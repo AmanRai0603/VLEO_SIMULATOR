@@ -1,0 +1,13 @@
+{
+  "id": "com_tx_power",
+  "state": "published",
+  "sheet_hash": "2bbde5",
+  "impl_hash": "222325",
+  "owner": "comms",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

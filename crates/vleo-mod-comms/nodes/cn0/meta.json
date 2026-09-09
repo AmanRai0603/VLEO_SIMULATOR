@@ -1,0 +1,13 @@
+{
+  "id": "com_cn0",
+  "state": "published",
+  "sheet_hash": "34ca84",
+  "impl_hash": "317212",
+  "owner": "comms",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["com_eirp", "com_path_loss", "com_atmospheric_loss", "com_g_over_t"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

@@ -1,0 +1,20 @@
+[package]
+name = "vleo-mod-orbit"
+description = "RING 3 — orbit geometry and manoeuvres. Where the vehicle is, how fast, how the plane moves, and what holding or leaving the orbit costs."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+vleo-core = { workspace = true }
+
+[build-dependencies]
+# The module list is an aggregate: built here, never committed, because every
+# node added would otherwise touch one file and every merge would conflict in
+# generated content nobody is allowed to edit.
+
+[lints.rust]
+unsafe_code = "forbid"

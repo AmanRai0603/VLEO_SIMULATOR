@@ -1,0 +1,113 @@
+<article class="node" data-node="kpi_power_margin" data-sheet-hash="dfe271" data-impl-hash="e56218">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="system">The system</a> <span class="sep">/</span> <a class="xref" data-group="applications">Applications and KPIs</a></nav>
+  <h2>Power margin — closure</h2>
+  <p class="ident"><code>kpi_power_margin</code> · <span class="kind kind-kpi">kpi</span> · owner <b>systems</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">interface</button>
+  <button role="tab" class="tab" data-tab="2">algorithm</button>
+  <button role="tab" class="tab" data-tab="3">generated code</button>
+  <button role="tab" class="tab" data-tab="4">evidence</button>
+  <button role="tab" class="tab" data-tab="5">flags</button>
+  <button role="tab" class="tab" data-tab="6">credibility</button>
+  <button role="tab" class="tab" data-tab="7">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">Is there enough power, with the margin the standard requires?</p>
+<p class="maths"><code>M = (achieved - required)/required, in the sense the requirement is stated</code></p>
+<p class="src">Source <b>ecss_e_st_10_02</b> — ECSS-E-ST-10-02C — Verification <span class="where">ESA-ESTEC, 2018</span></p>
+<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+</section>
+<section class="panel" data-panel="1">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>req</code></td><td><a class="xref" data-goto="kpi_power_margin_required">kpi_power_margin_required</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>ach</code></td><td><a class="xref" data-goto="pwr_margin">pwr_margin</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>M</code></td><td>kpi_power_margin</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+</section>
+<section class="panel" data-panel="2">
+<ol class="algo">
+<li><span class="step">compare achieved against required in the declared sense and return the signed fractional margin</span> <span class="binds">→ <code>m: Ratio</code></span></li>
+</ol>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>M &ge; -100</code> — a margin below -10000% means the inputs are not the ones the requirement was written against</li>
+<li><code>M &le; 1000</code> — a margin above 100000% means the requirement is not the one that binds</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// Is there enough power, with the margin the standard requires?
+///
+/// `M = (achieved - required)/required, in the sense the requirement is stated`
+///
+/// Source: `ecss_e_st_10_02`
+pub const NODE_ID: &amp;str = &quot;kpi_power_margin&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xbb637f9fe5dfe271;
+
+pub fn evaluate(req: Ratio, ach: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : compare achieved against required in the declared sense and return the signed fractional margin -&gt; Ratio
+    let m: Ratio = Ratio::new(mission::closure(req.get(), ach.get(), mission::Sense::AtLeast).margin);
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = m;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;M&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; -100.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;M&quot;, value: answer.get(), bound: -100.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;a margin below -10000% means the inputs are not the ones the requirement was written against&quot; });
+    }
+    if answer.get() &gt; 1000.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;M&quot;, value: answer.get(), bound: 1000.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;a margin above 100000% means the requirement is not the one that binds&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="4">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below -100 — a margin below -10000% means the inputs are not the ones the requirement was written against</li>
+<li><code>OutOfDomain</code> above 1000 — a margin above 100000% means the requirement is not the one that binds</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="6">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="kpi_power_margin"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="7">
+<p>Valid over <code>-100 &hellip; 1000</code> -.</p>
+<ul class="guards"><li>lower — a margin below -10000% means the inputs are not the ones the requirement was written against</li><li>upper — a margin above 100000% means the requirement is not the one that binds</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>no fixture: nothing outside this code has ever agreed with what it computes</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "orbit_beta_angle"
+label = "Beta angle"
+folder = "beta_angle"   # frozen at seed; renaming the label never moves the directory
+subsystem = "orbit"
+parent = "orbit_geometry"
+kind = "declared"
+owner = "systems"
+tier = "A"
+state = "published"
+
+[question]
+text = "What angle does the Sun make with the orbit plane? It decides eclipse duration and therefore both the power and the thermal design."
+
+[maths]
+expression = "beta = 30"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "beta"
+type = "Angle"
+unit = "Degree"
+lower = -90.0
+upper = 90.0
+reason_lower = "the angle between the orbit plane and the Sun is defined on -90..90"
+reason_upper = "the angle between the orbit plane and the Sun is defined on -90..90"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 30.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

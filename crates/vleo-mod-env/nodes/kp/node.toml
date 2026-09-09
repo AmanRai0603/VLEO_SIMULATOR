@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "env_kp"
+label = "Planetary geomagnetic index Kp"
+folder = "kp"   # frozen at seed; renaming the label never moves the directory
+subsystem = "env"
+parent = "space_env"
+kind = "declared"
+owner = "environment"
+tier = "A"
+state = "published"
+
+[question]
+text = "How disturbed is the geomagnetic field?"
+
+[maths]
+expression = "Kp = 3"
+source = "noaa_swpc"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "Kp"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0..9; a negative index is not a quiet day, it is a unit error"
+reason_upper = "Kp is defined on 0..9. This is the guard that catches an Ap value passed in by mistake, which would otherwise return an exospheric temperature of 1e18 K without complaint"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 3.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

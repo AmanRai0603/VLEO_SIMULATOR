@@ -1,0 +1,13 @@
+{
+  "id": "mass_structure",
+  "state": "published",
+  "sheet_hash": "40be53",
+  "impl_hash": "222325",
+  "owner": "mass",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

@@ -1,0 +1,13 @@
+{
+  "id": "pay_gsd",
+  "state": "published",
+  "sheet_hash": "310e0a",
+  "impl_hash": "b9dd72",
+  "owner": "payload",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pay_gsd_diffraction", "pay_gsd_detector"],
+  "contributes": ["kpi_gsd"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

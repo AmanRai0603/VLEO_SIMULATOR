@@ -1,0 +1,13 @@
+{
+  "id": "prop_thrust_to_drag",
+  "state": "published",
+  "sheet_hash": "47f9b4",
+  "impl_hash": "36f95c",
+  "owner": "systems",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["prop_delivered_thrust", "aero_drag_force"],
+  "contributes": ["kpi_thrust_margin", "kpi_service_lifetime"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

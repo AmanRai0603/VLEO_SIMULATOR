@@ -1,0 +1,77 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "prop_thrust"
+label = "Thrust"
+folder = "thrust"   # frozen at seed; renaming the label never moves the directory
+subsystem = "prop"
+parent = "prop_thruster"
+kind = "computed"
+owner = "propulsion"
+tier = "B"
+state = "published"
+
+[question]
+text = "How much thrust does the thruster produce from the air it is given?"
+
+[maths]
+expression = "T = mdot_i*v_e*alpha_div*alpha_pp"
+source = "romano2021"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "T"
+type = "Force"
+unit = "Millinewton"
+lower = 0.0
+upper = 1000.0
+reason_lower = "thrust cannot be negative"
+reason_upper = "above 1 N no air-breathing thruster in this band produces thrust, at any intake size"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "mi"
+var = "prop_ion_flow"
+type = "MassFlow"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "ve"
+var = "prop_exhaust_velocity"
+type = "Velocity"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "ad"
+var = "prop_div_efficiency"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "ap"
+var = "prop_double_ion_factor"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "multiply the ion flow by the exhaust velocity and apply the divergence and multiple-charge corrections"
+binds = "t"
+type = "Force"
+
+[contributes]
+kpis = ["kpi_thrust_margin"]
+
+[view]
+kind = "line"
+over = "orbit_altitude"
+points = 60
+

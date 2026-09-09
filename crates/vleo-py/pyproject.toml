@@ -1,0 +1,17 @@
+[build-system]
+requires = ["maturin>=1.5,<2"]
+build-backend = "maturin"
+
+[project]
+name = "vleo"
+version = "0.1.0"
+description = "The VLEO integrated design tool, bound to the same engine every other face calls."
+requires-python = ">=3.9"
+classifiers = ["Programming Language :: Rust"]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+# Stable-ABI wheels: one per platform rather than one per interpreter version,
+# because MATLAB supports a specific range of interpreter versions that differs
+# by release, and a user on another release reports the tool as broken.
+python-source = "python"

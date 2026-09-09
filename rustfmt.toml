@@ -1,0 +1,8 @@
+# Defaults, deliberately.
+#
+# The generated files are formatted by the generator with exactly these
+# settings, so `cargo fmt --all` is a no-op on them. Change anything here and
+# the formatter and the generator start fighting over the same bytes, the
+# regeneration diff fails for a reason that is not a defect, and within a
+# fortnight nobody reads it.
+edition = "2021"

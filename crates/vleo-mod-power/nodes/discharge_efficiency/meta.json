@@ -1,0 +1,13 @@
+{
+  "id": "pwr_discharge_efficiency",
+  "state": "published",
+  "sheet_hash": "19c433",
+  "impl_hash": "222325",
+  "owner": "power",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

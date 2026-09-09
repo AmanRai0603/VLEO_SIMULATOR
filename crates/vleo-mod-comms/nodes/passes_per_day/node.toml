@@ -1,0 +1,43 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "com_passes_per_day"
+label = "Usable passes per day"
+folder = "passes_per_day"   # frozen at seed; renaming the label never moves the directory
+subsystem = "com"
+parent = "comms"
+kind = "declared"
+owner = "operations"
+tier = "A"
+state = "published"
+
+[question]
+text = "How many usable ground station contacts are there each day?"
+
+[maths]
+expression = "N_pass = 9"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "N_pass"
+type = "Ratio"
+unit = "One"
+lower = 0.5
+upper = 60.0
+reason_lower = "below half a pass a day the mission cannot be operated"
+reason_upper = "above 60 passes a day exceeds the number of revolutions in a day"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 9.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[contributes]
+kpis = ["kpi_latency", "kpi_data_volume"]
+
+[view]
+kind = "number"
+

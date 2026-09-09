@@ -1,0 +1,13 @@
+{
+  "id": "orbit_slant_range",
+  "state": "published",
+  "sheet_hash": "bc1655",
+  "impl_hash": "509e95",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["orbit_radius", "orbit_min_elevation"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

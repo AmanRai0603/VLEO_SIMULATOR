@@ -1,0 +1,13 @@
+{
+  "id": "orbit_period",
+  "state": "published",
+  "sheet_hash": "077007",
+  "impl_hash": "d6a73d",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 1,
+  "holes": 1,
+  "inputs": ["orbit_radius"],
+  "contributes": [],
+  "gaps": []
+}

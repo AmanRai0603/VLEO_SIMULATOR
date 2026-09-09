@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "prop_throat_area"
+label = "Intake throat area"
+folder = "throat_area"   # frozen at seed; renaming the label never moves the directory
+subsystem = "prop"
+parent = "prop_intake"
+kind = "declared"
+owner = "propulsion"
+tier = "A"
+state = "published"
+
+[question]
+text = "How large is the opening from the collection chamber into the thruster?"
+
+[maths]
+expression = "A_out = 0.01"
+source = "romano2021"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "A_out"
+type = "Area"
+unit = "SquareMetre"
+lower = 0.0001
+upper = 1.0
+reason_lower = "below 1 cm2 the throat chokes the flow to the thruster whatever the mouth collects"
+reason_upper = "the throat cannot be larger than the mouth in any useful intake"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 0.01
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

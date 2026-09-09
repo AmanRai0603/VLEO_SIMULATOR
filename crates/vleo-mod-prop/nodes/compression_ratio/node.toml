@@ -1,0 +1,104 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "prop_compression_ratio"
+label = "Intake compression ratio"
+folder = "compression_ratio"   # frozen at seed; renaming the label never moves the directory
+subsystem = "prop"
+parent = "prop_intake"
+kind = "computed"
+owner = "propulsion"
+tier = "B"
+state = "published"
+
+[question]
+text = "By how much does the intake concentrate the gas before it reaches the thruster?"
+
+[maths]
+expression = "CR = 4*V*A_in*eta_geo/(v_bar*(A_out + beta*A_in))"
+source = "romano2021"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "CR"
+type = "Ratio"
+unit = "One"
+lower = 1.0
+upper = 100000.0
+reason_lower = "an intake cannot dilute the flow; a compression ratio below one means the geometry is inverted"
+reason_upper = "above 1e5 the chamber gas becomes collisional and the free-molecular balance no longer holds"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "a_in"
+var = "prop_intake_area"
+type = "Area"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "a_out"
+var = "prop_throat_area"
+type = "Area"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "eta_geo"
+var = "prop_eta_geo"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "beta"
+var = "prop_beta_backflow"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "t_c"
+var = "env_chamber_temperature"
+type = "Temperature"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "m"
+var = "env_mean_molar_mass"
+type = "MolarMass"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "n"
+var = "env_number_density"
+type = "NumberDensity"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "v"
+var = "orbit_velocity"
+type = "Velocity"
+
+[[algorithm.step]]
+number = 1
+text = "take the chamber-to-free-stream density ratio from the same flux balance"
+binds = "r"
+type = "Ratio"
+
+[view]
+kind = "number"
+

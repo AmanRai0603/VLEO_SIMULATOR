@@ -1,0 +1,46 @@
+# Six passes, every night, over everything.
+#
+# Three of them cannot run in the per-change pipeline: they need the whole tree,
+# the whole ledger and yesterday's state. That is what makes the audit a
+# different activity rather than a slower gate.
+name: nightly audit
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1 · build, both profiles
+        run: |
+          cargo build --workspace
+          cargo build --release --workspace
+
+      - name: 2 · golden vectors agree across profiles
+        run: |
+          cargo test --workspace
+          cargo test --release --workspace
+
+      - name: 3 · campaign over every reference case
+        run: |
+          cargo run --release -p vleo-cli --bin vleo -- data sync
+          for node in prop_thrust_to_drag pwr_margin thm_margin mass_margin com_link_margin kpi_thrust_margin; do
+            echo "== $node"
+            cargo run --release -p vleo-cli --bin vleo -- campaign "$node"
+          done
+
+      - name: 4 · the tree against its own rules
+        run: |
+          cargo run -p xtask -- assemble
+          cargo run -p xtask -- graph
+
+      - name: 5 · the gap pass, over everything
+        run: cargo run -p xtask -- gap
+
+      - name: 6 · reference data freshness
+        run: cargo run -p xtask -- bundle verify

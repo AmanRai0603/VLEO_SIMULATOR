@@ -1,0 +1,56 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pwr_subsystem_mass"
+label = "Power subsystem mass"
+folder = "subsystem_mass"   # frozen at seed; renaming the label never moves the directory
+subsystem = "power"
+parent = "power"
+kind = "computed"
+owner = "power"
+tier = "B"
+state = "published"
+
+[question]
+text = "What does the whole power subsystem weigh?"
+
+[maths]
+expression = "m = m_arr + m_batt + m_pcdu"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "m_pwr"
+type = "Mass"
+unit = "Kilogram"
+lower = 0.0
+upper = 2000.0
+reason_lower = "a mass cannot be negative"
+reason_upper = "above two tonnes the power system is not part of this spacecraft"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "ma"
+var = "pwr_array_mass"
+type = "Mass"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "mb"
+var = "pwr_battery_mass"
+type = "Mass"
+
+[[algorithm.step]]
+number = 1
+text = "sum the array and battery masses and add 25% for the distribution and control unit"
+binds = "m"
+type = "Mass"
+
+[view]
+kind = "number"
+

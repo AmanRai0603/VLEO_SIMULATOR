@@ -1,0 +1,13 @@
+{
+  "id": "aero_torque",
+  "state": "published",
+  "sheet_hash": "1a807d",
+  "impl_hash": "ff0a41",
+  "owner": "gnc",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["aero_drag_force", "aero_cp_cm_offset"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

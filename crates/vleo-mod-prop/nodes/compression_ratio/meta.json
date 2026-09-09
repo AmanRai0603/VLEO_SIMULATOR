@@ -1,0 +1,13 @@
+{
+  "id": "prop_compression_ratio",
+  "state": "published",
+  "sheet_hash": "338a0c",
+  "impl_hash": "6980f8",
+  "owner": "propulsion",
+  "tier": "B",
+  "fixtures": 1,
+  "holes": 1,
+  "inputs": ["prop_intake_area", "prop_throat_area", "prop_eta_geo", "prop_beta_backflow", "env_chamber_temperature", "env_mean_molar_mass", "env_number_density", "orbit_velocity"],
+  "contributes": [],
+  "gaps": []
+}

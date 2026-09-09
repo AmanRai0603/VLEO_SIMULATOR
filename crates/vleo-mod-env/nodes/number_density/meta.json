@@ -1,0 +1,13 @@
+{
+  "id": "env_number_density",
+  "state": "published",
+  "sheet_hash": "82d74a",
+  "impl_hash": "29c278",
+  "owner": "environment",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["orbit_altitude", "env_exospheric_temperature"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

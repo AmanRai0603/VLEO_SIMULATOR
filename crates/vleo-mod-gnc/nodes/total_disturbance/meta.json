@@ -1,0 +1,13 @@
+{
+  "id": "gnc_total_disturbance",
+  "state": "published",
+  "sheet_hash": "30dadb",
+  "impl_hash": "2faf65",
+  "owner": "gnc",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["aero_torque", "gnc_gravity_gradient_torque", "gnc_solar_torque", "gnc_magnetic_torque"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

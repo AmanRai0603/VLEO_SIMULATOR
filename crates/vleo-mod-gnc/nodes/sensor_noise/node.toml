@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "gnc_sensor_noise"
+label = "Attitude sensor noise"
+folder = "sensor_noise"   # frozen at seed; renaming the label never moves the directory
+subsystem = "gnc"
+parent = "gnc"
+kind = "declared"
+owner = "gnc"
+tier = "A"
+state = "published"
+
+[question]
+text = "How noisy is the attitude measurement?"
+
+[maths]
+expression = "sig_sen = 12"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "sig_sen"
+type = "Angle"
+unit = "Arcsecond"
+lower = 0.5
+upper = 3600.0
+reason_lower = "below 0.5 arcsec no star tracker in this class performs that well"
+reason_upper = "above one degree the sensor does not support any pointing requirement in this design"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 12.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

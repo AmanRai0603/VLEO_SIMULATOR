@@ -1,0 +1,13 @@
+{
+  "id": "thm_internal_dissipation",
+  "state": "published",
+  "sheet_hash": "5ed425",
+  "impl_hash": "222325",
+  "owner": "thermal",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

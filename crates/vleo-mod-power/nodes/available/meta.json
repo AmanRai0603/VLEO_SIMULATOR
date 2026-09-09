@@ -1,0 +1,13 @@
+{
+  "id": "pwr_available",
+  "state": "published",
+  "sheet_hash": "773f38",
+  "impl_hash": "a236a0",
+  "owner": "power",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pwr_array_power_eol", "orbit_eclipse_fraction", "pwr_discharge_efficiency"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

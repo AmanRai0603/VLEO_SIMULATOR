@@ -1,0 +1,13 @@
+{
+  "id": "orbit_nodal_regression",
+  "state": "published",
+  "sheet_hash": "436b4d",
+  "impl_hash": "41c3b6",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 1,
+  "holes": 1,
+  "inputs": ["orbit_radius", "orbit_eccentricity", "orbit_inclination"],
+  "contributes": [],
+  "gaps": []
+}

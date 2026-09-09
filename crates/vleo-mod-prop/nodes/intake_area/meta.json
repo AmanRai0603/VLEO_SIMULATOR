@@ -1,0 +1,13 @@
+{
+  "id": "prop_intake_area",
+  "state": "published",
+  "sheet_hash": "52fb6c",
+  "impl_hash": "222325",
+  "owner": "propulsion",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": ["kpi_thrust_margin"],
+  "gaps": []
+}

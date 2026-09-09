@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "com_frequency"
+label = "Downlink carrier frequency"
+folder = "frequency"   # frozen at seed; renaming the label never moves the directory
+subsystem = "com"
+parent = "comms"
+kind = "declared"
+owner = "comms"
+tier = "A"
+state = "published"
+
+[question]
+text = "On what frequency does the payload data come down?"
+
+[maths]
+expression = "f_c = 8.2"
+source = "itu_sa1862"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "f_c"
+type = "Frequency"
+unit = "Gigahertz"
+lower = 0.1
+upper = 40.0
+reason_lower = "below 100 MHz the antenna does not fit on this spacecraft"
+reason_upper = "above 40 GHz rain fade dominates and the ground segment is not the one costed here"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 8.2
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

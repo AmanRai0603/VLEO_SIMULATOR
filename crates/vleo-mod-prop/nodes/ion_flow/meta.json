@@ -1,0 +1,13 @@
+{
+  "id": "prop_ion_flow",
+  "state": "published",
+  "sheet_hash": "e46c05",
+  "impl_hash": "c40ce1",
+  "owner": "propulsion",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["prop_collected_flow", "prop_utilisation"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

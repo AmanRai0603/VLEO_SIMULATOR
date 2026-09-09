@@ -1,0 +1,13 @@
+{
+  "id": "mass_wet",
+  "state": "published",
+  "sheet_hash": "6f29d7",
+  "impl_hash": "76d13f",
+  "owner": "mass",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["mass_dry", "mass_disposal_propellant"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

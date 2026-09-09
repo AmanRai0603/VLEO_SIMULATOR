@@ -1,0 +1,31 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+
+[[fixture]]
+label = "250 km, moderate activity"
+expect = 6.631e-11
+tolerance = 0.005
+provenance = "independent-tool"
+source = "matlab_legacy"
+inputs = { h = 250000.0, t_inf = 949.6 }
+
+[[fixture]]
+label = "400 km, moderate activity"
+expect = 2.907e-12
+tolerance = 0.005
+provenance = "independent-tool"
+source = "matlab_legacy"
+inputs = { h = 400000.0, t_inf = 949.6 }
+
+[[fixture]]
+label = "200 km, solar minimum"
+expect = 1.679e-10
+tolerance = 0.005
+provenance = "independent-tool"
+source = "matlab_legacy"
+inputs = { h = 200000.0, t_inf = 633.9 }
+

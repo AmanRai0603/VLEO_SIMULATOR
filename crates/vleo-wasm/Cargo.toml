@@ -1,0 +1,33 @@
+[package]
+name = "vleo-wasm"
+description = "FACE — the browser. The demonstration kernel the public URL carries, compiled to WebAssembly. It holds the demonstration node subset only, so decompiling it recovers nothing that was not on the page beside it."
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.94"
+license = "UNLICENSED"
+authors = ["Orbitt Space"]
+repository = "https://github.com/AmanRai0603/VLEO_SIMULATOR"
+
+# Excluded from the workspace: it needs the wasm32 target, and Cargo unifies
+# features across workspace members — one face enabling `std` would silently
+# give it to this build.
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+vleo-modules = { path = "../vleo-modules" }
+vleo-bus = { path = "../vleo-bus" }
+vleo-core = { path = "../vleo-core" }
+vleo-units = { path = "../vleo-units" }
+wasm-bindgen = "0.2"
+console_error_panic_hook = "0.1"
+
+[profile.release]
+# The browser pays for every byte before anything is drawn, and unwinding
+# tables are dead weight in a face that cannot recover anyway.
+opt-level = "s"
+lto = "fat"
+panic = "abort"
+codegen-units = 1
+strip = "symbols"

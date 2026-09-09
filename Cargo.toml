@@ -1,0 +1,73 @@
+# VLEO Integrated Design Tool — one workspace, one version for every artefact.
+#
+# Ring discipline (enforced by the crate graph; a backwards call fails the build):
+#   RING 0  vleo-units    newtype units, frames, constants, portable maths
+#   RING 1  vleo-core     every formula, the resolver, the graph types   (no_std)
+#   RING 1b vleo-graph    the three graphs, generated from the sheets    (no_std)
+#   RING 2  vleo-bus      typed messages, ports, schedule, cache keys
+#   RING 3  vleo-mod-*    one crate per subsystem — a sibling it did not declare will not compile
+#           vleo-modules  facade + dispatch table; re-exports the twelve, holds no formula
+#   FACES   vleo-cli · vleo-daemon · vleo-wasm · vleo-ffi · vleo-py
+[workspace]
+resolver = "2"
+members = [
+    "crates/vleo-units",
+    "crates/vleo-core",
+    "crates/vleo-sheet",
+    "crates/vleo-bus",
+    "crates/vleo-data",
+    "crates/vleo-mod-env",
+    "crates/vleo-mod-orbit",
+    "crates/vleo-mod-aero",
+    "crates/vleo-mod-prop",
+    "crates/vleo-mod-power",
+    "crates/vleo-mod-thermal",
+    "crates/vleo-mod-gnc",
+    "crates/vleo-mod-comms",
+    "crates/vleo-mod-payload",
+    "crates/vleo-mod-mass",
+    "crates/vleo-mod-mission",
+    "crates/vleo-mod-cost",
+    "crates/vleo-modules",
+    "crates/vleo-cli",
+    "crates/vleo-daemon",
+    "crates/vleo-ffi",
+    "xtask",
+]
+exclude = ["crates/vleo-wasm", "crates/vleo-py"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.94"
+license = "UNLICENSED"
+authors = ["Orbitt Space"]
+repository = "https://github.com/AmanRai0603/VLEO_SIMULATOR"
+
+[workspace.dependencies]
+vleo-units   = { path = "crates/vleo-units" }
+vleo-sheet   = { path = "crates/vleo-sheet" }
+vleo-core    = { path = "crates/vleo-core" }
+vleo-graph   = { path = "crates/vleo-graph" }
+vleo-bus     = { path = "crates/vleo-bus" }
+vleo-data    = { path = "crates/vleo-data" }
+vleo-modules = { path = "crates/vleo-modules" }
+vleo-testkit = { path = "crates/vleo-testkit" }
+toml         = "0.8"
+serde        = { version = "1", features = ["derive"] }
+serde_json   = "1"
+
+# The kernel is the hot path.
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+
+# Dependencies optimised once and cached; an unoptimised nalgebra-class dependency
+# makes the edit-run cycle unusable.
+[profile.dev]
+opt-level = 0
+[profile.dev.package."*"]
+opt-level = 2

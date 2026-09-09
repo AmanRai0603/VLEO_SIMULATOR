@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "com_implementation_loss"
+label = "Implementation loss"
+folder = "implementation_loss"   # frozen at seed; renaming the label never moves the directory
+subsystem = "com"
+parent = "comms"
+kind = "declared"
+owner = "comms"
+tier = "A"
+state = "published"
+
+[question]
+text = "How far short of theory does the real modem fall, in decibels?"
+
+[maths]
+expression = "L_imp = 1.5"
+source = "ccsds131"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "L_imp"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 6.0
+reason_lower = "an implementation loss cannot be negative"
+reason_upper = "above 6 dB the equipment is not flight hardware"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 1.5
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

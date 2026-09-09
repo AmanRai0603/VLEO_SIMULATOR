@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pay_bits_per_pixel"
+label = "Bits per pixel"
+folder = "bits_per_pixel"   # frozen at seed; renaming the label never moves the directory
+subsystem = "pay"
+parent = "pay_optical"
+kind = "declared"
+owner = "payload"
+tier = "A"
+state = "published"
+
+[question]
+text = "How many bits does each sample carry?"
+
+[maths]
+expression = "b_px = 12"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "b_px"
+type = "Ratio"
+unit = "One"
+lower = 8.0
+upper = 16.0
+reason_lower = "below 8 bits the dynamic range is not usable for radiometry"
+reason_upper = "above 16 bits exceeds the detector's own noise floor and the extra bits carry noise"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 12.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

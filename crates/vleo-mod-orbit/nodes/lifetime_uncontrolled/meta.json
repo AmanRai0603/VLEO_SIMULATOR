@@ -1,0 +1,13 @@
+{
+  "id": "orbit_lifetime_uncontrolled",
+  "state": "published",
+  "sheet_hash": "5b3da4",
+  "impl_hash": "d20ae6",
+  "owner": "systems",
+  "tier": "C",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["orbit_altitude", "aero_ballistic_coefficient", "env_exospheric_temperature"],
+  "contributes": ["kpi_service_lifetime"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

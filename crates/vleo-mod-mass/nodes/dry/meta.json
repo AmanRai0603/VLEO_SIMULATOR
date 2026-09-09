@@ -1,0 +1,13 @@
+{
+  "id": "mass_dry",
+  "state": "published",
+  "sheet_hash": "361563",
+  "impl_hash": "314741",
+  "owner": "mass",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["mass_structure", "mass_propulsion_hw", "pwr_subsystem_mass", "mass_harness", "mass_avionics", "mass_comms_hw", "mass_gnc_hw", "mass_payload", "mass_system_margin"],
+  "contributes": ["kpi_mass_margin"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

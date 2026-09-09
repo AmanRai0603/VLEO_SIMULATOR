@@ -1,0 +1,23 @@
+[package]
+name = "vleo-cli"
+description = "FACE — the command line. Batch work, sweeps, campaigns, the self test and the diagnostic bundle. It depends on the bus and never on a module, so it cannot change a result."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "vleo"
+path = "src/main.rs"
+
+[dependencies]
+vleo-modules = { workspace = true, features = ["std"] }
+vleo-bus = { workspace = true, features = ["std"] }
+vleo-core = { workspace = true, features = ["std"] }
+vleo-units = { workspace = true, features = ["std"] }
+vleo-data = { workspace = true }
+
+[lints.rust]
+unsafe_code = "forbid"

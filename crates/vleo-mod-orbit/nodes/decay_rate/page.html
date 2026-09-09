@@ -1,0 +1,114 @@
+<article class="node" data-node="orbit_decay_rate" data-sheet-hash="53ae63" data-impl-hash="61e2c0">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="system">The system</a> <span class="sep">/</span> <a class="xref" data-group="orbit_env">Orbit and environment</a> <span class="sep">/</span> <a class="xref" data-group="orbit_geometry">Orbit geometry</a></nav>
+  <h2>Orbital decay rate</h2>
+  <p class="ident"><code>orbit_decay_rate</code> · <span class="kind kind-computed">computed</span> · owner <b>systems</b> · tier <b>B</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">interface</button>
+  <button role="tab" class="tab" data-tab="2">algorithm</button>
+  <button role="tab" class="tab" data-tab="3">generated code</button>
+  <button role="tab" class="tab" data-tab="4">evidence</button>
+  <button role="tab" class="tab" data-tab="5">flags</button>
+  <button role="tab" class="tab" data-tab="6">credibility</button>
+  <button role="tab" class="tab" data-tab="7">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How fast does the orbit fall if nothing compensates the drag?</p>
+<p class="maths"><code>da/dt = -rho*sqrt(mu*a)/BC</code></p>
+<p class="src">Source <b>vallado2013</b> — Vallado, D. A. — Fundamentals of Astrodynamics and Applications, 4th edition <span class="where">Microcosm Press, 2013</span></p>
+<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+</section>
+<section class="panel" data-panel="1">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>rho</code></td><td><a class="xref" data-goto="env_mass_density">env_mass_density</a></td><td>MassDensity</td><td>kg/m^3</td></tr>
+<tr><td>in</td><td><code>bc</code></td><td><a class="xref" data-goto="aero_ballistic_coefficient">aero_ballistic_coefficient</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>r</code></td><td><a class="xref" data-goto="orbit_radius">orbit_radius</a></td><td>Length</td><td>m</td></tr>
+<tr class="out"><td>out</td><td><code>da_dt</code></td><td>orbit_decay_rate</td><td>Velocity</td><td>m/s</td></tr>
+</tbody></table>
+<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+</section>
+<section class="panel" data-panel="2">
+<ol class="algo">
+<li><span class="step">apply the circular-orbit secular decay relation</span> <span class="binds">→ <code>d: Velocity</code></span></li>
+</ol>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>da_dt &ge; -10</code> — a decay faster than 10 m/s of semi-major axis per second is re-entry, not an orbit</li>
+<li><code>da_dt &le; 0</code> — drag cannot raise an orbit; a positive value here is a sign error upstream</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How fast does the orbit fall if nothing compensates the drag?
+///
+/// `da/dt = -rho*sqrt(mu*a)/BC`
+///
+/// Source: `vallado2013`
+pub const NODE_ID: &amp;str = &quot;orbit_decay_rate&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x07a146616c53ae63;
+
+pub fn evaluate(rho: MassDensity, bc: Ratio, r: Length) -&gt; Result&lt;Velocity, Fault&gt; {
+    // ---- HOLE 1 : apply the circular-orbit secular decay relation -&gt; Velocity
+    let d: Velocity = orbit::decay_rate(rho, bc.get(), r);
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Velocity = d;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;da_dt&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; -10.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;da_dt&quot;, value: answer.get(), bound: -10.0, edge: Edge::Lower, unit: Velocity::UNIT, reason: &quot;a decay faster than 10 m/s of semi-major axis per second is re-entry, not an orbit&quot; });
+    }
+    if answer.get() &gt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;da_dt&quot;, value: answer.get(), bound: 0.0, edge: Edge::Upper, unit: Velocity::UNIT, reason: &quot;drag cannot raise an orbit; a positive value here is a sign error upstream&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="4">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below -10 — a decay faster than 10 m/s of semi-major axis per second is re-entry, not an orbit</li>
+<li><code>OutOfDomain</code> above 0 — drag cannot raise an orbit; a positive value here is a sign error upstream</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="6">
+<p>Evidence tier <b>B</b>. What this tier cannot detect: an error the independent tool shares with this one.</p>
+<div class="cred" data-cred-for="orbit_decay_rate"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="7">
+<p>Valid over <code>-10 &hellip; 0</code> m/s.</p>
+<ul class="guards"><li>lower — a decay faster than 10 m/s of semi-major axis per second is re-entry, not an orbit</li><li>upper — drag cannot raise an orbit; a positive value here is a sign error upstream</li></ul>
+<div class="sweep" data-over="orbit_altitude" data-points="60" data-y="orbit_decay_rate"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_altitude">orbit_altitude</a> over 60 points. Run the branch to draw it.</p></div>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>no fixture: nothing outside this code has ever agreed with what it computes</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

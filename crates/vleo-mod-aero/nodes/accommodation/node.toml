@@ -1,0 +1,61 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "aero_accommodation"
+label = "Energy accommodation coefficient"
+folder = "accommodation"   # frozen at seed; renaming the label never moves the directory
+subsystem = "aero"
+parent = "aero_drag"
+kind = "computed"
+owner = "aero"
+tier = "B"
+state = "published"
+
+[question]
+text = "How completely does an incoming molecule thermalise with the surface before leaving?"
+note = "A design that assumes a fixed accommodation has a margin that moves when the Sun does."
+
+[maths]
+expression = "alpha = K*n_O*T_inf/(1 + K*n_O*T_inf),  K = 7.5e-17"
+source = "moe2005"
+
+[[assumption]]
+text = "The surface is covered in adsorbed atomic oxygen and behaves as that coverage dictates"
+fails_when = "a freshly cleaned or a fluorinated surface adsorbs far less, and its drag differs by tens of per cent from this"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "alpha"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 1.0
+reason_lower = "accommodation is a fraction and cannot be negative"
+reason_upper = "full accommodation is one; above it the reflected molecules would carry away energy the surface does not have"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "n_o"
+var = "env_atomic_oxygen_density"
+type = "NumberDensity"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "t_inf"
+var = "env_exospheric_temperature"
+type = "Temperature"
+
+[[algorithm.step]]
+number = 1
+text = "apply the Langmuir adsorption isotherm for atomic oxygen coverage"
+binds = "a"
+type = "Ratio"
+
+[view]
+kind = "number"
+

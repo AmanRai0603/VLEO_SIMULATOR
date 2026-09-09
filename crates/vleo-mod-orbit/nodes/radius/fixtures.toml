@@ -1,0 +1,15 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+
+[[fixture]]
+label = "250 km"
+expect = 6628137.0
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "wgs84"
+inputs = { h = 250000.0 }
+

@@ -1,0 +1,13 @@
+{
+  "id": "gnc_dump_time",
+  "state": "published",
+  "sheet_hash": "efb3ce",
+  "impl_hash": "222325",
+  "owner": "gnc",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

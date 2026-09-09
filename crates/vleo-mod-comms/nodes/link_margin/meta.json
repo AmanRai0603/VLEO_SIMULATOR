@@ -1,0 +1,13 @@
+{
+  "id": "com_link_margin",
+  "state": "published",
+  "sheet_hash": "fc7a72",
+  "impl_hash": "48a526",
+  "owner": "comms",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["com_ebn0", "com_required_ebn0", "com_implementation_loss"],
+  "contributes": ["kpi_data_volume"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

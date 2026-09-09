@@ -1,0 +1,13 @@
+{
+  "id": "com_daily_volume",
+  "state": "published",
+  "sheet_hash": "cce246",
+  "impl_hash": "a98fe6",
+  "owner": "operations",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["com_pass_volume", "com_passes_per_day"],
+  "contributes": ["kpi_data_volume"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

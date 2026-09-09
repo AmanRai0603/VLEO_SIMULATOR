@@ -1,0 +1,13 @@
+{
+  "id": "pay_geolocation_error",
+  "state": "published",
+  "sheet_hash": "ed118f",
+  "impl_hash": "44cd15",
+  "owner": "payload",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pay_toa_uncertainty", "pay_rf_gdop"],
+  "contributes": ["kpi_geolocation"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

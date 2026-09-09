@@ -1,0 +1,13 @@
+{
+  "id": "cost_programme",
+  "state": "published",
+  "sheet_hash": "9de7b8",
+  "impl_hash": "baba0d",
+  "owner": "programme",
+  "tier": "C",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["cost_non_recurring", "cost_production", "cost_launch_per_satellite", "mis_satellites", "cost_annual_operations", "orbit_mission_duration"],
+  "contributes": ["kpi_cost_per_year"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

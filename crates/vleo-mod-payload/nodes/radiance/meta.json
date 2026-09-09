@@ -1,0 +1,13 @@
+{
+  "id": "pay_radiance",
+  "state": "published",
+  "sheet_hash": "f6479b",
+  "impl_hash": "222325",
+  "owner": "payload",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

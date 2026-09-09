@@ -1,0 +1,13 @@
+{
+  "id": "com_antenna_gain",
+  "state": "published",
+  "sheet_hash": "d31226",
+  "impl_hash": "e5f268",
+  "owner": "comms",
+  "tier": "A",
+  "fixtures": 1,
+  "holes": 1,
+  "inputs": ["com_antenna_diameter", "com_frequency", "com_antenna_efficiency"],
+  "contributes": [],
+  "gaps": []
+}

@@ -1,0 +1,16 @@
+[package]
+name = "vleo-sheet"
+description = "BUILD ONLY — reads the sheets and emits everything derived from them. Used by the generators in xtask and by the build scripts, so there is exactly one implementation of what a sheet means. Never present at run time."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+toml = { workspace = true }
+vleo-units = { workspace = true }
+
+[lints.rust]
+unsafe_code = "forbid"

@@ -1,0 +1,13 @@
+{
+  "id": "cost_payload_recurring",
+  "state": "published",
+  "sheet_hash": "0c926d",
+  "impl_hash": "db98fb",
+  "owner": "programme",
+  "tier": "C",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["mass_payload", "cost_inflation"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

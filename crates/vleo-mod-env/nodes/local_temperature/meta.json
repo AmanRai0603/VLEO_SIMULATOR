@@ -1,0 +1,13 @@
+{
+  "id": "env_local_temperature",
+  "state": "published",
+  "sheet_hash": "8b357d",
+  "impl_hash": "5b7a9a",
+  "owner": "environment",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["orbit_altitude", "env_exospheric_temperature"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

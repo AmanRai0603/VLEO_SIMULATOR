@@ -1,0 +1,56 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "kpi_power_margin"
+label = "Power margin — closure"
+folder = "kpi_power_margin"   # frozen at seed; renaming the label never moves the directory
+subsystem = "kpi"
+parent = "applications"
+kind = "kpi"
+owner = "systems"
+tier = "A"
+state = "published"
+
+[question]
+text = "Is there enough power, with the margin the standard requires?"
+
+[maths]
+expression = "M = (achieved - required)/required, in the sense the requirement is stated"
+source = "ecss_e_st_10_02"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "M"
+type = "Ratio"
+unit = "One"
+lower = -100.0
+upper = 1000.0
+reason_lower = "a margin below -10000% means the inputs are not the ones the requirement was written against"
+reason_upper = "a margin above 100000% means the requirement is not the one that binds"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "req"
+var = "kpi_power_margin_required"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "ach"
+var = "pwr_margin"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "compare achieved against required in the declared sense and return the signed fractional margin"
+binds = "m"
+type = "Ratio"
+
+[view]
+kind = "number"
+

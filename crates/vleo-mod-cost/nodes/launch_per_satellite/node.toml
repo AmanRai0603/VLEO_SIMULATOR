@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "cost_launch_per_satellite"
+label = "Launch cost per satellite"
+folder = "launch_per_satellite"   # frozen at seed; renaming the label never moves the directory
+subsystem = "cost"
+parent = "mgt_cost"
+kind = "declared"
+owner = "programme"
+tier = "A"
+state = "published"
+
+[question]
+text = "What does it cost to put one satellite in orbit?"
+
+[maths]
+expression = "C_lch = 1.8"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "C_lch"
+type = "Money"
+unit = "MillionUsDollar"
+lower = 0.05
+upper = 100.0
+reason_lower = "below 50 thousand dollars no launch service exists"
+reason_upper = "above 100 million per satellite the constellation is not the one costed here"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 1.8
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

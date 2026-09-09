@@ -1,0 +1,73 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "mis_revisit"
+label = "Mean revisit time"
+folder = "revisit"   # frozen at seed; renaming the label never moves the directory
+subsystem = "mis"
+parent = "mission"
+kind = "computed"
+owner = "systems"
+tier = "C"
+state = "published"
+
+[question]
+text = "How often does the constellation come back to a given place?"
+
+[maths]
+expression = "t = A_earth/(N*W*V_g)"
+source = "larson_wertz"
+
+[[assumption]]
+text = "Uniform coverage of the whole globe, no latitude weighting"
+fails_when = "a Sun-synchronous constellation revisits the poles far more often than the equator, so this mean is optimistic at low latitudes and pessimistic at high ones"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "t_rev"
+type = "Time"
+unit = "Hour"
+lower = 0.0
+upper = 2400.0
+reason_lower = "a revisit time cannot be negative"
+reason_upper = "above 100 days the constellation does not provide a service"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "w"
+var = "pay_swath"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "v"
+var = "orbit_ground_track_speed"
+type = "Velocity"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "n"
+var = "mis_satellites"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "divide the Earth's surface area by the total swath sweep rate of the constellation"
+binds = "t"
+type = "Time"
+
+[contributes]
+kpis = ["kpi_revisit"]
+
+[view]
+kind = "line"
+over = "mis_satellites"
+points = 60
+

@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "aero_body_length"
+label = "Body length"
+folder = "body_length"   # frozen at seed; renaming the label never moves the directory
+subsystem = "aero"
+parent = "aero_drag"
+kind = "declared"
+owner = "mass"
+tier = "A"
+state = "published"
+
+[question]
+text = "How long is the vehicle along the flight direction?"
+
+[maths]
+expression = "L = 2"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "L"
+type = "Length"
+unit = "Metre"
+lower = 0.3
+upper = 10.0
+reason_lower = "below 0.3 m the vehicle is smaller than a 3U cubesat and the multipayload mission does not fit in it"
+reason_upper = "above 10 m the launch envelope and the free-molecular panel model both stop applying"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 2.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

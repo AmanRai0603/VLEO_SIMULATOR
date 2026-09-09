@@ -1,0 +1,13 @@
+{
+  "id": "com_eirp",
+  "state": "published",
+  "sheet_hash": "f7467a",
+  "impl_hash": "e46a9f",
+  "owner": "comms",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["com_tx_power", "com_antenna_gain", "com_line_loss"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

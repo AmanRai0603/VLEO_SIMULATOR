@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "kpi_gsd_required"
+label = "Ground sample distance — required"
+folder = "kpi_gsd_required"   # frozen at seed; renaming the label never moves the directory
+subsystem = "kpi"
+parent = "mgt_customer"
+kind = "declared"
+owner = "systems"
+tier = "A"
+state = "published"
+
+[question]
+text = "What does the customer require for ground sample distance?"
+
+[maths]
+expression = "R_req = 1"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "R_req"
+type = "Length"
+unit = "Metre"
+lower = 0.05
+upper = 100.0
+reason_lower = "below 5 cm no optical payload in this mass class achieves it"
+reason_upper = "above 100 m the product is not the one being sold"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 1.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

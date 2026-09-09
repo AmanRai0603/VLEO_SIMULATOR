@@ -1,0 +1,68 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "thm_dissipation"
+label = "Heat to reject"
+folder = "dissipation"   # frozen at seed; renaming the label never moves the directory
+subsystem = "thm"
+parent = "thermal"
+kind = "computed"
+owner = "thermal"
+tier = "B"
+state = "published"
+
+[question]
+text = "How much heat does the spacecraft have to get rid of?"
+
+[maths]
+expression = "Q = P_dem - P_rf - P_beam"
+source = "larson_wertz"
+
+[[assumption]]
+text = "All bus power that is not beam kinetic energy or radiated radio power becomes heat"
+fails_when = "true to within the accuracy of this budget; it ignores the small fraction stored in the battery over a cycle, which averages to zero over an orbit"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "Q"
+type = "Power"
+unit = "Watt"
+lower = 0.0
+upper = 50000.0
+reason_lower = "heat to reject cannot be negative"
+reason_upper = "above 50 kW nothing in this mass class dissipates that much"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "dem"
+var = "pwr_demand"
+type = "Power"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "pj"
+var = "prop_jet_power"
+type = "Power"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "tx"
+var = "com_tx_power"
+type = "Power"
+
+[[algorithm.step]]
+number = 1
+text = "everything drawn from the bus becomes heat except the beam kinetic power and the radiated radio-frequency power"
+binds = "q"
+type = "Power"
+
+[view]
+kind = "number"
+

@@ -1,0 +1,13 @@
+{
+  "id": "aero_frontal_area",
+  "state": "published",
+  "sheet_hash": "a0d5b8",
+  "impl_hash": "971293",
+  "owner": "mass",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["aero_body_diameter", "aero_appendage_area"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

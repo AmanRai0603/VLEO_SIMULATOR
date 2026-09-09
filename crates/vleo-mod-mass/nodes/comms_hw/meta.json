@@ -1,0 +1,13 @@
+{
+  "id": "mass_comms_hw",
+  "state": "published",
+  "sheet_hash": "915ac1",
+  "impl_hash": "222325",
+  "owner": "comms",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

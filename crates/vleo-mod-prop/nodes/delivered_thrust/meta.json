@@ -1,0 +1,13 @@
+{
+  "id": "prop_delivered_thrust",
+  "state": "published",
+  "sheet_hash": "907800",
+  "impl_hash": "29c8ab",
+  "owner": "propulsion",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["prop_thrust", "prop_throttle"],
+  "contributes": ["kpi_thrust_margin"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

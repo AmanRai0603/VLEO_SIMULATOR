@@ -1,0 +1,13 @@
+{
+  "id": "thm_dissipation",
+  "state": "published",
+  "sheet_hash": "2c72ab",
+  "impl_hash": "2f5cb0",
+  "owner": "thermal",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pwr_demand", "prop_jet_power", "com_tx_power"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

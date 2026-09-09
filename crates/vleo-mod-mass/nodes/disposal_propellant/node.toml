@@ -1,0 +1,57 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "mass_disposal_propellant"
+label = "Disposal propellant mass"
+folder = "disposal_propellant"   # frozen at seed; renaming the label never moves the directory
+subsystem = "mass"
+parent = "mass_aero"
+kind = "computed"
+owner = "propulsion"
+tier = "A"
+state = "published"
+
+[question]
+text = "How much stored propellant must be carried for the disposal manoeuvre?"
+note = "An air-breathing design does not reach zero here. Debris mitigation is a requirement, not a courtesy."
+
+[maths]
+expression = "m = m_dry*(exp(dv/v_e) - 1)"
+source = "iso24113"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "m_dis"
+type = "Mass"
+unit = "Kilogram"
+lower = 0.0
+upper = 1000.0
+reason_lower = "a propellant mass cannot be negative"
+reason_upper = "above a tonne the disposal budget is larger than the spacecraft"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "m"
+var = "mass_dry"
+type = "Mass"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "dv"
+var = "orbit_deorbit_delta_v"
+type = "Velocity"
+
+[[algorithm.step]]
+number = 1
+text = "apply the rocket equation at a 220 s stored-propellant specific impulse"
+binds = "mp"
+type = "Mass"
+
+[view]
+kind = "number"
+

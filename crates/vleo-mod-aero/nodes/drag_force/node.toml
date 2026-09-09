@@ -1,0 +1,69 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "aero_drag_force"
+label = "Drag force"
+folder = "drag_force"   # frozen at seed; renaming the label never moves the directory
+subsystem = "aero"
+parent = "aero_drag"
+kind = "computed"
+owner = "aero"
+tier = "A"
+state = "published"
+
+[question]
+text = "How hard is the atmosphere pulling the satellite backwards?"
+
+[maths]
+expression = "D = 0.5*rho*V^2*Cd*A"
+source = "vallado2013"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "D"
+type = "Force"
+unit = "Millinewton"
+lower = 0.0
+upper = 10000.0
+reason_lower = "drag cannot be negative"
+reason_upper = "above 10 N the vehicle is decelerating at a rate no electric propulsion system can answer"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "q"
+var = "aero_dynamic_pressure"
+type = "Pressure"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "cd"
+var = "aero_drag_coefficient"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "a"
+var = "aero_frontal_area"
+type = "Area"
+
+[[algorithm.step]]
+number = 1
+text = "multiply dynamic pressure by the drag coefficient and the frontal area"
+binds = "d"
+type = "Force"
+
+[contributes]
+kpis = ["kpi_service_lifetime"]
+
+[view]
+kind = "line"
+over = "orbit_altitude"
+points = 60
+

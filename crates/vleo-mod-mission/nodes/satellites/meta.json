@@ -1,0 +1,13 @@
+{
+  "id": "mis_satellites",
+  "state": "published",
+  "sheet_hash": "84dc8a",
+  "impl_hash": "222325",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": ["kpi_revisit", "kpi_cost_per_year"],
+  "gaps": []
+}

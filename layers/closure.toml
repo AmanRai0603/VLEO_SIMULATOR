@@ -1,0 +1,18 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "closure"
+label = "Closure — required against achieved"
+parent = "system"
+owner = "systems"
+
+[[relates]]
+from = "closure"
+to = "propulsion"
+why = "thrust against drag is the closure the design exists to reach"
+

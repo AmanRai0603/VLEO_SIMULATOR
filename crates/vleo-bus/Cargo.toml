@@ -1,0 +1,20 @@
+[package]
+name = "vleo-bus"
+description = "RING 2 — the wire contract. Typed messages, the case, the results and the run manifest that every face posts. A face depends on the bus and never on a module, so adding a face cannot change a result."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+vleo-core = { workspace = true }
+vleo-units = { workspace = true }
+
+[features]
+default = []
+std = ["vleo-core/std"]
+
+[lints.rust]
+unsafe_code = "forbid"

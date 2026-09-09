@@ -1,0 +1,13 @@
+{
+  "id": "prop_capture_efficiency",
+  "state": "published",
+  "sheet_hash": "479fc1",
+  "impl_hash": "dcaa1a",
+  "owner": "propulsion",
+  "tier": "B",
+  "fixtures": 1,
+  "holes": 1,
+  "inputs": ["prop_intake_area", "prop_throat_area", "prop_eta_geo", "prop_beta_backflow", "env_chamber_temperature", "env_mean_molar_mass", "env_number_density", "orbit_velocity"],
+  "contributes": ["kpi_thrust_margin"],
+  "gaps": []
+}

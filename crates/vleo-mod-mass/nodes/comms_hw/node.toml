@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "mass_comms_hw"
+label = "Communications hardware mass"
+folder = "comms_hw"   # frozen at seed; renaming the label never moves the directory
+subsystem = "mass"
+parent = "mass_aero"
+kind = "declared"
+owner = "comms"
+tier = "A"
+state = "published"
+
+[question]
+text = "What do the transceivers and antennas weigh?"
+
+[maths]
+expression = "m_com = 7.5"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "m_com"
+type = "Mass"
+unit = "Kilogram"
+lower = 0.2
+upper = 200.0
+reason_lower = "below 200 grams no transceiver and antenna exist"
+reason_upper = "above 200 kg the communications payload is not in this class"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 7.5
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

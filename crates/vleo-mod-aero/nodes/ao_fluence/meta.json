@@ -1,0 +1,13 @@
+{
+  "id": "aero_ao_fluence",
+  "state": "published",
+  "sheet_hash": "12f42f",
+  "impl_hash": "9c0e10",
+  "owner": "mass",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["env_atomic_oxygen_density", "orbit_velocity", "orbit_mission_duration"],
+  "contributes": ["kpi_service_lifetime"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

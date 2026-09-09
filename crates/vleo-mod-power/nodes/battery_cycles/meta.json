@@ -1,0 +1,13 @@
+{
+  "id": "pwr_battery_cycles",
+  "state": "published",
+  "sheet_hash": "ce91c2",
+  "impl_hash": "563afa",
+  "owner": "power",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["orbit_mission_duration", "orbit_period"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

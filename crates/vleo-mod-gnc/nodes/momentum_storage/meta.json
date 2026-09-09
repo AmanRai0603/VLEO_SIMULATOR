@@ -1,0 +1,13 @@
+{
+  "id": "gnc_momentum_storage",
+  "state": "published",
+  "sheet_hash": "44bb9f",
+  "impl_hash": "9caad0",
+  "owner": "gnc",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["gnc_total_disturbance", "orbit_period"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

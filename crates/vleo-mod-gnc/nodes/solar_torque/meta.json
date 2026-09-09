@@ -1,0 +1,13 @@
+{
+  "id": "gnc_solar_torque",
+  "state": "published",
+  "sheet_hash": "db9d4e",
+  "impl_hash": "21ae62",
+  "owner": "gnc",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["aero_frontal_area", "aero_cp_cm_offset", "pwr_array_incidence"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

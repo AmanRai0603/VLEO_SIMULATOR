@@ -1,0 +1,13 @@
+{
+  "id": "pay_scene_volume",
+  "state": "published",
+  "sheet_hash": "781701",
+  "impl_hash": "017366",
+  "owner": "payload",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pay_pixels_across", "pay_bits_per_pixel", "pay_compression"],
+  "contributes": ["kpi_data_volume"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

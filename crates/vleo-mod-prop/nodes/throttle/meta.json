@@ -1,0 +1,13 @@
+{
+  "id": "prop_throttle",
+  "state": "published",
+  "sheet_hash": "a6c290",
+  "impl_hash": "98cf37",
+  "owner": "propulsion",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pwr_available", "prop_bus_power", "pay_power", "pwr_avionics_load", "com_tx_power", "pwr_thermal_load", "pwr_harness_loss"],
+  "contributes": ["kpi_thrust_margin", "kpi_power_margin"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

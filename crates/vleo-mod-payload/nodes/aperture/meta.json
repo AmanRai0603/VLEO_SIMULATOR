@@ -1,0 +1,13 @@
+{
+  "id": "pay_aperture",
+  "state": "published",
+  "sheet_hash": "8fe472",
+  "impl_hash": "222325",
+  "owner": "payload",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": ["kpi_gsd"],
+  "gaps": []
+}

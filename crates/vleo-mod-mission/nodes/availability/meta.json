@@ -1,0 +1,13 @@
+{
+  "id": "mis_availability",
+  "state": "published",
+  "sheet_hash": "15f327",
+  "impl_hash": "ab5184",
+  "owner": "operations",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["mis_unit_availability", "mis_satellites"],
+  "contributes": ["kpi_availability"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

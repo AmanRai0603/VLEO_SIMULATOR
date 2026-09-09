@@ -1,0 +1,113 @@
+<article class="node" data-node="prop_ionisation_cost" data-sheet-hash="fd28ec" data-impl-hash="222325">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="system">The system</a> <span class="sep">/</span> <a class="xref" data-group="subsystems">Satellite subsystems</a> <span class="sep">/</span> <a class="xref" data-group="propulsion">Propulsion — air-breathing electric</a> <span class="sep">/</span> <a class="xref" data-group="prop_thruster">Thruster and power processing</a></nav>
+  <h2>Energy cost per ion</h2>
+  <p class="ident"><code>prop_ionisation_cost</code> · <span class="kind kind-declared">declared</span> · owner <b>propulsion</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">interface</button>
+  <button role="tab" class="tab" data-tab="2">algorithm</button>
+  <button role="tab" class="tab" data-tab="3">generated code</button>
+  <button role="tab" class="tab" data-tab="4">evidence</button>
+  <button role="tab" class="tab" data-tab="5">flags</button>
+  <button role="tab" class="tab" data-tab="6">credibility</button>
+  <button role="tab" class="tab" data-tab="7">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How much energy does the source spend to make one ion, including every loss?</p>
+<p class="maths"><code>eps_i = 250</code></p>
+<p class="src">Source <b>romano2021</b> — Romano, F. et al. — Intake design for an atmosphere-breathing electric propulsion system <span class="where">Acta Astronautica, 2021</span></p>
+<p class="note">Not the ionisation potential. A real source spends 2 to 30 times the theoretical minimum on excitation, radiation and wall losses.</p>
+<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+</section>
+<section class="panel" data-panel="1">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
+<tr class="out"><td>out</td><td><code>eps_i</code></td><td>prop_ionisation_cost</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="prop_ionisation_power">prop_ionisation_power</a></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
+<p>This is a declared value: <b>250</b> -, confirmed by <b>A. Rai / 2026-09-01</b>.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>eps_i &ge; 20</code> — below 20 eV per ion is under twice the 13.6 eV ionisation potential of atomic oxygen; no source has approached it</li>
+<li><code>eps_i &le; 1000</code> — above 1000 eV per ion the ionisation power alone exceeds any plausible bus, whatever the beam does</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How much energy does the source spend to make one ion, including every loss?
+///
+/// `eps_i = 250`
+///
+/// Source: `romano2021`
+///
+/// Not the ionisation potential. A real source spends 2 to 30 times the
+/// theoretical minimum on excitation, radiation and wall losses.
+pub const NODE_ID: &amp;str = &quot;prop_ionisation_cost&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x8c8b68e371fd28ec;
+
+pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
+    // generated · a declared value, converted from the unit it was written in
+    let declared: Ratio = match Ratio::from_unit(250.0, Unit::One) {
+        Some(q) =&gt; q,
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;eps_i&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+    };
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = declared;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;eps_i&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 20.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;eps_i&quot;, value: answer.get(), bound: 20.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;below 20 eV per ion is under twice the 13.6 eV ionisation potential of atomic oxygen; no source has approached it&quot; });
+    }
+    if answer.get() &gt; 1000.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;eps_i&quot;, value: answer.get(), bound: 1000.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;above 1000 eV per ion the ionisation power alone exceeds any plausible bus, whatever the beam does&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="4">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 20 — below 20 eV per ion is under twice the 13.6 eV ionisation potential of atomic oxygen; no source has approached it</li>
+<li><code>OutOfDomain</code> above 1000 — above 1000 eV per ion the ionisation power alone exceeds any plausible bus, whatever the beam does</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="6">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="prop_ionisation_cost"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="7">
+<p>Valid over <code>20 &hellip; 1000</code> -.</p>
+<ul class="guards"><li>lower — below 20 eV per ion is under twice the 13.6 eV ionisation potential of atomic oxygen; no source has approached it</li><li>upper — above 1000 eV per ion the ionisation power alone exceeds any plausible bus, whatever the beam does</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+</article>

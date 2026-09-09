@@ -1,0 +1,13 @@
+{
+  "id": "prop_thrust",
+  "state": "published",
+  "sheet_hash": "c2a689",
+  "impl_hash": "5cf68e",
+  "owner": "propulsion",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["prop_ion_flow", "prop_exhaust_velocity", "prop_div_efficiency", "prop_double_ion_factor"],
+  "contributes": ["kpi_thrust_margin"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

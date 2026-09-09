@@ -1,0 +1,59 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "gnc_nav_position_error"
+label = "Navigation position error"
+folder = "nav_position_error"   # frozen at seed; renaming the label never moves the directory
+subsystem = "gnc"
+parent = "gnc"
+kind = "computed"
+owner = "gnc"
+tier = "A"
+state = "published"
+
+[question]
+text = "How well does the spacecraft know where it is?"
+
+[maths]
+expression = "e = URE*GDOP"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "e_nav"
+type = "Length"
+unit = "Metre"
+lower = 0.0
+upper = 10000.0
+reason_lower = "a position error cannot be negative"
+reason_upper = "above 10 km the navigation solution is not usable"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "u"
+var = "gnc_user_range_error"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "g"
+var = "gnc_gdop"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "multiply the user range error by the geometric dilution"
+binds = "e"
+type = "Length"
+
+[contributes]
+kpis = ["kpi_geolocation"]
+
+[view]
+kind = "number"
+

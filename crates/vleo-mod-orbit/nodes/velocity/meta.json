@@ -1,0 +1,13 @@
+{
+  "id": "orbit_velocity",
+  "state": "published",
+  "sheet_hash": "f1fb4a",
+  "impl_hash": "a70531",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 2,
+  "holes": 1,
+  "inputs": ["orbit_radius"],
+  "contributes": [],
+  "gaps": []
+}

@@ -1,0 +1,13 @@
+{
+  "id": "pay_swath",
+  "state": "published",
+  "sheet_hash": "c5d9e6",
+  "impl_hash": "ace4d8",
+  "owner": "payload",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pay_gsd", "pay_pixels_across"],
+  "contributes": ["kpi_revisit"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

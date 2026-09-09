@@ -1,0 +1,13 @@
+{
+  "id": "kpi_cost_per_year",
+  "state": "published",
+  "sheet_hash": "6bc15e",
+  "impl_hash": "6bcf42",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["kpi_cost_per_year_required", "cost_per_year"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

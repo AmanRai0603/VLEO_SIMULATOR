@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pay_quantum_efficiency"
+label = "Detector quantum efficiency"
+folder = "quantum_efficiency"   # frozen at seed; renaming the label never moves the directory
+subsystem = "pay"
+parent = "pay_optical"
+kind = "declared"
+owner = "payload"
+tier = "A"
+state = "published"
+
+[question]
+text = "What fraction of incident photons become photoelectrons?"
+
+[maths]
+expression = "QE = 0.75"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "QE"
+type = "Ratio"
+unit = "One"
+lower = 0.05
+upper = 0.95
+reason_lower = "below 5% the detector is not one considered here"
+reason_upper = "above 95% no back-illuminated detector reaches it across the band"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 0.75
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

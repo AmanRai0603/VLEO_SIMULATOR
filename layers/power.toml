@@ -1,0 +1,18 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "power"
+label = "Power"
+parent = "subsystems"
+owner = "power"
+
+[[relates]]
+from = "power"
+to = "thermal"
+why = "everything the bus draws has to leave as heat"
+

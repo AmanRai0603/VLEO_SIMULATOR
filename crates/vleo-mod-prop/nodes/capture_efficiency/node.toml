@@ -1,0 +1,116 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "prop_capture_efficiency"
+label = "Intake collection efficiency"
+folder = "capture_efficiency"   # frozen at seed; renaming the label never moves the directory
+subsystem = "prop"
+parent = "prop_intake"
+kind = "computed"
+owner = "propulsion"
+tier = "B"
+state = "published"
+
+[question]
+text = "What fraction of the flow entering the mouth actually reaches the thruster?"
+note = "Read the relation slowly: the collection efficiency does not depend on the flight speed at all, only on geometry. Speed buys compression, not capture. A design trying to raise capture by flying faster is optimising the wrong term."
+
+[maths]
+expression = "eta_c = A_out*eta_geo/(A_out + beta*A_in)"
+source = "romano2021"
+
+[[assumption]]
+text = "Free-molecular flow throughout the duct and the chamber"
+fails_when = "if the chamber compresses far enough to become collisional the balance is no longer a simple flux balance, which happens above a compression ratio of roughly 1e4"
+
+[[assumption]]
+text = "The chamber gas is fully thermalised at the chamber temperature"
+fails_when = "a short duct passes part of the beam straight through, which raises the delivered flow above this and is not modelled"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "eta_c"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 1.0
+reason_lower = "a collection efficiency cannot be negative"
+reason_upper = "an intake cannot deliver more than enters its mouth"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "a_in"
+var = "prop_intake_area"
+type = "Area"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "a_out"
+var = "prop_throat_area"
+type = "Area"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "eta_geo"
+var = "prop_eta_geo"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "beta"
+var = "prop_beta_backflow"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "t_c"
+var = "env_chamber_temperature"
+type = "Temperature"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "m"
+var = "env_mean_molar_mass"
+type = "MolarMass"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "n"
+var = "env_number_density"
+type = "NumberDensity"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "v"
+var = "orbit_velocity"
+type = "Velocity"
+
+[[algorithm.step]]
+number = 1
+text = "balance the hyperthermal inflow against the thermal outflow through the throat and back out of the mouth"
+binds = "r"
+type = "Ratio"
+
+[contributes]
+kpis = ["kpi_thrust_margin"]
+
+[view]
+kind = "number"
+

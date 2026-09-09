@@ -1,0 +1,13 @@
+{
+  "id": "aero_dynamic_pressure",
+  "state": "published",
+  "sheet_hash": "e44a8b",
+  "impl_hash": "11ab56",
+  "owner": "aero",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["env_mass_density", "orbit_velocity"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

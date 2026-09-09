@@ -1,0 +1,13 @@
+{
+  "id": "mass_harness",
+  "state": "published",
+  "sheet_hash": "e2e374",
+  "impl_hash": "222325",
+  "owner": "thermal",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

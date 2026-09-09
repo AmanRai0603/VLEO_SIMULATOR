@@ -1,0 +1,13 @@
+{
+  "id": "aero_drag_acceleration",
+  "state": "published",
+  "sheet_hash": "2b7af8",
+  "impl_hash": "376307",
+  "owner": "aero",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["aero_drag_force", "mass_wet"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

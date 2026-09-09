@@ -1,0 +1,13 @@
+{
+  "id": "prop_exhaust_velocity",
+  "state": "published",
+  "sheet_hash": "69687a",
+  "impl_hash": "99060d",
+  "owner": "propulsion",
+  "tier": "A",
+  "fixtures": 1,
+  "holes": 1,
+  "inputs": ["prop_beam_voltage", "env_mean_molar_mass"],
+  "contributes": [],
+  "gaps": []
+}

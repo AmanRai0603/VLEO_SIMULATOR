@@ -1,0 +1,62 @@
+# What this repository depends on that it did not write, and what happens when
+# one of them goes away.
+#
+# The audit that produced this took three passes and found three dead or wrong
+# rows out of fourteen. That rate is normal and it will recur, which is why the
+# re-verification below is a scheduled afternoon rather than a rediscovery every
+# time somebody notices.
+#
+# Re-verify quarterly: still maintained, licence unchanged, still does what this
+# file says. Update the date. On a load-bearing row going dead, switch to the
+# recorded fallback — it is already named, so that is a decision of minutes.
+
+[[adopted]]
+name = "toml"
+version = "0.8"
+used_by = "vleo-sheet, vleo-data, xtask"
+load_bearing = true
+why = "reads the sheets, the layer files, the cases and the bundle manifests"
+fallback = "a hand-written parser for the subset used here — the schema is small and fixed"
+verified = "2026-09-09"
+
+[[adopted]]
+name = "wasm-bindgen"
+version = "0.2"
+used_by = "vleo-wasm"
+load_bearing = false
+why = "the browser binding surface, and it emits the TypeScript declarations"
+fallback = "the daemon face already covers everything the browser face does"
+verified = "2026-09-09"
+
+[[adopted]]
+name = "pyo3"
+version = "0.22"
+used_by = "vleo-py"
+load_bearing = false
+why = "the Python wheel, which is how MATLAB reaches the engine"
+fallback = "the C ABI in vleo-ffi, called from MATLAB through loadlibrary"
+verified = "2026-09-09"
+
+[[adopted]]
+name = "maturin"
+version = ">=1.5,<2"
+used_by = "the wheel build"
+load_bearing = false
+why = "builds and publishes the stable-ABI wheel"
+fallback = "setuptools-rust, or shipping the shared library and a ctypes shim"
+verified = "2026-09-09"
+
+# --- deliberately not adopted, with the reason -------------------------------
+#
+# hifitime, ANISE, nalgebra and hyperdual are the right answers to time, frames,
+# linear algebra and automatic differentiation, and adopting them rather than
+# writing them again would be correct the moment this tool needs any of the
+# four. It does not yet: nothing here propagates a trajectory, nothing converts
+# between frames, no relation needs a decomposition, and no state transition
+# matrix is formed. Adding a dependency before a node needs it is a dependency
+# nobody reviews.
+#
+# TRIGGER — adopt hifitime and ANISE outright on the first node that needs an
+# epoch or a frame conversion. Writing leap seconds again is a way to be wrong,
+# and an analytic Jacobian drifts from the model it differentiates while an
+# autodiff one cannot.

@@ -1,0 +1,114 @@
+<article class="node" data-node="orbit_nodal_regression" data-sheet-hash="436b4d" data-impl-hash="41c3b6">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="system">The system</a> <span class="sep">/</span> <a class="xref" data-group="orbit_env">Orbit and environment</a> <span class="sep">/</span> <a class="xref" data-group="orbit_geometry">Orbit geometry</a></nav>
+  <h2>Nodal regression rate</h2>
+  <p class="ident"><code>orbit_nodal_regression</code> · <span class="kind kind-computed">computed</span> · owner <b>systems</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">interface</button>
+  <button role="tab" class="tab" data-tab="2">algorithm</button>
+  <button role="tab" class="tab" data-tab="3">generated code</button>
+  <button role="tab" class="tab" data-tab="4">evidence</button>
+  <button role="tab" class="tab" data-tab="5">flags</button>
+  <button role="tab" class="tab" data-tab="6">credibility</button>
+  <button role="tab" class="tab" data-tab="7">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How fast does the orbit plane rotate under the second zonal harmonic?</p>
+<p class="maths"><code>dOmega/dt = -1.5*J2*sqrt(mu)*Re^2*cos(i)/((1-e^2)^2*a^(7/2))</code></p>
+<p class="src">Source <b>vallado2013</b> — Vallado, D. A. — Fundamentals of Astrodynamics and Applications, 4th edition <span class="where">Microcosm Press, 2013</span></p>
+<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+</section>
+<section class="panel" data-panel="1">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>r</code></td><td><a class="xref" data-goto="orbit_radius">orbit_radius</a></td><td>Length</td><td>m</td></tr>
+<tr><td>in</td><td><code>e</code></td><td><a class="xref" data-goto="orbit_eccentricity">orbit_eccentricity</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>i</code></td><td><a class="xref" data-goto="orbit_inclination">orbit_inclination</a></td><td>Angle</td><td>deg</td></tr>
+<tr class="out"><td>out</td><td><code>dOmega</code></td><td>orbit_nodal_regression</td><td>AngularRate</td><td>deg/d</td></tr>
+</tbody></table>
+<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+</section>
+<section class="panel" data-panel="2">
+<ol class="algo">
+<li><span class="step">evaluate the secular J2 node rate</span> <span class="binds">→ <code>d: AngularRate</code></span></li>
+</ol>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>dOmega &ge; -15</code> — a regression faster than 15 degrees per day does not occur in this altitude band</li>
+<li><code>dOmega &le; 15</code> — a regression faster than 15 degrees per day does not occur in this altitude band</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How fast does the orbit plane rotate under the second zonal harmonic?
+///
+/// `dOmega/dt = -1.5*J2*sqrt(mu)*Re^2*cos(i)/((1-e^2)^2*a^(7/2))`
+///
+/// Source: `vallado2013`
+pub const NODE_ID: &amp;str = &quot;orbit_nodal_regression&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x9762affa57436b4d;
+
+pub fn evaluate(r: Length, e: Ratio, i: Angle) -&gt; Result&lt;AngularRate, Fault&gt; {
+    // ---- HOLE 1 : evaluate the secular J2 node rate -&gt; AngularRate
+    let d: AngularRate = orbit::nodal_regression(r, e.get(), i);
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: AngularRate = d;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;dOmega&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; -3.028700089570008e-6 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;dOmega&quot;, value: answer.get(), bound: -3.028700089570008e-6, edge: Edge::Lower, unit: AngularRate::UNIT, reason: &quot;a regression faster than 15 degrees per day does not occur in this altitude band&quot; });
+    }
+    if answer.get() &gt; 3.028700089570008e-6 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;dOmega&quot;, value: answer.get(), bound: 3.028700089570008e-6, edge: Edge::Upper, unit: AngularRate::UNIT, reason: &quot;a regression faster than 15 degrees per day does not occur in this altitude band&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="4">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="250 km, 96.6 deg"><td>250 km, 96.6 deg</td><td class="num">0.000000202216606</td><td class="num">0.000001</td><td>independent-derivation</td><td>vallado2013</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below -15 — a regression faster than 15 degrees per day does not occur in this altitude band</li>
+<li><code>OutOfDomain</code> above 15 — a regression faster than 15 degrees per day does not occur in this altitude band</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="6">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="orbit_nodal_regression"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="7">
+<p>Valid over <code>-15 &hellip; 15</code> deg/d.</p>
+<ul class="guards"><li>lower — a regression faster than 15 degrees per day does not occur in this altitude band</li><li>upper — a regression faster than 15 degrees per day does not occur in this altitude band</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+</article>

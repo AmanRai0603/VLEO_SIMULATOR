@@ -1,0 +1,13 @@
+{
+  "id": "pwr_degradation_rate",
+  "state": "published",
+  "sheet_hash": "ea3854",
+  "impl_hash": "222325",
+  "owner": "power",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

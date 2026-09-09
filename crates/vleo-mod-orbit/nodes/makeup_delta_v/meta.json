@@ -1,0 +1,13 @@
+{
+  "id": "orbit_makeup_delta_v",
+  "state": "published",
+  "sheet_hash": "348d54",
+  "impl_hash": "af44d7",
+  "owner": "systems",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["aero_drag_acceleration"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

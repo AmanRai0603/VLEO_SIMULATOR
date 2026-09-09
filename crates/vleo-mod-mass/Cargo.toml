@@ -1,0 +1,20 @@
+[package]
+name = "vleo-mod-mass"
+description = "RING 3 — mass budgets. Where the mass goes, what margin is held, and whether the multipayload set fits at all."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+vleo-core = { workspace = true }
+
+[build-dependencies]
+# The module list is an aggregate: built here, never committed, because every
+# node added would otherwise touch one file and every merge would conflict in
+# generated content nobody is allowed to edit.
+
+[lints.rust]
+unsafe_code = "forbid"

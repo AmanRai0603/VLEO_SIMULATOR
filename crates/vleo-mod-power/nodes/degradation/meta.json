@@ -1,0 +1,13 @@
+{
+  "id": "pwr_degradation",
+  "state": "published",
+  "sheet_hash": "b23762",
+  "impl_hash": "1f376c",
+  "owner": "power",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pwr_degradation_rate", "orbit_mission_duration"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

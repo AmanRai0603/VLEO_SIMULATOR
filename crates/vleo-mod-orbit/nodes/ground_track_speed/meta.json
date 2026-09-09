@@ -1,0 +1,13 @@
+{
+  "id": "orbit_ground_track_speed",
+  "state": "published",
+  "sheet_hash": "19bed1",
+  "impl_hash": "4cf686",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["orbit_velocity", "orbit_radius"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

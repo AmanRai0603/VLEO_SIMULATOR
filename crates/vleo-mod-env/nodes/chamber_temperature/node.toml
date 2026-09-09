@@ -1,0 +1,41 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "env_chamber_temperature"
+label = "Intake chamber gas temperature"
+folder = "chamber_temperature"   # frozen at seed; renaming the label never moves the directory
+subsystem = "env"
+parent = "space_env"
+kind = "declared"
+owner = "propulsion"
+tier = "A"
+state = "published"
+
+[question]
+text = "What temperature does the collected gas reach in the collection chamber?"
+note = "Drives the mean thermal speed, and therefore back-flow: a hotter chamber leaks harder."
+
+[maths]
+expression = "T_c = 600"
+source = "romano2021"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "T_c"
+type = "Temperature"
+unit = "Kelvin"
+lower = 300.0
+upper = 1500.0
+reason_lower = "the chamber cannot be colder than the walls that bound it"
+reason_upper = "above 1500 K the assumption that the chamber gas is thermalised and un-ionised stops holding"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 600.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

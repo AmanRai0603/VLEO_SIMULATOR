@@ -1,0 +1,13 @@
+{
+  "id": "mass_margin",
+  "state": "published",
+  "sheet_hash": "eb4f94",
+  "impl_hash": "46d2af",
+  "owner": "mass",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["mass_limit", "mass_wet"],
+  "contributes": ["kpi_mass_margin"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

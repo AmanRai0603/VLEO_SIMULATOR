@@ -1,0 +1,13 @@
+{
+  "id": "orbit_earth_central_angle",
+  "state": "published",
+  "sheet_hash": "0c4196",
+  "impl_hash": "48ffa0",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 1,
+  "holes": 1,
+  "inputs": ["orbit_radius", "orbit_min_elevation"],
+  "contributes": [],
+  "gaps": []
+}

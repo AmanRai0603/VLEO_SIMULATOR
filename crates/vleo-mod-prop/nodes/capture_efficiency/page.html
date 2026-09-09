@@ -1,0 +1,134 @@
+<article class="node" data-node="prop_capture_efficiency" data-sheet-hash="479fc1" data-impl-hash="dcaa1a">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="system">The system</a> <span class="sep">/</span> <a class="xref" data-group="subsystems">Satellite subsystems</a> <span class="sep">/</span> <a class="xref" data-group="propulsion">Propulsion — air-breathing electric</a> <span class="sep">/</span> <a class="xref" data-group="prop_intake">Air intake</a></nav>
+  <h2>Intake collection efficiency</h2>
+  <p class="ident"><code>prop_capture_efficiency</code> · <span class="kind kind-computed">computed</span> · owner <b>propulsion</b> · tier <b>B</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">interface</button>
+  <button role="tab" class="tab" data-tab="2">algorithm</button>
+  <button role="tab" class="tab" data-tab="3">generated code</button>
+  <button role="tab" class="tab" data-tab="4">evidence</button>
+  <button role="tab" class="tab" data-tab="5">flags</button>
+  <button role="tab" class="tab" data-tab="6">credibility</button>
+  <button role="tab" class="tab" data-tab="7">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">What fraction of the flow entering the mouth actually reaches the thruster?</p>
+<p class="maths"><code>eta_c = A_out*eta_geo/(A_out + beta*A_in)</code></p>
+<p class="src">Source <b>romano2021</b> — Romano, F. et al. — Intake design for an atmosphere-breathing electric propulsion system <span class="where">Acta Astronautica, 2021</span></p>
+<p class="note">Read the relation slowly: the collection efficiency does not depend on the flight speed at all, only on geometry. Speed buys compression, not capture. A design trying to raise capture by flying faster is optimising the wrong term.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>Free-molecular flow throughout the duct and the chamber</dt><dd>fails when if the chamber compresses far enough to become collisional the balance is no longer a simple flux balance, which happens above a compression ratio of roughly 1e4</dd>
+<dt>The chamber gas is fully thermalised at the chamber temperature</dt><dd>fails when a short duct passes part of the beam straight through, which raises the delivered flow above this and is not modelled</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>a_in</code></td><td><a class="xref" data-goto="prop_intake_area">prop_intake_area</a></td><td>Area</td><td>m^2</td></tr>
+<tr><td>in</td><td><code>a_out</code></td><td><a class="xref" data-goto="prop_throat_area">prop_throat_area</a></td><td>Area</td><td>m^2</td></tr>
+<tr><td>in</td><td><code>eta_geo</code></td><td><a class="xref" data-goto="prop_eta_geo">prop_eta_geo</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>beta</code></td><td><a class="xref" data-goto="prop_beta_backflow">prop_beta_backflow</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>t_c</code></td><td><a class="xref" data-goto="env_chamber_temperature">env_chamber_temperature</a></td><td>Temperature</td><td>K</td></tr>
+<tr><td>in</td><td><code>m</code></td><td><a class="xref" data-goto="env_mean_molar_mass">env_mean_molar_mass</a></td><td>MolarMass</td><td>kg/mol</td></tr>
+<tr><td>in</td><td><code>n</code></td><td><a class="xref" data-goto="env_number_density">env_number_density</a></td><td>NumberDensity</td><td>1/m^3</td></tr>
+<tr><td>in</td><td><code>v</code></td><td><a class="xref" data-goto="orbit_velocity">orbit_velocity</a></td><td>Velocity</td><td>m/s</td></tr>
+<tr class="out"><td>out</td><td><code>eta_c</code></td><td>prop_capture_efficiency</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="prop_collected_flow">prop_collected_flow</a></p>
+</section>
+<section class="panel" data-panel="2">
+<ol class="algo">
+<li><span class="step">balance the hyperthermal inflow against the thermal outflow through the throat and back out of the mouth</span> <span class="binds">→ <code>r: Ratio</code></span></li>
+</ol>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>eta_c &ge; 0</code> — a collection efficiency cannot be negative</li>
+<li><code>eta_c &le; 1</code> — an intake cannot deliver more than enters its mouth</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What fraction of the flow entering the mouth actually reaches the thruster?
+///
+/// `eta_c = A_out*eta_geo/(A_out + beta*A_in)`
+///
+/// Source: `romano2021`
+///
+/// Read the relation slowly: the collection efficiency does not depend on the
+/// flight speed at all, only on geometry. Speed buys compression, not
+/// capture. A design trying to raise capture by flying faster is optimising
+/// the wrong term.
+///
+/// # Assumptions
+///
+/// * Free-molecular flow throughout the duct and the chamber — fails when if the chamber compresses far enough to become collisional the balance is no longer a simple flux balance, which happens above a compression ratio of roughly 1e4
+/// * The chamber gas is fully thermalised at the chamber temperature — fails when a short duct passes part of the beam straight through, which raises the delivered flow above this and is not modelled
+pub const NODE_ID: &amp;str = &quot;prop_capture_efficiency&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xa67dd2ff75479fc1;
+
+pub fn evaluate(a_in: Area, a_out: Area, eta_geo: Ratio, beta: Ratio, t_c: Temperature, m: MolarMass, n: NumberDensity, v: Velocity) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : balance the hyperthermal inflow against the thermal outflow through the throat and back out of the mouth -&gt; Ratio
+    let r: Ratio = prop::intake_balance(n, v, a_in, a_out, eta_geo, beta, t_c, m).collection_efficiency;
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = r;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;eta_c&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;eta_c&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;a collection efficiency cannot be negative&quot; });
+    }
+    if answer.get() &gt; 1.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;eta_c&quot;, value: answer.get(), bound: 1.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;an intake cannot deliver more than enters its mouth&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="4">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="IRS-class baseline intake"><td>IRS-class baseline intake</td><td class="num">0.40909</td><td class="num">0.0001</td><td>independent-derivation</td><td>romano2021</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0 — a collection efficiency cannot be negative</li>
+<li><code>OutOfDomain</code> above 1 — an intake cannot deliver more than enters its mouth</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="6">
+<p>Evidence tier <b>B</b>. What this tier cannot detect: an error the independent tool shares with this one.</p>
+<div class="cred" data-cred-for="prop_capture_efficiency"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="7">
+<p>Valid over <code>0 &hellip; 1</code> -.</p>
+<ul class="guards"><li>lower — a collection efficiency cannot be negative</li><li>upper — an intake cannot deliver more than enters its mouth</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+</article>

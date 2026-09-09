@@ -1,0 +1,13 @@
+{
+  "id": "com_data_rate",
+  "state": "published",
+  "sheet_hash": "5cbc11",
+  "impl_hash": "7c9bee",
+  "owner": "comms",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["com_cn0", "com_required_ebn0", "com_implementation_loss", "com_link_margin_required"],
+  "contributes": ["kpi_data_volume"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

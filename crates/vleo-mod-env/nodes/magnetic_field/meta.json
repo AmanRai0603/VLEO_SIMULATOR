@@ -1,0 +1,13 @@
+{
+  "id": "env_magnetic_field",
+  "state": "published",
+  "sheet_hash": "01e268",
+  "impl_hash": "c082af",
+  "owner": "environment",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["orbit_radius", "gnc_magnetic_latitude"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

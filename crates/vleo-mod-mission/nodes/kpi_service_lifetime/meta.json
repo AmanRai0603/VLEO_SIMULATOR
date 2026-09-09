@@ -1,0 +1,13 @@
+{
+  "id": "kpi_service_lifetime",
+  "state": "published",
+  "sheet_hash": "2c36ad",
+  "impl_hash": "e56218",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["kpi_service_lifetime_required", "orbit_lifetime_uncontrolled"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

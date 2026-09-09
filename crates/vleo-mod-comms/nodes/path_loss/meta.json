@@ -1,0 +1,13 @@
+{
+  "id": "com_path_loss",
+  "state": "published",
+  "sheet_hash": "7ae4b4",
+  "impl_hash": "5b6cb5",
+  "owner": "comms",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["orbit_slant_range", "com_frequency"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

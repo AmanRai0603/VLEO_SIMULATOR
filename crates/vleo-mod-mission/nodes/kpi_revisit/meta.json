@@ -1,0 +1,13 @@
+{
+  "id": "kpi_revisit",
+  "state": "published",
+  "sheet_hash": "276667",
+  "impl_hash": "6bcf42",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["kpi_revisit_required", "mis_revisit"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "thm_absorbed_ir",
+  "state": "published",
+  "sheet_hash": "8023fd",
+  "impl_hash": "d2de17",
+  "owner": "thermal",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["aero_frontal_area", "thm_emissivity", "thm_view_factor"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

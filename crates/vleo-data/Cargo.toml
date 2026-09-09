@@ -1,0 +1,16 @@
+[package]
+name = "vleo-data"
+description = "The reference-data store: versioned immutable bundles, a lockfile, one sync mechanism and verification before use. The engine makes no network calls — data arrives by an explicit sync, before the run."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+vleo-core = { workspace = true, features = ["std"] }
+toml = { workspace = true }
+
+[lints.rust]
+unsafe_code = "forbid"

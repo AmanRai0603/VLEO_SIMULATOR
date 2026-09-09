@@ -1,0 +1,91 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "cost_programme"
+label = "Total programme cost"
+folder = "programme"   # frozen at seed; renaming the label never moves the directory
+subsystem = "cost"
+parent = "mgt_cost"
+kind = "computed"
+owner = "programme"
+tier = "C"
+state = "published"
+
+[question]
+text = "What does the whole programme cost over the mission?"
+
+[maths]
+expression = "C = NRE + production + launch + operations*years"
+source = "nasa_cer"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "C_tot"
+type = "Money"
+unit = "MillionUsDollar"
+lower = 0.0
+upper = 1000000.0
+reason_lower = "a cost cannot be negative"
+reason_upper = "above a trillion dollars the programme is not the one being designed"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "nre"
+var = "cost_non_recurring"
+type = "Money"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "pr"
+var = "cost_production"
+type = "Money"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "lc"
+var = "cost_launch_per_satellite"
+type = "Money"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "n"
+var = "mis_satellites"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "op"
+var = "cost_annual_operations"
+type = "Money"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "y"
+var = "orbit_mission_duration"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "add the non-recurring cost, the production run, the launch of every satellite and the operations over the mission"
+binds = "c"
+type = "Money"
+
+[contributes]
+kpis = ["kpi_cost_per_year"]
+
+[view]
+kind = "number"
+

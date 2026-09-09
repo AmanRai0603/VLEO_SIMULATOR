@@ -1,0 +1,13 @@
+{
+  "id": "gnc_ground_pointing_error",
+  "state": "published",
+  "sheet_hash": "0c0455",
+  "impl_hash": "d4d498",
+  "owner": "gnc",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["gnc_pointing_error", "orbit_slant_range"],
+  "contributes": ["kpi_geolocation"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

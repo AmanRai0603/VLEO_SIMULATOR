@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pwr_avionics_load"
+label = "Avionics and housekeeping load"
+folder = "avionics_load"   # frozen at seed; renaming the label never moves the directory
+subsystem = "power"
+parent = "power"
+kind = "declared"
+owner = "avionics"
+tier = "A"
+state = "published"
+
+[question]
+text = "What does the on-board computer, the harness electronics and the housekeeping draw?"
+
+[maths]
+expression = "P_av = 35"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "P_av"
+type = "Power"
+unit = "Watt"
+lower = 5.0
+upper = 500.0
+reason_lower = "below 5 W no spacecraft avionics set runs"
+reason_upper = "above 500 W the avionics dominate the bus, which no design in this class does"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 35.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

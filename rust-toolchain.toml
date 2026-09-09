@@ -1,0 +1,7 @@
+# Pinned so a compiler change can never move a floating-point result silently.
+# A toolchain bump is a decision, reviewed like any other gate change.
+[toolchain]
+channel = "1.94.1"
+components = ["rustfmt", "clippy"]
+targets = ["x86_64-unknown-linux-gnu"]
+profile = "minimal"

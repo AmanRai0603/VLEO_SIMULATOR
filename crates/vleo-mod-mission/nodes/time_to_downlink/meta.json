@@ -1,0 +1,13 @@
+{
+  "id": "mis_time_to_downlink",
+  "state": "published",
+  "sheet_hash": "146539",
+  "impl_hash": "a6944d",
+  "owner": "operations",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["com_passes_per_day"],
+  "contributes": ["kpi_latency"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

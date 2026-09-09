@@ -1,0 +1,13 @@
+{
+  "id": "prop_total_efficiency",
+  "state": "published",
+  "sheet_hash": "d9a879",
+  "impl_hash": "141ada",
+  "owner": "propulsion",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["prop_jet_power", "prop_bus_power"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

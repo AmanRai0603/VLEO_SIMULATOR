@@ -1,0 +1,13 @@
+{
+  "id": "env_mean_free_path",
+  "state": "published",
+  "sheet_hash": "72a28b",
+  "impl_hash": "5f4eca",
+  "owner": "environment",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["env_number_density"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

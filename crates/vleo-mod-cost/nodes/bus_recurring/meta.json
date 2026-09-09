@@ -1,0 +1,13 @@
+{
+  "id": "cost_bus_recurring",
+  "state": "published",
+  "sheet_hash": "c6c81e",
+  "impl_hash": "9a5a47",
+  "owner": "programme",
+  "tier": "C",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["mass_dry", "cost_inflation"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

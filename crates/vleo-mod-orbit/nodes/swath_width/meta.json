@@ -1,0 +1,13 @@
+{
+  "id": "orbit_swath_width",
+  "state": "published",
+  "sheet_hash": "a079ef",
+  "impl_hash": "147fe0",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["orbit_earth_central_angle"],
+  "contributes": ["kpi_revisit"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

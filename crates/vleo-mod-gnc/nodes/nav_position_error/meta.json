@@ -1,0 +1,13 @@
+{
+  "id": "gnc_nav_position_error",
+  "state": "published",
+  "sheet_hash": "e16bf1",
+  "impl_hash": "162226",
+  "owner": "gnc",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["gnc_user_range_error", "gnc_gdop"],
+  "contributes": ["kpi_geolocation"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

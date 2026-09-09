@@ -1,0 +1,13 @@
+{
+  "id": "kpi_thrust_margin",
+  "state": "published",
+  "sheet_hash": "ce84a7",
+  "impl_hash": "e56218",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["kpi_thrust_margin_required", "prop_thrust_to_drag"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}
