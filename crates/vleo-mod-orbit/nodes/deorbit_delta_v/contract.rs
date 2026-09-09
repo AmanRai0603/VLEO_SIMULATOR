@@ -22,7 +22,7 @@ pub const OUTPUT_UNIT: Unit = Velocity::UNIT;
 /// so the bus carries no quantity types and a face cannot pass arguments
 /// in the wrong order.
 pub fn call(inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {
-    if inputs.len() < 1 || outputs.is_empty() {
+    if inputs.is_empty() || outputs.is_empty() {
         return Err(Fault::Blocked { node: NODE_ID, missing: "an input the contract declares" });
     }
     let h: Length = Length::new(inputs[0]);

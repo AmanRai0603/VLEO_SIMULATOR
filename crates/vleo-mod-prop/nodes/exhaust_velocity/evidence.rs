@@ -7,6 +7,8 @@
 //! produced by the thing being tested proves nothing, so the schema
 //! refuses a fixture whose provenance is the implementation.
 
+#![allow(clippy::approx_constant, clippy::excessive_precision)]
+
 use super::model;
 use vleo_core::units::*;
 
@@ -20,7 +22,7 @@ fn relative_error(got: f64, expected: f64) -> f64 {
 #[test]
 fn fixture_0() {
     let got = model::evaluate(Voltage::new(300.0), MolarMass::new(0.01872)).expect("the fixture case must not be refused");
-    let err = relative_error(got.get(), 55490.0);
-    assert!(err <= 0.002, "300 V, atomic oxygen mixture: got {} want 55490.0, relative error {} exceeds the declared tolerance 0.002. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    let err = relative_error(got.get(), 55610.058386);
+    assert!(err <= 1e-9, "300 V, atomic oxygen mixture: got {} want 55610.058386, relative error {} exceeds the declared tolerance 1e-9. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 

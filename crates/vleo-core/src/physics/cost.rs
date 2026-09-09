@@ -96,10 +96,25 @@ pub fn replacement_avoided(
 /// Small-satellite bus recurring cost against dry mass, fitted over the small
 /// end of the historical record. Stated with its residual because the residual
 /// is larger than most of the design decisions it would be used to compare.
-pub const BUS_RECURRING_CER: Cer = Cer { a: 0.98, b: 0.72, base_year: 2020, sigma: 0.40 };
+pub const BUS_RECURRING_CER: Cer = Cer {
+    a: 0.98,
+    b: 0.72,
+    base_year: 2020,
+    sigma: 0.40,
+};
 
 /// Payload recurring cost against payload mass.
-pub const PAYLOAD_RECURRING_CER: Cer = Cer { a: 1.85, b: 0.65, base_year: 2020, sigma: 0.45 };
+pub const PAYLOAD_RECURRING_CER: Cer = Cer {
+    a: 1.85,
+    b: 0.65,
+    base_year: 2020,
+    sigma: 0.45,
+};
 
 /// Non-recurring engineering against total dry mass.
-pub const NON_RECURRING_CER: Cer = Cer { a: 14.2, b: 0.55, base_year: 2020, sigma: 0.55 };
+pub const NON_RECURRING_CER: Cer = Cer {
+    a: 14.2,
+    b: 0.55,
+    base_year: 2020,
+    sigma: 0.55,
+};

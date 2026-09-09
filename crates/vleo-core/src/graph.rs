@@ -237,9 +237,18 @@ pub enum View {
     /// A formatted number with its unit, verdict and provenance.
     Number,
     /// A curve of one output against one swept input.
-    Line { over: &'static str, y: &'static str, points: u32 },
+    Line {
+        over: &'static str,
+        y: &'static str,
+        points: u32,
+    },
     /// A field of one output over two swept inputs.
-    Heatmap { over_x: &'static str, over_y: &'static str, z: &'static str, points: u32 },
+    Heatmap {
+        over_x: &'static str,
+        over_y: &'static str,
+        z: &'static str,
+        points: u32,
+    },
     /// A bar per named contribution — budgets and error trees.
     Bar { y: &'static str },
 }
@@ -266,9 +275,15 @@ pub trait NodeTable {
     /// Find a node by its identifier. Linear — the tables are small, and a
     /// perfect hash would be a second thing that can be wrong.
     fn find_node(&self, id: &str) -> Option<NodeIdx> {
-        self.nodes().iter().position(|n| n.id == id).map(|i| i as NodeIdx)
+        self.nodes()
+            .iter()
+            .position(|n| n.id == id)
+            .map(|i| i as NodeIdx)
     }
     fn find_var(&self, id: &str) -> Option<VarIdx> {
-        self.vars().iter().position(|v| v.id == id).map(|i| i as VarIdx)
+        self.vars()
+            .iter()
+            .position(|v| v.id == id)
+            .map(|i| i as VarIdx)
     }
 }

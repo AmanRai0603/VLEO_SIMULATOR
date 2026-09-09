@@ -158,6 +158,7 @@ version = "0.1.0"
 dependencies = [
  "vleo-bus",
  "vleo-core",
+ "vleo-data",
  "vleo-modules",
  "vleo-units",
 ]
@@ -166,6 +167,35 @@ dependencies = [
 name = "vleo-core"
 version = "0.1.0"
 dependencies = [
+ "vleo-units",
+]
+
+[[package]]
+name = "vleo-daemon"
+version = "0.1.0"
+dependencies = [
+ "vleo-bus",
+ "vleo-core",
+ "vleo-data",
+ "vleo-modules",
+ "vleo-units",
+]
+
+[[package]]
+name = "vleo-data"
+version = "0.1.0"
+dependencies = [
+ "toml",
+ "vleo-core",
+]
+
+[[package]]
+name = "vleo-ffi"
+version = "0.1.0"
+dependencies = [
+ "vleo-bus",
+ "vleo-core",
+ "vleo-modules",
  "vleo-units",
 ]
 
@@ -300,6 +330,7 @@ dependencies = [
 name = "xtask"
 version = "0.1.0"
 dependencies = [
+ "vleo-data",
  "vleo-sheet",
  "vleo-units",
 ]

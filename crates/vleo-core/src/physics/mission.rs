@@ -133,11 +133,17 @@ pub struct Closure {
 /// Compare achieved against required.
 pub fn closure(required: f64, achieved: f64, sense: Sense) -> Closure {
     if required == 0.0 {
-        return Closure { closed: false, margin: 0.0 };
+        return Closure {
+            closed: false,
+            margin: 0.0,
+        };
     }
     let margin = match sense {
         Sense::AtLeast => (achieved - required) / required,
         Sense::AtMost => (required - achieved) / required,
     };
-    Closure { closed: margin >= 0.0, margin }
+    Closure {
+        closed: margin >= 0.0,
+        margin,
+    }
 }

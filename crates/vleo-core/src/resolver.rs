@@ -114,7 +114,10 @@ pub fn evaluate<T: NodeTable + ?Sized>(
         || ws.blocked.len() < n
         || ws.blocked_fault.len() < n
     {
-        return Err(Fault::WorkspaceTooSmall { needed: n + 1, given: ws.order.len() });
+        return Err(Fault::WorkspaceTooSmall {
+            needed: n + 1,
+            given: ws.order.len(),
+        });
     }
     for m in ws.mark[..n].iter_mut() {
         *m = UNVISITED;
@@ -168,7 +171,23 @@ pub fn evaluate<T: NodeTable + ?Sized>(
             continue;
         }
         // Declared values publish themselves; there is nothing to compute.
+        //
+        // Unless the case supplied one. A case is per-customer values against
+        // one shared architecture, so an override is the whole mechanism —
+        // re-publishing the sheet's own number on top of it would make every
+        // case identical and every sweep flat, which is the kind of failure
+        // that looks like working software.
         if def.kind == Kind::Declared && def.inputs.is_empty() {
+            if def
+                .outputs
+                .iter()
+                .all(|&o| store.get(o).status == SlotStatus::Supplied)
+            {
+                ws.ran[ran] = node;
+                ran += 1;
+                hash_node(&mut hasher, table, node, store);
+                continue;
+            }
             match table.eval(node, store) {
                 Ok(()) => {
                     ws.ran[ran] = node;
@@ -279,7 +298,10 @@ fn missing_input<T: NodeTable + ?Sized>(
             } else {
                 table.node(producer).id
             };
-            return Some(Fault::Blocked { node: def.id, missing });
+            return Some(Fault::Blocked {
+                node: def.id,
+                missing,
+            });
         }
     }
     None
@@ -453,12 +475,7 @@ fn settle_credibility<T: NodeTable + ?Sized>(
 }
 
 /// Fold one node's identity and its published outputs into the chain hash.
-fn hash_node<T: NodeTable + ?Sized>(
-    h: &mut Hasher,
-    table: &T,
-    node: NodeIdx,
-    store: &Store<'_>,
-) {
+fn hash_node<T: NodeTable + ?Sized>(h: &mut Hasher, table: &T, node: NodeIdx, store: &Store<'_>) {
     let def = table.node(node);
     h.write_str(def.id);
     h.write_u64(def.sheet_hash);

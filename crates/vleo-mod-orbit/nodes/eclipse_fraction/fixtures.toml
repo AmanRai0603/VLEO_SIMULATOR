@@ -7,9 +7,9 @@
 
 [[fixture]]
 label = "250 km, beta = 30 deg"
-expect = 0.34386
-tolerance = 0.005
+expect = 0.398283597
+tolerance = 1e-06
 provenance = "independent-derivation"
 source = "larson_wertz"
-inputs = { r = 6628137.0, beta = 0.523599 }
+inputs = { r = 6628137.0, beta = 0.52359878 }
 

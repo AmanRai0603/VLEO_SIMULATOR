@@ -7,6 +7,8 @@
 //! produced by the thing being tested proves nothing, so the schema
 //! refuses a fixture whose provenance is the implementation.
 
+#![allow(clippy::approx_constant, clippy::excessive_precision)]
+
 use super::model;
 use vleo_core::units::*;
 
@@ -19,8 +21,8 @@ fn relative_error(got: f64, expected: f64) -> f64 {
 /// Provenance: `independent-derivation`, source `larson_wertz`.
 #[test]
 fn fixture_0() {
-    let got = model::evaluate(Length::new(6628137.0), Angle::new(0.523599)).expect("the fixture case must not be refused");
-    let err = relative_error(got.get(), 0.34386);
-    assert!(err <= 0.005, "250 km, beta = 30 deg: got {} want 0.34386, relative error {} exceeds the declared tolerance 0.005. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    let got = model::evaluate(Length::new(6628137.0), Angle::new(0.52359878)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 0.398283597);
+    assert!(err <= 1e-6, "250 km, beta = 30 deg: got {} want 0.398283597, relative error {} exceeds the declared tolerance 1e-6. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 

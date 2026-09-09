@@ -1,0 +1,24 @@
+[package]
+name = "vleo-py"
+description = "FACE — the Python wheel. It binds the same shared library the interface uses, so an analyst and a reviewer are looking at the same numbers. MATLAB reaches the engine through this wheel, out of process."
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.94"
+license = "UNLICENSED"
+authors = ["Orbitt Space"]
+repository = "https://github.com/AmanRai0603/VLEO_SIMULATOR"
+
+# Excluded from the workspace: it needs a Python interpreter to link against,
+# and `pyo3` is the one dependency that must not be unified into a build that
+# has no interpreter.
+
+[lib]
+name = "vleo"
+crate-type = ["cdylib"]
+
+[dependencies]
+vleo-modules = { path = "../vleo-modules", features = ["std"] }
+vleo-bus = { path = "../vleo-bus", features = ["std"] }
+vleo-core = { path = "../vleo-core", features = ["std"] }
+vleo-units = { path = "../vleo-units", features = ["std"] }
+pyo3 = { version = "0.22", features = ["extension-module"] }

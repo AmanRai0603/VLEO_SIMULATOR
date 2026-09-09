@@ -13,6 +13,6 @@ owner = "systems"
 
 [[relates]]
 from = "management"
-to = "engineering"
+to = "system"
 why = "the cost model can only run over a selected design"
 

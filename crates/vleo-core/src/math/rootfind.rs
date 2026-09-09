@@ -12,7 +12,11 @@ pub enum RootError {
     NotBracketed { fa: f64, fb: f64 },
     /// The iteration limit was reached. Carries the best estimate and the
     /// residual, so the caller can report both.
-    NotConverged { best: f64, residual: f64, iterations: u32 },
+    NotConverged {
+        best: f64,
+        residual: f64,
+        iterations: u32,
+    },
 }
 
 /// Bisection. Slow and unconditionally convergent once a root is bracketed,
@@ -55,8 +59,16 @@ where
     let (mut a, mut b) = (x0, x1);
     let (mut fa, mut fb) = (f(a), f(b));
     for i in 0..max_iter {
+        // Exact equality is the right test here and not a tolerance: the next
+        // line divides by this difference, and the only value that must be
+        // caught is the one that would divide by zero.
+        #[allow(clippy::float_cmp)]
         if fb == fa {
-            return Err(RootError::NotConverged { best: b, residual: pmath::abs(fb), iterations: i });
+            return Err(RootError::NotConverged {
+                best: b,
+                residual: pmath::abs(fb),
+                iterations: i,
+            });
         }
         let c = b - fb * (b - a) / (fb - fa);
         if pmath::abs(c - b) <= tol {
@@ -67,5 +79,9 @@ where
         b = c;
         fb = f(c);
     }
-    Err(RootError::NotConverged { best: b, residual: pmath::abs(fb), iterations: max_iter })
+    Err(RootError::NotConverged {
+        best: b,
+        residual: pmath::abs(fb),
+        iterations: max_iter,
+    })
 }

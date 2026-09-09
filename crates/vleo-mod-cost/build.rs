@@ -27,9 +27,8 @@ fn main() {
     }
     dirs.sort();
 
-    let mut src = String::from(
-        "// GENERATED at build time. An aggregate: built, never committed.\n\n",
-    );
+    let mut src =
+        String::from("// GENERATED at build time. An aggregate: built, never committed.\n\n");
     for d in &dirs {
         let ident = d.replace(['-', '.'], "_");
         src.push_str(&format!(

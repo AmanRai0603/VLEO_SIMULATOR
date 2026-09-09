@@ -12,6 +12,7 @@ publish = false
 [dependencies]
 vleo-sheet = { workspace = true }
 vleo-units = { workspace = true }
+vleo-data = { workspace = true }
 
 [lints.rust]
 unsafe_code = "forbid"

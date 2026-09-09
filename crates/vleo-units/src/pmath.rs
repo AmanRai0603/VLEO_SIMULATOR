@@ -28,21 +28,20 @@
 //! declares. Accuracy is verified against reference values in `tests/`.
 #![allow(clippy::excessive_precision)]
 
-pub const PI: f64 = 3.141_592_653_589_793_115_997_963_468_544_2;
-pub const TAU: f64 = 6.283_185_307_179_586_231_995_926_937_088_4;
-pub const FRAC_PI_2: f64 = 1.570_796_326_794_896_557_998_981_734_272_1;
-pub const FRAC_PI_4: f64 = 0.785_398_163_397_448_278_999_490_867_136_05;
-pub const LN_2: f64 = 0.693_147_180_559_945_286_226_763_982_995_18;
-pub const LOG2_E: f64 = 1.442_695_040_888_963_387_004_650_940_070_86;
-pub const LN_10: f64 = 2.302_585_092_994_045_684_017_991_454_684_4;
-pub const SQRT_2: f64 = 1.414_213_562_373_095_145_474_621_858_738_8;
+// Re-exported from `core` rather than re-typed. These are exactly specified
+// double values, identical on every target, and a second copy of them is a
+// second thing that can be wrong by a digit.
+pub use core::f64::consts::{FRAC_PI_2, FRAC_PI_4, LN_10, LN_2, LOG2_E, PI, SQRT_2, TAU};
 
 const SIGN_MASK: u64 = 0x8000_0000_0000_0000;
 const EXP_MASK: u64 = 0x7FF0_0000_0000_0000;
 
 // Three-part split of pi/2, so that `k * PIO2` is representable exactly enough
-// for Cody-Waite argument reduction to keep ~60 significant bits.
-const PIO2_HI: f64 = 1.570_796_326_794_896_557_998_98e0;
+// for Cody-Waite argument reduction to keep ~60 significant bits. The high part
+// *is* the nearest double to pi/2 by construction — that is what makes the
+// remaining two parts the residual — so it is taken from `core` rather than
+// re-typed.
+const PIO2_HI: f64 = FRAC_PI_2;
 const PIO2_MID: f64 = 6.123_233_995_736_765_886_130_33e-17;
 const PIO2_LO: f64 = 3.749_399_456_246_780_698_378_31e-33;
 
@@ -60,7 +59,7 @@ pub fn copysign(x: f64, y: f64) -> f64 {
 
 #[inline]
 pub fn is_nan(x: f64) -> bool {
-    x != x
+    f64::is_nan(x)
 }
 
 #[inline]
@@ -513,7 +512,7 @@ pub fn atan2(y: f64, x: f64) -> f64 {
 }
 
 pub fn asin(x: f64) -> f64 {
-    if x > 1.0 || x < -1.0 {
+    if !(-1.0..=1.0).contains(&x) {
         return f64::NAN;
     }
     if x == 1.0 {
@@ -526,7 +525,7 @@ pub fn asin(x: f64) -> f64 {
 }
 
 pub fn acos(x: f64) -> f64 {
-    if x > 1.0 || x < -1.0 {
+    if !(-1.0..=1.0).contains(&x) {
         return f64::NAN;
     }
     atan2(sqrt((1.0 - x) * (1.0 + x)), x)
@@ -651,7 +650,7 @@ pub fn interp(x: f64, xs: &[f64], ys: &[f64]) -> f64 {
 /// `|x| <= 3`, where it converges quickly and unconditionally; the asymptotic
 /// tail beyond that, where `erf` is within 3e-8 of one anyway.
 pub fn erf(x: f64) -> f64 {
-    const TWO_OVER_SQRT_PI: f64 = 1.128_379_167_095_512_573_896_158_903_121_5;
+    use core::f64::consts::FRAC_2_SQRT_PI as TWO_OVER_SQRT_PI;
     let a = abs(x);
     if a > 6.0 {
         return copysign(1.0, x);

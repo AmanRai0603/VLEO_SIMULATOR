@@ -73,9 +73,9 @@ pub fn hash_str(s: &str) -> u64 {
 pub fn short_hex(h: u64) -> [u8; 6] {
     const HEX: &[u8; 16] = b"0123456789abcdef";
     let mut out = [0u8; 6];
-    for i in 0..6 {
+    for (i, byte) in out.iter_mut().enumerate() {
         let nibble = ((h >> (4 * (5 - i))) & 0xF) as usize;
-        out[i] = HEX[nibble];
+        *byte = HEX[nibble];
     }
     out
 }

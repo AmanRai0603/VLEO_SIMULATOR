@@ -33,9 +33,25 @@ pub struct Dim {
 }
 
 impl Dim {
-    pub const NONE: Dim = Dim { m: 0, kg: 0, s: 0, a: 0, k: 0, mol: 0, cd: 0 };
+    pub const NONE: Dim = Dim {
+        m: 0,
+        kg: 0,
+        s: 0,
+        a: 0,
+        k: 0,
+        mol: 0,
+        cd: 0,
+    };
     pub const fn new(m: i8, kg: i8, s: i8, a: i8, k: i8, mol: i8, cd: i8) -> Dim {
-        Dim { m, kg, s, a, k, mol, cd }
+        Dim {
+            m,
+            kg,
+            s,
+            a,
+            k,
+            mol,
+            cd,
+        }
     }
 }
 
@@ -166,4 +182,15 @@ impl Unit {
     pub fn compatible_with(self, other: Unit) -> bool {
         self.dim() == other.dim()
     }
+}
+
+/// Present a value for a person.
+///
+/// One implementation, because a number formatted two ways is a number two
+/// people will read differently. This converts out of SI into the unit the node
+/// declared and chooses a notation that does not lie: a density of 6.6e-11
+/// printed to six decimal places is `0.000000`, which is not a rounding, it is
+/// a different claim.
+pub fn present(value_si: f64, unit: Unit) -> (f64, &'static str) {
+    (value_si / unit.si_factor(), unit.symbol())
 }

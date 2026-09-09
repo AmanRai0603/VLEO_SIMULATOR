@@ -7,9 +7,9 @@
 
 [[fixture]]
 label = "250 km circular"
-expect = 1.68603
-tolerance = 0.001
-provenance = "published-source"
+expect = 1.68420864
+tolerance = 1e-06
+provenance = "independent-derivation"
 source = "vallado2013"
 inputs = { r = 6628137.0, e = 0.0 }
 

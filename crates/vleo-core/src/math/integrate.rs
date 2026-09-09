@@ -33,7 +33,11 @@ pub fn simpson<F>(a: f64, b: f64, panels: u32, f: F) -> f64
 where
     F: Fn(f64) -> f64,
 {
-    let n = if panels % 2 == 0 { panels.max(2) } else { panels + 1 };
+    let n = if panels.is_multiple_of(2) {
+        panels.max(2)
+    } else {
+        panels + 1
+    };
     let h = (b - a) / n as f64;
     let mut s = f(a) + f(b);
     for i in 1..n {

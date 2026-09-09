@@ -39,6 +39,16 @@ pub struct Case {
     /// Which node, and how much of the graph around it.
     pub target: String,
     pub mode: RunMode,
+    /// The bundles the face verified before the run started, by name.
+    ///
+    /// A resolved handle, not a path: `evaluate` reads the local store and
+    /// nothing else, and it cannot reach a filesystem or a socket to find out.
+    /// Synchronisation and evaluation are separate moments — a network failure
+    /// stops the store getting fresher and stops nothing else.
+    pub data: Vec<String>,
+    /// The exact versions and hashes, carried into the run manifest so a
+    /// result can be reproduced next year by syncing the same versions.
+    pub data_versions: Vec<String>,
 }
 
 /// The three run modes, in the wire form.
@@ -200,4 +210,36 @@ pub fn fault_message(f: &Fault) -> String {
     let mut s = String::new();
     let _ = write!(&mut s, "{f}");
     s
+}
+
+/// Format a number to a stated number of significant figures, switching to
+/// scientific notation where fixed notation would round the value away.
+///
+/// One implementation, in the layer every face already depends on, because a
+/// number formatted two ways is a number two people will read differently. A
+/// density of 6.6e-11 printed to six decimal places is `0.000000`, which is not
+/// a rounding — it is a different claim.
+pub fn format_significant(v: f64, digits: usize) -> String {
+    use alloc::format;
+    use vleo_units::pmath;
+    if v == 0.0 {
+        return String::from("0");
+    }
+    if !pmath::is_finite(v) || pmath::is_nan(v) {
+        return String::from(if v > 0.0 { "+inf" } else { "not a number" });
+    }
+    let a = pmath::abs(v);
+    if !(1.0e-3..1.0e6).contains(&a) {
+        format!("{:.*e}", digits.saturating_sub(1), v)
+    } else {
+        let exp = pmath::floor(pmath::log10(a)) as i32;
+        let decimals = (digits as i32 - 1 - exp).clamp(0, 12) as usize;
+        format!("{:.*}", decimals, v)
+    }
+}
+
+/// Convert a value out of SI into the unit a node declared, and format it.
+pub fn present(value_si: f64, unit: vleo_units::Unit, digits: usize) -> (String, &'static str) {
+    let (v, sym) = vleo_units::unit::present(value_si, unit);
+    (format_significant(v, digits), sym)
 }

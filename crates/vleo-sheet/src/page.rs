@@ -22,7 +22,10 @@ fn h(s: &str) -> String {
 }
 
 fn unit_symbol(name: &str) -> String {
-    Unit::from_name(name).unwrap_or(Unit::One).symbol().to_string()
+    Unit::from_name(name)
+        .unwrap_or(Unit::One)
+        .symbol()
+        .to_string()
 }
 
 /// The eight tabs.
@@ -32,7 +35,11 @@ fn unit_symbol(name: &str) -> String {
 /// layer. The empty states carry as much weight as the filled ones: most of
 /// these are read by somebody about to fill their first node, and "no data"
 /// teaches nothing.
-pub fn fragment(sh: &Sheet, holes: &std::collections::BTreeMap<u32, String>, tree: &Tree) -> String {
+pub fn fragment(
+    sh: &Sheet,
+    holes: &std::collections::BTreeMap<u32, String>,
+    tree: &Tree,
+) -> String {
     let mut o = String::new();
     let gaps = crate::emit::gap_pass(sh, holes);
     o.push_str(&format!(
@@ -73,7 +80,10 @@ pub fn fragment(sh: &Sheet, holes: &std::collections::BTreeMap<u32, String>, tre
     // --- 1 question and mathematics ----------------------------------------
     tab(&mut o, 0, true, |o| {
         if sh.question.trim().is_empty() {
-            empty(o, "Not yet specified. Needs a question, an expression and a source.");
+            empty(
+                o,
+                "Not yet specified. Needs a question, an expression and a source.",
+            );
         } else {
             o.push_str(&format!("<p class=\"question\">{}</p>\n", h(&sh.question)));
             o.push_str(&format!(
@@ -166,7 +176,10 @@ pub fn fragment(sh: &Sheet, holes: &std::collections::BTreeMap<u32, String>, tre
     // --- 3 algorithm --------------------------------------------------------
     tab(&mut o, 2, false, |o| {
         if sh.steps.is_empty() {
-            empty(o, "No steps yet. Each step becomes one hole in the generated code.");
+            empty(
+                o,
+                "No steps yet. Each step becomes one hole in the generated code.",
+            );
             if sh.is_declared() {
                 o.push_str(&format!(
                     "<p>This is a declared value: <b>{v}</b> {u}, confirmed by <b>{c}</b>.</p>\n",
@@ -218,7 +231,10 @@ pub fn fragment(sh: &Sheet, holes: &std::collections::BTreeMap<u32, String>, tre
     // --- 5 evidence ---------------------------------------------------------
     tab(&mut o, 4, false, |o| {
         if sh.fixtures.is_empty() {
-            empty(o, "No known-good numbers yet. A number from our own code does not count.");
+            empty(
+                o,
+                "No known-good numbers yet. A number from our own code does not count.",
+            );
         } else {
             o.push_str("<table class=\"fx\"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>\n");
             for f in &sh.fixtures {
@@ -259,7 +275,10 @@ pub fn fragment(sh: &Sheet, holes: &std::collections::BTreeMap<u32, String>, tre
     // --- 7 credibility ------------------------------------------------------
     tab(&mut o, 6, false, |o| {
         if sh.tier.is_empty() || sh.tier == "unset" {
-            empty(o, "Tier not set — this decides how much evidence the gate demands.");
+            empty(
+                o,
+                "Tier not set — this decides how much evidence the gate demands.",
+            );
         }
         o.push_str(&format!(
             "<p>Evidence tier <b>{t}</b>. What this tier cannot detect: {c}.</p>\n",
@@ -347,7 +366,11 @@ fn breadcrumb(sh: &Sheet, tree: &Tree) -> String {
     let mut cur = sh.parent.clone();
     let mut guard = 0;
     while let Some(g) = tree.groups.get(&cur) {
-        chain.push(format!("<a class=\"xref\" data-group=\"{}\">{}</a>", h(&g.id), h(&g.label)));
+        chain.push(format!(
+            "<a class=\"xref\" data-group=\"{}\">{}</a>",
+            h(&g.id),
+            h(&g.label)
+        ));
         cur = g.parent.clone();
         guard += 1;
         if guard > 12 {
@@ -426,7 +449,11 @@ pub fn index_json(tree: &Tree) -> String {
             h(&r.from),
             h(&r.to),
             h(&r.why),
-            if i + 1 == tree.relations.len() { "" } else { "," }
+            if i + 1 == tree.relations.len() {
+                ""
+            } else {
+                ","
+            }
         ));
     }
     o.push_str("  ],\n  \"cases\": [\n");

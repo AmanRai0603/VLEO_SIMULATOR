@@ -68,6 +68,7 @@ pub struct IntakeResult {
 ///   structure, times the transmission of the duct to a beam.
 /// * `beta` — back-flow transmission of the duct to a thermal molecule. A long,
 ///   narrow, honeycombed duct makes this small, which is what an intake *is*.
+#[allow(clippy::too_many_arguments)] // the relation has this many terms; naming them all is the point
 pub fn intake_balance(
     free_stream_density: NumberDensity,
     velocity: Velocity,
@@ -216,10 +217,6 @@ pub fn closing_intake_area(
 
 /// Equivalent stored-propellant mass an air-breathing system saves over a
 /// mission — the commercial argument, quantified.
-pub fn equivalent_stored_propellant(
-    thrust: Force,
-    duration: Time,
-    reference_isp: Time,
-) -> Mass {
+pub fn equivalent_stored_propellant(thrust: Force, duration: Time, reference_isp: Time) -> Mass {
     Mass::new(thrust.get() * duration.get() / (reference_isp.get() * G0.get()))
 }

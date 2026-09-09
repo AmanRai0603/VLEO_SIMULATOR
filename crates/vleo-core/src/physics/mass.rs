@@ -71,7 +71,8 @@ pub fn dry_mass(
     payloads: Mass,
     system_margin: Ratio,
 ) -> Mass {
-    let sum = structure + propulsion + power + thermal + avionics + comms + gnc + harness + payloads;
+    let sum =
+        structure + propulsion + power + thermal + avionics + comms + gnc + harness + payloads;
     sum * (1.0 + system_margin.get())
 }
 
@@ -94,7 +95,7 @@ pub fn dry_mass_from_structure_fraction(
     structure_fraction: Ratio,
 ) -> Option<Mass> {
     let f = structure_fraction.get();
-    if f >= 1.0 || f < 0.0 {
+    if !(0.0..1.0).contains(&f) {
         return None;
     }
     Some(Mass::new(everything_else.get() / (1.0 - f)))
@@ -162,7 +163,10 @@ impl PayloadAllocation {
         data_limit: DataRate,
     ) -> (&'static str, f64) {
         let candidates = [
-            ("mass", (mass_limit.get() - self.mass.get()) / mass_limit.get()),
+            (
+                "mass",
+                (mass_limit.get() - self.mass.get()) / mass_limit.get(),
+            ),
             (
                 "power",
                 (power_limit.get() - self.orbit_average_power.get()) / power_limit.get(),
@@ -205,10 +209,7 @@ pub fn cylinder_inertia_axial(mass: Mass, radius: Length) -> f64 {
 /// distributed along its length. Positive means the centre of pressure is aft,
 /// which is the stable configuration — and arranging that is most of what
 /// passive aerostability in VLEO means.
-pub fn cp_cm_offset(
-    area_centroid_from_nose: Length,
-    mass_centroid_from_nose: Length,
-) -> Length {
+pub fn cp_cm_offset(area_centroid_from_nose: Length, mass_centroid_from_nose: Length) -> Length {
     Length::new(pmath::abs(
         area_centroid_from_nose.get() - mass_centroid_from_nose.get(),
     ))

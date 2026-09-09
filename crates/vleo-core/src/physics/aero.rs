@@ -142,9 +142,7 @@ pub fn drag_force(
     drag_coefficient: f64,
     reference_area: Area,
 ) -> Force {
-    Force::new(
-        dynamic_pressure(density, velocity).get() * drag_coefficient * reference_area.get(),
-    )
+    Force::new(dynamic_pressure(density, velocity).get() * drag_coefficient * reference_area.get())
 }
 
 /// Lift force, same reference area and dynamic pressure.
@@ -154,9 +152,7 @@ pub fn lift_force(
     lift_coefficient: f64,
     reference_area: Area,
 ) -> Force {
-    Force::new(
-        dynamic_pressure(density, velocity).get() * lift_coefficient * reference_area.get(),
-    )
+    Force::new(dynamic_pressure(density, velocity).get() * lift_coefficient * reference_area.get())
 }
 
 /// Ballistic coefficient, `m/(Cd·A)`, in kg/m^2.

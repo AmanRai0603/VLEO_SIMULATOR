@@ -181,18 +181,19 @@ impl CredVec {
     /// quantity has a fixture of its own.
     pub fn demoted(self) -> CredVec {
         let mut v = self;
-        for i in 0..8 {
-            v.0[i] = v.0[i].saturating_sub(1);
+        for f in v.0.iter_mut() {
+            *f = f.saturating_sub(1);
         }
         v
     }
+
     /// The rollup over a subtree is the minimum, factor by factor — the same
     /// rule one level up, so a subtree is never more credible than its weakest
     /// node.
     pub fn rollup(self, other: CredVec) -> CredVec {
         let mut v = [0u8; 8];
-        for i in 0..8 {
-            v[i] = if self.0[i] < other.0[i] { self.0[i] } else { other.0[i] };
+        for (i, slot) in v.iter_mut().enumerate() {
+            *slot = self.0[i].min(other.0[i]);
         }
         CredVec(v)
     }
@@ -228,7 +229,11 @@ pub fn score(
     // Measurable from the sheet.
     v.set(
         Factor::Mathematics,
-        if def.expression.is_empty() || def.source.is_empty() { 0 } else { 4 },
+        if def.expression.is_empty() || def.source.is_empty() {
+            0
+        } else {
+            4
+        },
     );
     v.set(
         Factor::Assumptions,
@@ -265,6 +270,7 @@ pub fn score(
     // Needs the evidence to have run.
     v.set(
         Factor::Validation,
+        #[allow(clippy::if_same_then_else)] // the two ones mean different things
         if def.fixtures.is_empty() && def.kind == crate::graph::Kind::Declared {
             // A declared value is not validated by a fixture — there is nothing
             // to compute. It is validated by a named source and a person's
@@ -296,11 +302,9 @@ pub fn score(
 
     // Proxies, and named as such. Neither is a measurement; both are stated
     // here rather than left implicit so a reader can discount them.
-    let carries_uncertainty = def
-        .inputs
-        .is_empty()
-        .then_some(false)
-        .unwrap_or(true);
+    // A node with no inputs is a declared number: it has no upstream to inherit
+    // an uncertainty from, and stating one for it is a different act.
+    let carries_uncertainty = !def.inputs.is_empty();
     v.set(
         Factor::Uncertainty,
         if def.id.contains("uncertainty") {

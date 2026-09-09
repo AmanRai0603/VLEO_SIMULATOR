@@ -1,7 +1,7 @@
 //! Reading the tree off disk.
 
-use crate::model::*;
 use crate::fnv1a;
+use crate::model::*;
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -34,7 +34,10 @@ fn u(v: Option<&toml::Value>) -> u32 {
 }
 
 pub fn load_all(root: &Path) -> Result<Tree, String> {
-    let mut tree = Tree { root: root.to_path_buf(), ..Default::default() };
+    let mut tree = Tree {
+        root: root.to_path_buf(),
+        ..Default::default()
+    };
     let crates_dir = root.join("crates");
     let mut crate_dirs: Vec<PathBuf> = fs::read_dir(&crates_dir)
         .map_err(|e| format!("crates/: {e}"))?
@@ -85,7 +88,9 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
     let v: toml::Value = text
         .parse()
         .map_err(|e| format!("{}: malformed sheet: {e}", path.display()))?;
-    let t = v.as_table().ok_or_else(|| format!("{}: not a table", path.display()))?;
+    let t = v
+        .as_table()
+        .ok_or_else(|| format!("{}: not a table", path.display()))?;
 
     let mut sh = Sheet {
         id: s(t.get("id")),
@@ -109,9 +114,16 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
         sh.expression = s(m.get("expression"));
         sh.source = s(m.get("source"));
     }
-    for a in t.get("assumption").and_then(|a| a.as_array()).unwrap_or(&vec![]) {
+    for a in t
+        .get("assumption")
+        .and_then(|a| a.as_array())
+        .unwrap_or(&vec![])
+    {
         let a = a.as_table().unwrap();
-        sh.assumptions.push(Assumption { text: s(a.get("text")), fails_when: s(a.get("fails_when")) });
+        sh.assumptions.push(Assumption {
+            text: s(a.get("text")),
+            fails_when: s(a.get("fails_when")),
+        });
     }
     if let Some(o) = t.get("output").and_then(|o| o.as_table()) {
         sh.symbol = s(o.get("symbol"));
@@ -128,10 +140,18 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
     }
     for i in t.get("input").and_then(|i| i.as_array()).unwrap_or(&vec![]) {
         let i = i.as_table().unwrap();
-        sh.inputs.push(Input { binding: s(i.get("binding")), var: s(i.get("var")), ty: s(i.get("type")) });
+        sh.inputs.push(Input {
+            binding: s(i.get("binding")),
+            var: s(i.get("var")),
+            ty: s(i.get("type")),
+        });
     }
     if let Some(alg) = t.get("algorithm").and_then(|a| a.as_table()) {
-        for st in alg.get("step").and_then(|s| s.as_array()).unwrap_or(&vec![]) {
+        for st in alg
+            .get("step")
+            .and_then(|s| s.as_array())
+            .unwrap_or(&vec![])
+        {
             let st = st.as_table().unwrap();
             sh.steps.push(Step {
                 number: u(st.get("number")),
@@ -147,13 +167,20 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
         }
     }
     if let Some(d) = t.get("data").and_then(|d| d.as_table()) {
-        for b in d.get("bundles").and_then(|b| b.as_array()).unwrap_or(&vec![]) {
+        for b in d
+            .get("bundles")
+            .and_then(|b| b.as_array())
+            .unwrap_or(&vec![])
+        {
             sh.bundles.push(b.as_str().unwrap_or("").to_string());
         }
     }
     if let Some(vw) = t.get("view").and_then(|v| v.as_table()) {
         sh.view = match s(vw.get("kind")).as_str() {
-            "line" => View::Line { over: s(vw.get("over")), points: u(vw.get("points")) },
+            "line" => View::Line {
+                over: s(vw.get("over")),
+                points: u(vw.get("points")),
+            },
             "heatmap" => View::Heatmap {
                 over_x: s(vw.get("over_x")),
                 over_y: s(vw.get("over_y")),
@@ -170,7 +197,11 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
         let fv: toml::Value = ftext
             .parse()
             .map_err(|e| format!("{}: malformed fixtures: {e}", fx.display()))?;
-        for r in fv.get("fixture").and_then(|r| r.as_array()).unwrap_or(&vec![]) {
+        for r in fv
+            .get("fixture")
+            .and_then(|r| r.as_array())
+            .unwrap_or(&vec![])
+        {
             let r = r.as_table().unwrap();
             let mut inputs = Vec::new();
             if let Some(m) = r.get("inputs").and_then(|m| m.as_table()) {
@@ -310,7 +341,11 @@ fn load_layers(tree: &mut Tree) -> Result<(), String> {
             };
             tree.groups.insert(grp.id.clone(), grp);
         }
-        for r in v.get("relates").and_then(|r| r.as_array()).unwrap_or(&vec![]) {
+        for r in v
+            .get("relates")
+            .and_then(|r| r.as_array())
+            .unwrap_or(&vec![])
+        {
             let r = r.as_table().unwrap();
             tree.relations.push(Relation {
                 from: s(r.get("from")),
@@ -346,7 +381,11 @@ fn load_cases(tree: &mut Tree) -> Result<(), String> {
             }
             c.supply.sort_by(|a, b| a.0.cmp(&b.0));
         }
-        for it in v.get("iterate").and_then(|i| i.as_array()).unwrap_or(&vec![]) {
+        for it in v
+            .get("iterate")
+            .and_then(|i| i.as_array())
+            .unwrap_or(&vec![])
+        {
             let it = it.as_table().unwrap();
             let mut cy = CycleSpec {
                 converge_on: s(it.get("converge_on")),
@@ -354,7 +393,11 @@ fn load_cases(tree: &mut Tree) -> Result<(), String> {
                 max_iter: u(it.get("max_iter")),
                 ..Default::default()
             };
-            for n in it.get("nodes").and_then(|n| n.as_array()).unwrap_or(&vec![]) {
+            for n in it
+                .get("nodes")
+                .and_then(|n| n.as_array())
+                .unwrap_or(&vec![])
+            {
                 cy.nodes.push(n.as_str().unwrap_or("").to_string());
             }
             for sd in it.get("seed").and_then(|s| s.as_array()).unwrap_or(&vec![]) {
@@ -372,7 +415,11 @@ fn load_sources(tree: &mut Tree) -> Result<(), String> {
     let p = tree.root.join("sources").join("sources.toml");
     let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
     let v: toml::Value = text.parse().map_err(|e| format!("{}: {e}", p.display()))?;
-    for r in v.get("source").and_then(|r| r.as_array()).unwrap_or(&vec![]) {
+    for r in v
+        .get("source")
+        .and_then(|r| r.as_array())
+        .unwrap_or(&vec![])
+    {
         let r = r.as_table().unwrap();
         let src = Source {
             id: s(r.get("id")),

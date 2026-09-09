@@ -198,38 +198,102 @@ macro_rules! square {
     };
 }
 
-quantity!(Length, Unit::Metre, "A distance. Altitudes are quoted in kilometres and stored in metres.");
-quantity!(Area, Unit::SquareMetre, "An area — intake mouth, frontal area, radiator, solar array.");
+quantity!(
+    Length,
+    Unit::Metre,
+    "A distance. Altitudes are quoted in kilometres and stored in metres."
+);
+quantity!(
+    Area,
+    Unit::SquareMetre,
+    "An area — intake mouth, frontal area, radiator, solar array."
+);
 quantity!(Volume, Unit::CubicMetre, "A volume.");
 quantity!(Mass, Unit::Kilogram, "A mass.");
-quantity!(MassFlow, Unit::KgPerSecond, "A mass flow rate. ABEP intakes work at milligrams per second.");
-quantity!(MassFlux, Unit::KgPerSecond, "A mass flow per unit area, kg/m^2/s — the incident flux before an intake.");
-quantity!(MassDensity, Unit::KgPerCubicMetre, "A mass density. The VLEO regime spans roughly 1e-9 to 1e-13 kg/m^3.");
-quantity!(NumberDensity, Unit::PerCubicMetre, "A number density, particles per cubic metre.");
-quantity!(MolarMass, Unit::KgPerMol, "A molar mass — the mean molecular mass of the local atmosphere.");
-quantity!(Velocity, Unit::MetrePerSecond, "A speed or a speed component.");
+quantity!(
+    MassFlow,
+    Unit::KgPerSecond,
+    "A mass flow rate. ABEP intakes work at milligrams per second."
+);
+quantity!(
+    MassFlux,
+    Unit::KgPerSecond,
+    "A mass flow per unit area, kg/m^2/s — the incident flux before an intake."
+);
+quantity!(
+    MassDensity,
+    Unit::KgPerCubicMetre,
+    "A mass density. The VLEO regime spans roughly 1e-9 to 1e-13 kg/m^3."
+);
+quantity!(
+    NumberDensity,
+    Unit::PerCubicMetre,
+    "A number density, particles per cubic metre."
+);
+quantity!(
+    MolarMass,
+    Unit::KgPerMol,
+    "A molar mass — the mean molecular mass of the local atmosphere."
+);
+quantity!(
+    Velocity,
+    Unit::MetrePerSecond,
+    "A speed or a speed component."
+);
 quantity!(Acceleration, Unit::MetrePerSecond2, "An acceleration.");
 quantity!(Force, Unit::Newton, "A force. Thrust and drag are both this type, which is what lets the closure node subtract them.");
 quantity!(Torque, Unit::NewtonMetre, "A torque.");
-quantity!(Impulse, Unit::NewtonSecond, "An impulse — force integrated over time.");
-quantity!(AngularMomentum, Unit::NewtonMetreSecond, "Stored angular momentum — reaction wheel sizing.");
+quantity!(
+    Impulse,
+    Unit::NewtonSecond,
+    "An impulse — force integrated over time."
+);
+quantity!(
+    AngularMomentum,
+    Unit::NewtonMetreSecond,
+    "Stored angular momentum — reaction wheel sizing."
+);
 quantity!(Pressure, Unit::Pascal, "A pressure.");
-quantity!(Energy, Unit::Joule, "An energy. Battery capacity is stored here and displayed in watt-hours.");
+quantity!(
+    Energy,
+    Unit::Joule,
+    "An energy. Battery capacity is stored here and displayed in watt-hours."
+);
 quantity!(Power, Unit::Watt, "A power.");
-quantity!(Irradiance, Unit::WattPerSquareMetre, "A power per unit area — the solar constant, albedo, Earth infrared.");
-quantity!(Temperature, Unit::Kelvin, "An absolute temperature. There is no Celsius in the kernel.");
+quantity!(
+    Irradiance,
+    Unit::WattPerSquareMetre,
+    "A power per unit area — the solar constant, albedo, Earth infrared."
+);
+quantity!(
+    Temperature,
+    Unit::Kelvin,
+    "An absolute temperature. There is no Celsius in the kernel."
+);
 quantity!(Time, Unit::Second, "A duration.");
-quantity!(Angle, Unit::Radian, "An angle, in radians. Degrees exist only at a face.");
+quantity!(
+    Angle,
+    Unit::Radian,
+    "An angle, in radians. Degrees exist only at a face."
+);
 quantity!(AngularRate, Unit::RadianPerSecond, "An angular rate.");
 quantity!(Frequency, Unit::Hertz, "A frequency.");
 quantity!(Voltage, Unit::Volt, "A potential difference.");
 quantity!(Current, Unit::Ampere, "An electric current.");
 quantity!(Charge, Unit::Coulomb, "An electric charge.");
 quantity!(MagneticFluxDensity, Unit::Tesla, "A magnetic flux density.");
-quantity!(DipoleMoment, Unit::AmpereSquareMetre, "A magnetic dipole moment.");
+quantity!(
+    DipoleMoment,
+    Unit::AmpereSquareMetre,
+    "A magnetic dipole moment."
+);
 quantity!(DataRate, Unit::BitPerSecond, "A data rate.");
 quantity!(DataVolume, Unit::Bit, "A quantity of data, in bits.");
-quantity!(Money, Unit::UsDollar, "A cost, in the currency and year the cost model was fitted in.");
+quantity!(
+    Money,
+    Unit::UsDollar,
+    "A cost, in the currency and year the cost model was fitted in."
+);
 
 quantity!(Ratio, Unit::One, "A dimensionless ratio — an efficiency, a fraction, a margin factor. Kept as its own type so an efficiency cannot be silently used where a count or a bare scale factor was meant.");
 
@@ -238,7 +302,7 @@ impl Ratio {
     /// True when the ratio lies in `[0, 1]` — the shape almost every
     /// efficiency in this system must have.
     pub fn is_fraction(self) -> bool {
-        self.get() >= 0.0 && self.get() <= 1.0
+        (0.0..=1.0).contains(&self.get())
     }
 }
 

@@ -5,10 +5,54 @@
 //! after the browser face and before anything else.
 
 use std::collections::BTreeMap;
+use std::path::PathBuf;
 use std::process::ExitCode;
 use vleo_bus::{Case, RunMode};
 use vleo_core::graph::Kind;
 use vleo_modules::{tables, Scratch, Vleo, NODES, VARS};
+
+/// The local store, resolved before the run.
+///
+/// R3: the engine makes no network calls. Data arrives by an explicit sync,
+/// before the run. `evaluate` reads what is already local and nothing else,
+/// which is what makes a run deterministic, offline-capable and replayable.
+fn resolve_data() -> (Vec<String>, Vec<String>) {
+    let root = data_root();
+    let mut store = vleo_data::Store::open(&root);
+    if store.load().is_err() || store.bundles.is_empty() {
+        // The shipped set travels with the binary, so a fresh install runs
+        // before any sync at all.
+        let shipped = repo_bundles();
+        if shipped.is_dir() {
+            let _ = store.sync(&vleo_data::Source::Shipped(shipped));
+        }
+    }
+    (store.verified_names(), store.versions())
+}
+
+fn data_root() -> PathBuf {
+    // Outside the install directory by default, so it survives an upgrade and
+    // an uninstall rather than being deleted with the application.
+    std::env::var("VLEO_DATA")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            std::env::var("HOME")
+                .map(|h| PathBuf::from(h).join(".vleo").join("data"))
+                .unwrap_or_else(|_| PathBuf::from(".vleo/data"))
+        })
+}
+
+fn repo_bundles() -> PathBuf {
+    let mut p = std::env::current_dir().unwrap_or_default();
+    loop {
+        if p.join("bundles").is_dir() && p.join("layers").is_dir() {
+            return p.join("bundles");
+        }
+        if !p.pop() {
+            return PathBuf::from("bundles");
+        }
+    }
+}
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -22,6 +66,7 @@ fn main() -> ExitCode {
         "show" => cmd_show(&rest),
         "cases" => cmd_cases(),
         "selftest" => cmd_selftest(),
+        "data" => cmd_data(&rest),
         "version" => {
             print_version();
             Ok(())
@@ -59,6 +104,10 @@ vleo <command>
   show <node>          the sheet, as the engine holds it.
   cases                the stored cases and what each supplies.
   selftest             every fixture in the tree, executed against this build.
+  data sync|list|verify
+                       reconcile the local store, or say what is in it. A run
+                       either has verified data on disk or refuses to start: it
+                       does not fetch, wait, retry or fall back silently.
   version              kernel, graph and build identity.
 
 Everything crossing the boundary is SI. A face converts for display and never
@@ -78,7 +127,10 @@ fn short(h: u64) -> String {
 }
 
 fn opt<'a>(args: &'a [&'a str], name: &str) -> Option<&'a str> {
-    args.iter().position(|a| *a == name).and_then(|i| args.get(i + 1)).copied()
+    args.iter()
+        .position(|a| *a == name)
+        .and_then(|i| args.get(i + 1))
+        .copied()
 }
 
 fn sets(args: &[&str]) -> Result<Vec<(String, f64)>, String> {
@@ -86,7 +138,9 @@ fn sets(args: &[&str]) -> Result<Vec<(String, f64)>, String> {
     for (i, a) in args.iter().enumerate() {
         if *a == "--set" {
             let kv = args.get(i + 1).ok_or("--set needs id=value")?;
-            let (k, v) = kv.split_once('=').ok_or_else(|| format!("'{kv}' is not id=value"))?;
+            let (k, v) = kv
+                .split_once('=')
+                .ok_or_else(|| format!("'{kv}' is not id=value"))?;
             let val: f64 = v.parse().map_err(|_| format!("'{v}' is not a number"))?;
             if Vleo::find(k).is_none() {
                 return Err(format!("no node '{k}'"));
@@ -107,11 +161,14 @@ fn build_case(node: &str, args: &[&str]) -> Result<Case, String> {
     if Vleo::case(&base).is_none() {
         return Err(format!("no stored case '{base}'. `vleo cases` lists them."));
     }
+    let (data, data_versions) = resolve_data();
     Ok(Case {
         base,
         supply: sets(args)?,
         target: node.to_string(),
         mode: RunMode::from_name(opt(args, "--mode").unwrap_or("branch")),
+        data,
+        data_versions,
     })
 }
 
@@ -128,13 +185,8 @@ fn cmd_run(args: &[&str]) -> Result<(), String> {
     println!();
     match results.values.iter().find(|v| v.id == def.id) {
         Some(v) => {
-            let display = VARS[idx as usize].unit;
-            println!(
-                "  \x1b[1m{} = {:.6} {}\x1b[0m",
-                v.symbol,
-                v.value,
-                display.symbol()
-            );
+            let (shown, sym) = vleo_bus::present(v.value, VARS[idx as usize].unit, 6);
+            println!("  \x1b[1m{} = {} {}\x1b[0m", v.symbol, shown, sym);
             println!(
                 "  credibility {} of 4, governed by {}",
                 v.cred.governing_score(),
@@ -159,19 +211,30 @@ fn cmd_run(args: &[&str]) -> Result<(), String> {
     }
     println!();
     println!("  provenance");
-    println!("    kernel {} · graph {} · case {} · chain {}",
-             results.manifest.kernel, results.manifest.graph,
-             results.manifest.case, results.manifest.chain);
+    if results.manifest.data.is_empty() {
+        println!("    \x1b[33mno reference data in the store — every node that declares a bundle refused\x1b[0m");
+    } else {
+        println!("    data   {}", results.manifest.data.join(" · "));
+    }
+    println!(
+        "    kernel {} · graph {} · case {} · chain {}",
+        results.manifest.kernel,
+        results.manifest.graph,
+        results.manifest.case,
+        results.manifest.chain
+    );
     println!("    mode {} · endpoint local-cli", results.manifest.mode);
     println!();
     println!("  the chain behind this number");
     for v in results.values.iter().take(200) {
         if def.inputs.iter().any(|&i| VARS[i as usize].id == v.id) || v.id == def.id {
+            let unit = VARS[Vleo::find(&v.id).unwrap_or(0) as usize].unit;
+            let (shown, sym) = vleo_bus::present(v.value, unit, 6);
             println!(
-                "    {:<34} {:>16.6} {:<8} cred {}",
+                "    {:<34} {:>18} {:<10} cred {}",
                 v.id,
-                v.value,
-                v.unit,
+                shown,
+                sym,
                 v.cred.governing_score()
             );
         }
@@ -180,10 +243,18 @@ fn cmd_run(args: &[&str]) -> Result<(), String> {
 }
 
 fn cmd_sweep(args: &[&str]) -> Result<(), String> {
-    let node = *args.first().ok_or("usage: vleo sweep <node> --over <input>")?;
+    let node = *args
+        .first()
+        .ok_or("usage: vleo sweep <node> --over <input>")?;
     let over = opt(args, "--over").ok_or("--over names the input to sweep")?;
-    let from: f64 = opt(args, "--from").ok_or("--from")?.parse().map_err(|_| "--from is not a number")?;
-    let to: f64 = opt(args, "--to").ok_or("--to")?.parse().map_err(|_| "--to is not a number")?;
+    let from: f64 = opt(args, "--from")
+        .ok_or("--from")?
+        .parse()
+        .map_err(|_| "--from is not a number")?;
+    let to: f64 = opt(args, "--to")
+        .ok_or("--to")?
+        .parse()
+        .map_err(|_| "--to is not a number")?;
     let points: usize = opt(args, "--points").unwrap_or("21").parse().unwrap_or(21);
     let over_idx = Vleo::find(over).ok_or_else(|| format!("no node '{over}' to sweep"))?;
     let node_idx = Vleo::find(node).ok_or_else(|| format!("no node '{node}'"))?;
@@ -191,16 +262,16 @@ fn cmd_sweep(args: &[&str]) -> Result<(), String> {
     let mut scratch = Scratch::new();
     println!(
         "# {} against {} — {} points\n# {:<18} {:<22} note",
-        node,
-        over,
-        points,
-        VARS[over_idx as usize].symbol,
-        NODES[node_idx as usize].id
+        node, over, points, VARS[over_idx as usize].symbol, NODES[node_idx as usize].id
     );
     let mut ran = 0usize;
     let mut refused = 0usize;
     for i in 0..points {
-        let t = if points == 1 { 0.0 } else { i as f64 / (points - 1) as f64 };
+        let t = if points == 1 {
+            0.0
+        } else {
+            i as f64 / (points - 1) as f64
+        };
         let x = from + t * (to - from);
         let mut case = build_case(node, args)?;
         case.supply.push((over.to_string(), x));
@@ -208,7 +279,9 @@ fn cmd_sweep(args: &[&str]) -> Result<(), String> {
             Ok(r) => match r.values.iter().find(|v| v.id == node) {
                 Some(v) => {
                     ran += 1;
-                    println!("{:<20.6} {:<22.9} ok", x, v.value);
+                    let (sx, _) = vleo_bus::present(x, VARS[over_idx as usize].unit, 6);
+                    let (sy, _) = vleo_bus::present(v.value, VARS[node_idx as usize].unit, 9);
+                    println!("{:<20} {:<24} ok", sx, sy);
                 }
                 None => {
                     refused += 1;
@@ -230,15 +303,18 @@ fn cmd_campaign(args: &[&str]) -> Result<(), String> {
     let node_idx = Vleo::find(node).ok_or_else(|| format!("no node '{node}'"))?;
     let mut scratch = Scratch::new();
     println!(
-        "{:<16} {:>20} {:>8} {:>8} {:>10}  {}",
-        "case", NODES[node_idx as usize].id, "ran", "blocked", "cred", "chain"
+        "{:<16} {:>20} {:>8} {:>8} {:>10}  chain",
+        "case", NODES[node_idx as usize].id, "ran", "blocked", "cred"
     );
     for c in tables::CASES.iter() {
+        let (data, data_versions) = resolve_data();
         let case = Case {
             base: c.id.to_string(),
             supply: sets(args)?,
             target: node.to_string(),
             mode: RunMode::Branch,
+            data,
+            data_versions,
         };
         match vleo_modules::evaluate(&case, &mut scratch) {
             Ok(r) => {
@@ -246,10 +322,12 @@ fn cmd_campaign(args: &[&str]) -> Result<(), String> {
                 println!(
                     "{:<16} {:>20} {:>8} {:>8} {:>10}  {}",
                     c.id,
-                    v.map(|v| format!("{:.6}", v.value)).unwrap_or_else(|| "-".into()),
+                    v.map(|v| vleo_bus::present(v.value, VARS[node_idx as usize].unit, 6).0)
+                        .unwrap_or_else(|| "-".into()),
                     r.manifest.ran,
                     r.manifest.blocked_count,
-                    v.map(|v| v.cred.governing_score().to_string()).unwrap_or_else(|| "-".into()),
+                    v.map(|v| v.cred.governing_score().to_string())
+                        .unwrap_or_else(|| "-".into()),
                     r.manifest.chain
                 );
             }
@@ -294,10 +372,25 @@ fn cmd_show(args: &[&str]) -> Result<(), String> {
     println!("  question     {}", def.question);
     println!("  relation     {}", def.expression);
     println!("  source       {}", def.source);
-    println!("  owner        {}  tier {}  kind {}  state {}",
-             def.owner, def.tier.name(), def.kind.name(), def.state.name());
-    println!("  publishes    {} ({}) in {}", var.symbol, var.label, var.unit.symbol());
-    println!("  valid over   {} … {} {}", var.limit.lower, var.limit.upper, var.unit.symbol());
+    println!(
+        "  owner        {}  tier {}  kind {}  state {}",
+        def.owner,
+        def.tier.name(),
+        def.kind.name(),
+        def.state.name()
+    );
+    println!(
+        "  publishes    {} ({}) in {}",
+        var.symbol,
+        var.label,
+        var.unit.symbol()
+    );
+    println!(
+        "  valid over   {} … {} {}",
+        var.limit.lower,
+        var.limit.upper,
+        var.unit.symbol()
+    );
     println!("               lower: {}", var.limit.reason_lower);
     println!("               upper: {}", var.limit.reason_upper);
     if !def.assumptions.is_empty() {
@@ -320,21 +413,36 @@ fn cmd_show(args: &[&str]) -> Result<(), String> {
     }
     let consumers: Vec<&str> = NODES
         .iter()
-        .filter(|c| c.inputs.iter().any(|&x| x == i))
+        .filter(|c| c.inputs.contains(&i))
         .map(|c| c.id)
         .collect();
-    println!("  read by      {} node(s){}", consumers.len(),
-             if consumers.is_empty() { String::new() } else { format!(": {}", consumers.join(", ")) });
+    println!(
+        "  read by      {} node(s){}",
+        consumers.len(),
+        if consumers.is_empty() {
+            String::new()
+        } else {
+            format!(": {}", consumers.join(", "))
+        }
+    );
     if !def.contributes.is_empty() {
         println!("  contributes  {}", def.contributes.join(", "));
     }
     if def.fixtures.is_empty() {
-        println!("  evidence     \x1b[33mnone — nothing outside this code has agreed with it\x1b[0m");
+        println!(
+            "  evidence     \x1b[33mnone — nothing outside this code has agreed with it\x1b[0m"
+        );
     } else {
         println!("  evidence");
         for f in def.fixtures {
-            println!("    {:<34} expect {:>16} ± {:<10} {} / {}",
-                     f.label, f.expected, f.tolerance, f.provenance.name(), f.source);
+            println!(
+                "    {:<34} expect {:>16} ± {:<10} {} / {}",
+                f.label,
+                f.expected,
+                f.tolerance,
+                f.provenance.name(),
+                f.source
+            );
         }
     }
     Ok(())
@@ -392,8 +500,12 @@ fn cmd_selftest() -> Result<(), String> {
             if ok {
                 passed += 1;
             } else {
-                println!("  \x1b[31mFAIL\x1b[0m {} / {} — provenance {} is not an external oracle",
-                         def.id, f.label, f.provenance.name());
+                println!(
+                    "  \x1b[31mFAIL\x1b[0m {} / {} — provenance {} is not an external oracle",
+                    def.id,
+                    f.label,
+                    f.provenance.name()
+                );
             }
         }
         let _ = i;
@@ -404,7 +516,72 @@ fn cmd_selftest() -> Result<(), String> {
     );
     println!("Run `cargo test` to execute the fixtures against this build.");
     if passed != total {
-        return Err("a fixture claims an expected value that did not come from outside this code".into());
+        return Err(
+            "a fixture claims an expected value that did not come from outside this code".into(),
+        );
     }
     Ok(())
+}
+
+fn cmd_data(args: &[&str]) -> Result<(), String> {
+    let root = data_root();
+    let mut store = vleo_data::Store::open(&root);
+    match args.first().copied() {
+        Some("sync") => {
+            let from = args.get(1).map(PathBuf::from).unwrap_or_else(repo_bundles);
+            let n = store.sync(&vleo_data::Source::File(from.clone()))?;
+            println!(
+                "synced {n} bundle(s) from {} into {}",
+                from.display(),
+                root.display()
+            );
+            println!("Synchronisation and evaluation are separate moments. The engine now reads only what is on disk.");
+            Ok(())
+        }
+        Some("verify") => {
+            store.load()?;
+            for b in store.bundles.values() {
+                if b.verified {
+                    println!(
+                        "  \x1b[32mok\x1b[0m   {}@{} {}",
+                        b.manifest.name, b.manifest.version, b.manifest.content_hash
+                    );
+                } else {
+                    println!(
+                        "  \x1b[31mFAIL\x1b[0m {}@{} — {}",
+                        b.manifest.name,
+                        b.manifest.version,
+                        b.refusal.clone().unwrap_or_default()
+                    );
+                }
+            }
+            Ok(())
+        }
+        _ => {
+            store.load()?;
+            if store.bundles.is_empty() {
+                println!(
+                    "The store at {} is empty. `vleo data sync` fills it.",
+                    root.display()
+                );
+                return Ok(());
+            }
+            for b in store.bundles.values() {
+                println!(
+                    "{:<20} {:<12} {}  licence until {}  stale after {} days",
+                    b.manifest.name,
+                    b.manifest.version,
+                    if b.verified { "verified" } else { "REFUSED " },
+                    b.manifest.licence_until,
+                    b.manifest.stale_after_days
+                );
+                println!(
+                    "  provenance {} — {}",
+                    b.manifest.provenance,
+                    b.manifest.note.trim().lines().next().unwrap_or("")
+                );
+            }
+            Ok(())
+        }
+    }
 }

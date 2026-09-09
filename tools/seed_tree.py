@@ -79,7 +79,7 @@ def layer(gid, label, parent, owner, relates=()):
 layer("root", "VLEO multipayload programme", "", "systems")
 
 layer("management", "Management layer", "root", "systems",
-      [("management", "engineering", "the cost model can only run over a selected design")])
+      [("management", "system", "the cost model can only run over a selected design")])
 layer("mgt_customer", "Customer requirement and KPIs", "management", "systems")
 layer("mgt_programme", "Programme control", "management", "systems")
 layer("mgt_cost", "Cost and value case", "management", "systems")
@@ -386,8 +386,8 @@ C("orbit_velocity", "Circular orbital speed", "orbit", "orbit_geometry", "Veloci
   tier="A",
   assumptions=[("Two-body, circular",
                 "at e = 0.05 the speed varies by 5% around the orbit and a drag figure computed at the mean underestimates the perigee pass")],
-  fixtures=[("250 km circular", {"r": 6628137.0}, 7754.6, 1e-4, "published-source", "vallado2013"),
-            ("400 km circular", {"r": 6778137.0}, 7668.6, 1e-4, "published-source", "vallado2013")])
+  fixtures=[("250 km circular", {"r": 6628137.0}, 7754.84549737, 1e-9, "independent-derivation", "vallado2013"),
+            ("400 km circular", {"r": 6778137.0}, 7668.55817541, 1e-9, "independent-derivation", "vallado2013")])
 
 C("orbit_period", "Orbital period", "orbit", "orbit_geometry", "Time", "Minute", "T_orb",
   "How long does one revolution take?",
@@ -399,7 +399,7 @@ C("orbit_period", "Orbital period", "orbit", "orbit_geometry", "Time", "Minute",
   "a period below 5000 s corresponds to an orbit inside the Earth",
   "6200 s corresponds to about 1000 km, outside this tool's band",
   tier="A",
-  fixtures=[("250 km circular", {"r": 6628137.0}, 5370.2, 1e-4, "published-source", "vallado2013")])
+  fixtures=[("250 km circular", {"r": 6628137.0}, 5370.29564631, 1e-9, "independent-derivation", "vallado2013")])
 
 C("orbit_ground_track_speed", "Ground track speed", "orbit", "orbit_geometry", "Velocity", "MetrePerSecond", "V_g",
   "How fast does the sub-satellite point move over the ground?",
@@ -424,7 +424,7 @@ C("orbit_nodal_regression", "Nodal regression rate", "orbit", "orbit_geometry", 
   "a regression faster than 15 degrees per day does not occur in this altitude band",
   "a regression faster than 15 degrees per day does not occur in this altitude band",
   tier="A",
-  fixtures=[("250 km, 96.6 deg", {"r": 6628137.0, "e": 0.0, "i": 1.6860}, 2.0136e-7, 2e-3, "published-source", "vallado2013")])
+  fixtures=[("250 km, 96.6 deg", {"r": 6628137.0, "e": 0.0, "i": 1.68598806}, 2.02216606e-7, 1e-6, "independent-derivation", "vallado2013")])
 
 C("orbit_sun_sync_inclination", "Sun-synchronous inclination", "orbit", "orbit_geometry", "Angle", "Degree", "i_ss",
   "What inclination makes the orbit plane keep pace with the Sun?",
@@ -438,7 +438,7 @@ C("orbit_sun_sync_inclination", "Sun-synchronous inclination", "orbit", "orbit_g
   "a Sun-synchronous inclination is always retrograde and above about 95 degrees in this band",
   "above 115 degrees no Sun-synchronous solution exists below 2000 km",
   tier="A",
-  fixtures=[("250 km circular", {"r": 6628137.0, "e": 0.0}, 1.68603, 1e-3, "published-source", "vallado2013")])
+  fixtures=[("250 km circular", {"r": 6628137.0, "e": 0.0}, 1.68420864, 1e-6, "independent-derivation", "vallado2013")])
 
 C("orbit_earth_central_angle", "Earth central half-angle", "orbit", "orbit_geometry", "Angle", "Degree", "lambda",
   "How much of the Earth's surface is in view at the working elevation?",
@@ -450,7 +450,7 @@ C("orbit_earth_central_angle", "Earth central half-angle", "orbit", "orbit_geome
   "a negative half-angle means the target is below the horizon",
   "beyond 85 degrees the whole visible hemisphere is in view, which does not occur in this band",
   tier="A",
-  fixtures=[("250 km, 10 deg elevation", {"r": 6628137.0, "eps": 0.174533}, 0.0959, 5e-3, "published-source", "larson_wertz")])
+  fixtures=[("250 km, 10 deg elevation", {"r": 6628137.0, "eps": 0.17453293}, 0.150429309, 1e-6, "independent-derivation", "larson_wertz")])
 
 C("orbit_swath_width", "Ground swath width", "orbit", "orbit_geometry", "Length", "Kilometre", "W",
   "How wide a strip of ground does one pass cover?",
@@ -488,7 +488,7 @@ C("orbit_eclipse_fraction", "Eclipse fraction of the orbit", "orbit", "orbit_geo
   tier="A",
   assumptions=[("Cylindrical shadow, no penumbra",
                 "the penumbra adds about 10 seconds per orbit, which matters for a precise thermal transient and not for a power budget")],
-  fixtures=[("250 km, beta = 30 deg", {"r": 6628137.0, "beta": 0.523599}, 0.34386, 5e-3, "independent-derivation", "larson_wertz")])
+  fixtures=[("250 km, beta = 30 deg", {"r": 6628137.0, "beta": 0.52359878}, 0.398283597, 1e-6, "independent-derivation", "larson_wertz")])
 
 C("orbit_decay_rate", "Orbital decay rate", "orbit", "orbit_geometry", "Velocity", "MetrePerSecond", "da_dt",
   "How fast does the orbit fall if nothing compensates the drag?",
@@ -664,7 +664,7 @@ C("aero_drag_force", "Drag force", "aero", "aero_drag", "Force", "Millinewton", 
   "above 10 N the vehicle is decelerating at a rate no electric propulsion system can answer",
   tier="A",
   kpis=["kpi_service_lifetime"],
-  fixtures=[("250 km, baseline vehicle", {"q": 1.9938, "cd": 2.85807, "a": 0.3327},
+  fixtures=[("250 km, baseline vehicle", {"q": 1.9938e-3, "cd": 2.85807, "a": 0.3327},
              1.8957e-3, 1e-3, "independent-derivation", "vallado2013")],
   view=("line", {"over": "orbit_altitude", "points": 60}))
 
@@ -913,7 +913,7 @@ C("prop_exhaust_velocity", "Beam exhaust velocity", "prop", "prop_thruster", "Ve
   "below 1 km/s the exhaust is slower than a cold gas thruster and the concept has no advantage",
   "above 500 km/s the relativistic and space-charge assumptions in the relation break down",
   tier="A",
-  fixtures=[("300 V, atomic oxygen mixture", {"vb": 300.0, "m": 0.018720}, 55490.0, 2e-3, "independent-derivation", "codata2018")],
+  fixtures=[("300 V, atomic oxygen mixture", {"vb": 300.0, "m": 0.018720}, 55610.0583860, 1e-9, "independent-derivation", "codata2018")],
   note="Air is lighter than xenon, so the same voltage buys a far higher exhaust velocity. It is the one respect in which air-breathing propulsion is easier rather than harder.")
 
 C("prop_thrust", "Thrust", "prop", "prop_thruster", "Force", "Millinewton", "T",
@@ -1732,7 +1732,7 @@ C("com_antenna_gain", "Spacecraft antenna gain", "com", "comms", "Ratio", "Decib
   "above 80 dBi is a deep-space aperture, not a spacecraft antenna",
   tier="A",
   fixtures=[("0.3 m at 8.2 GHz, 60% efficient", {"d": 0.30, "f": 8.2e9, "e": 0.60},
-             25.229, 2e-3, "independent-derivation", "larson_wertz")])
+             26.00679804, 1e-8, "independent-derivation", "larson_wertz")])
 
 C("com_gs_gain", "Ground station antenna gain", "com", "comms", "Ratio", "Decibel", "G_r",
   "How much does the ground antenna concentrate the received power?",

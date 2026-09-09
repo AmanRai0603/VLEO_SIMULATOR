@@ -1,0 +1,117 @@
+# One gate, called by the pipeline exactly as the authoring hook and a person
+# call it. Where the hook runs one script and the pipeline runs another they
+# drift within a month and the hook becomes theatre.
+name: gate
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: gate-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  gate:
+    name: build, generate, gate, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The toolchain is pinned in rust-toolchain.toml. A compiler change can
+      # move a floating-point result, so a bump is a decision rather than a
+      # surprise.
+      - name: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
+
+      - name: formatting
+        run: cargo fmt --all -- --check
+
+      - name: lints
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: build
+        run: cargo build --workspace
+
+      # The regeneration diff. A hand edit outside a numbered HOLE block is
+      # discarded by regeneration and therefore caught here, which is what makes
+      # the generated region genuinely owned by the generator rather than merely
+      # labelled that way.
+      - name: regenerate and compare
+        run: |
+          cargo run -p xtask -- docs
+          if ! git diff --quiet; then
+            echo "::error::the committed artefacts differ from what the sheets generate."
+            echo "Run 'cargo run -p xtask -- docs' and commit the result."
+            git --no-pager diff --stat
+            exit 1
+          fi
+
+      # Byte-stability. A generator whose output depends on iteration order,
+      # a clock or a path fails this at random, and within a fortnight nobody
+      # reads the check above.
+      - name: generators are byte-stable
+        run: |
+          cargo run -p xtask -- docs
+          cargo run -p xtask -- docs
+          git diff --quiet || { echo "::error::a generator is not deterministic"; exit 1; }
+
+      - name: the gate
+        run: cargo run -p xtask -- gate
+
+      - name: assembly validations
+        run: cargo run -p xtask -- assemble
+
+      - name: reference data verifies
+        run: cargo run -p xtask -- bundle verify
+
+      # A fixture disagreement is a physics disagreement, not a build failure.
+      # It goes to the node owner, and the tolerance is not the thing to change.
+      - name: evidence
+        run: cargo test --workspace
+
+      - name: the gap pass
+        run: cargo run -p xtask -- gap || true
+
+      - name: the tree, reported
+        run: |
+          cargo run -p xtask -- status
+          cargo run -p xtask -- graph
+
+  # Both profiles build on every merge. A customer build that fails only at
+  # release time fails on the day it can least be afforded — and link-time
+  # optimisation with a single codegen unit changes inlining, so the profile
+  # that ships is the profile that must be proven.
+  shipping-profile:
+    name: the profile that ships
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo build --release --workspace
+      - name: golden vectors against the shipping build
+        run: cargo test --release --workspace
+
+  no-std:
+    name: the kernel stays no_std
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup target add thumbv7em-none-eabihf
+      # If the no_std build ever acquires std, this fails. Cargo unifies
+      # features across workspace members, so one face enabling std would
+      # silently give it to the kernel — which is why this is a constrained
+      # target and never `--workspace`.
+      - run: cargo build -p vleo-units --target thumbv7em-none-eabihf --no-default-features
+      - run: cargo build -p vleo-core --target thumbv7em-none-eabihf --no-default-features

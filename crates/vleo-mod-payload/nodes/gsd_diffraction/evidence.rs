@@ -7,6 +7,8 @@
 //! produced by the thing being tested proves nothing, so the schema
 //! refuses a fixture whose provenance is the implementation.
 
+#![allow(clippy::approx_constant, clippy::excessive_precision)]
+
 use super::model;
 use vleo_core::units::*;
 

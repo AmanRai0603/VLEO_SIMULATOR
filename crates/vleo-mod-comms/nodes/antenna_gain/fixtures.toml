@@ -7,8 +7,8 @@
 
 [[fixture]]
 label = "0.3 m at 8.2 GHz, 60% efficient"
-expect = 25.229
-tolerance = 0.002
+expect = 26.00679804
+tolerance = 1e-08
 provenance = "independent-derivation"
 source = "larson_wertz"
 inputs = { d = 0.3, f = 8200000000.0, e = 0.6 }

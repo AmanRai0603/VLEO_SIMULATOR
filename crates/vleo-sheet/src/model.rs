@@ -41,18 +41,24 @@ pub struct Fixture {
     pub inputs: Vec<(String, f64)>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub enum View {
+    /// A formatted number with its unit, verdict and provenance. The default,
+    /// and what all but a handful of nodes want.
+    #[default]
     Number,
-    Line { over: String, points: u32 },
-    Heatmap { over_x: String, over_y: String, points: u32 },
-    Bar { y: String },
-}
-
-impl Default for View {
-    fn default() -> Self {
-        View::Number
-    }
+    Line {
+        over: String,
+        points: u32,
+    },
+    Heatmap {
+        over_x: String,
+        over_y: String,
+        points: u32,
+    },
+    Bar {
+        y: String,
+    },
 }
 
 #[derive(Clone, Debug, Default)]

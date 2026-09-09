@@ -30,30 +30,55 @@ pub enum Fault {
     /// The mathematics is undefined at this point — a zero denominator, a
     /// negative argument to a square root, a logarithm of zero. Distinct from
     /// `OutOfDomain`, which is a declared limit rather than a singularity.
-    Degenerate { node: &'static str, field: &'static str, reason: &'static str },
+    Degenerate {
+        node: &'static str,
+        field: &'static str,
+        reason: &'static str,
+    },
     /// The node has never run and something asked for its value.
     NotRun { node: &'static str },
     /// One or more upstream nodes have never run. The missing node is named,
     /// because a disabled control that does not say why is a defect.
-    Blocked { node: &'static str, missing: &'static str },
+    Blocked {
+        node: &'static str,
+        missing: &'static str,
+    },
     /// A reference-data bundle a node declared it needs is not in the store.
-    DataMissing { node: &'static str, bundle: &'static str },
+    DataMissing {
+        node: &'static str,
+        bundle: &'static str,
+    },
     /// A bundle is present but its hash or signature does not verify. This is a
     /// refusal, never a warning: a result computed from unverifiable data is
     /// not a degraded result, it is not a result.
-    DataUnverified { node: &'static str, bundle: &'static str },
+    DataUnverified {
+        node: &'static str,
+        bundle: &'static str,
+    },
     /// A declared cycle did not reach its convergence criterion. Carries the
     /// iteration count and the last residual, so non-convergence is a
     /// reportable result rather than a crash.
-    NotConverged { node: &'static str, iterations: u32, residual: f64, tolerance: f64 },
+    NotConverged {
+        node: &'static str,
+        iterations: u32,
+        residual: f64,
+        tolerance: f64,
+    },
     /// The dependency graph contains a cycle nobody declared. A cycle is a
     /// property of the design, so it is declared in the case; an undeclared one
     /// is an error naming the nodes involved.
-    UndeclaredCycle { node: &'static str, back_to: &'static str },
+    UndeclaredCycle {
+        node: &'static str,
+        back_to: &'static str,
+    },
     /// A node depends on another that has been retired as *wrong*. Its
     /// consumers are suspect, and retirement should not protect anyone from
     /// finding that out.
-    DependsOnWithdrawn { node: &'static str, withdrawn: &'static str, replacement: &'static str },
+    DependsOnWithdrawn {
+        node: &'static str,
+        withdrawn: &'static str,
+        replacement: &'static str,
+    },
     /// The resolver was given a workspace too small for the graph. A caller
     /// error, reported rather than silently truncated.
     WorkspaceTooSmall { needed: usize, given: usize },

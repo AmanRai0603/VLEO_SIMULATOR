@@ -102,7 +102,12 @@ pub enum Verdict {
     Pass { relative_error: f64 },
     /// Outside tolerance. A physics disagreement, not a build failure — it goes
     /// to the node owner, and the tolerance is not the thing to change.
-    Fail { got: f64, expected: f64, relative_error: f64, tolerance: f64 },
+    Fail {
+        got: f64,
+        expected: f64,
+        relative_error: f64,
+        tolerance: f64,
+    },
     /// The node refused to run on this fixture's case.
     Refused,
     /// The fixture exists and has not been executed in this run.
@@ -125,9 +130,16 @@ impl Fixture {
             crate::units::pmath::abs((got - e) / e)
         };
         if err <= self.tolerance {
-            Verdict::Pass { relative_error: err }
+            Verdict::Pass {
+                relative_error: err,
+            }
         } else {
-            Verdict::Fail { got, expected: e, relative_error: err, tolerance: self.tolerance }
+            Verdict::Fail {
+                got,
+                expected: e,
+                relative_error: err,
+                tolerance: self.tolerance,
+            }
         }
     }
 }

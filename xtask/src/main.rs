@@ -25,11 +25,15 @@ fn main() -> ExitCode {
         "graph" => cmd_graph(&root),
         "new" => cmd_new(&root, &rest),
         "codeowners" => cmd_codeowners(&root),
+        "bundle" => cmd_bundle(&root, &rest),
+        "variables" => cmd_variables(&root),
         "help" | "--help" | "-h" => {
             help();
             Ok(())
         }
-        other => Err(format!("unknown command '{other}'. Try `cargo xtask help`.")),
+        other => Err(format!(
+            "unknown command '{other}'. Try `cargo xtask help`."
+        )),
     };
 
     match r {
@@ -64,6 +68,16 @@ cargo xtask <command>
                      re-decided. Not a copy: a real copy drags a stale source
                      citation through thirty nodes.
   codeowners         regenerate CODEOWNERS from the layer files.
+  bundle publish <dir>
+                     hash every payload file and write the result into the
+                     manifest. Publishing twice from the same input gives the
+                     same hash, which is what makes verification mean anything.
+                     Publication is irreversible by design.
+  bundle verify      re-check every hash in bundles/.
+  variables          write docs/VARIABLES.md — every variable in the tree, its
+                     unit, its range, the reason for each bound, and what reads
+                     it. Generated, because a register maintained by hand is a
+                     register that is wrong.
 
 The tree is seeded once, ever, by tools/seed_tree.py."
     );
@@ -72,7 +86,8 @@ The tree is seeded once, ever, by tools/seed_tree.py."
 fn repo_root() -> PathBuf {
     let mut p = std::env::current_dir().expect("a working directory");
     loop {
-        if p.join("Cargo.toml").is_file() && p.join("crates").is_dir() && p.join("layers").is_dir() {
+        if p.join("Cargo.toml").is_file() && p.join("crates").is_dir() && p.join("layers").is_dir()
+        {
             return p;
         }
         if !p.pop() {
@@ -122,6 +137,15 @@ fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
             ("page.html", page::fragment(sh, &holes, &tree)),
             ("meta.json", emit::meta_json(sh, &gaps)),
         ] {
+            // Format the candidate before comparing, so the generator is a
+            // function of its input: writing unformatted text and formatting it
+            // afterwards makes every run report a change and the
+            // regenerate-and-compare check stops meaning anything.
+            let text = if name.ends_with(".rs") {
+                gate::formatted(&text)
+            } else {
+                text
+            };
             if write_if_changed(&sh.dir.join(name), &text)? {
                 written += 1;
             }
@@ -241,7 +265,10 @@ fn cmd_status(root: &Path) -> Result<(), String> {
         }
         gaps_total += emit::gap_pass(sh, &vleo_sheet::load::read_holes(&sh.dir)).len();
     }
-    println!("{:<12} {:>6} {:>10} {:>10}", "subsystem", "rows", "declared", "computed");
+    println!(
+        "{:<12} {:>6} {:>10} {:>10}",
+        "subsystem", "rows", "declared", "computed"
+    );
     for (s, c) in &by_sub {
         println!("{:<12} {:>6} {:>10} {:>10}", s, c[0], c[1], c[2]);
     }
@@ -302,19 +329,33 @@ fn cmd_graph(root: &Path) -> Result<(), String> {
     println!("three graphs, never merged:");
     println!("  derivation   {derivation:>5} edges   variable -> node      execution");
     println!("  contribution {contribution:>5} edges   variable -> KPI       coverage");
-    println!("  relation     {:>5} edges   group -> group        navigation", tree.relations.len());
+    println!(
+        "  relation     {:>5} edges   group -> group        navigation",
+        tree.relations.len()
+    );
     println!();
     let deepest = deepest_chain(&tree);
-    println!("deepest declared chain: {} nodes — {}", deepest.len(), deepest.join(" -> "));
+    println!(
+        "deepest declared chain: {} nodes — {}",
+        deepest.len(),
+        deepest.join(" -> ")
+    );
     let unread: Vec<&str> = tree
         .ordered()
         .iter()
         .filter(|s| {
-            s.kind != "kpi" && !tree.sheets.values().any(|c| c.inputs.iter().any(|i| i.var == s.id))
+            s.kind != "kpi"
+                && !tree
+                    .sheets
+                    .values()
+                    .any(|c| c.inputs.iter().any(|i| i.var == s.id))
         })
         .map(|s| s.id.as_str())
         .collect();
-    println!("{} node(s) nothing reads — every one is a leaf of the design, or an oversight:", unread.len());
+    println!(
+        "{} node(s) nothing reads — every one is a leaf of the design, or an oversight:",
+        unread.len()
+    );
     for u in unread.iter().take(20) {
         println!("    {u}");
     }
@@ -323,7 +364,12 @@ fn cmd_graph(root: &Path) -> Result<(), String> {
 
 fn deepest_chain(tree: &Tree) -> Vec<String> {
     let mut memo: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    fn depth(id: &str, tree: &Tree, memo: &mut BTreeMap<String, Vec<String>>, seen: &mut Vec<String>) -> Vec<String> {
+    fn depth(
+        id: &str,
+        tree: &Tree,
+        memo: &mut BTreeMap<String, Vec<String>>,
+        seen: &mut Vec<String>,
+    ) -> Vec<String> {
         if let Some(v) = memo.get(id) {
             return v.clone();
         }
@@ -357,7 +403,9 @@ fn deepest_chain(tree: &Tree) -> Vec<String> {
 }
 
 fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
-    let id = args.first().ok_or("usage: cargo xtask new <id> --like <sibling>")?;
+    let id = args
+        .first()
+        .ok_or("usage: cargo xtask new <id> --like <sibling>")?;
     let like = args
         .iter()
         .position(|a| *a == "--like")
@@ -373,7 +421,11 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
         .join("crates")
         .join(&src.crate_name)
         .join("nodes")
-        .join(if folder.is_empty() { id.to_string() } else { folder.clone() });
+        .join(if folder.is_empty() {
+            id.to_string()
+        } else {
+            folder.clone()
+        });
     if dir.exists() {
         return Err(format!("{} already exists", dir.display()));
     }
@@ -386,7 +438,14 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
         if l.starts_with("id = ") {
             out.push_str(&format!("id = \"{id}\"\n"));
         } else if l.starts_with("folder = ") {
-            out.push_str(&format!("folder = \"{}\"   # frozen at seed\n", if folder.is_empty() { id.to_string() } else { folder.clone() }));
+            out.push_str(&format!(
+                "folder = \"{}\"   # frozen at seed\n",
+                if folder.is_empty() {
+                    id.to_string()
+                } else {
+                    folder.clone()
+                }
+            ));
         } else if l.starts_with("label = ")
             || l.starts_with("text = ")
             || l.starts_with("expression = ")
@@ -397,7 +456,9 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
             || l.starts_with("confirmed_by = ")
         {
             let key = l.split(" = ").next().unwrap();
-            out.push_str(&format!("{key} = \"\"   # REQUIRED — re-decide, do not inherit\n"));
+            out.push_str(&format!(
+                "{key} = \"\"   # REQUIRED — re-decide, do not inherit\n"
+            ));
         } else {
             out.push_str(line);
             out.push('\n');
@@ -434,7 +495,10 @@ fn cmd_codeowners(root: &Path) -> Result<(), String> {
     o.push_str("/web/                     @web-owner @integrator\n\n");
     let mut by_owner: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
     for sh in tree.ordered() {
-        by_owner.entry(sh.owner.as_str()).or_default().push(sh.crate_name.as_str());
+        by_owner
+            .entry(sh.owner.as_str())
+            .or_default()
+            .push(sh.crate_name.as_str());
     }
     let mut seen = std::collections::BTreeSet::new();
     for sh in tree.ordered() {
@@ -449,5 +513,203 @@ fn cmd_codeowners(root: &Path) -> Result<(), String> {
     let _ = by_owner;
     fs::write(root.join("CODEOWNERS"), &o).map_err(|e| e.to_string())?;
     println!("codeowners: {} lines", o.lines().count());
+    Ok(())
+}
+
+fn cmd_bundle(root: &Path, args: &[&str]) -> Result<(), String> {
+    match args.first().copied() {
+        Some("publish") => {
+            let dir = args
+                .get(1)
+                .map(PathBuf::from)
+                .ok_or("usage: cargo xtask bundle publish <dir>")?;
+            let b = vleo_data::load_bundle(&dir)?;
+            let computed = vleo_data::hash_files(&dir, &b.manifest.files)?;
+            let mp = dir.join("manifest.toml");
+            let text = fs::read_to_string(&mp).map_err(|e| e.to_string())?;
+            let mut out = String::new();
+            for line in text.lines() {
+                if line.trim_start().starts_with("content_hash") {
+                    out.push_str(&format!("content_hash = \"{computed}\"\n"));
+                } else {
+                    out.push_str(line);
+                    out.push('\n');
+                }
+            }
+            fs::write(&mp, out).map_err(|e| e.to_string())?;
+            println!(
+                "published {}@{} — {}",
+                b.manifest.name, b.manifest.version, computed
+            );
+            println!("A published version is never edited. A correction is a new version.");
+            Ok(())
+        }
+        Some("verify") | None => {
+            let dir = root.join("bundles");
+            let mut n = 0;
+            let mut bad = 0;
+            for e in fs::read_dir(&dir).map_err(|e| e.to_string())? {
+                let p = e.map_err(|e| e.to_string())?.path();
+                if !p.is_dir() {
+                    continue;
+                }
+                for v in fs::read_dir(&p).map_err(|e| e.to_string())? {
+                    let vp = v.map_err(|e| e.to_string())?.path();
+                    if !vp.join("manifest.toml").is_file() {
+                        continue;
+                    }
+                    n += 1;
+                    let b = vleo_data::load_bundle(&vp)?;
+                    if b.verified {
+                        println!(
+                            "  \x1b[32mok\x1b[0m   {}@{} {}",
+                            b.manifest.name, b.manifest.version, b.manifest.content_hash
+                        );
+                    } else {
+                        bad += 1;
+                        println!(
+                            "  \x1b[31mFAIL\x1b[0m {}@{} — {}",
+                            b.manifest.name,
+                            b.manifest.version,
+                            b.refusal.unwrap_or_default()
+                        );
+                    }
+                }
+            }
+            println!("{n} bundle(s), {bad} refused");
+            if bad > 0 {
+                return Err("a tampered byte is refused, never warned about".into());
+            }
+            Ok(())
+        }
+        Some(other) => Err(format!("unknown bundle command '{other}'")),
+    }
+}
+
+/// The variable register.
+///
+/// Generated from the sheets, like everything else. A register maintained by
+/// hand drifts from the tree within a week, and then it is worse than absent:
+/// somebody will trust it.
+fn cmd_variables(root: &Path) -> Result<(), String> {
+    let tree = load(root)?;
+    let mut o = String::new();
+    o.push_str("<!-- GENERATED by `cargo xtask variables`. Do not edit: the sheets are the source. -->\n\n");
+    o.push_str("# The variable register\n\n");
+    o.push_str("Every row in the tree, with the unit it publishes in, the range over which it\n");
+    o.push_str("is declared valid, and the reason for each bound. A guard whose reason is not\n");
+    o.push_str("written down gets deleted by the next person who finds it awkward, so the\n");
+    o.push_str("reasons are part of the register rather than a comment in the code.\n\n");
+
+    let declared = tree.ordered().iter().filter(|s| s.is_declared()).count();
+    let computed = tree.sheets.len() - declared;
+    o.push_str(&format!(
+        "**{} rows** — {} a person picked, {} worked out. Two thirds of any design tree is\n\
+         the first kind: cheaper than a computed node, and not free, because every margin\n\
+         in the design is built out of them.\n\n",
+        tree.sheets.len(),
+        declared,
+        computed
+    ));
+
+    let mut by_sub: BTreeMap<&str, Vec<&vleo_sheet::Sheet>> = BTreeMap::new();
+    for sh in tree.ordered() {
+        by_sub.entry(sh.subsystem.as_str()).or_default().push(sh);
+    }
+    for (sub, sheets) in &by_sub {
+        let label = tree
+            .groups
+            .values()
+            .find(|g| sheets.iter().any(|s| s.parent == g.id))
+            .map(|g| g.label.clone())
+            .unwrap_or_else(|| (*sub).to_string());
+        o.push_str(&format!("\n## `{sub}` — {label}\n\n"));
+        for sh in sheets {
+            let unit = vleo_units::Unit::from_name(&sh.unit)
+                .map(|u| u.symbol())
+                .unwrap_or("?");
+            o.push_str(&format!("### `{}` — {}\n\n", sh.id, sh.label));
+            o.push_str(&format!("> {}\n\n", sh.question));
+            o.push_str(&format!(
+                "| | |\n|---|---|\n\
+                 | symbol | `{}` |\n\
+                 | type | `{}` |\n\
+                 | unit | {} |\n\
+                 | kind | {} |\n\
+                 | owner | {} |\n\
+                 | evidence tier | {} |\n\
+                 | relation | `{}` |\n\
+                 | source | `{}` |\n",
+                sh.symbol, sh.ty, unit, sh.kind, sh.owner, sh.tier, sh.expression, sh.source
+            ));
+            if let Some(v) = sh.value {
+                o.push_str(&format!("| declared value | **{v}** {unit} |\n"));
+                o.push_str(&format!("| confirmed by | {} |\n", sh.confirmed_by));
+            }
+            o.push_str(&format!(
+                "| valid over | {} … {} {} |\n",
+                sh.lower, sh.upper, unit
+            ));
+            o.push('\n');
+            o.push_str(&format!("- **lower bound** — {}\n", sh.reason_lower));
+            o.push_str(&format!("- **upper bound** — {}\n", sh.reason_upper));
+            if !sh.inputs.is_empty() {
+                o.push_str(&format!(
+                    "- **reads** — {}\n",
+                    sh.inputs
+                        .iter()
+                        .map(|i| format!("`{}`", i.var))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ));
+            }
+            let consumers: Vec<String> = tree
+                .sheets
+                .values()
+                .filter(|c| c.inputs.iter().any(|i| i.var == sh.id))
+                .map(|c| format!("`{}`", c.id))
+                .collect();
+            o.push_str(&format!(
+                "- **read by** — {}\n",
+                if consumers.is_empty() {
+                    "nothing yet. Every one of these is a leaf of the design, or an oversight."
+                        .to_string()
+                } else {
+                    consumers.join(", ")
+                }
+            ));
+            if !sh.kpis.is_empty() {
+                o.push_str(&format!("- **contributes to** — {}\n", sh.kpis.join(", ")));
+            }
+            for a in &sh.assumptions {
+                o.push_str(&format!(
+                    "- **assumes** {} — fails when {}\n",
+                    a.text, a.fails_when
+                ));
+            }
+            if sh.fixtures.is_empty() && !sh.is_declared() {
+                o.push_str("- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.\n");
+            }
+            for f in &sh.fixtures {
+                o.push_str(&format!(
+                    "- **evidence** {} — expect {} ± {} relative, from `{}` ({})\n",
+                    f.label, f.expect, f.tolerance, f.source, f.provenance
+                ));
+            }
+            if !sh.note.is_empty() {
+                o.push_str(&format!("\n{}\n", sh.note));
+            }
+            o.push('\n');
+        }
+    }
+    let p = root.join("docs").join("VARIABLES.md");
+    fs::create_dir_all(p.parent().unwrap()).map_err(|e| e.to_string())?;
+    fs::write(&p, &o).map_err(|e| e.to_string())?;
+    println!(
+        "variables: {} rows, {} KB -> {}",
+        tree.sheets.len(),
+        o.len() / 1024,
+        p.display()
+    );
     Ok(())
 }

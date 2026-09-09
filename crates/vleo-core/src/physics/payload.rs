@@ -22,11 +22,7 @@ use vleo_units::*;
 ///
 /// The floor no detector can beat. At 300 km, 500 nm and a 0.3 m aperture it is
 /// 0.61 m; the same telescope at 600 km gets 1.22 m.
-pub fn diffraction_limited_gsd(
-    altitude: Length,
-    wavelength: Length,
-    aperture: Length,
-) -> Length {
+pub fn diffraction_limited_gsd(altitude: Length, wavelength: Length, aperture: Length) -> Length {
     Length::new(1.22 * wavelength.get() * altitude.get() / aperture.get())
 }
 
@@ -67,6 +63,7 @@ pub fn dwell_time(gsd: Length, ground_track_speed: Velocity) -> Time {
 /// ```
 ///
 /// with `L` the at-aperture spectral radiance in W/m^2/sr/m.
+#[allow(clippy::too_many_arguments)] // the relation has this many terms; naming them all is the point
 pub fn signal_electrons(
     radiance: f64,
     aperture: Length,
@@ -82,18 +79,18 @@ pub fn signal_electrons(
     let solid_angle = pmath::PI / (4.0 * f_number * f_number);
     let a_px = pixel_pitch.get() * pixel_pitch.get();
     let photon_energy = PLANCK * SPEED_OF_LIGHT.get() / wavelength.get();
-    radiance * solid_angle * a_px * bandwidth.get() * transmission.get()
+    radiance
+        * solid_angle
+        * a_px
+        * bandwidth.get()
+        * transmission.get()
         * quantum_efficiency.get()
         * integration_time.get()
         / photon_energy
 }
 
 /// Signal to noise ratio, shot noise plus dark current plus read noise.
-pub fn optical_snr(
-    signal_electrons: f64,
-    dark_electrons: f64,
-    read_noise_electrons: f64,
-) -> f64 {
+pub fn optical_snr(signal_electrons: f64, dark_electrons: f64, read_noise_electrons: f64) -> f64 {
     let noise = pmath::sqrt(
         signal_electrons + dark_electrons + read_noise_electrons * read_noise_electrons,
     );
@@ -132,6 +129,7 @@ pub fn sar_azimuth_resolution(antenna_length: Length) -> Length {
 /// Proportional to the cube of range for a stripmap SAR at fixed resolution.
 /// Dropping from 500 km to 250 km is an eightfold improvement, or the same
 /// image for one eighth of the transmit power.
+#[allow(clippy::too_many_arguments)] // the relation has this many terms; naming them all is the point
 pub fn sar_nesz(
     transmit_power: Power,
     antenna_gain_db: f64,
@@ -146,7 +144,11 @@ pub fn sar_nesz(
     let g = crate::physics::comms::from_db(antenna_gain_db);
     let l = crate::physics::comms::from_db(losses_db);
     let r = range.get();
-    let numerator = 4.0 * pmath::powi(4.0 * pmath::PI, 2) * r * r * r
+    let numerator = 4.0
+        * pmath::powi(4.0 * pmath::PI, 2)
+        * r
+        * r
+        * r
         * platform_velocity.get()
         * K_BOLTZMANN
         * system_noise_temperature.get()
@@ -231,7 +233,11 @@ pub fn intercept_range(
 
 /// User range error contributed by a signal at a given chip rate and
 /// carrier-to-noise density.
-pub fn pnt_ranging_error(chip_rate: Frequency, cn0_db_hz: f64, loop_bandwidth: Frequency) -> Length {
+pub fn pnt_ranging_error(
+    chip_rate: Frequency,
+    cn0_db_hz: f64,
+    loop_bandwidth: Frequency,
+) -> Length {
     let cn0 = crate::physics::comms::from_db(cn0_db_hz);
     let chip_length = SPEED_OF_LIGHT.get() / chip_rate.get();
     Length::new(chip_length * pmath::sqrt(loop_bandwidth.get() / (2.0 * cn0)))

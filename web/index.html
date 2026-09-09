@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VLEO Integrated Design Tool</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2317181c'/%3E%3Ctext x='8' y='12' font-size='11' fill='%23fbfaf7' text-anchor='middle' font-family='sans-serif'%3EV%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<!--
+  The document is the interface, and the interface is the document.
+
+  Structure rather than canvas: a canvas cannot be searched, selected, linked
+  into or printed, and review packs get printed. The only canvas here is the
+  sweep plot, which is a field rather than prose.
+-->
+<header id="bar">
+  <div class="brand">
+    <span class="mark">VLEO</span>
+    <span class="sub">Integrated Design Tool</span>
+  </div>
+  <div id="provenance" class="prov">
+    <span class="p-item" id="p-engine" title="Which engine answered. Every result records it, so a divergence between two endpoints is a fault that raises a flag rather than an argument.">engine <b>—</b></span>
+    <span class="p-item" id="p-kernel" title="Identifies this build of the engine.">kernel <b>—</b></span>
+    <span class="p-item" id="p-graph" title="Identifies the graph the engine was built against. Changes when an edge does.">graph <b>—</b></span>
+    <span class="p-item" id="p-data" title="Which reference-data bundles answered, and at which version.">data <b>—</b></span>
+  </div>
+</header>
+
+<nav id="controls">
+  <label class="ctl">case
+    <select id="case"></select>
+  </label>
+  <label class="ctl">layer
+    <select id="layer">
+      <option value="management">1 · management</option>
+      <option value="system" selected>2 · the system</option>
+      <option value="subsystems">3 · subsystem</option>
+      <option value="closure">4 · closure</option>
+      <option value="">all rows</option>
+    </select>
+  </label>
+  <label class="ctl">search
+    <input id="search" type="search" placeholder="node, symbol or question" autocomplete="off">
+  </label>
+  <span class="ctl-group" role="group" aria-label="run mode">
+    <button class="mode sel" data-mode="alone" title="Only this node. Disabled when a dependency has never run, and it names which.">run alone</button>
+    <button class="mode" data-mode="branch" title="The whole dependency closure, in topological order. The mode that produces a defensible number.">run the branch</button>
+    <button class="mode" data-mode="all" title="Everything buildable. Unbuilt nodes stay blocked and are listed.">run everything</button>
+  </span>
+  <button id="run" class="primary">▶ Run</button>
+  <span id="runstate" class="runstate"></span>
+</nav>
+
+<main>
+  <section id="tree" class="panel">
+    <h3>the tree <span class="count" id="tree-count"></span></h3>
+    <p class="hint">One parent per node. The tree is the decomposition; it is not the dependency — which is why both are drawn.</p>
+    <div id="tree-body" role="tree"></div>
+  </section>
+
+  <section id="left" class="panel">
+    <section id="paths">
+      <h3>what this touches</h3>
+      <p class="hint">Row is what it feeds. Column is what feeds it. The panel that answers <i>what would I disturb</i>.</p>
+      <div id="paths-body"></div>
+    </section>
+    <section id="matrix">
+      <h3>connectivity <span class="count" id="mx-count"></span></h3>
+      <p class="hint">The hierarchy is drawn <i>inside</i> the matrix as nested boxes on the diagonal. A mark inside a box is coupling that subtree owns; a mark outside it crosses a boundary.</p>
+      <div id="matrix-body"></div>
+      <ul id="crossings" class="crossings"></ul>
+    </section>
+  </section>
+
+  <section id="node" class="panel node-panel">
+    <div id="node-body"></div>
+    <div id="result" class="result"></div>
+  </section>
+</main>
+
+<footer>
+  <span>250 rows · <span id="foot-counts"></span></span>
+  <span class="muted">A blank is a statement, not an oversight. Always <b>n of 250</b> — the denominator was always there.</span>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

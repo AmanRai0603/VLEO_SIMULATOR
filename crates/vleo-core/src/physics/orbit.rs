@@ -76,7 +76,11 @@ pub fn ground_track_speed(orbital_speed: Velocity, radius: Length) -> Velocity {
 /// Negative for a prograde orbit — the node regresses. This is the relation a
 /// Sun-synchronous orbit is designed against, and the one that decides whether
 /// a constellation's planes stay where they were put.
-pub fn nodal_regression(semi_major_axis: Length, eccentricity: f64, inclination: Angle) -> AngularRate {
+pub fn nodal_regression(
+    semi_major_axis: Length,
+    eccentricity: f64,
+    inclination: Angle,
+) -> AngularRate {
     let a = semi_major_axis.get();
     let p = (1.0 - eccentricity * eccentricity) * (1.0 - eccentricity * eccentricity);
     let re = R_EARTH.get();
@@ -102,7 +106,7 @@ pub fn sun_synchronous_inclination(semi_major_axis: Length, eccentricity: f64) -
     let re = R_EARTH.get();
     let cos_i = -SUN_RA_RATE.get() * p * pmath::powf(a, 3.5)
         / (1.5 * J2_EARTH * pmath::sqrt(MU_EARTH) * re * re);
-    if cos_i < -1.0 || cos_i > 1.0 {
+    if !(-1.0..=1.0).contains(&cos_i) {
         return None;
     }
     Some(Angle::new(pmath::acos(cos_i)))
@@ -130,9 +134,7 @@ pub fn slant_range(radius: Length, min_elevation: Angle) -> Length {
     let lambda = earth_central_angle(radius, min_elevation);
     let re = R_EARTH.get();
     let r = radius.get();
-    Length::new(pmath::sqrt(
-        re * re + r * r - 2.0 * re * r * lambda.cos(),
-    ))
+    Length::new(pmath::sqrt(re * re + r * r - 2.0 * re * r * lambda.cos()))
 }
 
 /// Ground swath width for a given Earth-central half-angle.

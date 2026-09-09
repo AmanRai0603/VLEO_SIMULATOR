@@ -90,11 +90,7 @@ pub fn eb_over_n0_db(cn0_db: f64, data_rate: DataRate) -> f64 {
 ///
 /// A margin, not a verdict. Whether 3 dB is enough is a decision that belongs
 /// to a person, and it is one of the nine.
-pub fn link_margin_db(
-    eb_n0_db: f64,
-    required_eb_n0_db: f64,
-    implementation_loss_db: f64,
-) -> f64 {
+pub fn link_margin_db(eb_n0_db: f64, required_eb_n0_db: f64, implementation_loss_db: f64) -> f64 {
     eb_n0_db - required_eb_n0_db - implementation_loss_db
 }
 

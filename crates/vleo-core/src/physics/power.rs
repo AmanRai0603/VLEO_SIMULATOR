@@ -52,7 +52,9 @@ pub fn orbit_average_power(
     eclipse_fraction: Ratio,
 ) -> Power {
     let direct = array_power.get() * sunlit_fraction.get() * path_efficiency_direct.get();
-    let stored = array_power.get() * sunlit_fraction.get() * path_efficiency_battery.get()
+    let stored = array_power.get()
+        * sunlit_fraction.get()
+        * path_efficiency_battery.get()
         * eclipse_fraction.get()
         / pmath::max(sunlit_fraction.get(), 1.0e-9);
     Power::new(direct * (1.0 - eclipse_fraction.get()) + stored * eclipse_fraction.get())

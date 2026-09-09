@@ -13,6 +13,53 @@ use crate::load::{read_holes, Tree};
 use crate::model::*;
 use std::collections::BTreeSet;
 
+/// Format a candidate the way the generator does before writing it, so the
+/// regeneration check asks "did the content drift" rather than "has the
+/// formatter run".
+///
+/// When `rustfmt` is not on the path, or refuses the candidate, this returns
+/// the text **unchanged**. It must never return anything but valid source: this
+/// value is written to disk as well as compared, and an earlier version
+/// returned a whitespace-collapsed form on failure — which put every generated
+/// module on one line, where the first `//` comment swallowed the rest of the
+/// file. The comparison is allowed to be weaker than the formatting; the
+/// content is not allowed to be wrong.
+pub fn formatted(text: &str) -> String {
+    use std::io::Write;
+    let dir = std::env::temp_dir().join("vleo-gate");
+    let _ = std::fs::create_dir_all(&dir);
+    let p = dir.join(format!("candidate-{}.rs", crate::fnv1a(text)));
+    if let Ok(mut f) = std::fs::File::create(&p) {
+        if f.write_all(text.as_bytes()).is_ok() {
+            drop(f);
+            // `--skip-children` because a generated `mod.rs` declares submodules
+            // that do not exist beside a temporary file, and resolving them is
+            // not what is being asked here.
+            let ok = std::process::Command::new("rustfmt")
+                .args(["--edition", "2021", "--quiet", "--skip-children"])
+                .arg(&p)
+                .stderr(std::process::Stdio::null())
+                .status()
+                .map(|s| s.success())
+                .unwrap_or(false);
+            if ok {
+                if let Ok(out) = std::fs::read_to_string(&p) {
+                    let _ = std::fs::remove_file(&p);
+                    return out;
+                }
+            }
+            let _ = std::fs::remove_file(&p);
+        }
+    }
+    text.to_string()
+}
+
+/// Collapse whitespace. The weaker comparison, used only when `rustfmt` is
+/// absent.
+fn normalise(s: &str) -> String {
+    s.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Verdict {
     Pass,
@@ -33,13 +80,22 @@ pub struct Check {
 
 impl Check {
     fn pass(name: &'static str) -> Check {
-        Check { name, verdict: Verdict::Pass }
+        Check {
+            name,
+            verdict: Verdict::Pass,
+        }
     }
     fn fail(name: &'static str, why: String) -> Check {
-        Check { name, verdict: Verdict::Fail(why) }
+        Check {
+            name,
+            verdict: Verdict::Fail(why),
+        }
     }
     fn note(name: &'static str, why: String) -> Check {
-        Check { name, verdict: Verdict::Note(why) }
+        Check {
+            name,
+            verdict: Verdict::Note(why),
+        }
     }
     pub fn is_note(&self) -> bool {
         matches!(self.verdict, Verdict::Note(_))
@@ -76,22 +132,34 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     out.push(if missing.is_empty() {
         Check::pass("schema")
     } else {
-        Check::fail("schema", format!("required fields blank: {}", missing.join(", ")))
+        Check::fail(
+            "schema",
+            format!("required fields blank: {}", missing.join(", ")),
+        )
     });
 
     // 2 — a computed node declares at least one input.
     out.push(if sh.is_declared() || !sh.inputs.is_empty() {
         Check::pass("inputs")
     } else {
-        Check::fail("inputs", "a computed node with no declared input claims to compute something from nothing".into())
+        Check::fail(
+            "inputs",
+            "a computed node with no declared input claims to compute something from nothing"
+                .into(),
+        )
     });
 
     // 3 — a declared value names a source and a confirmation.
-    out.push(if !sh.is_declared() || (sh.value.is_some() && !sh.confirmed_by.trim().is_empty()) {
-        Check::pass("declared-value")
-    } else {
-        Check::fail("declared-value", "a declared value needs a number, a source and who confirmed it".into())
-    });
+    out.push(
+        if !sh.is_declared() || (sh.value.is_some() && !sh.confirmed_by.trim().is_empty()) {
+            Check::pass("declared-value")
+        } else {
+            Check::fail(
+                "declared-value",
+                "a declared value needs a number, a source and who confirmed it".into(),
+            )
+        },
+    );
 
     // 4 — every input resolves, and the declared type agrees with the producer.
     let mut bad = Vec::new();
@@ -102,9 +170,10 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
                 "'{}' expects {} but {} publishes {}",
                 i.binding, i.ty, p.id, p.ty
             )),
-            Some(p) if p.state == "deprecated" => {
-                bad.push(format!("'{}' is deprecated and may not be a new dependency", p.id))
-            }
+            Some(p) if p.state == "deprecated" => bad.push(format!(
+                "'{}' is deprecated and may not be a new dependency",
+                p.id
+            )),
             _ => {}
         }
     }
@@ -147,7 +216,11 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     ] {
         let p = sh.dir.join(name);
         match std::fs::read_to_string(&p) {
-            Ok(got) if got == want => {}
+            // The committed file is formatted; what the generator emits is not
+            // yet. Comparing after normalising whitespace asks the question the
+            // check is actually for — did the *content* drift — rather than
+            // whether the formatter has run.
+            Ok(got) if got == formatted(&want) || normalise(&got) == normalise(&want) => {}
             Ok(_) => drift.push(name),
             Err(_) => drift.push(name),
         }
@@ -157,7 +230,10 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     } else {
         Check::fail(
             "regenerate",
-            format!("{} differ from what the sheet generates — run `cargo xtask docs`", drift.join(", ")),
+            format!(
+                "{} differ from what the sheet generates — run `cargo xtask docs`",
+                drift.join(", ")
+            ),
         )
     });
 
@@ -187,7 +263,10 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     } else {
         Check::fail(
             "provenance",
-            format!("an expected value may not come from the code under test: {}", badfx.join("; ")),
+            format!(
+                "an expected value may not come from the code under test: {}",
+                badfx.join("; ")
+            ),
         )
     });
 
@@ -198,7 +277,9 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     }
     if let Some(v) = sh.value {
         if v < sh.lower || v > sh.upper {
-            dom.push(format!("the declared value {v} is outside its own declared range"));
+            dom.push(format!(
+                "the declared value {v} is outside its own declared range"
+            ));
         }
     }
     out.push(if dom.is_empty() {
@@ -212,7 +293,10 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     //      for a reason that is not a defect.
     let mut leaks = Vec::new();
     for (n, body) in &holes {
-        for bad in [".sin()", ".cos()", ".exp()", ".ln()", ".powf(", ".sqrt()", ".atan2(", ".tan()", ".log10("] {
+        for bad in [
+            ".sin()", ".cos()", ".exp()", ".ln()", ".powf(", ".sqrt()", ".atan2(", ".tan()",
+            ".log10(",
+        ] {
             if body.contains(bad) {
                 leaks.push(format!("hole {n} calls {bad} — route it through pmath"));
             }
@@ -273,7 +357,10 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
     let mut orphans = Vec::new();
     for sh in tree.ordered() {
         if !tree.groups.contains_key(&sh.parent) {
-            orphans.push(format!("{} hangs under '{}', which is not a group", sh.id, sh.parent));
+            orphans.push(format!(
+                "{} hangs under '{}', which is not a group",
+                sh.id, sh.parent
+            ));
         }
     }
     out.push(if orphans.is_empty() {
@@ -362,12 +449,18 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
     out.push(if unresolved.is_empty() {
         Check::pass("V8 sources resolve")
     } else {
-        Check::fail("V8 sources resolve", unresolved.into_iter().collect::<Vec<_>>().join(", "))
+        Check::fail(
+            "V8 sources resolve",
+            unresolved.into_iter().collect::<Vec<_>>().join(", "),
+        )
     });
     out.push(if superseded.is_empty() {
         Check::pass("V9 no superseded sources")
     } else {
-        Check::fail("V9 no superseded sources", superseded.into_iter().collect::<Vec<_>>().join(", "))
+        Check::fail(
+            "V9 no superseded sources",
+            superseded.into_iter().collect::<Vec<_>>().join(", "),
+        )
     });
 
     // V10 — every relation edge names groups that exist.
@@ -377,7 +470,10 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
             badrel.push(format!("{} -> {}", r.from, r.to));
         }
         if r.why.trim().is_empty() {
-            badrel.push(format!("{} -> {} is unlabelled, which is itself a finding", r.from, r.to));
+            badrel.push(format!(
+                "{} -> {} is unlabelled, which is itself a finding",
+                r.from, r.to
+            ));
         }
     }
     out.push(if badrel.is_empty() {
@@ -393,7 +489,10 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
         for cy in &c.cycles {
             for n in &cy.nodes {
                 if !tree.sheets.contains_key(n) {
-                    badcy.push(format!("case {} declares a cycle through {}, which does not exist", c.id, n));
+                    badcy.push(format!(
+                        "case {} declares a cycle through {}, which does not exist",
+                        c.id, n
+                    ));
                 }
             }
             if !cy.nodes.contains(&cy.converge_on) {
@@ -403,7 +502,10 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
                 ));
             }
             if cy.tolerance <= 0.0 || cy.max_iter == 0 {
-                badcy.push(format!("case {} declares a cycle with no usable stopping rule", c.id));
+                badcy.push(format!(
+                    "case {} declares a cycle with no usable stopping rule",
+                    c.id
+                ));
             }
         }
     }
@@ -420,7 +522,8 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
 /// found, so the message names both ends rather than saying a cycle exists.
 fn find_cycles(tree: &Tree, declared: &BTreeSet<String>) -> Vec<String> {
     let ids: Vec<&String> = tree.sheets.keys().collect();
-    let mut colour: std::collections::BTreeMap<&str, u8> = ids.iter().map(|i| (i.as_str(), 0u8)).collect();
+    let mut colour: std::collections::BTreeMap<&str, u8> =
+        ids.iter().map(|i| (i.as_str(), 0u8)).collect();
     let mut stack: Vec<&str> = Vec::new();
 
     fn walk<'a>(
@@ -449,7 +552,10 @@ fn find_cycles(tree: &Tree, declared: &BTreeSet<String>) -> Vec<String> {
                     }
                     1 => {
                         let at = stack.iter().position(|x| *x == p).unwrap_or(0);
-                        let mut loop_ = stack[at..].iter().map(|s| s.to_string()).collect::<Vec<_>>();
+                        let mut loop_ = stack[at..]
+                            .iter()
+                            .map(|s| s.to_string())
+                            .collect::<Vec<_>>();
                         loop_.push(p.to_string());
                         return Some(loop_);
                     }

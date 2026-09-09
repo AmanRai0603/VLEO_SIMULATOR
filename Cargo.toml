@@ -15,6 +15,7 @@ members = [
     "crates/vleo-core",
     "crates/vleo-sheet",
     "crates/vleo-bus",
+    "crates/vleo-data",
     "crates/vleo-mod-env",
     "crates/vleo-mod-orbit",
     "crates/vleo-mod-aero",
@@ -29,6 +30,8 @@ members = [
     "crates/vleo-mod-cost",
     "crates/vleo-modules",
     "crates/vleo-cli",
+    "crates/vleo-daemon",
+    "crates/vleo-ffi",
     "xtask",
 ]
 exclude = ["crates/vleo-wasm", "crates/vleo-py"]
@@ -39,7 +42,7 @@ edition = "2021"
 rust-version = "1.94"
 license = "UNLICENSED"
 authors = ["Orbitt Space"]
-repository = "https://github.com/amanrai0603/vleo_simulator"
+repository = "https://github.com/AmanRai0603/VLEO_SIMULATOR"
 
 [workspace.dependencies]
 vleo-units   = { path = "crates/vleo-units" }
@@ -47,6 +50,7 @@ vleo-sheet   = { path = "crates/vleo-sheet" }
 vleo-core    = { path = "crates/vleo-core" }
 vleo-graph   = { path = "crates/vleo-graph" }
 vleo-bus     = { path = "crates/vleo-bus" }
+vleo-data    = { path = "crates/vleo-data" }
 vleo-modules = { path = "crates/vleo-modules" }
 vleo-testkit = { path = "crates/vleo-testkit" }
 toml         = "0.8"

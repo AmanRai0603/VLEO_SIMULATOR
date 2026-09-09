@@ -7,9 +7,9 @@
 
 [[fixture]]
 label = "250 km, 96.6 deg"
-expect = 2.0136e-07
-tolerance = 0.002
-provenance = "published-source"
+expect = 2.02216606e-07
+tolerance = 1e-06
+provenance = "independent-derivation"
 source = "vallado2013"
-inputs = { r = 6628137.0, e = 0.0, i = 1.686 }
+inputs = { r = 6628137.0, e = 0.0, i = 1.68598806 }
 

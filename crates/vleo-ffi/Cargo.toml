@@ -1,0 +1,24 @@
+[package]
+name = "vleo-ffi"
+description = "FACE — the C ABI. One header, generated from the same declarations as every other binding, so MATLAB, Simulink and anything else that speaks C get the same numbers as the browser."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[lib]
+crate-type = ["rlib", "cdylib", "staticlib"]
+
+[dependencies]
+vleo-modules = { workspace = true, features = ["std"] }
+vleo-bus = { workspace = true, features = ["std"] }
+vleo-core = { workspace = true, features = ["std"] }
+vleo-units = { workspace = true, features = ["std"] }
+
+[lints.rust]
+# The one place `unsafe` is unavoidable: a C caller hands us raw pointers.
+# Every use is bounded, checked and commented, and nothing else in the
+# workspace is allowed any.
+unsafe_code = "allow"

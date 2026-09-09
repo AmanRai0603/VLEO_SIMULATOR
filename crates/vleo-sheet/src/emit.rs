@@ -38,7 +38,9 @@ fn esc(s: &str) -> String {
 pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
     let mut o = String::new();
     o.push_str(BANNER);
-    o.push_str("#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return)]\n\n");
+    o.push_str(
+        "#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]\n\n",
+    );
     o.push_str("use vleo_core::fault::{Edge, Fault};\n");
     o.push_str("use vleo_core::physics::*;\n");
     o.push_str("use vleo_core::units::pmath;\n");
@@ -84,7 +86,9 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
         // A declared value publishes itself. Nothing is computed, and the
         // conversion from the unit it was written in is explicit rather than a
         // constant somebody folded by hand.
-        o.push_str("    // generated · a declared value, converted from the unit it was written in\n");
+        o.push_str(
+            "    // generated · a declared value, converted from the unit it was written in\n",
+        );
         o.push_str(&format!(
             "    let declared: {ty} = match {ty}::from_unit({v:?}, Unit::{u}) {{\n\
              \x20       Some(q) => q,\n\
@@ -106,10 +110,14 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
             ));
             match holes.get(&st.number) {
                 Some(body) if !body.trim().is_empty() => {
-                    for line in body.lines() {
-                        o.push_str("    ");
-                        o.push_str(line.trim_end());
-                        o.push('\n');
+                    for line in dedent(body).lines() {
+                        if line.trim().is_empty() {
+                            o.push('\n');
+                        } else {
+                            o.push_str("    ");
+                            o.push_str(line.trim_end());
+                            o.push('\n');
+                        }
                     }
                 }
                 _ => {
@@ -164,6 +172,29 @@ fn to_si(v: f64, unit: &str) -> f64 {
     v * unit_of(unit).si_factor()
 }
 
+/// Strip the common leading indentation, keeping relative indentation inside a
+/// multi-line body. Without this, splicing an already-indented body adds four
+/// spaces on every regeneration and the generator is not a function of its
+/// input.
+fn dedent(body: &str) -> String {
+    let min = body
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| l.len() - l.trim_start().len())
+        .min()
+        .unwrap_or(0);
+    body.lines()
+        .map(|l| {
+            if l.len() >= min {
+                &l[min..]
+            } else {
+                l.trim_start()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn wrap(s: &str, width: usize) -> Vec<String> {
     let mut out = Vec::new();
     let mut line = String::new();
@@ -205,7 +236,10 @@ pub fn contract_rs(sh: &Sheet) -> String {
     o.push_str("pub const NODE_ID: &str = \"");
     o.push_str(&sh.id);
     o.push_str("\";\n");
-    o.push_str(&format!("pub const SHEET_HASH: u64 = 0x{:016x};\n", sh.sheet_hash));
+    o.push_str(&format!(
+        "pub const SHEET_HASH: u64 = 0x{:016x};\n",
+        sh.sheet_hash
+    ));
     o.push_str("/// The variables this node reads, in the order `call` expects them.\n");
     o.push_str("pub const INPUT_VARS: &[&str] = &[\n");
     for i in &sh.inputs {
@@ -213,7 +247,10 @@ pub fn contract_rs(sh: &Sheet) -> String {
     }
     o.push_str("];\n");
     o.push_str("/// The variables this node publishes.\n");
-    o.push_str(&format!("pub const OUTPUT_VARS: &[&str] = &[\"{}\"];\n", sh.id));
+    o.push_str(&format!(
+        "pub const OUTPUT_VARS: &[&str] = &[\"{}\"];\n",
+        sh.id
+    ));
     o.push_str(&format!(
         "/// The SI unit every value crossing this boundary is expressed in.\n\
          pub const OUTPUT_UNIT: Unit = {}::UNIT;\n\n",
@@ -225,13 +262,12 @@ pub fn contract_rs(sh: &Sheet) -> String {
          /// in the wrong order.\n",
     );
     o.push_str("pub fn call(inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {\n");
-    if sh.inputs.is_empty() {
-        o.push_str("    if outputs.is_empty() {\n");
-    } else {
-        o.push_str(&format!(
-            "    if inputs.len() < {} || outputs.is_empty() {{\n",
-            sh.inputs.len()
-        ));
+    match sh.inputs.len() {
+        0 => o.push_str("    if outputs.is_empty() {\n"),
+        1 => o.push_str("    if inputs.is_empty() || outputs.is_empty() {\n"),
+        n => o.push_str(&format!(
+            "    if inputs.len() < {n} || outputs.is_empty() {{\n"
+        )),
     }
     o.push_str("        return Err(Fault::Blocked { node: NODE_ID, missing: \"an input the contract declares\" });\n");
     o.push_str("    }\n");
@@ -249,7 +285,9 @@ pub fn contract_rs(sh: &Sheet) -> String {
         .map(|i| i.binding.clone())
         .collect::<Vec<_>>()
         .join(", ");
-    o.push_str(&format!("    let answer = super::model::evaluate({args})?;\n"));
+    o.push_str(&format!(
+        "    let answer = super::model::evaluate({args})?;\n"
+    ));
     o.push_str("    outputs[0] = answer.get();\n    Ok(())\n}\n");
     o
 }
@@ -266,7 +304,9 @@ pub fn mod_rs(sh: &Sheet) -> String {
     o.push_str("\n#[path = \"model.rs\"]\npub mod model;\n");
     o.push_str("#[path = \"contract.rs\"]\npub mod contract;\n");
     o.push_str("#[cfg(test)]\n#[path = \"evidence.rs\"]\nmod evidence;\n\n");
-    o.push_str("pub use contract::{call, INPUT_VARS, NODE_ID, OUTPUT_UNIT, OUTPUT_VARS, SHEET_HASH};\n");
+    o.push_str(
+        "pub use contract::{call, INPUT_VARS, NODE_ID, OUTPUT_UNIT, OUTPUT_VARS, SHEET_HASH};\n",
+    );
     o
 }
 
@@ -294,12 +334,19 @@ pub fn evidence_rs(sh: &Sheet) -> String {
         );
         return o;
     }
+    // A fixture input that happens to equal a named constant is still a fixture
+    // input: substituting the constant would make the test compare the
+    // implementation against itself.
+    o.push_str("#![allow(clippy::approx_constant, clippy::excessive_precision)]\n\n");
     o.push_str("use super::model;\nuse vleo_core::units::*;\n\n");
     o.push_str("fn relative_error(got: f64, expected: f64) -> f64 {\n");
     o.push_str("    if expected == 0.0 { pmath::abs(got) } else { pmath::abs((got - expected) / expected) }\n}\n\n");
     for (n, fx) in sh.fixtures.iter().enumerate() {
         o.push_str(&format!("/// {}\n", fx.label));
-        o.push_str(&format!("///\n/// Provenance: `{}`, source `{}`.\n", fx.provenance, fx.source));
+        o.push_str(&format!(
+            "///\n/// Provenance: `{}`, source `{}`.\n",
+            fx.provenance, fx.source
+        ));
         o.push_str(&format!("#[test]\nfn fixture_{n}() {{\n"));
         let mut args = Vec::new();
         for i in &sh.inputs {
@@ -339,8 +386,14 @@ pub fn meta_json(sh: &Sheet, gaps: &[String]) -> String {
     o.push_str("{\n");
     o.push_str(&format!("  \"id\": \"{}\",\n", esc(&sh.id)));
     o.push_str(&format!("  \"state\": \"{}\",\n", esc(&sh.state)));
-    o.push_str(&format!("  \"sheet_hash\": \"{}\",\n", short_hex(sh.sheet_hash)));
-    o.push_str(&format!("  \"impl_hash\": \"{}\",\n", short_hex(sh.impl_hash)));
+    o.push_str(&format!(
+        "  \"sheet_hash\": \"{}\",\n",
+        short_hex(sh.sheet_hash)
+    ));
+    o.push_str(&format!(
+        "  \"impl_hash\": \"{}\",\n",
+        short_hex(sh.impl_hash)
+    ));
     o.push_str(&format!("  \"owner\": \"{}\",\n", esc(&sh.owner)));
     o.push_str(&format!("  \"tier\": \"{}\",\n", esc(&sh.tier)));
     o.push_str(&format!("  \"fixtures\": {},\n", sh.fixtures.len()));
@@ -394,7 +447,10 @@ pub fn meta_json(sh: &Sheet, gaps: &[String]) -> String {
 pub fn gap_pass(sh: &Sheet, holes: &BTreeMap<u32, String>) -> Vec<String> {
     let mut g = Vec::new();
     if sh.question.trim().is_empty() {
-        g.push("no question stated — an equation with no question gets reused for the wrong thing".into());
+        g.push(
+            "no question stated — an equation with no question gets reused for the wrong thing"
+                .into(),
+        );
     }
     if sh.expression.trim().is_empty() {
         g.push("no relation stated".into());
@@ -412,7 +468,10 @@ pub fn gap_pass(sh: &Sheet, holes: &BTreeMap<u32, String>) -> Vec<String> {
         g.push("a declared limit has no reason — a guard whose reason is not written gets deleted by the next person".into());
     }
     if !sh.is_declared() && sh.inputs.is_empty() {
-        g.push("a computed node with no declared input claims to compute something from nothing".into());
+        g.push(
+            "a computed node with no declared input claims to compute something from nothing"
+                .into(),
+        );
     }
     if sh.is_declared() && sh.value.is_none() {
         g.push("a declared value with no number".into());
@@ -426,11 +485,16 @@ pub fn gap_pass(sh: &Sheet, holes: &BTreeMap<u32, String>) -> Vec<String> {
             _ => g.push(format!("hole {} is empty: {}", st.number, st.text)),
         }
         if st.binds.trim().is_empty() || st.ty.trim().is_empty() {
-            g.push(format!("step {} does not say what it binds or at what type", st.number));
+            g.push(format!(
+                "step {} does not say what it binds or at what type",
+                st.number
+            ));
         }
     }
     if !sh.is_declared() && sh.fixtures.is_empty() {
-        g.push("no fixture: nothing outside this code has ever agreed with what it computes".into());
+        g.push(
+            "no fixture: nothing outside this code has ever agreed with what it computes".into(),
+        );
     }
     for fx in &sh.fixtures {
         if fx.provenance == "self-snapshot" || fx.provenance == "agent-generated" {
@@ -529,9 +593,17 @@ fn view_expr(v: &View) -> String {
     match v {
         View::Number => "View::Number".into(),
         View::Line { over, points } => {
-            format!("View::Line {{ over: \"{}\", y: \"\", points: {} }}", esc(over), points)
+            format!(
+                "View::Line {{ over: \"{}\", y: \"\", points: {} }}",
+                esc(over),
+                points
+            )
         }
-        View::Heatmap { over_x, over_y, points } => format!(
+        View::Heatmap {
+            over_x,
+            over_y,
+            points,
+        } => format!(
             "View::Heatmap {{ over_x: \"{}\", over_y: \"{}\", z: \"\", points: {} }}",
             esc(over_x),
             esc(over_y),
@@ -555,8 +627,11 @@ fn crate_ident(c: &str) -> String {
 pub fn tables_rs(tree: &Tree) -> String {
     let sheets = tree.ordered();
     let n = sheets.len();
-    let idx: BTreeMap<&str, usize> =
-        sheets.iter().enumerate().map(|(i, s)| (s.id.as_str(), i)).collect();
+    let idx: BTreeMap<&str, usize> = sheets
+        .iter()
+        .enumerate()
+        .map(|(i, s)| (s.id.as_str(), i))
+        .collect();
 
     let mut o = String::new();
     o.push_str("// GENERATED at build time from the sheets. Never committed: it is an\n");
@@ -574,7 +649,11 @@ pub fn tables_rs(tree: &Tree) -> String {
         let inputs = sh
             .inputs
             .iter()
-            .map(|i| idx.get(i.var.as_str()).map(|v| v.to_string()).unwrap_or("0".into()))
+            .map(|i| {
+                idx.get(i.var.as_str())
+                    .map(|v| v.to_string())
+                    .unwrap_or("0".into())
+            })
             .collect::<Vec<_>>()
             .join(", ");
         let outputs = idx[sh.id.as_str()].to_string();
@@ -693,7 +772,10 @@ pub fn tables_rs(tree: &Tree) -> String {
     o.push_str("/// A loop the design actually has, declared where design decisions live.\n");
     o.push_str("pub struct CycleDef {\n    pub nodes: &'static [u16],\n    pub converge_on: u16,\n    pub tolerance: f64,\n    pub max_iter: u32,\n    pub seeds: &'static [(u16, f64)],\n}\n\n");
     o.push_str("pub struct CaseDef {\n    pub id: &'static str,\n    pub label: &'static str,\n    pub note: &'static str,\n    pub supply: &'static [(u16, f64)],\n    pub cycles: &'static [CycleDef],\n}\n\n");
-    o.push_str(&format!("pub static CASES: [CaseDef; {}] = [\n", tree.cases.len()));
+    o.push_str(&format!(
+        "pub static CASES: [CaseDef; {}] = [\n",
+        tree.cases.len()
+    ));
     for c in tree.cases.values() {
         let supply = c
             .supply
@@ -737,7 +819,10 @@ pub fn tables_rs(tree: &Tree) -> String {
 
     // The navigation graph: groups and the relation edges between them.
     o.push_str("pub struct GroupDef {\n    pub id: &'static str,\n    pub label: &'static str,\n    pub parent: &'static str,\n    pub owner: &'static str,\n}\n\n");
-    o.push_str(&format!("pub static GROUPS: [GroupDef; {}] = [\n", tree.groups.len()));
+    o.push_str(&format!(
+        "pub static GROUPS: [GroupDef; {}] = [\n",
+        tree.groups.len()
+    ));
     for g in tree.groups.values() {
         o.push_str(&format!(
             "    GroupDef {{ id: \"{}\", label: \"{}\", parent: \"{}\", owner: \"{}\" }},\n",

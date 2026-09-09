@@ -1,0 +1,46 @@
+{
+  "$comment": [
+    "Commands are opt-in and skills are opt-in. A hook fires whether or not",
+    "anybody remembered it, which is what makes it the mechanism that produces",
+    "repeatability rather than describing it.",
+    "",
+    "A hook is not a control. It only fires inside the authoring tool; a",
+    "terminal in the same container has none. The authority is server-side —",
+    "branch protection, required checks, CODEOWNERS, the merge queue. The hooks",
+    "exist to fail fast and to teach; the branch rules exist to be true. Both",
+    "are needed, and there is one gate binary so the two can never disagree",
+    "about what passing means."
+  ],
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": ".claude/hooks/session-start.sh", "timeout": 300 }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|NotebookEdit",
+        "hooks": [
+          { "type": "command", "command": ".claude/hooks/path-guard.sh", "timeout": 20 }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          { "type": "command", "command": ".claude/hooks/post-edit.sh", "timeout": 180 }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": ".claude/hooks/evidence-guard.sh", "timeout": 300 }
+        ]
+      }
+    ]
+  }
+}

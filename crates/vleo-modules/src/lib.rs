@@ -25,6 +25,12 @@ use vleo_core::value::{Slot, SlotStatus, Store};
 use vleo_units::Unit;
 
 /// The graph, compiled in.
+///
+/// A declared limit that happens to equal pi/2 — an inclination bound, a beta
+/// angle — is a bound, not an approximation standing in for a named constant,
+/// so the lint that would rewrite it is switched off across the generated
+/// tables.
+#[allow(clippy::approx_constant)]
 pub mod tables {
     include!(concat!(env!("OUT_DIR"), "/tables.rs"));
 }
@@ -40,10 +46,26 @@ pub use vleo_units as units;
 /// adapter needs no allocator — the kernel runs where there is not one.
 const MAX_INPUTS: usize = 16;
 
-/// The engine.
-pub struct Vleo;
+/// The engine, holding the resolved data handle for one run.
+///
+/// It is constructed per run rather than being a unit struct so that the
+/// bundles a run was given travel with it. Nothing here is global: a sweep is
+/// a parallel map with no mutex, because there is nothing shared to protect.
+pub struct Vleo {
+    data: Vec<String>,
+}
 
 impl Vleo {
+    /// The engine with no reference data. Every node that declares a bundle
+    /// refuses, by name.
+    pub fn bare() -> Vleo {
+        Vleo { data: Vec::new() }
+    }
+    /// The engine given the bundles a face verified before the run.
+    pub fn with_data(data: Vec<String>) -> Vleo {
+        Vleo { data }
+    }
+
     /// Identifies this build of the engine. Travels into every result: a page
     /// carrying a different one refuses to run rather than showing a number
     /// from an engine it was not built against.
@@ -116,7 +138,19 @@ impl NodeTable for Vleo {
         // starts. A result computed from unverifiable data is not a degraded
         // result; it is not a result. The store is a resolved handle passed in,
         // never a path the kernel opens.
-        let data_ok = def.bundles.is_empty();
+        let data_ok = def.bundles.iter().all(|b| self.data.iter().any(|d| d == b));
+        if !data_ok {
+            if let Some(missing) = def
+                .bundles
+                .iter()
+                .find(|b| !self.data.iter().any(|d| d == *b))
+            {
+                return Err(Fault::DataMissing {
+                    node: def.id,
+                    bundle: missing,
+                });
+            }
+        }
 
         let mut outputs = [0.0f64; 4];
         (tables::DISPATCH[node as usize])(&inputs[..n_in], &mut outputs[..def.outputs.len()])?;
@@ -257,8 +291,10 @@ impl Scratch {
 /// command line, the rig console, the wheel — reaches it, and they all get the
 /// same numbers because there is only one of it.
 pub fn evaluate(case: &vleo_bus::Case, scratch: &mut Scratch) -> Result<vleo_bus::Results, Fault> {
-    let table = Vleo;
-    let target = Vleo::find(&case.target).ok_or(Fault::NotRun { node: "unknown node" })?;
+    let table = Vleo::with_data(case.data.clone());
+    let target = Vleo::find(&case.target).ok_or(Fault::NotRun {
+        node: "unknown node",
+    })?;
     let base = Vleo::case(&case.base);
 
     let mut store = Store::new(&mut scratch.slots);
@@ -311,7 +347,13 @@ pub fn evaluate(case: &vleo_bus::Case, scratch: &mut Scratch) -> Result<vleo_bus
         blocked: &mut scratch.blocked,
         blocked_fault: &mut scratch.blocked_fault,
     };
-    let report = resolver::evaluate(&table, &mut store, case.mode.to_mode(target), &cycles, &mut ws)?;
+    let report = resolver::evaluate(
+        &table,
+        &mut store,
+        case.mode.to_mode(target),
+        &cycles,
+        &mut ws,
+    )?;
 
     Ok(collect(&table, &store, &ws, &report, case, target))
 }
@@ -351,6 +393,7 @@ fn supply_checked(store: &mut Store<'_>, v: NodeIdx, value: f64) -> Result<(), F
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn collect(
     table: &Vleo,
     store: &Store<'_>,
@@ -401,7 +444,7 @@ fn collect(
         graph: hex(Vleo::graph_hash()),
         case: hex(case.hash()),
         chain: hex(report.chain_hash),
-        data: Vec::new(),
+        data: case.data_versions.clone(),
         endpoint: String::new(),
         ran: report.ran,
         blocked_count: report.blocked,
@@ -414,7 +457,13 @@ fn collect(
     for &n in ws.ran[..report.ran].iter() {
         verdicts.extend(fixture_verdicts(n));
     }
-    vleo_bus::Results { values, blocked, verdicts, manifest, series: Vec::new() }
+    vleo_bus::Results {
+        values,
+        blocked,
+        verdicts,
+        manifest,
+        series: Vec::new(),
+    }
 }
 
 fn hex(h: u64) -> String {

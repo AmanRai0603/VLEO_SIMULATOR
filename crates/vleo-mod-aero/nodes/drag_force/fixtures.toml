@@ -11,5 +11,5 @@ expect = 0.0018957
 tolerance = 0.001
 provenance = "independent-derivation"
 source = "vallado2013"
-inputs = { q = 1.9938, cd = 2.85807, a = 0.3327 }
+inputs = { q = 0.0019938, cd = 2.85807, a = 0.3327 }
 

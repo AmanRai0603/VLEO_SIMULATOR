@@ -8,6 +8,12 @@
 //! library reached through CPython's `math` module — which is exactly the
 //! provenance rule every fixture in this system obeys: an expected value may
 //! never be produced by the code under test.
+// These literals are reference values from an independent implementation, not
+// approximations standing in for a named constant, so the lints that would
+// rewrite them into `core::f64::consts` are switched off here: substituting the
+// constant would make the test compare the implementation against itself.
+#![allow(clippy::approx_constant, clippy::excessive_precision)]
+
 use vleo_units::pmath::*;
 
 /// Relative error, or absolute error when the reference is zero.

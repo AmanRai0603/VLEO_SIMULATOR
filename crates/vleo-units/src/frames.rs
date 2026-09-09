@@ -62,7 +62,12 @@ pub struct Vec3<F: Frame> {
 
 impl<F: Frame> Vec3<F> {
     pub const fn new(x: f64, y: f64, z: f64) -> Self {
-        Vec3 { x, y, z, _frame: PhantomData }
+        Vec3 {
+            x,
+            y,
+            z,
+            _frame: PhantomData,
+        }
     }
     pub const ZERO: Self = Vec3::new(0.0, 0.0, 0.0);
 
@@ -86,12 +91,16 @@ impl<F: Frame> Vec3<F> {
     pub fn scale(self, k: f64) -> Self {
         Vec3::new(self.x * k, self.y * k, self.z * k)
     }
+    /// Named `plus` rather than `add`: a `Vec3<Eci>` and a `Vec3<Ecef>` must
+    /// not be addable, so the standard `Add` trait is deliberately not
+    /// implemented, and an inherent method that shadows it by name would be
+    /// read as though it were.
     #[inline]
-    pub fn add(self, o: Self) -> Self {
+    pub fn plus(self, o: Self) -> Self {
         Vec3::new(self.x + o.x, self.y + o.y, self.z + o.z)
     }
     #[inline]
-    pub fn sub(self, o: Self) -> Self {
+    pub fn minus(self, o: Self) -> Self {
         Vec3::new(self.x - o.x, self.y - o.y, self.z - o.z)
     }
     /// Unit vector, or zero when the input is zero — a caller that cares about
