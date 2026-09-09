@@ -1,0 +1,13 @@
+{
+  "id": "com_gs_gain",
+  "state": "published",
+  "sheet_hash": "ba699a",
+  "impl_hash": "e5f268",
+  "owner": "comms",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["com_gs_antenna_diameter", "com_frequency", "com_antenna_efficiency"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

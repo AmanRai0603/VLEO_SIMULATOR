@@ -1,0 +1,17 @@
+[package]
+name = "xtask"
+description = "The generators, the gate and the assembly. One binary, called by the authoring hook, by the pipeline and by hand — because where the hook runs one script and the pipeline runs another they drift within a month and the hook becomes theatre."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+vleo-sheet = { workspace = true }
+vleo-units = { workspace = true }
+
+[lints.rust]
+unsafe_code = "forbid"

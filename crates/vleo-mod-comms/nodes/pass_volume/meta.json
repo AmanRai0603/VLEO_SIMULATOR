@@ -1,0 +1,13 @@
+{
+  "id": "com_pass_volume",
+  "state": "published",
+  "sheet_hash": "885863",
+  "impl_hash": "ef3bf7",
+  "owner": "comms",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["com_data_rate", "com_contact_time"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

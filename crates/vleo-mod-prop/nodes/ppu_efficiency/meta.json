@@ -1,0 +1,13 @@
+{
+  "id": "prop_ppu_efficiency",
+  "state": "published",
+  "sheet_hash": "28b676",
+  "impl_hash": "222325",
+  "owner": "power",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

@@ -1,0 +1,65 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "thm_required_radiator_area"
+label = "Radiator area required"
+folder = "required_radiator_area"   # frozen at seed; renaming the label never moves the directory
+subsystem = "thm"
+parent = "thermal"
+kind = "computed"
+owner = "thermal"
+tier = "A"
+state = "published"
+
+[question]
+text = "How much radiator would be needed to hold the temperature limit?"
+note = "The inverse question, and the one a thermal design actually asks."
+
+[maths]
+expression = "A = Q/(eps*sigma*(T^4 - T_sink^4))"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "A_req"
+type = "Area"
+unit = "SquareMetre"
+lower = 0.0
+upper = 1000.0
+reason_lower = "a required area cannot be negative"
+reason_upper = "above 1000 m2 the design does not close and the answer is that the dissipation is wrong"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "q"
+var = "thm_dissipation"
+type = "Power"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "e"
+var = "thm_emissivity"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "lim"
+var = "thm_temperature_limit"
+type = "Temperature"
+
+[[algorithm.step]]
+number = 1
+text = "solve the grey-body balance for area against a 250 K effective sink"
+binds = "a"
+type = "Area"
+
+[view]
+kind = "number"
+

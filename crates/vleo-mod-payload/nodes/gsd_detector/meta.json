@@ -1,0 +1,13 @@
+{
+  "id": "pay_gsd_detector",
+  "state": "published",
+  "sheet_hash": "96f60e",
+  "impl_hash": "ed5ec6",
+  "owner": "payload",
+  "tier": "A",
+  "fixtures": 1,
+  "holes": 1,
+  "inputs": ["orbit_altitude", "pay_pixel_pitch", "pay_focal_length"],
+  "contributes": [],
+  "gaps": []
+}

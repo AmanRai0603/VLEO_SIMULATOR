@@ -1,0 +1,13 @@
+{
+  "id": "mis_latency",
+  "state": "published",
+  "sheet_hash": "3d391d",
+  "impl_hash": "320d3b",
+  "owner": "operations",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["mis_time_to_downlink", "com_contact_time", "mis_processing_time", "mis_delivery_time"],
+  "contributes": ["kpi_latency"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

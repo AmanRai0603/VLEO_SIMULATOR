@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pay_wavelength"
+label = "Centre wavelength"
+folder = "wavelength"   # frozen at seed; renaming the label never moves the directory
+subsystem = "pay"
+parent = "pay_optical"
+kind = "declared"
+owner = "payload"
+tier = "A"
+state = "published"
+
+[question]
+text = "At what wavelength does the imager work?"
+
+[maths]
+expression = "lam_o = 550"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "lam_o"
+type = "Length"
+unit = "Nanometre"
+lower = 350.0
+upper = 2500.0
+reason_lower = "below 350 nm the atmosphere absorbs most of the signal"
+reason_upper = "above 2500 nm the detector is a cooled infrared array, which is not the payload described here"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 550.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

@@ -1,0 +1,113 @@
+<article class="node" data-node="prop_ion_flow" data-sheet-hash="e46c05" data-impl-hash="c40ce1">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="system">The system</a> <span class="sep">/</span> <a class="xref" data-group="subsystems">Satellite subsystems</a> <span class="sep">/</span> <a class="xref" data-group="propulsion">Propulsion — air-breathing electric</a> <span class="sep">/</span> <a class="xref" data-group="prop_thruster">Thruster and power processing</a></nav>
+  <h2>Ionised mass flow</h2>
+  <p class="ident"><code>prop_ion_flow</code> · <span class="kind kind-computed">computed</span> · owner <b>propulsion</b> · tier <b>B</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">interface</button>
+  <button role="tab" class="tab" data-tab="2">algorithm</button>
+  <button role="tab" class="tab" data-tab="3">generated code</button>
+  <button role="tab" class="tab" data-tab="4">evidence</button>
+  <button role="tab" class="tab" data-tab="5">flags</button>
+  <button role="tab" class="tab" data-tab="6">credibility</button>
+  <button role="tab" class="tab" data-tab="7">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How much of the collected mass is actually accelerable?</p>
+<p class="maths"><code>mdot_i = eta_u*mdot</code></p>
+<p class="src">Source <b>romano2021</b> — Romano, F. et al. — Intake design for an atmosphere-breathing electric propulsion system <span class="where">Acta Astronautica, 2021</span></p>
+<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+</section>
+<section class="panel" data-panel="1">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>md</code></td><td><a class="xref" data-goto="prop_collected_flow">prop_collected_flow</a></td><td>MassFlow</td><td>mg/s</td></tr>
+<tr><td>in</td><td><code>eta_u</code></td><td><a class="xref" data-goto="prop_utilisation">prop_utilisation</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>mdot_i</code></td><td>prop_ion_flow</td><td>MassFlow</td><td>mg/s</td></tr>
+</tbody></table>
+<p class="consumers"><b>3</b> nodes read this: <a class="xref" data-goto="prop_ionisation_power">prop_ionisation_power</a>, <a class="xref" data-goto="prop_jet_power">prop_jet_power</a>, <a class="xref" data-goto="prop_thrust">prop_thrust</a></p>
+</section>
+<section class="panel" data-panel="2">
+<ol class="algo">
+<li><span class="step">apply the propellant utilisation efficiency</span> <span class="binds">→ <code>mi: MassFlow</code></span></li>
+</ol>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>mdot_i &ge; 0</code> — an ion mass flow cannot be negative</li>
+<li><code>mdot_i &le; 10</code> — cannot exceed the collected flow it comes from</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How much of the collected mass is actually accelerable?
+///
+/// `mdot_i = eta_u*mdot`
+///
+/// Source: `romano2021`
+pub const NODE_ID: &amp;str = &quot;prop_ion_flow&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x4814e56ff8e46c05;
+
+pub fn evaluate(md: MassFlow, eta_u: Ratio) -&gt; Result&lt;MassFlow, Fault&gt; {
+    // ---- HOLE 1 : apply the propellant utilisation efficiency -&gt; MassFlow
+    let mi: MassFlow = prop::ion_mass_flow(md, eta_u);
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: MassFlow = mi;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;mdot_i&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;mdot_i&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: MassFlow::UNIT, reason: &quot;an ion mass flow cannot be negative&quot; });
+    }
+    if answer.get() &gt; 9.999999999999999e-6 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;mdot_i&quot;, value: answer.get(), bound: 9.999999999999999e-6, edge: Edge::Upper, unit: MassFlow::UNIT, reason: &quot;cannot exceed the collected flow it comes from&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="4">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0 — an ion mass flow cannot be negative</li>
+<li><code>OutOfDomain</code> above 10 — cannot exceed the collected flow it comes from</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="6">
+<p>Evidence tier <b>B</b>. What this tier cannot detect: an error the independent tool shares with this one.</p>
+<div class="cred" data-cred-for="prop_ion_flow"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="7">
+<p>Valid over <code>0 &hellip; 10</code> mg/s.</p>
+<ul class="guards"><li>lower — an ion mass flow cannot be negative</li><li>upper — cannot exceed the collected flow it comes from</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>no fixture: nothing outside this code has ever agreed with what it computes</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

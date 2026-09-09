@@ -1,0 +1,13 @@
+{
+  "id": "gnc_pointing_error",
+  "state": "published",
+  "sheet_hash": "a02e71",
+  "impl_hash": "63bce5",
+  "owner": "gnc",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["gnc_sensor_noise", "gnc_alignment_error", "gnc_control_error", "gnc_thermal_distortion"],
+  "contributes": ["kpi_geolocation"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

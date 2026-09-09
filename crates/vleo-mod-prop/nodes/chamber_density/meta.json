@@ -1,0 +1,13 @@
+{
+  "id": "prop_chamber_density",
+  "state": "published",
+  "sheet_hash": "6391cd",
+  "impl_hash": "c9ad5b",
+  "owner": "propulsion",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["env_number_density", "prop_compression_ratio"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

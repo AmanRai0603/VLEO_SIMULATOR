@@ -1,0 +1,64 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "com_gs_gain"
+label = "Ground station antenna gain"
+folder = "gs_gain"   # frozen at seed; renaming the label never moves the directory
+subsystem = "com"
+parent = "comms"
+kind = "computed"
+owner = "comms"
+tier = "A"
+state = "published"
+
+[question]
+text = "How much does the ground antenna concentrate the received power?"
+
+[maths]
+expression = "G = eta*(pi*D/lambda)^2"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "G_r"
+type = "Ratio"
+unit = "Decibel"
+lower = 0.0
+upper = 80.0
+reason_lower = "a ground aperture of this class always has positive gain"
+reason_upper = "above 80 dBi is a deep-space aperture"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "d"
+var = "com_gs_antenna_diameter"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "f"
+var = "com_frequency"
+type = "Frequency"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "e"
+var = "com_antenna_efficiency"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "apply the same aperture relation to the ground antenna"
+binds = "g"
+type = "Ratio"
+
+[view]
+kind = "number"
+

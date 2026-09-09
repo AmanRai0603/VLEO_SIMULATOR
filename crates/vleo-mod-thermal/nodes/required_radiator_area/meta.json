@@ -1,0 +1,13 @@
+{
+  "id": "thm_required_radiator_area",
+  "state": "published",
+  "sheet_hash": "6eea8c",
+  "impl_hash": "746b80",
+  "owner": "thermal",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["thm_dissipation", "thm_emissivity", "thm_temperature_limit"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

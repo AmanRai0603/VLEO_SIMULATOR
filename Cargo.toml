@@ -10,7 +10,27 @@
 #   FACES   vleo-cli · vleo-daemon · vleo-wasm · vleo-ffi · vleo-py
 [workspace]
 resolver = "2"
-members = ["crates/vleo-units", "crates/vleo-core"]
+members = [
+    "crates/vleo-units",
+    "crates/vleo-core",
+    "crates/vleo-sheet",
+    "crates/vleo-bus",
+    "crates/vleo-mod-env",
+    "crates/vleo-mod-orbit",
+    "crates/vleo-mod-aero",
+    "crates/vleo-mod-prop",
+    "crates/vleo-mod-power",
+    "crates/vleo-mod-thermal",
+    "crates/vleo-mod-gnc",
+    "crates/vleo-mod-comms",
+    "crates/vleo-mod-payload",
+    "crates/vleo-mod-mass",
+    "crates/vleo-mod-mission",
+    "crates/vleo-mod-cost",
+    "crates/vleo-modules",
+    "crates/vleo-cli",
+    "xtask",
+]
 exclude = ["crates/vleo-wasm", "crates/vleo-py"]
 
 [workspace.package]
@@ -23,6 +43,7 @@ repository = "https://github.com/amanrai0603/vleo_simulator"
 
 [workspace.dependencies]
 vleo-units   = { path = "crates/vleo-units" }
+vleo-sheet   = { path = "crates/vleo-sheet" }
 vleo-core    = { path = "crates/vleo-core" }
 vleo-graph   = { path = "crates/vleo-graph" }
 vleo-bus     = { path = "crates/vleo-bus" }

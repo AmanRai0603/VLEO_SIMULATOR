@@ -1,0 +1,13 @@
+{
+  "id": "kpi_mass_margin",
+  "state": "published",
+  "sheet_hash": "744715",
+  "impl_hash": "e56218",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["kpi_mass_margin_required", "mass_margin"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

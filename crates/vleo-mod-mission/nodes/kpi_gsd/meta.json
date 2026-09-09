@@ -1,0 +1,13 @@
+{
+  "id": "kpi_gsd",
+  "state": "published",
+  "sheet_hash": "af8124",
+  "impl_hash": "6bcf42",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["kpi_gsd_required", "pay_gsd"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

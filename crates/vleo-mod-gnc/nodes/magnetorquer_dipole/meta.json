@@ -1,0 +1,13 @@
+{
+  "id": "gnc_magnetorquer_dipole",
+  "state": "published",
+  "sheet_hash": "3da001",
+  "impl_hash": "f1dd55",
+  "owner": "gnc",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["gnc_momentum_storage", "env_magnetic_field", "gnc_dump_time"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

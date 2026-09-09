@@ -1,0 +1,64 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pay_toa_uncertainty"
+label = "Time of arrival uncertainty"
+folder = "toa_uncertainty"   # frozen at seed; renaming the label never moves the directory
+subsystem = "pay"
+parent = "pay_rf"
+kind = "computed"
+owner = "payload"
+tier = "A"
+state = "published"
+
+[question]
+text = "How precisely can the payload time an intercepted signal?"
+
+[maths]
+expression = "sigma = 1/(2*pi*B*sqrt(2*SNR*B*T))"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "sig_tau"
+type = "Time"
+unit = "Second"
+lower = 1e-15
+upper = 1.0
+reason_lower = "below a femtosecond no receiver in this design times that precisely"
+reason_upper = "above one second the measurement carries no geolocation information"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "b"
+var = "pay_rf_bandwidth"
+type = "Frequency"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "s"
+var = "pay_rf_snr"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "t"
+var = "pay_rf_integration"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "apply the Cramer-Rao lower bound on time-of-arrival estimation"
+binds = "sg"
+type = "Time"
+
+[view]
+kind = "number"
+

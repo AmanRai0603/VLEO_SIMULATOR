@@ -1,0 +1,60 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pay_gsd"
+label = "Achieved ground sample distance"
+folder = "gsd"   # frozen at seed; renaming the label never moves the directory
+subsystem = "pay"
+parent = "pay_optical"
+kind = "computed"
+owner = "payload"
+tier = "A"
+state = "published"
+
+[question]
+text = "What ground sample distance does the system actually achieve?"
+note = "Taking the better of the two produces a resolution claim the optics cannot deliver and the detector cannot sample, and it survives review because both inputs are individually correct."
+
+[maths]
+expression = "GSD = max(GSD_diffraction, GSD_detector)"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "GSD"
+type = "Length"
+unit = "Metre"
+lower = 0.001
+upper = 1000.0
+reason_lower = "below a millimetre the inputs are not physical"
+reason_upper = "above a kilometre no product in this design is being made"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "gd"
+var = "pay_gsd_diffraction"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "gp"
+var = "pay_gsd_detector"
+type = "Length"
+
+[[algorithm.step]]
+number = 1
+text = "take the worse of the two limits, never the better"
+binds = "g"
+type = "Length"
+
+[contributes]
+kpis = ["kpi_gsd"]
+
+[view]
+kind = "number"
+

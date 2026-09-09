@@ -1,0 +1,41 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "mass_system_margin"
+label = "System-level mass margin"
+folder = "system_margin"   # frozen at seed; renaming the label never moves the directory
+subsystem = "mass"
+parent = "mass_aero"
+kind = "declared"
+owner = "mass"
+tier = "A"
+state = "published"
+
+[question]
+text = "What system-level margin is held above the sum of the subsystem masses?"
+note = "Separate from and additional to the per-item maturity allowances. It covers what is not on the list yet, which on any real programme is the term that bites."
+
+[maths]
+expression = "M_sys = 0.2"
+source = "ecss_e_st_10_02"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "M_sys"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 0.5
+reason_lower = "a margin cannot be negative"
+reason_upper = "above 50% the design is a sketch and the number is not a budget"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 0.2
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

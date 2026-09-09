@@ -1,0 +1,33 @@
+# A case: per-customer values against one shared architecture.
+#
+# The architecture is never copied. What the customer did not buy is
+# simply not in play, and n copies would mean n fixes and silent
+# drift — the anti-clone-and-own rule, ISO/IEC 26580.
+
+id = "solar_max"
+label = "Solar maximum, storm conditions"
+note = "The activity level the design must survive rather than the one it is sized at. Density at 250 km is roughly five times the quiet value."
+
+[supply]
+# Overrides on top of each declared node's own value.
+env_f107 = 250.0
+env_f107a = 250.0
+env_kp = 7.0
+
+[[iterate]]
+# A declared cycle. Power becomes heat, heat sets array temperature,
+# array temperature sets cell efficiency, cell efficiency sets available
+# power, and available power throttles the largest load on the bus.
+# A cycle is a property of the design, so it is declared where design
+# decisions live. An undeclared one is a named error, not a hung run.
+nodes = ["pwr_cell_derating", "pwr_array_power_eol", "pwr_available", "prop_throttle", "prop_delivered_bus_power", "pwr_demand", "thm_dissipation", "thm_equilibrium_temperature"]
+converge_on = "pwr_demand"
+tolerance = 1e-06
+max_iter = 80
+
+[[iterate.seed]]
+var = "thm_equilibrium_temperature"
+value = 300.0
+source = "orbitt_case_c1"
+note = "A seed decides which fixed point the iteration reaches, so it carries a source like every other declared number."
+

@@ -1,0 +1,13 @@
+{
+  "id": "pwr_battery_energy",
+  "state": "published",
+  "sheet_hash": "fd1cbf",
+  "impl_hash": "c537a6",
+  "owner": "power",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pwr_demand", "orbit_eclipse_fraction", "orbit_period", "pwr_dod", "pwr_discharge_efficiency"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

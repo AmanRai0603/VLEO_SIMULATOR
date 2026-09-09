@@ -1,0 +1,109 @@
+<article class="node" data-node="gnc_inertia_min" data-sheet-hash="31cca2" data-impl-hash="222325">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="system">The system</a> <span class="sep">/</span> <a class="xref" data-group="subsystems">Satellite subsystems</a> <span class="sep">/</span> <a class="xref" data-group="gnc">Guidance, navigation and control</a></nav>
+  <h2>Smallest principal moment of inertia</h2>
+  <p class="ident"><code>gnc_inertia_min</code> · <span class="kind kind-declared">declared</span> · owner <b>gnc</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">interface</button>
+  <button role="tab" class="tab" data-tab="2">algorithm</button>
+  <button role="tab" class="tab" data-tab="3">generated code</button>
+  <button role="tab" class="tab" data-tab="4">evidence</button>
+  <button role="tab" class="tab" data-tab="5">flags</button>
+  <button role="tab" class="tab" data-tab="6">credibility</button>
+  <button role="tab" class="tab" data-tab="7">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">What is the smallest principal moment of inertia?</p>
+<p class="maths"><code>I_min = 1.2</code></p>
+<p class="src">Source <b>orbitt_case_c1</b> — Orbitt Space — VLEO multipayload reference case C1 <span class="where">internal, 2026-09-01</span></p>
+<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+</section>
+<section class="panel" data-panel="1">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
+<tr class="out"><td>out</td><td><code>I_min</code></td><td>gnc_inertia_min</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="gnc_gravity_gradient_torque">gnc_gravity_gradient_torque</a></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
+<p>This is a declared value: <b>1.2</b> -, confirmed by <b>A. Rai / 2026-09-01</b>.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>I_min &ge; 0.01</code> — below 0.01 kg.m2 there is no vehicle</li>
+<li><code>I_min &le; 1000</code> — cannot exceed the largest principal moment</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What is the smallest principal moment of inertia?
+///
+/// `I_min = 1.2`
+///
+/// Source: `orbitt_case_c1`
+pub const NODE_ID: &amp;str = &quot;gnc_inertia_min&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x16d7457c2d31cca2;
+
+pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
+    // generated · a declared value, converted from the unit it was written in
+    let declared: Ratio = match Ratio::from_unit(1.2, Unit::One) {
+        Some(q) =&gt; q,
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;I_min&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+    };
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = declared;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;I_min&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.01 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;I_min&quot;, value: answer.get(), bound: 0.01, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;below 0.01 kg.m2 there is no vehicle&quot; });
+    }
+    if answer.get() &gt; 1000.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;I_min&quot;, value: answer.get(), bound: 1000.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;cannot exceed the largest principal moment&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="4">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0.01 — below 0.01 kg.m2 there is no vehicle</li>
+<li><code>OutOfDomain</code> above 1000 — cannot exceed the largest principal moment</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="6">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="gnc_inertia_min"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="7">
+<p>Valid over <code>0.01 &hellip; 1000</code> -.</p>
+<ul class="guards"><li>lower — below 0.01 kg.m2 there is no vehicle</li><li>upper — cannot exceed the largest principal moment</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+</article>

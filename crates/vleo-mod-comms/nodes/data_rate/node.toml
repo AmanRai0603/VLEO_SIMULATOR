@@ -1,0 +1,75 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "com_data_rate"
+label = "Achievable downlink data rate"
+folder = "data_rate"   # frozen at seed; renaming the label never moves the directory
+subsystem = "com"
+parent = "comms"
+kind = "computed"
+owner = "comms"
+tier = "A"
+state = "published"
+
+[question]
+text = "How fast can data come down while keeping the required margin?"
+
+[maths]
+expression = "R = 10^((C/N0 - EbN0_req - L_imp - M)/10)"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "R_b"
+type = "DataRate"
+unit = "MegabitPerSecond"
+lower = 0.001
+upper = 100000.0
+reason_lower = "below 1 kbit/s the downlink cannot even carry housekeeping"
+reason_upper = "above 100 Gbit/s no spacecraft modem in this class runs"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "c"
+var = "com_cn0"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "er"
+var = "com_required_ebn0"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "li"
+var = "com_implementation_loss"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "m"
+var = "com_link_margin_required"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "solve the link equation for the rate that leaves exactly the required margin"
+binds = "r"
+type = "DataRate"
+
+[contributes]
+kpis = ["kpi_data_volume"]
+
+[view]
+kind = "number"
+

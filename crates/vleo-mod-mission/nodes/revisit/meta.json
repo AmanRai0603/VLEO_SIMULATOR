@@ -1,0 +1,13 @@
+{
+  "id": "mis_revisit",
+  "state": "published",
+  "sheet_hash": "c941c0",
+  "impl_hash": "401bb4",
+  "owner": "systems",
+  "tier": "C",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pay_swath", "orbit_ground_track_speed", "mis_satellites"],
+  "contributes": ["kpi_revisit"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

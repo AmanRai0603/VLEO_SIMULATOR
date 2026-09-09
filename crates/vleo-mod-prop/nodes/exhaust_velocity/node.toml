@@ -1,0 +1,57 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "prop_exhaust_velocity"
+label = "Beam exhaust velocity"
+folder = "exhaust_velocity"   # frozen at seed; renaming the label never moves the directory
+subsystem = "prop"
+parent = "prop_thruster"
+kind = "computed"
+owner = "propulsion"
+tier = "A"
+state = "published"
+
+[question]
+text = "How fast does the accelerated beam leave the thruster?"
+note = "Air is lighter than xenon, so the same voltage buys a far higher exhaust velocity. It is the one respect in which air-breathing propulsion is easier rather than harder."
+
+[maths]
+expression = "v_e = sqrt(2*q*V_b/m_i)"
+source = "romano2021"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "v_e"
+type = "Velocity"
+unit = "MetrePerSecond"
+lower = 1000.0
+upper = 500000.0
+reason_lower = "below 1 km/s the exhaust is slower than a cold gas thruster and the concept has no advantage"
+reason_upper = "above 500 km/s the relativistic and space-charge assumptions in the relation break down"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "vb"
+var = "prop_beam_voltage"
+type = "Voltage"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "m"
+var = "env_mean_molar_mass"
+type = "MolarMass"
+
+[[algorithm.step]]
+number = 1
+text = "accelerate a singly-charged ion of the local mean mass through the beam potential"
+binds = "ve"
+type = "Velocity"
+
+[view]
+kind = "number"
+

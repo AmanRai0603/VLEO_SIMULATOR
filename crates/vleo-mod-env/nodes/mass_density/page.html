@@ -1,0 +1,125 @@
+<article class="node" data-node="env_mass_density" data-sheet-hash="539680" data-impl-hash="8321d4">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="system">The system</a> <span class="sep">/</span> <a class="xref" data-group="orbit_env">Orbit and environment</a> <span class="sep">/</span> <a class="xref" data-group="space_env">Space environment</a></nav>
+  <h2>Atmospheric mass density</h2>
+  <p class="ident"><code>env_mass_density</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>B</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">interface</button>
+  <button role="tab" class="tab" data-tab="2">algorithm</button>
+  <button role="tab" class="tab" data-tab="3">generated code</button>
+  <button role="tab" class="tab" data-tab="4">evidence</button>
+  <button role="tab" class="tab" data-tab="5">flags</button>
+  <button role="tab" class="tab" data-tab="6">credibility</button>
+  <button role="tab" class="tab" data-tab="7">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How much air is there at the flight altitude, in kilograms per cubic metre?</p>
+<p class="maths"><code>rho = SUM_i n_i(z)*m_i,  n_i(z) = n_i(z0)*(T0/T)^(1+alpha_i)*exp(-INT M_i*g/(R*T) dz)</code></p>
+<p class="src">Source <b>jacchia1971</b> — Jacchia, L. G. — Revised static models of the thermosphere and exosphere with empirical temperature profiles <span class="where">SAO Special Report 332, 1971</span></p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>Diffusive equilibrium above 120 km, five species</dt><dd>fails when below about 100 km turbulent mixing dominates and species do not separate; the model is not valid there</dd>
+<dt>No diurnal, seasonal or longitudinal variation</dt><dd>fails when the real density at a fixed altitude varies by a factor of two around the orbit; this returns the daily mean</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>h</code></td><td><a class="xref" data-goto="orbit_altitude">orbit_altitude</a></td><td>Length</td><td>km</td></tr>
+<tr><td>in</td><td><code>t_inf</code></td><td><a class="xref" data-goto="env_exospheric_temperature">env_exospheric_temperature</a></td><td>Temperature</td><td>K</td></tr>
+<tr class="out"><td>out</td><td><code>rho</code></td><td>env_mass_density</td><td>MassDensity</td><td>kg/m^3</td></tr>
+</tbody></table>
+<p class="consumers"><b>5</b> nodes read this: <a class="xref" data-goto="aero_dynamic_pressure">aero_dynamic_pressure</a>, <a class="xref" data-goto="orbit_decay_rate">orbit_decay_rate</a>, <a class="xref" data-goto="prop_collected_flow">prop_collected_flow</a>, <a class="xref" data-goto="prop_incident_flux">prop_incident_flux</a>, <a class="xref" data-goto="thm_aero_heating">thm_aero_heating</a></p>
+</section>
+<section class="panel" data-panel="2">
+<ol class="algo">
+<li><span class="step">integrate diffusive equilibrium from the 120 km base for every species and sum the masses</span> <span class="binds">→ <code>rho: MassDensity</code></span></li>
+</ol>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>rho &ge; 0.000000000000001</code> — below 1e-15 kg/m3 the free-molecular relations downstream stop producing a meaningful drag</li>
+<li><code>rho &le; 0.000001</code> — above 1e-6 kg/m3 the flow is no longer free-molecular and every aerodynamic node in this tree is outside its envelope</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How much air is there at the flight altitude, in kilograms per cubic metre?
+///
+/// `rho = SUM_i n_i(z)*m_i,  n_i(z) = n_i(z0)*(T0/T)^(1+alpha_i)*exp(-INT M_i*g/(R*T) dz)`
+///
+/// Source: `jacchia1971`
+///
+/// # Assumptions
+///
+/// * Diffusive equilibrium above 120 km, five species — fails when below about 100 km turbulent mixing dominates and species do not separate; the model is not valid there
+/// * No diurnal, seasonal or longitudinal variation — fails when the real density at a fixed altitude varies by a factor of two around the orbit; this returns the daily mean
+pub const NODE_ID: &amp;str = &quot;env_mass_density&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x6ee594b58f539680;
+
+pub fn evaluate(h: Length, t_inf: Temperature) -&gt; Result&lt;MassDensity, Fault&gt; {
+    // ---- HOLE 1 : integrate diffusive equilibrium from the 120 km base for every species and sum the masses -&gt; MassDensity
+    let rho: MassDensity = env::mass_density(h, t_inf);
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: MassDensity = rho;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;rho&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 1e-15 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;rho&quot;, value: answer.get(), bound: 1e-15, edge: Edge::Lower, unit: MassDensity::UNIT, reason: &quot;below 1e-15 kg/m3 the free-molecular relations downstream stop producing a meaningful drag&quot; });
+    }
+    if answer.get() &gt; 1e-6 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;rho&quot;, value: answer.get(), bound: 1e-6, edge: Edge::Upper, unit: MassDensity::UNIT, reason: &quot;above 1e-6 kg/m3 the flow is no longer free-molecular and every aerodynamic node in this tree is outside its envelope&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="4">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="250 km, moderate activity"><td>250 km, moderate activity</td><td class="num">0.00000000006631</td><td class="num">0.005</td><td>independent-tool</td><td>matlab_legacy</td></tr>
+<tr data-fixture="400 km, moderate activity"><td>400 km, moderate activity</td><td class="num">0.000000000002907</td><td class="num">0.005</td><td>independent-tool</td><td>matlab_legacy</td></tr>
+<tr data-fixture="200 km, solar minimum"><td>200 km, solar minimum</td><td class="num">0.0000000001679</td><td class="num">0.005</td><td>independent-tool</td><td>matlab_legacy</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0.000000000000001 — below 1e-15 kg/m3 the free-molecular relations downstream stop producing a meaningful drag</li>
+<li><code>OutOfDomain</code> above 0.000001 — above 1e-6 kg/m3 the flow is no longer free-molecular and every aerodynamic node in this tree is outside its envelope</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-drivers</b></li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="6">
+<p>Evidence tier <b>B</b>. What this tier cannot detect: an error the independent tool shares with this one.</p>
+<div class="cred" data-cred-for="env_mass_density"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="7">
+<p>Valid over <code>0.000000000000001 &hellip; 0.000001</code> kg/m^3.</p>
+<ul class="guards"><li>lower — below 1e-15 kg/m3 the free-molecular relations downstream stop producing a meaningful drag</li><li>upper — above 1e-6 kg/m3 the flow is no longer free-molecular and every aerodynamic node in this tree is outside its envelope</li></ul>
+<div class="sweep" data-over="orbit_altitude" data-points="80" data-y="env_mass_density"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_altitude">orbit_altitude</a> over 80 points. Run the branch to draw it.</p></div>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+</article>

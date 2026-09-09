@@ -1,0 +1,67 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pay_scene_volume"
+label = "Data volume per scene"
+folder = "scene_volume"   # frozen at seed; renaming the label never moves the directory
+subsystem = "pay"
+parent = "pay_optical"
+kind = "computed"
+owner = "payload"
+tier = "A"
+state = "published"
+
+[question]
+text = "How much data is one imaged scene?"
+
+[maths]
+expression = "V = N_x*N_y*b*bands/CR"
+source = "ccsds122"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "V_scene"
+type = "DataVolume"
+unit = "Gigabit"
+lower = 0.0
+upper = 1000000.0
+reason_lower = "a data volume cannot be negative"
+reason_upper = "above a petabit no single scene in this design is produced"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "n"
+var = "pay_pixels_across"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "b"
+var = "pay_bits_per_pixel"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "cr"
+var = "pay_compression"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "assume a square scene of the across-track width, in four spectral bands"
+binds = "v"
+type = "DataVolume"
+
+[contributes]
+kpis = ["kpi_data_volume"]
+
+[view]
+kind = "number"
+

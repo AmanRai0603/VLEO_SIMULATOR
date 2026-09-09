@@ -1,0 +1,13 @@
+{
+  "id": "env_density_uncertainty",
+  "state": "published",
+  "sheet_hash": "6c0f15",
+  "impl_hash": "5c5e4b",
+  "owner": "environment",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["env_kp"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

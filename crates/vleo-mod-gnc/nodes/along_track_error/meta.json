@@ -1,0 +1,13 @@
+{
+  "id": "gnc_along_track_error",
+  "state": "published",
+  "sheet_hash": "10e596",
+  "impl_hash": "3882f2",
+  "owner": "gnc",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["aero_drag_acceleration", "env_density_uncertainty"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

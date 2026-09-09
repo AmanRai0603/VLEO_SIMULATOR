@@ -1,0 +1,13 @@
+{
+  "id": "gnc_magnetic_torque",
+  "state": "published",
+  "sheet_hash": "3a477a",
+  "impl_hash": "4cf7ff",
+  "owner": "gnc",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["gnc_residual_dipole", "env_magnetic_field"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

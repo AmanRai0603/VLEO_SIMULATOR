@@ -1,0 +1,13 @@
+{
+  "id": "thm_aero_heating",
+  "state": "published",
+  "sheet_hash": "36e9ee",
+  "impl_hash": "dd8e41",
+  "owner": "thermal",
+  "tier": "C",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["env_mass_density", "orbit_velocity", "aero_frontal_area"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

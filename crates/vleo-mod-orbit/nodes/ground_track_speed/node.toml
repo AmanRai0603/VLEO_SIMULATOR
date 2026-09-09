@@ -1,0 +1,57 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "orbit_ground_track_speed"
+label = "Ground track speed"
+folder = "ground_track_speed"   # frozen at seed; renaming the label never moves the directory
+subsystem = "orbit"
+parent = "orbit_geometry"
+kind = "computed"
+owner = "systems"
+tier = "A"
+state = "published"
+
+[question]
+text = "How fast does the sub-satellite point move over the ground?"
+note = "Not the orbital speed. The difference is what sets sensor dwell time and therefore signal-to-noise."
+
+[maths]
+expression = "V_g = V*Re/r"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "V_g"
+type = "Velocity"
+unit = "MetrePerSecond"
+lower = 6000.0
+upper = 8000.0
+reason_lower = "below 6 km/s is outside this tool's altitude band"
+reason_upper = "the ground track can never move faster than the orbital speed"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "v"
+var = "orbit_velocity"
+type = "Velocity"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "r"
+var = "orbit_radius"
+type = "Length"
+
+[[algorithm.step]]
+number = 1
+text = "scale the orbital speed by the ratio of Earth radius to orbital radius"
+binds = "vg"
+type = "Velocity"
+
+[view]
+kind = "number"
+

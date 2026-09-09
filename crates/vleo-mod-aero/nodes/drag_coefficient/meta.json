@@ -1,0 +1,13 @@
+{
+  "id": "aero_drag_coefficient",
+  "state": "published",
+  "sheet_hash": "c026dd",
+  "impl_hash": "31b0cb",
+  "owner": "aero",
+  "tier": "A",
+  "fixtures": 1,
+  "holes": 1,
+  "inputs": ["aero_speed_ratio", "aero_body_length", "aero_body_diameter", "aero_accommodation", "env_wall_temperature", "orbit_velocity", "env_mean_molar_mass", "env_knudsen"],
+  "contributes": [],
+  "gaps": []
+}

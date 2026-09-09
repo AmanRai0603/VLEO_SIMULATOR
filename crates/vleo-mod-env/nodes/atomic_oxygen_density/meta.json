@@ -1,0 +1,13 @@
+{
+  "id": "env_atomic_oxygen_density",
+  "state": "published",
+  "sheet_hash": "c473b9",
+  "impl_hash": "b615a2",
+  "owner": "environment",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["orbit_altitude", "env_exospheric_temperature"],
+  "contributes": ["kpi_service_lifetime"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

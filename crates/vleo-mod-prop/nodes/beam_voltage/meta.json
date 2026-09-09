@@ -1,0 +1,13 @@
+{
+  "id": "prop_beam_voltage",
+  "state": "published",
+  "sheet_hash": "94da5a",
+  "impl_hash": "222325",
+  "owner": "propulsion",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

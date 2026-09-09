@@ -1,0 +1,13 @@
+{
+  "id": "cost_replacement_avoided",
+  "state": "published",
+  "sheet_hash": "4002ff",
+  "impl_hash": "28e2db",
+  "owner": "programme",
+  "tier": "C",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["cost_bus_recurring", "cost_payload_recurring", "cost_launch_per_satellite", "mis_satellites", "prop_thrust_to_drag"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

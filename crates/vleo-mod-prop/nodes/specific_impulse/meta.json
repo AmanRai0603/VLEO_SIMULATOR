@@ -1,0 +1,13 @@
+{
+  "id": "prop_specific_impulse",
+  "state": "published",
+  "sheet_hash": "b0dbaa",
+  "impl_hash": "ef0cff",
+  "owner": "propulsion",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["prop_thrust", "prop_collected_flow"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "env_knudsen",
+  "state": "published",
+  "sheet_hash": "705ba8",
+  "impl_hash": "ec41c5",
+  "owner": "environment",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["env_mean_free_path", "aero_body_length"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

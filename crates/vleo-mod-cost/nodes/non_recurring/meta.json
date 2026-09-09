@@ -1,0 +1,13 @@
+{
+  "id": "cost_non_recurring",
+  "state": "published",
+  "sheet_hash": "aa182d",
+  "impl_hash": "96ff06",
+  "owner": "programme",
+  "tier": "C",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["mass_dry", "cost_inflation"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

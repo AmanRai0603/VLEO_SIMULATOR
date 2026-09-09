@@ -1,0 +1,13 @@
+{
+  "id": "env_mass_density",
+  "state": "published",
+  "sheet_hash": "539680",
+  "impl_hash": "8321d4",
+  "owner": "environment",
+  "tier": "B",
+  "fixtures": 3,
+  "holes": 1,
+  "inputs": ["orbit_altitude", "env_exospheric_temperature"],
+  "contributes": ["kpi_service_lifetime"],
+  "gaps": []
+}

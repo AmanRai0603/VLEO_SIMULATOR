@@ -1,0 +1,13 @@
+{
+  "id": "pwr_cell_derating",
+  "state": "published",
+  "sheet_hash": "bad38f",
+  "impl_hash": "937dcf",
+  "owner": "power",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pwr_cell_temperature_coefficient", "thm_equilibrium_temperature"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

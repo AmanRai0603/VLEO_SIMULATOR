@@ -1,0 +1,60 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "cost_bus_recurring"
+label = "Bus recurring cost, first unit"
+folder = "bus_recurring"   # frozen at seed; renaming the label never moves the directory
+subsystem = "cost"
+parent = "mgt_cost"
+kind = "computed"
+owner = "programme"
+tier = "C"
+state = "published"
+
+[question]
+text = "What does the first spacecraft bus cost to build?"
+
+[maths]
+expression = "C = a*m_dry^b, escalated"
+source = "nasa_cer"
+
+[[assumption]]
+text = "The historical fit applies to this class of spacecraft"
+fails_when = "the fit's one-sigma residual is 40%, which is larger than most of the design decisions it would be used to compare"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "C_bus"
+type = "Money"
+unit = "MillionUsDollar"
+lower = 0.0
+upper = 10000.0
+reason_lower = "a cost cannot be negative"
+reason_upper = "above 10 billion for one bus the relation is being fed a mass it was not fitted on"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "m"
+var = "mass_dry"
+type = "Mass"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "i"
+var = "cost_inflation"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "evaluate the bus cost estimating relation on dry mass and escalate to 2026"
+binds = "c"
+type = "Money"
+
+[view]
+kind = "number"
+

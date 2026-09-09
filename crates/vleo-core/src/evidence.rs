@@ -87,6 +87,12 @@ pub struct Fixture {
     pub provenance: Provenance,
     /// The identifier of a row in `sources/`, never a free-text string.
     pub source: &'static str,
+    /// The node's own inputs, in SI, in contract order.
+    ///
+    /// Carried on the fixture so the *run* can execute it, not only the test
+    /// suite. A verdict shown on a page has to have come from a run: a badge
+    /// read out of a field is a claim about last March.
+    pub inputs: &'static [f64],
 }
 
 /// The result of checking one fixture.

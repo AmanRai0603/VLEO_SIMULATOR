@@ -1,0 +1,116 @@
+<article class="node" data-node="env_density_uncertainty" data-sheet-hash="6c0f15" data-impl-hash="5c5e4b">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="system">The system</a> <span class="sep">/</span> <a class="xref" data-group="orbit_env">Orbit and environment</a> <span class="sep">/</span> <a class="xref" data-group="space_env">Space environment</a></nav>
+  <h2>Density model uncertainty</h2>
+  <p class="ident"><code>env_density_uncertainty</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">interface</button>
+  <button role="tab" class="tab" data-tab="2">algorithm</button>
+  <button role="tab" class="tab" data-tab="3">generated code</button>
+  <button role="tab" class="tab" data-tab="4">evidence</button>
+  <button role="tab" class="tab" data-tab="5">flags</button>
+  <button role="tab" class="tab" data-tab="6">credibility</button>
+  <button role="tab" class="tab" data-tab="7">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How wrong might the density be, and therefore how wrong is every margin built on it?</p>
+<p class="maths"><code>sigma_rho = 0.15 + 0.03*Kp</code></p>
+<p class="src">Source <b>doornbos2011</b> — Doornbos, E. — Thermospheric density and wind determination from satellite dynamics <span class="where">TU Delft, 2011</span></p>
+<p class="note">A node that consumes density and does not carry this forward is a node whose margin is fictional.</p>
+<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+</section>
+<section class="panel" data-panel="1">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>kp</code></td><td><a class="xref" data-goto="env_kp">env_kp</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>sigma_rho</code></td><td>env_density_uncertainty</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="gnc_along_track_error">gnc_along_track_error</a></p>
+</section>
+<section class="panel" data-panel="2">
+<ol class="algo">
+<li><span class="step">apply the quiet-time residual and grow it with geomagnetic activity</span> <span class="binds">→ <code>s: Ratio</code></span></li>
+</ol>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>sigma_rho &ge; 0.05</code> — no published comparison of an empirical thermosphere model against measured drag does better than 5%</li>
+<li><code>sigma_rho &le; 1</code> — an uncertainty above 100% of the value is not an uncertainty, it is an absence of a model</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How wrong might the density be, and therefore how wrong is every margin built on it?
+///
+/// `sigma_rho = 0.15 + 0.03*Kp`
+///
+/// Source: `doornbos2011`
+///
+/// A node that consumes density and does not carry this forward is a node
+/// whose margin is fictional.
+pub const NODE_ID: &amp;str = &quot;env_density_uncertainty&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xbf9f7a40456c0f15;
+
+pub fn evaluate(kp: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : apply the quiet-time residual and grow it with geomagnetic activity -&gt; Ratio
+    let s: Ratio = env::density_uncertainty(kp.get());
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = s;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;sigma_rho&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.05 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;sigma_rho&quot;, value: answer.get(), bound: 0.05, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;no published comparison of an empirical thermosphere model against measured drag does better than 5%&quot; });
+    }
+    if answer.get() &gt; 1.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;sigma_rho&quot;, value: answer.get(), bound: 1.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;an uncertainty above 100% of the value is not an uncertainty, it is an absence of a model&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="4">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0.05 — no published comparison of an empirical thermosphere model against measured drag does better than 5%</li>
+<li><code>OutOfDomain</code> above 1 — an uncertainty above 100% of the value is not an uncertainty, it is an absence of a model</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="6">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="env_density_uncertainty"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="7">
+<p>Valid over <code>0.05 &hellip; 1</code> -.</p>
+<ul class="guards"><li>lower — no published comparison of an empirical thermosphere model against measured drag does better than 5%</li><li>upper — an uncertainty above 100% of the value is not an uncertainty, it is an absence of a model</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>no fixture: nothing outside this code has ever agreed with what it computes</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "kpi_availability_required"
+label = "Service availability — required"
+folder = "kpi_availability_required"   # frozen at seed; renaming the label never moves the directory
+subsystem = "kpi"
+parent = "mgt_customer"
+kind = "declared"
+owner = "systems"
+tier = "A"
+state = "published"
+
+[question]
+text = "What does the customer require for service availability?"
+
+[maths]
+expression = "R_req = 0.99"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "R_req"
+type = "Ratio"
+unit = "One"
+lower = 0.5
+upper = 0.99999
+reason_lower = "below 50% the service is unavailable more often than not"
+reason_upper = "above five nines no constellation in this class has demonstrated it"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 0.99
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

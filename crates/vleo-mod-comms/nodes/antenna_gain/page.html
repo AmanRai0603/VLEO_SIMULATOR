@@ -1,0 +1,114 @@
+<article class="node" data-node="com_antenna_gain" data-sheet-hash="d31226" data-impl-hash="e5f268">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="system">The system</a> <span class="sep">/</span> <a class="xref" data-group="subsystems">Satellite subsystems</a> <span class="sep">/</span> <a class="xref" data-group="comms">TT&amp;C and downlink</a></nav>
+  <h2>Spacecraft antenna gain</h2>
+  <p class="ident"><code>com_antenna_gain</code> · <span class="kind kind-computed">computed</span> · owner <b>comms</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">interface</button>
+  <button role="tab" class="tab" data-tab="2">algorithm</button>
+  <button role="tab" class="tab" data-tab="3">generated code</button>
+  <button role="tab" class="tab" data-tab="4">evidence</button>
+  <button role="tab" class="tab" data-tab="5">flags</button>
+  <button role="tab" class="tab" data-tab="6">credibility</button>
+  <button role="tab" class="tab" data-tab="7">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How much does the spacecraft antenna concentrate the transmitted power?</p>
+<p class="maths"><code>G = eta*(pi*D/lambda)^2</code></p>
+<p class="src">Source <b>larson_wertz</b> — Wertz, J. R., Everett, D. F. and Puschell, J. J. — Space Mission Engineering: The New SMAD <span class="where">Microcosm Press, 2011</span></p>
+<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+</section>
+<section class="panel" data-panel="1">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>d</code></td><td><a class="xref" data-goto="com_antenna_diameter">com_antenna_diameter</a></td><td>Length</td><td>m</td></tr>
+<tr><td>in</td><td><code>f</code></td><td><a class="xref" data-goto="com_frequency">com_frequency</a></td><td>Frequency</td><td>GHz</td></tr>
+<tr><td>in</td><td><code>e</code></td><td><a class="xref" data-goto="com_antenna_efficiency">com_antenna_efficiency</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>G_t</code></td><td>com_antenna_gain</td><td>Ratio</td><td>dB</td></tr>
+</tbody></table>
+<p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="com_eirp">com_eirp</a></p>
+</section>
+<section class="panel" data-panel="2">
+<ol class="algo">
+<li><span class="step">apply the circular aperture gain relation at the carrier wavelength</span> <span class="binds">→ <code>g: Ratio</code></span></li>
+</ol>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>G_t &ge; -10</code> — an aperture antenna does not have less than -10 dBi of gain</li>
+<li><code>G_t &le; 80</code> — above 80 dBi is a deep-space aperture, not a spacecraft antenna</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How much does the spacecraft antenna concentrate the transmitted power?
+///
+/// `G = eta*(pi*D/lambda)^2`
+///
+/// Source: `larson_wertz`
+pub const NODE_ID: &amp;str = &quot;com_antenna_gain&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xa27b7caec0d31226;
+
+pub fn evaluate(d: Length, f: Frequency, e: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : apply the circular aperture gain relation at the carrier wavelength -&gt; Ratio
+    let g: Ratio = Ratio::new(comms::aperture_gain_db(d, f, e));
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = g;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;G_t&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; -10.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;G_t&quot;, value: answer.get(), bound: -10.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;an aperture antenna does not have less than -10 dBi of gain&quot; });
+    }
+    if answer.get() &gt; 80.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;G_t&quot;, value: answer.get(), bound: 80.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;above 80 dBi is a deep-space aperture, not a spacecraft antenna&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="4">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="0.3 m at 8.2 GHz, 60% efficient"><td>0.3 m at 8.2 GHz, 60% efficient</td><td class="num">25.229</td><td class="num">0.002</td><td>independent-derivation</td><td>larson_wertz</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below -10 — an aperture antenna does not have less than -10 dBi of gain</li>
+<li><code>OutOfDomain</code> above 80 — above 80 dBi is a deep-space aperture, not a spacecraft antenna</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="6">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="com_antenna_gain"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="7">
+<p>Valid over <code>-10 &hellip; 80</code> dB.</p>
+<ul class="guards"><li>lower — an aperture antenna does not have less than -10 dBi of gain</li><li>upper — above 80 dBi is a deep-space aperture, not a spacecraft antenna</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+</article>

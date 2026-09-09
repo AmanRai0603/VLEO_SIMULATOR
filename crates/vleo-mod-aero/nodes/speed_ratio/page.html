@@ -1,0 +1,114 @@
+<article class="node" data-node="aero_speed_ratio" data-sheet-hash="bb8276" data-impl-hash="3241f4">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="system">The system</a> <span class="sep">/</span> <a class="xref" data-group="satellite">Satellite system</a> <span class="sep">/</span> <a class="xref" data-group="aero_drag">Aerodynamics and drag</a></nav>
+  <h2>Molecular speed ratio</h2>
+  <p class="ident"><code>aero_speed_ratio</code> · <span class="kind kind-computed">computed</span> · owner <b>aero</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">interface</button>
+  <button role="tab" class="tab" data-tab="2">algorithm</button>
+  <button role="tab" class="tab" data-tab="3">generated code</button>
+  <button role="tab" class="tab" data-tab="4">evidence</button>
+  <button role="tab" class="tab" data-tab="5">flags</button>
+  <button role="tab" class="tab" data-tab="6">credibility</button>
+  <button role="tab" class="tab" data-tab="7">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How hyperthermal is the flow — does the gas arrive as a beam or as a cloud?</p>
+<p class="maths"><code>s = V/sqrt(2*R*T/M)</code></p>
+<p class="src">Source <b>sentman1961</b> — Sentman, L. H. — Free molecule flow theory and its application to the determination of aerodynamic forces <span class="where">Lockheed LMSC-448514, 1961</span></p>
+<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+</section>
+<section class="panel" data-panel="1">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>v</code></td><td><a class="xref" data-goto="orbit_velocity">orbit_velocity</a></td><td>Velocity</td><td>m/s</td></tr>
+<tr><td>in</td><td><code>t</code></td><td><a class="xref" data-goto="env_local_temperature">env_local_temperature</a></td><td>Temperature</td><td>K</td></tr>
+<tr><td>in</td><td><code>m</code></td><td><a class="xref" data-goto="env_mean_molar_mass">env_mean_molar_mass</a></td><td>MolarMass</td><td>kg/mol</td></tr>
+<tr class="out"><td>out</td><td><code>s</code></td><td>aero_speed_ratio</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="aero_drag_coefficient">aero_drag_coefficient</a></p>
+</section>
+<section class="panel" data-panel="2">
+<ol class="algo">
+<li><span class="step">divide the bulk speed by the most probable thermal speed of the local mixture</span> <span class="binds">→ <code>s: Ratio</code></span></li>
+</ol>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>s &ge; 1</code> — below a speed ratio of one the flow is thermal rather than hyperthermal, and Sentman's relations lose their meaning</li>
+<li><code>s &le; 30</code> — above 30 the exponential terms underflow and the relations are numerically dead</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How hyperthermal is the flow — does the gas arrive as a beam or as a cloud?
+///
+/// `s = V/sqrt(2*R*T/M)`
+///
+/// Source: `sentman1961`
+pub const NODE_ID: &amp;str = &quot;aero_speed_ratio&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x9a432528dfbb8276;
+
+pub fn evaluate(v: Velocity, t: Temperature, m: MolarMass) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : divide the bulk speed by the most probable thermal speed of the local mixture -&gt; Ratio
+    let s: Ratio = aero::speed_ratio(v, t, m);
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = s;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;s&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 1.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;s&quot;, value: answer.get(), bound: 1.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;below a speed ratio of one the flow is thermal rather than hyperthermal, and Sentman's relations lose their meaning&quot; });
+    }
+    if answer.get() &gt; 30.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;s&quot;, value: answer.get(), bound: 30.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;above 30 the exponential terms underflow and the relations are numerically dead&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="4">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="250 km, moderate activity"><td>250 km, moderate activity</td><td class="num">8.6435</td><td class="num">0.005</td><td>independent-derivation</td><td>sentman1961</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 1 — below a speed ratio of one the flow is thermal rather than hyperthermal, and Sentman's relations lose their meaning</li>
+<li><code>OutOfDomain</code> above 30 — above 30 the exponential terms underflow and the relations are numerically dead</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="6">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="aero_speed_ratio"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="7">
+<p>Valid over <code>1 &hellip; 30</code> -.</p>
+<ul class="guards"><li>lower — below a speed ratio of one the flow is thermal rather than hyperthermal, and Sentman's relations lose their meaning</li><li>upper — above 30 the exponential terms underflow and the relations are numerically dead</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+</article>

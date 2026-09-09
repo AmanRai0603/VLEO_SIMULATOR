@@ -1,0 +1,13 @@
+{
+  "id": "pwr_margin",
+  "state": "published",
+  "sheet_hash": "628b20",
+  "impl_hash": "db8db3",
+  "owner": "power",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pwr_available", "pwr_demand"],
+  "contributes": ["kpi_power_margin"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

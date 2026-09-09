@@ -1,0 +1,120 @@
+<article class="node" data-node="cost_replacement_avoided" data-sheet-hash="4002ff" data-impl-hash="28e2db">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="management">Management layer</a> <span class="sep">/</span> <a class="xref" data-group="mgt_cost">Cost and value case</a></nav>
+  <h2>Replacement cost avoided</h2>
+  <p class="ident"><code>cost_replacement_avoided</code> · <span class="kind kind-computed">computed</span> · owner <b>programme</b> · tier <b>C</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">interface</button>
+  <button role="tab" class="tab" data-tab="2">algorithm</button>
+  <button role="tab" class="tab" data-tab="3">generated code</button>
+  <button role="tab" class="tab" data-tab="4">evidence</button>
+  <button role="tab" class="tab" data-tab="5">flags</button>
+  <button role="tab" class="tab" data-tab="6">credibility</button>
+  <button role="tab" class="tab" data-tab="7">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">What does air-breathing propulsion save by removing the need to replace satellites when propellant runs out?</p>
+<p class="maths"><code>C = (C_unit + C_launch)*N_replacements</code></p>
+<p class="src">Source <b>orbitt_case_c1</b> — Orbitt Space — VLEO multipayload reference case C1 <span class="where">internal, 2026-09-01</span></p>
+<p class="note">The commercial argument for the whole programme, as a node with a source and evidence rather than a slide.</p>
+<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+</section>
+<section class="panel" data-panel="1">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>cb</code></td><td><a class="xref" data-goto="cost_bus_recurring">cost_bus_recurring</a></td><td>Money</td><td>MUSD</td></tr>
+<tr><td>in</td><td><code>cp</code></td><td><a class="xref" data-goto="cost_payload_recurring">cost_payload_recurring</a></td><td>Money</td><td>MUSD</td></tr>
+<tr><td>in</td><td><code>lc</code></td><td><a class="xref" data-goto="cost_launch_per_satellite">cost_launch_per_satellite</a></td><td>Money</td><td>MUSD</td></tr>
+<tr><td>in</td><td><code>n</code></td><td><a class="xref" data-goto="mis_satellites">mis_satellites</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>td</code></td><td><a class="xref" data-goto="prop_thrust_to_drag">prop_thrust_to_drag</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>C_avd</code></td><td>cost_replacement_avoided</td><td>Money</td><td>MUSD</td></tr>
+</tbody></table>
+<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+</section>
+<section class="panel" data-panel="2">
+<ol class="algo">
+<li><span class="step">count one avoided replacement of the whole constellation when thrust exceeds drag, and none when it does not</span> <span class="binds">→ <code>c: Money</code></span></li>
+</ol>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>C_avd &ge; 0</code> — a saving cannot be negative</li>
+<li><code>C_avd &le; 1000000</code> — above a trillion dollars the programme is not the one being designed</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What does air-breathing propulsion save by removing the need to replace satellites when propellant runs out?
+///
+/// `C = (C_unit + C_launch)*N_replacements`
+///
+/// Source: `orbitt_case_c1`
+///
+/// The commercial argument for the whole programme, as a node with a source
+/// and evidence rather than a slide.
+pub const NODE_ID: &amp;str = &quot;cost_replacement_avoided&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xd78b109d944002ff;
+
+pub fn evaluate(cb: Money, cp: Money, lc: Money, n: Ratio, td: Ratio) -&gt; Result&lt;Money, Fault&gt; {
+    // ---- HOLE 1 : count one avoided replacement of the whole constellation when thrust exceeds drag, and none when it does not -&gt; Money
+    let c: Money = cost::replacement_avoided(Money::new(cb.get() + cp.get()), lc, if td.get() &gt;= 1.0 { n.get() } else { 0.0 });
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Money = c;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;C_avd&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;C_avd&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Money::UNIT, reason: &quot;a saving cannot be negative&quot; });
+    }
+    if answer.get() &gt; 1000000000000.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;C_avd&quot;, value: answer.get(), bound: 1000000000000.0, edge: Edge::Upper, unit: Money::UNIT, reason: &quot;above a trillion dollars the programme is not the one being designed&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="4">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0 — a saving cannot be negative</li>
+<li><code>OutOfDomain</code> above 1000000 — above a trillion dollars the programme is not the one being designed</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="6">
+<p>Evidence tier <b>C</b>. What this tier cannot detect: a wrong constant that still conserves the quantity.</p>
+<div class="cred" data-cred-for="cost_replacement_avoided"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="7">
+<p>Valid over <code>0 &hellip; 1000000</code> MUSD.</p>
+<ul class="guards"><li>lower — a saving cannot be negative</li><li>upper — above a trillion dollars the programme is not the one being designed</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>no fixture: nothing outside this code has ever agreed with what it computes</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

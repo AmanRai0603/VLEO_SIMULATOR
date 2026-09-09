@@ -1,0 +1,13 @@
+{
+  "id": "com_contact_time",
+  "state": "published",
+  "sheet_hash": "bf7960",
+  "impl_hash": "9ccb6c",
+  "owner": "comms",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["orbit_earth_central_angle", "orbit_period"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "orbit_decay_rate",
+  "state": "published",
+  "sheet_hash": "53ae63",
+  "impl_hash": "61e2c0",
+  "owner": "systems",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["env_mass_density", "aero_ballistic_coefficient", "orbit_radius"],
+  "contributes": ["kpi_service_lifetime"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

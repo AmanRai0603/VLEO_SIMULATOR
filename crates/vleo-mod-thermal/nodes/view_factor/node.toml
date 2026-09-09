@@ -1,0 +1,48 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "thm_view_factor"
+label = "Earth view factor"
+folder = "view_factor"   # frozen at seed; renaming the label never moves the directory
+subsystem = "thm"
+parent = "thermal"
+kind = "computed"
+owner = "thermal"
+tier = "A"
+state = "published"
+
+[question]
+text = "How much of the sky, from a nadir-facing surface, is filled by the Earth?"
+
+[maths]
+expression = "F = (Re/r)^2"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "F_E"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 1.0
+reason_lower = "a view factor cannot be negative"
+reason_upper = "a view factor cannot exceed one"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "r"
+var = "orbit_radius"
+type = "Length"
+
+[[algorithm.step]]
+number = 1
+text = "apply the flat-plate to sphere view factor at the orbital radius"
+binds = "f"
+type = "Ratio"
+
+[view]
+kind = "number"
+

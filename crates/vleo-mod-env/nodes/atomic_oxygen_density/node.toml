@@ -1,0 +1,59 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "env_atomic_oxygen_density"
+label = "Atomic oxygen number density"
+folder = "atomic_oxygen_density"   # frozen at seed; renaming the label never moves the directory
+subsystem = "env"
+parent = "space_env"
+kind = "computed"
+owner = "environment"
+tier = "B"
+state = "published"
+
+[question]
+text = "How much atomic oxygen is there — the species that erodes materials and the one an intake actually collects?"
+
+[maths]
+expression = "n_O(z) = n_O(z0)*(T0/T)*exp(-INT M_O*g/(R*T) dz)"
+source = "jacchia1971"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "n_O"
+type = "NumberDensity"
+unit = "PerCubicMetre"
+lower = 100000000.0
+upper = 1e+19
+reason_lower = "below 1e8 there is effectively no atomic oxygen and the accommodation model returns a specular surface"
+reason_upper = "above 1e19 is denser than the total number density at the model base"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "h"
+var = "orbit_altitude"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "t_inf"
+var = "env_exospheric_temperature"
+type = "Temperature"
+
+[[algorithm.step]]
+number = 1
+text = "integrate diffusive equilibrium for atomic oxygen alone"
+binds = "n_o"
+type = "NumberDensity"
+
+[contributes]
+kpis = ["kpi_service_lifetime"]
+
+[view]
+kind = "number"
+

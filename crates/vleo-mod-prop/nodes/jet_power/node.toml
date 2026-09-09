@@ -1,0 +1,56 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "prop_jet_power"
+label = "Jet power"
+folder = "jet_power"   # frozen at seed; renaming the label never moves the directory
+subsystem = "prop"
+parent = "prop_thruster"
+kind = "computed"
+owner = "propulsion"
+tier = "A"
+state = "published"
+
+[question]
+text = "How much power ends up in the beam?"
+
+[maths]
+expression = "P_jet = T^2/(2*mdot_i)"
+source = "romano2021"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "P_jet"
+type = "Power"
+unit = "Watt"
+lower = 0.0
+upper = 100000.0
+reason_lower = "jet power cannot be negative"
+reason_upper = "above 100 kW no bus in this mass class supplies it"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "t"
+var = "prop_thrust"
+type = "Force"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "mi"
+var = "prop_ion_flow"
+type = "MassFlow"
+
+[[algorithm.step]]
+number = 1
+text = "form the kinetic power of the beam from thrust and ion flow; refuse when the flow is zero"
+binds = "p"
+type = "Power"
+
+[view]
+kind = "number"
+

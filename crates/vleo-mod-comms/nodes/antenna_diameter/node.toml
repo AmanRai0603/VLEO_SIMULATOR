@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "com_antenna_diameter"
+label = "Spacecraft antenna diameter"
+folder = "antenna_diameter"   # frozen at seed; renaming the label never moves the directory
+subsystem = "com"
+parent = "comms"
+kind = "declared"
+owner = "comms"
+tier = "A"
+state = "published"
+
+[question]
+text = "How large is the spacecraft downlink antenna?"
+
+[maths]
+expression = "D_a = 0.3"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "D_a"
+type = "Length"
+unit = "Metre"
+lower = 0.02
+upper = 2.0
+reason_lower = "below 2 cm the aperture gain relation is not valid at this frequency"
+reason_upper = "above 2 m the antenna is a drag surface larger than the vehicle"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 0.3
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

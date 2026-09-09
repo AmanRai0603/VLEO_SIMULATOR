@@ -1,0 +1,15 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+
+[[fixture]]
+label = "300 V, atomic oxygen mixture"
+expect = 55490.0
+tolerance = 0.002
+provenance = "independent-derivation"
+source = "codata2018"
+inputs = { vb = 300.0, m = 0.01872 }
+

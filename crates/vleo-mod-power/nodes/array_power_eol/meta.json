@@ -1,0 +1,13 @@
+{
+  "id": "pwr_array_power_eol",
+  "state": "published",
+  "sheet_hash": "74fb63",
+  "impl_hash": "268205",
+  "owner": "power",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pwr_array_power_bol", "pwr_degradation", "pwr_cell_derating"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

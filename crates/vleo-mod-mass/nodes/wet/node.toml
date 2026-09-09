@@ -1,0 +1,56 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "mass_wet"
+label = "Wet mass"
+folder = "wet"   # frozen at seed; renaming the label never moves the directory
+subsystem = "mass"
+parent = "mass_aero"
+kind = "computed"
+owner = "mass"
+tier = "A"
+state = "published"
+
+[question]
+text = "What does the spacecraft weigh at separation?"
+
+[maths]
+expression = "m_wet = m_dry + m_prop"
+source = "ecss_e_st_10_02"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "m_wet"
+type = "Mass"
+unit = "Kilogram"
+lower = 1.0
+upper = 6000.0
+reason_lower = "below a kilogram there is no spacecraft"
+reason_upper = "above 6 tonnes the vehicle is not in this class"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "d"
+var = "mass_dry"
+type = "Mass"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "p"
+var = "mass_disposal_propellant"
+type = "Mass"
+
+[[algorithm.step]]
+number = 1
+text = "add the disposal propellant to the dry mass"
+binds = "m"
+type = "Mass"
+
+[view]
+kind = "number"
+

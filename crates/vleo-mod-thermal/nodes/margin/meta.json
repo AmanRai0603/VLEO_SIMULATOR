@@ -1,0 +1,13 @@
+{
+  "id": "thm_margin",
+  "state": "published",
+  "sheet_hash": "da4c9a",
+  "impl_hash": "599f55",
+  "owner": "thermal",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["thm_equilibrium_temperature", "thm_temperature_limit"],
+  "contributes": ["kpi_thermal_margin"],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

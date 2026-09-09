@@ -1,0 +1,13 @@
+{
+  "id": "prop_bus_power",
+  "state": "published",
+  "sheet_hash": "7725ae",
+  "impl_hash": "4a294c",
+  "owner": "propulsion",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["prop_input_power", "prop_ppu_efficiency"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

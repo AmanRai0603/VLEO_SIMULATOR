@@ -1,0 +1,13 @@
+{
+  "id": "pay_gsd_diffraction",
+  "state": "published",
+  "sheet_hash": "13c72c",
+  "impl_hash": "01bc73",
+  "owner": "payload",
+  "tier": "A",
+  "fixtures": 1,
+  "holes": 1,
+  "inputs": ["orbit_altitude", "pay_wavelength", "pay_aperture"],
+  "contributes": ["kpi_gsd"],
+  "gaps": []
+}

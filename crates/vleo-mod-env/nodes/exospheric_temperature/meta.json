@@ -1,0 +1,13 @@
+{
+  "id": "env_exospheric_temperature",
+  "state": "published",
+  "sheet_hash": "4416ab",
+  "impl_hash": "292cba",
+  "owner": "environment",
+  "tier": "A",
+  "fixtures": 3,
+  "holes": 1,
+  "inputs": ["env_f107", "env_f107a", "env_kp"],
+  "contributes": [],
+  "gaps": []
+}

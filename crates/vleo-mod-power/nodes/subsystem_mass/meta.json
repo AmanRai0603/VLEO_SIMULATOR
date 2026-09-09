@@ -1,0 +1,13 @@
+{
+  "id": "pwr_subsystem_mass",
+  "state": "published",
+  "sheet_hash": "fc55c9",
+  "impl_hash": "67e647",
+  "owner": "power",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pwr_array_mass", "pwr_battery_mass"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

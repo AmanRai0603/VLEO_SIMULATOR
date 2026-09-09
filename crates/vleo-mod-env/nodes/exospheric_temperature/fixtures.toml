@@ -1,0 +1,31 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+
+[[fixture]]
+label = "solar minimum, quiet"
+expect = 633.9
+tolerance = 0.002
+provenance = "published-source"
+source = "jacchia1971"
+inputs = { f107 = 70.0, f107a = 70.0, kp = 1.0 }
+
+[[fixture]]
+label = "moderate activity"
+expect = 949.6
+tolerance = 0.002
+provenance = "published-source"
+source = "jacchia1971"
+inputs = { f107 = 150.0, f107a = 150.0, kp = 3.0 }
+
+[[fixture]]
+label = "solar maximum, storm"
+expect = 1417.9
+tolerance = 0.002
+provenance = "published-source"
+source = "jacchia1971"
+inputs = { f107 = 250.0, f107a = 250.0, kp = 7.0 }
+

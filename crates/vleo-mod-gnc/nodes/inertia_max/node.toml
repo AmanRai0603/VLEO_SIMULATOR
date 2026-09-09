@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "gnc_inertia_max"
+label = "Largest principal moment of inertia"
+folder = "inertia_max"   # frozen at seed; renaming the label never moves the directory
+subsystem = "gnc"
+parent = "gnc"
+kind = "declared"
+owner = "gnc"
+tier = "A"
+state = "published"
+
+[question]
+text = "What is the largest principal moment of inertia?"
+
+[maths]
+expression = "I_max = 8"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "I_max"
+type = "Ratio"
+unit = "One"
+lower = 0.01
+upper = 1000.0
+reason_lower = "below 0.01 kg.m2 there is no vehicle"
+reason_upper = "above 1000 kg.m2 the vehicle is not in this mass class"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 8.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

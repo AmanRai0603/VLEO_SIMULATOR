@@ -1,0 +1,13 @@
+{
+  "id": "kpi_availability",
+  "state": "published",
+  "sheet_hash": "107ce6",
+  "impl_hash": "e56218",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["kpi_availability_required", "mis_availability"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

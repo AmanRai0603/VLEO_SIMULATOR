@@ -1,0 +1,13 @@
+{
+  "id": "com_ebn0",
+  "state": "published",
+  "sheet_hash": "27c2e5",
+  "impl_hash": "8872c8",
+  "owner": "comms",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["com_cn0", "com_data_rate"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

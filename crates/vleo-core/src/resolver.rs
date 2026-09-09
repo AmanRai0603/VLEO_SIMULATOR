@@ -179,12 +179,11 @@ pub fn evaluate<T: NodeTable + ?Sized>(
             }
             continue;
         }
-        // Every input must be known, or the node is blocked and says by what.
-        if let Some(f) = missing_input(table, store, node) {
-            record_block(ws, &mut blocked, &mut first_fault, node, f);
-            continue;
-        }
-
+        // A declared cycle is checked *before* the input check. Inside a loop
+        // every member is waiting on the next one by construction, so asking
+        // "are all your inputs known" first would block the whole loop and
+        // report it as eight independent missing dependencies. The seed is what
+        // breaks the deadlock, and it is applied by the sweep.
         if let Some((ci, spec)) = cycle_of(cycles, node) {
             if ci < 32 && cycle_done[ci] {
                 continue;
@@ -206,6 +205,12 @@ pub fn evaluate<T: NodeTable + ?Sized>(
             if ci < 32 {
                 cycle_done[ci] = true;
             }
+            continue;
+        }
+
+        // Every input must be known, or the node is blocked and says by what.
+        if let Some(f) = missing_input(table, store, node) {
+            record_block(ws, &mut blocked, &mut first_fault, node, f);
             continue;
         }
 
@@ -313,28 +318,44 @@ fn topo_from<T: NodeTable + ?Sized>(
         }
         ws.mark[node as usize] = IN_PROGRESS;
         let def = table.node(node);
-        for &v in def.inputs {
-            let producer = table.var(v).producer;
-            if producer == u16::MAX || producer == node {
-                continue;
-            }
-            match ws.mark[producer as usize] {
-                DONE => {}
-                IN_PROGRESS => {
-                    // A loop. Declared cycles break the edge here and are
-                    // relaxed later; anything else is a named error.
-                    if same_declared_cycle(cycles, node, producer) {
-                        continue;
-                    }
-                    return Err(Fault::UndeclaredCycle {
-                        node: def.id,
-                        back_to: table.node(producer).id,
-                    });
+
+        // A declared cycle is ordered as one unit. Every member's *external*
+        // dependencies have to be satisfied before the loop is entered,
+        // because the sweep runs all of them. Expanding only this node's own
+        // inputs would schedule the loop before a sibling member's input was
+        // computed, and the first sweep would then refuse on a dependency
+        // nobody could see was missing.
+        let members: &[NodeIdx] = match cycle_of(cycles, node) {
+            Some((_, spec)) => spec.nodes,
+            None => core::slice::from_ref(&node),
+        };
+        for &m in members {
+            for &v in table.node(m).inputs {
+                let producer = table.var(v).producer;
+                if producer == u16::MAX || producer == m {
+                    continue;
                 }
-                _ => {
-                    if sp < ws.stack.len() {
-                        ws.stack[sp] = producer;
-                        sp += 1;
+                if members.len() > 1 && members.contains(&producer) {
+                    continue; // an edge inside the loop; the sweep relaxes it
+                }
+                match ws.mark[producer as usize] {
+                    DONE => {}
+                    IN_PROGRESS => {
+                        // A loop. Declared cycles break the edge here and are
+                        // relaxed later; anything else is a named error.
+                        if same_declared_cycle(cycles, node, producer) {
+                            continue;
+                        }
+                        return Err(Fault::UndeclaredCycle {
+                            node: def.id,
+                            back_to: table.node(producer).id,
+                        });
+                    }
+                    _ => {
+                        if sp < ws.stack.len() {
+                            ws.stack[sp] = producer;
+                            sp += 1;
+                        }
                     }
                 }
             }
@@ -388,6 +409,7 @@ fn sweep_cycle<T: NodeTable + ?Sized>(
             crate::units::pmath::abs(now - previous)
         };
         if residual <= spec.tolerance {
+            settle_credibility(table, store, spec)?;
             return Ok(());
         }
         previous = now;
@@ -399,6 +421,35 @@ fn sweep_cycle<T: NodeTable + ?Sized>(
         residual: crate::units::pmath::abs(now - previous),
         tolerance: spec.tolerance,
     })
+}
+
+/// Recompute the loop's credibility from the converged state.
+///
+/// Credibility rolls up by taking the minimum factor by factor, which is right
+/// along a chain and wrong inside a fixed point: a loop reads its own outputs,
+/// so once any zero enters it is absorbing and every member ends at zero
+/// however many sweeps run. That is not a statement about the design, it is an
+/// artefact of the propagation rule meeting a cycle.
+///
+/// The honest semantics: inside a converged fixed point the members do not
+/// weaken each other. The loop is as credible as what feeds it from outside
+/// and as what each member is made of. This clears the members' vectors and
+/// runs one final pass, so an edge inside the loop contributes nothing and an
+/// edge from outside contributes its real value.
+fn settle_credibility<T: NodeTable + ?Sized>(
+    table: &T,
+    store: &mut Store<'_>,
+    spec: &CycleSpec<'_>,
+) -> Result<(), Fault> {
+    for &m in spec.nodes {
+        for &o in table.node(m).outputs {
+            store.slots[o as usize].cred = crate::credibility::CredVec([4; 8]);
+        }
+    }
+    for &m in spec.nodes {
+        table.eval(m, store)?;
+    }
+    Ok(())
 }
 
 /// Fold one node's identity and its published outputs into the chain hash.

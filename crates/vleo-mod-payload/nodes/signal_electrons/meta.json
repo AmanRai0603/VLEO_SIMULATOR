@@ -1,0 +1,13 @@
+{
+  "id": "pay_signal_electrons",
+  "state": "published",
+  "sheet_hash": "a01b03",
+  "impl_hash": "0c9694",
+  "owner": "payload",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pay_radiance", "pay_aperture", "pay_focal_length", "pay_pixel_pitch", "pay_transmission", "pay_quantum_efficiency", "pay_dwell_time", "pay_wavelength"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

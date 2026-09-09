@@ -1,0 +1,51 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "mis_time_to_downlink"
+label = "Mean time to next downlink"
+folder = "time_to_downlink"   # frozen at seed; renaming the label never moves the directory
+subsystem = "mis"
+parent = "mission"
+kind = "computed"
+owner = "operations"
+tier = "A"
+state = "published"
+
+[question]
+text = "How long does data wait on board before it can come down?"
+
+[maths]
+expression = "t = 86400/(2*N_pass)"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "t_dl"
+type = "Time"
+unit = "Minute"
+lower = 0.0
+upper = 1440.0
+reason_lower = "a wait cannot be negative"
+reason_upper = "above a day the mission is not operable"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "n"
+var = "com_passes_per_day"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "take half the mean interval between passes"
+binds = "t"
+type = "Time"
+
+[contributes]
+kpis = ["kpi_latency"]
+
+[view]
+kind = "number"
+

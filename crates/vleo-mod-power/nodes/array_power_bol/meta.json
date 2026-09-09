@@ -1,0 +1,13 @@
+{
+  "id": "pwr_array_power_bol",
+  "state": "published",
+  "sheet_hash": "8280a8",
+  "impl_hash": "7fbf4e",
+  "owner": "power",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pwr_array_area", "pwr_cell_efficiency", "pwr_packing", "pwr_array_incidence"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

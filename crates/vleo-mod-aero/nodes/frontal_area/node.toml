@@ -1,0 +1,56 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "aero_frontal_area"
+label = "Total frontal area"
+folder = "frontal_area"   # frozen at seed; renaming the label never moves the directory
+subsystem = "aero"
+parent = "aero_drag"
+kind = "computed"
+owner = "mass"
+tier = "A"
+state = "published"
+
+[question]
+text = "What area does the flow actually see?"
+
+[maths]
+expression = "A = pi*D^2/4 + A_app"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "A"
+type = "Area"
+unit = "SquareMetre"
+lower = 0.005
+upper = 20.0
+reason_lower = "below 50 cm2 there is no vehicle"
+reason_upper = "above 20 m2 nothing in this design closes"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "d"
+var = "aero_body_diameter"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "a_app"
+var = "aero_appendage_area"
+type = "Area"
+
+[[algorithm.step]]
+number = 1
+text = "add the circular body cross-section to the appendage area"
+binds = "a"
+type = "Area"
+
+[view]
+kind = "number"
+

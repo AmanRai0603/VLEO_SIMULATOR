@@ -1,0 +1,57 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "gnc_along_track_error"
+label = "Along-track prediction error after one day"
+folder = "along_track_error"   # frozen at seed; renaming the label never moves the directory
+subsystem = "gnc"
+parent = "gnc"
+kind = "computed"
+owner = "gnc"
+tier = "B"
+state = "published"
+
+[question]
+text = "How far out is a one-day orbit prediction, given how wrong the density model is?"
+note = "The term that dominates orbit prediction in this regime, and the reason the density uncertainty is a published output rather than a footnote."
+
+[maths]
+expression = "e = 1.5*da*t^2"
+source = "doornbos2011"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "e_at"
+type = "Length"
+unit = "Metre"
+lower = 0.0
+upper = 10000000.0
+reason_lower = "an error magnitude cannot be negative"
+reason_upper = "above 10000 km the prediction is meaningless and the answer is that the model is unusable there"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "a"
+var = "aero_drag_acceleration"
+type = "Acceleration"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "s"
+var = "env_density_uncertainty"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "propagate the drag acceleration error, which is the density uncertainty applied to the drag, over one day"
+binds = "e"
+type = "Length"
+
+[view]
+kind = "number"
+

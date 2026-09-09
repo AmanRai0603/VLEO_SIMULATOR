@@ -1,0 +1,13 @@
+{
+  "id": "aero_accommodation",
+  "state": "published",
+  "sheet_hash": "7decb8",
+  "impl_hash": "11e6a8",
+  "owner": "aero",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["env_atomic_oxygen_density", "env_exospheric_temperature"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

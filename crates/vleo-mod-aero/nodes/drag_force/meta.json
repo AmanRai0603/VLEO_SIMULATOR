@@ -1,0 +1,13 @@
+{
+  "id": "aero_drag_force",
+  "state": "published",
+  "sheet_hash": "a80708",
+  "impl_hash": "8b725f",
+  "owner": "aero",
+  "tier": "A",
+  "fixtures": 1,
+  "holes": 1,
+  "inputs": ["aero_dynamic_pressure", "aero_drag_coefficient", "aero_frontal_area"],
+  "contributes": ["kpi_service_lifetime"],
+  "gaps": []
+}

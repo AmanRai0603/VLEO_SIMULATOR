@@ -203,3 +203,128 @@ impl Default for CredVec {
         CredVec::ZERO
     }
 }
+
+/// Score one node, on the run.
+///
+/// Never stored, and computed from what actually executed rather than from a
+/// field somebody typed. Three of the eight are measurable from the sheet
+/// alone; three more need the evidence to have run; the last two are proxies
+/// and are marked as such below, because a score that pretends to measure
+/// something it cannot is worse than a gap.
+///
+/// * `fixtures_ran` — did the node's evidence execute in this run
+/// * `fixtures_passed` — did every executed fixture agree
+/// * `data_ok` — is every declared bundle present and verified
+/// * `upstream` — the rolled-up vector of everything that fed it
+pub fn score(
+    def: &crate::graph::NodeDef,
+    fixtures_ran: bool,
+    fixtures_passed: bool,
+    data_ok: bool,
+    upstream: CredVec,
+) -> CredVec {
+    let mut v = CredVec::ZERO;
+
+    // Measurable from the sheet.
+    v.set(
+        Factor::Mathematics,
+        if def.expression.is_empty() || def.source.is_empty() { 0 } else { 4 },
+    );
+    v.set(
+        Factor::Assumptions,
+        match def.assumptions.len() {
+            0 => {
+                // A declared value has no algorithm to make assumptions about,
+                // and a single-step relation is direct. Scoring either zero
+                // would make most of the tree govern its own subtree for a
+                // reason that is not a weakness — and a score that fires
+                // everywhere stops being read. A multi-step relation with no
+                // stated assumption is a different matter: it always has at
+                // least one, and not stating it is the gap.
+                if def.kind == crate::graph::Kind::Declared {
+                    3
+                } else if def.steps.len() <= 1 {
+                    2
+                } else {
+                    0
+                }
+            }
+            1 => 3,
+            _ => 4,
+        },
+    );
+    v.set(
+        Factor::Verification,
+        match def.state {
+            crate::graph::State::Published | crate::graph::State::Verified => 4,
+            crate::graph::State::Implemented => 2,
+            _ => 0,
+        },
+    );
+
+    // Needs the evidence to have run.
+    v.set(
+        Factor::Validation,
+        if def.fixtures.is_empty() && def.kind == crate::graph::Kind::Declared {
+            // A declared value is not validated by a fixture — there is nothing
+            // to compute. It is validated by a named source and a person's
+            // confirmation, which the schema requires and the gate checks. It
+            // is capped below the top: a confirmed number from a document is
+            // not two independent routes agreeing.
+            3
+        } else if def.fixtures.is_empty() {
+            0 // no evidence, no score, and the gate is not a formality
+        } else if !fixtures_ran {
+            1
+        } else if !fixtures_passed {
+            1 // a failed case caps the whole node at one
+        } else {
+            def.tier.validation_ceiling()
+        },
+    );
+    v.set(Factor::Reproducibility, if data_ok { 4 } else { 0 });
+    v.set(
+        Factor::InputPedigree,
+        if !data_ok {
+            0
+        } else if def.inputs.is_empty() {
+            4
+        } else {
+            upstream.get(Factor::InputPedigree)
+        },
+    );
+
+    // Proxies, and named as such. Neither is a measurement; both are stated
+    // here rather than left implicit so a reader can discount them.
+    let carries_uncertainty = def
+        .inputs
+        .is_empty()
+        .then_some(false)
+        .unwrap_or(true);
+    v.set(
+        Factor::Uncertainty,
+        if def.id.contains("uncertainty") {
+            4
+        } else if carries_uncertainty {
+            2
+        } else {
+            1
+        },
+    );
+    v.set(
+        Factor::Understanding,
+        match def.steps.len() {
+            0 => 3,
+            1..=3 => 3,
+            4..=6 => 2,
+            _ => 1, // a node nobody can walk through from the page is not credible
+        },
+    );
+
+    // The chain is only as credible as its weakest link, so the upstream vector
+    // is folded in factor by factor rather than averaged.
+    if !def.inputs.is_empty() {
+        v = v.rollup(upstream);
+    }
+    v
+}

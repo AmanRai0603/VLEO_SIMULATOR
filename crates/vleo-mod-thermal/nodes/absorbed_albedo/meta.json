@@ -1,0 +1,13 @@
+{
+  "id": "thm_absorbed_albedo",
+  "state": "published",
+  "sheet_hash": "4c5426",
+  "impl_hash": "30432e",
+  "owner": "thermal",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["aero_frontal_area", "thm_absorptivity", "thm_view_factor"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

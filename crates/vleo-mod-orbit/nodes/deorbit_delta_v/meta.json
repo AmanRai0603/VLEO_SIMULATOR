@@ -1,0 +1,13 @@
+{
+  "id": "orbit_deorbit_delta_v",
+  "state": "published",
+  "sheet_hash": "b9f5a1",
+  "impl_hash": "001a6b",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["orbit_altitude"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

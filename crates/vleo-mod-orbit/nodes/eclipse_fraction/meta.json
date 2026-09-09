@@ -1,0 +1,13 @@
+{
+  "id": "orbit_eclipse_fraction",
+  "state": "published",
+  "sheet_hash": "a66dd2",
+  "impl_hash": "e013f4",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 1,
+  "holes": 1,
+  "inputs": ["orbit_radius", "orbit_beta_angle"],
+  "contributes": [],
+  "gaps": []
+}

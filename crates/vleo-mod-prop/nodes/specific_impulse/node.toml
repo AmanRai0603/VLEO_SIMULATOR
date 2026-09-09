@@ -1,0 +1,57 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "prop_specific_impulse"
+label = "Specific impulse"
+folder = "specific_impulse"   # frozen at seed; renaming the label never moves the directory
+subsystem = "prop"
+parent = "prop_thruster"
+kind = "computed"
+owner = "propulsion"
+tier = "A"
+state = "published"
+
+[question]
+text = "What is the specific impulse, referred honestly to the collected flow rather than the ionised part?"
+note = "Referring this to the ion flow alone flatters the number by the reciprocal of the utilisation, which is how brochure figures are made."
+
+[maths]
+expression = "Isp = T/(mdot*g0)"
+source = "romano2021"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "Isp"
+type = "Time"
+unit = "Second"
+lower = 100.0
+upper = 50000.0
+reason_lower = "below 100 s an air-breathing system offers nothing a cold gas thruster does not"
+reason_upper = "above 50000 s the relation is being fed an ion flow that is not physical"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "t"
+var = "prop_thrust"
+type = "Force"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "md"
+var = "prop_collected_flow"
+type = "MassFlow"
+
+[[algorithm.step]]
+number = 1
+text = "divide thrust by the weight flow of everything collected, not only what was ionised"
+binds = "i"
+type = "Time"
+
+[view]
+kind = "number"
+

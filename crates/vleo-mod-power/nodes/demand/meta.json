@@ -1,0 +1,13 @@
+{
+  "id": "pwr_demand",
+  "state": "published",
+  "sheet_hash": "f121b4",
+  "impl_hash": "cee702",
+  "owner": "power",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["prop_delivered_bus_power", "pay_power", "pwr_avionics_load", "com_tx_power", "pwr_thermal_load", "pwr_harness_loss"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

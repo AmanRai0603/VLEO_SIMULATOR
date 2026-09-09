@@ -1,0 +1,56 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "gnc_momentum_storage"
+label = "Momentum storage required"
+folder = "momentum_storage"   # frozen at seed; renaming the label never moves the directory
+subsystem = "gnc"
+parent = "gnc"
+kind = "computed"
+owner = "gnc"
+tier = "A"
+state = "published"
+
+[question]
+text = "How much angular momentum must the wheels be able to store?"
+
+[maths]
+expression = "h = T*T_orb/2*(1 + margin)"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "h_req"
+type = "AngularMomentum"
+unit = "NewtonMetreSecond"
+lower = 0.0
+upper = 100.0
+reason_lower = "a momentum magnitude cannot be negative"
+reason_upper = "above 100 N.m.s no wheel assembly that fits this vehicle stores it"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "t"
+var = "gnc_total_disturbance"
+type = "Torque"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "p"
+var = "orbit_period"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "accumulate the secular torque over half a revolution with a 50% margin"
+binds = "h"
+type = "AngularMomentum"
+
+[view]
+kind = "number"
+

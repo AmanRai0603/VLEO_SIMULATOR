@@ -1,0 +1,13 @@
+{
+  "id": "prop_input_power",
+  "state": "published",
+  "sheet_hash": "081784",
+  "impl_hash": "3998c9",
+  "owner": "propulsion",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["prop_jet_power", "prop_ionisation_power", "prop_other_losses"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

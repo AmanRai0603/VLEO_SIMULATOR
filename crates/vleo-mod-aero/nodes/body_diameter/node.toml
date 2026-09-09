@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "aero_body_diameter"
+label = "Body diameter"
+folder = "body_diameter"   # frozen at seed; renaming the label never moves the directory
+subsystem = "aero"
+parent = "aero_drag"
+kind = "declared"
+owner = "mass"
+tier = "A"
+state = "published"
+
+[question]
+text = "How wide is the vehicle across the flight direction?"
+
+[maths]
+expression = "D_b = 0.6"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "D_b"
+type = "Length"
+unit = "Metre"
+lower = 0.1
+upper = 3.0
+reason_lower = "below 0.1 m no useful payload aperture fits"
+reason_upper = "above 3 m the frontal area makes the air-breathing closure impossible at any altitude in the band"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 0.6
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

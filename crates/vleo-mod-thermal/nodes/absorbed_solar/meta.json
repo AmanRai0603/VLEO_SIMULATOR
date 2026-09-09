@@ -1,0 +1,13 @@
+{
+  "id": "thm_absorbed_solar",
+  "state": "published",
+  "sheet_hash": "a26eab",
+  "impl_hash": "4f7f3e",
+  "owner": "thermal",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["aero_frontal_area", "thm_absorptivity", "pwr_array_incidence"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

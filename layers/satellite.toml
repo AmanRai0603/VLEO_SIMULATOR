@@ -1,0 +1,23 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "satellite"
+label = "Satellite system"
+parent = "system"
+owner = "systems"
+
+[[relates]]
+from = "satellite"
+to = "propulsion"
+why = "thruster demand sets the power budget"
+
+[[relates]]
+from = "satellite"
+to = "power"
+why = "the array is both the power source and a drag surface"
+

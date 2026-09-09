@@ -1,0 +1,13 @@
+{
+  "id": "pwr_array_area",
+  "state": "published",
+  "sheet_hash": "de4ad2",
+  "impl_hash": "222325",
+  "owner": "power",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": ["kpi_power_margin"],
+  "gaps": []
+}

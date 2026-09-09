@@ -1,0 +1,13 @@
+{
+  "id": "gnc_inertia_max",
+  "state": "published",
+  "sheet_hash": "4a5bef",
+  "impl_hash": "222325",
+  "owner": "gnc",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

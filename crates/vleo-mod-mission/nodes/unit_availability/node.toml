@@ -1,0 +1,43 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "mis_unit_availability"
+label = "Single satellite availability"
+folder = "unit_availability"   # frozen at seed; renaming the label never moves the directory
+subsystem = "mis"
+parent = "mission"
+kind = "declared"
+owner = "operations"
+tier = "A"
+state = "published"
+
+[question]
+text = "What fraction of the time is one satellite fully operational?"
+
+[maths]
+expression = "A_unit = 0.97"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "A_unit"
+type = "Ratio"
+unit = "One"
+lower = 0.5
+upper = 0.9999
+reason_lower = "below 50% the satellite is unavailable more often than not"
+reason_upper = "above 0.9999 no small satellite has demonstrated that availability"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 0.97
+confirmed_by = "A. Rai / 2026-09-01"
+
+[contributes]
+kpis = ["kpi_availability"]
+
+[view]
+kind = "number"
+

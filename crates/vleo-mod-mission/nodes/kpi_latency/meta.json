@@ -1,0 +1,13 @@
+{
+  "id": "kpi_latency",
+  "state": "published",
+  "sheet_hash": "15ef77",
+  "impl_hash": "6bcf42",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["kpi_latency_required", "mis_latency"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

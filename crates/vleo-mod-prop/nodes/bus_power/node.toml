@@ -1,0 +1,57 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "prop_bus_power"
+label = "Propulsion demand on the bus"
+folder = "bus_power"   # frozen at seed; renaming the label never moves the directory
+subsystem = "prop"
+parent = "prop_thruster"
+kind = "computed"
+owner = "propulsion"
+tier = "B"
+state = "published"
+
+[question]
+text = "How much power does the propulsion system take from the bus?"
+note = "The largest single load on the bus, and the reason the power chapter is where an air-breathing design usually fails."
+
+[maths]
+expression = "P_prop = P_in/eta_ppu"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "P_prop"
+type = "Power"
+unit = "Watt"
+lower = 0.0
+upper = 100000.0
+reason_lower = "bus demand cannot be negative"
+reason_upper = "above 100 kW no bus in this mass class supplies it"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "pin"
+var = "prop_input_power"
+type = "Power"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "eta"
+var = "prop_ppu_efficiency"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "divide by the power processing unit efficiency"
+binds = "p"
+type = "Power"
+
+[view]
+kind = "number"
+

@@ -1,0 +1,13 @@
+{
+  "id": "mass_payload",
+  "state": "published",
+  "sheet_hash": "5fbb0d",
+  "impl_hash": "222325",
+  "owner": "payload",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

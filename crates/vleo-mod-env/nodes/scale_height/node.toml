@@ -1,0 +1,56 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "env_scale_height"
+label = "Density scale height"
+folder = "scale_height"   # frozen at seed; renaming the label never moves the directory
+subsystem = "env"
+parent = "space_env"
+kind = "computed"
+owner = "environment"
+tier = "A"
+state = "published"
+
+[question]
+text = "Over what altitude change does the density fall by a factor of e?"
+
+[maths]
+expression = "H = R*T/(M*g)"
+source = "vallado2013"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "H"
+type = "Length"
+unit = "Kilometre"
+lower = 5.0
+upper = 200.0
+reason_lower = "a scale height below 5 km does not occur above the model base"
+reason_upper = "above 200 km the atmosphere is effectively isothermal and the concept stops being useful"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "h"
+var = "orbit_altitude"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "t_inf"
+var = "env_exospheric_temperature"
+type = "Temperature"
+
+[[algorithm.step]]
+number = 1
+text = "form the barometric scale height from the local temperature, mean molar mass and gravity"
+binds = "hs"
+type = "Length"
+
+[view]
+kind = "number"
+

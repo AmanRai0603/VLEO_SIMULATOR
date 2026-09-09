@@ -1,0 +1,36 @@
+[package]
+name = "vleo-modules"
+description = "The facade. Re-exports the twelve subsystem crates, holds the graph tables generated from the sheets at build time, and implements the one NodeTable the resolver walks. It has no formula of its own."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+vleo-core = { workspace = true }
+vleo-bus = { workspace = true }
+vleo-units = { workspace = true }
+vleo-mod-env = { path = "../vleo-mod-env" }
+vleo-mod-orbit = { path = "../vleo-mod-orbit" }
+vleo-mod-aero = { path = "../vleo-mod-aero" }
+vleo-mod-prop = { path = "../vleo-mod-prop" }
+vleo-mod-power = { path = "../vleo-mod-power" }
+vleo-mod-thermal = { path = "../vleo-mod-thermal" }
+vleo-mod-gnc = { path = "../vleo-mod-gnc" }
+vleo-mod-comms = { path = "../vleo-mod-comms" }
+vleo-mod-payload = { path = "../vleo-mod-payload" }
+vleo-mod-mass = { path = "../vleo-mod-mass" }
+vleo-mod-mission = { path = "../vleo-mod-mission" }
+vleo-mod-cost = { path = "../vleo-mod-cost" }
+
+[build-dependencies]
+vleo-sheet = { workspace = true }
+
+[features]
+default = []
+std = ["vleo-bus/std", "vleo-core/std"]
+
+[lints.rust]
+unsafe_code = "forbid"

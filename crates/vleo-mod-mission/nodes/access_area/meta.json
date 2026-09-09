@@ -1,0 +1,13 @@
+{
+  "id": "mis_access_area",
+  "state": "published",
+  "sheet_hash": "04b26c",
+  "impl_hash": "f1b789",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["orbit_earth_central_angle"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

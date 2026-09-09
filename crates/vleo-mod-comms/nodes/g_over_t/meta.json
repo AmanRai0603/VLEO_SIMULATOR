@@ -1,0 +1,13 @@
+{
+  "id": "com_g_over_t",
+  "state": "published",
+  "sheet_hash": "b760bb",
+  "impl_hash": "728ca4",
+  "owner": "comms",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["com_gs_gain", "com_system_noise_temperature"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

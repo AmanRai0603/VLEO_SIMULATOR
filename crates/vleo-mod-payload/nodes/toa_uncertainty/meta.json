@@ -1,0 +1,13 @@
+{
+  "id": "pay_toa_uncertainty",
+  "state": "published",
+  "sheet_hash": "2e38da",
+  "impl_hash": "4570ea",
+  "owner": "payload",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pay_rf_bandwidth", "pay_rf_snr", "pay_rf_integration"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

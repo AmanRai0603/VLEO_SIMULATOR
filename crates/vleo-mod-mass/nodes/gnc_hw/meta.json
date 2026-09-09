@@ -1,0 +1,13 @@
+{
+  "id": "mass_gnc_hw",
+  "state": "published",
+  "sheet_hash": "8c005c",
+  "impl_hash": "222325",
+  "owner": "gnc",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

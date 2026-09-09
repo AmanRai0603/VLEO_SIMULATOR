@@ -1,0 +1,13 @@
+{
+  "id": "mis_processing_time",
+  "state": "published",
+  "sheet_hash": "7a1346",
+  "impl_hash": "222325",
+  "owner": "operations",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": ["kpi_latency"],
+  "gaps": []
+}

@@ -1,0 +1,13 @@
+{
+  "id": "com_passes_per_day",
+  "state": "published",
+  "sheet_hash": "5ce1a2",
+  "impl_hash": "222325",
+  "owner": "operations",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": ["kpi_latency", "kpi_data_volume"],
+  "gaps": []
+}

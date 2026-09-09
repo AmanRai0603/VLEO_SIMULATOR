@@ -1,0 +1,13 @@
+{
+  "id": "mis_coverage_fraction",
+  "state": "published",
+  "sheet_hash": "bb9512",
+  "impl_hash": "0daf78",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["orbit_earth_central_angle"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

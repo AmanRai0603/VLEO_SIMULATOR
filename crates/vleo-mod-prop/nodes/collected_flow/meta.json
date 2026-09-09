@@ -1,0 +1,13 @@
+{
+  "id": "prop_collected_flow",
+  "state": "published",
+  "sheet_hash": "3c4880",
+  "impl_hash": "95606c",
+  "owner": "propulsion",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["env_mass_density", "orbit_velocity", "prop_intake_area", "prop_capture_efficiency"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

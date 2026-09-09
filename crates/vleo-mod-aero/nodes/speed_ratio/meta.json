@@ -1,0 +1,13 @@
+{
+  "id": "aero_speed_ratio",
+  "state": "published",
+  "sheet_hash": "bb8276",
+  "impl_hash": "3241f4",
+  "owner": "aero",
+  "tier": "A",
+  "fixtures": 1,
+  "holes": 1,
+  "inputs": ["orbit_velocity", "env_local_temperature", "env_mean_molar_mass"],
+  "contributes": [],
+  "gaps": []
+}

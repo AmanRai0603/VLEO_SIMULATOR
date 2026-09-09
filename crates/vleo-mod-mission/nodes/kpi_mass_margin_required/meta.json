@@ -1,0 +1,13 @@
+{
+  "id": "kpi_mass_margin_required",
+  "state": "published",
+  "sheet_hash": "a62574",
+  "impl_hash": "222325",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

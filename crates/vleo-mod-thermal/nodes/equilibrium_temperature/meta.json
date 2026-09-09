@@ -1,0 +1,13 @@
+{
+  "id": "thm_equilibrium_temperature",
+  "state": "published",
+  "sheet_hash": "5b3e31",
+  "impl_hash": "dc0c66",
+  "owner": "thermal",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["thm_absorbed_solar", "thm_absorbed_albedo", "thm_absorbed_ir", "thm_aero_heating", "thm_dissipation", "thm_radiator_area", "thm_emissivity"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

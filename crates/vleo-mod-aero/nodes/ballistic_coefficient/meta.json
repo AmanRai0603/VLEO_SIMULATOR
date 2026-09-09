@@ -1,0 +1,13 @@
+{
+  "id": "aero_ballistic_coefficient",
+  "state": "published",
+  "sheet_hash": "dac3fa",
+  "impl_hash": "1707cd",
+  "owner": "aero",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["mass_wet", "aero_drag_coefficient", "aero_frontal_area"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

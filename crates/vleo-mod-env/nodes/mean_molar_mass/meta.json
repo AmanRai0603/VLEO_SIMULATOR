@@ -1,0 +1,13 @@
+{
+  "id": "env_mean_molar_mass",
+  "state": "published",
+  "sheet_hash": "9a7055",
+  "impl_hash": "d9a9d5",
+  "owner": "environment",
+  "tier": "B",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["orbit_altitude", "env_exospheric_temperature"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

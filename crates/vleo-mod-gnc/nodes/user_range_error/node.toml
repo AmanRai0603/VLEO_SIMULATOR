@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "gnc_user_range_error"
+label = "GNSS user range error"
+folder = "user_range_error"   # frozen at seed; renaming the label never moves the directory
+subsystem = "gnc"
+parent = "gnc"
+kind = "declared"
+owner = "gnc"
+tier = "A"
+state = "published"
+
+[question]
+text = "How accurate is one pseudorange measurement?"
+
+[maths]
+expression = "URE = 1.5"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "URE"
+type = "Length"
+unit = "Metre"
+lower = 0.05
+upper = 50.0
+reason_lower = "below 5 cm requires carrier-phase processing that this receiver does not perform on board"
+reason_upper = "above 50 m the receiver is not usable for orbit determination"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 1.5
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

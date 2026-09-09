@@ -1,0 +1,13 @@
+{
+  "id": "kpi_geolocation_required",
+  "state": "published",
+  "sheet_hash": "8617b3",
+  "impl_hash": "222325",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

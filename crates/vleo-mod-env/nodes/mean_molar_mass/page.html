@@ -1,0 +1,117 @@
+<article class="node" data-node="env_mean_molar_mass" data-sheet-hash="9a7055" data-impl-hash="d9a9d5">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="system">The system</a> <span class="sep">/</span> <a class="xref" data-group="orbit_env">Orbit and environment</a> <span class="sep">/</span> <a class="xref" data-group="space_env">Space environment</a></nav>
+  <h2>Mean molar mass of the local gas</h2>
+  <p class="ident"><code>env_mean_molar_mass</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>B</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">interface</button>
+  <button role="tab" class="tab" data-tab="2">algorithm</button>
+  <button role="tab" class="tab" data-tab="3">generated code</button>
+  <button role="tab" class="tab" data-tab="4">evidence</button>
+  <button role="tab" class="tab" data-tab="5">flags</button>
+  <button role="tab" class="tab" data-tab="6">credibility</button>
+  <button role="tab" class="tab" data-tab="7">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">What is the mean molar mass of the air the vehicle is flying through?</p>
+<p class="maths"><code>M = rho*N_A/n</code></p>
+<p class="src">Source <b>jacchia1971</b> — Jacchia, L. G. — Revised static models of the thermosphere and exosphere with empirical temperature profiles <span class="where">SAO Special Report 332, 1971</span></p>
+<p class="note">Falls from 26 g/mol at 120 km to near 16 — pure atomic oxygen — by 350 km. Every free-molecular relation downstream reads it.</p>
+<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+</section>
+<section class="panel" data-panel="1">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>h</code></td><td><a class="xref" data-goto="orbit_altitude">orbit_altitude</a></td><td>Length</td><td>km</td></tr>
+<tr><td>in</td><td><code>t_inf</code></td><td><a class="xref" data-goto="env_exospheric_temperature">env_exospheric_temperature</a></td><td>Temperature</td><td>K</td></tr>
+<tr class="out"><td>out</td><td><code>M</code></td><td>env_mean_molar_mass</td><td>MolarMass</td><td>kg/mol</td></tr>
+</tbody></table>
+<p class="consumers"><b>6</b> nodes read this: <a class="xref" data-goto="aero_drag_coefficient">aero_drag_coefficient</a>, <a class="xref" data-goto="aero_speed_ratio">aero_speed_ratio</a>, <a class="xref" data-goto="prop_capture_efficiency">prop_capture_efficiency</a>, <a class="xref" data-goto="prop_compression_ratio">prop_compression_ratio</a>, <a class="xref" data-goto="prop_exhaust_velocity">prop_exhaust_velocity</a>, <a class="xref" data-goto="prop_ionisation_power">prop_ionisation_power</a></p>
+</section>
+<section class="panel" data-panel="2">
+<ol class="algo">
+<li><span class="step">take the mass-weighted mean over the five species</span> <span class="binds">→ <code>m: MolarMass</code></span></li>
+</ol>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>M &ge; 0.002</code> — below 2 g/mol the mixture would be pure hydrogen, which does not occur in this band</li>
+<li><code>M &le; 0.03</code> — above 30 g/mol the mixture would be heavier than molecular nitrogen, which does not occur above the base</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What is the mean molar mass of the air the vehicle is flying through?
+///
+/// `M = rho*N_A/n`
+///
+/// Source: `jacchia1971`
+///
+/// Falls from 26 g/mol at 120 km to near 16 — pure atomic oxygen — by 350
+/// km. Every free-molecular relation downstream reads it.
+pub const NODE_ID: &amp;str = &quot;env_mean_molar_mass&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x1f6c235a719a7055;
+
+pub fn evaluate(h: Length, t_inf: Temperature) -&gt; Result&lt;MolarMass, Fault&gt; {
+    // ---- HOLE 1 : take the mass-weighted mean over the five species -&gt; MolarMass
+    let m: MolarMass = env::composition(h, t_inf).mean_molar_mass();
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: MolarMass = m;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;M&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.002 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;M&quot;, value: answer.get(), bound: 0.002, edge: Edge::Lower, unit: MolarMass::UNIT, reason: &quot;below 2 g/mol the mixture would be pure hydrogen, which does not occur in this band&quot; });
+    }
+    if answer.get() &gt; 0.03 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;M&quot;, value: answer.get(), bound: 0.03, edge: Edge::Upper, unit: MolarMass::UNIT, reason: &quot;above 30 g/mol the mixture would be heavier than molecular nitrogen, which does not occur above the base&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="4">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0.002 — below 2 g/mol the mixture would be pure hydrogen, which does not occur in this band</li>
+<li><code>OutOfDomain</code> above 0.03 — above 30 g/mol the mixture would be heavier than molecular nitrogen, which does not occur above the base</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="6">
+<p>Evidence tier <b>B</b>. What this tier cannot detect: an error the independent tool shares with this one.</p>
+<div class="cred" data-cred-for="env_mean_molar_mass"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="7">
+<p>Valid over <code>0.002 &hellip; 0.03</code> kg/mol.</p>
+<ul class="guards"><li>lower — below 2 g/mol the mixture would be pure hydrogen, which does not occur in this band</li><li>upper — above 30 g/mol the mixture would be heavier than molecular nitrogen, which does not occur above the base</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>no fixture: nothing outside this code has ever agreed with what it computes</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

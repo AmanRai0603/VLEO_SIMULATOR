@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "gnc_gdop"
+label = "Geometric dilution of precision"
+folder = "gdop"   # frozen at seed; renaming the label never moves the directory
+subsystem = "gnc"
+parent = "gnc"
+kind = "declared"
+owner = "gnc"
+tier = "A"
+state = "published"
+
+[question]
+text = "How much does the satellite geometry amplify ranging error into position error?"
+
+[maths]
+expression = "GDOP = 2.5"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "GDOP"
+type = "Ratio"
+unit = "One"
+lower = 1.0
+upper = 20.0
+reason_lower = "a dilution below one is not geometrically possible"
+reason_upper = "above 20 the geometry is degenerate and the solution is not usable"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 2.5
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

@@ -1,0 +1,188 @@
+# Sources are objects, not strings.
+#
+# A fixture or a declared value references an identifier here, never a
+# free-text citation. Marking one superseded then lists every node that
+# depends on it — one query rather than a search.
+
+[[source]]
+id = "jacchia1971"
+title = "Jacchia, L. G. — Revised static models of the thermosphere and exosphere with empirical temperature profiles"
+where = "SAO Special Report 332, 1971"
+status = "current"
+used_for = "The temperature profile, the exospheric temperature relation and the diffusive-equilibrium structure the atmosphere node implements."
+
+[[source]]
+id = "us_std_1976"
+title = "U.S. Standard Atmosphere, 1976"
+where = "NOAA-S/T 76-1562"
+status = "current"
+used_for = "The 120 km base state the diffusive-equilibrium integration starts from, and the collision cross-section."
+
+[[source]]
+id = "sentman1961"
+title = "Sentman, L. H. — Free molecule flow theory and its application to the determination of aerodynamic forces"
+where = "Lockheed LMSC-448514, 1961"
+status = "current"
+used_for = "The free-molecular drag and lift coefficients for a surface element."
+
+[[source]]
+id = "doornbos2011"
+title = "Doornbos, E. — Thermospheric density and wind determination from satellite dynamics"
+where = "TU Delft, 2011"
+status = "current"
+used_for = "The form of Sentman's relations used here, and the published residual of empirical thermosphere models against measured drag."
+
+[[source]]
+id = "moe2005"
+title = "Moe, K. and Moe, M. M. — Gas-surface interactions and satellite drag coefficients"
+where = "Planetary and Space Science 53, 2005"
+status = "current"
+used_for = "The Langmuir adsorption model for energy accommodation, and why accommodation moves with solar activity."
+
+[[source]]
+id = "romano2021"
+title = "Romano, F. et al. — Intake design for an atmosphere-breathing electric propulsion system"
+where = "Acta Astronautica, 2021"
+status = "current"
+used_for = "The intake flux balance, the compression ratio and collection efficiency definitions, and the thruster efficiency chain."
+
+[[source]]
+id = "vallado2013"
+title = "Vallado, D. A. — Fundamentals of Astrodynamics and Applications, 4th edition"
+where = "Microcosm Press, 2013"
+status = "current"
+used_for = "The two-body and J2 secular relations, the decay relation and the rocket equation."
+
+[[source]]
+id = "larson_wertz"
+title = "Wertz, J. R., Everett, D. F. and Puschell, J. J. — Space Mission Engineering: The New SMAD"
+where = "Microcosm Press, 2011"
+status = "current"
+used_for = "The access geometry, the link budget, the power and thermal budgets, the disturbance torques and the payload relations."
+
+[[source]]
+id = "wgs84"
+title = "NIMA TR8350.2 — World Geodetic System 1984"
+where = "3rd edition, 2000"
+status = "current"
+used_for = "The Earth equatorial radius, flattening, gravitational parameter and J2."
+
+[[source]]
+id = "codata2018"
+title = "CODATA 2018 recommended values of the fundamental physical constants"
+where = "NIST, 2019"
+status = "current"
+used_for = "Boltzmann's constant, the gas constant, Avogadro's number, the elementary charge and the atomic mass unit."
+
+[[source]]
+id = "igrf2020"
+title = "International Geomagnetic Reference Field, 13th generation"
+where = "IAGA, 2020"
+status = "current"
+used_for = "The dipole moment used in the magnetic field approximation."
+
+[[source]]
+id = "iso24113"
+title = "ISO 24113 — Space systems: space debris mitigation requirements"
+where = "ISO, 2019"
+status = "current"
+used_for = "The disposal requirement that makes deorbit delta-v a design variable rather than an afterthought."
+
+[[source]]
+id = "ecss_e_st_10_02"
+title = "ECSS-E-ST-10-02C — Verification"
+where = "ESA-ESTEC, 2018"
+status = "current"
+used_for = "The margin philosophy, the mass growth allowances and the required-against-achieved closure convention."
+
+[[source]]
+id = "ecss_e_st_50"
+title = "ECSS-E-ST-50-05C — Radio frequency and modulation"
+where = "ESA-ESTEC, 2011"
+status = "current"
+used_for = "The link margin convention."
+
+[[source]]
+id = "ccsds131"
+title = "CCSDS 131.0-B — TM synchronization and channel coding"
+where = "CCSDS, 2021"
+status = "current"
+used_for = "The required energy per bit for the assumed coded modulation."
+
+[[source]]
+id = "ccsds122"
+title = "CCSDS 122.0-B — Image data compression"
+where = "CCSDS, 2017"
+status = "current"
+used_for = "The compression ratio range the imagery budget is written against."
+
+[[source]]
+id = "itu_p618"
+title = "ITU-R P.618 — Propagation data and prediction methods for earth-space telecommunication systems"
+where = "ITU, 2023"
+status = "current"
+used_for = "The atmospheric and rain attenuation the link budget carries."
+
+[[source]]
+id = "itu_sa1862"
+title = "ITU-R SA.1862 — Frequency bands for Earth exploration-satellite service downlinks"
+where = "ITU, 2010"
+status = "current"
+used_for = "The X-band downlink allocation the frequency is chosen inside."
+
+[[source]]
+id = "noaa_swpc"
+title = "NOAA Space Weather Prediction Center — solar and geomagnetic indices"
+where = "NOAA, retrieved 2026-09-01"
+status = "current"
+used_for = "The F10.7 and Kp drivers, distributed as the solar-drivers bundle."
+
+[[source]]
+id = "nist_asd"
+title = "NIST Atomic Spectra Database, ionisation energies"
+where = "NIST, 2023"
+status = "current"
+used_for = "The first ionisation energies that set the floor on the energy an ABEP thruster spends per ion."
+
+[[source]]
+id = "ciaaw2021"
+title = "CIAAW — Standard atomic weights"
+where = "IUPAC, 2021"
+status = "current"
+used_for = "The molar masses of the atmospheric species."
+
+[[source]]
+id = "nasa_cer"
+title = "NASA Cost Estimating Handbook, version 4.0"
+where = "NASA, 2015"
+status = "current"
+used_for = "The form of the cost estimating relations and the learning curve convention."
+
+[[source]]
+id = "modtran_ref"
+title = "At-aperture radiance reference case, mid-latitude summer, 30 degree solar zenith"
+where = "MODTRAN 6 run, 2026-08-14"
+status = "current"
+used_for = "The scene radiance the optical signal-to-noise chain is evaluated at."
+
+[[source]]
+id = "orbitt_case_c1"
+title = "Orbitt Space — VLEO multipayload reference case C1"
+where = "internal, 2026-09-01"
+status = "current"
+used_for = "Every declared value that is a programme decision rather than a physical constant."
+
+[[source]]
+id = "orbitt_case_c2"
+title = "Orbitt Space — VLEO multipayload reference case C2"
+where = "internal, 2026-09-01"
+status = "current"
+used_for = "The comms and PNT case's declared values."
+
+[[source]]
+id = "matlab_legacy"
+title = "Orbitt Space — legacy MATLAB feasibility tool, 364 files"
+where = "internal, 2025"
+status = "current"
+used_for = "An independent implementation, used as a second opinion. Its outputs are a parity grid, never a fixture: an implementation cannot supply its own expected values, and this one is an implementation."
+

@@ -1,0 +1,13 @@
+{
+  "id": "prop_incident_flux",
+  "state": "published",
+  "sheet_hash": "0887e4",
+  "impl_hash": "d180a3",
+  "owner": "propulsion",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["env_mass_density", "orbit_velocity"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

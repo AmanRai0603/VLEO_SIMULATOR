@@ -1,0 +1,13 @@
+{
+  "id": "com_doppler",
+  "state": "published",
+  "sheet_hash": "3abd6a",
+  "impl_hash": "42e48d",
+  "owner": "comms",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["com_frequency", "orbit_ground_track_speed"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

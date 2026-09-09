@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pwr_harness_loss"
+label = "Harness and distribution loss"
+folder = "harness_loss"   # frozen at seed; renaming the label never moves the directory
+subsystem = "power"
+parent = "power"
+kind = "declared"
+owner = "power"
+tier = "A"
+state = "published"
+
+[question]
+text = "What fraction is lost between the source and the loads?"
+
+[maths]
+expression = "L_h = 0.06"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "L_h"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 0.25
+reason_lower = "a loss fraction cannot be negative"
+reason_upper = "above 25% the harness is the largest load on the bus"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 0.06
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

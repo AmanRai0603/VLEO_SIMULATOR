@@ -1,0 +1,40 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pwr_thermal_load"
+label = "Thermal control load"
+folder = "thermal_load"   # frozen at seed; renaming the label never moves the directory
+subsystem = "power"
+parent = "power"
+kind = "declared"
+owner = "thermal"
+tier = "A"
+state = "published"
+
+[question]
+text = "What do the heaters and thermal control electronics draw?"
+
+[maths]
+expression = "P_th = 15"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "P_th"
+type = "Power"
+unit = "Watt"
+lower = 0.0
+upper = 300.0
+reason_lower = "a heater load cannot be negative"
+reason_upper = "above 300 W the thermal design is heating rather than rejecting, which does not happen in this orbit"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 15.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

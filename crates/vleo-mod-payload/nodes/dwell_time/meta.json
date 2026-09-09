@@ -1,0 +1,13 @@
+{
+  "id": "pay_dwell_time",
+  "state": "published",
+  "sheet_hash": "9107fc",
+  "impl_hash": "5eeae9",
+  "owner": "payload",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pay_gsd", "orbit_ground_track_speed"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

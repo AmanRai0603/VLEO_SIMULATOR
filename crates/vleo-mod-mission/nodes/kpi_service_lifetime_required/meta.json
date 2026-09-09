@@ -1,0 +1,13 @@
+{
+  "id": "kpi_service_lifetime_required",
+  "state": "published",
+  "sheet_hash": "99f4bf",
+  "impl_hash": "222325",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

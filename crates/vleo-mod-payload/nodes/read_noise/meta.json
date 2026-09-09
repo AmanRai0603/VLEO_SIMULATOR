@@ -1,0 +1,13 @@
+{
+  "id": "pay_read_noise",
+  "state": "published",
+  "sheet_hash": "466787",
+  "impl_hash": "222325",
+  "owner": "payload",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

@@ -1,0 +1,13 @@
+{
+  "id": "pwr_array_mass",
+  "state": "published",
+  "sheet_hash": "a49e94",
+  "impl_hash": "397dfe",
+  "owner": "power",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["pwr_array_area", "pwr_array_areal_density"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

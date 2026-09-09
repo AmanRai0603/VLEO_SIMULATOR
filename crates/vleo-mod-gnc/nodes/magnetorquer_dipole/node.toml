@@ -1,0 +1,64 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "gnc_magnetorquer_dipole"
+label = "Magnetorquer dipole required"
+folder = "magnetorquer_dipole"   # frozen at seed; renaming the label never moves the directory
+subsystem = "gnc"
+parent = "gnc"
+kind = "computed"
+owner = "gnc"
+tier = "A"
+state = "published"
+
+[question]
+text = "How strong must the torque rods be to dump that momentum?"
+
+[maths]
+expression = "m = h/(B*t_dump)"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "m_req"
+type = "DipoleMoment"
+unit = "AmpereSquareMetre"
+lower = 0.0
+upper = 1000.0
+reason_lower = "a dipole magnitude cannot be negative"
+reason_upper = "above 1000 A.m2 no torque rod that fits this vehicle produces it"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "h"
+var = "gnc_momentum_storage"
+type = "AngularMomentum"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "b"
+var = "env_magnetic_field"
+type = "MagneticFluxDensity"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "td"
+var = "gnc_dump_time"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "divide the stored momentum by the field and the available dump interval"
+binds = "m"
+type = "DipoleMoment"
+
+[view]
+kind = "number"
+

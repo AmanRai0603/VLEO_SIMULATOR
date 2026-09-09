@@ -1,0 +1,56 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "orbit_slant_range"
+label = "Slant range at working elevation"
+folder = "slant_range"   # frozen at seed; renaming the label never moves the directory
+subsystem = "orbit"
+parent = "orbit_geometry"
+kind = "computed"
+owner = "systems"
+tier = "A"
+state = "published"
+
+[question]
+text = "How far away is a target or ground station at the edge of the access circle?"
+
+[maths]
+expression = "d = sqrt(Re^2 + r^2 - 2*Re*r*cos(lambda))"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "d"
+type = "Length"
+unit = "Kilometre"
+lower = 100.0
+upper = 4000.0
+reason_lower = "the slant range is at least the altitude"
+reason_upper = "beyond 4000 km the geometry is outside this tool's band"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "r"
+var = "orbit_radius"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "eps"
+var = "orbit_min_elevation"
+type = "Angle"
+
+[[algorithm.step]]
+number = 1
+text = "apply the law of cosines across the access triangle"
+binds = "d"
+type = "Length"
+
+[view]
+kind = "number"
+

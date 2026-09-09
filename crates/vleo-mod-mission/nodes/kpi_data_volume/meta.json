@@ -1,0 +1,13 @@
+{
+  "id": "kpi_data_volume",
+  "state": "published",
+  "sheet_hash": "202941",
+  "impl_hash": "e56218",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["kpi_data_volume_required", "com_daily_volume"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

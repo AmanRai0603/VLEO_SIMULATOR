@@ -1,0 +1,57 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pwr_cell_derating"
+label = "Array temperature derating factor"
+folder = "cell_derating"   # frozen at seed; renaming the label never moves the directory
+subsystem = "power"
+parent = "power"
+kind = "computed"
+owner = "power"
+tier = "A"
+state = "published"
+
+[question]
+text = "How much output does the array lose because it is hotter than its rating?"
+note = "This node closes the loop. Without it power, thermal and propulsion are three independent chains; with it they are one system, and the resolver has to relax them together."
+
+[maths]
+expression = "f_T = 1 + k_T*(T_eq - 298.15)"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "f_T"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 1.5
+reason_lower = "a derating factor cannot be negative"
+reason_upper = "above 1.5 the array would be producing half again its rating, which the coefficient does not permit"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "k"
+var = "pwr_cell_temperature_coefficient"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "t"
+var = "thm_equilibrium_temperature"
+type = "Temperature"
+
+[[algorithm.step]]
+number = 1
+text = "apply the linear temperature coefficient about the 298.15 K reference, floored at 30% so the relaxation cannot chase a negative array"
+binds = "f"
+type = "Ratio"
+
+[view]
+kind = "number"
+

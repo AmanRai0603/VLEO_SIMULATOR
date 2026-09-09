@@ -1,0 +1,120 @@
+<article class="node" data-node="env_magnetic_field" data-sheet-hash="01e268" data-impl-hash="c082af">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="system">The system</a> <span class="sep">/</span> <a class="xref" data-group="orbit_env">Orbit and environment</a> <span class="sep">/</span> <a class="xref" data-group="space_env">Space environment</a></nav>
+  <h2>Geomagnetic flux density</h2>
+  <p class="ident"><code>env_magnetic_field</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">interface</button>
+  <button role="tab" class="tab" data-tab="2">algorithm</button>
+  <button role="tab" class="tab" data-tab="3">generated code</button>
+  <button role="tab" class="tab" data-tab="4">evidence</button>
+  <button role="tab" class="tab" data-tab="5">flags</button>
+  <button role="tab" class="tab" data-tab="6">credibility</button>
+  <button role="tab" class="tab" data-tab="7">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How strong is the magnetic field at the flight altitude?</p>
+<p class="maths"><code>B = B0*(Re/r)^3*sqrt(1 + 3*sin^2(lat_m))</code></p>
+<p class="src">Source <b>igrf2020</b> — International Geomagnetic Reference Field, 13th generation <span class="where">IAGA, 2020</span></p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>Centred dipole, no higher-order terms</dt><dd>fails when the South Atlantic Anomaly departs from a dipole by up to 30%; a magnetorquer sized on this alone is undersized there</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>r</code></td><td><a class="xref" data-goto="orbit_radius">orbit_radius</a></td><td>Length</td><td>m</td></tr>
+<tr><td>in</td><td><code>lat_m</code></td><td><a class="xref" data-goto="gnc_magnetic_latitude">gnc_magnetic_latitude</a></td><td>Angle</td><td>deg</td></tr>
+<tr class="out"><td>out</td><td><code>B</code></td><td>env_magnetic_field</td><td>MagneticFluxDensity</td><td>T</td></tr>
+</tbody></table>
+<p class="consumers"><b>2</b> nodes read this: <a class="xref" data-goto="gnc_magnetic_torque">gnc_magnetic_torque</a>, <a class="xref" data-goto="gnc_magnetorquer_dipole">gnc_magnetorquer_dipole</a></p>
+</section>
+<section class="panel" data-panel="2">
+<ol class="algo">
+<li><span class="step">evaluate the tilted dipole approximation at the orbital radius</span> <span class="binds">→ <code>b: MagneticFluxDensity</code></span></li>
+</ol>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>B &ge; 0.000001</code> — the field never falls below a microtesla at these altitudes</li>
+<li><code>B &le; 0.0001</code> — the surface equatorial field is 3.1e-5 T; 1e-4 would be four times the polar surface value</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How strong is the magnetic field at the flight altitude?
+///
+/// `B = B0*(Re/r)^3*sqrt(1 + 3*sin^2(lat_m))`
+///
+/// Source: `igrf2020`
+///
+/// # Assumptions
+///
+/// * Centred dipole, no higher-order terms — fails when the South Atlantic Anomaly departs from a dipole by up to 30%; a magnetorquer sized on this alone is undersized there
+pub const NODE_ID: &amp;str = &quot;env_magnetic_field&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x803500f0a601e268;
+
+pub fn evaluate(r: Length, lat_m: Angle) -&gt; Result&lt;MagneticFluxDensity, Fault&gt; {
+    // ---- HOLE 1 : evaluate the tilted dipole approximation at the orbital radius -&gt; MagneticFluxDensity
+    let b: MagneticFluxDensity = env::magnetic_field(r, lat_m);
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: MagneticFluxDensity = b;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;B&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 1e-6 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;B&quot;, value: answer.get(), bound: 1e-6, edge: Edge::Lower, unit: MagneticFluxDensity::UNIT, reason: &quot;the field never falls below a microtesla at these altitudes&quot; });
+    }
+    if answer.get() &gt; 0.0001 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;B&quot;, value: answer.get(), bound: 0.0001, edge: Edge::Upper, unit: MagneticFluxDensity::UNIT, reason: &quot;the surface equatorial field is 3.1e-5 T; 1e-4 would be four times the polar surface value&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="4">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0.000001 — the field never falls below a microtesla at these altitudes</li>
+<li><code>OutOfDomain</code> above 0.0001 — the surface equatorial field is 3.1e-5 T; 1e-4 would be four times the polar surface value</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="6">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="env_magnetic_field"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="7">
+<p>Valid over <code>0.000001 &hellip; 0.0001</code> T.</p>
+<ul class="guards"><li>lower — the field never falls below a microtesla at these altitudes</li><li>upper — the surface equatorial field is 3.1e-5 T; 1e-4 would be four times the polar surface value</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>no fixture: nothing outside this code has ever agreed with what it computes</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

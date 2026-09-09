@@ -1,0 +1,13 @@
+{
+  "id": "mis_satellites_required",
+  "state": "published",
+  "sheet_hash": "cc89a1",
+  "impl_hash": "80850c",
+  "owner": "systems",
+  "tier": "C",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["kpi_revisit_required", "pay_swath", "orbit_ground_track_speed"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "mass_disposal_propellant",
+  "state": "published",
+  "sheet_hash": "cf1d5a",
+  "impl_hash": "e7e3b0",
+  "owner": "propulsion",
+  "tier": "A",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["mass_dry", "orbit_deorbit_delta_v"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

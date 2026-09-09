@@ -1,0 +1,13 @@
+{
+  "id": "orbit_sun_sync_inclination",
+  "state": "published",
+  "sheet_hash": "75c533",
+  "impl_hash": "52062d",
+  "owner": "systems",
+  "tier": "A",
+  "fixtures": 1,
+  "holes": 1,
+  "inputs": ["orbit_radius", "orbit_eccentricity"],
+  "contributes": [],
+  "gaps": []
+}

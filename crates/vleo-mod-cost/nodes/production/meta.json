@@ -1,0 +1,13 @@
+{
+  "id": "cost_production",
+  "state": "published",
+  "sheet_hash": "b4290c",
+  "impl_hash": "80d2a2",
+  "owner": "programme",
+  "tier": "C",
+  "fixtures": 0,
+  "holes": 1,
+  "inputs": ["cost_bus_recurring", "cost_payload_recurring", "mis_satellites", "cost_learning_slope"],
+  "contributes": [],
+  "gaps": ["no fixture: nothing outside this code has ever agreed with what it computes"]
+}

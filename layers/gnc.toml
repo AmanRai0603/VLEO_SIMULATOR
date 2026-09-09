@@ -1,0 +1,18 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "gnc"
+label = "Guidance, navigation and control"
+parent = "subsystems"
+owner = "gnc"
+
+[[relates]]
+from = "gnc"
+to = "aero_drag"
+why = "aerodynamic torque is the dominant disturbance in this regime"
+
