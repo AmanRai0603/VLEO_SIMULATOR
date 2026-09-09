@@ -1,0 +1,16 @@
+[package]
+name = "vleo-units"
+description = "RING 0 — units and frames as types, physical constants, and the portable maths library. A leaf: it depends on nothing and compiles once."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[features]
+default = []
+std = []
+
+[lints.rust]
+unsafe_code = "forbid"

@@ -1,0 +1,22 @@
+[package]
+name = "vleo-core"
+description = "RING 1 — the kernel. Every formula in the system, the fault taxonomy, the credibility vector, the graph types and the resolver. no_std, no alloc, no I/O, no clock, no drawing."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+vleo-units = { workspace = true }
+
+[features]
+default = []
+# `std` exists only so the faces can print a Fault. It adds nothing to the
+# physics, and `cargo xtask check` fails the build if the no_std target
+# acquires it.
+std = ["vleo-units/std"]
+
+[lints.rust]
+unsafe_code = "forbid"
