@@ -5,10 +5,11 @@ id = "aero_dynamic_pressure"
 label = "Dynamic pressure"
 folder = "dynamic_pressure"   # frozen at seed; renaming the label never moves the directory
 subsystem = "aero"
-parent = "aero_drag"
+parent = "sys_satellite"
 kind = "computed"
 owner = "aero"
 tier = "A"
+layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

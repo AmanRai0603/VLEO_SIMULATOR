@@ -1,0 +1,15 @@
+[package]
+name = "vleo-mod-management"
+description = "LAYER 1 — the management layer — the ask, the money, the schedule, the answer that goes back. It holds sheets and, for now, no code: every row in it is seeded and nothing is generated from a sheet nobody has specified."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+vleo-core = { workspace = true }
+
+[lints.rust]
+unsafe_code = "forbid"

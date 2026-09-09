@@ -5,10 +5,11 @@ id = "kpi_latency_required"
 label = "End to end latency — required"
 folder = "kpi_latency_required"   # frozen at seed; renaming the label never moves the directory
 subsystem = "kpi"
-parent = "mgt_customer"
+parent = "sys_service"
 kind = "declared"
 owner = "systems"
 tier = "A"
+layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

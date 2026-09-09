@@ -3,86 +3,124 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VLEO Integrated Design Tool</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2317181c'/%3E%3Ctext x='8' y='12' font-size='11' fill='%23fbfaf7' text-anchor='middle' font-family='sans-serif'%3EV%3C/text%3E%3C/svg%3E">
+<title>VLEO Multipayload design tool</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%231a1a1a'/%3E%3Ctext x='8' y='12' font-size='11' fill='%23fbfaf7' text-anchor='middle' font-family='monospace'%3EV%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="/app.css">
 </head>
 <body>
 <!--
-  The document is the interface, and the interface is the document.
+  One figure, two relations.
 
-  Structure rather than canvas: a canvas cannot be searched, selected, linked
-  into or printed, and review packs get printed. The only canvas here is the
-  sweep plot, which is a field rather than prose.
+  The nested boxes on the diagonal are the tree. The marks are the dependency.
+  Neither is beside the other — they share the same grid, because a side-car
+  tree drifts out of alignment as branches open, and a tree alone cannot show
+  the second relation at all.
 -->
-<header id="bar">
-  <div class="brand">
-    <span class="mark">VLEO</span>
-    <span class="sub">Integrated Design Tool</span>
-  </div>
-  <div id="provenance" class="prov">
-    <span class="p-item" id="p-engine" title="Which engine answered. Every result records it, so a divergence between two endpoints is a fault that raises a flag rather than an argument.">engine <b>—</b></span>
-    <span class="p-item" id="p-kernel" title="Identifies this build of the engine.">kernel <b>—</b></span>
-    <span class="p-item" id="p-graph" title="Identifies the graph the engine was built against. Changes when an edge does.">graph <b>—</b></span>
-    <span class="p-item" id="p-data" title="Which reference-data bundles answered, and at which version.">data <b>—</b></span>
-  </div>
+
+<header id="masthead">
+  <h1>VLEO Multipayload design tool</h1>
+  <p class="tagline">Orbitt Space · four layers · one architecture, many cases</p>
 </header>
 
-<nav id="controls">
-  <label class="ctl">case
-    <select id="case"></select>
-  </label>
-  <label class="ctl">layer
-    <select id="layer">
-      <option value="management">1 · management</option>
-      <option value="system" selected>2 · the system</option>
-      <option value="subsystems">3 · subsystem</option>
-      <option value="closure">4 · closure</option>
-      <option value="">all rows</option>
-    </select>
-  </label>
-  <label class="ctl">search
-    <input id="search" type="search" placeholder="node, symbol or question" autocomplete="off">
-  </label>
-  <span class="ctl-group" role="group" aria-label="run mode">
-    <button class="mode sel" data-mode="alone" title="Only this node. Disabled when a dependency has never run, and it names which.">run alone</button>
-    <button class="mode" data-mode="branch" title="The whole dependency closure, in topological order. The mode that produces a defensible number.">run the branch</button>
-    <button class="mode" data-mode="all" title="Everything buildable. Unbuilt nodes stay blocked and are listed.">run everything</button>
-  </span>
-  <button id="run" class="primary">▶ Run</button>
-  <span id="runstate" class="runstate"></span>
+<nav id="tabs">
+  <div class="tabrow">
+    <button class="nudge" id="prev" title="the layer above">←</button>
+    <button class="nudge" id="next" title="the layer below">→</button>
+    <button class="tab sel" data-layer="1">1 Management layer</button>
+    <button class="tab" data-layer="2">2 The system — tree, connectivity, one node</button>
+    <button class="tab" data-layer="3">3 Subsystem</button>
+    <button class="tab" data-layer="4">4 The run</button>
+    <span class="status" id="status"></span>
+  </div>
+
+  <div class="tabrow sub" id="controls">
+    <button class="ctl" id="expand-all">expand all</button>
+    <button class="ctl" id="collapse-all">collapse all</button>
+    <button class="ctl" id="howto">▸ how to read it</button>
+    <span class="grp"><span class="lbl">size</span>
+      <button class="ctl sz" data-size="S">S</button
+      ><button class="ctl sz sel" data-size="M">M</button
+      ><button class="ctl sz" data-size="L">L</button>
+    </span>
+    <span class="grp" id="concept-grp">
+      <button class="ctl cpt" data-concept="single">Single satellite</button
+      ><button class="ctl cpt sel" data-concept="constellation">Constellation</button>
+    </span>
+    <span class="grp" id="subsys-grp"><span class="lbl">layer</span>
+      <select id="subsys" class="ctl"></select>
+    </span>
+  </div>
+
+  <div class="tabrow sub" id="caserow">
+    <span class="tag" id="concept-tag">Constellation</span>
+    <span class="lbl">case</span>
+    <button class="ctl case sel" data-case="c1">C1 · ISR+EO+geo</button
+    ><button class="ctl case" data-case="c2">C2 · comms+EO+PNT</button>
+    <span class="hint-inline" id="caserow-note"></span>
+  </div>
 </nav>
 
+<section id="howto-panel" hidden>
+  <ol id="howto-steps"></ol>
+  <button class="ctl" id="howto-close">close</button>
+</section>
+
 <main>
-  <section id="tree" class="panel">
-    <h3>the tree <span class="count" id="tree-count"></span></h3>
-    <p class="hint">One parent per node. The tree is the decomposition; it is not the dependency — which is why both are drawn.</p>
-    <div id="tree-body" role="tree"></div>
-  </section>
+  <div id="stepper"></div>
+  <p class="caption" id="caption-a"></p>
+  <p class="caption" id="caption-b"></p>
 
-  <section id="left" class="panel">
-    <section id="paths">
-      <h3>what this touches</h3>
-      <p class="hint">Row is what it feeds. Column is what feeds it. The panel that answers <i>what would I disturb</i>.</p>
-      <div id="paths-body"></div>
-    </section>
-    <section id="matrix">
-      <h3>connectivity <span class="count" id="mx-count"></span></h3>
-      <p class="hint">The hierarchy is drawn <i>inside</i> the matrix as nested boxes on the diagonal. A mark inside a box is coupling that subtree owns; a mark outside it crosses a boundary.</p>
-      <div id="matrix-body"></div>
-      <ul id="crossings" class="crossings"></ul>
-    </section>
-  </section>
+  <div id="figure">
+    <div class="colheads">
+      <span class="colhead out">→ each row — what that node feeds</span>
+      <span class="colhead in">↓ each column — what that node reads</span>
+    </div>
 
-  <section id="node" class="panel node-panel">
+    <div class="grid">
+      <div id="tree" class="pane"></div>
+      <div id="paths" class="pane">
+        <div class="paths-label">paths</div>
+        <svg id="paths-svg" aria-hidden="true"></svg>
+        <div id="paths-dots"></div>
+      </div>
+      <div id="matrix" class="pane">
+        <div id="matrix-scroll">
+          <div id="matrix-inner">
+            <div id="matrix-cells"></div>
+            <svg id="matrix-svg" aria-hidden="true"></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="legend">
+      <p class="rule">its row is what it feeds · its column is what feeds it</p>
+      <p class="keys">
+        <span class="key"><i class="sw in"></i>input — every node that feeds the selected one</span>
+        <span class="key"><i class="sw out"></i>output — every node it feeds</span>
+        <span class="key"><i class="sw both"></i>both ways</span>
+      </p>
+      <p class="rule">solid = one hop away · pale = further down the chain</p>
+      <p class="rule">the lit branch is the path from the root to what you selected</p>
+    </div>
+
+    <p id="reach" class="reach"></p>
+    <dl id="notes"></dl>
+  </div>
+
+  <div id="nodeview" hidden>
+    <button class="ctl" id="back">↑ back to the layer</button>
     <div id="node-body"></div>
-    <div id="result" class="result"></div>
-  </section>
+    <div id="run-panel"></div>
+  </div>
+
+  <div id="runview" hidden>
+    <div id="run-body"></div>
+  </div>
 </main>
 
 <footer>
-  <span>250 rows · <span id="foot-counts"></span></span>
-  <span class="muted">A blank is a statement, not an oversight. Always <b>n of 250</b> — the denominator was always there.</span>
+  <span id="foot"></span>
 </footer>
 
 <script src="/app.js"></script>

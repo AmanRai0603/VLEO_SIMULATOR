@@ -1,0 +1,13 @@
+{
+  "id": "l3_navsense_n_06",
+  "state": "empty",
+  "sheet_hash": "72fd18",
+  "impl_hash": "222325",
+  "owner": "gnc",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

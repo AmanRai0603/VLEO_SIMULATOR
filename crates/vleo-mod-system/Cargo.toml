@@ -1,0 +1,15 @@
+[package]
+name = "vleo-mod-system"
+description = "LAYER 2 — the system layer's seeded rows — places in the decomposition nobody has specified yet. It holds sheets and, for now, no code: every row in it is seeded and nothing is generated from a sheet nobody has specified."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+vleo-core = { workspace = true }
+
+[lints.rust]
+unsafe_code = "forbid"

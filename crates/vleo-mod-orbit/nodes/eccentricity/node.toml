@@ -5,10 +5,11 @@ id = "orbit_eccentricity"
 label = "Orbit eccentricity"
 folder = "eccentricity"   # frozen at seed; renaming the label never moves the directory
 subsystem = "orbit"
-parent = "orbit_geometry"
+parent = "sys_orbit_env"
 kind = "declared"
 owner = "systems"
 tier = "A"
+layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

@@ -8,6 +8,10 @@
 [[group]]
 id = "mgt_programme"
 label = "Programme control"
-parent = "management"
-owner = "systems"
+parent = "mgt_orbitt"
+owner = "programme"
+layer = 1
+box = false   # drawn as a nested box on the diagonal
+tone = "green"
+cases = []   # empty means every case
 

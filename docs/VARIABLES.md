@@ -7,12 +7,814 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**250 rows** — 112 a person picked, 138 worked out. Two thirds of any design tree is
+**1333 rows** — 884 a person picked, 449 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
 
-## `aero` — Aerodynamics and drag
+## `acs` — Attitude control sizing
+
+### `l3_acs_ach_01` — Achieved 1 — against target 1
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_ach_02` — Achieved 2 — against target 2
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_ach_03` — Achieved 3 — against target 3
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_ach_04` — Achieved 4 — against target 4
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_ach_05` — Achieved 5 — against target 5
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_ach_06` — Achieved 6 — against target 6
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_ach_07` — Achieved 7 — against target 7
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_ach_08` — Achieved 8 — against target 8
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_ach_09` — Achieved 9 — against target 9
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_interface` — Attitude control sizing — subsystem interface
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_n_01` — Attitude control sizing · internal — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_02` — Attitude control sizing · internal — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_03` — Attitude control sizing · internal — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_04` — Attitude control sizing · internal — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_05` — Attitude control sizing · internal — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_06` — Attitude control sizing · internal — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_07` — Attitude control sizing · internal — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_08` — Attitude control sizing · internal — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_09` — Attitude control sizing · internal — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_10` — Attitude control sizing · internal — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_11` — Attitude control sizing · internal — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_12` — Attitude control sizing · internal — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_13` — Attitude control sizing · internal — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_14` — Attitude control sizing · internal — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_15` — Attitude control sizing · internal — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_16` — Attitude control sizing · internal — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_17` — Attitude control sizing · internal — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_18` — Attitude control sizing · internal — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_19` — Attitude control sizing · internal — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_n_20` — Attitude control sizing · internal — to be named (20)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_acs_req_01` — Target 1 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_req_02` — Target 2 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_req_03` — Target 3 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_req_04` — Target 4 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_req_05` — Target 5 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_req_06` — Target 6 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_req_07` — Target 7 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_req_08` — Target 8 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_acs_req_09` — Target 9 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+
+## `aero` — Satellite system
 
 ### `aero_accommodation` — Energy accommodation coefficient
 
@@ -339,6 +1141,868 @@ Treating this as a constant 2.2 is the single largest avoidable error in a VLEO 
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
 In VLEO this dominates gravity gradient and solar pressure by one to three orders of magnitude, which is why a control design carried over from a higher orbit is undersized here.
+
+
+## `atthw` — Attitude hardware
+
+### `l3_atthw_ach_01` — Achieved 1 — against target 1
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_ach_02` — Achieved 2 — against target 2
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_ach_03` — Achieved 3 — against target 3
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_ach_04` — Achieved 4 — against target 4
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_ach_05` — Achieved 5 — against target 5
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_ach_06` — Achieved 6 — against target 6
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_ach_07` — Achieved 7 — against target 7
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_ach_08` — Achieved 8 — against target 8
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_ach_09` — Achieved 9 — against target 9
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_interface` — Attitude hardware — subsystem interface
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_n_01` — Attitude hardware · internal — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_02` — Attitude hardware · internal — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_03` — Attitude hardware · internal — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_04` — Attitude hardware · internal — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_05` — Attitude hardware · internal — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_06` — Attitude hardware · internal — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_07` — Attitude hardware · internal — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_08` — Attitude hardware · internal — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_09` — Attitude hardware · internal — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_10` — Attitude hardware · internal — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_11` — Attitude hardware · internal — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_12` — Attitude hardware · internal — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_13` — Attitude hardware · internal — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_14` — Attitude hardware · internal — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_15` — Attitude hardware · internal — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_16` — Attitude hardware · internal — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_17` — Attitude hardware · internal — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_18` — Attitude hardware · internal — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_19` — Attitude hardware · internal — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_20` — Attitude hardware · internal — to be named (20)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_21` — Attitude hardware · internal — to be named (21)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_22` — Attitude hardware · internal — to be named (22)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_n_23` — Attitude hardware · internal — to be named (23)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_atthw_req_01` — Target 1 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_req_02` — Target 2 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_req_03` — Target 3 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_req_04` — Target 4 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_req_05` — Target 5 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_req_06` — Target 6 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_req_07` — Target 7 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_req_08` — Target 8 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_atthw_req_09` — Target 9 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
 
 ## `com` — Closure — required against achieved
@@ -921,7 +2585,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **read by** — `com_eirp`, `prop_throttle`, `pwr_demand`, `thm_dissipation`
 
 
-## `cost` — Cost and value case
+## `cost` — Cost of the design
 
 ### `cost_annual_operations` — Annual operations cost
 
@@ -1173,7 +2837,7 @@ The term that decides whether forty satellites cost forty times one, and the ter
 The commercial argument for the whole programme, as a node with a source and evidence rather than a slide.
 
 
-## `env` — Space environment
+## `env` — Orbit and environment
 
 ### `env_atomic_oxygen_density` — Atomic oxygen number density
 
@@ -1548,7 +3212,1057 @@ Falls from 26 g/mol at 120 km to near 16 — pure atomic oxygen — by 350 km. E
 - **read by** — `aero_drag_coefficient`
 
 
-## `gnc` — Guidance, navigation and control
+## `fsw` — Flight software
+
+### `l3_fsw_ach_01` — Achieved 1 — against target 1
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_fsw_ach_02` — Achieved 2 — against target 2
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_fsw_ach_03` — Achieved 3 — against target 3
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_fsw_interface` — Flight software — subsystem interface
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_fsw_n_01` — Flight software · internal — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_02` — Flight software · internal — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_03` — Flight software · internal — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_04` — Flight software · internal — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_05` — Flight software · internal — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_06` — Flight software · internal — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_07` — Flight software · internal — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_08` — Flight software · internal — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_09` — Flight software · internal — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_10` — Flight software · internal — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_11` — Flight software · internal — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_12` — Flight software · internal — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_13` — Flight software · internal — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_14` — Flight software · internal — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_15` — Flight software · internal — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_16` — Flight software · internal — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_17` — Flight software · internal — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_18` — Flight software · internal — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_19` — Flight software · internal — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_20` — Flight software · internal — to be named (20)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_21` — Flight software · internal — to be named (21)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_22` — Flight software · internal — to be named (22)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_23` — Flight software · internal — to be named (23)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_24` — Flight software · internal — to be named (24)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_25` — Flight software · internal — to be named (25)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_26` — Flight software · internal — to be named (26)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_27` — Flight software · internal — to be named (27)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_28` — Flight software · internal — to be named (28)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_29` — Flight software · internal — to be named (29)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_30` — Flight software · internal — to be named (30)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_31` — Flight software · internal — to be named (31)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_32` — Flight software · internal — to be named (32)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_33` — Flight software · internal — to be named (33)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_34` — Flight software · internal — to be named (34)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_35` — Flight software · internal — to be named (35)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_36` — Flight software · internal — to be named (36)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_37` — Flight software · internal — to be named (37)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_38` — Flight software · internal — to be named (38)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_39` — Flight software · internal — to be named (39)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_40` — Flight software · internal — to be named (40)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_41` — Flight software · internal — to be named (41)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_42` — Flight software · internal — to be named (42)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_43` — Flight software · internal — to be named (43)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_44` — Flight software · internal — to be named (44)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_n_45` — Flight software · internal — to be named (45)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_fsw_req_01` — Target 1 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_fsw_req_02` — Target 2 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_fsw_req_03` — Target 3 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | avionics |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+
+## `gnc` — Point it
 
 ### `gnc_alignment_error` — Payload to sensor alignment error
 
@@ -2022,7 +4736,7 @@ Summed, not root-sum-squared. These are biases that can and do align, and a whee
 - **read by** — `gnc_nav_position_error`
 
 
-## `kpi` — Applications and KPIs
+## `kpi` — Service level the customer buys
 
 ### `kpi_availability` — Service availability — closure
 
@@ -2852,6 +5566,5853 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
 
+## `massaero` — Mass and aerodynamics
+
+### `l3_massaero_ach_01` — Achieved 1 — against target 1
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_02` — Achieved 2 — against target 2
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_03` — Achieved 3 — against target 3
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_04` — Achieved 4 — against target 4
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_05` — Achieved 5 — against target 5
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_06` — Achieved 6 — against target 6
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_07` — Achieved 7 — against target 7
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_08` — Achieved 8 — against target 8
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_09` — Achieved 9 — against target 9
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_10` — Achieved 10 — against target 10
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_11` — Achieved 11 — against target 11
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_12` — Achieved 12 — against target 12
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_13` — Achieved 13 — against target 13
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_14` — Achieved 14 — against target 14
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_15` — Achieved 15 — against target 15
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_16` — Achieved 16 — against target 16
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_17` — Achieved 17 — against target 17
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_18` — Achieved 18 — against target 18
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_ach_19` — Achieved 19 — against target 19
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_interface` — Mass and aerodynamics — subsystem interface
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_n_01` — Mass and aerodynamics · internal — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_02` — Mass and aerodynamics · internal — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_03` — Mass and aerodynamics · internal — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_04` — Mass and aerodynamics · internal — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_05` — Mass and aerodynamics · internal — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_06` — Mass and aerodynamics · internal — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_07` — Mass and aerodynamics · internal — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_08` — Mass and aerodynamics · internal — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_09` — Mass and aerodynamics · internal — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_10` — Mass and aerodynamics · internal — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_11` — Mass and aerodynamics · internal — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_12` — Mass and aerodynamics · internal — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_13` — Mass and aerodynamics · internal — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_14` — Mass and aerodynamics · internal — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_15` — Mass and aerodynamics · internal — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_16` — Mass and aerodynamics · internal — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_17` — Mass and aerodynamics · internal — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_18` — Mass and aerodynamics · internal — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_19` — Mass and aerodynamics · internal — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_20` — Mass and aerodynamics · internal — to be named (20)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_21` — Mass and aerodynamics · internal — to be named (21)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_22` — Mass and aerodynamics · internal — to be named (22)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_n_23` — Mass and aerodynamics · internal — to be named (23)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_massaero_req_01` — Target 1 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_02` — Target 2 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_03` — Target 3 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_04` — Target 4 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_05` — Target 5 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_06` — Target 6 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_07` — Target 7 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_08` — Target 8 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_09` — Target 9 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_10` — Target 10 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_11` — Target 11 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_12` — Target 12 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_13` — Target 13 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_14` — Target 14 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_15` — Target 15 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_16` — Target 16 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_17` — Target 17 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_18` — Target 18 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_massaero_req_19` — Target 19 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+
+## `mgt` — Customer 1
+
+### `mgt_c1_case` — Customer 1 — case identifier
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_communications_01` — Communications · the ask, in the customer's words
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_communications_02` — Communications · acceptance criterion
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_communications_03` — Communications · target value
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_communications_04` — Communications · measurement method
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_communications_05` — Communications · required
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_communications_06` — Communications · achieved
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_communications_07` — Communications · closure verdict
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_contract` — Customer 1 — contract and value
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_earth_01` — Earth observation & ISR · the ask, in the customer's words
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_earth_02` — Earth observation & ISR · acceptance criterion
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_earth_03` — Earth observation & ISR · target value
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_earth_04` — Earth observation & ISR · measurement method
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_earth_05` — Earth observation & ISR · required
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_earth_06` — Earth observation & ISR · achieved
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_earth_07` — Earth observation & ISR · closure verdict
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_handdown` — Customer 1 — KPI hand-down to the architecture
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `mgt_c1_pnt_01` — PNT & geolocation · the ask, in the customer's words
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_pnt_02` — PNT & geolocation · acceptance criterion
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_pnt_03` — PNT & geolocation · target value
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_pnt_04` — PNT & geolocation · measurement method
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_pnt_05` — PNT & geolocation · required
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_pnt_06` — PNT & geolocation · achieved
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c1_pnt_07` — PNT & geolocation · closure verdict
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_case` — Customer 2 — case identifier
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_communications_01` — Communications · the ask, in the customer's words
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_communications_02` — Communications · acceptance criterion
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_communications_03` — Communications · target value
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_communications_04` — Communications · measurement method
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_communications_05` — Communications · required
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_communications_06` — Communications · achieved
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_communications_07` — Communications · closure verdict
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_contract` — Customer 2 — contract and value
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_earth_01` — Earth observation & ISR · the ask, in the customer's words
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_earth_02` — Earth observation & ISR · acceptance criterion
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_earth_03` — Earth observation & ISR · target value
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_earth_04` — Earth observation & ISR · measurement method
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_earth_05` — Earth observation & ISR · required
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_earth_06` — Earth observation & ISR · achieved
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_earth_07` — Earth observation & ISR · closure verdict
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_handdown` — Customer 2 — KPI hand-down to the architecture
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `mgt_c2_pnt_01` — PNT & geolocation · the ask, in the customer's words
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_pnt_02` — PNT & geolocation · acceptance criterion
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_pnt_03` — PNT & geolocation · target value
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_pnt_04` — PNT & geolocation · measurement method
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_pnt_05` — PNT & geolocation · required
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_pnt_06` — PNT & geolocation · achieved
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_c2_pnt_07` — PNT & geolocation · closure verdict
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_01` — Capability item — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_02` — Capability item — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_03` — Capability item — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_04` — Capability item — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_05` — Capability item — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_06` — Capability item — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_07` — Capability item — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_08` — Capability item — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_09` — Capability item — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_10` — Capability item — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_11` — Capability item — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_12` — Capability item — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_13` — Capability item — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_14` — Capability item — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_15` — Capability item — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_16` — Capability item — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_17` — Capability item — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_18` — Capability item — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_19` — Capability item — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_20` — Capability item — to be named (20)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_21` — Capability item — to be named (21)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_22` — Capability item — to be named (22)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_23` — Capability item — to be named (23)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_24` — Capability item — to be named (24)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_25` — Capability item — to be named (25)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_26` — Capability item — to be named (26)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_27` — Capability item — to be named (27)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_28` — Capability item — to be named (28)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_29` — Capability item — to be named (29)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_30` — Capability item — to be named (30)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_31` — Capability item — to be named (31)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_cap_32` — Capability item — to be named (32)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_control_01` — Schedule · critical path
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_control_02` — Schedule · float and margin
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_control_03` — Risk register · likelihood and consequence
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_control_04` — Risk register · mitigation owner
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_control_05` — Configuration item list
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_control_06` — Baseline and effectivity
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_control_07` — Change control board
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_control_08` — Non-conformance and waiver log
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_control_09` — Cost at completion
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_control_10` — Earned value
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_control_11` — Staffing and skills
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_control_12` — Facility and test-slot booking
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_gate_01` — MCR · mission concept review
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_gate_02` — SRR · system requirements review
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_gate_03` — MDR · mission definition review
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_gate_04` — PDR · preliminary design review
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_gate_05` — CDR · critical design review
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_gate_06` — SIR · system integration review
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_gate_07` — TRR · test readiness review
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_gate_08` — ORR · operational readiness review
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_gate_09` — FRR · flight readiness review
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_gate_10` — PLAR · post-launch assessment review
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_gate_11` — DR · disposal review
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_party_01` — Launch authority · payload safety
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_party_02` — Spectrum regulator · frequency filing
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_party_03` — Debris mitigation authority · ISO 24113 compliance
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_party_04` — Export control authority
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_party_05` — Insurance underwriter
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_party_06` — Customer assurance · acceptance
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_party_07` — Independent verification body
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_party_08` — National space agency · licensing
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_phase_01` — Phase 0 · mission analysis and needs identification
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_phase_02` — Phase A · feasibility
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_phase_03` — Phase B · preliminary definition
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_phase_04` — Phase C · detailed definition
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_phase_05` — Phase D · qualification and production
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_phase_06` — Phase E · utilisation
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_phase_07` — Phase F · disposal
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_segment_01` — Space segment · the constellation
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_segment_02` — Space segment · the satellite
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_segment_03` — Launch segment · vehicle and dispenser
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_segment_04` — Launch segment · injection accuracy
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_segment_05` — Ground segment · stations and network
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_segment_06` — Ground segment · mission control
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_segment_07` — Ground segment · processing and archive
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_segment_08` — User segment · tasking
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_segment_09` — User segment · product delivery
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_01` — Supply chain item — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_02` — Supply chain item — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_03` — Supply chain item — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_04` — Supply chain item — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_05` — Supply chain item — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_06` — Supply chain item — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_07` — Supply chain item — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_08` — Supply chain item — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_09` — Supply chain item — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_10` — Supply chain item — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_11` — Supply chain item — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_12` — Supply chain item — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_13` — Supply chain item — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_14` — Supply chain item — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_15` — Supply chain item — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_16` — Supply chain item — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_17` — Supply chain item — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_18` — Supply chain item — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_19` — Supply chain item — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_20` — Supply chain item — to be named (20)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_21` — Supply chain item — to be named (21)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_22` — Supply chain item — to be named (22)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_23` — Supply chain item — to be named (23)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_24` — Supply chain item — to be named (24)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_25` — Supply chain item — to be named (25)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_26` — Supply chain item — to be named (26)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_27` — Supply chain item — to be named (27)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_28` — Supply chain item — to be named (28)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_29` — Supply chain item — to be named (29)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_30` — Supply chain item — to be named (30)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_31` — Supply chain item — to be named (31)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_32` — Supply chain item — to be named (32)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_33` — Supply chain item — to be named (33)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_34` — Supply chain item — to be named (34)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_35` — Supply chain item — to be named (35)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_supplier_36` — Supply chain item — to be named (36)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_01` — Selected design — the one thing that crosses from engineering
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_02` — Non-recurring cost estimate
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_03` — Recurring cost, first unit
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_04` — Learning curve slope
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_05` — Production run cost
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_06` — Launch cost per satellite
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_07` — Annual operations cost
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_08` — Cost at completion
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_09` — Cost per operational year
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_10` — Currency year and escalation
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_11` — One-sigma residual of the fit
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_12` — Replacement cost avoided by air-breathing propulsion
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_13` — Revenue per service unit
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_14` — Contracted service level
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_15` — Break-even satellite count
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_16` — Net present value
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_17` — Internal rate of return
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_18` — Sensitivity · altitude
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_19` — Sensitivity · constellation size
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_20` — Sensitivity · launch price
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_21` — Insurance premium
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_22` — Ground segment capital cost
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_23` — Ground segment operating cost
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_24` — Spectrum licence cost
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_25` — Disposal cost provision
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_26` — Cost risk contingency
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_27` — Value case verdict
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_28` — Value case — required
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_29` — Value case — achieved
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_val_30` — Value case — closure
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_01` — Verification activity — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_02` — Verification activity — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_03` — Verification activity — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_04` — Verification activity — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_05` — Verification activity — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_06` — Verification activity — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_07` — Verification activity — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_08` — Verification activity — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_09` — Verification activity — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_10` — Verification activity — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_11` — Verification activity — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_12` — Verification activity — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_13` — Verification activity — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_14` — Verification activity — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_15` — Verification activity — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_16` — Verification activity — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_17` — Verification activity — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_18` — Verification activity — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_19` — Verification activity — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_20` — Verification activity — to be named (20)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_21` — Verification activity — to be named (21)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_22` — Verification activity — to be named (22)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_23` — Verification activity — to be named (23)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_24` — Verification activity — to be named (24)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_25` — Verification activity — to be named (25)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_26` — Verification activity — to be named (26)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_27` — Verification activity — to be named (27)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_28` — Verification activity — to be named (28)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_29` — Verification activity — to be named (29)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_30` — Verification activity — to be named (30)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_31` — Verification activity — to be named (31)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_32` — Verification activity — to be named (32)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_33` — Verification activity — to be named (33)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_34` — Verification activity — to be named (34)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `mgt_verif_35` — Verification activity — to be named (35)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | programme |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+
 ## `mis` — Mission performance
 
 ### `mis_access_area` — Instantaneous access area
@@ -3110,7 +11671,2227 @@ The inverse question, and the one a concept trade actually asks.
 - **contributes to** — kpi_availability
 
 
-## `orbit` — Orbit geometry
+## `multipay` — Multi-payload
+
+### `l3_multipay_ach_01` — Achieved 1 — against target 1
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_ach_02` — Achieved 2 — against target 2
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_ach_03` — Achieved 3 — against target 3
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_ach_04` — Achieved 4 — against target 4
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_ach_05` — Achieved 5 — against target 5
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_ach_06` — Achieved 6 — against target 6
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_ach_07` — Achieved 7 — against target 7
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_ach_08` — Achieved 8 — against target 8
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_ach_09` — Achieved 9 — against target 9
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_interface` — Multi-payload — subsystem interface
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_n_01` — Multi-payload · internal — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_02` — Multi-payload · internal — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_03` — Multi-payload · internal — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_04` — Multi-payload · internal — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_05` — Multi-payload · internal — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_06` — Multi-payload · internal — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_07` — Multi-payload · internal — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_08` — Multi-payload · internal — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_09` — Multi-payload · internal — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_10` — Multi-payload · internal — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_11` — Multi-payload · internal — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_12` — Multi-payload · internal — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_13` — Multi-payload · internal — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_14` — Multi-payload · internal — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_15` — Multi-payload · internal — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_16` — Multi-payload · internal — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_17` — Multi-payload · internal — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_18` — Multi-payload · internal — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_n_19` — Multi-payload · internal — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_multipay_req_01` — Target 1 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_req_02` — Target 2 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_req_03` — Target 3 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_req_04` — Target 4 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_req_05` — Target 5 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_req_06` — Target 6 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_req_07` — Target 7 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_req_08` — Target 8 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_multipay_req_09` — Target 9 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+
+## `navod` — Navigation & orbit determination
+
+### `l3_navod_ach_01` — Achieved 1 — against target 1
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_ach_02` — Achieved 2 — against target 2
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_ach_03` — Achieved 3 — against target 3
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_ach_04` — Achieved 4 — against target 4
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_ach_05` — Achieved 5 — against target 5
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_ach_06` — Achieved 6 — against target 6
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_ach_07` — Achieved 7 — against target 7
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_ach_08` — Achieved 8 — against target 8
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_ach_09` — Achieved 9 — against target 9
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_interface` — Navigation & orbit determination — subsystem interface
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_n_01` — Navigation & orbit determination · internal — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_02` — Navigation & orbit determination · internal — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_03` — Navigation & orbit determination · internal — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_04` — Navigation & orbit determination · internal — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_05` — Navigation & orbit determination · internal — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_06` — Navigation & orbit determination · internal — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_07` — Navigation & orbit determination · internal — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_08` — Navigation & orbit determination · internal — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_09` — Navigation & orbit determination · internal — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_10` — Navigation & orbit determination · internal — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_11` — Navigation & orbit determination · internal — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_12` — Navigation & orbit determination · internal — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_13` — Navigation & orbit determination · internal — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_14` — Navigation & orbit determination · internal — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_15` — Navigation & orbit determination · internal — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_16` — Navigation & orbit determination · internal — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_17` — Navigation & orbit determination · internal — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_18` — Navigation & orbit determination · internal — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_n_19` — Navigation & orbit determination · internal — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navod_req_01` — Target 1 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_req_02` — Target 2 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_req_03` — Target 3 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_req_04` — Target 4 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_req_05` — Target 5 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_req_06` — Target 6 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_req_07` — Target 7 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_req_08` — Target 8 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navod_req_09` — Target 9 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+
+## `navsense` — Navigation sensing
+
+### `l3_navsense_ach_01` — Achieved 1 — against target 1
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navsense_ach_02` — Achieved 2 — against target 2
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navsense_ach_03` — Achieved 3 — against target 3
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navsense_ach_04` — Achieved 4 — against target 4
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navsense_ach_05` — Achieved 5 — against target 5
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navsense_ach_06` — Achieved 6 — against target 6
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navsense_interface` — Navigation sensing — subsystem interface
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navsense_n_01` — Navigation sensing · internal — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_02` — Navigation sensing · internal — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_03` — Navigation sensing · internal — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_04` — Navigation sensing · internal — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_05` — Navigation sensing · internal — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_06` — Navigation sensing · internal — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_07` — Navigation sensing · internal — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_08` — Navigation sensing · internal — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_09` — Navigation sensing · internal — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_10` — Navigation sensing · internal — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_11` — Navigation sensing · internal — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_12` — Navigation sensing · internal — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_13` — Navigation sensing · internal — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_14` — Navigation sensing · internal — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_15` — Navigation sensing · internal — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_16` — Navigation sensing · internal — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_17` — Navigation sensing · internal — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_18` — Navigation sensing · internal — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_n_19` — Navigation sensing · internal — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_navsense_req_01` — Target 1 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navsense_req_02` — Target 2 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navsense_req_03` — Target 3 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navsense_req_04` — Target 4 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navsense_req_05` — Target 5 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_navsense_req_06` — Target 6 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+
+## `orbit` — Orbit and environment
 
 ### `orbit_altitude` — Orbit altitude
 
@@ -3572,7 +14353,831 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **evidence** 400 km circular — expect 7668.55817541 ± 0.000000001 relative, from `vallado2013` (independent-derivation)
 
 
-## `pay` — EO optical
+## `orbmaint` — Orbit maintenance
+
+### `l3_orbmaint_ach_01` — Achieved 1 — against target 1
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_ach_02` — Achieved 2 — against target 2
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_ach_03` — Achieved 3 — against target 3
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_ach_04` — Achieved 4 — against target 4
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_ach_05` — Achieved 5 — against target 5
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_ach_06` — Achieved 6 — against target 6
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_ach_07` — Achieved 7 — against target 7
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_ach_08` — Achieved 8 — against target 8
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_ach_09` — Achieved 9 — against target 9
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_ach_10` — Achieved 10 — against target 10
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_interface` — Orbit maintenance — subsystem interface
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_n_01` — Orbit maintenance · internal — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_02` — Orbit maintenance · internal — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_03` — Orbit maintenance · internal — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_04` — Orbit maintenance · internal — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_05` — Orbit maintenance · internal — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_06` — Orbit maintenance · internal — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_07` — Orbit maintenance · internal — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_08` — Orbit maintenance · internal — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_09` — Orbit maintenance · internal — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_10` — Orbit maintenance · internal — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_11` — Orbit maintenance · internal — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_12` — Orbit maintenance · internal — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_13` — Orbit maintenance · internal — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_14` — Orbit maintenance · internal — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_15` — Orbit maintenance · internal — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_16` — Orbit maintenance · internal — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_17` — Orbit maintenance · internal — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_18` — Orbit maintenance · internal — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_n_19` — Orbit maintenance · internal — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_orbmaint_req_01` — Target 1 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_req_02` — Target 2 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_req_03` — Target 3 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_req_04` — Target 4 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_req_05` — Target 5 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_req_06` — Target 6 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_req_07` — Target 7 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_req_08` — Target 8 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_req_09` — Target 9 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_orbmaint_req_10` — Target 10 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+
+## `pay` — Earth observation & ISR
 
 ### `pay_aperture` — Optical aperture diameter
 
@@ -4160,7 +15765,3438 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — `pay_gsd_diffraction`, `pay_signal_electrons`
 
 
-## `power` — Closure — required against achieved
+## `payload` — Payload
+
+### `l3_payload_ach_01` — Achieved 1 — against target 1
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_ach_02` — Achieved 2 — against target 2
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_ach_03` — Achieved 3 — against target 3
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_ach_04` — Achieved 4 — against target 4
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_ach_05` — Achieved 5 — against target 5
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_ach_06` — Achieved 6 — against target 6
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_ach_07` — Achieved 7 — against target 7
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_ach_08` — Achieved 8 — against target 8
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_ach_09` — Achieved 9 — against target 9
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_ach_10` — Achieved 10 — against target 10
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_ach_11` — Achieved 11 — against target 11
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_ach_12` — Achieved 12 — against target 12
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_interface` — Payload — subsystem interface
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_n_01` — Payload · internal — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_02` — Payload · internal — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_03` — Payload · internal — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_04` — Payload · internal — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_05` — Payload · internal — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_06` — Payload · internal — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_07` — Payload · internal — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_08` — Payload · internal — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_09` — Payload · internal — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_10` — Payload · internal — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_11` — Payload · internal — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_12` — Payload · internal — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_13` — Payload · internal — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_14` — Payload · internal — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_15` — Payload · internal — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_16` — Payload · internal — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_17` — Payload · internal — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_18` — Payload · internal — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_19` — Payload · internal — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_20` — Payload · internal — to be named (20)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_21` — Payload · internal — to be named (21)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_22` — Payload · internal — to be named (22)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_23` — Payload · internal — to be named (23)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_24` — Payload · internal — to be named (24)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_25` — Payload · internal — to be named (25)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_26` — Payload · internal — to be named (26)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_27` — Payload · internal — to be named (27)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_28` — Payload · internal — to be named (28)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_29` — Payload · internal — to be named (29)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_30` — Payload · internal — to be named (30)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_31` — Payload · internal — to be named (31)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_32` — Payload · internal — to be named (32)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_33` — Payload · internal — to be named (33)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_34` — Payload · internal — to be named (34)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_35` — Payload · internal — to be named (35)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_36` — Payload · internal — to be named (36)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_37` — Payload · internal — to be named (37)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_38` — Payload · internal — to be named (38)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_39` — Payload · internal — to be named (39)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_40` — Payload · internal — to be named (40)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_41` — Payload · internal — to be named (41)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_42` — Payload · internal — to be named (42)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_n_43` — Payload · internal — to be named (43)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_payload_req_01` — Target 1 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_req_02` — Target 2 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_req_03` — Target 3 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_req_04` — Target 4 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_req_05` — Target 5 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_req_06` — Target 6 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_req_07` — Target 7 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_req_08` — Target 8 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_req_09` — Target 9 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_req_10` — Target 10 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_req_11` — Target 11 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_payload_req_12` — Target 12 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+
+## `pointing` — Pointing error budget
+
+### `l3_pointing_ach_01` — Achieved 1 — against target 1
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_pointing_ach_02` — Achieved 2 — against target 2
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_pointing_ach_03` — Achieved 3 — against target 3
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_pointing_ach_04` — Achieved 4 — against target 4
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_pointing_ach_05` — Achieved 5 — against target 5
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_pointing_ach_06` — Achieved 6 — against target 6
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_pointing_interface` — Pointing error budget — subsystem interface
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_pointing_n_01` — Pointing error budget · internal — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_02` — Pointing error budget · internal — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_03` — Pointing error budget · internal — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_04` — Pointing error budget · internal — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_05` — Pointing error budget · internal — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_06` — Pointing error budget · internal — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_07` — Pointing error budget · internal — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_08` — Pointing error budget · internal — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_09` — Pointing error budget · internal — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_10` — Pointing error budget · internal — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_11` — Pointing error budget · internal — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_12` — Pointing error budget · internal — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_13` — Pointing error budget · internal — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_14` — Pointing error budget · internal — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_15` — Pointing error budget · internal — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_16` — Pointing error budget · internal — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_17` — Pointing error budget · internal — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_18` — Pointing error budget · internal — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_n_19` — Pointing error budget · internal — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_pointing_req_01` — Target 1 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_pointing_req_02` — Target 2 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_pointing_req_03` — Target 3 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_pointing_req_04` — Target 4 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_pointing_req_05` — Target 5 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_pointing_req_06` — Target 6 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+
+## `power` — Power
+
+### `l3_power_ach_01` — Achieved 1 — against target 1
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_ach_02` — Achieved 2 — against target 2
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_ach_03` — Achieved 3 — against target 3
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_ach_04` — Achieved 4 — against target 4
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_ach_05` — Achieved 5 — against target 5
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_ach_06` — Achieved 6 — against target 6
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_ach_07` — Achieved 7 — against target 7
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_ach_08` — Achieved 8 — against target 8
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_ach_09` — Achieved 9 — against target 9
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_ach_10` — Achieved 10 — against target 10
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_ach_11` — Achieved 11 — against target 11
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_ach_12` — Achieved 12 — against target 12
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_ach_13` — Achieved 13 — against target 13
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_interface` — Power — subsystem interface
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_n_01` — Power · internal — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_02` — Power · internal — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_03` — Power · internal — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_04` — Power · internal — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_05` — Power · internal — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_06` — Power · internal — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_07` — Power · internal — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_08` — Power · internal — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_09` — Power · internal — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_10` — Power · internal — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_11` — Power · internal — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_12` — Power · internal — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_13` — Power · internal — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_14` — Power · internal — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_15` — Power · internal — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_16` — Power · internal — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_17` — Power · internal — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_18` — Power · internal — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_19` — Power · internal — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_20` — Power · internal — to be named (20)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_21` — Power · internal — to be named (21)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_22` — Power · internal — to be named (22)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_23` — Power · internal — to be named (23)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_24` — Power · internal — to be named (24)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_25` — Power · internal — to be named (25)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_26` — Power · internal — to be named (26)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_27` — Power · internal — to be named (27)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_28` — Power · internal — to be named (28)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_29` — Power · internal — to be named (29)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_30` — Power · internal — to be named (30)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_31` — Power · internal — to be named (31)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_32` — Power · internal — to be named (32)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_33` — Power · internal — to be named (33)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_34` — Power · internal — to be named (34)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_35` — Power · internal — to be named (35)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_36` — Power · internal — to be named (36)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_37` — Power · internal — to be named (37)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_38` — Power · internal — to be named (38)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_39` — Power · internal — to be named (39)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_40` — Power · internal — to be named (40)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_n_41` — Power · internal — to be named (41)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_power_req_01` — Target 1 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_req_02` — Target 2 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_req_03` — Target 3 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_req_04` — Target 4 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_req_05` — Target 5 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_req_06` — Target 6 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_req_07` — Target 7 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_req_08` — Target 8 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_req_09` — Target 9 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_req_10` — Target 10 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_req_11` — Target 11 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_req_12` — Target 12 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_power_req_13` — Target 13 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | power |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
 ### `pwr_array_area` — Solar array area
 
@@ -4730,7 +19766,1946 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — `prop_throttle`, `pwr_demand`
 
 
-## `prop` — Closure — required against achieved
+## `prop` — Propulsion · ICP plasma thruster
+
+### `l3_prop_ach_01` — Achieved 1 — against target 1
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_02` — Achieved 2 — against target 2
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_03` — Achieved 3 — against target 3
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_04` — Achieved 4 — against target 4
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_05` — Achieved 5 — against target 5
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_06` — Achieved 6 — against target 6
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_07` — Achieved 7 — against target 7
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_08` — Achieved 8 — against target 8
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_09` — Achieved 9 — against target 9
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_10` — Achieved 10 — against target 10
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_11` — Achieved 11 — against target 11
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_12` — Achieved 12 — against target 12
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_13` — Achieved 13 — against target 13
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_14` — Achieved 14 — against target 14
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_15` — Achieved 15 — against target 15
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_16` — Achieved 16 — against target 16
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_17` — Achieved 17 — against target 17
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_18` — Achieved 18 — against target 18
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_ach_19` — Achieved 19 — against target 19
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_interface` — Propulsion · ICP plasma thruster — subsystem interface
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_n_01` — Propulsion · ICP plasma thruster · internal — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_02` — Propulsion · ICP plasma thruster · internal — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_03` — Propulsion · ICP plasma thruster · internal — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_04` — Propulsion · ICP plasma thruster · internal — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_05` — Propulsion · ICP plasma thruster · internal — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_06` — Propulsion · ICP plasma thruster · internal — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_07` — Propulsion · ICP plasma thruster · internal — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_08` — Propulsion · ICP plasma thruster · internal — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_09` — Propulsion · ICP plasma thruster · internal — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_10` — Propulsion · ICP plasma thruster · internal — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_11` — Propulsion · ICP plasma thruster · internal — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_12` — Propulsion · ICP plasma thruster · internal — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_13` — Propulsion · ICP plasma thruster · internal — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_14` — Propulsion · ICP plasma thruster · internal — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_15` — Propulsion · ICP plasma thruster · internal — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_16` — Propulsion · ICP plasma thruster · internal — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_17` — Propulsion · ICP plasma thruster · internal — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_18` — Propulsion · ICP plasma thruster · internal — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_19` — Propulsion · ICP plasma thruster · internal — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_20` — Propulsion · ICP plasma thruster · internal — to be named (20)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_21` — Propulsion · ICP plasma thruster · internal — to be named (21)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_22` — Propulsion · ICP plasma thruster · internal — to be named (22)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_23` — Propulsion · ICP plasma thruster · internal — to be named (23)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_24` — Propulsion · ICP plasma thruster · internal — to be named (24)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_25` — Propulsion · ICP plasma thruster · internal — to be named (25)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_26` — Propulsion · ICP plasma thruster · internal — to be named (26)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_27` — Propulsion · ICP plasma thruster · internal — to be named (27)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_28` — Propulsion · ICP plasma thruster · internal — to be named (28)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_29` — Propulsion · ICP plasma thruster · internal — to be named (29)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_30` — Propulsion · ICP plasma thruster · internal — to be named (30)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_31` — Propulsion · ICP plasma thruster · internal — to be named (31)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_32` — Propulsion · ICP plasma thruster · internal — to be named (32)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_33` — Propulsion · ICP plasma thruster · internal — to be named (33)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_34` — Propulsion · ICP plasma thruster · internal — to be named (34)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_35` — Propulsion · ICP plasma thruster · internal — to be named (35)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_36` — Propulsion · ICP plasma thruster · internal — to be named (36)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_37` — Propulsion · ICP plasma thruster · internal — to be named (37)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_38` — Propulsion · ICP plasma thruster · internal — to be named (38)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_39` — Propulsion · ICP plasma thruster · internal — to be named (39)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_40` — Propulsion · ICP plasma thruster · internal — to be named (40)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_41` — Propulsion · ICP plasma thruster · internal — to be named (41)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_42` — Propulsion · ICP plasma thruster · internal — to be named (42)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_43` — Propulsion · ICP plasma thruster · internal — to be named (43)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_44` — Propulsion · ICP plasma thruster · internal — to be named (44)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_45` — Propulsion · ICP plasma thruster · internal — to be named (45)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_46` — Propulsion · ICP plasma thruster · internal — to be named (46)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_47` — Propulsion · ICP plasma thruster · internal — to be named (47)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_48` — Propulsion · ICP plasma thruster · internal — to be named (48)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_49` — Propulsion · ICP plasma thruster · internal — to be named (49)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_50` — Propulsion · ICP plasma thruster · internal — to be named (50)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_51` — Propulsion · ICP plasma thruster · internal — to be named (51)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_52` — Propulsion · ICP plasma thruster · internal — to be named (52)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_53` — Propulsion · ICP plasma thruster · internal — to be named (53)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_54` — Propulsion · ICP plasma thruster · internal — to be named (54)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_55` — Propulsion · ICP plasma thruster · internal — to be named (55)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_n_56` — Propulsion · ICP plasma thruster · internal — to be named (56)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_prop_req_01` — Target 1 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_02` — Target 2 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_03` — Target 3 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_04` — Target 4 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_05` — Target 5 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_06` — Target 6 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_07` — Target 7 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_08` — Target 8 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_09` — Target 9 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_10` — Target 10 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_11` — Target 11 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_12` — Target 12 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_13` — Target 13 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_14` — Target 14 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_15` — Target 15 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_16` — Target 16 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_17` — Target 17 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_18` — Target 18 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_prop_req_19` — Target 19 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | propulsion |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
 ### `prop_beam_voltage` — Beam accelerating voltage
 
@@ -5403,6 +22378,4287 @@ At or above one the orbit holds indefinitely. Below one the mission has a lifeti
 - **contributes to** — kpi_thrust_margin
 
 
+## `struct` — Structure
+
+### `l3_struct_ach_01` — Achieved 1 — against target 1
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_struct_ach_02` — Achieved 2 — against target 2
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_struct_ach_03` — Achieved 3 — against target 3
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_struct_ach_04` — Achieved 4 — against target 4
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_struct_interface` — Structure — subsystem interface
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_struct_n_01` — Structure · internal — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_02` — Structure · internal — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_03` — Structure · internal — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_04` — Structure · internal — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_05` — Structure · internal — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_06` — Structure · internal — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_07` — Structure · internal — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_08` — Structure · internal — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_09` — Structure · internal — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_10` — Structure · internal — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_11` — Structure · internal — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_12` — Structure · internal — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_13` — Structure · internal — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_14` — Structure · internal — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_15` — Structure · internal — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_16` — Structure · internal — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_17` — Structure · internal — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_18` — Structure · internal — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_19` — Structure · internal — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_20` — Structure · internal — to be named (20)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_21` — Structure · internal — to be named (21)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_22` — Structure · internal — to be named (22)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_23` — Structure · internal — to be named (23)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_24` — Structure · internal — to be named (24)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_25` — Structure · internal — to be named (25)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_26` — Structure · internal — to be named (26)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_27` — Structure · internal — to be named (27)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_28` — Structure · internal — to be named (28)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_29` — Structure · internal — to be named (29)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_30` — Structure · internal — to be named (30)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_31` — Structure · internal — to be named (31)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_32` — Structure · internal — to be named (32)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_33` — Structure · internal — to be named (33)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_34` — Structure · internal — to be named (34)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_35` — Structure · internal — to be named (35)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_36` — Structure · internal — to be named (36)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_37` — Structure · internal — to be named (37)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_38` — Structure · internal — to be named (38)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_n_39` — Structure · internal — to be named (39)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_struct_req_01` — Target 1 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_struct_req_02` — Target 2 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_struct_req_03` — Target 3 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_struct_req_04` — Target 4 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+
+## `sys` — Carry the payloads
+
+### `sys_carry_n_01` — Carry the payloads — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_carry_n_02` — Carry the payloads — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_carry_n_03` — Carry the payloads — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_carry_n_04` — Carry the payloads — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_carry_n_05` — Carry the payloads — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_carry_n_06` — Carry the payloads — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_carry_n_07` — Carry the payloads — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_carry_n_08` — Carry the payloads — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_carry_n_09` — Carry the payloads — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_carry_n_10` — Carry the payloads — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_carry_n_11` — Carry the payloads — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_carry_n_12` — Carry the payloads — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_carry_n_13` — Carry the payloads — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_carry_n_14` — Carry the payloads — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_carry_n_15` — Carry the payloads — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_carry_n_16` — Carry the payloads — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_carry_n_17` — Carry the payloads — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | payload |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_01` — Communications service — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_02` — Communications service — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_03` — Communications service — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_04` — Communications service — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_05` — Communications service — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_06` — Communications service — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_07` — Communications service — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_08` — Communications service — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_09` — Communications service — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_10` — Communications service — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_11` — Communications service — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_12` — Communications service — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_13` — Communications service — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_14` — Communications service — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_15` — Communications service — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_16` — Communications service — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_17` — Communications service — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_comms_app_n_18` — Communications service — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_concept_n_01` — Concept trade · single satellite against constellation — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_concept_n_02` — Concept trade · single satellite against constellation — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_concept_n_03` — Concept trade · single satellite against constellation — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_concept_n_04` — Concept trade · single satellite against constellation — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_concept_n_05` — Concept trade · single satellite against constellation — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_concept_n_06` — Concept trade · single satellite against constellation — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_concept_n_07` — Concept trade · single satellite against constellation — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_concept_n_08` — Concept trade · single satellite against constellation — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_concept_n_09` — Concept trade · single satellite against constellation — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_concept_n_10` — Concept trade · single satellite against constellation — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_concept_n_11` — Concept trade · single satellite against constellation — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_concept_n_12` — Concept trade · single satellite against constellation — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_concept_n_13` — Concept trade · single satellite against constellation — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_concept_n_14` — Concept trade · single satellite against constellation — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_know_n_01` — Know where it is — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_know_n_02` — Know where it is — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_know_n_03` — Know where it is — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_know_n_04` — Know where it is — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_know_n_05` — Know where it is — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_know_n_06` — Know where it is — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_know_n_07` — Know where it is — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_know_n_08` — Know where it is — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_know_n_09` — Know where it is — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_know_n_10` — Know where it is — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_know_n_11` — Know where it is — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_know_n_12` — Know where it is — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | gnc |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_01` — Orbit and environment — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_02` — Orbit and environment — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_03` — Orbit and environment — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_04` — Orbit and environment — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_05` — Orbit and environment — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_06` — Orbit and environment — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_07` — Orbit and environment — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_08` — Orbit and environment — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_09` — Orbit and environment — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_10` — Orbit and environment — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_11` — Orbit and environment — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_12` — Orbit and environment — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_13` — Orbit and environment — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_14` — Orbit and environment — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_15` — Orbit and environment — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_16` — Orbit and environment — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_17` — Orbit and environment — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_18` — Orbit and environment — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_19` — Orbit and environment — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_20` — Orbit and environment — to be named (20)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_21` — Orbit and environment — to be named (21)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_22` — Orbit and environment — to be named (22)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_23` — Orbit and environment — to be named (23)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_24` — Orbit and environment — to be named (24)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_25` — Orbit and environment — to be named (25)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_orbenv_n_26` — Orbit and environment — to be named (26)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_perf_n_01` — Mission performance — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_perf_n_02` — Mission performance — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_perf_n_03` — Mission performance — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_perf_n_04` — Mission performance — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_perf_n_05` — Mission performance — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_perf_n_06` — Mission performance — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_perf_n_07` — Mission performance — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_perf_n_08` — Mission performance — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_perf_n_09` — Mission performance — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_perf_n_10` — Mission performance — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_perf_n_11` — Mission performance — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_perf_n_12` — Mission performance — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | systems |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_01` — Satellite system — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_02` — Satellite system — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_03` — Satellite system — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_04` — Satellite system — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_05` — Satellite system — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_06` — Satellite system — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_07` — Satellite system — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_08` — Satellite system — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_09` — Satellite system — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_10` — Satellite system — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_11` — Satellite system — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_12` — Satellite system — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_13` — Satellite system — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_14` — Satellite system — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_15` — Satellite system — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_16` — Satellite system — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_17` — Satellite system — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sys_sat_n_18` — Satellite system — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | mass |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+
+## `thermal` — Thermal
+
+### `l3_thermal_ach_01` — Achieved 1 — against target 1
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_ach_02` — Achieved 2 — against target 2
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_ach_03` — Achieved 3 — against target 3
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_ach_04` — Achieved 4 — against target 4
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_ach_05` — Achieved 5 — against target 5
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_ach_06` — Achieved 6 — against target 6
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_ach_07` — Achieved 7 — against target 7
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_ach_08` — Achieved 8 — against target 8
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_ach_09` — Achieved 9 — against target 9
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_ach_10` — Achieved 10 — against target 10
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_ach_11` — Achieved 11 — against target 11
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_interface` — Thermal — subsystem interface
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_n_01` — Thermal · internal — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_02` — Thermal · internal — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_03` — Thermal · internal — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_04` — Thermal · internal — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_05` — Thermal · internal — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_06` — Thermal · internal — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_07` — Thermal · internal — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_08` — Thermal · internal — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_09` — Thermal · internal — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_10` — Thermal · internal — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_11` — Thermal · internal — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_12` — Thermal · internal — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_13` — Thermal · internal — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_14` — Thermal · internal — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_15` — Thermal · internal — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_16` — Thermal · internal — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_17` — Thermal · internal — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_18` — Thermal · internal — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_19` — Thermal · internal — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_20` — Thermal · internal — to be named (20)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_21` — Thermal · internal — to be named (21)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_22` — Thermal · internal — to be named (22)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_23` — Thermal · internal — to be named (23)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_n_24` — Thermal · internal — to be named (24)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_thermal_req_01` — Target 1 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_req_02` — Target 2 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_req_03` — Target 3 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_req_04` — Target 4 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_req_05` — Target 5 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_req_06` — Target 6 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_req_07` — Target 7 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_req_08` — Target 8 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_req_09` — Target 9 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_req_10` — Target 10 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_thermal_req_11` — Target 11 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | thermal |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+
 ## `thm` — Closure — required against achieved
 
 ### `thm_absorbed_albedo` — Absorbed albedo
@@ -5722,5 +26978,765 @@ The inverse question, and the one a thermal design actually asks.
 - **upper bound** — a view factor cannot exceed one
 - **reads** — `orbit_radius`
 - **read by** — `thm_absorbed_albedo`, `thm_absorbed_ir`
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+
+## `ttc` — TT&C and downlink
+
+### `l3_ttc_ach_01` — Achieved 1 — against target 1
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_ttc_ach_02` — Achieved 2 — against target 2
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_ttc_ach_03` — Achieved 3 — against target 3
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_ttc_ach_04` — Achieved 4 — against target 4
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_ttc_ach_05` — Achieved 5 — against target 5
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_ttc_ach_06` — Achieved 6 — against target 6
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_ttc_ach_07` — Achieved 7 — against target 7
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_ttc_ach_08` — Achieved 8 — against target 8
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_ttc_interface` — TT&C and downlink — subsystem interface
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_ttc_n_01` — TT&C and downlink · internal — to be named (1)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_02` — TT&C and downlink · internal — to be named (2)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_03` — TT&C and downlink · internal — to be named (3)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_04` — TT&C and downlink · internal — to be named (4)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_05` — TT&C and downlink · internal — to be named (5)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_06` — TT&C and downlink · internal — to be named (6)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_07` — TT&C and downlink · internal — to be named (7)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_08` — TT&C and downlink · internal — to be named (8)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_09` — TT&C and downlink · internal — to be named (9)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_10` — TT&C and downlink · internal — to be named (10)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_11` — TT&C and downlink · internal — to be named (11)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_12` — TT&C and downlink · internal — to be named (12)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_13` — TT&C and downlink · internal — to be named (13)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_14` — TT&C and downlink · internal — to be named (14)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_15` — TT&C and downlink · internal — to be named (15)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_16` — TT&C and downlink · internal — to be named (16)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_17` — TT&C and downlink · internal — to be named (17)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_18` — TT&C and downlink · internal — to be named (18)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_19` — TT&C and downlink · internal — to be named (19)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_n_20` — TT&C and downlink · internal — to be named (20)
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `l3_ttc_req_01` — Target 1 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_ttc_req_02` — Target 2 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_ttc_req_03` — Target 3 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_ttc_req_04` — Target 4 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_ttc_req_05` — Target 5 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_ttc_req_06` — Target 6 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_ttc_req_07` — Target 7 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_ttc_req_08` — Target 8 from the system layer — to be named
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | comms |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 

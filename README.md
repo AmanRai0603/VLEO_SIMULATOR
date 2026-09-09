@@ -7,16 +7,23 @@ it solves is not a VLEO problem.
 
 | | |
 |---|---|
-| rows in the tree | **250** — 112 a person picked, 138 worked out |
-| declared edges | **368** derivation · **53** contribution · **10** relation |
-| subsystem crates | **12**, one per team, isolated by the compiler |
+| rows in the tree | **1333** across four layers — 250 specified, 1083 seeded |
+| specified rows | **112** a person picked · **126** worked out · **12** KPI closures |
+| declared edges | **368** derivation · **53** contribution · **35** relation |
+| subsystem crates | **15**, one per team, isolated by the compiler |
 | faces | browser · daemon · command line · C ABI · Python wheel · MATLAB |
 | deepest declared chain | **25 nodes**, solar flux to cost per year |
 | an 80-point sweep of the whole graph | **83 ms** |
 
-![The tool: the tree, what a change touches, connectivity as nested boxes on the
-diagonal, and the node with its eight tabs, its answer, its credibility vector
-and the evidence that executed on this run](docs/img/tool.png)
+![The tool: the tree and the dependency in one grid — nested boxes on the
+diagonal are the tree, marks off it are what reads what, and the routed arrows
+leave the selected row and turn down the column of every node it
+feeds](docs/img/tool.png)
+
+The tree and the matrix are **one figure, not two panes**. A side-car tree
+drifts out of alignment the moment a branch opens, and a tree on its own cannot
+show the second relation at all. Closing a box does not hide anything: it
+becomes one row, and every edge inside it rolls up onto that row.
 
 ---
 
@@ -54,7 +61,7 @@ This repository is one answer to what they described:
       vleo-units/     RING 0  units and frames as types, constants, portable maths
       vleo-core/      RING 1  every formula, the fault taxonomy, credibility, the resolver
       vleo-bus/       RING 2  the wire contract every face speaks
-      vleo-mod-*/     RING 3  twelve subsystem crates, 250 node folders between them
+      vleo-mod-*/     RING 3  fifteen subsystem crates, 1333 node folders between them
       vleo-modules/           the facade: the graph tables, compiled in
       vleo-sheet/      BUILD  what a sheet means — read by the generators and the build
       vleo-data/              versioned bundles, a lockfile, verification before use
@@ -68,8 +75,8 @@ This repository is one answer to what they described:
     cases/                    per-customer values against one shared architecture
     sources/                  sources as objects, not strings
     bundles/                  reference-data recipes
-    web/                      the shell: three views of one state
-    docs/                     including VARIABLES.md — all 250 rows, generated
+    web/                      the shell: one figure, four layers, one selected row
+    docs/                     including VARIABLES.md — all 1333 rows, generated
 
 ### One node is one folder
 
@@ -86,6 +93,30 @@ This repository is one answer to what they described:
 Everything about one node is in one directory: adding one is a copy, deleting
 one is a remove, its history is the log of a directory, and ownership is a path
 rule.
+
+---
+
+## Four layers, one architecture
+
+| layer | rows | what it answers |
+|---|---|---|
+| 1 management | 228 | who wants what, what it costs, what the programme promised |
+| 2 the system | 367 | what the satellite is made of, and what reads what |
+| 3 subsystem | 738 across 15 layers | decomposed until each row is a question one person can answer |
+| 4 the run | — | one case, one chain hash, one set of numbers |
+
+**Exactly one row in each subsystem layer crosses upward.** That row is the
+whole interface between the layer and the system; it is declared on the sheet
+(`crosses_to`) and drawn with a teal outline. A layer whose second row starts
+reaching upward is a boundary that has stopped being a boundary, and the gate
+can see it because the crossing is data rather than convention.
+
+A **case** selects which boxes are in scope. It is never a copy of the tree: two
+customers are two cases against one architecture, because a cloned architecture
+is two architectures that will disagree, and the disagreement is found late.
+
+![Layer 3: a subsystem decomposed to 738 seeded rows — the structure exists, the
+content does not, and the hatched squares say which is which](docs/img/layers.png)
 
 ---
 
@@ -127,6 +158,9 @@ At or above one, the orbit holds indefinitely with no stored propellant. Below
 one, the mission has a lifetime rather than an altitude, and every other number
 in the design is a detail. **It does not close at this design point**, and the
 tool says so rather than being tuned until it does.
+
+![One node: eight tabs, its answer, the eight credibility factors with the
+lowest governing, and the evidence that executed on this run](docs/img/node.png)
 
 ![A behaviour sweep of thrust-to-drag against altitude, 80 points over the whole
 graph in 83 ms, showing an optimum near 300 km](docs/img/sweep.png)
@@ -219,7 +253,13 @@ crate reaching the platform library.
 
 ## Where it is honest about what it is not
 
-- **120 of the 138 computed rows carry no fixture.** Nothing outside this code
+- **1083 of the 1333 rows are seeded and nothing is specified in them.** The
+  folder, the sheet, the row and the dispatch stub exist; the stub returns
+  `NotRun`, by name. That is the decomposition written down before anyone has
+  been told to fill it in, and it is deliberate: a decomposition that only
+  exists where someone has already done the work is a decomposition nobody can
+  plan against.
+- **108 of the 126 computed rows carry no fixture.** Nothing outside this code
   has agreed with what they compute, so their validation credibility factor is
   zero, which governs the whole vector. `cargo run -p xtask -- gap` lists every
   one. A blank is a statement, not an oversight.
@@ -266,7 +306,7 @@ A new node:
 
 Two human reviews per node, and everything between them is a command. If a node
 takes materially longer than that, the template has a defect — worth finding,
-because it will be paid 250 times.
+because it will be paid 1333 times.
 
 See [`docs/RUNBOOK.md`](docs/RUNBOOK.md) for the full loop and
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for why the rings are shaped the

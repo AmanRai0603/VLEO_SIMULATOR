@@ -5,10 +5,11 @@ id = "pwr_battery_specific_energy"
 label = "Battery specific energy"
 folder = "battery_specific_energy"   # frozen at seed; renaming the label never moves the directory
 subsystem = "power"
-parent = "power"
+parent = "sys_power"
 kind = "declared"
 owner = "power"
 tier = "A"
+layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

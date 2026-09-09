@@ -5,10 +5,11 @@ id = "aero_ao_fluence"
 label = "Atomic oxygen fluence"
 folder = "ao_fluence"   # frozen at seed; renaming the label never moves the directory
 subsystem = "aero"
-parent = "aero_drag"
+parent = "sys_satellite"
 kind = "computed"
 owner = "mass"
 tier = "B"
+layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

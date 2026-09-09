@@ -24,6 +24,9 @@ vleo-mod-payload = { path = "../vleo-mod-payload" }
 vleo-mod-mass = { path = "../vleo-mod-mass" }
 vleo-mod-mission = { path = "../vleo-mod-mission" }
 vleo-mod-cost = { path = "../vleo-mod-cost" }
+vleo-mod-management = { path = "../vleo-mod-management" }
+vleo-mod-system = { path = "../vleo-mod-system" }
+vleo-mod-subsystem = { path = "../vleo-mod-subsystem" }
 
 [build-dependencies]
 vleo-sheet = { workspace = true }

@@ -1,27 +1,34 @@
 /* Paper, not a dark instrument console.
    Review packs get printed, and a console palette prints as a grey rectangle.
-   Every colour below is chosen to survive a black-and-white printer: the marks
-   differ in weight and shape as well as in hue. */
+   Every distinction below survives a black-and-white printer: the marks differ
+   in weight, fill and position as well as in hue. */
 
 :root {
-  --ink: #17181c;
-  --ink-2: #4a4e58;
-  --ink-3: #767b86;
-  --paper: #fbfaf7;
-  --paper-2: #ffffff;
-  --rule: #d9d5cc;
-  --rule-2: #ebe7de;
-  /* amber = what this node feeds; violet = what feeds it. The pairing is the
-     one the static tool already used, so a reader carries it across. */
-  --feeds: #b45309;
-  --fed-by: #6d28d9;
-  --ok: #15803d;
-  --warn: #b45309;
-  --stop: #b91c1c;
-  --sel: #1d4ed8;
-  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
-  --sans: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --paper:   #fbfaf7;
+  --card:    #ffffff;
+  --ink:     #1a1a1a;
+  --ink-2:   #4b4b4b;
+  --ink-3:   #8a8880;
+  --rule:    #ddd8cd;
+  --rule-2:  #ece8de;
+
+  /* Amber = what the selection feeds. Violet = what feeds it. Green = both.
+     The pairing carries across the tree, the paths and the matrix, so a reader
+     learns it once. */
+  --out:     #b5731a;
+  --out-pale:#f6e9d8;
+  --in:      #61399c;
+  --in-pale: #ece5f7;
+  --both:    #22704a;
+  --both-pale:#dfeee6;
+  --teal:    #14807f;
+  --teal-pale:#dcefee;
+  --slate:   #4a5568;
+  --slate-pale:#e8ebef;
+
+  --cell: 24px;
+
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "IBM Plex Mono", Menlo, Consolas, monospace;
 }
 
 * { box-sizing: border-box; }
@@ -30,198 +37,321 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font: 14px/1.55 var(--ui);
+  font: 12px/1.5 var(--mono);
   -webkit-font-smoothing: antialiased;
 }
 
-/* ---------- the provenance bar ------------------------------------------- */
-/* Always visible. A number without provenance one click away is the failure
-   this programme exists to prevent. */
-#bar {
-  display: flex; align-items: baseline; gap: 1.5rem;
-  padding: .6rem 1rem; border-bottom: 1px solid var(--rule);
-  background: var(--paper-2); position: sticky; top: 0; z-index: 20;
-  flex-wrap: wrap;
+/* ---------- masthead ------------------------------------------------------ */
+#masthead { padding: 1.6rem 2.5rem .4rem; }
+#masthead h1 { font: 500 19px var(--mono); margin: 0 0 .35rem; letter-spacing: -.01em; }
+.tagline {
+  margin: 0; color: var(--teal); font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: .13em;
 }
-.brand { display: flex; align-items: baseline; gap: .5rem; }
-.mark { font: 600 16px var(--ui); letter-spacing: .14em; }
-.sub { color: var(--ink-3); font-size: 12px; }
-.prov { display: flex; gap: 1.1rem; margin-left: auto; font: 11px/1.4 var(--mono); color: var(--ink-3); flex-wrap: wrap; }
-.prov b { color: var(--ink-2); font-weight: 600; }
-.prov .amber b { color: var(--warn); }
-.prov .amber::before { content: "▲ "; color: var(--warn); }
 
-/* ---------- controls ------------------------------------------------------ */
-#controls {
-  display: flex; gap: .9rem; align-items: center; flex-wrap: wrap;
-  padding: .55rem 1rem; border-bottom: 1px solid var(--rule-2);
-  background: var(--paper-2); position: sticky; top: 41px; z-index: 19;
+/* ---------- the tab bar --------------------------------------------------- */
+#tabs { padding: 0 2.5rem; }
+.tabrow {
+  display: flex; align-items: center; gap: .35rem; flex-wrap: wrap;
+  padding: .55rem 0; border-top: 1px solid var(--rule);
 }
-.ctl { font-size: 11px; color: var(--ink-3); text-transform: lowercase; letter-spacing: .04em; }
-.ctl select, .ctl input {
-  font: 12px var(--ui); color: var(--ink); background: var(--paper);
-  border: 1px solid var(--rule); border-radius: 3px; padding: .22rem .4rem; margin-left: .35rem;
+.tabrow.sub { border-top: 0; padding-top: 0; }
+.nudge, .tab, .ctl {
+  font: 11px var(--mono); color: var(--ink-2); background: var(--card);
+  border: 1px solid var(--rule); border-radius: 3px; padding: .22rem .55rem;
+  cursor: pointer; white-space: nowrap;
 }
-.ctl input { min-width: 15rem; }
-.ctl-group { display: inline-flex; border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; }
-.mode {
-  font: 12px var(--ui); border: 0; background: var(--paper-2); color: var(--ink-2);
-  padding: .3rem .6rem; cursor: pointer; border-right: 1px solid var(--rule-2);
+.nudge { padding: .22rem .45rem; }
+.tab.sel, .ctl.sel { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.ctl:disabled { color: var(--ink-3); cursor: not-allowed;
+  background: repeating-linear-gradient(45deg,#f5f3ee,#f5f3ee 3px,#efece4 3px,#efece4 6px); }
+.grp { display: inline-flex; align-items: center; gap: .3rem; margin-left: .5rem; }
+.grp .ctl { border-radius: 0; margin-left: -1px; }
+.grp .ctl:first-of-type { border-radius: 3px 0 0 3px; margin-left: 0; }
+.grp .ctl:last-of-type { border-radius: 0 3px 3px 0; }
+.lbl, .hint-inline {
+  color: var(--ink-3); font-size: 10px; text-transform: uppercase; letter-spacing: .1em;
 }
-.mode:last-child { border-right: 0; }
-.mode.sel { background: var(--ink); color: var(--paper-2); }
-.mode:disabled { color: var(--ink-3); cursor: not-allowed; background: repeating-linear-gradient(45deg, #f4f2ec, #f4f2ec 4px, #eeebe3 4px, #eeebe3 8px); }
-button.primary {
-  font: 600 12px var(--ui); background: var(--sel); color: #fff; border: 0;
-  padding: .34rem .9rem; border-radius: 3px; cursor: pointer;
+.hint-inline { text-transform: none; letter-spacing: 0; margin-left: .6rem; }
+.tag {
+  font-size: 10px; background: var(--ink); color: var(--paper);
+  padding: .2rem .5rem; border-radius: 3px; letter-spacing: .04em;
 }
-button.primary:disabled { background: var(--rule); color: var(--ink-3); cursor: not-allowed; }
-.runstate { font: 11px var(--mono); color: var(--ink-3); }
-.runstate.bad { color: var(--stop); }
-.runstate.warn { color: var(--warn); }
+.status { margin-left: auto; color: var(--ink-3); font-size: 10.5px; }
+select.ctl { padding: .18rem .3rem; }
 
-/* ---------- the three panels --------------------------------------------- */
-/* Three views of one state, side by side. The node page is a column rather
-   than an overlay: covering the tree to show a node is how a reader loses the
-   thing that told them where they are. */
-main { display: grid; grid-template-columns: minmax(250px, 20%) minmax(230px, 22%) minmax(420px, 1fr); gap: 0; align-items: start; }
-.panel { border-right: 1px solid var(--rule-2); padding: .8rem 1rem 2rem; min-height: 60vh; }
-#left > section + section { margin-top: 1.4rem; border-top: 1px solid var(--rule-2); padding-top: .8rem; }
-.panel:last-child { border-right: 0; }
-.panel h3 { font: 600 11px var(--ui); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin: .2rem 0 .3rem; }
-.count { color: var(--ink-3); font-weight: 400; letter-spacing: 0; text-transform: none; }
-.hint { font-size: 11px; color: var(--ink-3); margin: 0 0 .7rem; max-width: 34rem; }
+/* ---------- how to read it ------------------------------------------------ */
+#howto-panel {
+  margin: .4rem 2.5rem 0; padding: .8rem 1.2rem; background: var(--card);
+  border: 1px solid var(--rule); border-radius: 4px;
+}
+#howto-panel ol { margin: 0 0 .6rem; padding-left: 1.4rem; font-size: 11.5px; color: var(--ink-2); }
+#howto-panel li { margin: .28rem 0; }
+#howto-panel li b { color: var(--ink); }
+
+/* ---------- stepper ------------------------------------------------------- */
+main { padding: 1.1rem 2.5rem 3rem; }
+#stepper { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .9rem; }
+.step { display: inline-flex; align-items: center; gap: .4rem; color: var(--ink-3); font-size: 11px;
+  text-transform: uppercase; letter-spacing: .1em; }
+.step .n {
+  width: 17px; height: 17px; border-radius: 50%; display: inline-grid; place-items: center;
+  border: 1px solid var(--rule); font-size: 9.5px; color: var(--ink-3); background: var(--card);
+}
+.step.on { color: var(--ink); }
+.step.on .n { background: var(--out); border-color: var(--out); color: #fff; }
+.step .dash { color: var(--rule); }
+#stepper .aside { margin-left: auto; color: var(--ink-3); font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: .09em; }
+
+.caption {
+  margin: 0 0 .18rem; color: var(--teal); font-size: 11px;
+  text-transform: uppercase; letter-spacing: .08em;
+}
+.caption + .caption { margin-bottom: 1.1rem; }
+
+/* ---------- the figure ---------------------------------------------------- */
+.colheads { display: grid; grid-template-columns: 402px 1fr; margin: .3rem 0 .4rem; }
+.colhead { font-size: 10.5px; text-transform: uppercase; letter-spacing: .09em; }
+.colhead.out { color: var(--out); }
+.colhead.in { color: var(--in); justify-self: start; }
+
+/* One scroll box, not three. The tree, the paths column and the matrix share a
+   single viewport, so a branch opening cannot slide one out of step with
+   another — which is the whole reason the tree is drawn inside the grid rather
+   than beside it. The two left columns stick while the matrix scrolls sideways. */
+.grid {
+  display: grid;
+  grid-template-columns: 340px 62px max-content;
+  gap: 0; align-items: start;
+  overflow: auto; max-height: 76vh;
+  border: 1px solid var(--rule-2); background: var(--card); border-radius: 3px;
+  padding: 16px 12px 12px 0;
+  width: max-content; max-width: 100%;
+}
+.pane { min-width: 0; }
+#tree  { position: sticky; left: 0; z-index: 3; background: var(--card); width: 340px; }
 
 /* ---------- the tree ------------------------------------------------------ */
-#tree-body { font: 12px var(--mono); max-height: 74vh; overflow: auto; }
-.group { margin: .45rem 0 .2rem; font: 600 11px var(--ui); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
-.group .owner { float: right; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--ink-3); }
-.row {
-  display: flex; align-items: baseline; gap: .4rem; padding: .1rem .3rem;
-  border-left: 3px solid transparent; cursor: pointer; border-radius: 2px;
+#tree { padding-right: .2rem; padding-left: 12px; }
+.trow { display: flex; align-items: stretch; height: calc(var(--cell) + 5px); }
+.gutter { display: flex; align-items: stretch; flex: none; }
+.gutter i {
+  width: 13px; position: relative; display: block;
 }
-.row:hover { background: #f2efe8; }
-.row.sel { background: var(--ink); color: var(--paper-2); border-left-color: var(--sel); }
-.row.sel .rid, .row.sel .rlabel { color: inherit; }
-.row.feeds { border-left-color: var(--feeds); background: #fdf5ea; }
-.row.fedby { border-left-color: var(--fed-by); background: #f5f1fd; }
-.row.reach { background: #f6f5f1; }
-.rid { color: var(--ink); }
-.rlabel { color: var(--ink-3); font: 11px var(--ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dot { width: .5rem; flex: none; text-align: center; }
-/* An unstarted node is grey like every other unstarted thing, never an error. */
-.k-declared .dot { color: var(--ink-3); }
-.k-computed .dot { color: var(--sel); }
-.k-kpi .dot { color: var(--feeds); }
-.stale { text-decoration: underline dotted var(--warn); }
+/* The lit branch: the path from the root to what you selected. */
+.gutter i.line::before {
+  content: ""; position: absolute; left: 6px; top: 0; bottom: 0; width: 1px; background: var(--rule);
+}
+.gutter i.line.lit::before { background: var(--teal); width: 1.5px; }
+.gutter i.elbow::before {
+  content: ""; position: absolute; left: 6px; top: 0; height: 50%; width: 1px; background: var(--rule);
+}
+.gutter i.elbow::after {
+  content: ""; position: absolute; left: 6px; top: 50%; width: 7px; height: 1px; background: var(--rule);
+}
+.gutter i.elbow.lit::before, .gutter i.elbow.lit::after { background: var(--teal); height: 50%; }
+.gutter i.elbow.lit::after { height: 1.5px; top: calc(50% - .5px); }
+.gutter i.tee::before {
+  content: ""; position: absolute; left: 6px; top: 0; bottom: 0; width: 1px; background: var(--rule);
+}
+.gutter i.tee::after {
+  content: ""; position: absolute; left: 6px; top: 50%; width: 7px; height: 1px; background: var(--rule);
+}
+.gutter i.tee.lit::before, .gutter i.tee.lit::after { background: var(--teal); }
 
-/* ---------- what this touches -------------------------------------------- */
-#paths-body { font: 12px var(--mono); }
-.path-h { font: 600 10px var(--ui); letter-spacing: .1em; text-transform: uppercase; margin: .8rem 0 .25rem; }
-.path-h.out { color: var(--feeds); }
-.path-h.in { color: var(--fed-by); }
-.path-item { padding: .1rem 0 .1rem .6rem; border-left: 2px solid var(--rule); cursor: pointer; }
-.path-item:hover { background: #f2efe8; }
-.path-item .why { color: var(--ink-3); font: 11px var(--ui); }
-.reach-line { margin-top: 1rem; font: 11px var(--ui); color: var(--ink-2); border-top: 1px solid var(--rule-2); padding-top: .6rem; }
-.reach-line b { font-size: 15px; }
+.pill {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: .4rem;
+  border: 1px solid var(--rule); border-left-width: 3px; border-radius: 3px;
+  background: var(--card); padding: 0 .45rem; margin: 1.5px 0;
+  cursor: pointer; font-size: 11px; color: var(--ink);
+}
+.pill:hover { border-color: var(--ink-3); }
+.pill .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.pill .tri { color: inherit; opacity: .55; font-size: 9px; flex: none; }
+.pill .seeded { opacity: .55; font-style: italic; }
+
+/* Relation to the selection, carried in the fill. Solid = one hop, pale =
+   further down the chain. */
+.pill.sel   { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.pill.out   { background: var(--out); color: #fff; border-color: var(--out); }
+.pill.outp  { background: var(--out-pale); border-left-color: var(--out); }
+.pill.in    { background: var(--in); color: #fff; border-color: var(--in); }
+.pill.inp   { background: var(--in-pale); border-left-color: var(--in); }
+.pill.both  { background: var(--both); color: #fff; border-color: var(--both); }
+.pill.t-teal   { border-left-color: var(--teal); }
+.pill.t-slate  { border-left-color: var(--slate); }
+.pill.t-amber  { border-left-color: var(--out); }
+.pill.t-violet { border-left-color: var(--in); }
+.pill.t-green  { border-left-color: var(--both); }
+.pill.crossing { box-shadow: inset 0 0 0 1px var(--teal); }
+
+/* ---------- the paths column --------------------------------------------- */
+#paths { position: sticky; left: 340px; z-index: 2; background: var(--card); width: 62px; }
+.paths-label {
+  position: absolute; top: -15px; left: 0; right: 0;
+  font-size: 10px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .1em;
+  text-align: center;
+}
+#paths-svg { position: absolute; left: 0; top: 0; width: 100%; pointer-events: none; }
+#paths-dots { position: relative; }
+.pdot {
+  height: calc(var(--cell) + 5px); display: flex; align-items: center; justify-content: flex-start;
+  padding-left: 3px; font-size: 9px; color: var(--ink-3); cursor: pointer;
+}
+.pdot.sel { color: var(--ink); font-weight: 600; }
 
 /* ---------- the matrix ---------------------------------------------------- */
-/* Fixed cell, panel scrolls. A cell small enough to fit is a cell too small to
-   read, and suppressing the grid past a threshold answers a question with a
-   message. */
-#matrix-body { overflow: auto; max-height: 40vh; border: 1px solid var(--rule-2); background: var(--paper-2); }
-table.mx { border-collapse: collapse; }
-table.mx td { width: 11px; height: 11px; padding: 0; border: 0; position: relative; }
-td.diag { background: #e8e4da; }
-td.diag.sel { background: var(--ink); }
-td.mark::after {
-  content: ""; position: absolute; inset: 2px;
-  background: var(--ink-2); border-radius: 1px;
+#matrix-scroll { overflow: visible; }
+#matrix-inner { position: relative; }
+#matrix-cells { position: relative; }
+#matrix-svg { position: absolute; left: 0; top: 0; pointer-events: none; }
+
+/* Only the cells that carry something are in the document. A 387x387 grid is
+   150 000 elements of which 600 are filled; the empty ones are paper, and paper
+   does not need a div. */
+.mcell {
+  position: absolute; width: calc(var(--cell) + 5px); height: calc(var(--cell) + 5px);
 }
-/* Inside a subtree box the coupling is owned; outside it crosses a boundary,
-   and the two are coloured differently because that difference is the finding. */
-td.mark.inside::after { background: var(--ink-3); }
-td.mark.crosses::after { background: var(--feeds); }
-td.mark.rowsel::after { background: var(--feeds); }
-td.mark.colsel::after { background: var(--fed-by); }
-td.box { box-shadow: inset 0 0 0 1px var(--rule); }
-.crossings { list-style: none; padding: 0; margin: .7rem 0 0; font: 11px var(--mono); color: var(--ink-2); }
-.crossings li { padding: .12rem 0; border-bottom: 1px dotted var(--rule-2); }
-.crossings .unlabelled { color: var(--stop); }
+/* The bands: the selected row and the selected column, so the eye can travel
+   from a mark to the node it names without counting. */
+.band { position: absolute; pointer-events: none; }
+.band.rband { left: 0; background: var(--out-pale); }
+.band.cband { top: 0; background: var(--in-pale); }
+.mcell.diag { background: #efece4; cursor: pointer; box-shadow: inset 0 0 0 1px var(--paper); }
+.mcell.diag:hover { background: #e2ddd0; }
+.mcell.diag.seeded { background: repeating-linear-gradient(45deg,#f2efe8,#f2efe8 3px,#e9e5db 3px,#e9e5db 6px); }
+.mcell.diag.sel, .mcell.diag.sel:hover { background: var(--ink); }
+.mcell.diag .num { position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: 8.5px; color: var(--ink-3); }
+.mcell.diag.sel .num { color: var(--paper); }
+.mcell .mk {
+  position: absolute; left: 5px; top: 5px; right: 5px; bottom: 5px; border-radius: 1px;
+}
+.mcell .mk.inside  { background: var(--ink-3); }
+.mcell .mk.crosses { background: var(--out); }
+.mcell .mk.rowsel  { background: var(--out); }
+.mcell .mk.colsel  { background: var(--in); }
+.mcell .mk.below   { outline: 1px solid rgba(0,0,0,.35); }
+
+/* Nested boxes on the diagonal: the tree, drawn inside the matrix. */
+.boxrect {
+  position: absolute; border: 1px solid var(--rule); border-radius: 2px;
+  pointer-events: none; background: rgba(255,255,255,.35);
+}
+.boxlabel {
+  position: absolute; font-size: 9px; color: var(--ink-3); white-space: nowrap;
+  pointer-events: none; padding-left: 3px;
+}
+
+/* ---------- legend and notes --------------------------------------------- */
+#legend { margin-top: 1rem; }
+#legend .rule { margin: .1rem 0; font-size: 10.5px; color: var(--ink-3);
+  text-transform: uppercase; letter-spacing: .08em; }
+#legend .keys { display: flex; gap: 1.6rem; flex-wrap: wrap; margin: .45rem 0; }
+.key { display: inline-flex; align-items: center; gap: .4rem; font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
+.sw { width: 9px; height: 9px; border-radius: 1px; display: inline-block; }
+.sw.in { background: var(--in); } .sw.out { background: var(--out); } .sw.both { background: var(--both); }
+
+.reach { margin: 1.1rem 0 0; font-size: 12.5px; color: var(--ink); }
+.reach b { font-weight: 600; }
+
+#notes { margin: 1.6rem 0 0; display: grid; grid-template-columns: 150px 1fr; gap: .35rem 1.2rem; }
+#notes dt { font-size: 9.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .08em; }
+#notes dd { margin: 0; font-size: 12px; color: var(--ink-2); font-family: Georgia, "Iowan Old Style", serif; }
+#notes dd b { color: var(--ink); font-family: var(--mono); font-size: 11.5px; }
 
 /* ---------- the node page ------------------------------------------------- */
-.node-panel { background: var(--paper-2); padding: .9rem 1.4rem 4rem; }
-.node { max-width: 62rem; }
-.node-head h2 { font: 600 22px var(--sans); margin: .1rem 0 .2rem; }
-.crumb { font: 11px var(--mono); color: var(--ink-3); }
+#nodeview { max-width: 74rem; }
+#back { margin-bottom: .9rem; }
+.node-head h2 { font: 500 20px var(--mono); margin: .2rem 0 .25rem; }
+.crumb { font-size: 10.5px; color: var(--ink-3); }
 .crumb .sep { color: var(--rule); }
-.ident { font: 11px var(--mono); color: var(--ink-3); margin: 0 0 1rem; }
-.kind { padding: 0 .3rem; border: 1px solid var(--rule); border-radius: 2px; }
+.ident { font-size: 10.5px; color: var(--ink-3); margin: 0 0 1rem; }
+.kind { border: 1px solid var(--rule); border-radius: 2px; padding: 0 .3rem; }
 .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--rule); margin-bottom: 1rem; flex-wrap: wrap; }
-.tab { font: 11px var(--ui); background: none; border: 0; border-bottom: 2px solid transparent; padding: .4rem .7rem; cursor: pointer; color: var(--ink-3); }
-.tab.sel { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+.tab-btn {
+  font: 10.5px var(--mono); background: none; border: 0; border-bottom: 2px solid transparent;
+  padding: .4rem .65rem; cursor: pointer; color: var(--ink-3);
+  text-transform: uppercase; letter-spacing: .06em;
+}
+.tab-btn.sel { color: var(--ink); border-bottom-color: var(--ink); }
+.tabs .tab {
+  font: 10.5px var(--mono); background: none; border: 0; border-radius: 0;
+  border-bottom: 2px solid transparent; padding: .4rem .65rem; cursor: pointer;
+  color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em;
+}
+.tabs .tab.sel { color: var(--ink); background: none; border-bottom-color: var(--ink); }
 .panel[data-panel] { display: none; }
 .panel[data-panel].sel { display: block; }
-.node section.panel { border: 0; padding: 0; min-height: 0; }
-.question { font: 17px/1.5 var(--sans); margin: 0 0 .7rem; }
-.maths code { font: 14px var(--mono); background: #f4f2ec; padding: .3rem .5rem; display: inline-block; border-radius: 3px; }
-.src { font-size: 12px; color: var(--ink-2); }
-.src.warn { color: var(--stop); }
+.question { font: 15px/1.55 Georgia, "Iowan Old Style", serif; margin: 0 0 .8rem; }
+.maths code { background: #f4f2ec; padding: .3rem .55rem; border-radius: 3px; display: inline-block; font-size: 12px; }
+.src { font-size: 11px; color: var(--ink-2); }
+.src.warn { color: #a4262c; }
 .where { color: var(--ink-3); }
-.note { font-size: 12px; color: var(--ink-2); border-left: 3px solid var(--rule); padding-left: .7rem; margin: .8rem 0; }
-.muted, .empty { color: var(--ink-3); font-size: 12px; }
-/* The empty state is the teaching surface. "No data" teaches nothing. */
-.empty { border: 1px dashed var(--rule); padding: .6rem .8rem; border-radius: 3px; background: #faf8f3; }
-dl.asm { font-size: 12px; margin: .4rem 0; }
-dl.asm dt { font-weight: 600; margin-top: .5rem; }
+.note { font-size: 11.5px; color: var(--ink-2); border-left: 2px solid var(--rule); padding-left: .7rem; margin: .8rem 0; }
+.muted { color: var(--ink-3); font-size: 11px; }
+.empty { border: 1px dashed var(--rule); padding: .55rem .75rem; border-radius: 3px;
+  background: #faf8f3; color: var(--ink-3); font-size: 11.5px; }
+dl.asm { font-size: 11.5px; }
+dl.asm dt { font-weight: 600; margin-top: .45rem; }
 dl.asm dd { margin: 0 0 0 1rem; color: var(--ink-2); }
-table.iface, table.fx { border-collapse: collapse; width: 100%; font: 12px var(--mono); margin: .5rem 0; }
-table.iface th, table.fx th { text-align: left; font: 600 10px var(--ui); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); border-bottom: 1px solid var(--rule); padding: .3rem .5rem; }
+table.iface, table.fx { border-collapse: collapse; width: 100%; font-size: 11px; margin: .5rem 0; }
+table.iface th, table.fx th { text-align: left; font-size: 9.5px; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--ink-3); border-bottom: 1px solid var(--rule); padding: .3rem .5rem; }
 table.iface td, table.fx td { padding: .25rem .5rem; border-bottom: 1px solid var(--rule-2); }
 table.iface tr.out td { background: #fdf9f2; }
 td.num { text-align: right; }
-.xref { color: var(--sel); cursor: pointer; text-decoration: underline dotted; }
-ol.algo { font-size: 13px; padding-left: 1.3rem; }
-ol.algo .binds { color: var(--ink-3); font: 11px var(--mono); }
-ul.guards, ul.flags { font-size: 12px; color: var(--ink-2); padding-left: 1.2rem; }
-pre.code { background: #f7f5ef; border: 1px solid var(--rule-2); border-radius: 3px; padding: .8rem; overflow: auto; font: 11px/1.5 var(--mono); max-height: 40rem; }
-.gaps { border: 1px solid var(--warn); border-radius: 3px; padding: .6rem .9rem; margin-top: 1.5rem; background: #fefaf4; }
-.gaps h4 { margin: 0 0 .3rem; font: 600 11px var(--ui); letter-spacing: .08em; text-transform: uppercase; color: var(--warn); }
-.gaps ul { margin: 0; padding-left: 1.1rem; font-size: 12px; }
-h4 { font: 600 11px var(--ui); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin: 1.2rem 0 .3rem; }
+.xref { color: var(--in); cursor: pointer; text-decoration: underline dotted; }
+ol.algo { font-size: 12px; padding-left: 1.3rem; }
+ol.algo .binds { color: var(--ink-3); font-size: 10.5px; }
+ul.guards, ul.flags { font-size: 11.5px; color: var(--ink-2); padding-left: 1.2rem; }
+pre.code { background: #f7f5ef; border: 1px solid var(--rule-2); border-radius: 3px;
+  padding: .8rem; overflow: auto; font-size: 10.5px; line-height: 1.5; max-height: 38rem; }
+.gaps { border: 1px solid var(--out); border-radius: 3px; padding: .6rem .9rem;
+  margin-top: 1.4rem; background: #fdf8f1; }
+.gaps h4 { margin: 0 0 .3rem; font-size: 10px; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--out); }
+.gaps ul { margin: 0; padding-left: 1.1rem; font-size: 11.5px; }
+h4 { font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--ink-3); margin: 1.2rem 0 .3rem; }
 
-/* ---------- the result ---------------------------------------------------- */
-.result { max-width: 62rem; margin-top: 1.6rem; border-top: 2px solid var(--ink); padding-top: 1rem; }
-.answer { font: 600 30px var(--sans); margin: .3rem 0; }
-.answer .unit { font-size: 16px; color: var(--ink-3); font-weight: 400; }
-.answer.stale { color: var(--ink-3); text-decoration: underline dotted var(--warn); }
-.cred { display: flex; gap: .25rem; align-items: flex-end; height: 2.6rem; margin: .6rem 0; }
-.cred .f { width: 2.4rem; height: 100%; background: #ece8de; position: relative; border-radius: 2px 2px 0 0; }
-.cred .f i { position: absolute; bottom: 0; left: 0; right: 0; background: var(--ink-2); border-radius: 2px 2px 0 0; }
-.cred .f.gov i { background: var(--warn); }
-.cred .f span { position: absolute; top: 100%; left: 0; font: 9px var(--ui); color: var(--ink-3); white-space: nowrap; transform: rotate(35deg); transform-origin: left top; }
-.cred-note { font-size: 12px; color: var(--ink-2); margin-top: 2.4rem; }
-.blocked { font: 11px var(--mono); color: var(--stop); background: #fdf4f4; border: 1px solid #f3d6d6; border-radius: 3px; padding: .5rem .7rem; margin: .8rem 0; max-height: 16rem; overflow: auto; }
-.blocked div { padding: .1rem 0; }
-.verdicts { font: 11px var(--mono); margin: .8rem 0; }
-.verdicts .pass { color: var(--ok); }
-.verdicts .fail { color: var(--stop); }
-.chainline { font: 11px var(--mono); color: var(--ink-3); margin-top: .8rem; }
-canvas.plot { border: 1px solid var(--rule-2); background: var(--paper-2); border-radius: 3px; margin-top: .6rem; max-width: 100%; }
-.sweepctl { display: flex; gap: .6rem; align-items: center; font-size: 11px; color: var(--ink-3); margin-top: .8rem; flex-wrap: wrap; }
-.sweepctl input { width: 7rem; font: 12px var(--mono); border: 1px solid var(--rule); border-radius: 3px; padding: .2rem .35rem; }
-.sweepctl input.bad { border-color: var(--stop); background: #fdf4f4; }
-.refusal { color: var(--stop); font-size: 11px; }
+/* ---------- the run ------------------------------------------------------- */
+#run-panel, #run-body { margin-top: 1.4rem; border-top: 1px solid var(--rule); padding-top: 1rem; }
+.runbar { display: flex; gap: .35rem; align-items: center; flex-wrap: wrap; margin-bottom: .7rem; }
+.runbar .why { color: var(--ink-3); font-size: 10.5px; }
+.answer { font: 600 27px Georgia, serif; margin: .4rem 0 .2rem; }
+.answer .unit { font-size: 14px; color: var(--ink-3); font-weight: 400; }
+.answer.none { color: var(--ink-3); font-size: 18px; }
+.cred { display: flex; gap: .2rem; align-items: flex-end; height: 40px; margin: .7rem 0 2.1rem; }
+.cred .f { width: 34px; height: 100%; background: #ece8de; position: relative; border-radius: 2px 2px 0 0; }
+.cred .f i { position: absolute; bottom: 0; left: 0; right: 0; min-height: 3px;
+  background: var(--ink-2); border-radius: 2px 2px 0 0; }
+.cred .f.gov i { background: var(--out); }
+.cred .f span { position: absolute; top: 100%; left: 1px; font-size: 8px; color: var(--ink-3);
+  white-space: nowrap; transform: rotate(38deg); transform-origin: left top; }
+.blocked { font-size: 10.5px; color: #a4262c; background: #fdf5f4; border: 1px solid #f0d8d6;
+  border-radius: 3px; padding: .5rem .7rem; margin: .7rem 0; max-height: 15rem; overflow: auto; }
+.verdicts { font-size: 10.5px; margin: .7rem 0; }
+.verdicts .pass { color: var(--both); }
+.verdicts .fail { color: #a4262c; }
+.chainline { font-size: 10.5px; color: var(--ink-3); margin-top: .7rem; }
+.sweepctl { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap;
+  margin-top: .8rem; font-size: 10.5px; color: var(--ink-3); }
+.sweepctl input { width: 7rem; font: 11px var(--mono); border: 1px solid var(--rule);
+  border-radius: 3px; padding: .18rem .35rem; }
+.sweepctl input.bad { border-color: #a4262c; background: #fdf5f4; }
+canvas.plot { border: 1px solid var(--rule-2); background: var(--card);
+  border-radius: 3px; margin-top: .6rem; max-width: 100%; }
 
-footer { display: flex; gap: 1.5rem; padding: .7rem 1rem 2rem; border-top: 1px solid var(--rule-2); font: 11px var(--ui); color: var(--ink-3); flex-wrap: wrap; }
+footer { padding: 1rem 2.5rem 2.5rem; border-top: 1px solid var(--rule-2);
+  color: var(--ink-3); font-size: 10.5px; }
 
 @media print {
-  #controls, .close, #matrix { display: none; }
-  .node-panel { position: static; border: 0; }
+  #tabs, #howto-panel, .nudge, #back { display: none; }
   body { background: #fff; }
 }
-@media (max-width: 1180px) {
-  main { grid-template-columns: 1fr; }
-  .panel { border-right: 0; border-bottom: 1px solid var(--rule-2); min-height: 0; }
+@media print {
+  .grid { max-height: none; overflow: visible; }
 }

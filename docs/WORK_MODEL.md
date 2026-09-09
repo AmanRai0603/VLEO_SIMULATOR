@@ -64,7 +64,7 @@ immediately, and nothing where being wrong looks completely fine.
 | 2 | say what the right answer is | a number worked out by the code being tested proves nothing | H2, plus the schema rule on provenance |
 | 3 | decide whether two subsystems disagreeing is a defect or a modelling choice | needs to know what the model was for | H5, the integrator |
 | 4 | accept a reduced margin | a promise to a customer, not a calculation | H6, the integrator with domain owners |
-| 5 | change the generator or the gate | one mistake there is 250 mistakes | H7, two reviewers |
+| 5 | change the generator or the gate | one mistake there is 1333 mistakes | H7, two reviewers |
 | 6 | decide what ships and what the customer is told | liability | H8, the feature owner |
 
 Four agent definitions live in `.claude/agents/`. Each has exactly one

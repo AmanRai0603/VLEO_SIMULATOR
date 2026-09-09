@@ -64,6 +64,15 @@ pub enum View {
 #[derive(Clone, Debug, Default)]
 pub struct Sheet {
     pub id: String,
+    /// Which layer this row lives in, inherited from its parent group and
+    /// carried on the row so a face never has to walk the tree to find out.
+    pub layer: u8,
+    /// The node that crosses between this layer and the one above.
+    ///
+    /// Empty for an ordinary row. Exactly one node crosses between any two
+    /// layers, and it is the only route in: a subsystem is reached through its
+    /// interface node, never by reaching into it.
+    pub crosses_to: String,
     pub label: String,
     pub folder: String,
     pub subsystem: String,
@@ -112,6 +121,15 @@ impl Sheet {
     pub fn is_declared(&self) -> bool {
         self.kind == "declared"
     }
+    /// Seeded, and nobody has specified it yet.
+    ///
+    /// The folder exists, the row is on the tree, the eight tabs open and each
+    /// says what goes in it. Nothing is generated from it and it cannot run.
+    /// This is the normal state of most of a tree for most of a programme, so
+    /// it is a reported state rather than a failing one.
+    pub fn is_seeded(&self) -> bool {
+        self.state == "empty" || self.state.is_empty()
+    }
     /// The module path, which is the node identifier.
     pub fn module_path(&self) -> String {
         format!("{}::{}", self.subsystem, self.folder)
@@ -140,6 +158,27 @@ pub struct Group {
     pub label: String,
     pub parent: String,
     pub owner: String,
+    /// Which of the four layers this heading belongs to.
+    ///
+    /// 1 management · 2 the system · 3 subsystem · 4 the run. Exactly one node
+    /// crosses between any two layers; nothing else is shared, so no layer can
+    /// be reasoned about wrongly from another.
+    pub layer: u8,
+    /// Drawn as a nested box on the diagonal of the matrix.
+    ///
+    /// A mark inside a box is coupling that subtree owns; a mark outside it
+    /// crosses a boundary, and that difference is the finding. A heading that
+    /// is not a box is a label rather than a scope.
+    pub is_box: bool,
+    /// The colour family the branch is drawn in. Not styling: it is what makes
+    /// a branch findable on a tree of thirteen hundred rows.
+    pub tone: String,
+    /// The cases this branch is in play for. Empty means every case.
+    ///
+    /// The architecture is never copied. `n` copies means `n` fixes and silent
+    /// drift, so a case filters what is in play rather than forking the tree —
+    /// which is the anti-clone-and-own rule, ISO/IEC 26580.
+    pub cases: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default)]

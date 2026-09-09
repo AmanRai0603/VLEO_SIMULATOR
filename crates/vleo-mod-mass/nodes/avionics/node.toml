@@ -5,10 +5,11 @@ id = "mass_avionics"
 label = "Avionics mass"
 folder = "avionics"   # frozen at seed; renaming the label never moves the directory
 subsystem = "mass"
-parent = "mass_aero"
+parent = "sys_satellite"
 kind = "declared"
 owner = "avionics"
 tier = "A"
+layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

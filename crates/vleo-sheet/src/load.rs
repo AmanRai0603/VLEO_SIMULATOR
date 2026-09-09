@@ -102,6 +102,8 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
         owner: s(t.get("owner")),
         tier: s(t.get("tier")),
         state: s(t.get("state")),
+        layer: u(t.get("layer")) as u8,
+        crosses_to: s(t.get("crosses_to")),
         crate_name: crate_name.to_string(),
         dir: dir.to_path_buf(),
         ..Default::default()
@@ -338,6 +340,18 @@ fn load_layers(tree: &mut Tree) -> Result<(), String> {
                 label: s(g.get("label")),
                 parent: s(g.get("parent")),
                 owner: s(g.get("owner")),
+                layer: u(g.get("layer")) as u8,
+                is_box: g.get("box").and_then(|b| b.as_bool()).unwrap_or(false),
+                tone: s(g.get("tone")),
+                cases: g
+                    .get("cases")
+                    .and_then(|c| c.as_array())
+                    .map(|a| {
+                        a.iter()
+                            .filter_map(|x| x.as_str().map(|x| x.to_string()))
+                            .collect()
+                    })
+                    .unwrap_or_default(),
             };
             tree.groups.insert(grp.id.clone(), grp);
         }

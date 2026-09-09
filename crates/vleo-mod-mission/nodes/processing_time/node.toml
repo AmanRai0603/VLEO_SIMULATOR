@@ -5,10 +5,11 @@ id = "mis_processing_time"
 label = "Ground processing time"
 folder = "processing_time"   # frozen at seed; renaming the label never moves the directory
 subsystem = "mis"
-parent = "mission"
+parent = "sys_performance"
 kind = "declared"
 owner = "operations"
 tier = "A"
+layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]
