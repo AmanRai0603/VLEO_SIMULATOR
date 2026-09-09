@@ -14,6 +14,10 @@ it solves is not a VLEO problem.
 | deepest declared chain | **25 nodes**, solar flux to cost per year |
 | an 80-point sweep of the whole graph | **83 ms** |
 
+![The tool: the tree, what a change touches, connectivity as nested boxes on the
+diagonal, and the node with its eight tabs, its answer, its credibility vector
+and the evidence that executed on this run](docs/img/tool.png)
+
 ---
 
 ## The problem this is shaped around
@@ -123,6 +127,9 @@ At or above one, the orbit holds indefinitely with no stored propellant. Below
 one, the mission has a lifetime rather than an altitude, and every other number
 in the design is a detail. **It does not close at this design point**, and the
 tool says so rather than being tuned until it does.
+
+![A behaviour sweep of thrust-to-drag against altitude, 80 points over the whole
+graph in 83 ms, showing an optimum near 300 km](docs/img/sweep.png)
 
 The physics behind that number is real, not a placeholder:
 
