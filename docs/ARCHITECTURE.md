@@ -27,6 +27,25 @@ This was found by building it the other way first. The shared-crate version
 passed every other check in the design while quietly making its central claim
 false.
 
+## The shell is a tree of modules, not a bundle
+
+    dom.js  ← state.js ← display.js ← tree.js  ┐
+                      ↖ figure.js ← paths.js   ├─ app.js
+                      ↖ node.js  ← run.js      ┘
+                      ↖ architecture.js
+
+Every module depends inward and nothing depends on `app.js`. A view that could
+navigate would have to import the router that imports it, and a cycle in a
+hundred-line module is a cycle nobody notices until it is a thousand. Views
+render markup carrying `data-` attributes; `app.js` owns every listener and
+decides what a click means.
+
+The modules are served individually by the daemon rather than bundled. A
+bundler is a build step between the source and the thing that runs, and the
+first time they disagree the disagreement is invisible — which is the same
+argument that puts the graph tables in the build rather than in a file the
+engine reads at run time.
+
 ## Three graphs, never merged
 
 | graph | edge | says | used for | changes |

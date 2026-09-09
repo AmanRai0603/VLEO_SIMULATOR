@@ -1,0 +1,140 @@
+/*
+  One node, opened.
+
+  Three segments in a fixed order, because the order is the thing that has to
+  be repeatable: what the node is *made of*, what it is *connected to*, and
+  what it *says*. The third of those is the generated page; the first two are
+  computed here from the folder on disk and from the graph, so neither can
+  claim something the repository does not hold.
+*/
+'use strict';
+
+import { $, $$, esc, plural } from './dom.js';
+import { S, isSeeded } from './state.js';
+import { renderRun } from './run.js';
+
+export async function openNode(id) {
+  const r = S.byId.get(id);
+  if (!r) return;
+  const body = $('#node-body');
+  body.innerHTML = '<p class="muted">loading the node…</p>';
+
+  const [meta, fragment] = await Promise.all([
+    fetch('/v1/node/' + encodeURIComponent(id)).then(x => x.json()).catch(() => null),
+    fetch('/v1/fragment/' + encodeURIComponent(id)).then(x => x.text()).catch(() => null),
+  ]);
+
+  body.innerHTML =
+    '<section class="seg" data-seg="assembly"><h3 class="seg-h">' +
+      '<span class="seg-n">1</span>assembly — what this node is made of</h3>' +
+      assemblyHtml(r, meta) + '</section>' +
+    '<section class="seg" data-seg="connectivity"><h3 class="seg-h">' +
+      '<span class="seg-n">2</span>connectivity — what it is joined to, as declared</h3>' +
+      connectivityHtml(r) + '</section>' +
+    '<section class="seg" data-seg="sheet"><h3 class="seg-h">' +
+      '<span class="seg-n">3</span>the sheet — what it says</h3>' +
+      (fragment || '<p class="empty">The sheet for <code>' + esc(id) +
+        '</code> is not on disk. Run <code>cargo xtask docs</code>.</p>') + '</section>';
+
+  // The generated fragment styles its tabs as `.tab`; inside `.tabs` that is
+  // the underline tab, not a layer tab.
+  $$('.tabs .tab', body).forEach(t => {
+    t.classList.add('tab-btn');
+    t.onclick = () => {
+      $$('.tabs .tab', body).forEach(x => x.classList.remove('sel'));
+      $$('[data-panel]', body).forEach(x => x.classList.remove('sel'));
+      t.classList.add('sel');
+      const p = $('[data-panel="' + t.dataset.tab + '"]', body);
+      if (p) p.classList.add('sel');
+    };
+  });
+
+  renderRun($('#run-panel'), r);
+}
+
+/**
+ * The folder, read off the disk.
+ *
+ * This is the template: the same eight files for every one of the rows, seven
+ * of them generated. It is what makes adding the next node a copy rather than
+ * a decision, and it is shown rather than described because a described layout
+ * goes stale the first time the layout changes.
+ */
+function assemblyHtml(r, meta) {
+  if (!meta || !meta.ok) {
+    return '<p class="empty">The engine did not describe this folder.</p>';
+  }
+  const present = meta.artefacts.filter(a => a.present).length;
+  return '<p class="seg-lead"><code>' + esc(meta.folder) + '</code> — ' +
+    plural(present, 'file') + ' of ' + meta.artefacts.length +
+    '. Everything about one node is in one directory: adding one is a copy, deleting one is a ' +
+    'remove, its history is the log of a directory, and ownership is a path rule.</p>' +
+    '<table class="asm-t"><thead><tr><th>file</th><th>written</th><th>what it is</th>' +
+    '<th class="num">bytes</th></tr></thead><tbody>' +
+    meta.artefacts.map(a =>
+      '<tr class="' + (a.present ? '' : 'absent') + '">' +
+      '<td><code>' + esc(a.name) + '</code></td>' +
+      '<td><span class="by ' + (a.written === 'by hand' ? 'hand' : 'gen') + '">' +
+        esc(a.written) + '</span></td>' +
+      '<td>' + esc(a.what) + '</td>' +
+      '<td class="num">' + (a.present ? Math.round(a.bytes) : '—') + '</td></tr>').join('') +
+    '</tbody></table>' +
+    '<p class="seg-note">' +
+      'sheet <b>' + esc(meta.sheet_hash) + '</b> · implementation <b>' + esc(meta.impl_hash) + '</b> · ' +
+      plural(meta.steps, 'algorithm step') + ', and one numbered <code>HOLE</code> in ' +
+      '<code>model.rs</code> for each. A hand edit outside a hole is discarded by the next ' +
+      'regeneration and fails the regeneration diff, which is what makes the generated region ' +
+      'genuinely owned by the generator rather than merely labelled that way.' +
+    '</p>' +
+    (isSeeded(r)
+      ? '<p class="empty">Seeded: the two hand-written files exist and are unfilled, so nothing ' +
+        'has been generated from them. That is the normal state of most of a tree for most of a ' +
+        'programme, and it is a reported state rather than a failing one.</p>'
+      : '');
+}
+
+/**
+ * The connectivity definition.
+ *
+ * Three graphs, never merged. Each edge is declared exactly once, by the end
+ * that the edge *changes*: a derivation edge by the consuming node, because
+ * knowing its inputs changes its implementation; a contribution edge by the
+ * contributing variable; a relation edge by the layer file. Everything else —
+ * who consumes this, what feeds a KPI — is derived here and never stored.
+ */
+function connectivityHtml(r) {
+  const ins  = S.producers[r.i].map(i => S.rows[i]);
+  const outs = S.consumers[r.i].map(i => S.rows[i]);
+  const link = x => '<a class="xref" data-goto="' + esc(x.id) + '">' + esc(x.id) + '</a>' +
+    ' <span class="muted">' + esc(x.label) + '</span>';
+
+  const rows = [
+    ['reads · declared here',
+     'the derivation graph, declared by this node because knowing its inputs changes its implementation',
+     ins.length ? ins.map(link) : null,
+     'Nothing. This is a declared value or a leaf of the design.'],
+    ['publishes',
+     'one small question, one answer — the variable id is the node id',
+     [ '<code>' + esc(r.id) + '</code>' + (r.symbol ? ' <b>' + esc(r.symbol) + '</b>' : '') +
+       ' <span class="muted">' + esc(r.unit) + '</span>' ],
+     ''],
+    ['read by · derived',
+     'never stored, so it cannot go stale',
+     outs.length ? outs.map(link) : null,
+     'Nothing reads this yet. Every one of these is a leaf of the design, or an oversight.'],
+    ['contributes to · declared here',
+     'the contribution graph, declared by the variable — coverage, never execution',
+     r.kpi.length ? r.kpi.map(k => '<a class="xref" data-goto="' + esc(k) + '">' + esc(k) + '</a>') : null,
+     'No KPI names this row.'],
+  ];
+  if (r.crosses) {
+    rows.push(['crosses upward · declared here',
+      'the one route out of this layer — a subsystem is reached through its interface node, never by reaching into it',
+      ['<a class="xref" data-group="' + esc(r.crosses) + '">' + esc(r.crosses) + '</a>'], '']);
+  }
+
+  return '<table class="conn-t"><tbody>' + rows.map(([k, why, items, none]) =>
+    '<tr><th>' + esc(k) + '<span class="why">' + esc(why) + '</span></th><td>' +
+    (items ? items.join('<br>') : '<span class="muted">' + esc(none) + '</span>') +
+    '</td></tr>').join('') + '</tbody></table>';
+}

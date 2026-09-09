@@ -195,12 +195,20 @@ fn route(
     match (method, path) {
         ("GET", "/") => file(ctx, "index.html", "text/html; charset=utf-8"),
         ("GET", "/app.css") => file(ctx, "app.css", "text/css; charset=utf-8"),
-        ("GET", "/app.js") => file(ctx, "app.js", "application/javascript; charset=utf-8"),
+        // The shell is one module per concern. They are served individually
+        // rather than bundled: a bundler is a build step between the source and
+        // the thing that runs, and the first time they disagree the disagreement
+        // is invisible.
+        ("GET", p) if p.starts_with("/js/") => module(ctx, p.trim_start_matches("/js/")),
         ("GET", "/v1/version") => ok_json(version_json(ctx)),
         ("GET", "/v1/index") => ok_json(index_json()),
         ("GET", p) if p.starts_with("/v1/fragment/") => {
             let id = p.trim_start_matches("/v1/fragment/");
             fragment(ctx, id)
+        }
+        ("GET", p) if p.starts_with("/v1/node/") => {
+            let id = p.trim_start_matches("/v1/node/");
+            node_endpoint(ctx, id)
         }
         ("POST", "/v1/run") | ("GET", "/v1/run") => ok_json(run_json(params, ctx)),
         ("GET", "/v1/sweep") => ok_json(sweep_json(params, ctx)),
@@ -225,6 +233,124 @@ fn file(ctx: &Ctx, name: &str, ctype: &'static str) -> (&'static str, &'static s
             format!("web/{name} is not on disk").into_bytes(),
         ),
     }
+}
+
+/// One shell module, by name. Anything that is not a plain file name under
+/// `web/js` is refused before it reaches the filesystem.
+fn module(ctx: &Ctx, name: &str) -> (&'static str, &'static str, Vec<u8>) {
+    let ok = name.ends_with(".js")
+        && name
+            .trim_end_matches(".js")
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
+    if !ok {
+        return (
+            "400 Bad Request",
+            "text/plain; charset=utf-8",
+            b"not a module name".to_vec(),
+        );
+    }
+    match std::fs::read(ctx.root.join("web").join("js").join(name)) {
+        Ok(b) => ("200 OK", "application/javascript; charset=utf-8", b),
+        Err(_) => (
+            "404 Not Found",
+            "text/plain; charset=utf-8",
+            format!("web/js/{name} is not on disk").into_bytes(),
+        ),
+    }
+}
+
+/// What one node's folder actually holds.
+///
+/// The architecture view claims a node is one folder with a fixed set of
+/// artefacts, seven of them generated. A claim about the layout that the page
+/// asserts from memory is a claim that goes stale the first time the layout
+/// changes, so it is read off the disk instead.
+fn node_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
+    if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+        return (
+            "400 Bad Request",
+            "text/plain; charset=utf-8",
+            b"not a node identifier".to_vec(),
+        );
+    }
+    let i = match Vleo::find(id) {
+        Some(i) => i,
+        None => {
+            return (
+                "404 Not Found",
+                "application/json; charset=utf-8",
+                b"{\"ok\":false,\"message\":\"no such node\"}".to_vec(),
+            )
+        }
+    };
+    let def = &NODES[i as usize];
+    let dir = ctx.root.join(def.folder);
+
+    // The eight files, and who writes each. This list is the template: it is
+    // the same eight for every one of the 1333 folders, which is what makes
+    // adding the next node a copy rather than a decision.
+    const ARTEFACTS: &[(&str, &str, &str)] = &[
+        (
+            "node.toml",
+            "by hand",
+            "the sheet — the only file here written by hand",
+        ),
+        (
+            "fixtures.toml",
+            "by hand",
+            "known-good values, and where each came from",
+        ),
+        (
+            "model.rs",
+            "generated",
+            "the whole file, with one numbered HOLE per algorithm step",
+        ),
+        (
+            "contract.rs",
+            "generated",
+            "the untyped adapter the bus calls",
+        ),
+        ("mod.rs", "generated", "the module wiring"),
+        ("evidence.rs", "generated", "the fixtures, as tests"),
+        ("page.html", "generated", "the eight tabs"),
+        (
+            "meta.json",
+            "generated",
+            "state and hashes, written by the gate",
+        ),
+    ];
+
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.str_field("id", def.id);
+    j.str_field("folder", def.folder);
+    j.str_field("subsystem", def.subsystem);
+    j.str_field("state", def.state.name());
+    j.str_field("sheet_hash", &short(def.sheet_hash));
+    j.str_field("impl_hash", &short(def.impl_hash));
+    j.num_field("steps", def.steps.len() as f64);
+    j.num_field("inputs", def.inputs.len() as f64);
+    j.num_field("outputs", def.outputs.len() as f64);
+    j.num_field("fixtures", def.fixtures.len() as f64);
+    j.key("artefacts").open_arr();
+    for (n, (name, who, what)) in ARTEFACTS.iter().enumerate() {
+        if n > 0 {
+            j.raw(",");
+        }
+        let meta = std::fs::metadata(dir.join(name));
+        j.raw("{");
+        j.str_field("name", name);
+        j.str_field("written", who);
+        j.str_field("what", what);
+        j.bool_field("present", meta.is_ok());
+        j.num_field("bytes", meta.map(|m| m.len() as f64).unwrap_or(0.0));
+        j.close_obj();
+    }
+    j.close_arr();
+    j.raw("}");
+    ok_json(j.0)
 }
 
 /// One fragment per node, fetched when it is opened.
@@ -374,6 +500,31 @@ fn index_json() -> String {
         j.str_field("to", b);
         j.str_field("why", why);
         j.close_obj();
+    }
+    j.close_arr();
+    // Which crate holds how many folders, read off the carried paths rather
+    // than asserted. The isolation rule is a manifest line, so the count of it
+    // should be a fact too.
+    j.key("crates").open_arr();
+    {
+        let mut seen: Vec<(&str, usize)> = Vec::new();
+        for d in NODES.iter() {
+            let name = d.folder.split('/').nth(1).unwrap_or("");
+            match seen.iter_mut().find(|(n, _)| *n == name) {
+                Some((_, c)) => *c += 1,
+                None => seen.push((name, 1)),
+            }
+        }
+        seen.sort_by(|a, b| a.0.cmp(b.0));
+        for (i, (name, count)) in seen.iter().enumerate() {
+            if i > 0 {
+                j.raw(",");
+            }
+            j.raw("{");
+            j.str_field("name", name);
+            j.num_field("nodes", *count as f64);
+            j.close_obj();
+        }
     }
     j.close_arr();
     j.key("cases").open_arr();

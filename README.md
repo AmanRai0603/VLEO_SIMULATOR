@@ -75,7 +75,7 @@ This repository is one answer to what they described:
     cases/                    per-customer values against one shared architecture
     sources/                  sources as objects, not strings
     bundles/                  reference-data recipes
-    web/                      the shell: one figure, four layers, one selected row
+    web/js/                   the shell: one module per concern, no bundler
     docs/                     including VARIABLES.md — all 1333 rows, generated
 
 ### One node is one folder
@@ -96,6 +96,50 @@ rule.
 
 ---
 
+## The shell, segmented
+
+The interface is the architecture read in the order it has to be built in, and
+each part of that order is a module of its own. There is no bundler: a bundler
+is a build step between the source and the thing that runs, and the first time
+they disagree the disagreement is invisible.
+
+    web/js/state.js          the one state, and the three graphs derived from it
+    web/js/display.js        the one walk — the display rows all three drawings share
+    web/js/tree.js           the tree column
+    web/js/paths.js          the paths column
+    web/js/matrix.js         the matrix, and the routed arrows
+    web/js/figure.js         the layer view, and the prose that surrounds it
+    web/js/node.js           one node: assembly, connectivity, the sheet
+    web/js/run.js            the run, the result and the behaviour sweep
+    web/js/architecture.js   the architecture, as a page of the tool
+    web/js/app.js            boot, routing, and every event listener
+
+No view module wires a navigation handler. Views render markup carrying `data-`
+attributes and `app.js` decides what a click means, so the module graph stays a
+tree: app depends on the views, the views depend on the state, and nothing
+depends on app.
+
+**Opening a node reads in three named parts, in a fixed order**, because the
+order is what has to be repeatable when the next thousand rows are filled in:
+
+1. **assembly** — the folder and its eight files, read off the disk rather than
+   asserted, with who writes each one.
+2. **connectivity** — what it reads, what it publishes, what reads it, what it
+   contributes to and what it crosses to, each labelled with which end declares
+   the edge.
+3. **the sheet** — the eight generated tabs: question, interface, algorithm,
+   generated code, evidence, flags, credibility, design space.
+
+The first tab of the tool is the same thing at programme scale — the node and
+its assembly, connectivity as declared, layer by layer, the tree hierarchy and
+its connections, and the rings. Every number on it is counted from the tables
+the engine walks, so a claim there cannot outlive the thing it describes.
+
+![The architecture view: the eight files every node folder repeats, what is
+specified and what is deliberately not](docs/img/architecture.png)
+
+---
+
 ## Four layers, one architecture
 
 | layer | rows | what it answers |
@@ -104,6 +148,20 @@ rule.
 | 2 the system | 367 | what the satellite is made of, and what reads what |
 | 3 subsystem | 738 across 15 layers | decomposed until each row is a question one person can answer |
 | 4 the run | — | one case, one chain hash, one set of numbers |
+
+### What is specified, and what is deliberately not
+
+The 250 specified rows are the **engine-sizing chain** — atmosphere,
+aerodynamics, intake, thruster, power — carried end to end to the
+thrust-against-drag closure, plus one simple reference design case to run it
+against. That is enough to exercise every mechanism in the tool: units, guards,
+declared cycles, evidence, credibility, the chain hash and the sweep.
+
+The other 1083 rows are seeded on purpose. **The repeatable architecture is the
+first deliverable**; content arrives per node, through the authoring loop, and
+each one lands in a folder that already exists with an owner already on it. A
+decomposition that only exists where someone has already done the work is a
+decomposition nobody can plan against.
 
 **Exactly one row in each subsystem layer crosses upward.** That row is the
 whole interface between the layer and the system; it is declared on the sheet
