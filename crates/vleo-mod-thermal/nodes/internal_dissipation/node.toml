@@ -5,10 +5,11 @@ id = "thm_internal_dissipation"
 label = "Internal dissipation"
 folder = "internal_dissipation"   # frozen at seed; renaming the label never moves the directory
 subsystem = "thm"
-parent = "thermal"
+parent = "sys_cool"
 kind = "declared"
 owner = "thermal"
 tier = "A"
+layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

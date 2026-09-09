@@ -5,10 +5,11 @@ id = "env_mean_molar_mass"
 label = "Mean molar mass of the local gas"
 folder = "mean_molar_mass"   # frozen at seed; renaming the label never moves the directory
 subsystem = "env"
-parent = "space_env"
+parent = "sys_orbit_env"
 kind = "computed"
 owner = "environment"
 tier = "B"
+layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

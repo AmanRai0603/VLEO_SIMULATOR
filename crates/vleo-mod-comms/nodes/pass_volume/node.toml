@@ -5,10 +5,11 @@ id = "com_pass_volume"
 label = "Data volume per pass"
 folder = "pass_volume"   # frozen at seed; renaming the label never moves the directory
 subsystem = "com"
-parent = "comms"
+parent = "sys_command"
 kind = "computed"
 owner = "comms"
 tier = "B"
+layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

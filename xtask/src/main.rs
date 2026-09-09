@@ -129,14 +129,26 @@ fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
         touched += 1;
         let holes = vleo_sheet::load::read_holes(&sh.dir);
         let gaps = emit::gap_pass(sh, &holes);
-        for (name, text) in [
-            ("model.rs", emit::model_rs(sh, &holes)),
-            ("contract.rs", emit::contract_rs(sh)),
-            ("mod.rs", emit::mod_rs(sh)),
-            ("evidence.rs", emit::evidence_rs(sh)),
-            ("page.html", page::fragment(sh, &holes, &tree)),
-            ("meta.json", emit::meta_json(sh, &gaps)),
-        ] {
+        // A seeded row gets its page and its metadata and no code at all.
+        // Everything is ready for it; the content is what is missing, and
+        // generating a file full of `todo!()` would hide that behind something
+        // that looks like work.
+        let artefacts: Vec<(&str, String)> = if sh.is_seeded() {
+            vec![
+                ("page.html", page::fragment(sh, &holes, &tree)),
+                ("meta.json", emit::meta_json(sh, &gaps)),
+            ]
+        } else {
+            vec![
+                ("model.rs", emit::model_rs(sh, &holes)),
+                ("contract.rs", emit::contract_rs(sh)),
+                ("mod.rs", emit::mod_rs(sh)),
+                ("evidence.rs", emit::evidence_rs(sh)),
+                ("page.html", page::fragment(sh, &holes, &tree)),
+                ("meta.json", emit::meta_json(sh, &gaps)),
+            ]
+        };
+        for (name, text) in artefacts {
             // Format the candidate before comparing, so the generator is a
             // function of its input: writing unformatted text and formatting it
             // afterwards makes every run report a change and the
@@ -253,6 +265,37 @@ fn cmd_gate(root: &Path, args: &[&str]) -> Result<(), String> {
 
 fn cmd_status(root: &Path) -> Result<(), String> {
     let tree = load(root)?;
+    let names = ["", "management", "the system", "subsystem", "the run"];
+    let mut by_layer: BTreeMap<u8, [usize; 2]> = BTreeMap::new();
+    for sh in tree.ordered() {
+        let e = by_layer.entry(sh.layer).or_default();
+        e[0] += 1;
+        if !sh.is_seeded() {
+            e[1] += 1;
+        }
+    }
+    println!(
+        "{:<4} {:<14} {:>7} {:>11} {:>9}",
+        "", "layer", "rows", "specified", "seeded"
+    );
+    for (l, c) in &by_layer {
+        println!(
+            "{:<4} {:<14} {:>7} {:>11} {:>9}",
+            l,
+            names.get(*l as usize).copied().unwrap_or("?"),
+            c[0],
+            c[1],
+            c[0] - c[1]
+        );
+    }
+    println!(
+        "{:<4} {:<14} {:>7} {:>11} {:>9}\n",
+        "",
+        "total",
+        tree.sheets.len(),
+        tree.ordered().iter().filter(|s| !s.is_seeded()).count(),
+        tree.ordered().iter().filter(|s| s.is_seeded()).count()
+    );
     let mut by_sub: BTreeMap<&str, [usize; 3]> = BTreeMap::new();
     let mut gaps_total = 0usize;
     for sh in tree.ordered() {

@@ -110,6 +110,44 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     let mut out = Vec::new();
     let holes = read_holes(&sh.dir);
 
+    // A seeded row is checked for the four things a seed is responsible for and
+    // nothing else. Everything a person has yet to write is the gap pass's to
+    // report, and a gate that refuses most of a tree for six months is a gate
+    // nobody reads.
+    if sh.is_seeded() {
+        let mut missing = Vec::new();
+        for (name, v) in [
+            ("id", &sh.id),
+            ("label", &sh.label),
+            ("parent", &sh.parent),
+            ("owner", &sh.owner),
+        ] {
+            if v.trim().is_empty() {
+                missing.push(name);
+            }
+        }
+        out.push(if missing.is_empty() {
+            Check::pass("seeded")
+        } else {
+            Check::fail(
+                "seeded",
+                format!("a seeded row still needs: {}", missing.join(", ")),
+            )
+        });
+        out.push(if tree.groups.contains_key(&sh.parent) {
+            Check::pass("parent")
+        } else {
+            Check::fail("parent", format!("'{}' is not a group", sh.parent))
+        });
+        let gaps = emit::gap_pass(sh, &holes);
+        out.push(if gaps.is_empty() {
+            Check::pass("gap-pass")
+        } else {
+            Check::note("gap-pass", gaps.join("; "))
+        });
+        return out;
+    }
+
     // 1 — the sheet validates; no required field is blank.
     let mut missing = Vec::new();
     for (name, v) in [
@@ -392,7 +430,7 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
     let bad: Vec<String> = tree
         .ordered()
         .iter()
-        .filter(|s| !s.is_declared() && s.inputs.is_empty())
+        .filter(|s| !s.is_declared() && !s.is_seeded() && s.inputs.is_empty())
         .map(|s| s.id.clone())
         .collect();
     out.push(if bad.is_empty() {
@@ -434,6 +472,9 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
     let mut unresolved = BTreeSet::new();
     let mut superseded = BTreeSet::new();
     for sh in tree.ordered() {
+        if sh.is_seeded() {
+            continue;
+        }
         for s in std::iter::once(&sh.source).chain(sh.fixtures.iter().map(|f| &f.source)) {
             match tree.sources.get(s) {
                 None => {

@@ -446,6 +446,15 @@ pub fn meta_json(sh: &Sheet, gaps: &[String]) -> String {
 /// verdict: a node with an open gap cannot enter the second human review.
 pub fn gap_pass(sh: &Sheet, holes: &BTreeMap<u32, String>) -> Vec<String> {
     let mut g = Vec::new();
+    if sh.is_seeded() {
+        g.push(
+            "seeded, not yet specified — it needs a question, a relation cited to a page, \
+             an interface with units, a domain with a reason per bound, a numbered algorithm \
+             and a known-good value from outside this code"
+                .into(),
+        );
+        return g;
+    }
     if sh.question.trim().is_empty() {
         g.push(
             "no question stated — an equation with no question gets reused for the wrong thing"
@@ -559,7 +568,7 @@ fn kind_variant(k: &str) -> &'static str {
 
 fn state_variant(s: &str) -> &'static str {
     match s {
-        "empty" => "State::Empty",
+        "" | "empty" => "State::Empty",
         "specified" => "State::Specified",
         "implemented" => "State::Implemented",
         "verified" => "State::Verified",
@@ -709,7 +718,8 @@ pub fn tables_rs(tree: &Tree) -> String {
             .collect::<Vec<_>>()
             .join(", ");
         o.push_str(&format!(
-            "    NodeDef {{ id: \"{id}\", label: \"{label}\", subsystem: \"{sub}\", parent: \"{par}\", \
+            "    NodeDef {{ id: \"{id}\", label: \"{label}\", subsystem: \"{sub}\", folder: \"{folder}\", \
+             parent: \"{par}\", layer: {layer}, crosses_to: \"{crosses}\", \
              kind: {kind}, state: {state}, retirement: Retirement::Live, owner: \"{owner}\", tier: {tier}, \
              question: \"{q}\", expression: \"{e}\", source: \"{src}\", assumptions: &[{asm}], steps: &[{steps}], \
              inputs: &[{inputs}], outputs: &[{outputs}], contributes: &[{kpis}], bundles: &[{bundles}], \
@@ -717,7 +727,10 @@ pub fn tables_rs(tree: &Tree) -> String {
             id = esc(&sh.id),
             label = esc(&sh.label),
             sub = esc(&sh.subsystem),
+            folder = esc(&format!("crates/{}/nodes/{}", sh.crate_name, sh.folder)),
             par = esc(&sh.parent),
+            layer = sh.layer,
+            crosses = esc(&sh.crosses_to),
             kind = kind_variant(&sh.kind),
             state = state_variant(&sh.state),
             owner = esc(&sh.owner),
@@ -757,14 +770,28 @@ pub fn tables_rs(tree: &Tree) -> String {
     }
     o.push_str("];\n\n");
 
-    o.push_str("type NodeFn = fn(&[f64], &mut [f64]) -> Result<(), Fault>;\n");
+    o.push_str("type NodeFn = fn(&[f64], &mut [f64]) -> Result<(), Fault>;\n\n");
+    o.push_str(
+        "/// A row the tree knows about that nobody has specified yet.\n\
+         ///\n\
+         /// It refuses by name rather than being absent: a node hidden to make a\n\
+         /// run look complete is the one thing the run control may never do. The\n\
+         /// answer is always `n ran, m blocked`, and the blocked ones are named.\n\
+         fn unspecified(_: &[f64], _: &mut [f64]) -> Result<(), Fault> {\n\
+         \x20   Err(Fault::NotRun { node: \"seeded, not yet specified\" })\n\
+         }\n\n",
+    );
     o.push_str("pub static DISPATCH: [NodeFn; NODE_COUNT] = [\n");
     for sh in &sheets {
-        o.push_str(&format!(
-            "    {}::nodes::{}::call,\n",
-            crate_ident(&sh.crate_name),
-            sh.rust_ident()
-        ));
+        if sh.is_seeded() {
+            o.push_str("    unspecified,\n");
+        } else {
+            o.push_str(&format!(
+                "    {}::nodes::{}::call,\n",
+                crate_ident(&sh.crate_name),
+                sh.rust_ident()
+            ));
+        }
     }
     o.push_str("];\n\n");
 
@@ -818,18 +845,44 @@ pub fn tables_rs(tree: &Tree) -> String {
     o.push_str("];\n\n");
 
     // The navigation graph: groups and the relation edges between them.
-    o.push_str("pub struct GroupDef {\n    pub id: &'static str,\n    pub label: &'static str,\n    pub parent: &'static str,\n    pub owner: &'static str,\n}\n\n");
+    o.push_str(
+        "/// One heading in the tree.\n\
+         pub struct GroupDef {\n\
+         \x20   pub id: &'static str,\n\
+         \x20   pub label: &'static str,\n\
+         \x20   pub parent: &'static str,\n\
+         \x20   pub owner: &'static str,\n\
+         \x20   /// 1 management · 2 the system · 3 subsystem · 4 the run.\n\
+         \x20   pub layer: u8,\n\
+         \x20   /// Drawn as a nested box on the diagonal. A mark inside a box is\n\
+         \x20   /// coupling that subtree owns; a mark outside it crosses a boundary.\n\
+         \x20   pub is_box: bool,\n\
+         \x20   /// The colour family the branch is drawn in — what makes a branch\n\
+         \x20   /// findable on a tree of thirteen hundred rows.\n\
+         \x20   pub tone: &'static str,\n\
+         \x20   /// The cases this branch is in play for. Empty means every case.\n\
+         \x20   pub cases: &'static [&'static str],\n\
+         }\n\n",
+    );
     o.push_str(&format!(
         "pub static GROUPS: [GroupDef; {}] = [\n",
         tree.groups.len()
     ));
     for g in tree.groups.values() {
         o.push_str(&format!(
-            "    GroupDef {{ id: \"{}\", label: \"{}\", parent: \"{}\", owner: \"{}\" }},\n",
+            "    GroupDef {{ id: \"{}\", label: \"{}\", parent: \"{}\", owner: \"{}\", layer: {}, is_box: {}, tone: \"{}\", cases: &[{}] }},\n",
             esc(&g.id),
             esc(&g.label),
             esc(&g.parent),
-            esc(&g.owner)
+            esc(&g.owner),
+            g.layer,
+            g.is_box,
+            esc(&g.tone),
+            g.cases
+                .iter()
+                .map(|c| format!("\"{}\"", esc(c)))
+                .collect::<Vec<_>>()
+                .join(", ")
         ));
     }
     o.push_str("];\n\n");

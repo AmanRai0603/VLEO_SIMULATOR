@@ -5,10 +5,11 @@ id = "mis_satellites_required"
 label = "Satellites required for the revisit target"
 folder = "satellites_required"   # frozen at seed; renaming the label never moves the directory
 subsystem = "mis"
-parent = "mission"
+parent = "sys_performance"
 kind = "computed"
 owner = "systems"
 tier = "C"
+layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

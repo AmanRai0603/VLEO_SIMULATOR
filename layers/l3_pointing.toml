@@ -1,0 +1,22 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "l3_pointing"
+label = "Pointing error budget"
+parent = "root"
+owner = "gnc"
+layer = 3
+box = true   # drawn as a nested box on the diagonal
+tone = "teal"
+cases = []   # empty means every case
+
+[[relates]]
+from = "l3_pointing"
+to = "sys_point"
+why = "the subsystem's only route to the system is its interface node"
+

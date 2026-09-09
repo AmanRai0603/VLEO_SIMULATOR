@@ -186,8 +186,23 @@ pub struct NodeDef {
     pub label: &'static str,
     /// The subsystem crate it lives in.
     pub subsystem: &'static str,
+    /// Where the node's directory is, relative to the repository root.
+    ///
+    /// Carried rather than reconstructed. A face that rebuilds this path from
+    /// the id and the subsystem is a second implementation of the layout rule,
+    /// and it goes wrong on the first row whose folder is not its id minus a
+    /// prefix — silently, as a 404 nobody attributes to a layout change.
+    pub folder: &'static str,
     /// The layer group it hangs under.
     pub parent: &'static str,
+    /// Which of the four layers this row lives in.
+    pub layer: u8,
+    /// The layer group this node crosses to, or empty for an ordinary row.
+    ///
+    /// Exactly one node crosses between any two layers, and it is the only
+    /// route in: a subsystem is reached through its interface node, never by
+    /// reaching into it.
+    pub crosses_to: &'static str,
     pub kind: Kind,
     pub state: State,
     pub retirement: Retirement,

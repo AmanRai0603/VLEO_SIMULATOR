@@ -5,10 +5,11 @@ id = "gnc_user_range_error"
 label = "GNSS user range error"
 folder = "user_range_error"   # frozen at seed; renaming the label never moves the directory
 subsystem = "gnc"
-parent = "gnc"
+parent = "sys_point"
 kind = "declared"
 owner = "gnc"
 tier = "A"
+layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

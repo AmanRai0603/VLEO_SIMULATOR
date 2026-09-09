@@ -251,24 +251,12 @@ fn fragment(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
             )
         }
     };
+    // The path is carried on the node, not rebuilt from the id. Rebuilding it
+    // is a second implementation of the layout rule, and it fails on the first
+    // row whose folder is not its id minus a prefix — as a 404 that nobody
+    // attributes to a layout change.
     let def = &NODES[i as usize];
-    let folder = if def.id.starts_with("kpi_") {
-        def.id.to_string()
-    } else {
-        def.id
-            .split_once('_')
-            .map(|x| x.1)
-            .unwrap_or(def.id)
-            .to_string()
-    };
-    let crate_name = crate_for(def.subsystem, def.id);
-    let p = ctx
-        .root
-        .join("crates")
-        .join(crate_name)
-        .join("nodes")
-        .join(&folder)
-        .join("page.html");
+    let p = ctx.root.join(def.folder).join("page.html");
     match std::fs::read(&p) {
         Ok(b) => ("200 OK", "text/html; charset=utf-8", b),
         Err(_) => (
@@ -276,26 +264,6 @@ fn fragment(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
             "text/html; charset=utf-8",
             format!("<p class=\"empty\">No fragment for <code>{id}</code>. Run <code>cargo xtask docs</code>.</p>").into_bytes(),
         ),
-    }
-}
-
-fn crate_for(subsystem: &str, id: &str) -> &'static str {
-    if id.starts_with("pwr_") {
-        return "vleo-mod-power";
-    }
-    match subsystem {
-        "env" => "vleo-mod-env",
-        "orbit" => "vleo-mod-orbit",
-        "aero" => "vleo-mod-aero",
-        "prop" => "vleo-mod-prop",
-        "power" => "vleo-mod-power",
-        "thm" => "vleo-mod-thermal",
-        "gnc" => "vleo-mod-gnc",
-        "com" => "vleo-mod-comms",
-        "pay" => "vleo-mod-payload",
-        "mass" => "vleo-mod-mass",
-        "mis" | "kpi" => "vleo-mod-mission",
-        _ => "vleo-mod-cost",
     }
 }
 
@@ -340,6 +308,8 @@ fn index_json() -> String {
         j.str_field("id", d.id);
         j.str_field("label", d.label);
         j.str_field("parent", d.parent);
+        j.num_field("layer", d.layer as f64);
+        j.str_field("crosses", d.crosses_to);
         j.str_field("sub", d.subsystem);
         j.str_field("kind", d.kind.name());
         j.str_field("state", d.state.name());
@@ -380,6 +350,17 @@ fn index_json() -> String {
         j.str_field("label", g.label);
         j.str_field("parent", g.parent);
         j.str_field("owner", g.owner);
+        j.num_field("layer", g.layer as f64);
+        j.bool_field("box", g.is_box);
+        j.str_field("tone", g.tone);
+        j.key("cases").open_arr();
+        for (k, c) in g.cases.iter().enumerate() {
+            if k > 0 {
+                j.raw(",");
+            }
+            j.push_string(c);
+        }
+        j.close_arr();
         j.close_obj();
     }
     j.close_arr();

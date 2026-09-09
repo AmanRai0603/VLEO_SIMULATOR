@@ -235,6 +235,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "vleo-mod-management"
+version = "0.1.0"
+dependencies = [
+ "vleo-core",
+]
+
+[[package]]
 name = "vleo-mod-mass"
 version = "0.1.0"
 dependencies = [
@@ -277,6 +284,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "vleo-mod-subsystem"
+version = "0.1.0"
+dependencies = [
+ "vleo-core",
+]
+
+[[package]]
+name = "vleo-mod-system"
+version = "0.1.0"
+dependencies = [
+ "vleo-core",
+]
+
+[[package]]
 name = "vleo-mod-thermal"
 version = "0.1.0"
 dependencies = [
@@ -294,12 +315,15 @@ dependencies = [
  "vleo-mod-cost",
  "vleo-mod-env",
  "vleo-mod-gnc",
+ "vleo-mod-management",
  "vleo-mod-mass",
  "vleo-mod-mission",
  "vleo-mod-orbit",
  "vleo-mod-payload",
  "vleo-mod-power",
  "vleo-mod-prop",
+ "vleo-mod-subsystem",
+ "vleo-mod-system",
  "vleo-mod-thermal",
  "vleo-sheet",
  "vleo-units",

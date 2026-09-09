@@ -49,7 +49,8 @@ def D(nid, label, subsystem, parent, ty, unit, symbol, value, lo, hi, rlo, rhi,
         ty=ty, unit=unit, symbol=symbol, value=value, lo=lo, hi=hi,
         rlo=rlo, rhi=rhi, question=q, source=src, owner=owner, confirmed=conf,
         tier=tier, kpis=list(kpis), note=note, expression="%s = %g" % (symbol, value),
-        assumptions=[], steps=[], inputs=[], fixtures=[], view=("number", {}), bundles=[]))
+        assumptions=[], steps=[], inputs=[], fixtures=[], view=("number", {}),
+        bundles=[], state="published", layer=2, crosses_to=""))
 
 
 def C(nid, label, subsystem, parent, ty, unit, symbol, q, expr, src, owner,
@@ -62,58 +63,130 @@ def C(nid, label, subsystem, parent, ty, unit, symbol, q, expr, src, owner,
         owner=owner, inputs=list(ins), steps=list(steps), lo=lo, hi=hi,
         rlo=rlo, rhi=rhi, tier=tier, assumptions=list(assumptions),
         fixtures=list(fixtures), kpis=list(kpis), view=view,
-        bundles=list(bundles), confirmed="", value=None, note=note))
+        bundles=list(bundles), confirmed="", value=None, note=note,
+        state="published", layer=2, crosses_to=""))
 
 
-def layer(gid, label, parent, owner, relates=()):
+def layer(gid, label, parent, owner, lyr, box=False, tone="slate", relates=(), cases=()):
+    """One heading in the tree.
+
+    `lyr` is which of the four layers it belongs to — 1 management,
+    2 the system, 3 subsystem, 4 the run. Exactly one node crosses between any
+    two layers; nothing else is shared, so no layer can be reasoned about
+    wrongly from another.
+
+    `box` says whether it is drawn as a nested box on the diagonal of the
+    matrix. A mark inside a box is coupling that subtree owns; a mark outside
+    it crosses a boundary, and that difference is the finding. A heading that
+    is not a box is a label rather than a scope.
+    """
     LAYERS[gid] = dict(id=gid, label=label, parent=parent, owner=owner,
-                       relates=list(relates))
+                       layer=lyr, box=box, tone=tone, relates=list(relates),
+                       cases=list(cases))
+
+
+SEEDED = []
+
+
+def S(nid, label, parent, subsystem, owner, lyr, kind="declared", crosses=""):
+    """A seeded row.
+
+    The folder exists, the row is on the tree, the eight tabs open and each one
+    says what goes in it. Nothing is generated from it and it cannot run.
+
+    This is the normal state of most of a tree for most of a programme. Six
+    hundred grey rows on day one is not a failure and must not be drawn as one:
+    the denominator was always there, and hiding the unstarted rows to make the
+    tree look finished is the one thing the figure may never do.
+    """
+    NODES.append(Node(
+        id=nid, label=label, subsystem=subsystem, parent=parent, kind=kind,
+        ty="", unit="", symbol="", value=None, lo=0.0, hi=0.0, rlo="", rhi="",
+        question="", source="", owner=owner, confirmed="", tier="", kpis=[],
+        note="", expression="", assumptions=[], steps=[], inputs=[],
+        fixtures=[], view=("number", {}), bundles=[], state="empty",
+        layer=lyr, crosses_to=crosses))
+    SEEDED.append(nid)
+
+
+def seed_run(prefix, parent, subsystem, owner, lyr, labels):
+    """A block of seeded rows under one heading."""
+    for i, label in enumerate(labels, 1):
+        S("%s_%02d" % (prefix, i), label, parent, subsystem, owner, lyr)
+
+
+def unnamed(prefix, parent, subsystem, owner, lyr, n, what):
+    """`n` rows the decomposition has a place for and nobody has named yet.
+
+    Named `to be named` rather than given a plausible label, because a
+    plausible label on an empty row is the one thing that would make this tree
+    lie: a reader would take it for work that exists.
+    """
+    for i in range(1, n + 1):
+        S("%s_%02d" % (prefix, i), "%s — to be named (%d)" % (what, i),
+          parent, subsystem, owner, lyr)
 
 
 # =============================================================================
-# The layer files — the 296 rows in the tree that are not nodes.
-# Headings, their relations, and subsystem ownership, from which CODEOWNERS is
-# generated. Eight files, changed rarely, reviewed by two people: moving a
-# branch moves everyone's work.
+# THE FOUR LAYERS
+#
+# Exactly one node crosses between any two layers. A subsystem is reached
+# through its interface node and never by reaching into it, which is what makes
+# a layer something you can reason about on its own.
 # =============================================================================
-layer("root", "VLEO multipayload programme", "", "systems")
+layer("root", "VLEO multipayload programme", "", "systems", 0, box=True, tone="slate")
 
-layer("management", "Management layer", "root", "systems",
-      [("management", "system", "the cost model can only run over a selected design")])
-layer("mgt_customer", "Customer requirement and KPIs", "management", "systems")
-layer("mgt_programme", "Programme control", "management", "systems")
-layer("mgt_cost", "Cost and value case", "management", "systems")
+# --- LAYER 1 · MANAGEMENT ----------------------------------------------------
+# The ask, the money, the schedule, the answer that goes back.
+layer("mgt_orbitt", "Orbitt Space", "root", "systems", 1, box=True, tone="slate",
+      relates=[("mgt_orbitt", "sys_root", "the cost model can only run over a selected design")])
+layer("mgt_customers", "Customers", "mgt_orbitt", "systems", 1, box=True, tone="teal")
+layer("mgt_c1", "Customer 1", "mgt_customers", "systems", 1, box=True, tone="amber",
+      cases=["c1"],
+      relates=[("mgt_c1", "sys_service", "each customer has its own KPIs against one shared architecture")])
+layer("mgt_c2", "Customer 2", "mgt_customers", "systems", 1, box=True, tone="amber",
+      cases=["c2"])
+layer("mgt_programme", "Programme control", "mgt_orbitt", "programme", 1, tone="green")
+layer("mgt_segments", "Mission segments", "mgt_orbitt", "systems", 1, tone="green")
+layer("mgt_standards", "Standards & compliance", "mgt_orbitt", "programme", 1, tone="violet",
+      relates=[("mgt_standards", "mgt_programme", "every verification activity is a date on the critical path")])
+layer("mgt_value", "Cost and the value case", "mgt_programme", "programme", 1, tone="green",
+      relates=[("mgt_value", "sys_cost", "the cost model can only run over a selected design")])
+layer("mgt_supply", "Supply chain", "mgt_orbitt", "programme", 1, tone="violet")
+layer("mgt_capability", "Orbitt capability", "mgt_orbitt", "programme", 1, tone="violet")
 
-layer("system", "The system", "root", "systems")
-layer("applications", "Applications and KPIs", "system", "systems",
-      [("applications", "payload", "every KPI resolves to a payload chain")])
-layer("mission", "Mission performance", "system", "systems",
-      [("mission", "orbit_geometry", "revisit and coverage are geometry before they are anything else")])
-layer("orbit_env", "Orbit and environment", "system", "systems")
-layer("orbit_geometry", "Orbit geometry", "orbit_env", "systems")
-layer("space_env", "Space environment", "orbit_env", "environment",
-      [("space_env", "aero_drag", "density is the input the whole drag chain stands on")])
-layer("satellite", "Satellite system", "system", "systems",
-      [("satellite", "propulsion", "thruster demand sets the power budget"),
-       ("satellite", "power", "the array is both the power source and a drag surface")])
-layer("mass_aero", "Mass and aerodynamics", "satellite", "mass")
-layer("aero_drag", "Aerodynamics and drag", "satellite", "aero")
-layer("subsystems", "Satellite subsystems", "system", "systems")
-layer("propulsion", "Propulsion — air-breathing electric", "subsystems", "propulsion",
-      [("propulsion", "power", "the thruster is the largest single load on the bus")])
-layer("prop_intake", "Air intake", "propulsion", "propulsion")
-layer("prop_thruster", "Thruster and power processing", "propulsion", "propulsion")
-layer("power", "Power", "subsystems", "power",
-      [("power", "thermal", "everything the bus draws has to leave as heat")])
-layer("thermal", "Thermal", "subsystems", "thermal")
-layer("gnc", "Guidance, navigation and control", "subsystems", "gnc",
-      [("gnc", "aero_drag", "aerodynamic torque is the dominant disturbance in this regime")])
-layer("comms", "TT&C and downlink", "subsystems", "comms")
-layer("payload", "Service payloads", "system", "payload")
-layer("pay_optical", "EO optical", "payload", "payload")
-layer("pay_rf", "RF geolocation", "payload", "payload")
-layer("closure", "Closure — required against achieved", "system", "systems",
-      [("closure", "propulsion", "thrust against drag is the closure the design exists to reach")])
+# --- LAYER 2 · THE SYSTEM ----------------------------------------------------
+# The tree, what each node connects to, and what is inside it.
+layer("sys_root", "VLEO multipayload", "root", "systems", 2, box=True, tone="slate")
+layer("sys_service", "Service level the customer buys", "sys_root", "systems", 2, box=True, tone="amber")
+layer("sys_eo", "Earth observation & ISR", "sys_service", "payload", 2, tone="amber")
+layer("sys_pnt", "PNT & geolocation", "sys_service", "payload", 2, tone="amber")
+# C1 bought imagery and geolocation. A customer who bought no comms payload
+# should not see comms KPIs, so the branch is simply not in play for them.
+layer("sys_comms_app", "Communications", "sys_service", "comms", 2, tone="amber",
+      cases=["c2"])
+layer("sys_concept", "Mission concept", "sys_root", "systems", 2, tone="slate")
+layer("sys_performance", "Mission performance", "sys_root", "systems", 2, tone="violet",
+      relates=[("sys_performance", "sys_orbit_env", "revisit and coverage are geometry before they are anything else")])
+layer("sys_orbit_env", "Orbit and environment", "sys_root", "environment", 2, tone="violet",
+      relates=[("sys_orbit_env", "sys_keep_orbit", "density is the input the whole drag chain stands on")])
+layer("sys_satellite", "Satellite system", "sys_root", "mass", 2, box=True, tone="slate")
+layer("sys_subsystems", "Satellite subsystems", "sys_root", "systems", 2, box=True, tone="green")
+layer("sys_keep_orbit", "Keep it in orbit", "sys_subsystems", "propulsion", 2, tone="amber",
+      relates=[("sys_keep_orbit", "sys_power", "the thruster is the largest single load on the bus")])
+layer("sys_point", "Point it", "sys_subsystems", "gnc", 2, tone="amber",
+      relates=[("sys_point", "sys_keep_orbit", "aerodynamic torque is the dominant disturbance in this regime")])
+layer("sys_know", "Know where it is", "sys_subsystems", "gnc", 2, tone="amber")
+layer("sys_power", "Power it", "sys_subsystems", "power", 2, tone="violet",
+      relates=[("sys_power", "sys_cool", "everything the bus draws has to leave as heat")])
+layer("sys_cool", "Keep it cool", "sys_subsystems", "thermal", 2, tone="green")
+layer("sys_command", "Command and downlink", "sys_subsystems", "comms", 2, tone="green")
+layer("sys_carry", "Carry the payloads", "sys_subsystems", "payload", 2, tone="green")
+layer("sys_payloads", "Service payloads", "sys_root", "payload", 2, tone="amber")
+layer("sys_closure", "Closure — required against achieved", "sys_root", "systems", 2, tone="teal",
+      relates=[("sys_closure", "sys_keep_orbit", "thrust against drag is the closure the design exists to reach")])
+layer("sys_cost", "Cost of the design", "sys_root", "programme", 2, tone="violet")
+
 
 
 # =============================================================================
@@ -2622,6 +2695,185 @@ C("prop_delivered_thrust", "Thrust actually delivered", "prop", "prop_thruster",
   kpis=["kpi_thrust_margin"])
 
 
+
+# =============================================================================
+# LAYER 1 · MANAGEMENT — 228 rows, seeded
+#
+# What the customer asks, and everything that answers back. Each customer has
+# its own KPIs; all of them run through one engineering architecture, under
+# their own case id. The architecture is never copied — n copies means n fixes
+# and silent drift, which is the anti-clone-and-own rule.
+# =============================================================================
+APPLICATIONS = ["Earth observation & ISR", "PNT & geolocation", "Communications"]
+ASK = ["the ask, in the customer's words", "acceptance criterion",
+       "target value", "measurement method", "required", "achieved",
+       "closure verdict"]
+
+for cid, cname, owner in (("c1", "Customer 1", "systems"), ("c2", "Customer 2", "systems")):
+    S("mgt_%s_case" % cid, "%s — case identifier" % cname, "mgt_%s" % cid, "mgt", owner, 1)
+    S("mgt_%s_contract" % cid, "%s — contract and value" % cname, "mgt_%s" % cid, "mgt", owner, 1)
+    for a in APPLICATIONS:
+        slug = a.split()[0].lower().strip("&")
+        for j, field in enumerate(ASK, 1):
+            S("mgt_%s_%s_%02d" % (cid, slug, j), "%s · %s" % (a, field),
+              "mgt_%s" % cid, "mgt", owner, 1)
+    # The single node that hands this customer's KPI set down to the one
+    # engineering architecture. Everything else in the customer's branch is
+    # theirs alone.
+    S("mgt_%s_handdown" % cid, "%s — KPI hand-down to the architecture" % cname,
+      "mgt_%s" % cid, "mgt", owner, 1, kind="required", crosses="sys_service")
+
+seed_run("mgt_phase", "mgt_programme", "mgt", "programme", 1, [
+    "Phase 0 · mission analysis and needs identification",
+    "Phase A · feasibility",
+    "Phase B · preliminary definition",
+    "Phase C · detailed definition",
+    "Phase D · qualification and production",
+    "Phase E · utilisation",
+    "Phase F · disposal",
+])
+seed_run("mgt_gate", "mgt_programme", "mgt", "programme", 1, [
+    "MCR · mission concept review", "SRR · system requirements review",
+    "MDR · mission definition review", "PDR · preliminary design review",
+    "CDR · critical design review", "SIR · system integration review",
+    "TRR · test readiness review", "ORR · operational readiness review",
+    "FRR · flight readiness review", "PLAR · post-launch assessment review",
+    "DR · disposal review",
+])
+seed_run("mgt_control", "mgt_programme", "mgt", "programme", 1, [
+    "Schedule · critical path", "Schedule · float and margin",
+    "Risk register · likelihood and consequence", "Risk register · mitigation owner",
+    "Configuration item list", "Baseline and effectivity",
+    "Change control board", "Non-conformance and waiver log",
+    "Cost at completion", "Earned value", "Staffing and skills",
+    "Facility and test-slot booking",
+])
+seed_run("mgt_segment", "mgt_segments", "mgt", "systems", 1, [
+    "Space segment · the constellation", "Space segment · the satellite",
+    "Launch segment · vehicle and dispenser", "Launch segment · injection accuracy",
+    "Ground segment · stations and network", "Ground segment · mission control",
+    "Ground segment · processing and archive", "User segment · tasking",
+    "User segment · product delivery",
+])
+seed_run("mgt_party", "mgt_standards", "mgt", "programme", 1, [
+    "Launch authority · payload safety", "Spectrum regulator · frequency filing",
+    "Debris mitigation authority · ISO 24113 compliance",
+    "Export control authority", "Insurance underwriter",
+    "Customer assurance · acceptance", "Independent verification body",
+    "National space agency · licensing",
+])
+unnamed("mgt_verif", "mgt_standards", "mgt", "programme", 1, 35, "Verification activity")
+seed_run("mgt_val", "mgt_value", "mgt", "programme", 1, [
+    "Selected design — the one thing that crosses from engineering",
+    "Non-recurring cost estimate", "Recurring cost, first unit",
+    "Learning curve slope", "Production run cost", "Launch cost per satellite",
+    "Annual operations cost", "Cost at completion", "Cost per operational year",
+    "Currency year and escalation", "One-sigma residual of the fit",
+    "Replacement cost avoided by air-breathing propulsion",
+    "Revenue per service unit", "Contracted service level",
+    "Break-even satellite count", "Net present value",
+    "Internal rate of return", "Sensitivity · altitude",
+    "Sensitivity · constellation size", "Sensitivity · launch price",
+    "Insurance premium", "Ground segment capital cost",
+    "Ground segment operating cost", "Spectrum licence cost",
+    "Disposal cost provision", "Cost risk contingency",
+    "Value case verdict", "Value case — required", "Value case — achieved",
+    "Value case — closure",
+])
+unnamed("mgt_supplier", "mgt_supply", "mgt", "programme", 1, 36, "Supply chain item")
+unnamed("mgt_cap", "mgt_capability", "mgt", "programme", 1, 32, "Capability item")
+
+
+# =============================================================================
+# LAYER 3 · THE FIFTEEN SUBSYSTEM LAYERS — 738 rows, seeded
+#
+# Every layer is independent. Zero edges cross between subsystems: the only
+# route is up through the subsystem interface node. That is Parnas, applied —
+# a module is defined by what it hides.
+#
+# Each layer receives its targets from layer 2, mirrors them one for one as
+# achieved rows, and closes when achieved meets required. The closure rule is
+# identical at both boundaries, which is one of the five ideas here that is
+# ours and unproven.
+# =============================================================================
+SUBSYSTEM_LAYERS = [
+    # (id, label, owner, targets from layer 2, internal rows, the layer-2 group
+    #  its interface node reports to)
+    ("prop",     "Propulsion · ICP plasma thruster", "propulsion", 19, 56, "sys_keep_orbit"),
+    ("massaero", "Mass and aerodynamics",            "mass",       19, 23, "sys_satellite"),
+    ("payload",  "Payload",                          "payload",    12, 43, "sys_payloads"),
+    ("power",    "Power",                            "power",      13, 41, "sys_power"),
+    ("thermal",  "Thermal",                          "thermal",    11, 24, "sys_cool"),
+    ("fsw",      "Flight software",                  "avionics",    3, 45, "sys_command"),
+    ("struct",   "Structure",                        "mass",        4, 39, "sys_satellite"),
+    ("atthw",    "Attitude hardware",                "gnc",         9, 23, "sys_point"),
+    ("orbmaint", "Orbit maintenance",                "propulsion", 10, 19, "sys_keep_orbit"),
+    ("acs",      "Attitude control sizing",          "gnc",         9, 20, "sys_point"),
+    ("navod",    "Navigation & orbit determination", "gnc",         9, 19, "sys_know"),
+    ("multipay", "Multi-payload",                    "payload",     9, 19, "sys_carry"),
+    ("ttc",      "TT&C and downlink",                "comms",       8, 20, "sys_command"),
+    ("pointing", "Pointing error budget",            "gnc",         6, 19, "sys_point"),
+    ("navsense", "Navigation sensing",               "gnc",         6, 19, "sys_know"),
+]
+
+for sid, slabel, sowner, n_target, n_internal, reports_to in SUBSYSTEM_LAYERS:
+    gid = "l3_%s" % sid
+    layer(gid, slabel, "root", sowner, 3, box=True, tone="teal",
+          relates=[(gid, reports_to, "the subsystem's only route to the system is its interface node")])
+    # The one node that crosses. Nothing else in this layer is visible from
+    # outside it, and nothing outside it is visible from within.
+    S("l3_%s_interface" % sid, "%s — subsystem interface" % slabel, gid, sid, sowner, 3,
+      kind="required", crosses=reports_to)
+    # Targets equal the parent's variables, one for one, mirrored by achieved.
+    # Nothing closes until achieved meets required.
+    for i in range(1, n_target + 1):
+        S("l3_%s_req_%02d" % (sid, i), "Target %d from the system layer — to be named" % i,
+          gid, sid, sowner, 3, kind="required")
+        S("l3_%s_ach_%02d" % (sid, i), "Achieved %d — against target %d" % (i, i),
+          gid, sid, sowner, 3, kind="achieved")
+    unnamed("l3_%s_n" % sid, gid, sid, sowner, 3, n_internal, "%s · internal" % slabel)
+
+
+# =============================================================================
+# LAYER 2 · the rows the system layer has a place for and nobody has specified
+# =============================================================================
+unnamed("sys_concept_n", "sys_concept", "sys", "systems", 2, 14,
+        "Concept trade · single satellite against constellation")
+unnamed("sys_perf_n", "sys_performance", "sys", "systems", 2, 12, "Mission performance")
+unnamed("sys_orbenv_n", "sys_orbit_env", "sys", "environment", 2, 26, "Orbit and environment")
+unnamed("sys_sat_n", "sys_satellite", "sys", "mass", 2, 18, "Satellite system")
+unnamed("sys_carry_n", "sys_carry", "sys", "payload", 2, 17, "Carry the payloads")
+unnamed("sys_know_n", "sys_know", "sys", "gnc", 2, 12, "Know where it is")
+unnamed("sys_comms_app_n", "sys_comms_app", "sys", "comms", 2, 18, "Communications service")
+
+
+# The specified rows move into the four-layer tree.
+#
+# They were authored against a flat set of headings before the layer structure
+# existed. Re-parenting them is a tree change and nothing else: no relation, no
+# limit and no fixture moves, and the derivation graph is untouched.
+REPARENT = {
+    "space_env": "sys_orbit_env",
+    "orbit_geometry": "sys_orbit_env",
+    "aero_drag": "sys_satellite",
+    "mass_aero": "sys_satellite",
+    "prop_intake": "sys_keep_orbit",
+    "prop_thruster": "sys_keep_orbit",
+    "power": "sys_power",
+    "thermal": "sys_cool",
+    "gnc": "sys_point",
+    "comms": "sys_command",
+    "pay_optical": "sys_eo",
+    "pay_rf": "sys_pnt",
+    "payload": "sys_payloads",
+    "mission": "sys_performance",
+    "mgt_cost": "sys_cost",
+    "mgt_customer": "sys_service",
+    "applications": "sys_service",
+    "closure": "sys_closure",
+}
+
+
 def amend(nid, **kw):
     """Rewire a node after the fact.
 
@@ -2763,13 +3015,31 @@ SUBSYS_CRATE = {
     "gnc": "vleo-mod-gnc", "com": "vleo-mod-comms", "pay": "vleo-mod-payload",
     "mass": "vleo-mod-mass", "mis": "vleo-mod-mission", "cost": "vleo-mod-cost",
     "kpi": "vleo-mod-mission",
+    # The seeded layers. They hold sheets and no code, so there is nothing to
+    # isolate yet and one crate each would be fifteen empty manifests.
+    #
+    # TRIGGER — split a subsystem layer into its own crate the moment it gets
+    # its own owner and its first specified node. Inside a single crate
+    # `use crate::prop::…` from `power` compiles and the isolation rule is
+    # unenforced; separate crates make it a manifest line.
+    "mgt": "vleo-mod-management",
+    "sys": "vleo-mod-system",
 }
+for _sid in ("prop", "massaero", "payload", "power", "thermal", "fsw", "struct",
+             "atthw", "orbmaint", "acs", "navod", "multipay", "ttc", "pointing",
+             "navsense"):
+    SUBSYS_CRATE.setdefault(_sid, "vleo-mod-subsystem")
 
 
 def folder_for(n):
     """Frozen at seed and recorded in the sheet. Editing a label never moves a
     directory."""
     fid = n["id"]
+    # A seeded row keeps its whole identifier. Fifteen subsystem layers share
+    # one crate until they are split, and stripping the prefix would put
+    # `l3_prop_req_01` and `l3_power_req_01` in the same folder.
+    if n["state"] == "empty":
+        return fid
     # KPI rows keep their whole identifier: they share a crate with the mission
     # rows and `kpi_revisit` and `mis_revisit` would otherwise both want the
     # folder `revisit`. Caught by the collision check in main(), which is where
@@ -2785,6 +3055,8 @@ def folder_for(n):
 
 
 def crate_for(n):
+    if n["state"] == "empty" and n["layer"] == 3:
+        return "vleo-mod-subsystem"
     if n["id"].startswith("pwr_"):
         return "vleo-mod-power"
     return SUBSYS_CRATE[n["subsystem"]]
@@ -2815,8 +3087,22 @@ def emit_node(n):
     a('kind = %s' % toml_str(n["kind"]))
     a('owner = %s' % toml_str(n["owner"]))
     a('tier = %s' % toml_str(n["tier"]))
-    a('state = "published"')
+    a('layer = %d   # 1 management · 2 the system · 3 subsystem · 4 the run' % n["layer"])
+    if n["crosses_to"]:
+        a('# The single node that crosses between this layer and the one above.')
+        a('# A subsystem is reached through its interface node, never by reaching')
+        a('# into it, and that is what makes a layer something you can reason')
+        a('# about on its own.')
+        a('crosses_to = %s' % toml_str(n["crosses_to"]))
+    a('state = %s' % toml_str(n["state"]))
     a("")
+    if n["state"] == "empty":
+        a("# SEEDED — the folder exists and nothing has been specified in it.")
+        a("# Every field below is required before anything can be generated. An")
+        a("# open field blocks generation, which is the mechanism: ambiguity")
+        a("# becomes a blocking item on an engineer's screen rather than")
+        a("# something an implementer resolves silently.")
+        a("")
     a("[question]")
     a('text = %s' % toml_str(n["question"]))
     if n["note"]:
@@ -2834,6 +3120,8 @@ def emit_node(n):
     a("[output]")
     a("# The node's one answer. The variable id is the node id: one small")
     a("# question, one answer, one folder, one row on the tree.")
+    if n["state"] == "empty":
+        a("# A unit is a decision, not data. None of these is filled yet.")
     a('symbol = %s' % toml_str(n["symbol"]))
     a('type = %s' % toml_str(n["ty"]))
     a('unit = %s' % toml_str(n["unit"]))
@@ -2842,7 +3130,7 @@ def emit_node(n):
     a('reason_lower = %s' % toml_str(n["rlo"]))
     a('reason_upper = %s' % toml_str(n["rhi"]))
     a("")
-    if n["kind"] == "declared":
+    if n["kind"] == "declared" and n["value"] is not None:
         a("[value]")
         a("# A number a person picked. It carries the same discipline as a")
         a("# fixture, because every margin in the design is built out of these.")
@@ -3035,7 +3323,12 @@ def emit_supporting():
         for gid in sorted(members):
             g = LAYERS[gid]
             L += ["[[group]]", "id = %s" % toml_str(g["id"]), "label = %s" % toml_str(g["label"]),
-                  "parent = %s" % toml_str(g["parent"]), "owner = %s" % toml_str(g["owner"]), ""]
+                  "parent = %s" % toml_str(g["parent"]), "owner = %s" % toml_str(g["owner"]),
+                  "layer = %d" % g["layer"],
+                  "box = %s   # drawn as a nested box on the diagonal" % ("true" if g["box"] else "false"),
+                  "tone = %s" % toml_str(g["tone"]),
+                  "cases = [%s]   # empty means every case" %
+                  ", ".join(toml_str(c) for c in g["cases"]), ""]
         for gid in sorted(members):
             for frm, to, why in LAYERS[gid]["relates"]:
                 L += ["[[relates]]", "from = %s" % toml_str(frm), "to = %s" % toml_str(to),
@@ -3080,6 +3373,8 @@ BY_ID = {}
 
 def main():
     for n in NODES:
+        if n["parent"] in REPARENT:
+            n["parent"] = REPARENT[n["parent"]]
         BY_ID[n["id"]] = n
     seen = {}
     for n in NODES:

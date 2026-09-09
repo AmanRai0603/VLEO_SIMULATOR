@@ -1,0 +1,22 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "sys_point"
+label = "Point it"
+parent = "sys_subsystems"
+owner = "gnc"
+layer = 2
+box = false   # drawn as a nested box on the diagonal
+tone = "amber"
+cases = []   # empty means every case
+
+[[relates]]
+from = "sys_point"
+to = "sys_keep_orbit"
+why = "aerodynamic torque is the dominant disturbance in this regime"
+

@@ -5,10 +5,11 @@ id = "cost_launch_per_satellite"
 label = "Launch cost per satellite"
 folder = "launch_per_satellite"   # frozen at seed; renaming the label never moves the directory
 subsystem = "cost"
-parent = "mgt_cost"
+parent = "sys_cost"
 kind = "declared"
 owner = "programme"
 tier = "A"
+layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

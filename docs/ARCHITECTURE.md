@@ -5,7 +5,7 @@
     RING 0   vleo-units     units and frames as types, constants, portable maths
     RING 1   vleo-core      every formula, faults, credibility, the resolver
     RING 2   vleo-bus       the wire contract every face speaks
-    RING 3   vleo-mod-*     twelve subsystem crates
+    RING 3   vleo-mod-*     fifteen subsystem crates
              vleo-modules   the facade: the graph tables, compiled in
     FACES    wasm · daemon · cli · console · ffi · py
 
@@ -21,7 +21,7 @@ isolation rule is unenforced. Separate crates make it a manifest line: a sibling
 a crate did not declare will not compile.
 
 The faces still take one dependency on the facade, and the compiler still sees
-twelve units, so they build in parallel.
+fifteen units, so they build in parallel.
 
 This was found by building it the other way first. The shared-crate version
 passed every other check in the design while quietly making its central claim

@@ -5,10 +5,11 @@ id = "com_passes_per_day"
 label = "Usable passes per day"
 folder = "passes_per_day"   # frozen at seed; renaming the label never moves the directory
 subsystem = "com"
-parent = "comms"
+parent = "sys_command"
 kind = "declared"
 owner = "operations"
 tier = "A"
+layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]
