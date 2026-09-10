@@ -238,9 +238,9 @@ fn file(ctx: &Ctx, name: &str, ctype: &'static str) -> (&'static str, &'static s
 /// One shell module, by name. Anything that is not a plain file name under
 /// `web/js` is refused before it reaches the filesystem.
 fn module(ctx: &Ctx, name: &str) -> (&'static str, &'static str, Vec<u8>) {
-    let ok = name.ends_with(".js")
-        && name
-            .trim_end_matches(".js")
+    let stem = name.strip_suffix(".js").unwrap_or("");
+    let ok = !stem.is_empty()
+        && stem
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
     if !ok {

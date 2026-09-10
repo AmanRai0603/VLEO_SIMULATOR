@@ -223,6 +223,23 @@ lowest governing, and the evidence that executed on this run](docs/img/node.png)
 ![A behaviour sweep of thrust-to-drag against altitude, 80 points over the whole
 graph in 83 ms, showing an optimum near 300 km](docs/img/sweep.png)
 
+### Three rows refuse, and each says why
+
+Running everything at the reference case computes 247 of the 250 specified
+rows. The other three do not return a number, and none of them is a failure of
+the tool — each is a declared limit doing the job it exists for:
+
+| row | what it says |
+|---|---|
+| `aero_ao_fluence` | **2.02e27 atoms/m²** against a declared ceiling of 1e26, above which no known external material survives. At 250 km the atomic-oxygen flux is 1.28e19 atoms/m²/s, so a ram-facing surface passes that ceiling in **three months**, not five years. |
+| `pay_geolocation_error` | **4.8 mm**, below the declared floor of 1 cm — the relation returns a number better than any time-difference system in this design achieves, so the floor refuses it rather than letting an optimistic figure travel downstream. |
+| `kpi_geolocation` | blocked, because the row above it never ran. A KPI whose input refused is **unknown**, and it says so instead of quietly substituting. |
+
+The first is a design finding of the same weight as the thrust-to-drag result:
+**this design does not close on external materials either.** Widening either
+bound would turn the tool green and delete the finding, which is the one thing
+the guards exist to prevent.
+
 The physics behind that number is real, not a placeholder:
 
 - **Atmosphere** — diffusive equilibrium above a 120 km base with a Bates
@@ -311,6 +328,10 @@ crate reaching the platform library.
 
 ## Where it is honest about what it is not
 
+- **Three of the 250 specified rows refuse rather than return**, for the
+  reasons tabulated above. That is two design findings and one correctly
+  propagated unknown, not three defects — but a reader who expects 250 numbers
+  and counts 247 deserves to be told which three and why.
 - **1083 of the 1333 rows are seeded and nothing is specified in them.** The
   folder, the sheet, the row and the dispatch stub exist; the stub returns
   `NotRun`, by name. That is the decomposition written down before anyone has

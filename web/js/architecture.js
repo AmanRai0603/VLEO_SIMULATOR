@@ -88,6 +88,14 @@ function secNode() {
   'aerodynamics, intake, thruster, power — carried end to end to the thrust-against-drag closure, plus ' +
   'one simple reference design case to run it against. That is enough to exercise every mechanism in ' +
   'the tool: units, guards, cycles, evidence, credibility, the chain hash and the sweep.</p>' +
+  '<p class="prose">Not all of them return a number. A declared limit that refuses is the guard ' +
+  'doing its job, and at the reference case two of them fire — the atomic oxygen fluence sits above ' +
+  'the ceiling an external surface survives, and the geolocation error sits below the floor any ' +
+  'time-difference system in this design reaches — with one KPI correctly blocked behind the second. ' +
+  'Widening either bound would turn the tool green and delete the finding, which is the one thing the ' +
+  'guards exist to prevent. This page does not state how many: run <b>everything</b> on the run tab ' +
+  'and read the count off that run, because a number printed here would be a claim about the last ' +
+  'time somebody looked.</p>' +
   '<p class="prose">The other ' + seeded + ' rows are seeded on purpose. The structure is the ' +
   'deliverable first; the content arrives per node, through the loop above, and each one lands in a ' +
   'folder that already exists with an owner already on it. A decomposition that only exists where ' +
