@@ -1,0 +1,17 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "mgt_supply_chain"
+label = "Supply chain"
+parent = "mgt_orbitt_space"
+owner = "programme"
+layer = 1
+box = false   # drawn as a nested box on the diagonal
+tone = "violet"
+cases = []   # empty means every case
+

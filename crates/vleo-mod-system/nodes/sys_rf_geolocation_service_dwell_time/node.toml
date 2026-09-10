@@ -1,0 +1,61 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sys_rf_geolocation_service_dwell_time"
+label = "Dwell time"
+folder = "sys_rf_geolocation_service_dwell_time"   # frozen at seed; renaming the label never moves the directory
+subsystem = "sys"
+parent = "sys_rf_geolocation_service"
+kind = "computed"
+owner = "payload"
+tier = ""
+layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
+state = "empty"
+
+# SEEDED — the folder exists and nothing has been specified in it.
+# Every field below is required before anything can be generated. An
+# open field blocks generation, which is the mechanism: ambiguity
+# becomes a blocking item on an engineer's screen rather than
+# something an implementer resolves silently.
+
+[question]
+text = ""
+
+[maths]
+expression = ""
+source = ""
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+# A unit is a decision, not data. None of these is filled yet.
+symbol = ""
+type = ""
+unit = ""
+lower = 0.0
+upper = 0.0
+reason_lower = ""
+reason_upper = ""
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "altitude"
+var = "sys_orbit_geometry_altitude"
+type = ""
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "aperture_diameter"
+var = "sys_eo_optical_service_aperture_diameter"
+type = ""
+
+[contributes]
+kpis = ["sys_kpi_achieved_eo_isr_image_snr", "sys_kpi_achieved_eo_isr_smear", "sys_kpi_achieved_eo_isr_collection_capacity", "sys_kpi_achieved_eo_isr_intercept_prob", "sys_kpi_achieved_eo_isr_cep90", "sys_kpi_achieved_pnt_cep90"]
+
+[view]
+kind = "number"
+

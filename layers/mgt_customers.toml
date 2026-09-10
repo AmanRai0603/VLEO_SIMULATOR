@@ -8,7 +8,7 @@
 [[group]]
 id = "mgt_customers"
 label = "Customers"
-parent = "mgt_orbitt"
+parent = "mgt_orbitt_space"
 owner = "systems"
 layer = 1
 box = true   # drawn as a nested box on the diagonal

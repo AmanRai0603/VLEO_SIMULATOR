@@ -14,7 +14,7 @@ layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 # A subsystem is reached through its interface node, never by reaching
 # into it, and that is what makes a layer something you can reason
 # about on its own.
-crosses_to = "sys_command"
+crosses_to = "sys_avionics_and_software"
 state = "empty"
 
 # SEEDED — the folder exists and nothing has been specified in it.

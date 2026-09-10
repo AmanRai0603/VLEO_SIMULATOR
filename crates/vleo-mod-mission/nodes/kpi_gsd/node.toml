@@ -5,11 +5,11 @@ id = "kpi_gsd"
 label = "Ground sample distance — closure"
 folder = "kpi_gsd"   # frozen at seed; renaming the label never moves the directory
 subsystem = "kpi"
-parent = "sys_service"
+parent = "l3_x_closure"
 kind = "kpi"
 owner = "systems"
 tier = "A"
-layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

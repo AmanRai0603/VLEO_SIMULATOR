@@ -1,0 +1,47 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "sys_constellation_trade_output"
+label = "Constellation trade output"
+parent = "sys_orbit_and_environment"
+owner = "environment"
+layer = 2
+box = false   # drawn as a nested box on the diagonal
+tone = "violet"
+cases = []   # empty means every case
+
+[[relates]]
+from = "sys_constellation_trade_output"
+to = "sys_kpi_achieved_comms"
+why = "planes, sats per plane, phasing, RAAN spread"
+
+[[relates]]
+from = "sys_constellation_trade_output"
+to = "sys_kpi_achieved_eo_isr"
+why = "planes, sats per plane, phasing, RAAN spread"
+
+[[relates]]
+from = "sys_constellation_trade_output"
+to = "sys_kpi_achieved_pnt"
+why = "planes, sats per plane, phasing, RAAN spread"
+
+[[relates]]
+from = "sys_constellation_trade_output"
+to = "sys_launch_ground_and_disposal"
+why = "satellites per launch and replenishment"
+
+[[relates]]
+from = "sys_constellation_trade_output"
+to = "sys_rf_geolocation_service"
+why = "cluster baseline from the constellation geometry"
+
+[[relates]]
+from = "sys_constellation_trade_output"
+to = "sys_pnt_service"
+why = "planes and phasing set the geometric dilution"
+

@@ -1,0 +1,27 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "mgt_system_level"
+label = "System level"
+parent = "mgt_test_and_verification"
+owner = "programme"
+layer = 1
+box = false   # drawn as a nested box on the diagonal
+tone = "violet"
+cases = []   # empty means every case
+
+[[relates]]
+from = "mgt_system_level"
+to = "mgt_interface_level"
+why = "the built spacecraft, ready to be mated"
+
+[[relates]]
+from = "mgt_system_level"
+to = "mgt_review_gates"
+why = "the qualification evidence TRR and ORR need"
+

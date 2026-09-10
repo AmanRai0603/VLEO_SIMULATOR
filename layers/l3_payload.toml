@@ -17,6 +17,6 @@ cases = []   # empty means every case
 
 [[relates]]
 from = "l3_payload"
-to = "sys_payloads"
+to = "sys_payload_interface"
 why = "the subsystem's only route to the system is its interface node"
 

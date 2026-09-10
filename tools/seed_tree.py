@@ -16,6 +16,7 @@ branch.
 Run:  python3 tools/seed_tree.py
 """
 import os
+import sys
 import textwrap
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -136,57 +137,22 @@ def unnamed(prefix, parent, subsystem, owner, lyr, n, what):
 # =============================================================================
 layer("root", "VLEO multipayload programme", "", "systems", 0, box=True, tone="slate")
 
-# --- LAYER 1 · MANAGEMENT ----------------------------------------------------
-# The ask, the money, the schedule, the answer that goes back.
-layer("mgt_orbitt", "Orbitt Space", "root", "systems", 1, box=True, tone="slate",
-      relates=[("mgt_orbitt", "sys_root", "the cost model can only run over a selected design")])
-layer("mgt_customers", "Customers", "mgt_orbitt", "systems", 1, box=True, tone="teal")
-layer("mgt_c1", "Customer 1", "mgt_customers", "systems", 1, box=True, tone="amber",
-      cases=["c1"],
-      relates=[("mgt_c1", "sys_service", "each customer has its own KPIs against one shared architecture")])
-layer("mgt_c2", "Customer 2", "mgt_customers", "systems", 1, box=True, tone="amber",
-      cases=["c2"])
-layer("mgt_programme", "Programme control", "mgt_orbitt", "programme", 1, tone="green")
-layer("mgt_segments", "Mission segments", "mgt_orbitt", "systems", 1, tone="green")
-layer("mgt_standards", "Standards & compliance", "mgt_orbitt", "programme", 1, tone="violet",
-      relates=[("mgt_standards", "mgt_programme", "every verification activity is a date on the critical path")])
-layer("mgt_value", "Cost and the value case", "mgt_programme", "programme", 1, tone="green",
-      relates=[("mgt_value", "sys_cost", "the cost model can only run over a selected design")])
-layer("mgt_supply", "Supply chain", "mgt_orbitt", "programme", 1, tone="violet")
-layer("mgt_capability", "Orbitt capability", "mgt_orbitt", "programme", 1, tone="violet")
+# --- LAYERS 1 AND 2 · FROM THE DOCUMENT --------------------------------------
+#
+# Every row of the management and system layers is CD-06's, read out of
+# `cd06/tree.json` rather than written here. 228 rows and 367 rows, with the
+# 82, 78, 95 and 245 edges between them. Nothing in this file names a variable
+# those layers do not already contain.
+#
+# The three graphs arrive already separated, which is the thing that makes the
+# document usable as a source at all: ED_* is group to group, VE is variable to
+# variable, KE is variable to KPI. They are never merged.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from cd06_rows import (Cd06, install as cd06_install, install_edges as cd06_edges,
+                        LAYER3_SOURCE)
 
-# --- LAYER 2 · THE SYSTEM ----------------------------------------------------
-# The tree, what each node connects to, and what is inside it.
-layer("sys_root", "VLEO multipayload", "root", "systems", 2, box=True, tone="slate")
-layer("sys_service", "Service level the customer buys", "sys_root", "systems", 2, box=True, tone="amber")
-layer("sys_eo", "Earth observation & ISR", "sys_service", "payload", 2, tone="amber")
-layer("sys_pnt", "PNT & geolocation", "sys_service", "payload", 2, tone="amber")
-# C1 bought imagery and geolocation. A customer who bought no comms payload
-# should not see comms KPIs, so the branch is simply not in play for them.
-layer("sys_comms_app", "Communications", "sys_service", "comms", 2, tone="amber",
-      cases=["c2"])
-layer("sys_concept", "Mission concept", "sys_root", "systems", 2, tone="slate")
-layer("sys_performance", "Mission performance", "sys_root", "systems", 2, tone="violet",
-      relates=[("sys_performance", "sys_orbit_env", "revisit and coverage are geometry before they are anything else")])
-layer("sys_orbit_env", "Orbit and environment", "sys_root", "environment", 2, tone="violet",
-      relates=[("sys_orbit_env", "sys_keep_orbit", "density is the input the whole drag chain stands on")])
-layer("sys_satellite", "Satellite system", "sys_root", "mass", 2, box=True, tone="slate")
-layer("sys_subsystems", "Satellite subsystems", "sys_root", "systems", 2, box=True, tone="green")
-layer("sys_keep_orbit", "Keep it in orbit", "sys_subsystems", "propulsion", 2, tone="amber",
-      relates=[("sys_keep_orbit", "sys_power", "the thruster is the largest single load on the bus")])
-layer("sys_point", "Point it", "sys_subsystems", "gnc", 2, tone="amber",
-      relates=[("sys_point", "sys_keep_orbit", "aerodynamic torque is the dominant disturbance in this regime")])
-layer("sys_know", "Know where it is", "sys_subsystems", "gnc", 2, tone="amber")
-layer("sys_power", "Power it", "sys_subsystems", "power", 2, tone="violet",
-      relates=[("sys_power", "sys_cool", "everything the bus draws has to leave as heat")])
-layer("sys_cool", "Keep it cool", "sys_subsystems", "thermal", 2, tone="green")
-layer("sys_command", "Command and downlink", "sys_subsystems", "comms", 2, tone="green")
-layer("sys_carry", "Carry the payloads", "sys_subsystems", "payload", 2, tone="green")
-layer("sys_payloads", "Service payloads", "sys_root", "payload", 2, tone="amber")
-layer("sys_closure", "Closure — required against achieved", "sys_root", "systems", 2, tone="teal",
-      relates=[("sys_closure", "sys_keep_orbit", "thrust against drag is the closure the design exists to reach")])
-layer("sys_cost", "Cost of the design", "sys_root", "programme", 2, tone="violet")
-
+CD = Cd06()
+cd06_install(CD, layer, S)
 
 
 # =============================================================================
@@ -2696,182 +2662,114 @@ C("prop_delivered_thrust", "Thrust actually delivered", "prop", "prop_thruster",
 
 
 
-# =============================================================================
-# LAYER 1 · MANAGEMENT — 228 rows, seeded
+# The specified rows move into layer 3, where the decomposition they belong to
+# lives.
 #
-# What the customer asks, and everything that answers back. Each customer has
-# its own KPIs; all of them run through one engineering architecture, under
-# their own case id. The architecture is never copied — n copies means n fixes
-# and silent drift, which is the anti-clone-and-own rule.
-# =============================================================================
-APPLICATIONS = ["Earth observation & ISR", "PNT & geolocation", "Communications"]
-ASK = ["the ask, in the customer's words", "acceptance criterion",
-       "target value", "measurement method", "required", "achieved",
-       "closure verdict"]
-
-for cid, cname, owner in (("c1", "Customer 1", "systems"), ("c2", "Customer 2", "systems")):
-    S("mgt_%s_case" % cid, "%s — case identifier" % cname, "mgt_%s" % cid, "mgt", owner, 1)
-    S("mgt_%s_contract" % cid, "%s — contract and value" % cname, "mgt_%s" % cid, "mgt", owner, 1)
-    for a in APPLICATIONS:
-        slug = a.split()[0].lower().strip("&")
-        for j, field in enumerate(ASK, 1):
-            S("mgt_%s_%s_%02d" % (cid, slug, j), "%s · %s" % (a, field),
-              "mgt_%s" % cid, "mgt", owner, 1)
-    # The single node that hands this customer's KPI set down to the one
-    # engineering architecture. Everything else in the customer's branch is
-    # theirs alone.
-    S("mgt_%s_handdown" % cid, "%s — KPI hand-down to the architecture" % cname,
-      "mgt_%s" % cid, "mgt", owner, 1, kind="required", crosses="sys_service")
-
-seed_run("mgt_phase", "mgt_programme", "mgt", "programme", 1, [
-    "Phase 0 · mission analysis and needs identification",
-    "Phase A · feasibility",
-    "Phase B · preliminary definition",
-    "Phase C · detailed definition",
-    "Phase D · qualification and production",
-    "Phase E · utilisation",
-    "Phase F · disposal",
-])
-seed_run("mgt_gate", "mgt_programme", "mgt", "programme", 1, [
-    "MCR · mission concept review", "SRR · system requirements review",
-    "MDR · mission definition review", "PDR · preliminary design review",
-    "CDR · critical design review", "SIR · system integration review",
-    "TRR · test readiness review", "ORR · operational readiness review",
-    "FRR · flight readiness review", "PLAR · post-launch assessment review",
-    "DR · disposal review",
-])
-seed_run("mgt_control", "mgt_programme", "mgt", "programme", 1, [
-    "Schedule · critical path", "Schedule · float and margin",
-    "Risk register · likelihood and consequence", "Risk register · mitigation owner",
-    "Configuration item list", "Baseline and effectivity",
-    "Change control board", "Non-conformance and waiver log",
-    "Cost at completion", "Earned value", "Staffing and skills",
-    "Facility and test-slot booking",
-])
-seed_run("mgt_segment", "mgt_segments", "mgt", "systems", 1, [
-    "Space segment · the constellation", "Space segment · the satellite",
-    "Launch segment · vehicle and dispenser", "Launch segment · injection accuracy",
-    "Ground segment · stations and network", "Ground segment · mission control",
-    "Ground segment · processing and archive", "User segment · tasking",
-    "User segment · product delivery",
-])
-seed_run("mgt_party", "mgt_standards", "mgt", "programme", 1, [
-    "Launch authority · payload safety", "Spectrum regulator · frequency filing",
-    "Debris mitigation authority · ISO 24113 compliance",
-    "Export control authority", "Insurance underwriter",
-    "Customer assurance · acceptance", "Independent verification body",
-    "National space agency · licensing",
-])
-unnamed("mgt_verif", "mgt_standards", "mgt", "programme", 1, 35, "Verification activity")
-seed_run("mgt_val", "mgt_value", "mgt", "programme", 1, [
-    "Selected design — the one thing that crosses from engineering",
-    "Non-recurring cost estimate", "Recurring cost, first unit",
-    "Learning curve slope", "Production run cost", "Launch cost per satellite",
-    "Annual operations cost", "Cost at completion", "Cost per operational year",
-    "Currency year and escalation", "One-sigma residual of the fit",
-    "Replacement cost avoided by air-breathing propulsion",
-    "Revenue per service unit", "Contracted service level",
-    "Break-even satellite count", "Net present value",
-    "Internal rate of return", "Sensitivity · altitude",
-    "Sensitivity · constellation size", "Sensitivity · launch price",
-    "Insurance premium", "Ground segment capital cost",
-    "Ground segment operating cost", "Spectrum licence cost",
-    "Disposal cost provision", "Cost risk contingency",
-    "Value case verdict", "Value case — required", "Value case — achieved",
-    "Value case — closure",
-])
-unnamed("mgt_supplier", "mgt_supply", "mgt", "programme", 1, 36, "Supply chain item")
-unnamed("mgt_cap", "mgt_capability", "mgt", "programme", 1, 32, "Capability item")
-
-
-# =============================================================================
-# LAYER 3 · THE FIFTEEN SUBSYSTEM LAYERS — 738 rows, seeded
+# This is the correction the document forced. These rows were authored against
+# a flat set of headings, then re-parented into a layer 2 that was mine; CD-06's
+# layer 2 is coarser than they are. It holds "Drag coefficient" as one row and
+# this repository decomposes that into dynamic pressure, speed ratio, frontal
+# area and drag force — which is exactly what CD-06 pushes down into layer 3:
+# nineteen targets from layer 2 and ninety-five rows to answer them.
 #
-# Every layer is independent. Zero edges cross between subsystems: the only
-# route is up through the subsystem interface node. That is Parnas, applied —
-# a module is defined by what it hides.
-#
-# Each layer receives its targets from layer 2, mirrors them one for one as
-# achieved rows, and closes when achieved meets required. The closure rule is
-# identical at both boundaries, which is one of the five ideas here that is
-# ours and unproven.
-# =============================================================================
-SUBSYSTEM_LAYERS = [
-    # (id, label, owner, targets from layer 2, internal rows, the layer-2 group
-    #  its interface node reports to)
-    ("prop",     "Propulsion · ICP plasma thruster", "propulsion", 19, 56, "sys_keep_orbit"),
-    ("massaero", "Mass and aerodynamics",            "mass",       19, 23, "sys_satellite"),
-    ("payload",  "Payload",                          "payload",    12, 43, "sys_payloads"),
-    ("power",    "Power",                            "power",      13, 41, "sys_power"),
-    ("thermal",  "Thermal",                          "thermal",    11, 24, "sys_cool"),
-    ("fsw",      "Flight software",                  "avionics",    3, 45, "sys_command"),
-    ("struct",   "Structure",                        "mass",        4, 39, "sys_satellite"),
-    ("atthw",    "Attitude hardware",                "gnc",         9, 23, "sys_point"),
-    ("orbmaint", "Orbit maintenance",                "propulsion", 10, 19, "sys_keep_orbit"),
-    ("acs",      "Attitude control sizing",          "gnc",         9, 20, "sys_point"),
-    ("navod",    "Navigation & orbit determination", "gnc",         9, 19, "sys_know"),
-    ("multipay", "Multi-payload",                    "payload",     9, 19, "sys_carry"),
-    ("ttc",      "TT&C and downlink",                "comms",       8, 20, "sys_command"),
-    ("pointing", "Pointing error budget",            "gnc",         6, 19, "sys_point"),
-    ("navsense", "Navigation sensing",               "gnc",         6, 19, "sys_know"),
-]
+# So layer 2 becomes the document's 367 rows and nothing else, and every one of
+# these 250 becomes what it always was: the beginning of a subsystem layer's own
+# working. Nothing is discarded, no relation moves and no fixture changes — the
+# derivation graph is untouched. It is a change of parent and of layer.
+REPARENT = {
+    # heading                 subsystem layer it decomposes
+    "prop_intake":            "l3_prop",
+    "prop_thruster":          "l3_prop",
+    "aero_drag":              "l3_massaero",
+    "mass_aero":              "l3_massaero",
+    "payload":                "l3_payload",
+    "pay_optical":            "l3_payload",
+    "pay_rf":                 "l3_payload",
+    "power":                  "l3_power",
+    "thermal":                "l3_thermal",
+    "comms":                  "l3_ttc",
+    "gnc":                    "l3_acs",
+    # Two layers the document does not have. Orbit geometry, the space
+    # environment and mission performance are layer-2 groups in CD-06, not
+    # subsystem layers, and this repository decomposes all three; closure and
+    # cost are ours entirely. They are kept, in layers named as additions, so
+    # that nothing here is mistaken for a row the document specifies.
+    "space_env":              "l3_x_envorbit",
+    "orbit_geometry":         "l3_x_envorbit",
+    "mission":                "l3_x_envorbit",
+    "closure":                "l3_x_closure",
+    "mgt_cost":               "l3_x_closure",
+    "mgt_customer":           "l3_x_closure",
+    "applications":           "l3_x_closure",
+}
 
-for sid, slabel, sowner, n_target, n_internal, reports_to in SUBSYSTEM_LAYERS:
+# How many rows each subsystem layer already holds, so the unnamed remainder is
+# the document's total less the work that exists rather than on top of it.
+SPECIFIED_INTO = {}
+for _n in NODES:
+    _g = REPARENT.get(_n["parent"])
+    if _g:
+        SPECIFIED_INTO[_g[3:]] = SPECIFIED_INTO.get(_g[3:], 0) + 1
+
+
+# The two layers CD-06 does not have, named so that nobody mistakes them for
+# rows it does. The user asked for the document's variables; these are the
+# ones this repository brought with it, kept rather than dropped.
+layer("l3_x_envorbit", "Environment and orbit — addition", "root", "environment", 3,
+      box=True, tone="amber",
+      relates=[("l3_x_envorbit", CD.nid["orb"],
+                "it decomposes orbit geometry and the space environment, which CD-06 holds at layer 2")])
+S("l3_x_envorbit_interface", "Environment and orbit — subsystem interface",
+  "l3_x_envorbit", "envorbit", "environment", 3, kind="required", crosses=CD.nid["orb"])
+
+layer("l3_x_closure", "Closure and cost — addition", "root", "systems", 3,
+      box=True, tone="amber",
+      relates=[("l3_x_closure", CD.nid["svc"],
+                "required against achieved, for the service the customer buys")])
+S("l3_x_closure_interface", "Closure and cost — subsystem interface",
+  "l3_x_closure", "closure", "systems", 3, kind="required", crosses=CD.nid["svc"])
+
+# =============================================================================
+# LAYER 3 · THE FIFTEEN SUBSYSTEM LAYERS
+#
+# The document specifies these by shape and never names their rows: which
+# layers exist, how many targets each takes from layer 2, and how many rows
+# each holds. Three of those four are enough to build the layer honestly.
+#
+# The targets are derivable, and they are real names rather than placeholders:
+# a target equals the parent's variable, one for one, and every one of the
+# fifteen target counts in the document equals the variable count of the
+# layer-2 group it reports to. Nineteen targets for propulsion because layer 2
+# holds nineteen propulsion variables. So each target row is that variable's
+# name, mirrored by an achieved row, and the layer closes when achieved meets
+# required.
+#
+# What is left over is the layer's own working — the rows nobody has named. Those
+# stay `to be named`, because a plausible label on an unspecified row is the one
+# thing that would make this tree lie.
+# =============================================================================
+for sid, slabel, sowner, n_target, n_total, src_group in LAYER3_SOURCE(CD):
     gid = "l3_%s" % sid
+    reports_to = CD.nid[src_group]
     layer(gid, slabel, "root", sowner, 3, box=True, tone="teal",
-          relates=[(gid, reports_to, "the subsystem's only route to the system is its interface node")])
+          relates=[(gid, reports_to,
+                    "the subsystem's only route to the system is its interface node")])
     # The one node that crosses. Nothing else in this layer is visible from
     # outside it, and nothing outside it is visible from within.
     S("l3_%s_interface" % sid, "%s — subsystem interface" % slabel, gid, sid, sowner, 3,
       kind="required", crosses=reports_to)
-    # Targets equal the parent's variables, one for one, mirrored by achieved.
-    # Nothing closes until achieved meets required.
-    for i in range(1, n_target + 1):
-        S("l3_%s_req_%02d" % (sid, i), "Target %d from the system layer — to be named" % i,
-          gid, sid, sowner, 3, kind="required")
-        S("l3_%s_ach_%02d" % (sid, i), "Achieved %d — against target %d" % (i, i),
-          gid, sid, sowner, 3, kind="achieved")
-    unnamed("l3_%s_n" % sid, gid, sid, sowner, 3, n_internal, "%s · internal" % slabel)
+    for i, (cd_id, vlabel) in enumerate(CD.variables_of(src_group), 1):
+        S("l3_%s_req_%02d" % (sid, i), vlabel, gid, sid, sowner, 3, kind="required")
+        S("l3_%s_ach_%02d" % (sid, i), vlabel, gid, sid, sowner, 3, kind="achieved")
+    # The document's total for the layer, less its interface, its targets and
+    # its achieved rows, less whatever this repository has already specified
+    # into it. A layer already finer than the document's estimate gets none.
+    budget = n_total - 1 - 2 * n_target - SPECIFIED_INTO.get(sid, 0)
+    if budget > 0:
+        unnamed("l3_%s_n" % sid, gid, sid, sowner, 3, budget, "%s · internal" % slabel)
 
 
-# =============================================================================
-# LAYER 2 · the rows the system layer has a place for and nobody has specified
-# =============================================================================
-unnamed("sys_concept_n", "sys_concept", "sys", "systems", 2, 14,
-        "Concept trade · single satellite against constellation")
-unnamed("sys_perf_n", "sys_performance", "sys", "systems", 2, 12, "Mission performance")
-unnamed("sys_orbenv_n", "sys_orbit_env", "sys", "environment", 2, 26, "Orbit and environment")
-unnamed("sys_sat_n", "sys_satellite", "sys", "mass", 2, 18, "Satellite system")
-unnamed("sys_carry_n", "sys_carry", "sys", "payload", 2, 17, "Carry the payloads")
-unnamed("sys_know_n", "sys_know", "sys", "gnc", 2, 12, "Know where it is")
-unnamed("sys_comms_app_n", "sys_comms_app", "sys", "comms", 2, 18, "Communications service")
 
-
-# The specified rows move into the four-layer tree.
-#
-# They were authored against a flat set of headings before the layer structure
-# existed. Re-parenting them is a tree change and nothing else: no relation, no
-# limit and no fixture moves, and the derivation graph is untouched.
-REPARENT = {
-    "space_env": "sys_orbit_env",
-    "orbit_geometry": "sys_orbit_env",
-    "aero_drag": "sys_satellite",
-    "mass_aero": "sys_satellite",
-    "prop_intake": "sys_keep_orbit",
-    "prop_thruster": "sys_keep_orbit",
-    "power": "sys_power",
-    "thermal": "sys_cool",
-    "gnc": "sys_point",
-    "comms": "sys_command",
-    "pay_optical": "sys_eo",
-    "pay_rf": "sys_pnt",
-    "payload": "sys_payloads",
-    "mission": "sys_performance",
-    "mgt_cost": "sys_cost",
-    "mgt_customer": "sys_service",
-    "applications": "sys_service",
-    "closure": "sys_closure",
-}
 
 
 def amend(nid, **kw):
@@ -3027,7 +2925,7 @@ SUBSYS_CRATE = {
 }
 for _sid in ("prop", "massaero", "payload", "power", "thermal", "fsw", "struct",
              "atthw", "orbmaint", "acs", "navod", "multipay", "ttc", "pointing",
-             "navsense"):
+             "navsense", "envorbit", "closure"):
     SUBSYS_CRATE.setdefault(_sid, "vleo-mod-subsystem")
 
 
@@ -3375,7 +3273,11 @@ def main():
     for n in NODES:
         if n["parent"] in REPARENT:
             n["parent"] = REPARENT[n["parent"]]
+            n["layer"] = 3
         BY_ID[n["id"]] = n
+    edges = cd06_edges(CD, LAYERS, BY_ID)
+    print("cd06 edges: %(relation)d relation, %(derivation)d derivation, "
+          "%(contribution)d contribution, %(skipped)d skipped" % edges)
     seen = {}
     for n in NODES:
         key = (crate_for(n), folder_for(n))

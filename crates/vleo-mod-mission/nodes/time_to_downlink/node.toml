@@ -5,11 +5,11 @@ id = "mis_time_to_downlink"
 label = "Mean time to next downlink"
 folder = "time_to_downlink"   # frozen at seed; renaming the label never moves the directory
 subsystem = "mis"
-parent = "sys_performance"
+parent = "l3_x_envorbit"
 kind = "computed"
 owner = "operations"
 tier = "A"
-layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

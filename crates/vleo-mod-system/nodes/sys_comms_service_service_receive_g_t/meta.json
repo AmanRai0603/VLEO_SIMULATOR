@@ -1,0 +1,13 @@
+{
+  "id": "sys_comms_service_service_receive_g_t",
+  "state": "empty",
+  "sheet_hash": "298473",
+  "impl_hash": "222325",
+  "owner": "payload",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": ["sys_kpi_achieved_comms_link_margin", "sys_kpi_achieved_eo_isr_link_margin", "sys_kpi_achieved_pnt_link_margin"],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

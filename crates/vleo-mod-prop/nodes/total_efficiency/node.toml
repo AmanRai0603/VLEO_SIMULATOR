@@ -5,11 +5,11 @@ id = "prop_total_efficiency"
 label = "Total propulsion efficiency"
 folder = "total_efficiency"   # frozen at seed; renaming the label never moves the directory
 subsystem = "prop"
-parent = "sys_keep_orbit"
+parent = "l3_prop"
 kind = "computed"
 owner = "propulsion"
 tier = "A"
-layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

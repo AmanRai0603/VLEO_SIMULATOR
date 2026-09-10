@@ -1,0 +1,13 @@
+{
+  "id": "sys_tt_and_c_and_downlink_tt_and_c_antenna_gain",
+  "state": "empty",
+  "sheet_hash": "2aabd7",
+  "impl_hash": "222325",
+  "owner": "comms",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

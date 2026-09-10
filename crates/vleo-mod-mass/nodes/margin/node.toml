@@ -5,11 +5,11 @@ id = "mass_margin"
 label = "Mass margin"
 folder = "margin"   # frozen at seed; renaming the label never moves the directory
 subsystem = "mass"
-parent = "sys_closure"
+parent = "l3_x_closure"
 kind = "computed"
 owner = "mass"
 tier = "A"
-layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

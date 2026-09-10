@@ -5,11 +5,11 @@ id = "thm_emissivity"
 label = "Infrared emissivity"
 folder = "emissivity"   # frozen at seed; renaming the label never moves the directory
 subsystem = "thm"
-parent = "sys_cool"
+parent = "l3_thermal"
 kind = "declared"
 owner = "thermal"
 tier = "A"
-layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

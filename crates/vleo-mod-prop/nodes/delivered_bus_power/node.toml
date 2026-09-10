@@ -5,11 +5,11 @@ id = "prop_delivered_bus_power"
 label = "Propulsion power actually drawn"
 folder = "delivered_bus_power"   # frozen at seed; renaming the label never moves the directory
 subsystem = "prop"
-parent = "sys_keep_orbit"
+parent = "l3_prop"
 kind = "computed"
 owner = "propulsion"
 tier = "A"
-layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

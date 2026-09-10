@@ -1,0 +1,13 @@
+{
+  "id": "sys_comms_service_antenna_beamwidth",
+  "state": "empty",
+  "sheet_hash": "eff34b",
+  "impl_hash": "222325",
+  "owner": "payload",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": ["sys_kpi_achieved_comms_throughput", "sys_kpi_achieved_comms_devices_per_beam", "sys_kpi_achieved_eo_isr_min_detectable_eirp"],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

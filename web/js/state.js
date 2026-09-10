@@ -51,12 +51,23 @@ export const SIZES = { S: 18, M: 24, L: 32 };
 export const PAD = 5;
 export const cell = () => SIZES[S.size] + PAD;
 
+/* The four layers. A layer's root is the group the engine reports at that layer
+   directly under the tree's root — found, never hard-coded, because a group id
+   written down here is a second place the tree is defined and it goes stale the
+   first time the tree is reseeded. */
 export const LAYERS = {
-  1: { root: 'mgt_orbitt', name: 'Management layer' },
-  2: { root: 'sys_root',   name: 'The system' },
-  3: { root: '',           name: 'Subsystem' },
-  4: { root: '',           name: 'The run' },
+  1: { root: '', name: 'Management layer' },
+  2: { root: '', name: 'The system' },
+  3: { root: '', name: 'Subsystem' },
+  4: { root: '', name: 'The run' },
 };
+
+function findRoots() {
+  for (const n of [1, 2]) {
+    const g = (S.gkids.get('root') || []).find(id => S.G.get(id).layer === n);
+    LAYERS[n].root = g || '';
+  }
+}
 
 export const CAPTIONS = {
   1: ['Who wants what, what it costs, and what the programme has promised.',
@@ -113,6 +124,7 @@ function ingest() {
   for (const r of S.rows) {
     if (S.gnodes.has(r.parent)) S.gnodes.get(r.parent).push(r.i);
   }
+  findRoots();
   S.engineCase = S.index.cases.some(c => c.id === 'nominal') ? 'nominal' : S.index.cases[0].id;
   S.subsys = subsystemLayers()[0] || '';
 }

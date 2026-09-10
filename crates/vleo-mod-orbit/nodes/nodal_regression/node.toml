@@ -5,11 +5,11 @@ id = "orbit_nodal_regression"
 label = "Nodal regression rate"
 folder = "nodal_regression"   # frozen at seed; renaming the label never moves the directory
 subsystem = "orbit"
-parent = "sys_orbit_env"
+parent = "l3_x_envorbit"
 kind = "computed"
 owner = "systems"
 tier = "A"
-layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

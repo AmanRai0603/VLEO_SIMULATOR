@@ -5,11 +5,11 @@ id = "orbit_makeup_delta_v"
 label = "Drag make-up delta-v per year"
 folder = "makeup_delta_v"   # frozen at seed; renaming the label never moves the directory
 subsystem = "orbit"
-parent = "sys_orbit_env"
+parent = "l3_x_envorbit"
 kind = "computed"
 owner = "systems"
 tier = "B"
-layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

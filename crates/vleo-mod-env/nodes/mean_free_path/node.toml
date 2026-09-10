@@ -5,11 +5,11 @@ id = "env_mean_free_path"
 label = "Mean free path"
 folder = "mean_free_path"   # frozen at seed; renaming the label never moves the directory
 subsystem = "env"
-parent = "sys_orbit_env"
+parent = "l3_x_envorbit"
 kind = "computed"
 owner = "environment"
 tier = "A"
-layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

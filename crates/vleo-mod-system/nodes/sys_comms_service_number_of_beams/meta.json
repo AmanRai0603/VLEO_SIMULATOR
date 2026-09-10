@@ -1,0 +1,13 @@
+{
+  "id": "sys_comms_service_number_of_beams",
+  "state": "empty",
+  "sheet_hash": "1cb36f",
+  "impl_hash": "222325",
+  "owner": "payload",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": ["sys_kpi_achieved_comms_throughput", "sys_kpi_achieved_comms_devices_per_beam"],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

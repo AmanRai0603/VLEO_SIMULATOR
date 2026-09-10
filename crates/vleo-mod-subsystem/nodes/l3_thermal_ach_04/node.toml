@@ -2,7 +2,7 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "l3_thermal_ach_04"
-label = "Achieved 4 — against target 4"
+label = "Equipment temperature limits"
 folder = "l3_thermal_ach_04"   # frozen at seed; renaming the label never moves the directory
 subsystem = "thermal"
 parent = "l3_thermal"

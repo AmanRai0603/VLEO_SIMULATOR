@@ -7,9 +7,10 @@ it solves is not a VLEO problem.
 
 | | |
 |---|---|
-| rows in the tree | **1333** across four layers — 250 specified, 1083 seeded |
+| rows in the tree | **1329** across four layers — 250 specified, 1079 seeded |
+| layers 1 and 2 | **228** and **367** rows — CD-06's own, verbatim, from `cd06/tree.json` |
 | specified rows | **112** a person picked · **126** worked out · **12** KPI closures |
-| declared edges | **368** derivation · **53** contribution · **35** relation |
+| declared edges | **463** derivation · **298** contribution · **177** relation |
 | subsystem crates | **15**, one per team, isolated by the compiler |
 | faces | browser · daemon · command line · C ABI · Python wheel · MATLAB |
 | deepest declared chain | **25 nodes**, solar flux to cost per year |
@@ -61,7 +62,7 @@ This repository is one answer to what they described:
       vleo-units/     RING 0  units and frames as types, constants, portable maths
       vleo-core/      RING 1  every formula, the fault taxonomy, credibility, the resolver
       vleo-bus/       RING 2  the wire contract every face speaks
-      vleo-mod-*/     RING 3  fifteen subsystem crates, 1333 node folders between them
+      vleo-mod-*/     RING 3  fifteen subsystem crates, 1329 node folders between them
       vleo-modules/           the facade: the graph tables, compiled in
       vleo-sheet/      BUILD  what a sheet means — read by the generators and the build
       vleo-data/              versioned bundles, a lockfile, verification before use
@@ -76,7 +77,7 @@ This repository is one answer to what they described:
     sources/                  sources as objects, not strings
     bundles/                  reference-data recipes
     web/js/                   the shell: one module per concern, no bundler
-    docs/                     including VARIABLES.md — all 1333 rows, generated
+    docs/                     including VARIABLES.md — all 1329 rows, generated
 
 ### One node is one folder
 
@@ -142,12 +143,33 @@ specified and what is deliberately not](docs/img/architecture.png)
 
 ## Four layers, one architecture
 
-| layer | rows | what it answers |
-|---|---|---|
-| 1 management | 228 | who wants what, what it costs, what the programme promised |
-| 2 the system | 367 | what the satellite is made of, and what reads what |
-| 3 subsystem | 738 across 15 layers | decomposed until each row is a question one person can answer |
-| 4 the run | — | one case, one chain hash, one set of numbers |
+| layer | rows | source | what it answers |
+|---|---|---|---|
+| 1 management | **228** | CD-06, verbatim | who wants what, what it costs, what the programme promised |
+| 2 the system | **367** | CD-06, verbatim | what the satellite is made of, and what reads what |
+| 3 subsystem | 853 across 17 layers | shape from CD-06, rows ours | decomposed until each row is a question one person can answer |
+| 4 the run | — | — | one case, one chain hash, one set of numbers |
+
+Layers 1 and 2 are the document's rows and edges, read out of it by
+`tools/cd06_extract.py` and committed as `cd06/tree.json`. Nothing in this
+repository names a variable those two layers do not already contain: the counts
+match the document exactly, and so do the labels.
+
+Layer 3 is different, and the difference is stated rather than smoothed over.
+The document specifies it by shape only — which fifteen subsystem layers exist,
+how many targets each takes from layer 2, and how many rows each holds — and
+never names a row. Two of those three are enough to build it honestly. **The
+targets are derivable**: a target equals the parent's variable one for one, and
+every one of the fifteen target counts in the document equals the variable count
+of the layer-2 group it reports to. Nineteen targets for propulsion because
+layer 2 holds nineteen propulsion variables. So each target is that variable's
+name, mirrored by an achieved row. What is left is the layer's own working, and
+those rows stay `to be named` until somebody names them.
+
+Two of the seventeen layers are additions, labelled as such: orbit geometry, the
+space environment and mission performance are layer-2 groups in CD-06 rather
+than subsystem layers, and this repository decomposes all three; closure and
+cost are ours entirely.
 
 ### What is specified, and what is deliberately not
 
@@ -332,7 +354,7 @@ crate reaching the platform library.
   reasons tabulated above. That is two design findings and one correctly
   propagated unknown, not three defects — but a reader who expects 250 numbers
   and counts 247 deserves to be told which three and why.
-- **1083 of the 1333 rows are seeded and nothing is specified in them.** The
+- **1079 of the 1329 rows are seeded and nothing is specified in them.** The
   folder, the sheet, the row and the dispatch stub exist; the stub returns
   `NotRun`, by name. That is the decomposition written down before anyone has
   been told to fill it in, and it is deliberate: a decomposition that only
@@ -385,7 +407,7 @@ A new node:
 
 Two human reviews per node, and everything between them is a command. If a node
 takes materially longer than that, the template has a defect — worth finding,
-because it will be paid 1333 times.
+because it will be paid 1329 times.
 
 See [`docs/RUNBOOK.md`](docs/RUNBOOK.md) for the full loop and
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for why the rings are shaped the

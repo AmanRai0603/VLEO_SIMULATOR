@@ -7,16 +7,41 @@
 
 [[group]]
 id = "sys_power"
-label = "Power it"
-parent = "sys_subsystems"
+label = "Power"
+parent = "sys_power_it"
 owner = "power"
 layer = 2
 box = false   # drawn as a nested box on the diagonal
-tone = "violet"
+tone = "green"
 cases = []   # empty means every case
 
 [[relates]]
 from = "sys_power"
-to = "sys_cool"
-why = "everything the bus draws has to leave as heat"
+to = "sys_kpi_achieved_eo_isr"
+why = "array power and energy storage"
+
+[[relates]]
+from = "sys_power"
+to = "sys_kpi_achieved_pnt"
+why = "array power and energy storage"
+
+[[relates]]
+from = "sys_power"
+to = "sys_kpi_achieved_comms"
+why = "array power and energy storage"
+
+[[relates]]
+from = "sys_power"
+to = "sys_thermal"
+why = "waste heat to be rejected"
+
+[[relates]]
+from = "sys_power"
+to = "sys_multi_payload"
+why = "power available to share"
+
+[[relates]]
+from = "sys_power"
+to = "sys_attitude_control_sizing"
+why = "power available to the actuators"
 

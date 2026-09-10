@@ -1,0 +1,32 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "mgt_long_lead_items"
+label = "Long-lead items"
+parent = "mgt_supply_chain"
+owner = "programme"
+layer = 1
+box = false   # drawn as a nested box on the diagonal
+tone = "violet"
+cases = []   # empty means every case
+
+[[relates]]
+from = "mgt_long_lead_items"
+to = "mgt_cost_and_price"
+why = "long-lead cost and lead time"
+
+[[relates]]
+from = "mgt_long_lead_items"
+to = "mgt_cost_and_price_2"
+why = "long-lead cost and lead time"
+
+[[relates]]
+from = "mgt_long_lead_items"
+to = "mgt_cost_and_price_3"
+why = "long-lead cost and lead time"
+

@@ -7,7 +7,7 @@
 
 [[group]]
 id = "l3_navod"
-label = "Navigation & orbit determination"
+label = "Navigation & OD"
 parent = "root"
 owner = "gnc"
 layer = 3
@@ -17,6 +17,6 @@ cases = []   # empty means every case
 
 [[relates]]
 from = "l3_navod"
-to = "sys_know"
+to = "sys_navigation_and_orbit_determination"
 why = "the subsystem's only route to the system is its interface node"
 

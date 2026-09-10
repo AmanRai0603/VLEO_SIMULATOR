@@ -1,0 +1,32 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "sys_rf_geolocation_service"
+label = "RF geolocation service"
+parent = "sys_service_payloads"
+owner = "payload"
+layer = 2
+box = false   # drawn as a nested box on the diagonal
+tone = "amber"
+cases = []   # empty means every case
+
+[[relates]]
+from = "sys_rf_geolocation_service"
+to = "sys_kpi_achieved_eo_isr"
+why = "angle-of-arrival accuracy and timing sync"
+
+[[relates]]
+from = "sys_rf_geolocation_service"
+to = "sys_kpi_achieved_comms"
+why = "angle-of-arrival accuracy and timing sync"
+
+[[relates]]
+from = "sys_rf_geolocation_service"
+to = "sys_kpi_achieved_pnt"
+why = "angle-of-arrival accuracy and timing sync"
+

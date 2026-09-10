@@ -62,7 +62,7 @@ accepts rather than hunts. That is what makes two reviews per node affordable.
     gh pr ready   →   merge   →   published
 
 Two reviews. Everything between them is a command. If a node takes materially
-longer, the template has a defect, and it is worth finding: it will be paid 1333
+longer, the template has a defect, and it is worth finding: it will be paid 1329
 times.
 
 ## When the gate refuses

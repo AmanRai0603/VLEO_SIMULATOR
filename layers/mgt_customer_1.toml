@@ -1,0 +1,37 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "mgt_customer_1"
+label = "Customer 1"
+parent = "mgt_customers"
+owner = "systems"
+layer = 1
+box = false   # drawn as a nested box on the diagonal
+tone = "teal"
+cases = []   # empty means every case
+
+[[relates]]
+from = "mgt_customer_1"
+to = "mgt_cost_and_price"
+why = "the design the cost model runs over"
+
+[[relates]]
+from = "mgt_customer_1"
+to = "mgt_space_segment"
+why = "the spacecraft this customer needs"
+
+[[relates]]
+from = "mgt_customer_1"
+to = "mgt_ground_segment"
+why = "the ground capacity it consumes"
+
+[[relates]]
+from = "mgt_customer_1"
+to = "mgt_risk_register"
+why = "the technical risk it introduces"
+

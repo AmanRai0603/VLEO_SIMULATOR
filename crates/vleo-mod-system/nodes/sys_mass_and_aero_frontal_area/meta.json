@@ -1,0 +1,13 @@
+{
+  "id": "sys_mass_and_aero_frontal_area",
+  "state": "empty",
+  "sheet_hash": "6f3c2b",
+  "impl_hash": "222325",
+  "owner": "mass",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": ["sys_mass_and_aero_body_shape", "sys_mass_and_aero_panel_layout"],
+  "contributes": [],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

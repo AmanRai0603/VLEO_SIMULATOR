@@ -1,0 +1,13 @@
+{
+  "id": "mgt_interface_level_rf_compatibility_with_the_ground_segment",
+  "state": "empty",
+  "sheet_hash": "34f4b3",
+  "impl_hash": "222325",
+  "owner": "programme",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

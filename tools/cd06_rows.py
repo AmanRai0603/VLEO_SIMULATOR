@@ -58,6 +58,9 @@ KIND = {
 
 SLUG_DROP = re.compile(r"[^a-z0-9]+")
 
+# The system layer's root, as this file names it. The management layer crosses here.
+SYS_ROOT = "sys_vleo_multipayload"
+
 
 def slug(s):
     s = (s.replace("&", " and ").replace("·", " ").replace("—", " ")
@@ -78,10 +81,16 @@ class Cd06:
             for r in tab:
                 self.kids.setdefault(r[2], []).append(r[0])
         self.nid = {}          # cd06 id -> our node/group id
+        self.crossings = []    # the rows that cross between layers
 
     # -- shape ------------------------------------------------------------
     def is_group(self, i):
         return bool(self.kids.get(i))
+
+    def variables_of(self, group):
+        """The leaf variables directly under a layer-2 group, in document order."""
+        return [(k, self.sys[k][1]) for k in self.kids.get(group, [])
+                if not self.is_group(k)]
 
     def branch(self, tab, i, depth=1):
         """The ancestor at `depth`, which decides owner, tone and crate."""
@@ -137,7 +146,16 @@ def _emit(cd, tab, root, lyr, pfx, layer, S):
         nid = _unique("%s_%s_%s" % (pfx, group_slug, slug(label)),
                       cd.nid.values(), cd, tab, cd_id, pfx, label)
         cd.nid[cd_id] = nid
-        S(nid, label, parent_id, pfx, own, lyr, kind=KIND.get(note, "declared"))
+        # The one row in the management layer that crosses downward. CD-06
+        # marks it by its note — "the door into this customer's engineering
+        # layer" — and there is one per customer, which is the whole interface
+        # between what a customer asked for and the architecture that answers
+        # it. Nothing else in layer 1 can see layer 2.
+        crosses = SYS_ROOT if "door into" in note else ""
+        if crosses:
+            cd.crossings.append(nid)
+        S(nid, label, parent_id, pfx, own, lyr,
+          kind=KIND.get(note, "declared"), crosses=crosses)
 
     rec(root, "", slug(tab[root][1]))
 
@@ -166,3 +184,119 @@ def _unique(base, taken, cd=None, tab=None, cd_id=None, pfx=None, label=None):
     while "%s_%d" % (base, n) in taken:
         n += 1
     return "%s_%d" % (base, n)
+
+
+# Which layer-2 group each subsystem layer answers to.
+#
+# The document gives a target count per layer and a variable count per layer-2
+# group, and every one of the fifteen pairs agrees: nineteen targets for
+# propulsion, nineteen propulsion variables. That is the closure rule stated as
+# an arithmetic fact rather than a claim, and it is what makes the target rows
+# derivable instead of guessable.
+LAYER3_GROUP = {
+    "prop": "c2", "massaero": "c1", "payload": "c10", "power": "c3",
+    "thermal": "c4", "fsw": "c6", "struct": "c5", "atthw": "c8",
+    "orbmaint": "g3", "acs": "g2", "navod": "g4", "multipay": "c11",
+    "ttc": "c7", "pointing": "g1", "navsense": "c9",
+}
+
+LAYER3_OWNER = {
+    "prop": "propulsion", "massaero": "mass", "payload": "payload",
+    "power": "power", "thermal": "thermal", "fsw": "avionics",
+    "struct": "mass", "atthw": "gnc", "orbmaint": "propulsion",
+    "acs": "gnc", "navod": "gnc", "multipay": "payload", "ttc": "comms",
+    "pointing": "gnc", "navsense": "gnc",
+}
+
+
+def LAYER3_SOURCE(cd):
+    """(id, label, owner, targets, total, layer-2 group) for each subsystem layer."""
+    out = []
+    for s in cd.d["layer3_shape"]:
+        sid = s["id"]
+        grp = LAYER3_GROUP[sid]
+        n = len(cd.variables_of(grp))
+        if n != s["targets"]:
+            raise SystemExit(
+                "%s: the document asks for %d targets and its layer-2 group holds %d "
+                "variables. The closure rule says those are the same number, so one of "
+                "the two has changed." % (sid, s["targets"], n))
+        out.append((sid, s["label"], LAYER3_OWNER[sid], s["targets"], s["nodes"], grp))
+    return out
+
+
+def install_edges(cd, LAYERS, BY_ID):
+    """The three graphs, wired once every row they might name exists.
+
+    They stay three graphs. `ED_*` joins group to group and becomes a relation;
+    `VE` joins variable to variable and becomes a derivation edge, declared on
+    the consumer because knowing its inputs is what changes the consumer's
+    implementation; `KE` joins variable to KPI and becomes a contribution,
+    declared on the variable. Merging them would mean a KPI gets executed as
+    though it were derived, and a navigation link counts as evidence.
+    """
+    stat = {"relation": 0, "derivation": 0, "contribution": 0, "skipped": 0}
+
+    def as_group(tab, cd_id):
+        """A relation names a scope. Where CD-06 puts one end on a row rather
+        than a heading — every such edge in the document touches a customer's
+        crossing node — the relation belongs to the scope that row sits in."""
+        gid = cd.nid.get(cd_id)
+        if gid in LAYERS:
+            return gid
+        parent = tab[cd_id][2]
+        return cd.nid.get(parent) if parent else None
+
+    for src, tab in (("ED_MGT", cd.mgt), ("ED_SYS", cd.sys)):
+        for a, b, why in cd.d[src]:
+            ga, gb = as_group(tab, a), as_group(tab, b)
+            if ga in LAYERS and gb in LAYERS and ga != gb:
+                if (ga, gb, why) not in LAYERS[ga]["relates"]:
+                    LAYERS[ga]["relates"].append((ga, gb, why))
+                stat["relation"] += 1
+            else:
+                stat["skipped"] += 1
+
+    for a, b, why in cd.d["VE"]:
+        na, nb = cd.nid.get(a), cd.nid.get(b)
+        if na in BY_ID and nb in BY_ID:
+            ins = BY_ID[nb]["inputs"]
+            binding = _binding(BY_ID[na]["label"], {n for n, _ in ins})
+            ins.append((binding, na))
+            stat["derivation"] += 1
+        else:
+            stat["skipped"] += 1
+
+    for a, b, _why in cd.d["KE"]:
+        na, nb = cd.nid.get(a), cd.nid.get(b)
+        if na in BY_ID and nb in BY_ID:
+            if nb not in BY_ID[na]["kpis"]:
+                BY_ID[na]["kpis"].append(nb)
+            stat["contribution"] += 1
+        else:
+            stat["skipped"] += 1
+    return stat
+
+
+def _binding(label, taken):
+    """A Rust-safe binding name for an input, from the producer's label."""
+    b = slug(label)[:24].strip("_") or "x"
+    if b[0].isdigit():
+        b = "v_" + b
+    if b in RESERVED:
+        b += "_"
+    c, n = b, 2
+    while c in taken:
+        c = "%s_%d" % (b, n)
+        n += 1
+    return c
+
+
+RESERVED = {
+    "as", "break", "const", "continue", "crate", "else", "enum", "extern",
+    "false", "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod",
+    "move", "mut", "pub", "ref", "return", "self", "static", "struct", "super",
+    "trait", "true", "type", "unsafe", "use", "where", "while", "async",
+    "await", "dyn", "abstract", "become", "box", "do", "final", "macro",
+    "override", "priv", "typeof", "unsized", "virtual", "yield", "try",
+}

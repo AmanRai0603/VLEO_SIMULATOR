@@ -1,0 +1,13 @@
+{
+  "id": "sys_thermal_thermal_mass",
+  "state": "empty",
+  "sheet_hash": "3aaf42",
+  "impl_hash": "222325",
+  "owner": "thermal",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": ["sys_kpi_achieved_eo_isr_collection_capacity", "sys_kpi_achieved_eo_isr_dwell_time"],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "sys_attitude_control_sizing_control_torque_authority",
+  "state": "empty",
+  "sheet_hash": "6cfc1f",
+  "impl_hash": "222325",
+  "owner": "gnc",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": ["sys_attitude_control_sizing_magnetic_dipole_authority", "sys_attitude_hardware_earth_magnetic_field"],
+  "contributes": [],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

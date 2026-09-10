@@ -1,0 +1,52 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "sys_mass_and_aero"
+label = "Mass and aero"
+parent = "sys_satellite_system"
+owner = "mass"
+layer = 2
+box = false   # drawn as a nested box on the diagonal
+tone = "slate"
+cases = []   # empty means every case
+
+[[relates]]
+from = "sys_mass_and_aero"
+to = "sys_kpi_achieved_eo_isr"
+why = "jitter and platform agility"
+
+[[relates]]
+from = "sys_mass_and_aero"
+to = "sys_kpi_achieved_pnt"
+why = "jitter and platform agility"
+
+[[relates]]
+from = "sys_mass_and_aero"
+to = "sys_kpi_achieved_comms"
+why = "jitter and platform agility"
+
+[[relates]]
+from = "sys_mass_and_aero"
+to = "sys_propulsion"
+why = "drag to be overcome, and the intake capture area"
+
+[[relates]]
+from = "sys_mass_and_aero"
+to = "sys_structure"
+why = "launch loads and the load path"
+
+[[relates]]
+from = "sys_mass_and_aero"
+to = "sys_attitude_control_sizing"
+why = "aero torque and centre-of-pressure offset"
+
+[[relates]]
+from = "sys_mass_and_aero"
+to = "sys_multi_payload"
+why = "ram cross-section available to share"
+

@@ -2,7 +2,7 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "l3_navsense_ach_06"
-label = "Achieved 6 — against target 6"
+label = "Unmodelled acceleration"
 folder = "l3_navsense_ach_06"   # frozen at seed; renaming the label never moves the directory
 subsystem = "navsense"
 parent = "l3_navsense"

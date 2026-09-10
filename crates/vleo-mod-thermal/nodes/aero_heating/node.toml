@@ -5,11 +5,11 @@ id = "thm_aero_heating"
 label = "Free-molecular aerodynamic heating"
 folder = "aero_heating"   # frozen at seed; renaming the label never moves the directory
 subsystem = "thm"
-parent = "sys_cool"
+parent = "l3_thermal"
 kind = "computed"
 owner = "thermal"
 tier = "C"
-layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

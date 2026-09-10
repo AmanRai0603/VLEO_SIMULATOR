@@ -5,11 +5,11 @@ id = "com_eirp"
 label = "Effective isotropic radiated power"
 folder = "eirp"   # frozen at seed; renaming the label never moves the directory
 subsystem = "com"
-parent = "sys_command"
+parent = "l3_ttc"
 kind = "computed"
 owner = "comms"
 tier = "A"
-layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]

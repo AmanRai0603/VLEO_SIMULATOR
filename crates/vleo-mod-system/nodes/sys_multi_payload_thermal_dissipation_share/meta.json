@@ -1,0 +1,13 @@
+{
+  "id": "sys_multi_payload_thermal_dissipation_share",
+  "state": "empty",
+  "sheet_hash": "40581f",
+  "impl_hash": "222325",
+  "owner": "mass",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": ["sys_thermal_radiator_area_estimate", "sys_payload_interface_payload_dissipation"],
+  "contributes": [],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

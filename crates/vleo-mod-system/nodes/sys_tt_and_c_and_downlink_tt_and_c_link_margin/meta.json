@@ -1,0 +1,13 @@
+{
+  "id": "sys_tt_and_c_and_downlink_tt_and_c_link_margin",
+  "state": "empty",
+  "sheet_hash": "f8b31c",
+  "impl_hash": "222325",
+  "owner": "comms",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": ["sys_tt_and_c_and_downlink_tt_and_c_transmit_power", "sys_tt_and_c_and_downlink_tt_and_c_antenna_gain", "sys_comms_service_slant_range"],
+  "contributes": [],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

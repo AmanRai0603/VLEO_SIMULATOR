@@ -1,0 +1,13 @@
+{
+  "id": "sys_power_array_area",
+  "state": "empty",
+  "sheet_hash": "da3e6f",
+  "impl_hash": "222325",
+  "owner": "power",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": ["sys_power_electrical_power", "sys_power_cell_efficiency"],
+  "contributes": [],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

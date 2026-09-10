@@ -1,0 +1,27 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "sys_tt_and_c_and_downlink"
+label = "TT&C and downlink"
+parent = "sys_command_and_downlink_it"
+owner = "comms"
+layer = 2
+box = false   # drawn as a nested box on the diagonal
+tone = "green"
+cases = []   # empty means every case
+
+[[relates]]
+from = "sys_tt_and_c_and_downlink"
+to = "sys_multi_payload"
+why = "downlink available to share"
+
+[[relates]]
+from = "sys_tt_and_c_and_downlink"
+to = "sys_comms_service"
+why = "downlink rate and link margin"
+

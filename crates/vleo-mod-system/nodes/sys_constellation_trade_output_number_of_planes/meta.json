@@ -1,0 +1,13 @@
+{
+  "id": "sys_constellation_trade_output_number_of_planes",
+  "state": "empty",
+  "sheet_hash": "a7ac84",
+  "impl_hash": "222325",
+  "owner": "environment",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": ["sys_kpi_achieved_comms_fold", "sys_kpi_achieved_eo_isr_fold", "sys_kpi_achieved_pnt_fold", "sys_kpi_achieved_comms_coverage", "sys_kpi_achieved_eo_isr_coverage", "sys_kpi_achieved_pnt_coverage", "sys_kpi_achieved_comms_access_gap", "sys_kpi_achieved_pnt_access_gap", "sys_kpi_achieved_comms_contact_time", "sys_kpi_achieved_eo_isr_contact_time", "sys_kpi_achieved_comms_conjunction_rate", "sys_kpi_achieved_eo_isr_conjunction_rate", "sys_kpi_achieved_pnt_conjunction_rate", "sys_kpi_achieved_comms_handover_rate", "sys_kpi_achieved_pnt_gdop", "sys_kpi_achieved_pnt_fix_availability", "sys_kpi_achieved_pnt_time_to_first_fix", "sys_kpi_achieved_pnt_integrity_risk"],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

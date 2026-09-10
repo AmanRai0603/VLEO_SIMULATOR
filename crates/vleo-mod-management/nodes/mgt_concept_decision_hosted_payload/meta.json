@@ -1,0 +1,13 @@
+{
+  "id": "mgt_concept_decision_hosted_payload",
+  "state": "empty",
+  "sheet_hash": "33164a",
+  "impl_hash": "222325",
+  "owner": "systems",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

@@ -5,11 +5,11 @@ id = "prop_other_losses"
 label = "Other thruster losses"
 folder = "other_losses"   # frozen at seed; renaming the label never moves the directory
 subsystem = "prop"
-parent = "sys_keep_orbit"
+parent = "l3_prop"
 kind = "declared"
 owner = "propulsion"
 tier = "A"
-layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 state = "published"
 
 [question]
