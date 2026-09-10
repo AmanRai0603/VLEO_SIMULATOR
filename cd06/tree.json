@@ -1,0 +1,6773 @@
+{
+ "_source": "CD06_VLEO_Tool_Plan_and_Working_Model.html, first script block",
+ "_note": "Layers 1 and 2 are the document's own rows and edges, verbatim. Layer 3 is present as shape only — the document gives counts, never names.",
+ "layer3_shape": [
+  {
+   "id": "prop",
+   "label": "Propulsion · ICP plasma thruster",
+   "targets": 19,
+   "nodes": 95
+  },
+  {
+   "id": "massaero",
+   "label": "Mass and aero",
+   "targets": 19,
+   "nodes": 62
+  },
+  {
+   "id": "payload",
+   "label": "Payload",
+   "targets": 12,
+   "nodes": 68
+  },
+  {
+   "id": "power",
+   "label": "Power",
+   "targets": 13,
+   "nodes": 68
+  },
+  {
+   "id": "thermal",
+   "label": "Thermal",
+   "targets": 11,
+   "nodes": 47
+  },
+  {
+   "id": "fsw",
+   "label": "Flight software",
+   "targets": 3,
+   "nodes": 52
+  },
+  {
+   "id": "struct",
+   "label": "Structure",
+   "targets": 4,
+   "nodes": 48
+  },
+  {
+   "id": "atthw",
+   "label": "Attitude hardware",
+   "targets": 9,
+   "nodes": 42
+  },
+  {
+   "id": "orbmaint",
+   "label": "Orbit maintenance",
+   "targets": 10,
+   "nodes": 40
+  },
+  {
+   "id": "acs",
+   "label": "Attitude control sizing",
+   "targets": 9,
+   "nodes": 39
+  },
+  {
+   "id": "navod",
+   "label": "Navigation & OD",
+   "targets": 9,
+   "nodes": 38
+  },
+  {
+   "id": "multipay",
+   "label": "Multi-payload",
+   "targets": 9,
+   "nodes": 38
+  },
+  {
+   "id": "ttc",
+   "label": "TT&C and downlink",
+   "targets": 8,
+   "nodes": 37
+  },
+  {
+   "id": "pointing",
+   "label": "Pointing error budget",
+   "targets": 6,
+   "nodes": 32
+  },
+  {
+   "id": "navsense",
+   "label": "Navigation sensing",
+   "targets": 6,
+   "nodes": 32
+  }
+ ],
+ "HN_MGT": [
+  [
+   "mgm",
+   "Orbitt Space",
+   null,
+   "the organisation — every customer, every programme it runs",
+   ""
+  ],
+  [
+   "cus",
+   "Customers",
+   "mgm",
+   "each one gets its own solution, and its own engineering layer",
+   ""
+  ],
+  [
+   "ca",
+   "Customer 1",
+   "cus",
+   "ISR + EO + geolocation — their KPIs, one shared architecture",
+   ""
+  ],
+  [
+   "ca_req",
+   "Requirement",
+   "ca",
+   "for customer 1",
+   ""
+  ],
+  [
+   "ca_req_0",
+   "Requirement discussion",
+   "ca_req",
+   "set here",
+   ""
+  ],
+  [
+   "ca_req_1",
+   "Requirement document",
+   "ca_req",
+   "set here",
+   ""
+  ],
+  [
+   "ca_req_2",
+   "Acceptance criteria",
+   "ca_req",
+   "set here",
+   ""
+  ],
+  [
+   "ca_kpi",
+   "KPI definition",
+   "ca",
+   "for customer 1",
+   ""
+  ],
+  [
+   "ca_kpi_0",
+   "Segment KPIs",
+   "ca_kpi",
+   "set here",
+   ""
+  ],
+  [
+   "ca_kpi_1",
+   "Target values",
+   "ca_kpi",
+   "set here",
+   ""
+  ],
+  [
+   "ca_kpi_2",
+   "Measurement method",
+   "ca_kpi",
+   "set here",
+   ""
+  ],
+  [
+   "ca_con",
+   "Concept decision",
+   "ca",
+   "for customer 1",
+   ""
+  ],
+  [
+   "ca_con_0",
+   "Single satellite",
+   "ca_con",
+   "set here",
+   ""
+  ],
+  [
+   "ca_con_1",
+   "Constellation",
+   "ca_con",
+   "set here",
+   ""
+  ],
+  [
+   "ca_con_2",
+   "Hosted payload",
+   "ca_con",
+   "set here",
+   ""
+  ],
+  [
+   "ca_sol",
+   "VLEO Multipayload",
+   "ca",
+   "the door into this customer’s engineering layer",
+   ""
+  ],
+  [
+   "ca_cst",
+   "Cost & price",
+   "ca",
+   "for customer 1",
+   ""
+  ],
+  [
+   "ca_cst_0",
+   "Cost model over the design",
+   "ca_cst",
+   "computed",
+   ""
+  ],
+  [
+   "ca_cst_1",
+   "Price to the customer",
+   "ca_cst",
+   "computed",
+   ""
+  ],
+  [
+   "ca_cst_2",
+   "Payment milestones",
+   "ca_cst",
+   "computed",
+   ""
+  ],
+  [
+   "ca_val",
+   "Value proposition",
+   "ca",
+   "for customer 1",
+   ""
+  ],
+  [
+   "ca_val_0",
+   "Shared with the customer",
+   "ca_val",
+   "computed",
+   ""
+  ],
+  [
+   "ca_val_1",
+   "Held internally",
+   "ca_val",
+   "computed",
+   ""
+  ],
+  [
+   "ca_val_2",
+   "The case to proceed",
+   "ca_val",
+   "computed",
+   ""
+  ],
+  [
+   "cb",
+   "Customer 2",
+   "cus",
+   "Comms + EO + PNT — their KPIs, one shared architecture",
+   ""
+  ],
+  [
+   "cb_req",
+   "Requirement",
+   "cb",
+   "for customer 2",
+   ""
+  ],
+  [
+   "cb_req_0",
+   "Requirement discussion",
+   "cb_req",
+   "set here",
+   ""
+  ],
+  [
+   "cb_req_1",
+   "Requirement document",
+   "cb_req",
+   "set here",
+   ""
+  ],
+  [
+   "cb_req_2",
+   "Acceptance criteria",
+   "cb_req",
+   "set here",
+   ""
+  ],
+  [
+   "cb_kpi",
+   "KPI definition",
+   "cb",
+   "for customer 2",
+   ""
+  ],
+  [
+   "cb_kpi_0",
+   "Segment KPIs",
+   "cb_kpi",
+   "set here",
+   ""
+  ],
+  [
+   "cb_kpi_1",
+   "Target values",
+   "cb_kpi",
+   "set here",
+   ""
+  ],
+  [
+   "cb_kpi_2",
+   "Measurement method",
+   "cb_kpi",
+   "set here",
+   ""
+  ],
+  [
+   "cb_con",
+   "Concept decision",
+   "cb",
+   "for customer 2",
+   ""
+  ],
+  [
+   "cb_con_0",
+   "Single satellite",
+   "cb_con",
+   "set here",
+   ""
+  ],
+  [
+   "cb_con_1",
+   "Constellation",
+   "cb_con",
+   "set here",
+   ""
+  ],
+  [
+   "cb_con_2",
+   "Hosted payload",
+   "cb_con",
+   "set here",
+   ""
+  ],
+  [
+   "cb_sol",
+   "VLEO Multipayload",
+   "cb",
+   "the door into this customer’s engineering layer",
+   ""
+  ],
+  [
+   "cb_cst",
+   "Cost & price",
+   "cb",
+   "for customer 2",
+   ""
+  ],
+  [
+   "cb_cst_0",
+   "Cost model over the design",
+   "cb_cst",
+   "computed",
+   ""
+  ],
+  [
+   "cb_cst_1",
+   "Price to the customer",
+   "cb_cst",
+   "computed",
+   ""
+  ],
+  [
+   "cb_cst_2",
+   "Payment milestones",
+   "cb_cst",
+   "computed",
+   ""
+  ],
+  [
+   "cb_val",
+   "Value proposition",
+   "cb",
+   "for customer 2",
+   ""
+  ],
+  [
+   "cb_val_0",
+   "Shared with the customer",
+   "cb_val",
+   "computed",
+   ""
+  ],
+  [
+   "cb_val_1",
+   "Held internally",
+   "cb_val",
+   "computed",
+   ""
+  ],
+  [
+   "cb_val_2",
+   "The case to proceed",
+   "cb_val",
+   "computed",
+   ""
+  ],
+  [
+   "cc",
+   "Customer 3",
+   "cus",
+   "their ask, their KPIs, their own solution",
+   ""
+  ],
+  [
+   "cc_req",
+   "Requirement",
+   "cc",
+   "for customer 3",
+   ""
+  ],
+  [
+   "cc_req_0",
+   "Requirement discussion",
+   "cc_req",
+   "set here",
+   ""
+  ],
+  [
+   "cc_req_1",
+   "Requirement document",
+   "cc_req",
+   "set here",
+   ""
+  ],
+  [
+   "cc_req_2",
+   "Acceptance criteria",
+   "cc_req",
+   "set here",
+   ""
+  ],
+  [
+   "cc_kpi",
+   "KPI definition",
+   "cc",
+   "for customer 3",
+   ""
+  ],
+  [
+   "cc_kpi_0",
+   "Segment KPIs",
+   "cc_kpi",
+   "set here",
+   ""
+  ],
+  [
+   "cc_kpi_1",
+   "Target values",
+   "cc_kpi",
+   "set here",
+   ""
+  ],
+  [
+   "cc_kpi_2",
+   "Measurement method",
+   "cc_kpi",
+   "set here",
+   ""
+  ],
+  [
+   "cc_con",
+   "Concept decision",
+   "cc",
+   "for customer 3",
+   ""
+  ],
+  [
+   "cc_con_0",
+   "Single satellite",
+   "cc_con",
+   "set here",
+   ""
+  ],
+  [
+   "cc_con_1",
+   "Constellation",
+   "cc_con",
+   "set here",
+   ""
+  ],
+  [
+   "cc_con_2",
+   "Hosted payload",
+   "cc_con",
+   "set here",
+   ""
+  ],
+  [
+   "cc_sol",
+   "VLEO Multipayload",
+   "cc",
+   "the door into this customer’s engineering layer",
+   ""
+  ],
+  [
+   "cc_cst",
+   "Cost & price",
+   "cc",
+   "for customer 3",
+   ""
+  ],
+  [
+   "cc_cst_0",
+   "Cost model over the design",
+   "cc_cst",
+   "computed",
+   ""
+  ],
+  [
+   "cc_cst_1",
+   "Price to the customer",
+   "cc_cst",
+   "computed",
+   ""
+  ],
+  [
+   "cc_cst_2",
+   "Payment milestones",
+   "cc_cst",
+   "computed",
+   ""
+  ],
+  [
+   "cc_val",
+   "Value proposition",
+   "cc",
+   "for customer 3",
+   ""
+  ],
+  [
+   "cc_val_0",
+   "Shared with the customer",
+   "cc_val",
+   "computed",
+   ""
+  ],
+  [
+   "cc_val_1",
+   "Held internally",
+   "cc_val",
+   "computed",
+   ""
+  ],
+  [
+   "cc_val_2",
+   "The case to proceed",
+   "cc_val",
+   "computed",
+   ""
+  ],
+  [
+   "plc",
+   "Programme control",
+   "mgm",
+   "how the programme is run, once, for all customers",
+   ""
+  ],
+  [
+   "plc1",
+   "Life cycle & gates",
+   "plc",
+   "7 items",
+   ""
+  ],
+  [
+   "plc1_0",
+   "Pre-Phase A · concept",
+   "plc1",
+   "set here",
+   ""
+  ],
+  [
+   "plc1_1",
+   "Phase A · feasibility",
+   "plc1",
+   "set here",
+   ""
+  ],
+  [
+   "plc1_2",
+   "Phase B · preliminary design",
+   "plc1",
+   "set here",
+   ""
+  ],
+  [
+   "plc1_3",
+   "Phase C · detailed design",
+   "plc1",
+   "set here",
+   ""
+  ],
+  [
+   "plc1_4",
+   "Phase D · build, test, launch",
+   "plc1",
+   "set here",
+   ""
+  ],
+  [
+   "plc1_5",
+   "Phase E · operations",
+   "plc1",
+   "set here",
+   ""
+  ],
+  [
+   "plc1_6",
+   "Phase F · disposal",
+   "plc1",
+   "set here",
+   ""
+  ],
+  [
+   "plc2",
+   "Review gates",
+   "plc",
+   "11 items",
+   ""
+  ],
+  [
+   "plc2_0",
+   "MCR · mission concept",
+   "plc2",
+   "set here",
+   ""
+  ],
+  [
+   "plc2_1",
+   "SRR · system requirements",
+   "plc2",
+   "set here",
+   ""
+  ],
+  [
+   "plc2_2",
+   "MDR · mission definition",
+   "plc2",
+   "set here",
+   ""
+  ],
+  [
+   "plc2_3",
+   "PDR · preliminary design",
+   "plc2",
+   "set here",
+   ""
+  ],
+  [
+   "plc2_4",
+   "CDR · critical design",
+   "plc2",
+   "set here",
+   ""
+  ],
+  [
+   "plc2_5",
+   "SIR · system integration",
+   "plc2",
+   "set here",
+   ""
+  ],
+  [
+   "plc2_6",
+   "TRR · test readiness",
+   "plc2",
+   "set here",
+   ""
+  ],
+  [
+   "plc2_7",
+   "ORR · operational readiness",
+   "plc2",
+   "set here",
+   ""
+  ],
+  [
+   "plc2_8",
+   "FRR · flight readiness",
+   "plc2",
+   "set here",
+   ""
+  ],
+  [
+   "plc2_9",
+   "PLAR · post-launch",
+   "plc2",
+   "set here",
+   ""
+  ],
+  [
+   "plc2_10",
+   "DR · decommissioning",
+   "plc2",
+   "set here",
+   ""
+  ],
+  [
+   "plc3",
+   "Schedule & critical path",
+   "plc",
+   "4 items",
+   ""
+  ],
+  [
+   "plc3_0",
+   "Master schedule",
+   "plc3",
+   "set here",
+   ""
+  ],
+  [
+   "plc3_1",
+   "Critical path",
+   "plc3",
+   "set here",
+   ""
+  ],
+  [
+   "plc3_2",
+   "Float and slip",
+   "plc3",
+   "set here",
+   ""
+  ],
+  [
+   "plc3_3",
+   "Recovery plan",
+   "plc3",
+   "set here",
+   ""
+  ],
+  [
+   "plc4",
+   "Risk register",
+   "plc",
+   "4 items",
+   ""
+  ],
+  [
+   "plc4_0",
+   "Technical risk",
+   "plc4",
+   "set here",
+   ""
+  ],
+  [
+   "plc4_1",
+   "Schedule risk",
+   "plc4",
+   "set here",
+   ""
+  ],
+  [
+   "plc4_2",
+   "Supply risk",
+   "plc4",
+   "set here",
+   ""
+  ],
+  [
+   "plc4_3",
+   "Regulatory risk",
+   "plc4",
+   "set here",
+   ""
+  ],
+  [
+   "plc5",
+   "Configuration & data",
+   "plc",
+   "4 items",
+   ""
+  ],
+  [
+   "plc5_0",
+   "Baselines",
+   "plc5",
+   "set here",
+   ""
+  ],
+  [
+   "plc5_1",
+   "Change control",
+   "plc5",
+   "set here",
+   ""
+  ],
+  [
+   "plc5_2",
+   "Document tree",
+   "plc5",
+   "set here",
+   ""
+  ],
+  [
+   "plc5_3",
+   "Data rights",
+   "plc5",
+   "set here",
+   ""
+  ],
+  [
+   "seg",
+   "Mission segments",
+   "mgm",
+   "the four segments every mission is decomposed into",
+   ""
+  ],
+  [
+   "seg1",
+   "Space segment",
+   "seg",
+   "3 items",
+   ""
+  ],
+  [
+   "seg1_0",
+   "The spacecraft",
+   "seg1",
+   "set here",
+   ""
+  ],
+  [
+   "seg1_1",
+   "The constellation",
+   "seg1",
+   "set here",
+   ""
+  ],
+  [
+   "seg1_2",
+   "In-orbit spares",
+   "seg1",
+   "set here",
+   ""
+  ],
+  [
+   "seg2",
+   "Launch segment",
+   "seg",
+   "4 items",
+   ""
+  ],
+  [
+   "seg2_0",
+   "Launch provider",
+   "seg2",
+   "set here",
+   ""
+  ],
+  [
+   "seg2_1",
+   "Launch vehicle interface",
+   "seg2",
+   "set here",
+   ""
+  ],
+  [
+   "seg2_2",
+   "Dispenser and separation",
+   "seg2",
+   "set here",
+   ""
+  ],
+  [
+   "seg2_3",
+   "Launch campaign",
+   "seg2",
+   "set here",
+   ""
+  ],
+  [
+   "seg3",
+   "Ground segment",
+   "seg",
+   "4 items",
+   ""
+  ],
+  [
+   "seg3_0",
+   "Ground stations",
+   "seg3",
+   "set here",
+   ""
+  ],
+  [
+   "seg3_1",
+   "Mission control",
+   "seg3",
+   "set here",
+   ""
+  ],
+  [
+   "seg3_2",
+   "Data processing",
+   "seg3",
+   "set here",
+   ""
+  ],
+  [
+   "seg3_3",
+   "Archive and delivery",
+   "seg3",
+   "set here",
+   ""
+  ],
+  [
+   "seg4",
+   "User segment",
+   "seg",
+   "3 items",
+   ""
+  ],
+  [
+   "seg4_0",
+   "User terminals",
+   "seg4",
+   "set here",
+   ""
+  ],
+  [
+   "seg4_1",
+   "Service interface",
+   "seg4",
+   "set here",
+   ""
+  ],
+  [
+   "seg4_2",
+   "Tasking and delivery",
+   "seg4",
+   "set here",
+   ""
+  ],
+  [
+   "std",
+   "Standards & compliance",
+   "mgm",
+   "every external body that has to be satisfied — each one is an interface",
+   ""
+  ],
+  [
+   "std1",
+   "Regulatory authorisation",
+   "std",
+   "4 items",
+   ""
+  ],
+  [
+   "std1_0",
+   "National space authorisation",
+   "std1",
+   "set here",
+   ""
+  ],
+  [
+   "std1_1",
+   "Operator licence",
+   "std1",
+   "set here",
+   ""
+  ],
+  [
+   "std1_2",
+   "Liability convention",
+   "std1",
+   "set here",
+   ""
+  ],
+  [
+   "std1_3",
+   "Registration of the object",
+   "std1",
+   "set here",
+   ""
+  ],
+  [
+   "std2",
+   "Spectrum & frequency",
+   "std",
+   "4 items",
+   ""
+  ],
+  [
+   "std2_0",
+   "ITU filing",
+   "std2",
+   "set here",
+   ""
+  ],
+  [
+   "std2_1",
+   "National spectrum licence",
+   "std2",
+   "set here",
+   ""
+  ],
+  [
+   "std2_2",
+   "Coordination with incumbents",
+   "std2",
+   "set here",
+   ""
+  ],
+  [
+   "std2_3",
+   "Interference analysis",
+   "std2",
+   "set here",
+   ""
+  ],
+  [
+   "std3",
+   "Launch & range safety",
+   "std",
+   "4 items",
+   ""
+  ],
+  [
+   "std3_0",
+   "Launch provider ICD",
+   "std3",
+   "set here",
+   ""
+  ],
+  [
+   "std3_1",
+   "Range safety approval",
+   "std3",
+   "set here",
+   ""
+  ],
+  [
+   "std3_2",
+   "Payload safety review",
+   "std3",
+   "set here",
+   ""
+  ],
+  [
+   "std3_3",
+   "Hazardous material declaration",
+   "std3",
+   "set here",
+   ""
+  ],
+  [
+   "std4",
+   "Test & verification",
+   "std",
+   "0 items",
+   ""
+  ],
+  [
+   "tv1",
+   "Component level",
+   "std4",
+   "5 activities",
+   ""
+  ],
+  [
+   "tv1_0",
+   "EEE part screening",
+   "tv1",
+   "set here",
+   ""
+  ],
+  [
+   "tv1_1",
+   "Materials and processes",
+   "tv1",
+   "set here",
+   ""
+  ],
+  [
+   "tv1_2",
+   "Radiation · TID and SEE",
+   "tv1",
+   "set here",
+   ""
+  ],
+  [
+   "tv1_3",
+   "Outgassing and contamination",
+   "tv1",
+   "set here",
+   ""
+  ],
+  [
+   "tv1_4",
+   "Part qualification and lot acceptance",
+   "tv1",
+   "set here",
+   ""
+  ],
+  [
+   "tv2",
+   "Subsystem level",
+   "std4",
+   "5 activities",
+   ""
+  ],
+  [
+   "tv2_0",
+   "Functional test",
+   "tv2",
+   "set here",
+   ""
+  ],
+  [
+   "tv2_1",
+   "EMC and EMI",
+   "tv2",
+   "set here",
+   ""
+  ],
+  [
+   "tv2_2",
+   "Vibration and shock",
+   "tv2",
+   "set here",
+   ""
+  ],
+  [
+   "tv2_3",
+   "Thermal cycling",
+   "tv2",
+   "set here",
+   ""
+  ],
+  [
+   "tv2_4",
+   "Thermal vacuum bake-out",
+   "tv2",
+   "set here",
+   ""
+  ],
+  [
+   "tv3",
+   "System level",
+   "std4",
+   "9 activities",
+   ""
+  ],
+  [
+   "tv3_0",
+   "Full functional and performance",
+   "tv3",
+   "set here",
+   ""
+  ],
+  [
+   "tv3_1",
+   "Mass properties and balance",
+   "tv3",
+   "set here",
+   ""
+  ],
+  [
+   "tv3_2",
+   "Alignment and boresight",
+   "tv3",
+   "set here",
+   ""
+  ],
+  [
+   "tv3_3",
+   "Sine and random vibration",
+   "tv3",
+   "set here",
+   ""
+  ],
+  [
+   "tv3_4",
+   "Acoustic and shock",
+   "tv3",
+   "set here",
+   ""
+  ],
+  [
+   "tv3_5",
+   "Thermal vacuum and thermal balance",
+   "tv3",
+   "set here",
+   ""
+  ],
+  [
+   "tv3_6",
+   "Magnetic and electrostatic cleanliness",
+   "tv3",
+   "set here",
+   ""
+  ],
+  [
+   "tv3_7",
+   "Leak and pressure",
+   "tv3",
+   "set here",
+   ""
+  ],
+  [
+   "tv3_8",
+   "Deployment and mechanisms",
+   "tv3",
+   "set here",
+   ""
+  ],
+  [
+   "tv4",
+   "Interface level",
+   "std4",
+   "6 activities",
+   ""
+  ],
+  [
+   "tv4_0",
+   "Mechanical fit check to the dispenser",
+   "tv4",
+   "set here",
+   ""
+  ],
+  [
+   "tv4_1",
+   "Electrical harness continuity",
+   "tv4",
+   "set here",
+   ""
+  ],
+  [
+   "tv4_2",
+   "Data protocol and command dictionary",
+   "tv4",
+   "set here",
+   ""
+  ],
+  [
+   "tv4_3",
+   "RF compatibility with the ground segment",
+   "tv4",
+   "set here",
+   ""
+  ],
+  [
+   "tv4_4",
+   "Payload-to-bus interface test",
+   "tv4",
+   "set here",
+   ""
+  ],
+  [
+   "tv4_5",
+   "Launch vehicle interface verification",
+   "tv4",
+   "set here",
+   ""
+  ],
+  [
+   "tv5",
+   "Qualification approach",
+   "std4",
+   "5 activities",
+   ""
+  ],
+  [
+   "tv5_0",
+   "Qualification model",
+   "tv5",
+   "set here",
+   ""
+  ],
+  [
+   "tv5_1",
+   "Protoflight approach",
+   "tv5",
+   "set here",
+   ""
+  ],
+  [
+   "tv5_2",
+   "Acceptance levels and margins",
+   "tv5",
+   "set here",
+   ""
+  ],
+  [
+   "tv5_3",
+   "Test matrix and coverage",
+   "tv5",
+   "set here",
+   ""
+  ],
+  [
+   "tv5_4",
+   "Verification by analysis, review or similarity",
+   "tv5",
+   "set here",
+   ""
+  ],
+  [
+   "tv6",
+   "Facilities & bodies",
+   "std4",
+   "6 activities",
+   ""
+  ],
+  [
+   "tv6_0",
+   "EMC test house",
+   "tv6",
+   "set here",
+   ""
+  ],
+  [
+   "tv6_1",
+   "Vibration and shock facility",
+   "tv6",
+   "set here",
+   ""
+  ],
+  [
+   "tv6_2",
+   "Thermal vacuum chamber",
+   "tv6",
+   "set here",
+   ""
+  ],
+  [
+   "tv6_3",
+   "RF anechoic chamber",
+   "tv6",
+   "set here",
+   ""
+  ],
+  [
+   "tv6_4",
+   "Independent verification authority",
+   "tv6",
+   "set here",
+   ""
+  ],
+  [
+   "tv6_5",
+   "Launch provider fit-check",
+   "tv6",
+   "set here",
+   ""
+  ],
+  [
+   "std5",
+   "Debris & disposal",
+   "std",
+   "4 items",
+   ""
+  ],
+  [
+   "std5_0",
+   "ISO 24113 · debris mitigation",
+   "std5",
+   "set here",
+   ""
+  ],
+  [
+   "std5_1",
+   "25-year rule and successor",
+   "std5",
+   "set here",
+   ""
+  ],
+  [
+   "std5_2",
+   "Collision avoidance duty",
+   "std5",
+   "set here",
+   ""
+  ],
+  [
+   "std5_3",
+   "End-of-life disposal plan",
+   "std5",
+   "set here",
+   ""
+  ],
+  [
+   "std6",
+   "Export control",
+   "std",
+   "4 items",
+   ""
+  ],
+  [
+   "std6_0",
+   "Export classification",
+   "std6",
+   "set here",
+   ""
+  ],
+  [
+   "std6_1",
+   "End-user certification",
+   "std6",
+   "set here",
+   ""
+  ],
+  [
+   "std6_2",
+   "Technology transfer control",
+   "std6",
+   "set here",
+   ""
+  ],
+  [
+   "std6_3",
+   "Supplier flow-down",
+   "std6",
+   "set here",
+   ""
+  ],
+  [
+   "std7",
+   "Quality & product assurance",
+   "std",
+   "4 items",
+   ""
+  ],
+  [
+   "std7_0",
+   "ECSS-Q · product assurance",
+   "std7",
+   "set here",
+   ""
+  ],
+  [
+   "std7_1",
+   "AS9100 · quality system",
+   "std7",
+   "set here",
+   ""
+  ],
+  [
+   "std7_2",
+   "Parts, materials and processes",
+   "std7",
+   "set here",
+   ""
+  ],
+  [
+   "std7_3",
+   "Non-conformance handling",
+   "std7",
+   "set here",
+   ""
+  ],
+  [
+   "std8",
+   "Insurance & liability",
+   "std",
+   "4 items",
+   ""
+  ],
+  [
+   "std8_0",
+   "Launch insurance",
+   "std8",
+   "set here",
+   ""
+  ],
+  [
+   "std8_1",
+   "In-orbit insurance",
+   "std8",
+   "set here",
+   ""
+  ],
+  [
+   "std8_2",
+   "Third-party liability",
+   "std8",
+   "set here",
+   ""
+  ],
+  [
+   "std8_3",
+   "Indemnity to the state",
+   "std8",
+   "set here",
+   ""
+  ],
+  [
+   "sup",
+   "Supply chain",
+   "mgm",
+   "what has to be bought, qualified and delivered",
+   ""
+  ],
+  [
+   "sup1",
+   "Long-lead items",
+   "sup",
+   "3 items",
+   ""
+  ],
+  [
+   "sup1_0",
+   "Propulsion hardware",
+   "sup1",
+   "set here",
+   ""
+  ],
+  [
+   "sup1_1",
+   "Optics and detectors",
+   "sup1",
+   "set here",
+   ""
+  ],
+  [
+   "sup1_2",
+   "Radiation-tolerant parts",
+   "sup1",
+   "set here",
+   ""
+  ],
+  [
+   "sup2",
+   "Suppliers & qualification",
+   "sup",
+   "3 items",
+   ""
+  ],
+  [
+   "sup2_0",
+   "Supplier survey",
+   "sup2",
+   "set here",
+   ""
+  ],
+  [
+   "sup2_1",
+   "Qualification status",
+   "sup2",
+   "set here",
+   ""
+  ],
+  [
+   "sup2_2",
+   "Second sources",
+   "sup2",
+   "set here",
+   ""
+  ],
+  [
+   "sup3",
+   "Make or buy",
+   "sup",
+   "3 items",
+   ""
+  ],
+  [
+   "sup3_0",
+   "In-house scope",
+   "sup3",
+   "set here",
+   ""
+  ],
+  [
+   "sup3_1",
+   "Bought-in scope",
+   "sup3",
+   "set here",
+   ""
+  ],
+  [
+   "sup3_2",
+   "Rationale",
+   "sup3",
+   "set here",
+   ""
+  ],
+  [
+   "org",
+   "Orbitt capability",
+   "mgm",
+   "what the organisation itself can carry",
+   ""
+  ],
+  [
+   "org1",
+   "Engineering capacity",
+   "org",
+   "3 items",
+   ""
+  ],
+  [
+   "org1_0",
+   "Team and skills",
+   "org1",
+   "set here",
+   ""
+  ],
+  [
+   "org1_1",
+   "Tooling and the design tool",
+   "org1",
+   "set here",
+   ""
+  ],
+  [
+   "org1_2",
+   "Concurrent projects",
+   "org1",
+   "set here",
+   ""
+  ],
+  [
+   "org2",
+   "Facilities",
+   "org",
+   "3 items",
+   ""
+  ],
+  [
+   "org2_0",
+   "Cleanroom",
+   "org2",
+   "set here",
+   ""
+  ],
+  [
+   "org2_1",
+   "Integration bay",
+   "org2",
+   "set here",
+   ""
+  ],
+  [
+   "org2_2",
+   "Test access",
+   "org2",
+   "set here",
+   ""
+  ],
+  [
+   "org3",
+   "Heritage",
+   "org",
+   "3 items",
+   ""
+  ],
+  [
+   "org3_0",
+   "Flown hardware",
+   "org3",
+   "set here",
+   ""
+  ],
+  [
+   "org3_1",
+   "Qualified designs",
+   "org3",
+   "set here",
+   ""
+  ],
+  [
+   "org3_2",
+   "Lessons carried forward",
+   "org3",
+   "set here",
+   ""
+  ]
+ ],
+ "ED_MGT": [
+  [
+   "ca_req",
+   "ca_kpi",
+   "the requirement the KPIs are drawn from"
+  ],
+  [
+   "ca_kpi",
+   "ca_con",
+   "the targets the concepts are compared on"
+  ],
+  [
+   "ca_con",
+   "ca_sol",
+   "the concept that goes forward"
+  ],
+  [
+   "ca_kpi",
+   "ca_sol",
+   "the targets it must hit"
+  ],
+  [
+   "ca_sol",
+   "ca_cst",
+   "the design the cost model runs over"
+  ],
+  [
+   "ca_cst",
+   "ca_val",
+   "cost against the service delivered"
+  ],
+  [
+   "ca_req",
+   "ca_val",
+   "judged against what was asked for"
+  ],
+  [
+   "std2",
+   "ca_con",
+   "what spectrum policy allows this concept"
+  ],
+  [
+   "std1",
+   "ca_sol",
+   "the authorisation this solution must obtain"
+  ],
+  [
+   "std5",
+   "ca_sol",
+   "the disposal case it must close"
+  ],
+  [
+   "std6",
+   "sup1",
+   "what may be bought, and from where"
+  ],
+  [
+   "ca_sol",
+   "seg1",
+   "the spacecraft this customer needs"
+  ],
+  [
+   "ca_sol",
+   "seg3",
+   "the ground capacity it consumes"
+  ],
+  [
+   "seg2",
+   "ca_cst",
+   "launch cost and slot"
+  ],
+  [
+   "sup1",
+   "ca_cst",
+   "long-lead cost and lead time"
+  ],
+  [
+   "plc3",
+   "ca_cst",
+   "schedule cost of carrying it"
+  ],
+  [
+   "org1",
+   "ca_sol",
+   "the engineering capacity available to it"
+  ],
+  [
+   "ca_sol",
+   "plc4",
+   "the technical risk it introduces"
+  ],
+  [
+   "plc2",
+   "ca_val",
+   "the gates passed so far"
+  ],
+  [
+   "cb_req",
+   "cb_kpi",
+   "the requirement the KPIs are drawn from"
+  ],
+  [
+   "cb_kpi",
+   "cb_con",
+   "the targets the concepts are compared on"
+  ],
+  [
+   "cb_con",
+   "cb_sol",
+   "the concept that goes forward"
+  ],
+  [
+   "cb_kpi",
+   "cb_sol",
+   "the targets it must hit"
+  ],
+  [
+   "cb_sol",
+   "cb_cst",
+   "the design the cost model runs over"
+  ],
+  [
+   "cb_cst",
+   "cb_val",
+   "cost against the service delivered"
+  ],
+  [
+   "cb_req",
+   "cb_val",
+   "judged against what was asked for"
+  ],
+  [
+   "std2",
+   "cb_con",
+   "what spectrum policy allows this concept"
+  ],
+  [
+   "std1",
+   "cb_sol",
+   "the authorisation this solution must obtain"
+  ],
+  [
+   "std5",
+   "cb_sol",
+   "the disposal case it must close"
+  ],
+  [
+   "cb_sol",
+   "seg1",
+   "the spacecraft this customer needs"
+  ],
+  [
+   "cb_sol",
+   "seg3",
+   "the ground capacity it consumes"
+  ],
+  [
+   "seg2",
+   "cb_cst",
+   "launch cost and slot"
+  ],
+  [
+   "sup1",
+   "cb_cst",
+   "long-lead cost and lead time"
+  ],
+  [
+   "plc3",
+   "cb_cst",
+   "schedule cost of carrying it"
+  ],
+  [
+   "org1",
+   "cb_sol",
+   "the engineering capacity available to it"
+  ],
+  [
+   "cb_sol",
+   "plc4",
+   "the technical risk it introduces"
+  ],
+  [
+   "plc2",
+   "cb_val",
+   "the gates passed so far"
+  ],
+  [
+   "cc_req",
+   "cc_kpi",
+   "the requirement the KPIs are drawn from"
+  ],
+  [
+   "cc_kpi",
+   "cc_con",
+   "the targets the concepts are compared on"
+  ],
+  [
+   "cc_con",
+   "cc_sol",
+   "the concept that goes forward"
+  ],
+  [
+   "cc_kpi",
+   "cc_sol",
+   "the targets it must hit"
+  ],
+  [
+   "cc_sol",
+   "cc_cst",
+   "the design the cost model runs over"
+  ],
+  [
+   "cc_cst",
+   "cc_val",
+   "cost against the service delivered"
+  ],
+  [
+   "cc_req",
+   "cc_val",
+   "judged against what was asked for"
+  ],
+  [
+   "std2",
+   "cc_con",
+   "what spectrum policy allows this concept"
+  ],
+  [
+   "std1",
+   "cc_sol",
+   "the authorisation this solution must obtain"
+  ],
+  [
+   "std5",
+   "cc_sol",
+   "the disposal case it must close"
+  ],
+  [
+   "cc_sol",
+   "seg1",
+   "the spacecraft this customer needs"
+  ],
+  [
+   "cc_sol",
+   "seg3",
+   "the ground capacity it consumes"
+  ],
+  [
+   "seg2",
+   "cc_cst",
+   "launch cost and slot"
+  ],
+  [
+   "sup1",
+   "cc_cst",
+   "long-lead cost and lead time"
+  ],
+  [
+   "plc3",
+   "cc_cst",
+   "schedule cost of carrying it"
+  ],
+  [
+   "org1",
+   "cc_sol",
+   "the engineering capacity available to it"
+  ],
+  [
+   "cc_sol",
+   "plc4",
+   "the technical risk it introduces"
+  ],
+  [
+   "plc2",
+   "cc_val",
+   "the gates passed so far"
+  ],
+  [
+   "plc1",
+   "plc2",
+   "the phase each gate closes"
+  ],
+  [
+   "plc2",
+   "plc3",
+   "the dates the gates fix"
+  ],
+  [
+   "plc3",
+   "plc4",
+   "where the schedule risk sits"
+  ],
+  [
+   "plc4",
+   "plc5",
+   "the changes risk forces"
+  ],
+  [
+   "std3",
+   "seg2",
+   "the launch interface and safety case"
+  ],
+  [
+   "std4",
+   "plc2",
+   "the evidence a gate needs"
+  ],
+  [
+   "tv1",
+   "tv2",
+   "parts cleared into the subsystem build"
+  ],
+  [
+   "tv2",
+   "tv3",
+   "subsystems cleared into the spacecraft"
+  ],
+  [
+   "tv3",
+   "tv4",
+   "the built spacecraft, ready to be mated"
+  ],
+  [
+   "tv4",
+   "seg2",
+   "fit and function against the launch vehicle"
+  ],
+  [
+   "tv4",
+   "seg3",
+   "RF compatibility with the ground segment"
+  ],
+  [
+   "tv5",
+   "tv3",
+   "the levels and margins the system is tested to"
+  ],
+  [
+   "tv6",
+   "tv3",
+   "the facilities the campaign is booked into"
+  ],
+  [
+   "tv6",
+   "plc3",
+   "facility slots that drive the schedule"
+  ],
+  [
+   "tv3",
+   "plc2",
+   "the qualification evidence TRR and ORR need"
+  ],
+  [
+   "std7",
+   "tv1",
+   "the standard parts are screened to"
+  ],
+  [
+   "org3",
+   "tv5",
+   "heritage that allows verification by similarity"
+  ],
+  [
+   "std7",
+   "sup2",
+   "the quality standard suppliers are held to"
+  ],
+  [
+   "std8",
+   "seg2",
+   "cover for the launch"
+  ],
+  [
+   "seg1",
+   "seg3",
+   "what the ground has to talk to"
+  ],
+  [
+   "seg3",
+   "seg4",
+   "what the user actually receives"
+  ],
+  [
+   "seg2",
+   "plc3",
+   "the launch date the schedule hangs on"
+  ],
+  [
+   "sup2",
+   "sup1",
+   "which long leads are qualified"
+  ],
+  [
+   "sup3",
+   "sup2",
+   "what is bought rather than made"
+  ],
+  [
+   "org2",
+   "sup3",
+   "what can be made in-house"
+  ],
+  [
+   "org3",
+   "std7",
+   "heritage that shortens qualification"
+  ],
+  [
+   "org1",
+   "plc3",
+   "capacity against the plan"
+  ]
+ ],
+ "HN_SYS": [
+  [
+   "prg",
+   "VLEO multipayload",
+   null,
+   "3 applications · 30 KPIs · 219 design variables",
+   ""
+  ],
+  [
+   "svc",
+   "Service level the customer needs",
+   "prg",
+   "what management asks for — everything below exists to meet it",
+   ""
+  ],
+  [
+   "a1",
+   "Communications",
+   "svc",
+   "real-time IoT",
+   ""
+  ],
+  [
+   "a1k",
+   "KPI required · comms",
+   "a1",
+   "14 targets this application must hit",
+   ""
+  ],
+  [
+   "a1k_0",
+   "Handover rate",
+   "a1k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a1k_1",
+   "Throughput",
+   "a1k",
+   "target — required",
+   ""
+  ],
+  [
+   "a1k_2",
+   "Devices per beam",
+   "a1k",
+   "target — required",
+   ""
+  ],
+  [
+   "a1k_3",
+   "Contact time",
+   "a1k",
+   "target — required",
+   ""
+  ],
+  [
+   "a1k_4",
+   "Delivery latency",
+   "a1k",
+   "target — required",
+   ""
+  ],
+  [
+   "a1k_5",
+   "Access gap",
+   "a1k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a1k_6",
+   "Latency",
+   "a1k",
+   "target — required",
+   ""
+  ],
+  [
+   "a1k_7",
+   "Time transfer",
+   "a1k",
+   "target — required",
+   ""
+  ],
+  [
+   "a1k_8",
+   "Fold",
+   "a1k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a1k_9",
+   "Coverage",
+   "a1k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a1k_10",
+   "Link margin",
+   "a1k",
+   "target — required",
+   ""
+  ],
+  [
+   "a1k_11",
+   "Downlink data volume",
+   "a1k",
+   "target — required",
+   ""
+  ],
+  [
+   "a1k_12",
+   "Conjunction rate",
+   "a1k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a1k_13",
+   "Availability",
+   "a1k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a1a",
+   "KPI achieved · comms",
+   "a1",
+   "what the design actually delivers",
+   ""
+  ],
+  [
+   "a1a_0",
+   "Handover rate",
+   "a1a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a1a_1",
+   "Throughput",
+   "a1a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a1a_2",
+   "Devices per beam",
+   "a1a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a1a_3",
+   "Contact time",
+   "a1a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a1a_4",
+   "Delivery latency",
+   "a1a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a1a_5",
+   "Access gap",
+   "a1a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a1a_6",
+   "Latency",
+   "a1a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a1a_7",
+   "Time transfer",
+   "a1a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a1a_8",
+   "Fold",
+   "a1a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a1a_9",
+   "Coverage",
+   "a1a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a1a_10",
+   "Link margin",
+   "a1a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a1a_11",
+   "Downlink data volume",
+   "a1a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a1a_12",
+   "Conjunction rate",
+   "a1a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a1a_13",
+   "Availability",
+   "a1a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a2",
+   "Earth observation & ISR",
+   "svc",
+   "optical and SIGINT",
+   ""
+  ],
+  [
+   "a2k",
+   "KPI required · EO / ISR",
+   "a2",
+   "18 targets this application must hit",
+   ""
+  ],
+  [
+   "a2k_0",
+   "GSD",
+   "a2k",
+   "target — required",
+   ""
+  ],
+  [
+   "a2k_1",
+   "Swath",
+   "a2k",
+   "target — required",
+   ""
+  ],
+  [
+   "a2k_2",
+   "Image SNR",
+   "a2k",
+   "target — required",
+   ""
+  ],
+  [
+   "a2k_3",
+   "Smear",
+   "a2k",
+   "target — required",
+   ""
+  ],
+  [
+   "a2k_4",
+   "Collection capacity",
+   "a2k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a2k_5",
+   "Min detectable EIRP",
+   "a2k",
+   "target — required",
+   ""
+  ],
+  [
+   "a2k_6",
+   "Intercept prob.",
+   "a2k",
+   "target — required",
+   ""
+  ],
+  [
+   "a2k_7",
+   "Dwell time",
+   "a2k",
+   "target — required",
+   ""
+  ],
+  [
+   "a2k_8",
+   "Contact time",
+   "a2k",
+   "target — required",
+   ""
+  ],
+  [
+   "a2k_9",
+   "Delivery latency",
+   "a2k",
+   "target — required",
+   ""
+  ],
+  [
+   "a2k_10",
+   "Revisit",
+   "a2k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a2k_11",
+   "CEP90",
+   "a2k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a2k_12",
+   "Fold",
+   "a2k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a2k_13",
+   "Coverage",
+   "a2k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a2k_14",
+   "Link margin",
+   "a2k",
+   "target — required",
+   ""
+  ],
+  [
+   "a2k_15",
+   "Downlink data volume",
+   "a2k",
+   "target — required",
+   ""
+  ],
+  [
+   "a2k_16",
+   "Conjunction rate",
+   "a2k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a2k_17",
+   "Availability",
+   "a2k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a2a",
+   "KPI achieved · EO / ISR",
+   "a2",
+   "what the design actually delivers",
+   ""
+  ],
+  [
+   "a2a_0",
+   "GSD",
+   "a2a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a2a_1",
+   "Swath",
+   "a2a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a2a_2",
+   "Image SNR",
+   "a2a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a2a_3",
+   "Smear",
+   "a2a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a2a_4",
+   "Collection capacity",
+   "a2a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a2a_5",
+   "Min detectable EIRP",
+   "a2a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a2a_6",
+   "Intercept prob.",
+   "a2a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a2a_7",
+   "Dwell time",
+   "a2a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a2a_8",
+   "Contact time",
+   "a2a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a2a_9",
+   "Delivery latency",
+   "a2a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a2a_10",
+   "Revisit",
+   "a2a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a2a_11",
+   "CEP90",
+   "a2a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a2a_12",
+   "Fold",
+   "a2a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a2a_13",
+   "Coverage",
+   "a2a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a2a_14",
+   "Link margin",
+   "a2a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a2a_15",
+   "Downlink data volume",
+   "a2a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a2a_16",
+   "Conjunction rate",
+   "a2a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a2a_17",
+   "Availability",
+   "a2a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a3",
+   "PNT & geolocation",
+   "svc",
+   "users and emitters",
+   ""
+  ],
+  [
+   "a3k",
+   "KPI required · PNT",
+   "a3",
+   "17 targets this application must hit",
+   ""
+  ],
+  [
+   "a3k_0",
+   "GDOP",
+   "a3k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a3k_1",
+   "Fix availability",
+   "a3k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a3k_2",
+   "Position accuracy",
+   "a3k",
+   "target — required",
+   ""
+  ],
+  [
+   "a3k_3",
+   "Time to first fix",
+   "a3k",
+   "target — required",
+   ""
+  ],
+  [
+   "a3k_4",
+   "Integrity risk",
+   "a3k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a3k_5",
+   "Time to geolocate",
+   "a3k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a3k_6",
+   "Revisit",
+   "a3k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a3k_7",
+   "CEP90",
+   "a3k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a3k_8",
+   "Access gap",
+   "a3k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a3k_9",
+   "Latency",
+   "a3k",
+   "target — required",
+   ""
+  ],
+  [
+   "a3k_10",
+   "Time transfer",
+   "a3k",
+   "target — required",
+   ""
+  ],
+  [
+   "a3k_11",
+   "Fold",
+   "a3k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a3k_12",
+   "Coverage",
+   "a3k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a3k_13",
+   "Link margin",
+   "a3k",
+   "target — required",
+   ""
+  ],
+  [
+   "a3k_14",
+   "Downlink data volume",
+   "a3k",
+   "target — required",
+   ""
+  ],
+  [
+   "a3k_15",
+   "Conjunction rate",
+   "a3k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a3k_16",
+   "Availability",
+   "a3k",
+   "target — required",
+   "cp2"
+  ],
+  [
+   "a3a",
+   "KPI achieved · PNT",
+   "a3",
+   "what the design actually delivers",
+   ""
+  ],
+  [
+   "a3a_0",
+   "GDOP",
+   "a3a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a3a_1",
+   "Fix availability",
+   "a3a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a3a_2",
+   "Position accuracy",
+   "a3a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a3a_3",
+   "Time to first fix",
+   "a3a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a3a_4",
+   "Integrity risk",
+   "a3a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a3a_5",
+   "Time to geolocate",
+   "a3a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a3a_6",
+   "Revisit",
+   "a3a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a3a_7",
+   "CEP90",
+   "a3a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a3a_8",
+   "Access gap",
+   "a3a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a3a_9",
+   "Latency",
+   "a3a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a3a_10",
+   "Time transfer",
+   "a3a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a3a_11",
+   "Fold",
+   "a3a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a3a_12",
+   "Coverage",
+   "a3a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a3a_13",
+   "Link margin",
+   "a3a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a3a_14",
+   "Downlink data volume",
+   "a3a",
+   "achieved — what the design delivers",
+   ""
+  ],
+  [
+   "a3a_15",
+   "Conjunction rate",
+   "a3a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "a3a_16",
+   "Availability",
+   "a3a",
+   "achieved — what the design delivers",
+   "cp2"
+  ],
+  [
+   "cpt",
+   "Mission concept",
+   "prg",
+   "the two ways to deliver that service — pick one and the tree filters",
+   ""
+  ],
+  [
+   "cp1",
+   "Single large satellite",
+   "cpt",
+   "one vehicle, many payloads",
+   "cp1"
+  ],
+  [
+   "cp2",
+   "Constellation in low orbit",
+   "cpt",
+   "many vehicles, shared service",
+   "cp2"
+  ],
+  [
+   "msn",
+   "Mission performance",
+   "prg",
+   "what the mission is required to deliver",
+   ""
+  ],
+  [
+   "m1",
+   "Mission requirements",
+   "msn",
+   "9 variables · 9 set, 0 computed",
+   ""
+  ],
+  [
+   "m1_0",
+   "Mission epoch",
+   "m1",
+   "set here",
+   ""
+  ],
+  [
+   "m1_1",
+   "Mission duration",
+   "m1",
+   "set here",
+   ""
+  ],
+  [
+   "m1_2",
+   "Launch window",
+   "m1",
+   "set here",
+   ""
+  ],
+  [
+   "m1_3",
+   "Coverage latitude band",
+   "m1",
+   "set here",
+   ""
+  ],
+  [
+   "m1_4",
+   "Coverage requirement",
+   "m1",
+   "set here",
+   ""
+  ],
+  [
+   "m1_5",
+   "Revisit requirement",
+   "m1",
+   "set here",
+   ""
+  ],
+  [
+   "m1_6",
+   "Access gap requirement",
+   "m1",
+   "set here",
+   ""
+  ],
+  [
+   "m1_7",
+   "Data latency requirement",
+   "m1",
+   "set here",
+   ""
+  ],
+  [
+   "m1_8",
+   "Availability requirement",
+   "m1",
+   "set here",
+   ""
+  ],
+  [
+   "orb",
+   "Orbit and environment",
+   "prg",
+   "where it flies, and what it flies through",
+   ""
+  ],
+  [
+   "m2",
+   "Orbit geometry",
+   "orb",
+   "11 variables · 6 set, 5 computed",
+   ""
+  ],
+  [
+   "m2_0",
+   "Altitude",
+   "m2",
+   "set here",
+   ""
+  ],
+  [
+   "m2_1",
+   "Inclination",
+   "m2",
+   "set here",
+   ""
+  ],
+  [
+   "m2_2",
+   "LTAN",
+   "m2",
+   "set here",
+   ""
+  ],
+  [
+   "m2_3",
+   "Eccentricity",
+   "m2",
+   "set here",
+   ""
+  ],
+  [
+   "m2_4",
+   "Minimum elevation",
+   "m2",
+   "set here",
+   ""
+  ],
+  [
+   "m2_5",
+   "Off-nadir angle",
+   "m2",
+   "set here",
+   ""
+  ],
+  [
+   "m2_6",
+   "Orbital velocity",
+   "m2",
+   "computed",
+   ""
+  ],
+  [
+   "m2_7",
+   "Orbital period",
+   "m2",
+   "computed",
+   ""
+  ],
+  [
+   "m2_8",
+   "Repeat cycle",
+   "m2",
+   "computed",
+   ""
+  ],
+  [
+   "m2_9",
+   "Eclipse fraction",
+   "m2",
+   "computed",
+   ""
+  ],
+  [
+   "m2_10",
+   "Nodal regression rate",
+   "m2",
+   "computed",
+   ""
+  ],
+  [
+   "m3",
+   "Constellation trade output",
+   "orb",
+   "12 variables · 1 set, 11 computed",
+   "cp2"
+  ],
+  [
+   "m3_0",
+   "Walker pattern type",
+   "m3",
+   "set here",
+   "cp2"
+  ],
+  [
+   "m3_1",
+   "Constellation size",
+   "m3",
+   "computed",
+   "cp2"
+  ],
+  [
+   "m3_2",
+   "Number of planes",
+   "m3",
+   "computed",
+   "cp2"
+  ],
+  [
+   "m3_3",
+   "Satellites per plane",
+   "m3",
+   "computed",
+   "cp2"
+  ],
+  [
+   "m3_4",
+   "Phasing factor",
+   "m3",
+   "computed",
+   "cp2"
+  ],
+  [
+   "m3_5",
+   "RAAN spread",
+   "m3",
+   "computed",
+   "cp2"
+  ],
+  [
+   "m3_6",
+   "Instantaneous fold",
+   "m3",
+   "computed",
+   "cp2"
+  ],
+  [
+   "m3_7",
+   "Coverage achieved",
+   "m3",
+   "computed",
+   "cp2"
+  ],
+  [
+   "m3_8",
+   "Revisit achieved",
+   "m3",
+   "computed",
+   "cp2"
+  ],
+  [
+   "m3_9",
+   "Access gap achieved",
+   "m3",
+   "computed",
+   "cp2"
+  ],
+  [
+   "m3_10",
+   "Inter-satellite range",
+   "m3",
+   "computed",
+   "cp2"
+  ],
+  [
+   "m3_11",
+   "Collision probability",
+   "m3",
+   "computed",
+   "cp2"
+  ],
+  [
+   "m5",
+   "Space environment",
+   "orb",
+   "6 variables · 0 set, 6 computed",
+   ""
+  ],
+  [
+   "m5_0",
+   "Solar flux",
+   "m5",
+   "computed",
+   ""
+  ],
+  [
+   "m5_1",
+   "F10.7",
+   "m5",
+   "computed",
+   ""
+  ],
+  [
+   "m5_2",
+   "Ap",
+   "m5",
+   "computed",
+   ""
+  ],
+  [
+   "m5_3",
+   "Atmospheric density",
+   "m5",
+   "computed",
+   ""
+  ],
+  [
+   "m5_4",
+   "Thermospheric wind",
+   "m5",
+   "computed",
+   ""
+  ],
+  [
+   "m5_5",
+   "Atomic oxygen fluence",
+   "m5",
+   "computed",
+   ""
+  ],
+  [
+   "m4",
+   "Launch, ground and disposal",
+   "orb",
+   "7 variables · 4 set, 3 computed",
+   ""
+  ],
+  [
+   "m4_0",
+   "Injection accuracy",
+   "m4",
+   "set here",
+   ""
+  ],
+  [
+   "m4_1",
+   "Satellites per launch",
+   "m4",
+   "set here",
+   ""
+  ],
+  [
+   "m4_2",
+   "Ground station network",
+   "m4",
+   "set here",
+   ""
+  ],
+  [
+   "m4_3",
+   "Disposal altitude",
+   "m4",
+   "set here",
+   ""
+  ],
+  [
+   "m4_4",
+   "Pass duration",
+   "m4",
+   "computed",
+   ""
+  ],
+  [
+   "m4_5",
+   "Passes per day",
+   "m4",
+   "computed",
+   ""
+  ],
+  [
+   "m4_6",
+   "Daily contact time",
+   "m4",
+   "computed",
+   ""
+  ],
+  [
+   "sat",
+   "Satellite system",
+   "prg",
+   "the whole vehicle, before it is split into subsystems",
+   ""
+  ],
+  [
+   "c1",
+   "Mass and aero",
+   "sat",
+   "19 variables · 8 set, 11 computed",
+   ""
+  ],
+  [
+   "c1_0",
+   "Spacecraft dry mass",
+   "c1",
+   "set here",
+   ""
+  ],
+  [
+   "c1_1",
+   "Body shape",
+   "c1",
+   "set here",
+   ""
+  ],
+  [
+   "c1_2",
+   "Panel layout",
+   "c1",
+   "set here",
+   ""
+  ],
+  [
+   "c1_3",
+   "Panel stiffness",
+   "c1",
+   "set here",
+   ""
+  ],
+  [
+   "c1_4",
+   "Accommodation coefficient",
+   "c1",
+   "set here",
+   ""
+  ],
+  [
+   "c1_5",
+   "Erosion yield",
+   "c1",
+   "set here",
+   ""
+  ],
+  [
+   "c1_6",
+   "Launch load factor",
+   "c1",
+   "set here",
+   ""
+  ],
+  [
+   "c1_7",
+   "Mass margin",
+   "c1",
+   "set here",
+   ""
+  ],
+  [
+   "c1_8",
+   "Frontal area",
+   "c1",
+   "computed",
+   ""
+  ],
+  [
+   "c1_9",
+   "Drag coefficient",
+   "c1",
+   "computed",
+   ""
+  ],
+  [
+   "c1_10",
+   "Ballistic coefficient",
+   "c1",
+   "computed",
+   ""
+  ],
+  [
+   "c1_11",
+   "Relative velocity",
+   "c1",
+   "computed",
+   ""
+  ],
+  [
+   "c1_12",
+   "Drag acceleration",
+   "c1",
+   "computed",
+   ""
+  ],
+  [
+   "c1_13",
+   "Centre of pressure offset",
+   "c1",
+   "computed",
+   ""
+  ],
+  [
+   "c1_14",
+   "Launch mass",
+   "c1",
+   "computed",
+   ""
+  ],
+  [
+   "c1_15",
+   "Centre of mass",
+   "c1",
+   "computed",
+   ""
+  ],
+  [
+   "c1_16",
+   "Moments of inertia",
+   "c1",
+   "computed",
+   ""
+  ],
+  [
+   "c1_17",
+   "Structural mass fraction",
+   "c1",
+   "computed",
+   ""
+  ],
+  [
+   "c1_18",
+   "Erosion depth",
+   "c1",
+   "computed",
+   ""
+  ],
+  [
+   "c5",
+   "Structure",
+   "sat",
+   "4 variables · 3 set, 1 computed",
+   ""
+  ],
+  [
+   "c5_0",
+   "Bus dimensions",
+   "c5",
+   "set here",
+   ""
+  ],
+  [
+   "c5_1",
+   "Primary structure material",
+   "c5",
+   "set here",
+   ""
+  ],
+  [
+   "c5_2",
+   "Panel thickness",
+   "c5",
+   "set here",
+   ""
+  ],
+  [
+   "c5_3",
+   "Accommodation volume",
+   "c5",
+   "computed",
+   ""
+  ],
+  [
+   "c11",
+   "Multi-payload",
+   "sat",
+   "9 variables · 2 set, 7 computed",
+   ""
+  ],
+  [
+   "c11_0",
+   "Number of payloads",
+   "c11",
+   "set here",
+   ""
+  ],
+  [
+   "c11_1",
+   "Boresight separation",
+   "c11",
+   "set here",
+   ""
+  ],
+  [
+   "c11_2",
+   "Payload mass fraction",
+   "c11",
+   "computed",
+   ""
+  ],
+  [
+   "c11_3",
+   "Accommodation area",
+   "c11",
+   "computed",
+   ""
+  ],
+  [
+   "c11_4",
+   "Shared power allocation",
+   "c11",
+   "computed",
+   ""
+  ],
+  [
+   "c11_5",
+   "Shared downlink allocation",
+   "c11",
+   "computed",
+   ""
+  ],
+  [
+   "c11_6",
+   "Thermal dissipation share",
+   "c11",
+   "computed",
+   ""
+  ],
+  [
+   "c11_7",
+   "Simultaneity window",
+   "c11",
+   "computed",
+   ""
+  ],
+  [
+   "c11_8",
+   "Operating conflict rate",
+   "c11",
+   "computed",
+   ""
+  ],
+  [
+   "sub",
+   "Satellite subsystems",
+   "prg",
+   "grouped by what each one is there to do",
+   ""
+  ],
+  [
+   "sb1",
+   "Keep it in orbit",
+   "sub",
+   "propulsion and orbit control",
+   ""
+  ],
+  [
+   "c2",
+   "Propulsion",
+   "sb1",
+   "19 variables · 8 set, 11 computed",
+   ""
+  ],
+  [
+   "c2_0",
+   "Specific impulse",
+   "c2",
+   "set here",
+   ""
+  ],
+  [
+   "c2_1",
+   "Thruster duty cycle",
+   "c2",
+   "set here",
+   ""
+  ],
+  [
+   "c2_2",
+   "Intake capture area",
+   "c2",
+   "set here",
+   ""
+  ],
+  [
+   "c2_3",
+   "PPU efficiency",
+   "c2",
+   "set here",
+   ""
+  ],
+  [
+   "c2_4",
+   "Thrust vector alignment",
+   "c2",
+   "set here",
+   ""
+  ],
+  [
+   "c2_5",
+   "Propellant type",
+   "c2",
+   "set here",
+   ""
+  ],
+  [
+   "c2_6",
+   "Number of thrusters",
+   "c2",
+   "set here",
+   ""
+  ],
+  [
+   "c2_7",
+   "Throttle range",
+   "c2",
+   "set here",
+   ""
+  ],
+  [
+   "c2_8",
+   "Thrust authority",
+   "c2",
+   "computed",
+   ""
+  ],
+  [
+   "c2_9",
+   "Delta-v budget",
+   "c2",
+   "computed",
+   ""
+  ],
+  [
+   "c2_10",
+   "Propellant mass",
+   "c2",
+   "computed",
+   ""
+  ],
+  [
+   "c2_11",
+   "Decay rate",
+   "c2",
+   "computed",
+   ""
+  ],
+  [
+   "c2_12",
+   "Re-entry time unpowered",
+   "c2",
+   "computed",
+   ""
+  ],
+  [
+   "c2_13",
+   "Total impulse",
+   "c2",
+   "computed",
+   ""
+  ],
+  [
+   "c2_14",
+   "Thrust to drag ratio",
+   "c2",
+   "computed",
+   ""
+  ],
+  [
+   "c2_15",
+   "Minimum impulse bit",
+   "c2",
+   "computed",
+   ""
+  ],
+  [
+   "c2_16",
+   "Tank volume",
+   "c2",
+   "computed",
+   ""
+  ],
+  [
+   "c2_17",
+   "Compression ratio",
+   "c2",
+   "computed",
+   ""
+  ],
+  [
+   "c2_18",
+   "Achievable lifetime",
+   "c2",
+   "computed",
+   ""
+  ],
+  [
+   "g3",
+   "Orbit maintenance",
+   "sb1",
+   "10 variables · 3 set, 7 computed",
+   ""
+  ],
+  [
+   "g3_0",
+   "Thrust modulation resolution",
+   "g3",
+   "set here",
+   ""
+  ],
+  [
+   "g3_1",
+   "Propellant reserve",
+   "g3",
+   "set here",
+   ""
+  ],
+  [
+   "g3_2",
+   "Collision avoidance delta-v",
+   "g3",
+   "set here",
+   ""
+  ],
+  [
+   "g3_3",
+   "Station-keeping box",
+   "g3",
+   "computed",
+   ""
+  ],
+  [
+   "g3_4",
+   "Station-keeping delta-v",
+   "g3",
+   "computed",
+   ""
+  ],
+  [
+   "g3_5",
+   "Manoeuvre frequency",
+   "g3",
+   "computed",
+   ""
+  ],
+  [
+   "g3_6",
+   "Manoeuvre duration",
+   "g3",
+   "computed",
+   ""
+  ],
+  [
+   "g3_7",
+   "Thrust duty limit",
+   "g3",
+   "computed",
+   ""
+  ],
+  [
+   "g3_8",
+   "Deorbit delta-v",
+   "g3",
+   "computed",
+   ""
+  ],
+  [
+   "g3_9",
+   "Abort altitude",
+   "g3",
+   "computed",
+   ""
+  ],
+  [
+   "sb2",
+   "Point it",
+   "sub",
+   "attitude sensing, actuation and the loop",
+   ""
+  ],
+  [
+   "c8",
+   "Attitude hardware",
+   "sb2",
+   "9 variables · 5 set, 4 computed",
+   ""
+  ],
+  [
+   "c8_0",
+   "Number of reaction wheels",
+   "c8",
+   "set here",
+   ""
+  ],
+  [
+   "c8_1",
+   "Wheel speed limit",
+   "c8",
+   "set here",
+   ""
+  ],
+  [
+   "c8_2",
+   "Star tracker accuracy",
+   "c8",
+   "set here",
+   ""
+  ],
+  [
+   "c8_3",
+   "Gyro drift",
+   "c8",
+   "set here",
+   ""
+  ],
+  [
+   "c8_4",
+   "Earth magnetic field",
+   "c8",
+   "set here",
+   ""
+  ],
+  [
+   "c8_5",
+   "Aerodynamic torque",
+   "c8",
+   "computed",
+   ""
+  ],
+  [
+   "c8_6",
+   "Gravity gradient torque",
+   "c8",
+   "computed",
+   ""
+  ],
+  [
+   "c8_7",
+   "Solar radiation torque",
+   "c8",
+   "computed",
+   ""
+  ],
+  [
+   "c8_8",
+   "First mode frequency",
+   "c8",
+   "computed",
+   ""
+  ],
+  [
+   "g1",
+   "Pointing error budget",
+   "sb2",
+   "6 variables · 3 set, 3 computed",
+   ""
+  ],
+  [
+   "g1_0",
+   "Absolute performance error",
+   "g1",
+   "set here",
+   ""
+  ],
+  [
+   "g1_1",
+   "Relative performance error",
+   "g1",
+   "set here",
+   ""
+  ],
+  [
+   "g1_2",
+   "Absolute knowledge error",
+   "g1",
+   "set here",
+   ""
+  ],
+  [
+   "g1_3",
+   "Absolute measurement error",
+   "g1",
+   "computed",
+   ""
+  ],
+  [
+   "g1_4",
+   "Control error contribution",
+   "g1",
+   "computed",
+   ""
+  ],
+  [
+   "g1_5",
+   "Disturbance torque budget",
+   "g1",
+   "computed",
+   ""
+  ],
+  [
+   "g2",
+   "Attitude control sizing",
+   "sb2",
+   "9 variables · 3 set, 6 computed",
+   ""
+  ],
+  [
+   "g2_0",
+   "Attitude deadband",
+   "g2",
+   "set here",
+   ""
+  ],
+  [
+   "g2_1",
+   "Slew rate capability",
+   "g2",
+   "set here",
+   ""
+  ],
+  [
+   "g2_2",
+   "Magnetic dipole authority",
+   "g2",
+   "set here",
+   ""
+  ],
+  [
+   "g2_3",
+   "Control bandwidth",
+   "g2",
+   "computed",
+   ""
+  ],
+  [
+   "g2_4",
+   "Settling time",
+   "g2",
+   "computed",
+   ""
+  ],
+  [
+   "g2_5",
+   "Control torque authority",
+   "g2",
+   "computed",
+   ""
+  ],
+  [
+   "g2_6",
+   "Momentum storage capacity",
+   "g2",
+   "computed",
+   ""
+  ],
+  [
+   "g2_7",
+   "Momentum dumping frequency",
+   "g2",
+   "computed",
+   ""
+  ],
+  [
+   "g2_8",
+   "Aerodynamic trim angle",
+   "g2",
+   "computed",
+   ""
+  ],
+  [
+   "sb3",
+   "Know where it is",
+   "sub",
+   "navigation and orbit determination",
+   ""
+  ],
+  [
+   "c9",
+   "Navigation sensing",
+   "sb3",
+   "6 variables · 2 set, 4 computed",
+   ""
+  ],
+  [
+   "c9_0",
+   "GNSS solution",
+   "c9",
+   "set here",
+   ""
+  ],
+  [
+   "c9_1",
+   "Accelerometer class",
+   "c9",
+   "set here",
+   ""
+  ],
+  [
+   "c9_2",
+   "Observed acceleration",
+   "c9",
+   "computed",
+   ""
+  ],
+  [
+   "c9_3",
+   "Density estimate",
+   "c9",
+   "computed",
+   ""
+  ],
+  [
+   "c9_4",
+   "Scale factor",
+   "c9",
+   "computed",
+   ""
+  ],
+  [
+   "c9_5",
+   "Unmodelled acceleration",
+   "c9",
+   "computed",
+   ""
+  ],
+  [
+   "g4",
+   "Navigation and orbit determination",
+   "sb3",
+   "9 variables · 3 set, 6 computed",
+   ""
+  ],
+  [
+   "g4_0",
+   "Orbit determination accuracy",
+   "g4",
+   "set here",
+   ""
+  ],
+  [
+   "g4_1",
+   "Navigation filter rate",
+   "g4",
+   "set here",
+   ""
+  ],
+  [
+   "g4_2",
+   "Phasing tolerance",
+   "g4",
+   "set here",
+   ""
+  ],
+  [
+   "g4_3",
+   "Along-track control tolerance",
+   "g4",
+   "computed",
+   ""
+  ],
+  [
+   "g4_4",
+   "Position error growth",
+   "g4",
+   "computed",
+   ""
+  ],
+  [
+   "g4_5",
+   "Ephemeris prediction accuracy",
+   "g4",
+   "computed",
+   ""
+  ],
+  [
+   "g4_6",
+   "Prediction horizon",
+   "g4",
+   "computed",
+   ""
+  ],
+  [
+   "g4_7",
+   "Ephemeris upload cadence",
+   "g4",
+   "computed",
+   ""
+  ],
+  [
+   "g4_8",
+   "Orbit determination cycle",
+   "g4",
+   "computed",
+   ""
+  ],
+  [
+   "sb4",
+   "Power it",
+   "sub",
+   "generation, storage and distribution",
+   ""
+  ],
+  [
+   "c3",
+   "Power",
+   "sb4",
+   "13 variables · 8 set, 5 computed",
+   ""
+  ],
+  [
+   "c3_0",
+   "Cell efficiency",
+   "c3",
+   "set here",
+   ""
+  ],
+  [
+   "c3_1",
+   "Bus power demand",
+   "c3",
+   "set here",
+   ""
+  ],
+  [
+   "c3_2",
+   "Depth of discharge",
+   "c3",
+   "set here",
+   ""
+  ],
+  [
+   "c3_3",
+   "Bus voltage",
+   "c3",
+   "set here",
+   ""
+  ],
+  [
+   "c3_4",
+   "Array degradation",
+   "c3",
+   "set here",
+   ""
+  ],
+  [
+   "c3_5",
+   "SADA angle range",
+   "c3",
+   "set here",
+   ""
+  ],
+  [
+   "c3_6",
+   "Harness loss",
+   "c3",
+   "set here",
+   ""
+  ],
+  [
+   "c3_7",
+   "Power margin",
+   "c3",
+   "set here",
+   ""
+  ],
+  [
+   "c3_8",
+   "PPU power",
+   "c3",
+   "computed",
+   ""
+  ],
+  [
+   "c3_9",
+   "Electrical power",
+   "c3",
+   "computed",
+   ""
+  ],
+  [
+   "c3_10",
+   "Array area",
+   "c3",
+   "computed",
+   ""
+  ],
+  [
+   "c3_11",
+   "Battery capacity",
+   "c3",
+   "computed",
+   ""
+  ],
+  [
+   "c3_12",
+   "End of life power",
+   "c3",
+   "computed",
+   ""
+  ],
+  [
+   "sb5",
+   "Keep it cool",
+   "sub",
+   "the heat that must go somewhere",
+   ""
+  ],
+  [
+   "c4",
+   "Thermal",
+   "sb5",
+   "11 variables · 4 set, 7 computed",
+   ""
+  ],
+  [
+   "c4_0",
+   "Solar absorptivity",
+   "c4",
+   "set here",
+   ""
+  ],
+  [
+   "c4_1",
+   "Emissivity",
+   "c4",
+   "set here",
+   ""
+  ],
+  [
+   "c4_2",
+   "MLI layer count",
+   "c4",
+   "set here",
+   ""
+  ],
+  [
+   "c4_3",
+   "Equipment temperature limits",
+   "c4",
+   "set here",
+   ""
+  ],
+  [
+   "c4_4",
+   "Internal dissipation",
+   "c4",
+   "computed",
+   ""
+  ],
+  [
+   "c4_5",
+   "Environmental heat load",
+   "c4",
+   "computed",
+   ""
+  ],
+  [
+   "c4_6",
+   "Free-molecular heat flux",
+   "c4",
+   "computed",
+   ""
+  ],
+  [
+   "c4_7",
+   "Alpha over epsilon ratio",
+   "c4",
+   "computed",
+   ""
+  ],
+  [
+   "c4_8",
+   "Radiator area estimate",
+   "c4",
+   "computed",
+   ""
+  ],
+  [
+   "c4_9",
+   "Heater power estimate",
+   "c4",
+   "computed",
+   ""
+  ],
+  [
+   "c4_10",
+   "Thermal mass",
+   "c4",
+   "computed",
+   ""
+  ],
+  [
+   "sb6",
+   "Command and downlink it",
+   "sub",
+   "the computer and the link to the ground",
+   ""
+  ],
+  [
+   "c6",
+   "Avionics and software",
+   "sb6",
+   "3 variables · 3 set, 0 computed",
+   ""
+  ],
+  [
+   "c6_0",
+   "Processor throughput",
+   "c6",
+   "set here",
+   ""
+  ],
+  [
+   "c6_1",
+   "Memory size",
+   "c6",
+   "set here",
+   ""
+  ],
+  [
+   "c6_2",
+   "Clock distribution accuracy",
+   "c6",
+   "set here",
+   ""
+  ],
+  [
+   "c7",
+   "TT&C and downlink",
+   "sb6",
+   "8 variables · 4 set, 4 computed",
+   ""
+  ],
+  [
+   "c7_0",
+   "Telemetry rate",
+   "c7",
+   "set here",
+   ""
+  ],
+  [
+   "c7_1",
+   "TT&C transmit power",
+   "c7",
+   "set here",
+   ""
+  ],
+  [
+   "c7_2",
+   "TT&C frequency band",
+   "c7",
+   "set here",
+   ""
+  ],
+  [
+   "c7_3",
+   "TT&C antenna gain",
+   "c7",
+   "set here",
+   ""
+  ],
+  [
+   "c7_4",
+   "Downlink rate",
+   "c7",
+   "computed",
+   ""
+  ],
+  [
+   "c7_5",
+   "Data volume per orbit",
+   "c7",
+   "computed",
+   ""
+  ],
+  [
+   "c7_6",
+   "On-board storage",
+   "c7",
+   "computed",
+   ""
+  ],
+  [
+   "c7_7",
+   "TT&C link margin",
+   "c7",
+   "computed",
+   ""
+  ],
+  [
+   "sb7",
+   "Carry the payloads",
+   "sub",
+   "the interface every instrument sees",
+   ""
+  ],
+  [
+   "c10",
+   "Payload interface",
+   "sb7",
+   "12 variables · 11 set, 1 computed",
+   ""
+  ],
+  [
+   "c10_0",
+   "Payload mass",
+   "c10",
+   "set here",
+   ""
+  ],
+  [
+   "c10_1",
+   "Peak payload power",
+   "c10",
+   "set here",
+   ""
+  ],
+  [
+   "c10_2",
+   "Average payload power",
+   "c10",
+   "set here",
+   ""
+  ],
+  [
+   "c10_3",
+   "Payload data rate",
+   "c10",
+   "set here",
+   ""
+  ],
+  [
+   "c10_4",
+   "Payload dissipation",
+   "c10",
+   "set here",
+   ""
+  ],
+  [
+   "c10_5",
+   "Payload envelope",
+   "c10",
+   "set here",
+   ""
+  ],
+  [
+   "c10_6",
+   "Pointing requirement",
+   "c10",
+   "set here",
+   ""
+  ],
+  [
+   "c10_7",
+   "Pointing knowledge requirement",
+   "c10",
+   "set here",
+   ""
+  ],
+  [
+   "c10_8",
+   "Alignment stability",
+   "c10",
+   "set here",
+   ""
+  ],
+  [
+   "c10_9",
+   "Operating temperature range",
+   "c10",
+   "set here",
+   ""
+  ],
+  [
+   "c10_10",
+   "Field of view keep-out",
+   "c10",
+   "set here",
+   ""
+  ],
+  [
+   "c10_11",
+   "Payload duty cycle",
+   "c10",
+   "computed",
+   ""
+  ],
+  [
+   "srv",
+   "Service payloads",
+   "prg",
+   "what actually delivers each application",
+   ""
+  ],
+  [
+   "m6",
+   "EO optical service",
+   "srv",
+   "7 variables · 3 set, 4 computed",
+   ""
+  ],
+  [
+   "m6_0",
+   "Aperture diameter",
+   "m6",
+   "set here",
+   ""
+  ],
+  [
+   "m6_1",
+   "Detector IFOV",
+   "m6",
+   "set here",
+   ""
+  ],
+  [
+   "m6_2",
+   "Integration time",
+   "m6",
+   "set here",
+   ""
+  ],
+  [
+   "m6_3",
+   "Ground sample distance",
+   "m6",
+   "computed",
+   ""
+  ],
+  [
+   "m6_4",
+   "Swath width",
+   "m6",
+   "computed",
+   ""
+  ],
+  [
+   "m6_5",
+   "Motion smear",
+   "m6",
+   "computed",
+   ""
+  ],
+  [
+   "m6_6",
+   "Sun elevation at target",
+   "m6",
+   "computed",
+   ""
+  ],
+  [
+   "m7",
+   "RF geolocation service",
+   "srv",
+   "5 variables · 2 set, 3 computed",
+   ""
+  ],
+  [
+   "m7_0",
+   "Angle of arrival accuracy",
+   "m7",
+   "set here",
+   ""
+  ],
+  [
+   "m7_1",
+   "Timing synchronisation",
+   "m7",
+   "set here",
+   ""
+  ],
+  [
+   "m7_2",
+   "Cluster baseline",
+   "m7",
+   "computed",
+   ""
+  ],
+  [
+   "m7_3",
+   "Dwell time",
+   "m7",
+   "computed",
+   ""
+  ],
+  [
+   "m7_4",
+   "Geolocation CEP90",
+   "m7",
+   "computed",
+   ""
+  ],
+  [
+   "m8",
+   "Comms service",
+   "srv",
+   "12 variables · 4 set, 8 computed",
+   ""
+  ],
+  [
+   "m8_0",
+   "Service carrier frequency",
+   "m8",
+   "set here",
+   ""
+  ],
+  [
+   "m8_1",
+   "Service transmit EIRP",
+   "m8",
+   "set here",
+   ""
+  ],
+  [
+   "m8_2",
+   "Service receive G/T",
+   "m8",
+   "set here",
+   ""
+  ],
+  [
+   "m8_3",
+   "Number of beams",
+   "m8",
+   "set here",
+   ""
+  ],
+  [
+   "m8_4",
+   "Slant range",
+   "m8",
+   "computed",
+   ""
+  ],
+  [
+   "m8_5",
+   "Antenna beamwidth",
+   "m8",
+   "computed",
+   ""
+  ],
+  [
+   "m8_6",
+   "Beam footprint diameter",
+   "m8",
+   "computed",
+   ""
+  ],
+  [
+   "m8_7",
+   "Service link margin",
+   "m8",
+   "computed",
+   ""
+  ],
+  [
+   "m8_8",
+   "User throughput",
+   "m8",
+   "computed",
+   ""
+  ],
+  [
+   "m8_9",
+   "Devices per beam",
+   "m8",
+   "computed",
+   ""
+  ],
+  [
+   "m8_10",
+   "Handover rate",
+   "m8",
+   "computed",
+   ""
+  ],
+  [
+   "m8_11",
+   "Doppler shift",
+   "m8",
+   "computed",
+   ""
+  ],
+  [
+   "m9",
+   "PNT service",
+   "srv",
+   "3 variables · 1 set, 2 computed",
+   ""
+  ],
+  [
+   "m9_0",
+   "Clock stability",
+   "m9",
+   "set here",
+   ""
+  ],
+  [
+   "m9_1",
+   "Time transfer accuracy",
+   "m9",
+   "computed",
+   ""
+  ],
+  [
+   "m9_2",
+   "Geometric dilution",
+   "m9",
+   "computed",
+   ""
+  ]
+ ],
+ "ED_SYS": [
+  [
+   "m2",
+   "a1a",
+   "altitude, inclination, LTAN, eccentricity"
+  ],
+  [
+   "m3",
+   "a1a",
+   "planes, sats per plane, phasing, RAAN spread"
+  ],
+  [
+   "m8",
+   "a1a",
+   "carrier frequency, EIRP, G/T, number of beams"
+  ],
+  [
+   "m4",
+   "a1a",
+   "ground station network and disposal policy"
+  ],
+  [
+   "m6",
+   "a1a",
+   "aperture and detector set dwell time"
+  ],
+  [
+   "m9",
+   "a1a",
+   "clock, time sync and AOA set the geolocation method"
+  ],
+  [
+   "m2",
+   "a2a",
+   "altitude, inclination, LTAN, eccentricity"
+  ],
+  [
+   "m3",
+   "a2a",
+   "planes, sats per plane, phasing, RAAN spread"
+  ],
+  [
+   "m6",
+   "a2a",
+   "aperture, IFOV, integration time"
+  ],
+  [
+   "m7",
+   "a2a",
+   "angle-of-arrival accuracy and timing sync"
+  ],
+  [
+   "c3",
+   "a2a",
+   "array power and energy storage"
+  ],
+  [
+   "c8",
+   "a2a",
+   "pointing accuracy, knowledge and agility"
+  ],
+  [
+   "c4",
+   "a2a",
+   "thermal capacity"
+  ],
+  [
+   "c1",
+   "a2a",
+   "jitter and platform agility"
+  ],
+  [
+   "m4",
+   "a2a",
+   "ground station network and disposal policy"
+  ],
+  [
+   "m8",
+   "a2a",
+   "EIRP, G/T and carrier frequency set the link margin allocation"
+  ],
+  [
+   "m9",
+   "a2a",
+   "clock, time sync and AOA set the geolocation method"
+  ],
+  [
+   "m2",
+   "a3a",
+   "altitude, inclination, LTAN, eccentricity"
+  ],
+  [
+   "m3",
+   "a3a",
+   "planes, sats per plane, phasing, RAAN spread"
+  ],
+  [
+   "m9",
+   "a3a",
+   "clock stability and time transfer"
+  ],
+  [
+   "m8",
+   "a3a",
+   "EIRP, G/T and carrier frequency set the link margin allocation"
+  ],
+  [
+   "m6",
+   "a3a",
+   "aperture and detector set dwell time"
+  ],
+  [
+   "c10",
+   "a1a",
+   "payload power draw, data rate and aperture area"
+  ],
+  [
+   "c10",
+   "a2a",
+   "payload power draw, data rate and aperture area"
+  ],
+  [
+   "c3",
+   "a3a",
+   "array power and energy storage"
+  ],
+  [
+   "c8",
+   "a3a",
+   "pointing accuracy, knowledge and agility"
+  ],
+  [
+   "c4",
+   "a3a",
+   "thermal capacity"
+  ],
+  [
+   "c1",
+   "a3a",
+   "jitter and platform agility"
+  ],
+  [
+   "m4",
+   "a3a",
+   "ground station network and disposal policy"
+  ],
+  [
+   "m7",
+   "a1a",
+   "angle-of-arrival accuracy and timing sync"
+  ],
+  [
+   "m7",
+   "a3a",
+   "angle-of-arrival accuracy and timing sync"
+  ],
+  [
+   "c10",
+   "a3a",
+   "payload power draw, data rate and aperture area"
+  ],
+  [
+   "c3",
+   "a1a",
+   "array power and energy storage"
+  ],
+  [
+   "c8",
+   "a1a",
+   "pointing accuracy, knowledge and agility"
+  ],
+  [
+   "c4",
+   "a1a",
+   "thermal capacity"
+  ],
+  [
+   "c1",
+   "a1a",
+   "jitter and platform agility"
+  ],
+  [
+   "m1",
+   "m2",
+   "coverage band, revisit and access gap drive the orbit"
+  ],
+  [
+   "m2",
+   "m3",
+   "the orbit the constellation is built from"
+  ],
+  [
+   "m2",
+   "m5",
+   "altitude and epoch fix the environment"
+  ],
+  [
+   "m3",
+   "m4",
+   "satellites per launch and replenishment"
+  ],
+  [
+   "m5",
+   "c1",
+   "ρ and thermospheric wind — the drag input"
+  ],
+  [
+   "m5",
+   "c2",
+   "ρ · V², the drag the thruster must beat"
+  ],
+  [
+   "m5",
+   "c4",
+   "free-molecular heat flux"
+  ],
+  [
+   "m5",
+   "g3",
+   "density variability — the re-plan trigger"
+  ],
+  [
+   "m5",
+   "g4",
+   "unmodelled acceleration to be estimated"
+  ],
+  [
+   "c1",
+   "c2",
+   "drag to be overcome, and the intake capture area"
+  ],
+  [
+   "c1",
+   "c5",
+   "launch loads and the load path"
+  ],
+  [
+   "c1",
+   "g2",
+   "aero torque and centre-of-pressure offset"
+  ],
+  [
+   "c1",
+   "c11",
+   "ram cross-section available to share"
+  ],
+  [
+   "c2",
+   "c3",
+   "PPU power demand"
+  ],
+  [
+   "c3",
+   "c4",
+   "waste heat to be rejected"
+  ],
+  [
+   "c3",
+   "c11",
+   "power available to share"
+  ],
+  [
+   "c3",
+   "g2",
+   "power available to the actuators"
+  ],
+  [
+   "c4",
+   "c11",
+   "dissipation available to share"
+  ],
+  [
+   "c5",
+   "c10",
+   "accommodation volume for the instruments"
+  ],
+  [
+   "c6",
+   "g1",
+   "processor throughput for the control loop"
+  ],
+  [
+   "c7",
+   "c11",
+   "downlink available to share"
+  ],
+  [
+   "c7",
+   "m8",
+   "downlink rate and link margin"
+  ],
+  [
+   "c8",
+   "g1",
+   "sensor and actuator error contributions"
+  ],
+  [
+   "c8",
+   "g2",
+   "dipole authority and wheel capacity"
+  ],
+  [
+   "c9",
+   "g4",
+   "GNSS solution and accelerometer class"
+  ],
+  [
+   "c10",
+   "m6",
+   "payload interface for the optical service"
+  ],
+  [
+   "c10",
+   "m7",
+   "payload interface for the RF service"
+  ],
+  [
+   "c10",
+   "m8",
+   "payload interface for the comms service"
+  ],
+  [
+   "c10",
+   "m9",
+   "payload interface for the PNT service"
+  ],
+  [
+   "c11",
+   "m6",
+   "what the shared bus allows the optics"
+  ],
+  [
+   "c11",
+   "m8",
+   "what the shared bus allows the link"
+  ],
+  [
+   "g1",
+   "c10",
+   "pointing delivered against pointing required"
+  ],
+  [
+   "g2",
+   "g1",
+   "control error contribution"
+  ],
+  [
+   "g3",
+   "c2",
+   "station-keeping Δv and thrust duty limit"
+  ],
+  [
+   "g4",
+   "g3",
+   "along-track tolerance and prediction horizon"
+  ],
+  [
+   "m2",
+   "m6",
+   "altitude sets ground sample distance and swath"
+  ],
+  [
+   "m2",
+   "m8",
+   "altitude sets slant range and Doppler"
+  ],
+  [
+   "m3",
+   "m7",
+   "cluster baseline from the constellation geometry"
+  ],
+  [
+   "m3",
+   "m9",
+   "planes and phasing set the geometric dilution"
+  ],
+  [
+   "a1a",
+   "a1k",
+   "achieved against required — the comms design closes only if every target is met"
+  ],
+  [
+   "a2a",
+   "a2k",
+   "achieved against required — the EO / ISR design closes only if every target is met"
+  ],
+  [
+   "a3a",
+   "a3k",
+   "achieved against required — the PNT design closes only if every target is met"
+  ]
+ ],
+ "VE": [
+  [
+   "m2_0",
+   "m2_6",
+   "circular speed at that altitude"
+  ],
+  [
+   "m2_0",
+   "m2_7",
+   "period from the semi-major axis"
+  ],
+  [
+   "m2_0",
+   "m2_9",
+   "beta angle over the year"
+  ],
+  [
+   "m2_1",
+   "m2_9",
+   "beta angle over the year"
+  ],
+  [
+   "m2_2",
+   "m2_9",
+   "beta angle over the year"
+  ],
+  [
+   "m2_0",
+   "m2_10",
+   "J2 precession"
+  ],
+  [
+   "m2_1",
+   "m2_10",
+   "J2 precession"
+  ],
+  [
+   "m2_0",
+   "m2_5",
+   "what the detector can reach"
+  ],
+  [
+   "m6_1",
+   "m2_5",
+   "what the detector can reach"
+  ],
+  [
+   "m2_0",
+   "m8_4",
+   "geometry at the mask"
+  ],
+  [
+   "m2_4",
+   "m8_4",
+   "geometry at the mask"
+  ],
+  [
+   "m2_0",
+   "m8_11",
+   "range rate times frequency"
+  ],
+  [
+   "m8_0",
+   "m8_11",
+   "range rate times frequency"
+  ],
+  [
+   "m8_1",
+   "m8_7",
+   "EIRP, G/T and path loss"
+  ],
+  [
+   "m8_2",
+   "m8_7",
+   "EIRP, G/T and path loss"
+  ],
+  [
+   "m8_4",
+   "m8_7",
+   "EIRP, G/T and path loss"
+  ],
+  [
+   "m2_0",
+   "m8_6",
+   "beamwidth projected to the ground"
+  ],
+  [
+   "m8_5",
+   "m8_6",
+   "beamwidth projected to the ground"
+  ],
+  [
+   "m2_0",
+   "m6_3",
+   "IFOV projected to the ground"
+  ],
+  [
+   "m6_1",
+   "m6_3",
+   "IFOV projected to the ground"
+  ],
+  [
+   "m2_0",
+   "m6_4",
+   "field of view at that altitude"
+  ],
+  [
+   "m6_1",
+   "m6_4",
+   "field of view at that altitude"
+  ],
+  [
+   "m6_2",
+   "m6_5",
+   "ground motion during integration"
+  ],
+  [
+   "m2_6",
+   "m6_5",
+   "ground motion during integration"
+  ],
+  [
+   "m2_0",
+   "m7_3",
+   "time the target stays in view"
+  ],
+  [
+   "m6_0",
+   "m7_3",
+   "time the target stays in view"
+  ],
+  [
+   "m3_10",
+   "m7_2",
+   "separation between the cluster members"
+  ],
+  [
+   "m3_2",
+   "m9_2",
+   "geometry of the visible set"
+  ],
+  [
+   "m3_3",
+   "m9_2",
+   "geometry of the visible set"
+  ],
+  [
+   "m2_0",
+   "m4_4",
+   "arc above the mask"
+  ],
+  [
+   "m2_4",
+   "m4_4",
+   "arc above the mask"
+  ],
+  [
+   "m2_0",
+   "m4_5",
+   "ground track repeat"
+  ],
+  [
+   "m2_1",
+   "m4_5",
+   "ground track repeat"
+  ],
+  [
+   "m4_4",
+   "m4_6",
+   "duration times count"
+  ],
+  [
+   "m4_5",
+   "m4_6",
+   "duration times count"
+  ],
+  [
+   "c1_1",
+   "c1_8",
+   "ram cross-section of the chosen shape"
+  ],
+  [
+   "c1_2",
+   "c1_8",
+   "ram cross-section of the chosen shape"
+  ],
+  [
+   "c1_1",
+   "c1_9",
+   "free-molecular Cd for that surface"
+  ],
+  [
+   "c1_4",
+   "c1_9",
+   "free-molecular Cd for that surface"
+  ],
+  [
+   "c1_0",
+   "c1_10",
+   "m / (Cd A)"
+  ],
+  [
+   "c1_8",
+   "c1_10",
+   "m / (Cd A)"
+  ],
+  [
+   "c1_9",
+   "c1_10",
+   "m / (Cd A)"
+  ],
+  [
+   "m2_6",
+   "c1_11",
+   "orbital speed against the wind"
+  ],
+  [
+   "m5_4",
+   "c1_11",
+   "orbital speed against the wind"
+  ],
+  [
+   "m5_3",
+   "c1_12",
+   "½ρV² / B"
+  ],
+  [
+   "c1_11",
+   "c1_12",
+   "½ρV² / B"
+  ],
+  [
+   "c1_10",
+   "c1_12",
+   "½ρV² / B"
+  ],
+  [
+   "m5_5",
+   "c1_18",
+   "fluence times yield"
+  ],
+  [
+   "c1_5",
+   "c1_18",
+   "fluence times yield"
+  ],
+  [
+   "c2_8",
+   "c2_14",
+   "margin over the drag it must beat"
+  ],
+  [
+   "c1_12",
+   "c2_14",
+   "margin over the drag it must beat"
+  ],
+  [
+   "c2_9",
+   "c2_10",
+   "the rocket equation"
+  ],
+  [
+   "c2_0",
+   "c2_10",
+   "the rocket equation"
+  ],
+  [
+   "c1_10",
+   "c2_11",
+   "how fast it falls unpowered"
+  ],
+  [
+   "m5_3",
+   "c2_11",
+   "how fast it falls unpowered"
+  ],
+  [
+   "c2_11",
+   "c2_12",
+   "altitude divided by decay"
+  ],
+  [
+   "m2_0",
+   "c2_12",
+   "altitude divided by decay"
+  ],
+  [
+   "c2_8",
+   "c3_8",
+   "what the thruster draws"
+  ],
+  [
+   "c2_3",
+   "c3_8",
+   "what the thruster draws"
+  ],
+  [
+   "c3_8",
+   "c3_9",
+   "total electrical demand"
+  ],
+  [
+   "c3_1",
+   "c3_9",
+   "total electrical demand"
+  ],
+  [
+   "c3_9",
+   "c3_10",
+   "power divided by cell output"
+  ],
+  [
+   "c3_0",
+   "c3_10",
+   "power divided by cell output"
+  ],
+  [
+   "c3_1",
+   "c3_11",
+   "eclipse energy at allowed DoD"
+  ],
+  [
+   "m2_9",
+   "c3_11",
+   "eclipse energy at allowed DoD"
+  ],
+  [
+   "c3_2",
+   "c3_11",
+   "eclipse energy at allowed DoD"
+  ],
+  [
+   "m5_3",
+   "c4_6",
+   "½ρV³ at the ram face"
+  ],
+  [
+   "c1_11",
+   "c4_6",
+   "½ρV³ at the ram face"
+  ],
+  [
+   "c4_4",
+   "c4_8",
+   "heat to reject at that emissivity"
+  ],
+  [
+   "c4_1",
+   "c4_8",
+   "heat to reject at that emissivity"
+  ],
+  [
+   "c1_12",
+   "c8_5",
+   "drag force times the offset"
+  ],
+  [
+   "c1_13",
+   "c8_5",
+   "drag force times the offset"
+  ],
+  [
+   "c1_16",
+   "c8_6",
+   "inertia difference in the gradient"
+  ],
+  [
+   "m2_0",
+   "c8_6",
+   "inertia difference in the gradient"
+  ],
+  [
+   "c7_0",
+   "c7_5",
+   "rate times period"
+  ],
+  [
+   "m2_7",
+   "c7_5",
+   "rate times period"
+  ],
+  [
+   "c7_1",
+   "c7_7",
+   "power, gain and path loss"
+  ],
+  [
+   "c7_3",
+   "c7_7",
+   "power, gain and path loss"
+  ],
+  [
+   "m8_4",
+   "c7_7",
+   "power, gain and path loss"
+  ],
+  [
+   "g2_2",
+   "g2_5",
+   "dipole crossed with the field"
+  ],
+  [
+   "c8_4",
+   "g2_5",
+   "dipole crossed with the field"
+  ],
+  [
+   "c8_0",
+   "g2_6",
+   "wheels times their limit"
+  ],
+  [
+   "c8_1",
+   "g2_6",
+   "wheels times their limit"
+  ],
+  [
+   "c2_11",
+   "g3_4",
+   "decay made up over the life"
+  ],
+  [
+   "m1_1",
+   "g3_4",
+   "decay made up over the life"
+  ],
+  [
+   "c9_5",
+   "g4_4",
+   "unmodelled acceleration integrated"
+  ],
+  [
+   "g4_1",
+   "g4_4",
+   "unmodelled acceleration integrated"
+  ],
+  [
+   "c10_0",
+   "c11_2",
+   "payload against dry mass"
+  ],
+  [
+   "c1_0",
+   "c11_2",
+   "payload against dry mass"
+  ],
+  [
+   "c3_9",
+   "c11_4",
+   "what is left after the bus"
+  ],
+  [
+   "c10_1",
+   "c11_4",
+   "what is left after the bus"
+  ],
+  [
+   "c7_4",
+   "c11_5",
+   "downlink against what is generated"
+  ],
+  [
+   "c10_3",
+   "c11_5",
+   "downlink against what is generated"
+  ],
+  [
+   "c4_8",
+   "c11_6",
+   "rejection against generation"
+  ],
+  [
+   "c10_4",
+   "c11_6",
+   "rejection against generation"
+  ]
+ ],
+ "KE": [
+  [
+   "m2_0",
+   "a1a_8",
+   "sets fold"
+  ],
+  [
+   "m2_0",
+   "a2a_12",
+   "sets fold"
+  ],
+  [
+   "m2_0",
+   "a3a_11",
+   "sets fold"
+  ],
+  [
+   "m2_1",
+   "a1a_8",
+   "sets fold"
+  ],
+  [
+   "m2_1",
+   "a2a_12",
+   "sets fold"
+  ],
+  [
+   "m2_1",
+   "a3a_11",
+   "sets fold"
+  ],
+  [
+   "m3_4",
+   "a1a_8",
+   "sets fold"
+  ],
+  [
+   "m3_4",
+   "a2a_12",
+   "sets fold"
+  ],
+  [
+   "m3_4",
+   "a3a_11",
+   "sets fold"
+  ],
+  [
+   "m3_2",
+   "a1a_8",
+   "sets fold"
+  ],
+  [
+   "m3_2",
+   "a2a_12",
+   "sets fold"
+  ],
+  [
+   "m3_2",
+   "a3a_11",
+   "sets fold"
+  ],
+  [
+   "m3_5",
+   "a1a_8",
+   "sets fold"
+  ],
+  [
+   "m3_5",
+   "a2a_12",
+   "sets fold"
+  ],
+  [
+   "m3_5",
+   "a3a_11",
+   "sets fold"
+  ],
+  [
+   "m3_3",
+   "a1a_8",
+   "sets fold"
+  ],
+  [
+   "m3_3",
+   "a2a_12",
+   "sets fold"
+  ],
+  [
+   "m3_3",
+   "a3a_11",
+   "sets fold"
+  ],
+  [
+   "m3_1",
+   "a1a_8",
+   "sets fold"
+  ],
+  [
+   "m3_1",
+   "a2a_12",
+   "sets fold"
+  ],
+  [
+   "m3_1",
+   "a3a_11",
+   "sets fold"
+  ],
+  [
+   "m2_4",
+   "a1a_8",
+   "sets fold"
+  ],
+  [
+   "m2_4",
+   "a2a_12",
+   "sets fold"
+  ],
+  [
+   "m2_4",
+   "a3a_11",
+   "sets fold"
+  ],
+  [
+   "m2_0",
+   "a1a_9",
+   "sets coverage"
+  ],
+  [
+   "m2_0",
+   "a2a_13",
+   "sets coverage"
+  ],
+  [
+   "m2_0",
+   "a3a_12",
+   "sets coverage"
+  ],
+  [
+   "m2_1",
+   "a1a_9",
+   "sets coverage"
+  ],
+  [
+   "m2_1",
+   "a2a_13",
+   "sets coverage"
+  ],
+  [
+   "m2_1",
+   "a3a_12",
+   "sets coverage"
+  ],
+  [
+   "m3_2",
+   "a1a_9",
+   "sets coverage"
+  ],
+  [
+   "m3_2",
+   "a2a_13",
+   "sets coverage"
+  ],
+  [
+   "m3_2",
+   "a3a_12",
+   "sets coverage"
+  ],
+  [
+   "m3_5",
+   "a1a_9",
+   "sets coverage"
+  ],
+  [
+   "m3_5",
+   "a2a_13",
+   "sets coverage"
+  ],
+  [
+   "m3_5",
+   "a3a_12",
+   "sets coverage"
+  ],
+  [
+   "m3_1",
+   "a1a_9",
+   "sets coverage"
+  ],
+  [
+   "m3_1",
+   "a2a_13",
+   "sets coverage"
+  ],
+  [
+   "m3_1",
+   "a3a_12",
+   "sets coverage"
+  ],
+  [
+   "m2_0",
+   "a1a_5",
+   "sets access gap"
+  ],
+  [
+   "m2_0",
+   "a3a_8",
+   "sets access gap"
+  ],
+  [
+   "m3_2",
+   "a1a_5",
+   "sets access gap"
+  ],
+  [
+   "m3_2",
+   "a3a_8",
+   "sets access gap"
+  ],
+  [
+   "m3_3",
+   "a1a_5",
+   "sets access gap"
+  ],
+  [
+   "m3_3",
+   "a3a_8",
+   "sets access gap"
+  ],
+  [
+   "m2_4",
+   "a1a_5",
+   "sets access gap"
+  ],
+  [
+   "m2_4",
+   "a3a_8",
+   "sets access gap"
+  ],
+  [
+   "m2_0",
+   "a2a_10",
+   "sets revisit"
+  ],
+  [
+   "m2_0",
+   "a3a_6",
+   "sets revisit"
+  ],
+  [
+   "m2_3",
+   "a2a_10",
+   "sets revisit"
+  ],
+  [
+   "m2_3",
+   "a3a_6",
+   "sets revisit"
+  ],
+  [
+   "m2_1",
+   "a2a_10",
+   "sets revisit"
+  ],
+  [
+   "m2_1",
+   "a3a_6",
+   "sets revisit"
+  ],
+  [
+   "m2_2",
+   "a2a_10",
+   "sets revisit"
+  ],
+  [
+   "m2_2",
+   "a3a_6",
+   "sets revisit"
+  ],
+  [
+   "m2_8",
+   "a2a_10",
+   "sets revisit"
+  ],
+  [
+   "m2_8",
+   "a3a_6",
+   "sets revisit"
+  ],
+  [
+   "m3_3",
+   "a2a_10",
+   "sets revisit"
+  ],
+  [
+   "m3_3",
+   "a3a_6",
+   "sets revisit"
+  ],
+  [
+   "m3_1",
+   "a2a_10",
+   "sets revisit"
+  ],
+  [
+   "m3_1",
+   "a3a_6",
+   "sets revisit"
+  ],
+  [
+   "g2_1",
+   "a2a_10",
+   "sets revisit"
+  ],
+  [
+   "g2_1",
+   "a3a_6",
+   "sets revisit"
+  ],
+  [
+   "m2_4",
+   "a2a_10",
+   "sets revisit"
+  ],
+  [
+   "m2_4",
+   "a3a_6",
+   "sets revisit"
+  ],
+  [
+   "m2_5",
+   "a2a_10",
+   "sets revisit"
+  ],
+  [
+   "m2_5",
+   "a3a_6",
+   "sets revisit"
+  ],
+  [
+   "m2_0",
+   "a1a_3",
+   "sets contact time"
+  ],
+  [
+   "m2_0",
+   "a2a_8",
+   "sets contact time"
+  ],
+  [
+   "m2_1",
+   "a1a_3",
+   "sets contact time"
+  ],
+  [
+   "m2_1",
+   "a2a_8",
+   "sets contact time"
+  ],
+  [
+   "m3_2",
+   "a1a_3",
+   "sets contact time"
+  ],
+  [
+   "m3_2",
+   "a2a_8",
+   "sets contact time"
+  ],
+  [
+   "m3_3",
+   "a1a_3",
+   "sets contact time"
+  ],
+  [
+   "m3_3",
+   "a2a_8",
+   "sets contact time"
+  ],
+  [
+   "m4_2",
+   "a1a_3",
+   "sets contact time"
+  ],
+  [
+   "m4_2",
+   "a2a_8",
+   "sets contact time"
+  ],
+  [
+   "m2_4",
+   "a1a_3",
+   "sets contact time"
+  ],
+  [
+   "m2_4",
+   "a2a_8",
+   "sets contact time"
+  ],
+  [
+   "m2_0",
+   "a1a_12",
+   "sets conjunction rate"
+  ],
+  [
+   "m2_0",
+   "a2a_16",
+   "sets conjunction rate"
+  ],
+  [
+   "m2_0",
+   "a3a_15",
+   "sets conjunction rate"
+  ],
+  [
+   "m3_4",
+   "a1a_12",
+   "sets conjunction rate"
+  ],
+  [
+   "m3_4",
+   "a2a_16",
+   "sets conjunction rate"
+  ],
+  [
+   "m3_4",
+   "a3a_15",
+   "sets conjunction rate"
+  ],
+  [
+   "m3_2",
+   "a1a_12",
+   "sets conjunction rate"
+  ],
+  [
+   "m3_2",
+   "a2a_16",
+   "sets conjunction rate"
+  ],
+  [
+   "m3_2",
+   "a3a_15",
+   "sets conjunction rate"
+  ],
+  [
+   "m3_3",
+   "a1a_12",
+   "sets conjunction rate"
+  ],
+  [
+   "m3_3",
+   "a2a_16",
+   "sets conjunction rate"
+  ],
+  [
+   "m3_3",
+   "a3a_15",
+   "sets conjunction rate"
+  ],
+  [
+   "m3_1",
+   "a1a_12",
+   "sets conjunction rate"
+  ],
+  [
+   "m3_1",
+   "a2a_16",
+   "sets conjunction rate"
+  ],
+  [
+   "m3_1",
+   "a3a_15",
+   "sets conjunction rate"
+  ],
+  [
+   "c2_8",
+   "a1a_13",
+   "sets availability"
+  ],
+  [
+   "c2_8",
+   "a2a_17",
+   "sets availability"
+  ],
+  [
+   "c2_8",
+   "a3a_16",
+   "sets availability"
+  ],
+  [
+   "m4_2",
+   "a1a_13",
+   "sets availability"
+  ],
+  [
+   "m4_2",
+   "a2a_17",
+   "sets availability"
+  ],
+  [
+   "m4_2",
+   "a3a_16",
+   "sets availability"
+  ],
+  [
+   "m3_4",
+   "a1a_0",
+   "sets handover rate"
+  ],
+  [
+   "m3_2",
+   "a1a_0",
+   "sets handover rate"
+  ],
+  [
+   "m2_4",
+   "a1a_0",
+   "sets handover rate"
+  ],
+  [
+   "m3_10",
+   "a1a_6",
+   "sets latency"
+  ],
+  [
+   "m3_10",
+   "a3a_9",
+   "sets latency"
+  ],
+  [
+   "m3_5",
+   "a1a_6",
+   "sets latency"
+  ],
+  [
+   "m3_5",
+   "a3a_9",
+   "sets latency"
+  ],
+  [
+   "m3_3",
+   "a1a_6",
+   "sets latency"
+  ],
+  [
+   "m3_3",
+   "a3a_9",
+   "sets latency"
+  ],
+  [
+   "m4_2",
+   "a1a_6",
+   "sets latency"
+  ],
+  [
+   "m4_2",
+   "a3a_9",
+   "sets latency"
+  ],
+  [
+   "m3_10",
+   "a1a_7",
+   "sets time transfer"
+  ],
+  [
+   "m3_10",
+   "a3a_10",
+   "sets time transfer"
+  ],
+  [
+   "m9_0",
+   "a1a_7",
+   "sets time transfer"
+  ],
+  [
+   "m9_0",
+   "a3a_10",
+   "sets time transfer"
+  ],
+  [
+   "m7_1",
+   "a1a_7",
+   "sets time transfer"
+  ],
+  [
+   "m7_1",
+   "a3a_10",
+   "sets time transfer"
+  ],
+  [
+   "m8_3",
+   "a1a_1",
+   "sets throughput"
+  ],
+  [
+   "m8_5",
+   "a1a_1",
+   "sets throughput"
+  ],
+  [
+   "c10_1",
+   "a1a_1",
+   "sets throughput"
+  ],
+  [
+   "c3_9",
+   "a1a_1",
+   "sets throughput"
+  ],
+  [
+   "m8_3",
+   "a1a_2",
+   "sets devices per beam"
+  ],
+  [
+   "m8_5",
+   "a1a_2",
+   "sets devices per beam"
+  ],
+  [
+   "m2_0",
+   "a1a_10",
+   "sets link margin"
+  ],
+  [
+   "m2_0",
+   "a2a_14",
+   "sets link margin"
+  ],
+  [
+   "m2_0",
+   "a3a_13",
+   "sets link margin"
+  ],
+  [
+   "m8_0",
+   "a1a_10",
+   "sets link margin"
+  ],
+  [
+   "m8_0",
+   "a2a_14",
+   "sets link margin"
+  ],
+  [
+   "m8_0",
+   "a3a_13",
+   "sets link margin"
+  ],
+  [
+   "m8_1",
+   "a1a_10",
+   "sets link margin"
+  ],
+  [
+   "m8_1",
+   "a2a_14",
+   "sets link margin"
+  ],
+  [
+   "m8_1",
+   "a3a_13",
+   "sets link margin"
+  ],
+  [
+   "m8_2",
+   "a1a_10",
+   "sets link margin"
+  ],
+  [
+   "m8_2",
+   "a2a_14",
+   "sets link margin"
+  ],
+  [
+   "m8_2",
+   "a3a_13",
+   "sets link margin"
+  ],
+  [
+   "c10_6",
+   "a1a_10",
+   "sets link margin"
+  ],
+  [
+   "c10_6",
+   "a2a_14",
+   "sets link margin"
+  ],
+  [
+   "c10_6",
+   "a3a_13",
+   "sets link margin"
+  ],
+  [
+   "m2_4",
+   "a1a_10",
+   "sets link margin"
+  ],
+  [
+   "m2_4",
+   "a2a_14",
+   "sets link margin"
+  ],
+  [
+   "m2_4",
+   "a3a_13",
+   "sets link margin"
+  ],
+  [
+   "m3_10",
+   "a1a_11",
+   "sets downlink data volume"
+  ],
+  [
+   "m3_10",
+   "a2a_15",
+   "sets downlink data volume"
+  ],
+  [
+   "m3_10",
+   "a3a_14",
+   "sets downlink data volume"
+  ],
+  [
+   "c7_6",
+   "a1a_11",
+   "sets downlink data volume"
+  ],
+  [
+   "c7_6",
+   "a2a_15",
+   "sets downlink data volume"
+  ],
+  [
+   "c7_6",
+   "a3a_14",
+   "sets downlink data volume"
+  ],
+  [
+   "c7_4",
+   "a1a_11",
+   "sets downlink data volume"
+  ],
+  [
+   "c7_4",
+   "a2a_15",
+   "sets downlink data volume"
+  ],
+  [
+   "c7_4",
+   "a3a_14",
+   "sets downlink data volume"
+  ],
+  [
+   "c10_11",
+   "a1a_11",
+   "sets downlink data volume"
+  ],
+  [
+   "c10_11",
+   "a2a_15",
+   "sets downlink data volume"
+  ],
+  [
+   "c10_11",
+   "a3a_14",
+   "sets downlink data volume"
+  ],
+  [
+   "m4_2",
+   "a1a_11",
+   "sets downlink data volume"
+  ],
+  [
+   "m4_2",
+   "a2a_15",
+   "sets downlink data volume"
+  ],
+  [
+   "m4_2",
+   "a3a_14",
+   "sets downlink data volume"
+  ],
+  [
+   "c11_7",
+   "a1a_11",
+   "sets downlink data volume"
+  ],
+  [
+   "c11_7",
+   "a2a_15",
+   "sets downlink data volume"
+  ],
+  [
+   "c11_7",
+   "a3a_14",
+   "sets downlink data volume"
+  ],
+  [
+   "m4_2",
+   "a1a_4",
+   "sets delivery latency"
+  ],
+  [
+   "m4_2",
+   "a2a_9",
+   "sets delivery latency"
+  ],
+  [
+   "c7_4",
+   "a1a_4",
+   "sets delivery latency"
+  ],
+  [
+   "c7_4",
+   "a2a_9",
+   "sets delivery latency"
+  ],
+  [
+   "m2_0",
+   "a2a_0",
+   "sets gsd"
+  ],
+  [
+   "m2_3",
+   "a2a_0",
+   "sets gsd"
+  ],
+  [
+   "m6_0",
+   "a2a_0",
+   "sets gsd"
+  ],
+  [
+   "m6_1",
+   "a2a_0",
+   "sets gsd"
+  ],
+  [
+   "c10_6",
+   "a2a_0",
+   "sets gsd"
+  ],
+  [
+   "c10_7",
+   "a2a_0",
+   "sets gsd"
+  ],
+  [
+   "m2_4",
+   "a2a_0",
+   "sets gsd"
+  ],
+  [
+   "m2_5",
+   "a2a_0",
+   "sets gsd"
+  ],
+  [
+   "m2_0",
+   "a2a_1",
+   "sets swath"
+  ],
+  [
+   "m6_1",
+   "a2a_1",
+   "sets swath"
+  ],
+  [
+   "g2_1",
+   "a2a_1",
+   "sets swath"
+  ],
+  [
+   "m2_5",
+   "a2a_1",
+   "sets swath"
+  ],
+  [
+   "m6_0",
+   "a2a_2",
+   "sets image snr"
+  ],
+  [
+   "m6_1",
+   "a2a_2",
+   "sets image snr"
+  ],
+  [
+   "m6_2",
+   "a2a_2",
+   "sets image snr"
+  ],
+  [
+   "c10_8",
+   "a2a_2",
+   "sets image snr"
+  ],
+  [
+   "m7_3",
+   "a2a_2",
+   "sets image snr"
+  ],
+  [
+   "m6_1",
+   "a2a_3",
+   "sets smear"
+  ],
+  [
+   "c10_8",
+   "a2a_3",
+   "sets smear"
+  ],
+  [
+   "c10_6",
+   "a2a_3",
+   "sets smear"
+  ],
+  [
+   "m7_3",
+   "a2a_3",
+   "sets smear"
+  ],
+  [
+   "m6_2",
+   "a2a_3",
+   "sets smear"
+  ],
+  [
+   "m2_2",
+   "a2a_4",
+   "sets collection capacity"
+  ],
+  [
+   "m2_8",
+   "a2a_4",
+   "sets collection capacity"
+  ],
+  [
+   "c10_1",
+   "a2a_4",
+   "sets collection capacity"
+  ],
+  [
+   "g2_1",
+   "a2a_4",
+   "sets collection capacity"
+  ],
+  [
+   "c3_9",
+   "a2a_4",
+   "sets collection capacity"
+  ],
+  [
+   "c7_6",
+   "a2a_4",
+   "sets collection capacity"
+  ],
+  [
+   "c3_11",
+   "a2a_4",
+   "sets collection capacity"
+  ],
+  [
+   "c4_10",
+   "a2a_4",
+   "sets collection capacity"
+  ],
+  [
+   "m2_5",
+   "a2a_4",
+   "sets collection capacity"
+  ],
+  [
+   "m7_3",
+   "a2a_4",
+   "sets collection capacity"
+  ],
+  [
+   "m2_0",
+   "a2a_5",
+   "sets min detectable eirp"
+  ],
+  [
+   "m8_5",
+   "a2a_5",
+   "sets min detectable eirp"
+  ],
+  [
+   "m8_0",
+   "a2a_5",
+   "sets min detectable eirp"
+  ],
+  [
+   "c10_11",
+   "a2a_6",
+   "sets intercept prob."
+  ],
+  [
+   "m7_3",
+   "a2a_6",
+   "sets intercept prob."
+  ],
+  [
+   "m2_0",
+   "a2a_7",
+   "sets dwell time"
+  ],
+  [
+   "m6_0",
+   "a2a_7",
+   "sets dwell time"
+  ],
+  [
+   "c10_1",
+   "a2a_7",
+   "sets dwell time"
+  ],
+  [
+   "c3_9",
+   "a2a_7",
+   "sets dwell time"
+  ],
+  [
+   "c3_11",
+   "a2a_7",
+   "sets dwell time"
+  ],
+  [
+   "c4_10",
+   "a2a_7",
+   "sets dwell time"
+  ],
+  [
+   "c10_11",
+   "a2a_7",
+   "sets dwell time"
+  ],
+  [
+   "m8_0",
+   "a2a_11",
+   "sets cep90"
+  ],
+  [
+   "m8_0",
+   "a3a_7",
+   "sets cep90"
+  ],
+  [
+   "m7_0",
+   "a2a_11",
+   "sets cep90"
+  ],
+  [
+   "m7_0",
+   "a3a_7",
+   "sets cep90"
+  ],
+  [
+   "m9_0",
+   "a2a_11",
+   "sets cep90"
+  ],
+  [
+   "m9_0",
+   "a3a_7",
+   "sets cep90"
+  ],
+  [
+   "m7_1",
+   "a2a_11",
+   "sets cep90"
+  ],
+  [
+   "m7_1",
+   "a3a_7",
+   "sets cep90"
+  ],
+  [
+   "c10_7",
+   "a2a_11",
+   "sets cep90"
+  ],
+  [
+   "c10_7",
+   "a3a_7",
+   "sets cep90"
+  ],
+  [
+   "m7_3",
+   "a2a_11",
+   "sets cep90"
+  ],
+  [
+   "m7_3",
+   "a3a_7",
+   "sets cep90"
+  ],
+  [
+   "c11_7",
+   "a2a_11",
+   "sets cep90"
+  ],
+  [
+   "c11_7",
+   "a3a_7",
+   "sets cep90"
+  ],
+  [
+   "m3_4",
+   "a3a_0",
+   "sets gdop"
+  ],
+  [
+   "m3_2",
+   "a3a_0",
+   "sets gdop"
+  ],
+  [
+   "m3_3",
+   "a3a_0",
+   "sets gdop"
+  ],
+  [
+   "m3_1",
+   "a3a_0",
+   "sets gdop"
+  ],
+  [
+   "m2_4",
+   "a3a_0",
+   "sets gdop"
+  ],
+  [
+   "c11_7",
+   "a3a_0",
+   "sets gdop"
+  ],
+  [
+   "m3_2",
+   "a3a_1",
+   "sets fix availability"
+  ],
+  [
+   "m3_3",
+   "a3a_1",
+   "sets fix availability"
+  ],
+  [
+   "m2_4",
+   "a3a_1",
+   "sets fix availability"
+  ],
+  [
+   "m9_0",
+   "a3a_2",
+   "sets position accuracy"
+  ],
+  [
+   "m7_1",
+   "a3a_2",
+   "sets position accuracy"
+  ],
+  [
+   "c10_7",
+   "a3a_2",
+   "sets position accuracy"
+  ],
+  [
+   "m2_4",
+   "a3a_2",
+   "sets position accuracy"
+  ],
+  [
+   "m3_2",
+   "a3a_3",
+   "sets time to first fix"
+  ],
+  [
+   "m3_3",
+   "a3a_3",
+   "sets time to first fix"
+  ],
+  [
+   "m9_0",
+   "a3a_3",
+   "sets time to first fix"
+  ],
+  [
+   "m2_4",
+   "a3a_3",
+   "sets time to first fix"
+  ],
+  [
+   "c11_7",
+   "a3a_3",
+   "sets time to first fix"
+  ],
+  [
+   "m3_2",
+   "a3a_4",
+   "sets integrity risk"
+  ],
+  [
+   "m9_0",
+   "a3a_4",
+   "sets integrity risk"
+  ],
+  [
+   "m7_1",
+   "a3a_4",
+   "sets integrity risk"
+  ],
+  [
+   "m2_4",
+   "a3a_4",
+   "sets integrity risk"
+  ],
+  [
+   "m7_0",
+   "a3a_5",
+   "sets time to geolocate"
+  ],
+  [
+   "c11_7",
+   "a3a_5",
+   "sets time to geolocate"
+  ]
+ ]
+}
