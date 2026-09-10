@@ -11,6 +11,7 @@ label = "Spectrum & frequency"
 parent = "mgt_standards_and_compliance"
 owner = "programme"
 layer = 1
+order = 34
 box = false   # drawn as a nested box on the diagonal
 tone = "violet"
 cases = []   # empty means every case

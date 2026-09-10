@@ -11,6 +11,7 @@ label = "Pointing error budget"
 parent = "sys_point_it"
 owner = "gnc"
 layer = 2
+order = 84
 box = false   # drawn as a nested box on the diagonal
 tone = "green"
 cases = []   # empty means every case

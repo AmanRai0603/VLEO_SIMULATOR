@@ -11,6 +11,7 @@ label = "System level"
 parent = "mgt_test_and_verification"
 owner = "programme"
 layer = 1
+order = 39
 box = false   # drawn as a nested box on the diagonal
 tone = "violet"
 cases = []   # empty means every case

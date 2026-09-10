@@ -11,6 +11,7 @@ label = "Engineering capacity"
 parent = "mgt_orbitt_capability"
 owner = "programme"
 layer = 1
+order = 52
 box = false   # drawn as a nested box on the diagonal
 tone = "violet"
 cases = []   # empty means every case

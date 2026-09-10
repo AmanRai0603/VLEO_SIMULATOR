@@ -197,6 +197,11 @@ pub struct NodeDef {
     pub parent: &'static str,
     /// Which of the four layers this row lives in.
     pub layer: u8,
+    /// Where the row sits among its siblings, as whoever wrote them ordered
+    /// them. The node table is folder-ordered so that generation is
+    /// deterministic; a face that draws the tree sorts by this instead, or it
+    /// draws an alphabetised list nobody wrote.
+    pub order: u32,
     /// The layer group this node crosses to, or empty for an ordinary row.
     ///
     /// Exactly one node crosses between any two layers, and it is the only

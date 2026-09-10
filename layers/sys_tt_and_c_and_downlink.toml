@@ -11,6 +11,7 @@ label = "TT&C and downlink"
 parent = "sys_command_and_downlink_it"
 owner = "comms"
 layer = 2
+order = 95
 box = false   # drawn as a nested box on the diagonal
 tone = "green"
 cases = []   # empty means every case

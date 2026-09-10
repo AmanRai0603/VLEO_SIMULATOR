@@ -11,6 +11,7 @@ label = "Ground segment"
 parent = "mgt_mission_segments"
 owner = "systems"
 layer = 1
+order = 30
 box = false   # drawn as a nested box on the diagonal
 tone = "green"
 cases = []   # empty means every case

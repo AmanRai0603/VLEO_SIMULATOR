@@ -11,6 +11,7 @@ label = "Life cycle & gates"
 parent = "mgt_programme_control"
 owner = "programme"
 layer = 1
+order = 22
 box = false   # drawn as a nested box on the diagonal
 tone = "green"
 cases = []   # empty means every case

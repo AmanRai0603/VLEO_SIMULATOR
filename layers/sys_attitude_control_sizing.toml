@@ -11,6 +11,7 @@ label = "Attitude control sizing"
 parent = "sys_point_it"
 owner = "gnc"
 layer = 2
+order = 85
 box = false   # drawn as a nested box on the diagonal
 tone = "green"
 cases = []   # empty means every case

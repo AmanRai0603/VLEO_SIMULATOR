@@ -11,6 +11,7 @@ label = "Risk register"
 parent = "mgt_programme_control"
 owner = "programme"
 layer = 1
+order = 25
 box = false   # drawn as a nested box on the diagonal
 tone = "green"
 cases = []   # empty means every case

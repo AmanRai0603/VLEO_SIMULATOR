@@ -11,6 +11,7 @@ label = "Long-lead items"
 parent = "mgt_supply_chain"
 owner = "programme"
 layer = 1
+order = 48
 box = false   # drawn as a nested box on the diagonal
 tone = "violet"
 cases = []   # empty means every case

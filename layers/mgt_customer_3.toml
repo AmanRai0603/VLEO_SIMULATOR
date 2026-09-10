@@ -11,6 +11,7 @@ label = "Customer 3"
 parent = "mgt_customers"
 owner = "systems"
 layer = 1
+order = 15
 box = false   # drawn as a nested box on the diagonal
 tone = "teal"
 cases = []   # empty means every case

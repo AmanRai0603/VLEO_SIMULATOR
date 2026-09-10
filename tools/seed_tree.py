@@ -83,7 +83,7 @@ def layer(gid, label, parent, owner, lyr, box=False, tone="slate", relates=(), c
     """
     LAYERS[gid] = dict(id=gid, label=label, parent=parent, owner=owner,
                        layer=lyr, box=box, tone=tone, relates=list(relates),
-                       cases=list(cases))
+                       cases=list(cases), order=len(LAYERS))
 
 
 SEEDED = []
@@ -2986,6 +2986,12 @@ def emit_node(n):
     a('owner = %s' % toml_str(n["owner"]))
     a('tier = %s' % toml_str(n["tier"]))
     a('layer = %d   # 1 management · 2 the system · 3 subsystem · 4 the run' % n["layer"])
+    a('# Where this row sits among its siblings, as whoever wrote them ordered')
+    a('# them. Folders sort alphabetically and a tree that reads alphabetically')
+    a('# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`')
+    a('# reverses the order the source put them in, and the order is part of')
+    a('# what the source said.')
+    a('order = %d' % n["order"])
     if n["crosses_to"]:
         a('# The single node that crosses between this layer and the one above.')
         a('# A subsystem is reached through its interface node, never by reaching')
@@ -3223,6 +3229,7 @@ def emit_supporting():
             L += ["[[group]]", "id = %s" % toml_str(g["id"]), "label = %s" % toml_str(g["label"]),
                   "parent = %s" % toml_str(g["parent"]), "owner = %s" % toml_str(g["owner"]),
                   "layer = %d" % g["layer"],
+                  "order = %d" % g["order"],
                   "box = %s   # drawn as a nested box on the diagonal" % ("true" if g["box"] else "false"),
                   "tone = %s" % toml_str(g["tone"]),
                   "cases = [%s]   # empty means every case" %
@@ -3270,6 +3277,10 @@ BY_ID = {}
 
 
 def main():
+    # Creation order is authoring order: the document's own order for the rows
+    # that came from it, and the order they were written in for the rest.
+    for i, n in enumerate(NODES):
+        n["order"] = i
     for n in NODES:
         if n["parent"] in REPARENT:
             n["parent"] = REPARENT[n["parent"]]

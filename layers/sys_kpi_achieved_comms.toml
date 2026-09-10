@@ -11,6 +11,7 @@ label = "KPI achieved · comms"
 parent = "sys_communications"
 owner = "systems"
 layer = 2
+order = 59
 box = false   # drawn as a nested box on the diagonal
 tone = "amber"
 cases = []   # empty means every case

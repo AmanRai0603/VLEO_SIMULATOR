@@ -11,6 +11,7 @@ label = "Orbit geometry"
 parent = "sys_orbit_and_environment"
 owner = "environment"
 layer = 2
+order = 70
 box = false   # drawn as a nested box on the diagonal
 tone = "violet"
 cases = []   # empty means every case

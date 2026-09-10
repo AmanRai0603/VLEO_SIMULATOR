@@ -11,6 +11,7 @@ label = "TT&C and downlink"
 parent = "root"
 owner = "comms"
 layer = 3
+order = 117
 box = true   # drawn as a nested box on the diagonal
 tone = "teal"
 cases = []   # empty means every case

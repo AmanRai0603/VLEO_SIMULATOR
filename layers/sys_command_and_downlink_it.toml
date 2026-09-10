@@ -11,6 +11,7 @@ label = "Command and downlink it"
 parent = "sys_satellite_subsystems"
 owner = "comms"
 layer = 2
+order = 93
 box = false   # drawn as a nested box on the diagonal
 tone = "green"
 cases = []   # empty means every case

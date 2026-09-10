@@ -11,6 +11,7 @@ label = "Flight software"
 parent = "root"
 owner = "avionics"
 layer = 3
+order = 110
 box = true   # drawn as a nested box on the diagonal
 tone = "teal"
 cases = []   # empty means every case

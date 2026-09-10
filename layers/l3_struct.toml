@@ -11,6 +11,7 @@ label = "Structure"
 parent = "root"
 owner = "mass"
 layer = 3
+order = 111
 box = true   # drawn as a nested box on the diagonal
 tone = "teal"
 cases = []   # empty means every case

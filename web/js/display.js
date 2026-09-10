@@ -23,8 +23,13 @@ export function buildDisplay() {
   const rec = (gid, depth, bars, last) => {
     const g = S.G.get(gid);
     if (!caseOk(g)) return;
-    const own  = (S.gnodes.get(gid) || []).slice().sort((a, b) => a - b);
-    const kids = (S.gkids.get(gid) || []).filter(k => caseOk(S.G.get(k)));
+    // Siblings read in the order whoever wrote them put them in, not the order
+    // their folders happen to sort in. The node table is folder-ordered because
+    // generation has to be deterministic; the tree is not a directory listing.
+    const own  = (S.gnodes.get(gid) || []).slice()
+      .sort((a, b) => (S.rows[a].order - S.rows[b].order) || (a - b));
+    const kids = (S.gkids.get(gid) || []).filter(k => caseOk(S.G.get(k)))
+      .sort((a, b) => (S.G.get(a).order - S.G.get(b).order) || a.localeCompare(b));
     const has  = own.length > 0 || kids.length > 0;
     const open = has && S.expanded.has(gid);
 

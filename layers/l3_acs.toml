@@ -11,6 +11,7 @@ label = "Attitude control sizing"
 parent = "root"
 owner = "gnc"
 layer = 3
+order = 114
 box = true   # drawn as a nested box on the diagonal
 tone = "teal"
 cases = []   # empty means every case

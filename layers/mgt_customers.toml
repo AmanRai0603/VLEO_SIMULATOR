@@ -11,6 +11,7 @@ label = "Customers"
 parent = "mgt_orbitt_space"
 owner = "systems"
 layer = 1
+order = 2
 box = true   # drawn as a nested box on the diagonal
 tone = "teal"
 cases = []   # empty means every case

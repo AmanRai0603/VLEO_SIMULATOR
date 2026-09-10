@@ -11,6 +11,7 @@ label = "Environment and orbit — addition"
 parent = "root"
 owner = "environment"
 layer = 3
+order = 103
 box = true   # drawn as a nested box on the diagonal
 tone = "amber"
 cases = []   # empty means every case

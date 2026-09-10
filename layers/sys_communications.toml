@@ -11,6 +11,7 @@ label = "Communications"
 parent = "sys_service_level_the_customer_needs"
 owner = "systems"
 layer = 2
+order = 57
 box = false   # drawn as a nested box on the diagonal
 tone = "amber"
 cases = []   # empty means every case

@@ -67,6 +67,14 @@ pub struct Sheet {
     /// Which layer this row lives in, inherited from its parent group and
     /// carried on the row so a face never has to walk the tree to find out.
     pub layer: u8,
+    /// Where the row sits among its siblings, as whoever wrote them ordered
+    /// them.
+    ///
+    /// Folders sort alphabetically, and a tree that reads alphabetically is a
+    /// tree nobody wrote: it puts `Achievable lifetime` before `Specific
+    /// impulse` and reverses the order the source put them in. The order is
+    /// part of what the source said, so it is carried rather than recovered.
+    pub order: u32,
     /// The node that crosses between this layer and the one above.
     ///
     /// Empty for an ordinary row. Exactly one node crosses between any two
@@ -164,6 +172,8 @@ pub struct Group {
     /// crosses between any two layers; nothing else is shared, so no layer can
     /// be reasoned about wrongly from another.
     pub layer: u8,
+    /// Where the heading sits among its siblings, as it was written.
+    pub order: u32,
     /// Drawn as a nested box on the diagonal of the matrix.
     ///
     /// A mark inside a box is coupling that subtree owns; a mark outside it
