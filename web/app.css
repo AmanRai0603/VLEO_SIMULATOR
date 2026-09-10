@@ -355,3 +355,66 @@ footer { padding: 1rem 2.5rem 2.5rem; border-top: 1px solid var(--rule-2);
 @media print {
   .grid { max-height: none; overflow: visible; }
 }
+
+/* ---------- the segments -------------------------------------------------- */
+/* The node page is three named parts in a fixed order — what it is made of,
+   what it is joined to, what it says — because the order is what has to be
+   repeatable when the next thousand rows are filled in. */
+.seg { margin: 0 0 2rem; }
+.seg-h {
+  display: flex; align-items: center; gap: .5rem; margin: 0 0 .6rem;
+  font: 10.5px var(--mono); text-transform: uppercase; letter-spacing: .09em;
+  color: var(--ink-3); border-bottom: 1px solid var(--rule); padding-bottom: .35rem;
+}
+.seg-n {
+  width: 17px; height: 17px; border-radius: 50%; display: inline-grid; place-items: center;
+  background: var(--ink); color: var(--paper); font-size: 9.5px; flex: none;
+}
+.seg-lead { font-size: 11.5px; color: var(--ink-2); margin: 0 0 .6rem; }
+.seg-lead code { background: #f4f2ec; padding: .1rem .3rem; border-radius: 2px; }
+.seg-note { font-size: 11px; color: var(--ink-3); margin: .5rem 0 0; }
+
+table.asm-t, table.conn-t, table.grid-t {
+  border-collapse: collapse; width: 100%; font-size: 11px; margin: .4rem 0 .2rem;
+}
+table.asm-t th, table.grid-t th {
+  text-align: left; font-size: 9.5px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ink-3); border-bottom: 1px solid var(--rule); padding: .3rem .5rem;
+}
+table.asm-t td, table.grid-t td { padding: .28rem .5rem; border-bottom: 1px solid var(--rule-2); }
+table.asm-t tr.absent td { color: var(--ink-3); }
+table.grid-t tr.tot td { font-weight: 600; border-top: 1px solid var(--rule); }
+.by { font-size: 9.5px; padding: .05rem .35rem; border-radius: 2px; }
+.by.hand { background: var(--teal-pale); color: var(--teal); }
+.by.gen  { background: #f0ede5; color: var(--ink-3); }
+
+table.conn-t th {
+  text-align: left; vertical-align: top; width: 15rem; padding: .45rem .6rem .45rem 0;
+  border-bottom: 1px solid var(--rule-2); font-size: 10px; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--ink-2); font-weight: 500;
+}
+table.conn-t th .why {
+  display: block; text-transform: none; letter-spacing: 0; font-size: 10px;
+  color: var(--ink-3); margin-top: .15rem; font-weight: 400;
+}
+table.conn-t td { padding: .45rem 0; border-bottom: 1px solid var(--rule-2); line-height: 1.7; }
+
+/* ---------- the architecture view ----------------------------------------- */
+#archview { max-width: 78rem; }
+.arch-nav { display: flex; gap: .35rem; flex-wrap: wrap; margin: 0 0 1.3rem; }
+.tab.arch-tab { border-style: dashed; }
+.arch-lead { font: 14px/1.6 Georgia, "Iowan Old Style", serif; color: var(--ink); margin: 0 0 1.1rem; max-width: 54rem; }
+.prose { font: 12.5px/1.65 Georgia, "Iowan Old Style", serif; color: var(--ink-2); max-width: 54rem; margin: .5rem 0; }
+.prose b { color: var(--ink); }
+.cards { display: flex; gap: .6rem; flex-wrap: wrap; margin: 0 0 1.2rem; }
+.card {
+  border: 1px solid var(--rule); border-radius: 3px; background: var(--card);
+  padding: .55rem .8rem; min-width: 11rem; flex: 1;
+}
+.card b { display: block; font: 500 22px var(--mono); }
+.card .k { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .09em; color: var(--teal); }
+.card .w { display: block; font-size: 10.5px; color: var(--ink-3); margin-top: .25rem; }
+.tone { display: inline-block; width: 3px; height: 10px; margin-right: .4rem; vertical-align: -1px; background: var(--slate); }
+.tone.t-teal { background: var(--teal); } .tone.t-amber { background: var(--out); }
+.tone.t-violet { background: var(--in); } .tone.t-green { background: var(--both); }
+table.tree-t td:first-child { white-space: nowrap; }

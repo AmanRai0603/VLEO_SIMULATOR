@@ -26,6 +26,7 @@
   <div class="tabrow">
     <button class="nudge" id="prev" title="the layer above">←</button>
     <button class="nudge" id="next" title="the layer below">→</button>
+    <button class="tab arch-tab" id="arch-tab" title="the pattern every folder repeats">⌗ Architecture</button>
     <button class="tab sel" data-layer="1">1 Management layer</button>
     <button class="tab" data-layer="2">2 The system — tree, connectivity, one node</button>
     <button class="tab" data-layer="3">3 Subsystem</button>
@@ -108,6 +109,17 @@
     <dl id="notes"></dl>
   </div>
 
+  <!--
+    Four views, one state. The architecture view comes first in the tab bar
+    because it is what has to be understood before anything is added: the node
+    and its assembly, then how nodes connect, then how the connections stack
+    into layers, then the hierarchy those layers hang on.
+  -->
+  <div id="archview" hidden>
+    <div id="arch-nav" class="arch-nav"></div>
+    <div id="arch-body"></div>
+  </div>
+
   <div id="nodeview" hidden>
     <button class="ctl" id="back">↑ back to the layer</button>
     <div id="node-body"></div>
@@ -123,6 +135,9 @@
   <span id="foot"></span>
 </footer>
 
-<script src="/app.js"></script>
+<!-- One module per concern, served individually. A bundler is a build step
+     between the source and the thing that runs, and the first time they
+     disagree the disagreement is invisible. -->
+<script type="module" src="/js/app.js"></script>
 </body>
 </html>
