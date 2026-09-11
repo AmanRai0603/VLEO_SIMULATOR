@@ -1,0 +1,63 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "com_system_noise_temperature"
+label = "System noise temperature"
+folder = "com_system_noise_temperature"   # frozen at seed; renaming the label never moves the directory
+subsystem = "com"
+parent = "l3_ttc"
+kind = "computed"
+owner = "comms"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 643
+state = "published"
+
+[question]
+text = "How much noise does the receiving system contribute?"
+
+[maths]
+expression = "T_s = T_a/L + T0*(L-1)/L + T0*(F-1)"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "T_s"
+type = "Temperature"
+unit = "Kelvin"
+lower = 10.0
+upper = 3000.0
+reason_lower = "below 10 K requires cryogenic cooling not present in this ground segment"
+reason_upper = "above 3000 K the receiving system is not usable"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "ta"
+var = "com_gs_noise_temperature"
+type = "Temperature"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "ll"
+var = "com_line_loss"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "combine the antenna, line and receiver noise contributions at a 290 K physical temperature and a 1.2 dB noise figure"
+binds = "t"
+type = "Temperature"
+
+[view]
+kind = "number"
+

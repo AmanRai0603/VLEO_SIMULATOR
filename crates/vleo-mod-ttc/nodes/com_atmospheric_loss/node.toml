@@ -1,0 +1,47 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "com_atmospheric_loss"
+label = "Atmospheric and polarisation loss"
+folder = "com_atmospheric_loss"   # frozen at seed; renaming the label never moves the directory
+subsystem = "com"
+parent = "l3_ttc"
+kind = "declared"
+owner = "comms"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 636
+state = "published"
+
+[question]
+text = "How much is lost to the atmosphere, rain and polarisation mismatch, in decibels?"
+
+[maths]
+expression = "L_atm = 1.8"
+source = "itu_p618"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "L_atm"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 15.0
+reason_lower = "an atmospheric loss cannot be negative"
+reason_upper = "above 15 dB the link is not available at the stated elevation and frequency"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 1.8
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

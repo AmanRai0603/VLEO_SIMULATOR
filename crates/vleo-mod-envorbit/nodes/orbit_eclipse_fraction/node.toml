@@ -1,0 +1,67 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "orbit_eclipse_fraction"
+label = "Eclipse fraction of the orbit"
+folder = "orbit_eclipse_fraction"   # frozen at seed; renaming the label never moves the directory
+subsystem = "orbit"
+parent = "l3_x_envorbit"
+kind = "computed"
+owner = "systems"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 524
+state = "published"
+
+[question]
+text = "What fraction of each revolution is spent in the Earth's shadow?"
+
+[maths]
+expression = "f_ecl = (1/pi)*acos(sqrt(r^2 - Re^2)/(r*cos(beta)))"
+source = "larson_wertz"
+
+[[assumption]]
+text = "Cylindrical shadow, no penumbra"
+fails_when = "the penumbra adds about 10 seconds per orbit, which matters for a precise thermal transient and not for a power budget"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "f_ecl"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 0.45
+reason_lower = "a negative eclipse fraction is not a fraction"
+reason_upper = "no circular orbit in this band spends more than 45% of a revolution in shadow"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "r"
+var = "orbit_radius"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "beta"
+var = "orbit_beta_angle"
+type = "Angle"
+
+[[algorithm.step]]
+number = 1
+text = "apply the cylindrical shadow model; a full-sun orbit returns zero rather than a fault"
+binds = "f"
+type = "Ratio"
+
+[view]
+kind = "number"
+

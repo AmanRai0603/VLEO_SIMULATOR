@@ -1,0 +1,66 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "cost_per_year"
+label = "Cost per operational year"
+folder = "cost_per_year"   # frozen at seed; renaming the label never moves the directory
+subsystem = "cost"
+parent = "l3_x_closure"
+kind = "computed"
+owner = "programme"
+tier = "C"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 712
+state = "published"
+
+[question]
+text = "What does a year of service cost?"
+
+[maths]
+expression = "C = C_total/years"
+source = "nasa_cer"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "C_yr"
+type = "Money"
+unit = "MillionUsDollar"
+lower = 0.0
+upper = 1000000.0
+reason_lower = "a cost cannot be negative"
+reason_upper = "above a trillion dollars a year the programme is not the one being designed"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "c"
+var = "cost_programme"
+type = "Money"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "y"
+var = "orbit_mission_duration"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "divide the programme cost by the mission duration in years"
+binds = "cy"
+type = "Money"
+
+[contributes]
+kpis = ["kpi_cost_per_year"]
+
+[view]
+kind = "number"
+

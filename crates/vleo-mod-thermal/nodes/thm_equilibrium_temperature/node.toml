@@ -1,0 +1,109 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "thm_equilibrium_temperature"
+label = "Equilibrium temperature"
+folder = "thm_equilibrium_temperature"   # frozen at seed; renaming the label never moves the directory
+subsystem = "thm"
+parent = "l3_thermal"
+kind = "computed"
+owner = "thermal"
+tier = "B"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 603
+state = "published"
+
+[question]
+text = "What temperature does the spacecraft settle at?"
+
+[maths]
+expression = "T = (Q_total/(eps*sigma*A_rad))^(1/4)"
+source = "larson_wertz"
+
+[[assumption]]
+text = "One node — the whole spacecraft is at one temperature"
+fails_when = "a real design has a gradient across every panel; this sizes a radiator and bounds a temperature, and it does not predict a gradient"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "T_eq"
+type = "Temperature"
+unit = "Kelvin"
+lower = 100.0
+upper = 1000.0
+reason_lower = "below 100 K the spacecraft would be colder than deep space plus the Earth's infrared, which is not possible in this orbit"
+reason_upper = "above 1000 K nothing survives and the balance is being fed a nonsense load"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "qs"
+var = "thm_absorbed_solar"
+type = "Power"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "qa"
+var = "thm_absorbed_albedo"
+type = "Power"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "qi"
+var = "thm_absorbed_ir"
+type = "Power"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "qh"
+var = "thm_aero_heating"
+type = "Power"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "qd"
+var = "thm_dissipation"
+type = "Power"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "ar"
+var = "thm_radiator_area"
+type = "Area"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "e"
+var = "thm_emissivity"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "balance every absorbed and dissipated term against grey-body radiation from the radiator"
+binds = "t"
+type = "Temperature"
+
+[view]
+kind = "line"
+over = "orbit_altitude"
+points = 50
+

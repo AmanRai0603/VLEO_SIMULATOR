@@ -1,0 +1,71 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "com_eirp"
+label = "Effective isotropic radiated power"
+folder = "com_eirp"   # frozen at seed; renaming the label never moves the directory
+subsystem = "com"
+parent = "l3_ttc"
+kind = "computed"
+owner = "comms"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 641
+state = "published"
+
+[question]
+text = "How much power does the spacecraft appear to radiate towards the ground station?"
+
+[maths]
+expression = "EIRP = 10*log10(P_t) + G_t - L_line"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "EIRP"
+type = "Ratio"
+unit = "Decibel"
+lower = -20.0
+upper = 90.0
+reason_lower = "below -20 dBW no link in this design closes"
+reason_upper = "above 90 dBW the transmitter is not the one described"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "p"
+var = "com_tx_power"
+type = "Power"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "g"
+var = "com_antenna_gain"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "l"
+var = "com_line_loss"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "add the antenna gain to the transmitter power in decibels and subtract the line loss"
+binds = "e"
+type = "Ratio"
+
+[view]
+kind = "number"
+

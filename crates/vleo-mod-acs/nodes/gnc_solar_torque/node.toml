@@ -1,0 +1,71 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "gnc_solar_torque"
+label = "Solar radiation pressure torque"
+folder = "gnc_solar_torque"   # frozen at seed; renaming the label never moves the directory
+subsystem = "gnc"
+parent = "l3_acs"
+kind = "computed"
+owner = "gnc"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 618
+state = "published"
+
+[question]
+text = "How much torque does solar radiation pressure apply?"
+
+[maths]
+expression = "T = (S/c)*A*(1+q)*cos(theta)*x_cp"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "T_srp"
+type = "Torque"
+unit = "NewtonMetre"
+lower = 0.0
+upper = 1.0
+reason_lower = "a torque magnitude cannot be negative"
+reason_upper = "above 1 N.m no wheel that fits this vehicle can hold attitude"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "a"
+var = "aero_frontal_area"
+type = "Area"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "x"
+var = "aero_cp_cm_offset"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "th"
+var = "pwr_array_incidence"
+type = "Angle"
+
+[[algorithm.step]]
+number = 1
+text = "apply solar radiation pressure over the illuminated area with a reflectivity of 0.6"
+binds = "t"
+type = "Torque"
+
+[view]
+kind = "number"
+

@@ -1,0 +1,50 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "mis_delivery_time"
+label = "Delivery time to the customer"
+folder = "mis_delivery_time"   # frozen at seed; renaming the label never moves the directory
+subsystem = "mis"
+parent = "l3_x_envorbit"
+kind = "declared"
+owner = "operations"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 694
+state = "published"
+
+[question]
+text = "How long does the product take to reach the customer once processed?"
+
+[maths]
+expression = "t_del = 3"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "t_del"
+type = "Time"
+unit = "Minute"
+lower = 0.1
+upper = 1440.0
+reason_lower = "below six seconds no delivery path in this design runs"
+reason_upper = "above a day the product is not the near-real-time one being sold"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 3.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[contributes]
+kpis = ["kpi_latency"]
+
+[view]
+kind = "number"
+

@@ -1,0 +1,58 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "orbit_swath_width"
+label = "Ground swath width"
+folder = "orbit_swath_width"   # frozen at seed; renaming the label never moves the directory
+subsystem = "orbit"
+parent = "l3_x_envorbit"
+kind = "computed"
+owner = "systems"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 522
+state = "published"
+
+[question]
+text = "How wide a strip of ground does one pass cover?"
+
+[maths]
+expression = "W = 2*lambda*Re"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "W"
+type = "Length"
+unit = "Kilometre"
+lower = 1.0
+upper = 40000.0
+reason_lower = "a swath below one kilometre would not be a swath"
+reason_upper = "a swath cannot exceed the Earth's circumference"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "lam"
+var = "orbit_earth_central_angle"
+type = "Angle"
+
+[[algorithm.step]]
+number = 1
+text = "convert the Earth-central half-angle into a great-circle width"
+binds = "w"
+type = "Length"
+
+[contributes]
+kpis = ["kpi_revisit"]
+
+[view]
+kind = "number"
+

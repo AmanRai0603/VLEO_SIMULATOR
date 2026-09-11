@@ -1,0 +1,63 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "com_path_loss"
+label = "Free space path loss"
+folder = "com_path_loss"   # frozen at seed; renaming the label never moves the directory
+subsystem = "com"
+parent = "l3_ttc"
+kind = "computed"
+owner = "comms"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 642
+state = "published"
+
+[question]
+text = "How much of the signal is lost simply by spreading out over the range?"
+
+[maths]
+expression = "L = (4*pi*d/lambda)^2"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "L_fs"
+type = "Ratio"
+unit = "Decibel"
+lower = 100.0
+upper = 250.0
+reason_lower = "below 100 dB the range is shorter than any orbit in this band"
+reason_upper = "above 250 dB the range is not one this tool covers"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "d"
+var = "orbit_slant_range"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "f"
+var = "com_frequency"
+type = "Frequency"
+
+[[algorithm.step]]
+number = 1
+text = "apply the inverse-square spreading loss at the working slant range"
+binds = "l"
+type = "Ratio"
+
+[view]
+kind = "number"
+

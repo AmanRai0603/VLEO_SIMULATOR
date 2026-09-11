@@ -1,0 +1,83 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "mis_latency"
+label = "End to end latency"
+folder = "mis_latency"   # frozen at seed; renaming the label never moves the directory
+subsystem = "mis"
+parent = "l3_x_envorbit"
+kind = "computed"
+owner = "operations"
+tier = "B"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 701
+state = "published"
+
+[question]
+text = "How long from collection to the product reaching the customer?"
+note = "The wait term dominates, and it is the one a constellation design can actually move."
+
+[maths]
+expression = "t = t_wait + t_downlink + t_process + t_deliver"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "t_lat"
+type = "Time"
+unit = "Minute"
+lower = 0.0
+upper = 2880.0
+reason_lower = "a latency cannot be negative"
+reason_upper = "above two days the product is not the near-real-time one being sold"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "tw"
+var = "mis_time_to_downlink"
+type = "Time"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "td"
+var = "com_contact_time"
+type = "Time"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "tp"
+var = "mis_processing_time"
+type = "Time"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "tdl"
+var = "mis_delivery_time"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "sum the wait, the downlink, the processing and the delivery"
+binds = "t"
+type = "Time"
+
+[contributes]
+kpis = ["kpi_latency"]
+
+[view]
+kind = "number"
+

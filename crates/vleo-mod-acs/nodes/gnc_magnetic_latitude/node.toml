@@ -1,0 +1,47 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "gnc_magnetic_latitude"
+label = "Magnetic latitude"
+folder = "gnc_magnetic_latitude"   # frozen at seed; renaming the label never moves the directory
+subsystem = "gnc"
+parent = "l3_acs"
+kind = "declared"
+owner = "gnc"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 606
+state = "published"
+
+[question]
+text = "At what magnetic latitude is the field being evaluated?"
+
+[maths]
+expression = "lat_m = 45"
+source = "igrf2020"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "lat_m"
+type = "Angle"
+unit = "Degree"
+lower = -90.0
+upper = 90.0
+reason_lower = "magnetic latitude is defined on -90..90"
+reason_upper = "magnetic latitude is defined on -90..90"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 45.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

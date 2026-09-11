@@ -1,0 +1,63 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "env_number_density"
+label = "Total number density"
+folder = "env_number_density"   # frozen at seed; renaming the label never moves the directory
+subsystem = "env"
+parent = "l3_x_envorbit"
+kind = "computed"
+owner = "environment"
+tier = "B"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 501
+state = "published"
+
+[question]
+text = "How many particles per cubic metre are there at the flight altitude?"
+
+[maths]
+expression = "n = SUM_i n_i(z)"
+source = "jacchia1971"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "n"
+type = "NumberDensity"
+unit = "PerCubicMetre"
+lower = 100000000.0
+upper = 1e+20
+reason_lower = "below 1e8 per cubic metre there is nothing for an intake to collect"
+reason_upper = "above 1e20 the flow is continuum and the intake model does not apply"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "h"
+var = "orbit_altitude"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "t_inf"
+var = "env_exospheric_temperature"
+type = "Temperature"
+
+[[algorithm.step]]
+number = 1
+text = "sum the per-species diffusive-equilibrium densities"
+binds = "n"
+type = "NumberDensity"
+
+[view]
+kind = "number"
+

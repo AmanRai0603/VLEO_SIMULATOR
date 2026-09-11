@@ -1,0 +1,77 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "env_exospheric_temperature"
+label = "Exospheric temperature"
+folder = "env_exospheric_temperature"   # frozen at seed; renaming the label never moves the directory
+subsystem = "env"
+parent = "l3_x_envorbit"
+kind = "computed"
+owner = "environment"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 498
+state = "published"
+
+[question]
+text = "How hot is the upper thermosphere today, given the Sun and the geomagnetic field?"
+
+[maths]
+expression = "T_inf = 379 + 3.24*F10.7A + 1.3*(F10.7 - F10.7A) + 28*Kp + 0.03*exp(Kp)"
+source = "jacchia1971"
+
+[[assumption]]
+text = "Night-time minimum, with no diurnal or seasonal term"
+fails_when = "the diurnal bulge adds up to 30% at 14:00 local solar time; a design sized on this value alone is sized on the quiet side"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "T_inf"
+type = "Temperature"
+unit = "Kelvin"
+lower = 400.0
+upper = 2500.0
+reason_lower = "no observed thermosphere is colder than 400 K; below that the Bates profile inverts"
+reason_upper = "above 2500 K is beyond any recorded storm and beyond the fit"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "f107"
+var = "env_f107"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "f107a"
+var = "env_f107a"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "kp"
+var = "env_kp"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "apply the Jacchia 1971 night-time minimum relation with its geomagnetic correction"
+binds = "t_inf"
+type = "Temperature"
+
+[view]
+kind = "line"
+over = "env_f107"
+points = 60
+

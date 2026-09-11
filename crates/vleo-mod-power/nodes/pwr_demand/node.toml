@@ -1,0 +1,96 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pwr_demand"
+label = "Total bus power demand"
+folder = "pwr_demand"   # frozen at seed; renaming the label never moves the directory
+subsystem = "power"
+parent = "l3_power"
+kind = "computed"
+owner = "power"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 585
+state = "published"
+
+[question]
+text = "How much power does the whole spacecraft need?"
+note = "Written as one function with named arguments rather than a chain of additions, so a forgotten term is a missing argument the compiler names."
+
+[maths]
+expression = "P_dem = (P_prop + P_pay + P_av + P_com + P_th)*(1 + L_h)"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "P_dem"
+type = "Power"
+unit = "Watt"
+lower = 0.0
+upper = 50000.0
+reason_lower = "demand cannot be negative"
+reason_upper = "above 50 kW nothing in this mass class supplies it"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "pp"
+var = "prop_delivered_bus_power"
+type = "Power"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "pay"
+var = "pay_power"
+type = "Power"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "av"
+var = "pwr_avionics_load"
+type = "Power"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "com"
+var = "com_tx_power"
+type = "Power"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "th"
+var = "pwr_thermal_load"
+type = "Power"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "lh"
+var = "pwr_harness_loss"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "sum the named loads and inflate them by the harness loss"
+binds = "p"
+type = "Power"
+
+[view]
+kind = "number"
+

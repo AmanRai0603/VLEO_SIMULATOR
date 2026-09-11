@@ -1,19 +1,24 @@
-//! LAYER 2 — the system layer's seeded rows — places in the decomposition nobody has specified yet.
+//! LAYER 2 - the system layer
 //!
-//! # Why a crate with nothing in it
+//! What the satellite is made of, and what reads what.
 //!
-//! The rows are here. Every one has a folder, a sheet, a place on the tree and
-//! eight tabs that open and say what goes in each of them. What is missing is
-//! the content, and nothing is generated from a sheet nobody has specified —
-//! a file full of `todo!()` would hide that behind something that looks like
-//! work.
+//! # Why this is its own crate
 //!
-//! The crate exists so that the moment a row is specified there is somewhere
-//! for its implementation to go, and so the module list that wires them in is
-//! already being built.
+//! Inside one crate `use crate::prop::..` from `power` compiles and the
+//! isolation rule is unenforced. A separate crate makes it a manifest line: a
+//! sibling this crate did not declare will not build. The faces still take one
+//! dependency on the facade, so the compiler still sees independent units and
+//! still builds them in parallel.
+//!
+//! # What is in here
+//!
+//! Nothing but generated node modules, and for most layers not even those yet.
+//! Every formula lives one ring down in `vleo-core`; a node composes them in
+//! its `model.rs` and holds no formula of its own, and `cargo xtask gate`
+//! fails the build if one appears here.
 #![forbid(unsafe_code)]
 
-/// The nodes this layer owns. Empty until the first row is specified.
+/// The nodes this layer owns. One module per folder, wired at build time.
 pub mod nodes {
     include!(concat!(env!("OUT_DIR"), "/nodes.rs"));
 }

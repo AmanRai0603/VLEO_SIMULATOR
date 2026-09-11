@@ -1,0 +1,47 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pay_rf_integration"
+label = "Intercept integration time"
+folder = "pay_rf_integration"   # frozen at seed; renaming the label never moves the directory
+subsystem = "pay"
+parent = "l3_payload"
+kind = "declared"
+owner = "payload"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 667
+state = "published"
+
+[question]
+text = "How long is the emitter observed for one measurement?"
+
+[maths]
+expression = "t_int_rf = 0.01"
+source = "orbitt_case_c2"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "t_int_rf"
+type = "Time"
+unit = "Second"
+lower = 1e-06
+upper = 10.0
+reason_lower = "below a microsecond the emitter is not observed long enough to time it"
+reason_upper = "above 10 seconds the emitter and the geometry both move during the observation"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 0.01
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

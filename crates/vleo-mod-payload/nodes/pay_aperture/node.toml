@@ -1,0 +1,50 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pay_aperture"
+label = "Optical aperture diameter"
+folder = "pay_aperture"   # frozen at seed; renaming the label never moves the directory
+subsystem = "pay"
+parent = "l3_payload"
+kind = "declared"
+owner = "payload"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 653
+state = "published"
+
+[question]
+text = "How large is the telescope's entrance pupil?"
+
+[maths]
+expression = "D_o = 0.3"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "D_o"
+type = "Length"
+unit = "Metre"
+lower = 0.02
+upper = 1.5
+reason_lower = "below 2 cm the diffraction limit is coarser than any useful ground sample distance from this altitude"
+reason_upper = "above 1.5 m the telescope does not fit the launch envelope of this class"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 0.3
+confirmed_by = "A. Rai / 2026-09-01"
+
+[contributes]
+kpis = ["kpi_gsd"]
+
+[view]
+kind = "number"
+

@@ -1,0 +1,72 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "aero_ballistic_coefficient"
+label = "Ballistic coefficient"
+folder = "aero_ballistic_coefficient"   # frozen at seed; renaming the label never moves the directory
+subsystem = "aero"
+parent = "l3_massaero"
+kind = "computed"
+owner = "aero"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 540
+state = "published"
+
+[question]
+text = "How well does this vehicle resist the atmosphere, per unit of its own mass?"
+note = "Higher is better here. A cubesat is around 50; a slender VLEO platform reaches 150, and that difference is worth tens of kilometres of altitude."
+
+[maths]
+expression = "BC = m/(Cd*A)"
+source = "vallado2013"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "BC"
+type = "Ratio"
+unit = "One"
+lower = 5.0
+upper = 500.0
+reason_lower = "below 5 kg/m2 the vehicle is a sail, and nothing in this band closes"
+reason_upper = "above 500 kg/m2 the vehicle is denser than any spacecraft ever flown"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "m"
+var = "mass_wet"
+type = "Mass"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "cd"
+var = "aero_drag_coefficient"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "a"
+var = "aero_frontal_area"
+type = "Area"
+
+[[algorithm.step]]
+number = 1
+text = "divide the wet mass by the product of drag coefficient and frontal area"
+binds = "bc"
+type = "Ratio"
+
+[view]
+kind = "number"
+

@@ -1,0 +1,63 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "aero_dynamic_pressure"
+label = "Dynamic pressure"
+folder = "aero_dynamic_pressure"   # frozen at seed; renaming the label never moves the directory
+subsystem = "aero"
+parent = "l3_massaero"
+kind = "computed"
+owner = "aero"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 537
+state = "published"
+
+[question]
+text = "What pressure does the flow exert per unit of drag coefficient and area?"
+
+[maths]
+expression = "q = 0.5*rho*V^2"
+source = "vallado2013"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "q"
+type = "Pressure"
+unit = "Pascal"
+lower = 0.0
+upper = 1.0
+reason_lower = "dynamic pressure cannot be negative"
+reason_upper = "above 1 Pa the vehicle is re-entering, not orbiting"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "rho"
+var = "env_mass_density"
+type = "MassDensity"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "v"
+var = "orbit_velocity"
+type = "Velocity"
+
+[[algorithm.step]]
+number = 1
+text = "form the dynamic pressure of the free stream"
+binds = "q"
+type = "Pressure"
+
+[view]
+kind = "number"
+

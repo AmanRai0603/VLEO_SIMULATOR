@@ -1,0 +1,79 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "cost_production"
+label = "Production run cost"
+folder = "cost_production"   # frozen at seed; renaming the label never moves the directory
+subsystem = "cost"
+parent = "l3_x_closure"
+kind = "computed"
+owner = "programme"
+tier = "C"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 710
+state = "published"
+
+[question]
+text = "What does building the whole constellation cost?"
+
+[maths]
+expression = "C = sum over n of T1*n^log2(b)"
+source = "nasa_cer"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "C_prod"
+type = "Money"
+unit = "MillionUsDollar"
+lower = 0.0
+upper = 1000000.0
+reason_lower = "a cost cannot be negative"
+reason_upper = "above a trillion dollars the programme is not the one being designed"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "cb"
+var = "cost_bus_recurring"
+type = "Money"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "cp"
+var = "cost_payload_recurring"
+type = "Money"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "n"
+var = "mis_satellites"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "b"
+var = "cost_learning_slope"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "sum the learning curve over the production run of buses and payloads together"
+binds = "c"
+type = "Money"
+
+[view]
+kind = "number"
+

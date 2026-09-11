@@ -1,0 +1,111 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pay_signal_electrons"
+label = "Signal electrons per sample"
+folder = "pay_signal_electrons"   # frozen at seed; renaming the label never moves the directory
+subsystem = "pay"
+parent = "l3_payload"
+kind = "computed"
+owner = "payload"
+tier = "B"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 674
+state = "published"
+
+[question]
+text = "How many photoelectrons does one ground sample produce?"
+
+[maths]
+expression = "N_e = L*Omega*A_px*B*tau*QE*t/(h*c/lambda)"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "N_e"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 1000000000.0
+reason_lower = "an electron count cannot be negative"
+reason_upper = "above a billion electrons the well is saturated many times over"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "l"
+var = "pay_radiance"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "d"
+var = "pay_aperture"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "f"
+var = "pay_focal_length"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "p"
+var = "pay_pixel_pitch"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "tau"
+var = "pay_transmission"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "qe"
+var = "pay_quantum_efficiency"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "t"
+var = "pay_dwell_time"
+type = "Time"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "lam"
+var = "pay_wavelength"
+type = "Length"
+
+[[algorithm.step]]
+number = 1
+text = "collect photons through the aperture solid angle over the dwell time and convert them at the detector's quantum efficiency, over a 100 nm band"
+binds = "n"
+type = "Ratio"
+
+[view]
+kind = "number"
+

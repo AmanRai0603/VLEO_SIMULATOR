@@ -1,0 +1,63 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "env_knudsen"
+label = "Knudsen number"
+folder = "env_knudsen"   # frozen at seed; renaming the label never moves the directory
+subsystem = "env"
+parent = "l3_x_envorbit"
+kind = "computed"
+owner = "environment"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 506
+state = "published"
+
+[question]
+text = "Is the flow free-molecular — which is what licenses every aerodynamic relation in this tree?"
+
+[maths]
+expression = "Kn = lambda/L"
+source = "us_std_1976"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "Kn"
+type = "Ratio"
+unit = "One"
+lower = 10.0
+upper = 1000000000000.0
+reason_lower = "below Kn = 10 the flow is transitional and Sentman's free-molecular relations are outside their envelope. This bound is the Ariane 501 lesson written as a guard: a component used outside the envelope it was specified for, with nothing re-derived"
+reason_upper = "above 1e12 the number is meaningless but harmless"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "lam"
+var = "env_mean_free_path"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "l_body"
+var = "aero_body_length"
+type = "Length"
+
+[[algorithm.step]]
+number = 1
+text = "divide the mean free path by the vehicle's characteristic length"
+binds = "kn"
+type = "Ratio"
+
+[view]
+kind = "number"
+

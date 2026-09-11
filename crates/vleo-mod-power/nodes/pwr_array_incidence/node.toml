@@ -1,0 +1,47 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pwr_array_incidence"
+label = "Mean solar incidence angle on the array"
+folder = "pwr_array_incidence"   # frozen at seed; renaming the label never moves the directory
+subsystem = "power"
+parent = "l3_power"
+kind = "declared"
+owner = "power"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 572
+state = "published"
+
+[question]
+text = "At what mean angle does the sunlight strike the array over an orbit?"
+
+[maths]
+expression = "theta_s = 25"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "theta_s"
+type = "Angle"
+unit = "Degree"
+lower = 0.0
+upper = 85.0
+reason_lower = "zero is normal incidence, the best case and the limit"
+reason_upper = "above 85 degrees the cosine loss leaves almost nothing and the array is not pointed at the Sun in any useful sense"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 25.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

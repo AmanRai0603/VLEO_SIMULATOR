@@ -1,0 +1,76 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "orbit_decay_rate"
+label = "Orbital decay rate"
+folder = "orbit_decay_rate"   # frozen at seed; renaming the label never moves the directory
+subsystem = "orbit"
+parent = "l3_x_envorbit"
+kind = "computed"
+owner = "systems"
+tier = "B"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 525
+state = "published"
+
+[question]
+text = "How fast does the orbit fall if nothing compensates the drag?"
+
+[maths]
+expression = "da/dt = -rho*sqrt(mu*a)/BC"
+source = "vallado2013"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "da_dt"
+type = "Velocity"
+unit = "MetrePerSecond"
+lower = -10.0
+upper = 0.0
+reason_lower = "a decay faster than 10 m/s of semi-major axis per second is re-entry, not an orbit"
+reason_upper = "drag cannot raise an orbit; a positive value here is a sign error upstream"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "rho"
+var = "env_mass_density"
+type = "MassDensity"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "bc"
+var = "aero_ballistic_coefficient"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "r"
+var = "orbit_radius"
+type = "Length"
+
+[[algorithm.step]]
+number = 1
+text = "apply the circular-orbit secular decay relation"
+binds = "d"
+type = "Velocity"
+
+[contributes]
+kpis = ["kpi_service_lifetime"]
+
+[view]
+kind = "line"
+over = "orbit_altitude"
+points = 60
+

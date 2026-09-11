@@ -1,0 +1,71 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "gnc_gravity_gradient_torque"
+label = "Gravity gradient torque"
+folder = "gnc_gravity_gradient_torque"   # frozen at seed; renaming the label never moves the directory
+subsystem = "gnc"
+parent = "l3_acs"
+kind = "computed"
+owner = "gnc"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 617
+state = "published"
+
+[question]
+text = "How much torque does the gravity gradient apply?"
+
+[maths]
+expression = "T = (3*mu/(2*r^3))*|Iz - Iy|*sin(2*theta)"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "T_gg"
+type = "Torque"
+unit = "NewtonMetre"
+lower = 0.0
+upper = 1.0
+reason_lower = "a torque magnitude cannot be negative"
+reason_upper = "above 1 N.m no wheel that fits this vehicle can hold attitude"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "r"
+var = "orbit_radius"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "imax"
+var = "gnc_inertia_max"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "imin"
+var = "gnc_inertia_min"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "evaluate the gravity gradient torque at a 10 degree offset from local vertical"
+binds = "t"
+type = "Torque"
+
+[view]
+kind = "number"
+

@@ -1,0 +1,71 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "thm_absorbed_albedo"
+label = "Absorbed albedo"
+folder = "thm_absorbed_albedo"   # frozen at seed; renaming the label never moves the directory
+subsystem = "thm"
+parent = "l3_thermal"
+kind = "computed"
+owner = "thermal"
+tier = "B"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 600
+state = "published"
+
+[question]
+text = "How much reflected sunlight off the Earth does the spacecraft absorb?"
+
+[maths]
+expression = "Q = S*A*alpha_s*a_E*F"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "Q_alb"
+type = "Power"
+unit = "Watt"
+lower = 0.0
+upper = 100000.0
+reason_lower = "absorbed power cannot be negative"
+reason_upper = "above 100 kW the illuminated area is not this spacecraft"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "a"
+var = "aero_frontal_area"
+type = "Area"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "al"
+var = "thm_absorptivity"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "f"
+var = "thm_view_factor"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "apply the Earth's mean Bond albedo through the view factor"
+binds = "q"
+type = "Power"
+
+[view]
+kind = "number"
+
