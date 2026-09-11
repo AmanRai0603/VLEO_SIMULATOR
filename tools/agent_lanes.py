@@ -90,12 +90,97 @@ def outside_holes(diff, path):
     return bad
 
 
+# The cases this file is expected to get right. A checker nobody has watched
+# fail is a checker nobody knows works, and these are cheap enough to run every
+# time, so the evidence is never older than the last run.
+#
+#   (agent, path, allowed?)
+CASES = [
+    ("hole-filler", "crates/vleo-mod-prop/nodes/prop_capture_efficiency/model.rs", True),
+    ("hole-filler", "crates/vleo-mod-prop/nodes/prop_capture_efficiency/node.toml", False),
+    ("hole-filler", "crates/vleo-core/src/physics/prop.rs", False),
+    ("hole-filler", "xtask/src/main.rs", False),
+    ("fixture-recorder", "crates/vleo-mod-aero/nodes/aero_drag_force/fixtures.toml", True),
+    ("fixture-recorder", "crates/vleo-mod-aero/nodes/aero_drag_force/node.toml", False),
+    ("fixture-recorder", "web/js/app.js", False),
+    ("declaration-drafter", "crates/vleo-mod-aero/nodes/aero_drag_force/node.toml", True),
+    ("declaration-drafter", "crates/vleo-mod-aero/nodes/aero_drag_force/fixtures.toml", False),
+    ("declaration-drafter", "crates/vleo-core/src/physics/aero.rs", False),
+    ("test-author", "crates/vleo-core/tests/pmath_accuracy.rs", True),
+    ("test-author", "crates/vleo-mod-prop/nodes/prop_capture_efficiency/evidence.rs", False),
+    ("test-author", "crates/vleo-mod-prop/nodes/prop_capture_efficiency/fixtures.toml", False),
+    ("diagnostician", "crates/vleo-core/src/resolver.rs", False),
+    ("diagnostician", "docs/RUNBOOK.md", False),
+    ("systems-backend", "crates/vleo-daemon/src/main.rs", True),
+    ("systems-backend", "xtask/src/main.rs", True),
+    ("systems-backend", "tools/seed_tree.py", True),
+    ("systems-backend", "crates/vleo-mod-prop/nodes/prop_capture_efficiency/model.rs", False),
+    ("systems-backend", "web/js/matrix.js", False),
+    ("frontend-visualisation", "web/js/matrix.js", True),
+    ("frontend-visualisation", "web/app.css", True),
+    ("frontend-visualisation", "crates/vleo-daemon/src/main.rs", False),
+]
+
+# A hole body, and the same file with a line smuggled in above the imports.
+INSIDE = """diff --git a/m/model.rs b/m/model.rs
+@@
+ // ---- HOLE 1 : do the thing -> Ratio
+-let x: Ratio = old();
++let x: Ratio = new();
+ // ---- end HOLE 1
+"""
+OUTSIDE = """diff --git a/m/model.rs b/m/model.rs
+@@
+ use vleo_core::units::*;
++use std::f64::consts::PI;
+ // ---- HOLE 1 : do the thing -> Ratio
+ let x: Ratio = same();
+ // ---- end HOLE 1
+"""
+
+
+def verdict(lane, path):
+    if matches(path, lane.get("never", [])):
+        return False
+    return matches(path, lane.get("writes", []))
+
+
+def selftest():
+    all_lanes = {L["name"]: L for L in lanes()}
+    bad = 0
+    for name, path, want in CASES:
+        got = verdict(all_lanes[name], path)
+        if got != want:
+            bad += 1
+            print("   WRONG %-24s %-60s expected %s, got %s"
+                  % (name, path, "allowed" if want else "refused",
+                     "allowed" if got else "refused"))
+    print("paths: %d case(s), %d wrong" % (len(CASES), bad))
+
+    inside = outside_holes(INSIDE, "m/model.rs")
+    outside = outside_holes(OUTSIDE, "m/model.rs")
+    if inside:
+        bad += 1
+        print("   WRONG a change inside a hole was reported as outside: %s" % inside)
+    if not any("consts::PI" in x for x in outside):
+        bad += 1
+        print("   WRONG a change outside a hole was not caught: %s" % outside)
+    print("holes: 2 case(s), %d wrong" % (0 if not inside and outside else 1))
+    print("selftest: %s" % ("every case as expected" if bad == 0 else "%d FAILED" % bad))
+    return 1 if bad else 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--agent")
     ap.add_argument("--since", help="a commit or range; default is the working tree")
     ap.add_argument("--list", action="store_true")
+    ap.add_argument("--selftest", action="store_true",
+                    help="run the cases this checker is expected to get right")
     a = ap.parse_args()
+
+    if a.selftest:
+        return selftest()
 
     all_lanes = lanes()
     if a.list or not a.agent:
