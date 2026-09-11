@@ -66,3 +66,28 @@ all:
 
 Structural verification is inherited by every node at once; the arithmetic is
 not. That asymmetry is why your output is small and heavily surrounded.
+
+## What you hand back, and what happens to it
+
+One fenced block per hole, and nothing else — no file path, no diff, no
+surrounding function. A person or the harness runs:
+
+    cargo run -p xtask -- fill <node> --hole <n> --body -
+
+and pipes your block into it. If it refuses, the reason names what to change:
+a hole the sheet does not declare, a `HOLE` marker inside your body, a guard,
+an early return, or a platform maths call. Fix the block and hand it back; do
+not ask for the file.
+
+Then, in order:
+
+    cargo run -p xtask -- gate <node>     # every check, including portable maths
+    cargo run -p xtask -- ready <node>    # has it earned a person's attention
+    cargo test -p <the node's crate>
+
+`ready` is the one to read. It runs the gate, then the gap pass, then what
+criticality demands, and stops at the first that is not clean. A node it holds
+is a node where a person would be doing first-pass defect-finding, which is
+work a machine does better, faster and free.
+
+Say which of the three you ran and what each said.

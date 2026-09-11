@@ -47,12 +47,36 @@ Read the whole page before changing part of it. The tree, the paths column and
 the matrix share one walk and one scroll viewport for a reason: a side-car tree
 drifts out of alignment the moment a branch opens.
 
+## Every panel you touch has a spec, and three checks
+
+A wrong number crashes a test; a wrong chart looks beautiful. So a panel is
+declared like a node — `panels/<id>.toml`, saying what it draws, which state it
+`reads`, and what a correct picture looks like — and checked mechanically:
+
+    python3 tools/panel_check.py --panel <id>
+
+1 · it renders · 2 · it moves when each declared input moves · 3 · it matches
+`panels/reference/<id>.png` within tolerance.
+
+Check two is the one that matters. A panel wired to nothing renders perfectly
+and matches yesterday's reference every time — that is "three correct power
+numbers on one screen, correct at three different times".
+
+**A panel you add without a spec is a panel nothing checks.** Write the spec in
+the same change, not after.
+
+When a picture legitimately changes, re-record with `--record` — and look at
+the new image before you keep it. A reference nobody looked at is a snapshot of
+a bug. Two things learned recording the first three: take the reference in a
+state where the panel has something to be wrong about (`reference_state`), and
+give a large pane a viewport it fits inside, or the stitched screenshot
+composites whatever was scrolled behind it.
+
 ## Before you hand back
 
-Serve it and drive it:
-
+    python3 tools/panel_check.py
     cargo run --release -p vleo-daemon
 
-Then open every view you touched, and any view that shares state with it. Check
-the browser console is clean — no errors, no failed requests, no duplicate ids.
-Say what you opened and what you saw.
+Open every view you touched, and any view that shares state with it. Check the
+browser console is clean — no errors, no failed requests, no duplicate ids. Say
+what you opened, what you saw, and what `panel_check` said.

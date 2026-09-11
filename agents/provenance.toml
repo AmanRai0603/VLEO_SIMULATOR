@@ -27,6 +27,23 @@
 # a change to any definition is H10: the fleet owner, with the evaluation set
 # passing at k=3.
 #
+# SILENCE. `tools/fleet_report.py` reports how often each agent actually fires,
+# because a definition that loads into context and never runs is pure cost.
+# There are three honest answers to a silent agent — delete it, merge it into
+# another, or say why it is kept — and the third one has to be written down or
+# it decays into nobody having decided.
+#
+# So `expected_from` is required on every row: the point in the work at which
+# this agent starts firing. An agent silent past its own `expected_from` is a
+# finding; one silent before it is doing exactly what it should, which is
+# waiting, defined, for work that has not begun.
+#
+# All four of the silent ones are kept. The tree is 250 rows written and 1079
+# seeded: the content phase has not started. Their definitions exist now so
+# that when it does, the work is repeatable from the first node rather than
+# invented per node — which is the whole reason for writing a definition rather
+# than a prompt.
+#
 # THE MODEL-FAMILY RULE. A checker may not run the model family of the thing it
 # checks. The reason is not that one family is better: it is that a model given
 # its own reasoning to grade approves it. The working model states this twice —
@@ -38,10 +55,21 @@
 # tools/instruction_lint.py refuses a pair whose models match. Without that,
 # the rule is a sentence and the default — everything on one family, because
 # that is what the last person configured — silently wins.
+#
+# WHAT IS ACTUALLY ENFORCED, AND WHAT IS NOT. The working model means family in
+# the vendor sense, and cites the finding that mixing providers outperforms any
+# single vendor's stack. Every agent here runs Claude, so that rule is not
+# satisfied — what the lint enforces is the weaker "a checker does not run the
+# same model as its producer", which separates the model tiers and not the
+# training. Saying so is the point: an approximation recorded as the real thing
+# is how a control stops being one. Closing it properly means a second provider
+# in the harness, and that is a decision with a cost attached, not an oversight.
 
 [[agent]]
 id = "A"
 name = "declaration-drafter"
+expected_from = "the first node drafted from a paper rather than transcribed from CD-06"
+why_kept = "Silent because every row so far came from the CD-06 tree, which was already structured — there was no unstructured source to read. It fires on the first sheet drafted from romano2021 or a measurement."
 source = "BUILD"
 upstream = ""
 pinned = ""
@@ -56,6 +84,8 @@ note = "Written here because nothing off the shelf knows these fields. Its prohi
 [[agent]]
 id = "B"
 name = "fixture-recorder"
+expected_from = "now — it has fired"
+why_kept = "Fired once, recording the intake fixture."
 source = "BUILD"
 upstream = ""
 pinned = ""
@@ -70,6 +100,8 @@ note = "Written here because the provenance rule is ours. The gate enforces the 
 [[agent]]
 id = "C"
 name = "hole-filler"
+expected_from = "the first hole filled after a sheet passes both reviews"
+why_kept = "Silent because no sheet has been through H1a and H1b yet, and a hole filled before the physics is reviewed is a hole filled against a sheet that may change. The splice it returns text through is built and watched working; what is missing is a reviewed sheet to fill against, not the agent."
 source = "ADOPT"
 upstream = "a general coding subagent, narrowed to a few typed lines"
 pinned = "vendored 2026-09-09; no upstream commit — the definition was written against the splice this repository provides"
@@ -84,6 +116,8 @@ note = "The only prohibition in the roster that is fully enforced: it has no wri
 [[agent]]
 id = "E"
 name = "test-author"
+expected_from = "now — it has fired"
+why_kept = "Fired once, writing the capture-efficiency property test."
 checks = "hole-filler"
 source = "ADOPT"
 upstream = "the test-generation category; tuned to generate over a declared domain rather than from code"
@@ -99,7 +133,9 @@ note = "Its scope is smaller than the roster implies, because most property test
 [[agent]]
 id = "F"
 name = "diagnostician"
-checks = "systems-backend"
+expected_from = "now — it has fired"
+why_kept = "Fired once, on the duplicate-identifier defect."
+checks = "hole-filler"
 source = "ADOPT, tuned heavily"
 upstream = "the debugging and site-reliability agent category"
 pinned = "vendored 2026-09-09"
@@ -114,13 +150,15 @@ note = "Keeps Bash, so its read-only guarantee is detection rather than preventi
 [[agent]]
 id = "I"
 name = "systems-backend"
+expected_from = "the first generator or kernel change not made in this session"
+why_kept = "Silent because every change to the generators, the gate and the task runner so far has been made directly in the main session rather than delegated. That is a choice about how this session ran, not a judgement about the agent: the work it owns is exactly the work with the largest blast radius, which is why it is on opus and why H7 asks two reviewers for it."
 source = "ADOPT"
 upstream = "the backend-developer category, plus AGENTS.md and areas/*.md"
 pinned = "vendored 2026-09-09"
 licence = "ours, as written"
 owner = "platform engineer"
-model = "sonnet"
-why_model = "ordinary software engineering"
+model = "opus"
+why_model = "not ordinary after all — this agent owns the generators and the gate, where one mistake is 1329 mistakes, and the work model already files a change here under H7 for the same reason. The blast radius decides the model, not the difficulty of any single edit"
 fallback = "a person. This is the one agent whose work has a conventional substitute"
 verified = "2026-09-11"
 note = "Arguably not a roster entry at all — it is a coding agent pointed at this repository with an instruction file per area."
@@ -128,6 +166,8 @@ note = "Arguably not a roster entry at all — it is a coding agent pointed at t
 [[agent]]
 id = "J"
 name = "frontend-visualisation"
+expected_from = "the first panel or figure change after the panel specs exist"
+why_kept = "Silent because the web face was built before panels were declared. The three panel specs and their checks now exist, so a change here has something to be checked against — which is what makes delegating it safe rather than a matter of looking at the screenshot and hoping."
 source = "ADOPT"
 upstream = "the frontend-developer category, plus areas/document.md"
 pinned = "vendored 2026-09-09"

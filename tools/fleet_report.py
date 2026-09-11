@@ -47,6 +47,15 @@ def roster():
     return [a["name"] for a in tomllib.loads((ROOT / "agents" / "lanes.toml").read_text())["agent"]]
 
 
+def register():
+    """What the fleet owner decided about each definition."""
+    try:
+        d = tomllib.loads((ROOT / "agents" / "provenance.toml").read_text())
+    except Exception:
+        return {}
+    return {a["name"]: a for a in d.get("agent", [])}
+
+
 def logs():
     return sorted(LOGS.glob("*/*.jsonl")) if LOGS.is_dir() else []
 
@@ -88,25 +97,41 @@ def read(paths, since=None):
     return fired, last, tokens, sessions, turns
 
 
-def render(fired, last, tokens, sessions, turns, names):
+def render(fired, last, tokens, sessions, turns, names, reg=None):
+    reg = register() if reg is None else reg
     out = []
     out.append("firing rate — an agent that never fires is pure cost")
     out.append("")
-    out.append("  %-24s %8s  %s" % ("agent", "fired", "last"))
-    silent = []
+    out.append("  %-24s %8s  %-12s %s" % ("agent", "fired", "last", "expected from"))
+    waiting, unexplained = [], []
     for n in names:
+        exp = (reg.get(n) or {}).get("expected_from", "")
         if fired.get(n):
-            out.append("  %-24s %8d  %s" % (n, fired[n], last.get(n, "")[:10]))
+            out.append("  %-24s %8d  %-12s %s" % (n, fired[n], last.get(n, "")[:10], exp))
         else:
-            silent.append(n)
-            out.append("  %-24s %8s  %s" % (n, "0", "never"))
+            out.append("  %-24s %8s  %-12s %s" % (n, "0", "never", exp or "\x1b[31mnot recorded\x1b[0m"))
+            (waiting if exp else unexplained).append(n)
     for n in sorted(set(fired) - set(names)):
-        out.append("  %-24s %8d  %s   (not on the roster)" % (n, fired[n], last.get(n, "")[:10]))
-    if silent:
+        out.append("  %-24s %8d  %-12s (not on the roster)" % (n, fired[n], last.get(n, "")[:10]))
+
+    if waiting:
         out.append("")
-        out.append("  %d never fired: %s." % (len(silent), ", ".join(silent)))
-        out.append("  Each still loads into context. Delete it, merge it into another, or")
-        out.append("  say why it is being kept — those are the only three honest answers.")
+        out.append("  %d silent, each kept on purpose:" % len(waiting))
+        for n in waiting:
+            out.append("    %s — waits for: %s" % (n, reg[n]["expected_from"]))
+            why = reg[n].get("why_kept", "")
+            if why:
+                for line in _wrap(why, 74):
+                    out.append("      %s" % line)
+        out.append("")
+        out.append("  Silent before its own expected_from is an agent waiting, defined, for work")
+        out.append("  that has not begun. Silent past it is a finding.")
+    if unexplained:
+        out.append("")
+        out.append("  %d silent with no decision recorded: %s." % (len(unexplained), ", ".join(unexplained)))
+        out.append("  Each still loads into context. Delete it, merge it into another, or record")
+        out.append("  expected_from in agents/provenance.toml — those are the only three honest")
+        out.append("  answers, and the third one has to be written down or nobody decided.")
 
     out.append("")
     out.append("tokens — the main session only; a subagent's own run is not attributable here")
@@ -129,19 +154,38 @@ def render(fired, last, tokens, sessions, turns, names):
     return "\n".join(out)
 
 
+def _wrap(text, n):
+    words, line, out = text.split(), "", []
+    for w in words:
+        if len(line) + len(w) + 1 > n:
+            out.append(line)
+            line = w
+        else:
+            line = (line + " " + w).strip()
+    if line:
+        out.append(line)
+    return out
+
+
+#: (fired, roster, register, needle, present)
+REG = {"test-author": {"expected_from": "the first declared property"}}
 CASES = [
-    # (fired counter, roster, needle, present)
-    ({"hole-filler": 3}, ["hole-filler", "test-author"], "test-author", True),
-    ({"hole-filler": 3}, ["hole-filler", "test-author"], "1 never fired", True),
-    ({"hole-filler": 3, "test-author": 1}, ["hole-filler", "test-author"], "never fired", False),
-    ({"ghost": 2}, ["hole-filler"], "not on the roster", True),
+    ({"hole-filler": 3}, ["hole-filler", "test-author"], REG, "test-author", True),
+    # Silent with a recorded expectation is a decision, not a finding.
+    ({"hole-filler": 3}, ["hole-filler", "test-author"], REG, "kept on purpose", True),
+    ({"hole-filler": 3}, ["hole-filler", "test-author"], REG, "no decision recorded", False),
+    # Silent with nothing recorded is the finding W7 exists for.
+    ({"hole-filler": 3}, ["hole-filler", "test-author"], {}, "no decision recorded", True),
+    ({"hole-filler": 3}, ["hole-filler", "test-author"], {}, "kept on purpose", False),
+    ({"hole-filler": 3, "test-author": 1}, ["hole-filler", "test-author"], {}, "silent", False),
+    ({"ghost": 2}, ["hole-filler"], {}, "not on the roster", True),
 ]
 
 
 def selftest():
     bad = 0
-    for fired, names, needle, want in CASES:
-        text = render(collections.Counter(fired), {}, {}, set(), 0, names)
+    for fired, names, reg, needle, want in CASES:
+        text = render(collections.Counter(fired), {}, {}, set(), 0, names, reg)
         if (needle in text) != want:
             bad += 1
             print("  FAIL %r expected %s in:\n%s" % (needle, "present" if want else "absent", text))
@@ -151,7 +195,15 @@ def selftest():
         if n not in text:
             bad += 1
             print("  FAIL %s is on the roster and not in the report" % n)
-    print("selftest: %d cases, %s" % (len(CASES) + 1, "all as expected" if not bad else "%d FAILED" % bad))
+    # Every roster agent carries a decision. Without this the report goes quiet
+    # the moment somebody adds an agent and forgets, which is the failure W7
+    # names: a definition that loads and never runs, and nothing says so.
+    reg = register()
+    for n in roster():
+        if not (reg.get(n) or {}).get("expected_from"):
+            bad += 1
+            print("  FAIL %s has no expected_from — its silence would mean nothing" % n)
+    print("selftest: %d cases, %s" % (len(CASES) + 2, "all as expected" if not bad else "%d FAILED" % bad))
     return 1 if bad else 0
 
 

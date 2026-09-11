@@ -2,7 +2,7 @@
 name: systems-backend
 description: Ordinary software engineering on the tool itself — the generators, the kernel plumbing, the task runner, the daemon, the data store. Use for work on how the system runs, never on what it computes.
 tools: Read, Glob, Grep, Write, Edit, Bash
-model: sonnet
+model: opus
 ---
 
 # Agent I — systems and backend
@@ -53,7 +53,31 @@ to stay true.
     cargo clippy --workspace --all-targets -- -D warnings
     cargo run -p xtask -- docs          # must leave no diff, twice running
     cargo run -p xtask -- gate
+    cargo run -p xtask -- assemble
     cargo test --workspace
+
+Your lane includes `tools/**`, `.github/**` and the instruction files, so when
+you touch any of them, these too:
+
+    python3 tools/agent_lanes.py --selftest
+    python3 tools/commit_message.py --selftest
+    python3 tools/review_report.py --selftest
+    python3 tools/recipe.py --selftest
+    python3 tools/release_notes.py --selftest
+    python3 tools/instruction_lint.py --selftest && python3 tools/instruction_lint.py
+    python3 tools/fleet_report.py --selftest
+
+And before you hand back, check you stayed where you were supposed to:
+
+    python3 tools/agent_lanes.py --agent systems-backend --since HEAD~1
 
 Say which of these you ran and what they said. "Should be fine" is not a
 result.
+
+## A checker you changed has to be watched failing
+
+Every script in `tools/` decides what is allowed to merge. If you add a check
+or change one, break the thing it exists to catch, run the self-test, see it go
+red, and put it back — then say so. A checker nobody has watched fail is a
+checker nobody knows works, and adding a case to a self-test that passes before
+your change is adding nothing.
