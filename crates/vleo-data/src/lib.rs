@@ -145,11 +145,41 @@ impl Store {
                         b.refusal.clone().unwrap_or_default()
                     ));
                 }
+                // Copy it into the store. Without this, sync verified the
+                // source, wrote a lockfile and reported success over a store
+                // that stayed empty — so `data sync` and `data list`
+                // contradicted each other, and a run that needed a bundle
+                // found nothing where the lockfile said something was.
+                //
+                // Into name/version, so two versions of one bundle coexist and
+                // a published version is never overwritten.
+                let dest = self.root.join(&b.manifest.name).join(&b.manifest.version);
+                copy_bundle(&v, &dest, &b.manifest)?;
+
+                // Re-read from the store and verify there, not at the source.
+                // A copy that lost a byte is exactly the failure this whole
+                // mechanism exists to catch, and checking the original again
+                // would not catch it.
+                let installed = load_bundle(&dest)?;
+                if !installed.verified {
+                    return Err(format!(
+                        "{}@{} verified at the source and not after the copy: {}. \
+                         Something changed the bytes in between.",
+                        b.manifest.name,
+                        b.manifest.version,
+                        installed.refusal.clone().unwrap_or_default()
+                    ));
+                }
+
                 self.lock.insert(
-                    b.manifest.name.clone(),
-                    (b.manifest.version.clone(), b.manifest.content_hash.clone()),
+                    installed.manifest.name.clone(),
+                    (
+                        installed.manifest.version.clone(),
+                        installed.manifest.content_hash.clone(),
+                    ),
                 );
-                self.bundles.insert(b.manifest.name.clone(), b);
+                self.bundles
+                    .insert(installed.manifest.name.clone(), installed);
                 n += 1;
             }
         }
@@ -324,6 +354,25 @@ pub fn load_bundle(dir: &Path) -> Result<Bundle, String> {
         verified,
         refusal,
     })
+}
+
+/// Put a verified bundle in the store: the manifest and every file it lists.
+///
+/// Only what the manifest names. A file sitting in the source directory that no
+/// manifest lists is not part of the bundle — it is not hashed, so copying it
+/// would install something nothing verified.
+fn copy_bundle(from: &Path, to: &Path, m: &Manifest) -> Result<(), String> {
+    fs::create_dir_all(to).map_err(|e| format!("{}: {e}", to.display()))?;
+    fs::copy(from.join("manifest.toml"), to.join("manifest.toml"))
+        .map_err(|e| format!("{}: {e}", to.join("manifest.toml").display()))?;
+    for f in &m.files {
+        let dst = to.join(f);
+        if let Some(parent) = dst.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("{}: {e}", parent.display()))?;
+        }
+        fs::copy(from.join(f), &dst).map_err(|e| format!("{}: {e}", dst.display()))?;
+    }
+    Ok(())
 }
 
 /// FNV-1a over every payload file, in the order the manifest lists them.

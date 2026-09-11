@@ -1,4 +1,8 @@
+# Anchored at the root only, which missed the two crates outside the workspace:
+# vleo-wasm and vleo-py build into their own target/ directories, and staging
+# them adds several thousand build artefacts to a commit.
 /target
+**/target/
 /generated
 **/*.rs.bk
 .DS_Store

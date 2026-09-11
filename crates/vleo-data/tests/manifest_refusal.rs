@@ -145,3 +145,59 @@ fn a_tampered_byte_does_not_verify() {
         "the refusal says both hashes"
     );
 }
+
+/// Sync fills the store, and the store is what a run reads.
+///
+/// It used to verify the source, write a lockfile and report success over a
+/// store that stayed empty, so `data sync` and `data list` contradicted each
+/// other and a run found nothing where the lockfile said something was. Found
+/// by running the two commands in sequence, which is the one thing no unit
+/// test here was doing.
+#[test]
+fn sync_puts_the_bundle_in_the_store() {
+    let src = std::env::temp_dir().join("vleo-sync-src");
+    let store = std::env::temp_dir().join("vleo-sync-store");
+    let _ = fs::remove_dir_all(&src);
+    let _ = fs::remove_dir_all(&store);
+    let v = src.join("test-bundle").join("2026.01.01");
+    fs::create_dir_all(&v).unwrap();
+    fs::write(v.join("payload.csv"), "day,f107\n0,150\n").unwrap();
+    let hash = vleo_data::hash_files(&v, &["payload.csv".to_string()]).unwrap();
+    fs::write(
+        v.join("manifest.toml"),
+        format!(
+            "name = \"test-bundle\"\nversion = \"2026.01.01\"\nprovenance = \"test\"\n\
+             licence_until = \"2031-12-31\"\nstale_after_days = 120\n\
+             files = [\"payload.csv\"]\ncontent_hash = \"{hash}\"\n"
+        ),
+    )
+    .unwrap();
+
+    let mut s = vleo_data::Store::open(&store);
+    assert_eq!(s.sync(&vleo_data::Source::File(src.clone())).unwrap(), 1);
+
+    let installed = store.join("test-bundle").join("2026.01.01");
+    assert!(
+        installed.join("manifest.toml").is_file(),
+        "the manifest is in the store"
+    );
+    assert!(
+        installed.join("payload.csv").is_file(),
+        "the payload is in the store"
+    );
+
+    // What sync reported and what a later run finds must agree. That is the
+    // contradiction this test exists for.
+    let mut fresh = vleo_data::Store::open(&store);
+    assert_eq!(
+        fresh.load().unwrap(),
+        1,
+        "a fresh store reads back what sync wrote"
+    );
+    assert_eq!(fresh.verified_names(), vec!["test-bundle".to_string()]);
+
+    // Idempotent: a published version is never modified, so syncing twice is
+    // the same store.
+    assert_eq!(s.sync(&vleo_data::Source::File(src)).unwrap(), 1);
+    assert!(installed.join("payload.csv").is_file());
+}

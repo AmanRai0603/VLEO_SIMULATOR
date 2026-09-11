@@ -195,6 +195,34 @@ jobs:
       - name: every declared panel
         run: python3 tools/panel_check.py
 
+  # The two faces the workspace excludes, because they need targets of their
+  # own. `cargo build --workspace` does not reach them, so until this job
+  # existed nothing in the pipeline built two of the six doors onto the kernel
+  # and they could break silently for as long as nobody opened them by hand.
+  excluded-faces:
+    name: the faces outside the workspace
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            crates/vleo-wasm/target
+            crates/vleo-py/target
+          key: ${{ runner.os }}-excluded-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
+      - run: rustup target add wasm32-unknown-unknown
+      # --locked, because these two do not share the workspace lockfile and
+      # ADOPTION.lock's rule is the same for them: an exact version plus a
+      # committed lock, resolved from it rather than fresh on the day.
+      - name: the browser face
+        working-directory: crates/vleo-wasm
+        run: cargo build --locked --target wasm32-unknown-unknown --release
+      - name: the Python face
+        working-directory: crates/vleo-py
+        run: cargo build --locked --release
+
   # Both profiles build on every merge. A customer build that fails only at
   # release time fails on the day it can least be afforded — and link-time
   # optimisation with a single codegen unit changes inlining, so the profile

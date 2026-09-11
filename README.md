@@ -147,19 +147,87 @@ lowest governing, and the evidence that executed](docs/img/node.png)
 
 ## Developing
 
-The full walkthrough is [`docs/USING_IT.md`](docs/USING_IT.md). The loop:
+### Who does what
+
+Nothing here is autonomous. The division is fixed and it is the point of the
+whole arrangement: a person decides, a generator derives, an agent does the
+part that is neither a decision nor a derivation.
+
+| | does | cannot |
+|---|---|---|
+| **a person** | states the question, the relation, its source, the domain and the reason for each bound; derives the known-good numbers; accepts the node | be replaced at any of it — none of it is checkable by machine |
+| **a generator** | emits every artefact from the sheet, deterministically | decide anything. It combines and refuses; a decision taken during generation is a decision nobody reviewed |
+| **an agent** | drafts, fills a hole, writes a test, diagnoses a failure | do a person's part, and each is held out of it by a path rule rather than by instruction |
+
+Two human decisions per node, and everything between them is a command. If a
+node takes materially longer than that, the template has a defect worth finding
+— it will be paid 1329 times.
+
+### The nine generators
+
+Six run per node. Each reads that node's sheet and nothing else, which is what
+makes 1329 rows 1329 independent pieces of work rather than one large one.
+
+| generator | emits | what it is for |
+|---|---|---|
+| model | `model.rs` | the whole implementation, with numbered `HOLE` blocks left open |
+| contract | `contract.rs` | outputs, units, guarantees, domain, faults — what other nodes may rely on |
+| module | `mod.rs` | wires the node into its crate |
+| evidence | `evidence.rs` | the fixture tests, plus three properties derived from the declared domain |
+| page | `page.html` | this node's fragment of the document |
+| metadata | `meta.json` | criticality, reviewer count, open gaps |
+
+Three run at assembly, where the whole tree is visible:
+
+| generator | emits |
+|---|---|
+| index | the tree the faces read |
+| document | every page fragment, assembled |
+| graph | the three graph tables — derivation, contribution, relation |
+
+The gap pass is the ninth and the cheapest: it diffs what the sheet promised
+against what the artefacts contain. It costs nothing because the requirement is
+a schema rather than prose, so it runs on every node on every build.
+
+**What the generators mean in practice.** A sheet of about forty lines produces
+six files and four tests. Structural correctness — units, guards, fault
+construction, ordering, tracing — is inherited by every node at once and is
+tested once, in the generator. What is left to write by hand is two or three
+typed lines per hole, and those are what the five checks below surround.
+
+### The loop, start to finish
+
+Verified end to end on `main`: a node taken from nothing to "waiting on a
+person", then removed.
 
 ```
 cargo run -p xtask -- new <id> --like <sibling>   # clone the shape, blank the decisions
-cargo run -p xtask -- declare <id>                # the completion questions, and what is open
-#   fill node.toml
-cargo run -p xtask -- docs <id>                   # refuses while any field is open
-#   return each hole body as text
-cargo run -p xtask -- fill <id> --hole 1 --body -
+cargo run -p xtask -- declare <id>                # the completion questions, and which are open
+#   a person answers them in node.toml
+cargo run -p xtask -- docs <id>                   # refuses while any is open; then six artefacts
+cargo run -p xtask -- fill <id> --hole 1 --body - # the hole body arrives as text, and is spliced
 cargo run -p xtask -- gate <id>                   # twelve checks, in order
 cargo run -p xtask -- ready <id>                  # has it earned a person's attention
 cargo test -p vleo-mod-<subsystem>
 ```
+
+What that run showed, in order:
+
+| stage | what happened |
+|---|---|
+| `declare` | six questions open |
+| `docs` | refused, named the six fields, wrote nothing |
+| `declare` | `0 gaps open · ready to generate` |
+| `docs` | six artefacts written |
+| `fill` | one line spliced; a second body carrying a guard was refused by name |
+| `gate` | twelve checks, then `0 node check failure(s)` |
+| `ready` | held — no fixture yet |
+| a fixture added | `1 of 1 waiting on H2`, and four tests generated for it |
+
+The gate also caught a real defect during that run: a bulk edit had clobbered
+the inherited input types, and the contract check named every one of them —
+"`eta_geo` expects Area but `prop_eta_geo` publishes Ratio". That is an
+interface mismatch caught at the sheet, before any code existed.
 
 Two commands must be green before anything is pushed:
 
@@ -187,6 +255,13 @@ tools/agent_lanes.py --agent <name> --since HEAD~1
 | I systems-backend | generators, gate, kernel plumbing, the faces | edit a sheet or a hole | full |
 | J frontend-visualisation | the web face, panels and figures | invent a style token; ship an unrendered figure | partial |
 
+**Where each sits in the loop.** A is before `declare`, reading a paper into
+sheet fields. B is after a person has derived a known-good number, formatting it
+with its provenance. C is between `docs` and `fill`, returning the hole body as
+text. E extends the evidence beyond the three generated properties. F is not in
+the loop at all — it runs when something moved and nobody expected it. I and J
+work on the tool rather than on the design.
+
 `full` means the machine prevents it. C has no write tool at all: it returns
 hole bodies as text and `xtask fill` is the only route into a generated file,
 refusing a guard, an early return or a platform maths call before anything is
@@ -198,11 +273,18 @@ with nobody's name against it is a gap that blocks review, which is the closest
 mechanical thing to it. Whether the formula is right is H1b's job and will not
 become a machine's.
 
+Four of the seven have never fired here, and that is recorded rather than left
+to be noticed: `agents/provenance.toml` gives each an `expected_from` — the
+point in the work at which it starts — and `tools/fleet_report.py` reads it, so
+an agent silent *before* its own `expected_from` is one waiting for work that
+has not begun, and one silent *past* it is a finding.
+
 Five roster entries are scripts rather than agents, because the work is a fixed
-transform: the commit-message rule (`tools/commit_message.py`), the advisory
-review (`tools/review_report.py`, which can never block a merge), the dependency
-bot (`.github/dependabot.yml`), bundle publication, and the release pipeline
-with one human approval.
+transform with one right answer: the commit-message rule
+(`tools/commit_message.py`), the advisory review (`tools/review_report.py`,
+which can never block a merge), the dependency bot (`.github/dependabot.yml`),
+bundle publication (`xtask bundle publish`), and the release pipeline with one
+human approval. A model is the wrong tool for work with no judgement in it.
 
 ### What runs without being asked
 
@@ -311,6 +393,9 @@ showing an optimum near 300 km](docs/img/sweep.png)
   exist. Mutation testing has been done by hand and recorded per change.
 - **Signing is absent, not stubbed.** The release workflow builds and gates but
   does not sign, because no certificate exists yet.
+- **Two faces sit outside the workspace.** `vleo-wasm` and `vleo-py` need
+  targets of their own, so `cargo build --workspace` does not reach them. They
+  have their own pipeline job; build them by hand from their own directories.
 
 ## Two things a fresh clone needs from a person
 
