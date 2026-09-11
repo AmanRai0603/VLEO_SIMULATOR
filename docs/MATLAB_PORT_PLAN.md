@@ -219,3 +219,139 @@ than a node.
    hosts are blocked here, so the data has to come from your machine. Route 2 —
    a CSV you export — is the plan unless you would rather I work from
    `prf_study.mat` directly.
+
+---
+
+# Part II · The solar-weather tab, and where it lands
+
+Added after exploring `01_kernel/sw_study` in full — eight tabs, 38 analysis
+methods, ~57 views, all reading one database.
+
+## 6 · The shape problem, stated exactly
+
+The tree links layer 3 to layer 2 through **one interface node per subsystem**,
+carrying `crosses_to`. Group parentage does not do it:
+
+```
+l3_x_envorbit                     parent = "root"          ← correct by design
+  └─ l3_x_envorbit_interface      crosses_to = "sys_orbit_and_environment"
+```
+
+`sys_orbit_and_environment` is the **parent** of `sys_space_environment`. So the
+existing layer-3 group crosses to the level above space environment, and
+**nothing in the tree crosses to `sys_space_environment` itself.** That is why
+there is no layer-3 environment under it: not an oversight in the seed, but a
+subsystem that was never given one.
+
+The six layer-2 rows under `sys_space_environment` — solar flux, F10.7, Ap,
+atmospheric density, thermospheric wind, atomic oxygen fluence — are all
+`state = "empty"`. They are the answers a layer-3 group is supposed to supply,
+and no group supplies them.
+
+## 7 · What actually computes a number in that tab
+
+38 analysis methods, but most produce *understanding* — verification, scoring,
+segmentation, storm classification. The chain that produces the numbers a design
+consumes is narrow:
+
+```
+prf_study.mat            10,319 days, 1997-2025, F10.7 · Ap · 8×Kp
+  └─ prf_cycles          cycle boundaries, the mean cycle, 27-day recurrence
+      └─ prf_design      THE SYNTHESIS — "what F10.7 and Ap do I design to,
+         │                N days ahead, at what confidence"
+         │   F10.7  central = persistence(today) → mean cycle,
+         │           blended w = exp(−lead/27)
+         │           design  = central + q-percentile of the L-day change
+         │                     (empirical structure function, so the band
+         │                      widens with lead as knowledge fades)
+         │   Ap     not forecastable long-term → STORM RETURN PERIOD from
+         │           the empirical exceedance curve (1 / 10 / 100 years)
+         ├─ prf_ap2kp    Ap → Kp: Bartels/IAGA table + a bias measured on the
+         │                record, because a daily Ap has to serve two senses
+         │                DTM2020 wants and the table was built for neither
+         └─ prf_drivers  the formal export: per-day F10.7, Ap, Kp, plus
+                          .f107a_81 (81-day CENTRED mean) and ap_3h [N×8]
+```
+
+`prf_drivers`' header states the interface better than a summary could:
+
+> The orbit propagator, the decay study and the density model all need the same
+> three numbers per day — F10.7, Ap and Kp — and they need to know **which
+> version** they are being given: the truth, the expected level, or a design
+> percentile.
+
+That is exactly a node's contract: one answer, and the credibility that travels
+with it.
+
+## 8 · The proposal — everything under solar flux
+
+A new layer-3 group for solar weather, crossing to `sys_space_environment`, with
+`sys_space_environment_solar_flux` as the layer-2 row it rolls up into. F10.7 and
+Ap then flow **out** of it, which is where they are actually computed.
+
+```
+sys_space_environment              (layer 2 group)
+  ├─ sys_space_environment_solar_flux   ← the tab's answer lands here
+  ├─ sys_space_environment_f10_7        ← flows from solar flux
+  ├─ sys_space_environment_ap           ← flows from solar flux
+  └─ …
+
+l3_solar_weather                   (layer 3 group, NEW, owner: environment)
+  └─ l3_solar_weather_interface    crosses_to = "sys_space_environment"
+```
+
+Nodes inside it, one question each:
+
+| node | the question it answers | from |
+|---|---|---|
+| `sw_cycle_phase` | Where in the solar cycle is this date? | `prf_cycles` |
+| `sw_mean_cycle_level` | What F10.7 does the mean cycle expect at that phase? | `prf_cycles` |
+| `sw_central_expectation` | Persistence decaying into the mean cycle, `w = exp(−L/27)` | `prf_design` |
+| `sw_uncertainty_growth` | How far does F10.7 move over L days, at percentile q? | `prf_design` |
+| `sw_f107_design` | **The F10.7 to design to**, at a lead and a confidence | `prf_design` |
+| `sw_f107_81day` | The 81-day centred mean | `prf_drivers` |
+| `sw_ap_return_level` | **The Ap that recurs once per N years** | `prf_design` |
+| `sw_ap_to_kp` | Kp from daily Ap, published table | `prf_ap2kp` |
+
+`sw_f107_design` and `sw_ap_return_level` are the two that cross upward. The rest
+are the working that gets them there, and each is small enough to review.
+
+### The one that is not a node
+
+`prf_ap2kp`'s **bias correction** is fitted on the record — nine Ap bins, ≥200
+days, ≥20 per bin, median residuals, nearest-bin fill. That is not a relation and
+cannot be an `expression`. It is a derived table with a provenance: reference
+data, published as part of the bundle, not computed by a node. The node
+`sw_ap_to_kp` carries the published table; the offset arrives as data.
+
+## 9 · What this does to the three declared constants
+
+`env_f107 = 150`, `env_f107a = 150`, `env_kp = 3` stay exactly as they are for
+now. They are the design point — one assumed sky — and the layer-3 solar-weather
+group is what makes a *window-derived* sky available beside it. Whether layer 3's
+`env_*` rows later read from layer 2 is a separate decision, taken once there is
+something to read.
+
+This ordering matters: it means the whole tab can be brought across without
+touching a written node or deleting a confirmed value, and the first thing that
+changes for anybody is that six empty layer-2 rows start answering.
+
+## 10 · The data, settled
+
+`prf_study.mat` was downloaded from Drive and opened here: **MATLAB v5**, so
+`scipy.io.loadmat` reads it with no MATLAB and no HDF5 tooling.
+
+```
+PRF.meta.source     NGDC DSD/DGD annual summaries
+PRF.meta.tool       prf_indices_fetch.m
+span                1997-01-01 … 2025-12-31   10,319 gap-free days
+PRF.observed        f107 (64…343) · ap_planetary (0…273) · kp_planetary [N×8]
+```
+
+Its own metadata carries the caveat that belongs in the bundle note: *"ap_planetary
+is SWPC estimated planetary A, not GFZ definitive."*
+
+So: a new version of the existing `solar-drivers` bundle, daily resolution,
+provenance `noaa_swpc`, that caveat recorded, hashed by `xtask bundle publish`.
+The `.mat` itself never enters the repository, and nothing depends on where it
+sits on anybody's machine.
