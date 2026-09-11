@@ -416,6 +416,34 @@ reporting or regeneration; none of it decides anything.
 a change that moves a bound or an owner, and commit what they produce. The
 regeneration diff in the pipeline catches it if you forget.
 
+### Putting a name against a relation
+
+`cargo run -p xtask -- confirm --list` prints every written relation with nobody's
+name against it, grouped by the owner who owes one. Today that is **138 of the
+138 computed rows** — every declared value already carries a confirmation and no
+relation does, which is why `ready` holds the whole written tree.
+
+`cargo run -p xtask -- confirm <node> --by "<your name>"` puts one there. It
+prints the question, the relation, the source, the assumptions and the declared
+range first, because a name put against a relation nobody re-read is a keystroke
+rather than a confirmation. Then it writes `<name> / <today>` into `[maths]` and
+reads the sheet back through the loader to prove it landed.
+
+Three things it refuses, and the first is the point of the field:
+
+- **a name that belongs to an agent.** An agent may never supply mathematics,
+  and this field is the only thing that can tell whether one did. The list of
+  refused identities is read from `agents/provenance.toml`, so an agent added
+  tomorrow is covered without anyone remembering to come back here.
+- **a declared value.** Its confirmation lives under `[value]` and it already
+  has one.
+- **a relation that is already confirmed.** Changing an attribution is a review
+  decision, not a command.
+
+There is no flag that confirms many at once, and that absence is deliberate: a
+person asked to approve thirty things at a keystroke is not approving any of
+them. One relation, one reading, one name.
+
 ### Two commands that ask whether the evidence is real
 
 Everything else in the gate proves the tests pass. These two ask the other
