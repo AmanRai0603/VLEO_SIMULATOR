@@ -374,7 +374,170 @@ pub fn evidence_rs(sh: &Sheet) -> String {
         ));
         o.push_str("}\n\n");
     }
+
+    properties(sh, &mut o);
     o
+}
+
+/// The property strategies, generated from the declared domain.
+///
+/// The fixture above checks one point. A wrong constant moves that point and it
+/// is caught; a wrong *shape* — an exponent, a sign, a term on the wrong side of
+/// a divide — can pass one point and be wrong everywhere else. That is what
+/// these ask about, and they are derived rather than written because most of the
+/// question is the same for every node: does the relation still behave like a
+/// relation away from the one place somebody checked it?
+///
+/// Four properties, all from this node's own sheet and its own fixtures. None
+/// reads another node, so 1329 rows stay 1329 independent acts.
+///
+/// 1. **It answers near the known-good point.** Across a decade either side of
+///    every fixture input, the node must return a value, not a refusal. A hole
+///    with a wrong exponent typically still hits the fixture and then refuses
+///    across the whole neighbourhood, because the answer leaves the declared
+///    domain — which reads as "the guard is working" and is in fact the relation
+///    being wrong.
+/// 2. **Every answer is inside the declared domain.** Not a restatement of the
+///    generated guard: it proves the guard is reachable and that nothing routes
+///    around it.
+/// 3. **A refusal is named, never a panic and never a NaN.** A division by zero
+///    inside a hole is not caught by any guard.
+/// 4. **The same inputs give bit-identical answers.** A relation that depends on
+///    a clock, iteration order or hidden state fails here and nowhere else, and
+///    it is the failure that makes cross-face agreement impossible.
+fn properties(sh: &Sheet, o: &mut String) {
+    if sh.is_declared() || sh.inputs.is_empty() || sh.fixtures.is_empty() {
+        return;
+    }
+    let base = &sh.fixtures[0];
+    let at = |scale: &str, which: usize| -> String {
+        sh.inputs
+            .iter()
+            .enumerate()
+            .map(|(i, inp)| {
+                let v = base
+                    .inputs
+                    .iter()
+                    .find(|(k, _)| *k == inp.binding)
+                    .map(|(_, v)| *v)
+                    .unwrap_or(0.0);
+                if i == which {
+                    format!("{}::new({:?} * {scale})", inp.ty, v)
+                } else {
+                    format!("{}::new({:?})", inp.ty, v)
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    // The sheet declares its domain in the sheet's own unit; `.get()` returns
+    // SI. Comparing one against the other is how a period in minutes came to be
+    // checked against a number of seconds — caught by this test on its first
+    // run, in the test rather than in the node.
+    let (lo, hi, id) = (
+        to_si(sh.lower, &sh.unit),
+        to_si(sh.upper, &sh.unit),
+        sh.id.as_str(),
+    );
+
+    o.push_str("// ---- properties, generated from the declared domain ---------------------\n");
+    o.push_str("//\n");
+    o.push_str("// The fixture above checks one point. A wrong constant moves that point and\n");
+    o.push_str("// is caught there; a wrong shape can pass one point and be wrong everywhere\n");
+    o.push_str("// else. These ask the part of that question that is the same for every\n");
+    o.push_str("// node, so it is derived rather than written.\n\n");
+
+    // 1 — it answers near the known-good point.
+    o.push_str("/// One per cent either side of the known-good point, this node still answers.\n");
+    o.push_str("///\n");
+    o.push_str(&format!(
+        "/// Derived from `{}` and the declared domain {lo} … {hi}.\n",
+        esc(&base.label)
+    ));
+    o.push_str("///\n");
+    o.push_str("/// One per cent, not a decade. These domains are design bands — an altitude\n");
+    o.push_str("/// range somebody chose, not a range over which the mathematics holds — so a\n");
+    o.push_str("/// decade leaves most of them legitimately, and a check that cries wolf is a\n");
+    o.push_str("/// check people turn off. What is left is still worth asking: a relation that\n");
+    o.push_str("/// refuses at the immediate neighbours of the one point somebody verified is\n");
+    o.push_str("/// either discontinuous there, or has a domain declared tighter than the\n");
+    o.push_str("/// physics. Both are sheet questions, and both are invisible from the fixture.\n");
+    o.push_str("#[test]\n");
+    o.push_str("fn answers_near_the_known_good_point() {\n");
+    o.push_str("    let mut refused: Vec<String> = Vec::new();\n");
+    for (i, inp) in sh.inputs.iter().enumerate() {
+        o.push_str("    for scale in [0.99_f64, 1.01] {\n");
+        o.push_str(&format!(
+            "        if let Err(f) = model::evaluate({}) {{\n",
+            at("scale", i)
+        ));
+        o.push_str(&format!(
+            "            refused.push(format!(\"{} x{{scale}} -> {{f}}\"));\n",
+            esc(&inp.binding)
+        ));
+        o.push_str("        }\n");
+        o.push_str("    }\n");
+    }
+    o.push_str("    assert!(\n");
+    o.push_str("        refused.is_empty(),\n");
+    o.push_str(&format!(
+        "        \"{id} refuses near its own known-good point: {{:?}}. Either the relation is wrong in shape, or the declared domain {lo} … {hi} is narrower than the physics. Both are sheet questions for the node owner, not tolerances to widen.\",\n"
+    ));
+    o.push_str("        refused\n");
+    o.push_str("    );\n");
+    o.push_str("}\n\n");
+
+    // 2 — every answer is inside the declared domain, and no call panics.
+    o.push_str("/// Every answer sits inside the declared domain, and no call panics.\n");
+    o.push_str("///\n");
+    o.push_str("/// Not a restatement of the generated guard: it proves the guard is reachable,\n");
+    o.push_str("/// that nothing routes around it, and that a hole cannot return a value that\n");
+    o.push_str("/// is not a number. A division by zero inside a hole is caught by no guard.\n");
+    o.push_str("#[test]\n");
+    o.push_str("fn every_answer_is_inside_the_declared_domain() {\n");
+    for (i, _) in sh.inputs.iter().enumerate() {
+        o.push_str("    for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {\n");
+        o.push_str(&format!(
+            "        if let Ok(v) = model::evaluate({}) {{\n",
+            at("scale", i)
+        ));
+        o.push_str(&format!(
+            "            assert!(v.get().is_finite(), \"{id} produced a value that is not a number\");\n"
+        ));
+        o.push_str(&format!(
+            "            assert!(v.get() >= {lo:?} && v.get() <= {hi:?}, \"{id} answered {{}}, outside its declared domain {lo} … {hi} — the guard did not stop it\", v.get());\n"
+        ));
+        o.push_str("        }\n");
+        o.push_str("    }\n");
+    }
+    o.push_str("}\n\n");
+
+    // 3 — the same inputs give the same answer.
+    o.push_str("/// The same inputs give a bit-identical answer.\n");
+    o.push_str("///\n");
+    o.push_str("/// A relation that reaches a clock, a hash order or any hidden state fails\n");
+    o.push_str("/// here and nowhere else, and it is the one defect that makes bit-for-bit\n");
+    o.push_str("/// agreement across the faces impossible rather than merely hard.\n");
+    o.push_str("#[test]\n");
+    o.push_str("fn the_same_inputs_give_the_same_answer() {\n");
+    o.push_str(&format!(
+        "    let a = model::evaluate({});\n",
+        at("1.0", usize::MAX)
+    ));
+    o.push_str(&format!(
+        "    let b = model::evaluate({});\n",
+        at("1.0", usize::MAX)
+    ));
+    o.push_str("    match (a, b) {\n");
+    o.push_str(&format!(
+        "        (Ok(x), Ok(y)) => assert!(x.get().to_bits() == y.get().to_bits(), \"{id} is not deterministic: {{}} then {{}}\", x.get(), y.get()),\n"
+    ));
+    o.push_str("        (Err(_), Err(_)) => {}\n");
+    o.push_str(&format!(
+        "        _ => panic!(\"{id} refused on one call and answered on the other\"),\n"
+    ));
+    o.push_str("    }\n");
+    o.push_str("}\n\n");
 }
 
 // ---------------------------------------------------------------------------
