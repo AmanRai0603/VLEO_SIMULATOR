@@ -441,7 +441,7 @@ another, they drift within a month and the hook becomes theatre.
 A new node:
 
     cargo run -p xtask -- new prop_intake_throat --like prop_capture_efficiency
-    $EDITOR crates/vleo-mod-prop/nodes/intake_throat/node.toml   # the physics
+    $EDITOR crates/vleo-mod-prop/nodes/prop_intake_throat/node.toml   # the physics
     cargo run -p xtask -- docs prop_intake_throat                # six artefacts, none typed
     # fill the numbered HOLE blocks in model.rs — a few typed lines each
     cargo run -p xtask -- gate prop_intake_throat
@@ -451,7 +451,10 @@ Two human reviews per node, and everything between them is a command. If a node
 takes materially longer than that, the template has a defect — worth finding,
 because it will be paid 1329 times.
 
-See [`docs/RUNBOOK.md`](docs/RUNBOOK.md) for the full loop and
+[`docs/USING_IT.md`](docs/USING_IT.md) is the page to read first: opening the
+tool, filling a row end to end, what each agent will and will not do for you,
+and what to try when something has gone wrong. Then
+[`docs/RUNBOOK.md`](docs/RUNBOOK.md) for the full loop and
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for why the rings are shaped the
 way they are.
 

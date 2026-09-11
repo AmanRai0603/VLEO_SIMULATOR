@@ -8,6 +8,11 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 0
 
+# The commit-message rule lives in a tracked folder, so pointing git at it once
+# is the whole installation. Done here rather than asked for in a document: a
+# setup step somebody has to remember is a setup step somebody skips.
+[ -z "$(git config --get core.hooksPath || true)" ] && git config core.hooksPath tools/githooks
+
 echo "── VLEO integrated design tool ──────────────────────────────────────"
 if command -v cargo >/dev/null 2>&1; then
   cargo run -q -p xtask -- status 2>/dev/null | tail -8

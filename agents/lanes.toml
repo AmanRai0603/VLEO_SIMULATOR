@@ -1,0 +1,72 @@
+# Which paths each agent may change, and which it may never.
+#
+# The roster's "what it may not do" column is only worth something if something
+# checks it. The one rule the document states structurally — the hole filler is
+# never given the file, so it cannot write outside a hole — is the model for the
+# rest: a lane is a fact about a diff, not a sentence in a prompt.
+#
+# `tools/agent_lanes.py --agent <name>` checks the working tree or a commit
+# range against the lane and names every file that left it.
+#
+#   writes     glob patterns the agent may add to or modify
+#   never      glob patterns it may not touch, whatever `writes` says
+#   holes_only when true, changes to model.rs must fall inside a numbered
+#              HOLE block; anything outside one is a violation even though the
+#              file itself is in the lane
+
+[[agent]]
+id = "A"
+name = "declaration-drafter"
+does = "turns a source into the sheet's fields and raises what must be answered first"
+writes = ["crates/vleo-mod-*/nodes/*/node.toml", "sources/sources.toml", "docs/**"]
+never = ["crates/vleo-mod-*/nodes/*/fixtures.toml", "crates/vleo-core/**", "xtask/**", "tools/**"]
+may_not = "supply mathematics, a reason, or a value"
+
+[[agent]]
+id = "B"
+name = "fixture-recorder"
+does = "records the known-good rows with where each came from, and says which range edges have no case"
+writes = ["crates/vleo-mod-*/nodes/*/fixtures.toml"]
+never = ["crates/vleo-mod-*/nodes/*/node.toml", "crates/vleo-core/**", "xtask/**", "tools/**", "web/**"]
+may_not = "produce an expected value"
+
+[[agent]]
+id = "C"
+name = "hole-filler"
+does = "returns the few typed lines for each numbered hole"
+writes = ["crates/vleo-mod-*/nodes/*/model.rs"]
+never = ["crates/vleo-mod-*/nodes/*/node.toml", "crates/vleo-mod-*/nodes/*/fixtures.toml", "crates/vleo-core/**", "xtask/**", "tools/**", "web/**"]
+holes_only = true
+may_not = "write outside the hole"
+
+[[agent]]
+id = "E"
+name = "test-author"
+does = "turns a declared property into a test that exercises it, and extends the golden corpus"
+writes = ["crates/*/tests/**", "crates/vleo-mod-*/tests/**"]
+never = ["crates/vleo-mod-*/nodes/*/node.toml", "crates/vleo-mod-*/nodes/*/fixtures.toml", "crates/vleo-mod-*/nodes/*/model.rs", "crates/vleo-mod-*/nodes/*/evidence.rs", "xtask/**", "tools/**"]
+may_not = "invent an expected value"
+
+[[agent]]
+id = "F"
+name = "diagnostician"
+does = "gathers the evidence on a failed run: which node, which change, which margin moved"
+writes = []
+never = ["**"]
+may_not = "fix, or judge whether it is acceptable"
+
+[[agent]]
+id = "I"
+name = "systems-backend"
+does = "the generators, kernel plumbing, the task runner, the server, the data pipeline"
+writes = ["crates/vleo-units/**", "crates/vleo-core/**", "crates/vleo-bus/**", "crates/vleo-sheet/**", "crates/vleo-data/**", "crates/vleo-modules/**", "crates/vleo-daemon/**", "crates/vleo-cli/**", "crates/vleo-ffi/**", "crates/vleo-py/**", "crates/vleo-wasm/**", "xtask/**", "tools/**", ".github/**", "Cargo.toml", "docs/**"]
+never = ["crates/vleo-mod-*/nodes/**", "web/**"]
+may_not = "edit a sheet or a hole"
+
+[[agent]]
+id = "J"
+name = "frontend-visualisation"
+does = "the shell, the tree, the matrix, panel code and plot components"
+writes = ["web/**", "docs/img/**", "docs/**"]
+never = ["crates/**", "xtask/**", "tools/**"]
+may_not = "invent a style token, or ship a figure nobody rendered"

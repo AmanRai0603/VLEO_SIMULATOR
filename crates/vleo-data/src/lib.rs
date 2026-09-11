@@ -228,6 +228,21 @@ impl Store {
     }
 }
 
+/// `YYYY-MM-DD`, checked for shape rather than trusted.
+///
+/// No calendar arithmetic: this says the field is a date, not that the date
+/// exists. That is enough to stop `licence_until = "soon"`, which is the
+/// failure worth stopping — it parses as TOML and never expires.
+fn is_iso_date(s: &str) -> bool {
+    let b = s.as_bytes();
+    b.len() == 10
+        && b[4] == b'-'
+        && b[7] == b'-'
+        && b.iter()
+            .enumerate()
+            .all(|(i, c)| matches!(i, 4 | 7) || c.is_ascii_digit())
+}
+
 /// Read one bundle and verify it before it is usable.
 pub fn load_bundle(dir: &Path) -> Result<Bundle, String> {
     let mp = dir.join("manifest.toml");
@@ -250,9 +265,46 @@ pub fn load_bundle(dir: &Path) -> Result<Bundle, String> {
     for f in v.get("files").and_then(|f| f.as_array()).unwrap_or(&vec![]) {
         m.files.push(f.as_str().unwrap_or("").to_string());
     }
-    if m.provenance.trim().is_empty() {
+    // Publishing without these is impossible rather than forbidden. A rule that
+    // says "always fill in the licence" is a rule somebody skips on the day
+    // they are in a hurry, and the bundle that results looks exactly like a
+    // good one. Refusing to load it is the only version of the rule that holds.
+    for (field, value) in [
+        ("name", m.name.as_str()),
+        ("version", m.version.as_str()),
+        ("provenance", m.provenance.as_str()),
+        ("licence_until", m.licence_until.as_str()),
+    ] {
+        if value.trim().is_empty() {
+            return Err(format!(
+                "{}: a manifest with no {field} fails publication",
+                mp.display()
+            ));
+        }
+    }
+    if m.files.is_empty() {
         return Err(format!(
-            "{}: a manifest without provenance fails publication",
+            "{}: a manifest that lists no files has nothing to hash, so its \
+             content hash would mean nothing",
+            mp.display()
+        ));
+    }
+    // A date, so that expiry can be read locally with no network. Checked for
+    // shape here rather than trusted: `licence_until = "soon"` parses as TOML
+    // and would silently never expire.
+    if !is_iso_date(&m.licence_until) {
+        return Err(format!(
+            "{}: licence_until is {:?}, which is not a YYYY-MM-DD date — an \
+             unparseable expiry is an expiry that never arrives",
+            mp.display(),
+            m.licence_until
+        ));
+    }
+    if m.stale_after_days == 0 {
+        return Err(format!(
+            "{}: stale_after_days is missing or zero. It decides when the \
+             input-pedigree factor drops, and a missing one defaults to a \
+             number nobody chose",
             mp.display()
         ));
     }
