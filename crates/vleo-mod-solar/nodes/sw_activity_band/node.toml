@@ -1,18 +1,17 @@
 # The sheet. This is the only file in this folder that must be written by
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
-id = "l3_solar_interface"
-label = "Solar weather — subsystem interface"
-folder = "l3_solar_interface"   # frozen at seed; renaming the label never moves the directory
+id = "sw_activity_band"
+label = "Flux activity band"
+folder = "sw_activity_band"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "required"
+kind = "declared"
 owner = "environment"
 tier = ""
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1329
+order = 1345
 state = "empty"
-crosses_to = "sys_space_environment"
 
 [question]
 text = ""

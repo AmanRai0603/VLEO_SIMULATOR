@@ -633,6 +633,31 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
         Check::fail("V12 one crate per owner", spread.join(", "))
     });
 
+    // V14 — no two rows claim the same place on the tree.
+    //
+    // `order` is what the display list sorts by, so two rows sharing one puts
+    // them in an arbitrary order that depends on the map's iteration — stable
+    // within a run, and free to swap when a row is added anywhere. It reads as
+    // a reordering nobody made.
+    //
+    // Added because a subsystem added after the seed collided with an existing
+    // interface row and nothing said so: the gate was green, the assembly was
+    // green, and two rows sat at 720.
+    let mut at: BTreeMap<u32, Vec<&str>> = BTreeMap::new();
+    for sh in tree.ordered() {
+        at.entry(sh.order).or_default().push(sh.id.as_str());
+    }
+    let clashes: Vec<String> = at
+        .iter()
+        .filter(|(_, ids)| ids.len() > 1)
+        .map(|(o, ids)| format!("{o}: {}", ids.join(" and ")))
+        .collect();
+    out.push(if clashes.is_empty() {
+        Check::pass("V14 one row per place")
+    } else {
+        Check::fail("V14 one row per place", clashes.join(", "))
+    });
+
     // V13 — the browser face offers only rows it can actually answer.
     //
     // The demonstration subset is a hand-written list in a crate outside the
