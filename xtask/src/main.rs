@@ -1661,8 +1661,37 @@ fn cmd_codeowners(root: &Path) -> Result<(), String> {
         }
     }
     let _ = by_owner;
+
+    // GitHub's one documented limit on this file, checked from
+    // github/docs@main: "CODEOWNERS files must be under 3 MB in size. A
+    // CODEOWNERS file over this limit will not be loaded, which means that
+    // code owner information is not shown and the appropriate code owners
+    // will not be requested to review changes in a pull request." No maximum
+    // number of rules is stated anywhere in that page.
+    //
+    // Worth a check rather than a note because of how it fails: over the
+    // limit the file is ignored in full and every pull request looks like one
+    // with no owners, which is the same green as a pull request whose owners
+    // all approved. One row costs about 66 bytes, so 3 MB is around 47,000 of
+    // them and a 1,329-row tree uses 3% of it — but the tree is the thing that
+    // grows, and this is the check that notices.
+    const CODEOWNERS_LIMIT: usize = 3 * 1024 * 1024;
+    if o.len() >= CODEOWNERS_LIMIT {
+        return Err(format!(
+            "the generated CODEOWNERS is {} bytes and GitHub ignores the file entirely at \
+             3 MB. Over the limit every pull request shows no owners, which looks exactly \
+             like a pull request whose owners approved. Consolidate rows onto wildcard \
+             patterns per crate before writing this.",
+            o.len()
+        ));
+    }
     fs::write(root.join("CODEOWNERS"), &o).map_err(|e| e.to_string())?;
-    println!("codeowners: {} lines", o.lines().count());
+    println!(
+        "codeowners: {} lines, {} KB of the 3 MB GitHub will load ({}%)",
+        o.lines().count(),
+        o.len() / 1024,
+        o.len() * 100 / CODEOWNERS_LIMIT
+    );
     Ok(())
 }
 
