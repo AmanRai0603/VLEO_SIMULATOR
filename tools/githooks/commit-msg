@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Fail a badly-formed commit message at the moment it is written, not at the
+# moment the pipeline rejects the branch an hour later.
+#
+# Installed by pointing git at this folder, which is tracked, so the hook a
+# person runs and the hook everyone else runs are the same file:
+#
+#     git config core.hooksPath tools/githooks
+#
+# The pipeline runs the same script over the range being pushed, because a hook
+# is not a control — a terminal with no hooksPath set has none.
+exec python3 "$(dirname "$0")/../commit_message.py" --file "$1"

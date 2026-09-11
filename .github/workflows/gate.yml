@@ -90,6 +90,22 @@ jobs:
           cargo run -p xtask -- status
           cargo run -p xtask -- graph
 
+  # The commit-message rule, run over the commits this branch adds. It is the
+  # same script the commit-msg hook runs, because a hook only fires inside the
+  # tool that installed it — a terminal with no hooksPath set has none, and a
+  # rule that holds in one place and not the other is not a rule.
+  commit-messages:
+    name: commit messages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: the checker checks itself first
+        run: python3 tools/commit_message.py --selftest
+      - name: every commit this branch adds
+        run: python3 tools/commit_message.py --range "$(git rev-list --max-parents=0 HEAD | tail -1)..HEAD"
+
   # Both profiles build on every merge. A customer build that fails only at
   # release time fails on the day it can least be afforded — and link-time
   # optimisation with a single codegen unit changes inlining, so the profile
