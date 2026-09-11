@@ -133,6 +133,35 @@ fn opt<'a>(args: &'a [&'a str], name: &str) -> Option<&'a str> {
         .copied()
 }
 
+/// A supplied value only survives on a node that declares its own number.
+///
+/// Every other kind works its answer out during the run and overwrites what was
+/// supplied, so `--set` on one used to be accepted, ignored, and reported as a
+/// successful run against a number nobody asked for. A sweep over one produced
+/// a flat line and said "0 refused", which reads as a real result. Refusing by
+/// name is the only honest version: a refusal the user can see beats a silent
+/// substitution every time.
+fn suppliable(idx: u16) -> Result<(), String> {
+    let def = &NODES[idx as usize];
+    if def.kind == Kind::Declared {
+        return Ok(());
+    }
+    Err(format!(
+        "'{}' is {}, so a supplied value would be overwritten the moment it is \
+         evaluated. Set one of the declared numbers it reads instead — `vleo show {}` \
+         lists them.",
+        def.id,
+        match def.kind {
+            Kind::Computed => "computed from its inputs",
+            Kind::Required => "a target handed down from the layer above",
+            Kind::Achieved => "what a subsystem returned",
+            Kind::Kpi => "a key performance indicator",
+            Kind::Declared => unreachable!(),
+        },
+        def.id
+    ))
+}
+
 fn sets(args: &[&str]) -> Result<Vec<(String, f64)>, String> {
     let mut out = Vec::new();
     for (i, a) in args.iter().enumerate() {
@@ -142,9 +171,8 @@ fn sets(args: &[&str]) -> Result<Vec<(String, f64)>, String> {
                 .split_once('=')
                 .ok_or_else(|| format!("'{kv}' is not id=value"))?;
             let val: f64 = v.parse().map_err(|_| format!("'{v}' is not a number"))?;
-            if Vleo::find(k).is_none() {
-                return Err(format!("no node '{k}'"));
-            }
+            let idx = Vleo::find(k).ok_or_else(|| format!("no node '{k}'"))?;
+            suppliable(idx)?;
             out.push((k.to_string(), val));
         }
     }
@@ -257,6 +285,7 @@ fn cmd_sweep(args: &[&str]) -> Result<(), String> {
         .map_err(|_| "--to is not a number")?;
     let points: usize = opt(args, "--points").unwrap_or("21").parse().unwrap_or(21);
     let over_idx = Vleo::find(over).ok_or_else(|| format!("no node '{over}' to sweep"))?;
+    suppliable(over_idx)?;
     let node_idx = Vleo::find(node).ok_or_else(|| format!("no node '{node}'"))?;
 
     let mut scratch = Scratch::new();

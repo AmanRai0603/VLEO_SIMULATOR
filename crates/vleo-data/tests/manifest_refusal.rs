@@ -87,7 +87,11 @@ fn no_licence_is_refused() {
 fn a_licence_that_is_not_a_date_is_refused() {
     // The failure worth stopping: `"soon"` parses as TOML, reads as an intent,
     // and expires on no day at all.
-    let dir = bundle("lic-soon", "licence_until", Some(r#"licence_until = "soon""#));
+    let dir = bundle(
+        "lic-soon",
+        "licence_until",
+        Some(r#"licence_until = "soon""#),
+    );
     let e = vleo_data::load_bundle(&dir).expect_err("a non-date licence fails");
     assert!(e.contains("YYYY-MM-DD"), "{e}");
 }
@@ -136,5 +140,8 @@ fn a_tampered_byte_does_not_verify() {
     fs::write(dir.join("payload.csv"), "day,f107\n0,151\n").unwrap();
     let b = vleo_data::load_bundle(&dir).unwrap();
     assert!(!b.verified, "one changed digit must break the hash");
-    assert!(b.refusal.unwrap().contains(&real), "the refusal says both hashes");
+    assert!(
+        b.refusal.unwrap().contains(&real),
+        "the refusal says both hashes"
+    );
 }

@@ -509,7 +509,8 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
     )
     .map_err(|e| e.to_string())?;
     println!("new: {}", dir.display());
-    println!("Now fill the sheet, then `cargo xtask docs {id}`. An open field blocks generation, which is the mechanism: ambiguity becomes a blocking item on an engineer's screen rather than something an implementer resolves silently.");
+    println!("Now fill the sheet, then `cargo xtask docs {id}` and `cargo xtask gate {id}`.");
+    println!("An open field fails the gate by name, which is the mechanism: ambiguity becomes a blocking item on an engineer's screen rather than something an implementer resolves silently.");
     Ok(())
 }
 
