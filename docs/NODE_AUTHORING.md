@@ -83,6 +83,40 @@ type = "Ratio"
   the whole graph is visible, so it is the only place the question can honestly
   be asked.
 
+### The five fields this page used to omit
+
+Found by checking what the loader reads against what this page explains — the
+loader took forty-five fields from a sheet and fifteen were not on this page.
+Most of those fifteen belong to `layers/`, `cases/` or `sources/` rather than to
+a node. These five are yours.
+
+- **`[maths] confirmed_by`** — who supplied the relation, and when. An agent may
+  never supply mathematics, and without a name nothing can tell whether one
+  did. A relation with nobody against it is a gap, so the node cannot reach H2.
+  It does not make the formula right; it makes it somebody's, which is what H1b
+  needs to be a review rather than a reading.
+- **`criticality`** — `minor` or `significant`, defaulting to minor. Significant
+  means two reviewers and the hole filled twice by different model families.
+  Everything cannot be significant: a person asked to approve too many things
+  stops evaluating each one, so raising it is done on purpose.
+- **`migrated_from`** — the prior MATLAB function and line, when this node was
+  translated from it. Its numbers then go in `parity.csv` beside the node and
+  **never** in `fixtures.toml`: an implementation cannot supply its own expected
+  values, and that is an implementation. A disagreement between the two is a
+  finding about one of them, not a check either has passed.
+- **`note`** — anything a reader of the node page needs that is not one of the
+  fields above: what the relation is usually misused for, what a number is
+  sensitive to, why an obvious simplification was not taken. Optional, and the
+  one place on the sheet where prose is the right answer.
+- **`[contributes] kpis`** — which key performance indicators this node's answer
+  feeds. This is the contribution graph, declared by the variable rather than by
+  the KPI, and it is what makes coverage a fact rather than a search. The gate
+  refuses a KPI named here that does not exist.
+
+`layer`, `order`, `crosses_to` and `folder` are on the sheet and are **not
+yours**: they are frozen at seed, and the tree's shape is a reviewed change to
+`layers/`, not a field edit.
+
 ## Declared values
 
 Two thirds of the tree is numbers a person picked. They are cheaper than a
