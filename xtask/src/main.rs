@@ -24,6 +24,9 @@ fn main() -> ExitCode {
         "gap" => cmd_gap(&root),
         "graph" => cmd_graph(&root),
         "new" => cmd_new(&root, &rest),
+        "declare" => cmd_declare(&root, &rest),
+        "fill" => cmd_fill(&root, &rest),
+        "ready" => cmd_ready(&root, &rest),
         "codeowners" => cmd_codeowners(&root),
         "bundle" => cmd_bundle(&root, &rest),
         "variables" => cmd_variables(&root),
@@ -67,6 +70,19 @@ cargo xtask <command>
                      clone the shape of a sibling and blank what must be
                      re-decided. Not a copy: a real copy drags a stale source
                      citation through thirty nodes.
+  declare <node>     the completion questions, in order, with what each one is
+                     for. A gap left open is not a warning: generation refuses
+                     until every one is answered. Add --source <path> to record
+                     where the drafting started.
+  fill <node> --hole <n> --body <file|->
+                     splice one hole body into a generated model.rs. The hole
+                     filler is never handed the file: it returns the few typed
+                     lines as text and this puts them where they go. An agent
+                     given the file and told not to stray is not constrained.
+  ready [<node>]     whether a person should be asked to look yet: the gate,
+                     then the gap pass, then what criticality demands. A node
+                     with an open gap does not enter H2 — the reviewer accepts,
+                     they do not hunt for defects a machine finds free.
   codeowners         regenerate CODEOWNERS from the layer files.
   bundle publish <dir>
                      hash every payload file and write the result into the
@@ -115,14 +131,55 @@ fn write_if_changed(path: &Path, text: &str) -> Result<bool, String> {
 
 // ---------------------------------------------------------------------------
 
+/// The fields the scaffold cannot be emitted without.
+///
+/// Not a style rule. Without a type there is no signature, without a bound
+/// there is no guard, without a reason the guard is deleted by the next person
+/// who finds it awkward, and without a source nothing downstream knows what it
+/// is resting on.
+fn unfilled(sh: &vleo_sheet::model::Sheet) -> Vec<&'static str> {
+    let mut missing = Vec::new();
+    for (name, v) in [
+        ("label", &sh.label),
+        ("question", &sh.question),
+        ("expression", &sh.expression),
+        ("source", &sh.source),
+        ("type", &sh.ty),
+        ("unit", &sh.unit),
+        ("symbol", &sh.symbol),
+        ("reason_lower", &sh.reason_lower),
+        ("reason_upper", &sh.reason_upper),
+    ] {
+        if v.trim().is_empty() {
+            missing.push(name);
+        }
+    }
+    missing
+}
+
 fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
     let tree = load(root)?;
     let only = args.first().copied();
     let mut written = 0usize;
     let mut touched = 0usize;
+    let mut refused: Vec<(String, Vec<&'static str>)> = Vec::new();
     for sh in tree.ordered() {
         if let Some(o) = only {
             if sh.id != o {
+                continue;
+            }
+        }
+        // An open field is not a warning. The scaffold cannot be emitted
+        // without every type, bound and precondition, so generation refuses
+        // rather than producing a file that looks finished and is not. That
+        // refusal is the mechanism: it turns ambiguity from something an
+        // implementer settles quietly into a blocking item on an engineer's
+        // screen. A seeded row is exempt — it has not been started, and its
+        // page and metadata say exactly that.
+        if !sh.is_seeded() {
+            let missing = unfilled(sh);
+            if !missing.is_empty() {
+                refused.push((sh.id.clone(), missing));
                 continue;
             }
         }
@@ -162,6 +219,20 @@ fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
                 written += 1;
             }
         }
+    }
+    if !refused.is_empty() {
+        for (id, missing) in &refused {
+            println!(
+                "  \x1b[31mrefused\x1b[0m {id} — nothing to generate from: {}",
+                missing.join(", ")
+            );
+        }
+        return Err(format!(
+            "{} node(s) have an open field. The scaffold is a function of the sheet: no type, \n\
+             no signature; no bound, no guard; no reason, and the guard is deleted by whoever \n\
+             next finds it awkward. Answer them and run this again.",
+            refused.len()
+        ));
     }
     if touched == 0 {
         return Err(format!("no node matched '{}'", only.unwrap_or("")));
@@ -445,6 +516,394 @@ fn deepest_chain(tree: &Tree) -> Vec<String> {
     best
 }
 
+/// The completion questions, and which of them are still open.
+///
+/// The questions are derived from what the generator will need, not composed
+/// freely: a fixed set is repeatable across engineers and nodes, and an open
+/// conversation is not. Each one exists because something downstream cannot be
+/// emitted without it, and this says which thing.
+///
+/// It answers nothing. Agent A drafts from a source, an engineer decides, and
+/// this is the list they are deciding against — the same list `xtask docs`
+/// refuses on, so there is never a question that blocks generation and is not
+/// on this page.
+fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
+    let id = args
+        .first()
+        .ok_or("usage: cargo xtask declare <node> [--source <path>]")?;
+    let source = args
+        .iter()
+        .position(|a| *a == "--source")
+        .and_then(|i| args.get(i + 1));
+    let tree = load(root)?;
+    let sh = tree.sheets.get(*id).ok_or_else(|| {
+        format!("no node '{id}'. `cargo xtask new {id} --like <sibling>` starts one")
+    })?;
+
+    println!(
+        "\x1b[1m{}\x1b[0m — {}",
+        sh.id,
+        if sh.label.is_empty() {
+            "(no label yet)"
+        } else {
+            &sh.label
+        }
+    );
+    if let Some(src) = source {
+        println!("  drafting from {src}");
+    }
+    println!("  {}", sh.dir.join("node.toml").display());
+    println!();
+
+    // (field, question, what cannot be emitted without it)
+    let asks: Vec<(&str, &str, &str)> = vec![
+        (
+            "label",
+            "what is this row called, in the tree",
+            "the page title and every reference to it",
+        ),
+        (
+            "question",
+            "what one question does it answer",
+            "an equation with no question gets reused for the wrong thing",
+        ),
+        (
+            "expression",
+            "what is the relation",
+            "the algorithm, and what a reviewer compares against the source",
+        ),
+        (
+            "source",
+            "cited where — book, paper, page",
+            "this is the claim everything else rests on",
+        ),
+        (
+            "symbol",
+            "what is the answer's symbol",
+            "the binding name in the generated signature",
+        ),
+        (
+            "type",
+            "what quantity is it",
+            "the signature; a dimensional error has to fail to compile",
+        ),
+        (
+            "unit",
+            "in what unit",
+            "the conversion at every face boundary",
+        ),
+        (
+            "reason_lower",
+            "why is the lower bound there",
+            "a guard whose reason is not written gets deleted by the next person",
+        ),
+        (
+            "reason_upper",
+            "why is the upper bound there",
+            "the same, at the other end",
+        ),
+    ];
+    let have = |f: &str| -> &str {
+        match f {
+            "label" => &sh.label,
+            "question" => &sh.question,
+            "expression" => &sh.expression,
+            "source" => &sh.source,
+            "symbol" => &sh.symbol,
+            "type" => &sh.ty,
+            "unit" => &sh.unit,
+            "reason_lower" => &sh.reason_lower,
+            "reason_upper" => &sh.reason_upper,
+            _ => "",
+        }
+    };
+
+    // The open set comes from the same function `xtask docs` refuses on, so
+    // there can never be a question that blocks generation and is not on this
+    // page. Two lists that must agree are two lists that will not.
+    let blocking = unfilled(sh);
+    for (field, _, _) in &asks {
+        if !blocking.contains(field) && have(field).trim().is_empty() {
+            return Err(format!(
+                "'{field}' is blank and does not block generation — declare and docs disagree \
+                 about what a finished sheet is"
+            ));
+        }
+    }
+
+    let mut open = 0usize;
+    for (field, ask, why) in &asks {
+        let v = have(field);
+        if blocking.contains(field) {
+            open += 1;
+            println!("  \x1b[33m?\x1b[0m  {ask}");
+            println!("     {field} — without it: {why}");
+        } else {
+            println!("  \x1b[32m·\x1b[0m  {field} = {}", truncate(v, 68));
+        }
+    }
+
+    // The decisions that are not fields on the sheet but change what happens.
+    println!();
+    println!(
+        "  criticality = {} — {}",
+        sh.criticality,
+        if sh.criticality == "significant" {
+            "two reviewers, and the hole filled twice by different model families"
+        } else {
+            "one reviewer; raise it on purpose, not by default"
+        }
+    );
+    if !sh.migrated_from.is_empty() {
+        println!(
+            "  migrated_from = {} — its numbers go in parity.csv, never in fixtures.toml",
+            sh.migrated_from
+        );
+    }
+    if !sh.is_declared() {
+        println!(
+            "  {} numbered step(s), {} declared input(s)",
+            sh.steps.len(),
+            sh.inputs.len()
+        );
+    }
+
+    println!();
+    if open == 0 {
+        println!("0 gaps open · ready to generate — `cargo xtask docs {id}`");
+    } else {
+        println!(
+            "\x1b[33m{open} question(s) open.\x1b[0m Generation refuses until they are answered. \
+             That refusal is the mechanism: it turns ambiguity from something an implementer \
+             settles quietly into a blocking item on an engineer's screen."
+        );
+    }
+    Ok(())
+}
+
+fn truncate(s: &str, n: usize) -> String {
+    let one = s.split_whitespace().collect::<Vec<_>>().join(" ");
+    if one.chars().count() <= n {
+        one
+    } else {
+        format!("{}…", one.chars().take(n - 1).collect::<String>())
+    }
+}
+
+/// Has this node earned a person's attention yet?
+///
+/// The working model's change 2: a node tester that must pass before anybody is
+/// asked to look. Both human reviews used to sit at the front of the work, and
+/// nothing human sat where "done" is decided except a merge approval that is a
+/// formality by then — so the person was being spent on specification, where
+/// they are irreplaceable, and also on first-pass defect-finding, where a
+/// machine is better, faster and free.
+///
+/// Three stages, in order, stopping at the first that is not clean:
+///
+///   1. the gate — does what exists pass
+///   2. the gap pass — is anything the sheet promised absent
+///   3. what criticality demands — a significant node gets a second
+///      independent check, and a migrated one gets its parity grid
+fn cmd_ready(root: &Path, args: &[&str]) -> Result<(), String> {
+    let tree = load(root)?;
+    let only = args.first().copied();
+    let mut asked = 0usize;
+    let mut ready = 0usize;
+    let mut held: Vec<(String, String, String)> = Vec::new();
+
+    for sh in tree.ordered() {
+        if let Some(o) = only {
+            if sh.id != o {
+                continue;
+            }
+        }
+        if sh.is_seeded() && only.is_none() {
+            continue;
+        }
+        asked += 1;
+        let checks = gate::gate_node(sh, &tree);
+        if let Some(c) = checks.iter().find(|c: &&gate::Check| c.failed()) {
+            let why = match &c.verdict {
+                gate::Verdict::Fail(w) => w.clone(),
+                _ => String::new(),
+            };
+            held.push((
+                sh.id.clone(),
+                "the gate".into(),
+                format!("{} — {why}", c.name),
+            ));
+            continue;
+        }
+        let gaps = emit::gap_pass(sh, &vleo_sheet::load::read_holes(&sh.dir));
+        if !gaps.is_empty() {
+            held.push((sh.id.clone(), "the gap pass".into(), gaps.join("; ")));
+            continue;
+        }
+        if sh.criticality == "significant" && sh.fixtures.len() < 2 {
+            held.push((
+                sh.id.clone(),
+                "criticality".into(),
+                "significant, and fewer than two independent checks behind it".into(),
+            ));
+            continue;
+        }
+        ready += 1;
+    }
+
+    if asked == 0 {
+        return Err(format!("no node matched '{}'", only.unwrap_or("")));
+    }
+    for (id, stage, why) in &held {
+        println!("  \x1b[33mhold\x1b[0m {id} — {stage}: {why}");
+    }
+    println!(
+        "ready: {ready} of {asked} node(s) have passed every machine stage and are waiting on H2"
+    );
+    if !held.is_empty() {
+        println!(
+            "{} held. A person asked to look at these is being asked to find what a machine finds free.",
+            held.len()
+        );
+    }
+    Ok(())
+}
+
+/// Splice one hole body into a node's `model.rs`.
+///
+/// This exists so that the hole filler never touches the file. The working
+/// model is explicit that its prohibition holds *only* in that form: an agent
+/// given write access to a file and told not to stray is not constrained, it is
+/// asked. So the agent returns the body of one numbered step as text, and this
+/// is the only thing that puts text into a generated file.
+///
+/// Four refusals, all before anything is written:
+///
+///   * a hole number the sheet does not declare
+///   * a body carrying a `HOLE` marker of its own, which would let one body
+///     claim the block after it as well
+///   * a guard. Guards are generated from the declared domain and travel with
+///     their reason; one added here has no reason attached and is deleted by
+///     the next person who finds it awkward
+///   * a platform maths call. The gate catches this later, but later means
+///     after it is committed, and the message is more useful at the moment
+///     somebody is holding the two lines in their head
+fn cmd_fill(root: &Path, args: &[&str]) -> Result<(), String> {
+    let id = args
+        .first()
+        .ok_or("usage: cargo xtask fill <node> --hole <n> --body <file|->")?;
+    let n: u32 = args
+        .iter()
+        .position(|a| *a == "--hole")
+        .and_then(|i| args.get(i + 1))
+        .ok_or("which hole: --hole <n>")?
+        .parse()
+        .map_err(|_| "--hole takes a number".to_string())?;
+    let src = args
+        .iter()
+        .position(|a| *a == "--body")
+        .and_then(|i| args.get(i + 1))
+        .ok_or("the body, as a file or - for standard input: --body <file|->")?;
+
+    let body = if *src == "-" {
+        let mut buf = String::new();
+        std::io::Read::read_to_string(&mut std::io::stdin(), &mut buf)
+            .map_err(|e| e.to_string())?;
+        buf
+    } else {
+        fs::read_to_string(src).map_err(|e| format!("{src}: {e}"))?
+    };
+    if body.trim().is_empty() {
+        return Err(
+            "the body is empty. An empty hole is a gap, and the gap pass already says so".into(),
+        );
+    }
+
+    let tree = load(root)?;
+    let sh = tree
+        .sheets
+        .get(*id)
+        .ok_or_else(|| format!("no node '{id}'"))?;
+    if sh.is_declared() {
+        return Err(format!(
+            "'{id}' is a declared value — a person picked its number, so it has no holes"
+        ));
+    }
+    let step = sh
+        .steps
+        .iter()
+        .find(|st| st.number == n)
+        .ok_or_else(|| {
+            format!(
+                "'{id}' declares {} step(s); there is no hole {n}. The algorithm in the sheet decides how many there are",
+                sh.steps.len()
+            )
+        })?;
+
+    for (needle, why) in [
+        ("---- HOLE", "a body may not carry a HOLE marker — one body would claim the next block as well"),
+        ("---- end HOLE", "a body may not carry a HOLE marker — one body would claim the next block as well"),
+        ("Fault::", "a body may not construct a fault. The guards are generated from the declared domain, with the reason attached"),
+        ("return Err(", "a body may not return early. The generated tail maps the answer and its faults"),
+    ] {
+        if body.contains(needle) {
+            return Err(format!("refused: {why} (found {needle:?})"));
+        }
+    }
+    for bad in [
+        ".sin()", ".cos()", ".exp()", ".ln()", ".powf(", ".sqrt()", ".atan2(", ".tan()", ".log10(",
+    ] {
+        if body.contains(bad) {
+            return Err(format!(
+                "refused: the body calls {bad} — route it through pmath, or cross-face agreement \
+                 fails on the first night for a reason that is not a defect"
+            ));
+        }
+    }
+
+    let mut holes = vleo_sheet::load::read_holes(&sh.dir);
+    let before = holes.get(&n).cloned().unwrap_or_default();
+    holes.insert(n, body.clone());
+    let text = gate::formatted(&emit::model_rs(sh, &holes));
+    write_if_changed(&sh.dir.join("model.rs"), &text)?;
+
+    // Read it back and prove the body landed where it was meant to. Writing a
+    // file and announcing success is how a splice that silently dropped the
+    // last line gets discovered three nodes later.
+    let after = vleo_sheet::load::read_holes(&sh.dir);
+    let landed = after
+        .get(&n)
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default();
+    if landed.is_empty() {
+        return Err(format!(
+            "hole {n} is still empty after the splice — nothing was written"
+        ));
+    }
+    println!(
+        "{id} hole {n} ({}) — {} line(s) spliced{}",
+        step.text,
+        landed.lines().count(),
+        if before.trim().is_empty() {
+            ""
+        } else {
+            ", replacing what was there"
+        }
+    );
+    // The crate is the folder the node lives in, not its subsystem tag: gnc
+    // rows live in vleo-mod-acs, and a command line that names a crate nobody
+    // has is worse than no command line.
+    let krate = sh
+        .dir
+        .ancestors()
+        .nth(2)
+        .and_then(|p| p.file_name())
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
+    println!("Now: cargo xtask gate {id} && cargo test -p {krate}");
+    Ok(())
+}
+
 fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
     let id = args
         .first()
@@ -499,6 +958,16 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
         } else {
             out.push_str(line);
             out.push('\n');
+            // Criticality decides how many people read this node and whether
+            // its hole is filled twice by different model families. A sibling's
+            // answer is not this node's answer, so it is asked here rather than
+            // inherited silently.
+            if l.starts_with("tier = ") && !sheet.contains("criticality") {
+                out.push_str(
+                    "criticality = \"minor\"   # minor | significant — significant means two \
+                     reviewers and a differential fill\n",
+                );
+            }
         }
     }
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
@@ -509,8 +978,10 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
     )
     .map_err(|e| e.to_string())?;
     println!("new: {}", dir.display());
-    println!("Now fill the sheet, then `cargo xtask docs {id}` and `cargo xtask gate {id}`.");
-    println!("An open field fails the gate by name, which is the mechanism: ambiguity becomes a blocking item on an engineer's screen rather than something an implementer resolves silently.");
+    println!("`cargo xtask declare {id}` lists what must be answered first.");
+    println!("Then `cargo xtask docs {id}`.");
+    println!("Generation refuses while any field is open, and names the fields. That refusal is the mechanism: ambiguity becomes a blocking item on an engineer's screen rather than something an implementer resolves silently.");
+    println!("When it generates, `cargo xtask ready {id}` says whether a person should be asked to look yet.");
     Ok(())
 }
 

@@ -39,23 +39,40 @@ on — and nothing detects that for about two years.
 
 ## The completion questions
 
-Derived from what the generator needs, not composed freely. A fixed set is
-repeatable across engineers and nodes; an open conversation is not.
+Do not write them out. Run them:
 
-- What is the question, in ordinary words? If it cannot be said plainly it is
-  not one node.
-- What relation, and cited to which page of which source?
-- Every input and output: symbol, type, unit. A unit is a decision, not data.
-- The range over which it is valid, **and a reason for each bound**. A guard
-  whose reason is not written gets deleted by the next person.
-- The steps, numbered, each binding a named value at a stated type.
-- Every assumption, and the condition under which it stops holding.
-- Can any input reach zero, or change sign, inside the declared domain?
-- Criticality: does this node carry a design decision, or a detail?
+    cargo run -p xtask -- declare <node id> --source <the paper you read>
 
-## When you are finished
+The questions are derived from what the generator needs, not composed freely,
+and that command computes the open set from the same function `xtask docs`
+refuses on. A list in this file would be a second copy, and two lists that must
+agree will not.
 
-    cargo run -p xtask -- gate <node id>
+It prints, for each open field, the question and what cannot be emitted without
+it. Work down them. When it says `0 gaps open · ready to generate`, you are
+finished drafting.
 
-If the gap pass lists anything, the sheet is not ready and you say so rather
-than filling the gap yourself.
+Two fields it will show you that are decisions rather than drafting, and which
+you may propose and never settle:
+
+- **`criticality`** — `minor` or `significant`. Significant means two reviewers
+  and the hole filled twice by different model families. Everything cannot be
+  significant: a person asked to approve too many things stops evaluating each
+  one, so the default is `minor` and raising it is done on purpose.
+- **`migrated_from`** — set it when the node exists in the MATLAB tool, naming
+  the function and line. Its numbers then go in `parity.csv` beside the node
+  and **never** in `fixtures.toml`: an implementation cannot supply its own
+  expected values, and that is an implementation.
+
+## The loop, start to finish
+
+    cargo run -p xtask -- new <id> --like <sibling>   # if it does not exist yet
+    cargo run -p xtask -- declare <id> --source <path>
+    # ... answer the open fields in node.toml ...
+    cargo run -p xtask -- declare <id>                # until 0 gaps open
+    cargo run -p xtask -- docs <id>                   # refuses while any is open
+    cargo run -p xtask -- gate <id>
+
+Hand back the `declare` output and the `gate` output, verbatim. If the gap pass
+lists anything, the sheet is not ready and you say so rather than filling the
+gap yourself.

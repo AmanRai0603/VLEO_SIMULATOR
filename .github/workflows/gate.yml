@@ -85,6 +85,12 @@ jobs:
       - name: the gap pass
         run: cargo run -p xtask -- gap || true
 
+      # Which nodes have passed every machine stage and are waiting on a
+      # person. Reported, never targeted: a number that must go up is a number
+      # somebody makes go up.
+      - name: ready for review
+        run: cargo run -p xtask -- ready
+
       - name: the tree, reported
         run: |
           cargo run -p xtask -- status
@@ -108,6 +114,15 @@ jobs:
         run: python3 tools/review_report.py --selftest
       - name: the recipe runner
         run: python3 tools/recipe.py --selftest
+      # Gap W8: the instruction files are an input to every node and were the
+      # only input nothing checked. Stale references are what they will really
+      # have — a path renamed by a commit that never opened one.
+      - name: the fleet instrument
+        run: python3 tools/fleet_report.py --selftest
+      - name: the instruction-file lint
+        run: |
+          python3 tools/instruction_lint.py --selftest
+          python3 tools/instruction_lint.py
       - name: the release notes
         run: python3 tools/release_notes.py --selftest
       # Every recipe, applied twice on a copy; the second must change nothing.
@@ -126,9 +141,12 @@ jobs:
   # says something.
   #
   # It is deliberately not a required check, and must never become one. An
-  # adopted review model — pinned to a different family from whichever wrote
-  # the change — belongs in this job beside the mechanical pass, under the same
-  # rule: it writes to the summary, and it has no say in the merge.
+  # adopted review model belongs in this job beside the mechanical pass, under
+  # two rules: it writes to the summary and has no say in the merge, and its
+  # family must differ from whichever model wrote the change. A model handed its
+  # own reasoning to grade approves it — which is why agents/provenance.toml
+  # declares the producer/checker pairings and the instruction lint refuses a
+  # pair whose models match.
   review:
     name: advisory review (never blocks)
     runs-on: ubuntu-latest
@@ -147,6 +165,35 @@ jobs:
           base="${{ github.event.pull_request.base.sha || github.event.before }}"
           git cat-file -e "$base^{commit}" 2>/dev/null || base="$(git rev-list --max-parents=0 HEAD | tail -1)"
           python3 tools/review_report.py --range "$base..HEAD" | tee -a "$GITHUB_STEP_SUMMARY"
+
+  # The visual lane, checked the way the engine is. A wrong number crashes a
+  # test; a wrong chart looks beautiful, and the measured record of this
+  # codebase says that is where the defects actually live. Three checks per
+  # declared panel, none of which needs a person: it renders, it moves when its
+  # declared inputs move, and it matches a reference somebody looked at.
+  #
+  # The second is the one worth the browser. A panel wired to nothing renders
+  # perfectly and matches yesterday's reference every time.
+  panels:
+    name: the panels render, move and match
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
+      - name: the browser
+        run: |
+          pip install --quiet playwright Pillow
+          python3 -m playwright install --with-deps chromium
+      - name: the checker checks itself first
+        run: python3 tools/panel_check.py --selftest
+      - name: every declared panel
+        run: python3 tools/panel_check.py
 
   # Both profiles build on every merge. A customer build that fails only at
   # release time fails on the day it can least be afforded — and link-time

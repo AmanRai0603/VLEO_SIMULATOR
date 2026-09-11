@@ -1,0 +1,223 @@
+# Where each agent definition came from, and what happens when it goes away.
+#
+# Two widely-used agent projects were acquired or archived within months of each
+# other in 2026, and the teams built on them are still managing it. So every
+# adopted definition is a vendored copy in this repository, pinned, never a
+# reference to somebody else's file that can change under us.
+#
+# Eight fields, and the last three are the ones that make the file worth having:
+#
+#   source        BUILD (written here, because it encodes this domain) or
+#                 ADOPT (copied from a collection and tuned)
+#   upstream      the exact repository address. Not the name — four separate
+#                 projects answer to "AgentLint", and one tool lives under two
+#                 organisations. A name is not an identifier
+#   pinned        the commit or release the copy was taken from
+#   licence       as read, not as assumed. One row in the wider audit turned out
+#                 to run a tiered licence rather than an open one
+#   owner         who here decides what this definition says
+#   model         which model runs it, and why that one
+#   fallback      the named alternative in the same category, written down
+#                 before it is needed
+#   verified      the date somebody last checked the three things above are
+#                 still true. A catalogue entry describes a project on the day
+#                 it was written
+#
+# Re-verify quarterly, and whenever an upstream collection publishes. Promoting
+# a change to any definition is H10: the fleet owner, with the evaluation set
+# passing at k=3.
+#
+# SILENCE. `tools/fleet_report.py` reports how often each agent actually fires,
+# because a definition that loads into context and never runs is pure cost.
+# There are three honest answers to a silent agent — delete it, merge it into
+# another, or say why it is kept — and the third one has to be written down or
+# it decays into nobody having decided.
+#
+# So `expected_from` is required on every row: the point in the work at which
+# this agent starts firing. An agent silent past its own `expected_from` is a
+# finding; one silent before it is doing exactly what it should, which is
+# waiting, defined, for work that has not begun.
+#
+# All four of the silent ones are kept. The tree is 250 rows written and 1079
+# seeded: the content phase has not started. Their definitions exist now so
+# that when it does, the work is repeatable from the first node rather than
+# invented per node — which is the whole reason for writing a definition rather
+# than a prompt.
+#
+# THE MODEL-FAMILY RULE. A checker may not run the model family of the thing it
+# checks. The reason is not that one family is better: it is that a model given
+# its own reasoning to grade approves it. The working model states this twice —
+# for the reviewer, "pinned to a different model family from the producer", and
+# for differential fill, "the same hole filled independently by a second model
+# family and the two compared numerically over the declared domain".
+#
+# `checks = "<agent>"` on a row below declares the pairing, and
+# tools/instruction_lint.py refuses a pair whose models match. Without that,
+# the rule is a sentence and the default — everything on one family, because
+# that is what the last person configured — silently wins.
+#
+# WHAT IS ACTUALLY ENFORCED, AND WHAT IS NOT. The working model means family in
+# the vendor sense, and cites the finding that mixing providers outperforms any
+# single vendor's stack. Every agent here runs Claude, so that rule is not
+# satisfied — what the lint enforces is the weaker "a checker does not run the
+# same model as its producer", which separates the model tiers and not the
+# training. Saying so is the point: an approximation recorded as the real thing
+# is how a control stops being one. Closing it properly means a second provider
+# in the harness, and that is a decision with a cost attached, not an oversight.
+
+[[agent]]
+id = "A"
+name = "declaration-drafter"
+expected_from = "the first node drafted from a paper rather than transcribed from CD-06"
+why_kept = "Silent because every row so far came from the CD-06 tree, which was already structured — there was no unstructured source to read. It fires on the first sheet drafted from romano2021 or a measurement."
+source = "BUILD"
+upstream = ""
+pinned = ""
+licence = "ours"
+owner = "integrator"
+model = "sonnet"
+why_model = "reads unstructured sources into a fixed schema — following a field list, not reasoning about physics"
+fallback = "the sheet template and its REQUIRED markers — a person fills it, slower"
+verified = "2026-09-11"
+note = "Written here because nothing off the shelf knows these fields. Its prohibition — supply mathematics, a reason, or a value — has nothing mechanical behind it."
+
+[[agent]]
+id = "B"
+name = "fixture-recorder"
+expected_from = "now — it has fired"
+why_kept = "Fired once, recording the intake fixture."
+source = "BUILD"
+upstream = ""
+pinned = ""
+licence = "ours"
+owner = "integrator"
+model = "sonnet"
+why_model = "formats and shape-checks against a schema"
+fallback = "fixtures.toml written by hand; the gate already refuses a bad provenance either way"
+verified = "2026-09-11"
+note = "Written here because the provenance rule is ours. The gate enforces the half that can be enforced."
+
+[[agent]]
+id = "C"
+name = "hole-filler"
+expected_from = "the first hole filled after a sheet passes both reviews"
+why_kept = "Silent because no sheet has been through H1a and H1b yet, and a hole filled before the physics is reviewed is a hole filled against a sheet that may change. The splice it returns text through is built and watched working; what is missing is a reviewed sheet to fill against, not the agent."
+source = "ADOPT"
+upstream = "a general coding subagent, narrowed to a few typed lines"
+pinned = "vendored 2026-09-09; no upstream commit — the definition was written against the splice this repository provides"
+licence = "ours, as written"
+owner = "platform engineer"
+model = "sonnet"
+why_model = "two or three typed lines composing existing kernel relations; the types are the constraint, not the model"
+fallback = "a person writes the hole. It is two or three lines"
+verified = "2026-09-11"
+note = "The only prohibition in the roster that is fully enforced: it has no write path at all. `cargo xtask fill` is the sole route from its output into a file."
+
+[[agent]]
+id = "E"
+name = "test-author"
+expected_from = "now — it has fired"
+why_kept = "Fired once, writing the capture-efficiency property test."
+checks = "hole-filler"
+source = "ADOPT"
+upstream = "the test-generation category; tuned to generate over a declared domain rather than from code"
+pinned = "vendored 2026-09-09"
+licence = "ours, as written"
+owner = "platform engineer"
+model = "opus"
+why_model = "a checker: it must be able to see that a test is vacuous, which is the thing the producer's family is worst at seeing about itself"
+fallback = "gen_tests already emits the harness and the property strategies from the sheet; E extends, it does not originate"
+verified = "2026-09-11"
+note = "Its scope is smaller than the roster implies, because most property tests are generated deterministically from the sheet."
+
+[[agent]]
+id = "F"
+name = "diagnostician"
+expected_from = "now — it has fired"
+why_kept = "Fired once, on the duplicate-identifier defect."
+checks = "hole-filler"
+source = "ADOPT, tuned heavily"
+upstream = "the debugging and site-reliability agent category"
+pinned = "vendored 2026-09-09"
+licence = "ours, as written"
+owner = "integrator"
+model = "opus"
+why_model = "the messiest work in the system — parallel hypotheses over a declared topology, on the day something broke"
+fallback = "the chain printed by `vleo run` and `git log` — slower, and it is what F reads anyway"
+verified = "2026-09-11"
+note = "Keeps Bash, so its read-only guarantee is detection rather than prevention. The judge half of its prohibition has nothing behind it at all."
+
+[[agent]]
+id = "I"
+name = "systems-backend"
+expected_from = "the first generator or kernel change not made in this session"
+why_kept = "Silent because every change to the generators, the gate and the task runner so far has been made directly in the main session rather than delegated. That is a choice about how this session ran, not a judgement about the agent: the work it owns is exactly the work with the largest blast radius, which is why it is on opus and why H7 asks two reviewers for it."
+source = "ADOPT"
+upstream = "the backend-developer category, plus AGENTS.md and areas/*.md"
+pinned = "vendored 2026-09-09"
+licence = "ours, as written"
+owner = "platform engineer"
+model = "opus"
+why_model = "not ordinary after all — this agent owns the generators and the gate, where one mistake is 1329 mistakes, and the work model already files a change here under H7 for the same reason. The blast radius decides the model, not the difficulty of any single edit"
+fallback = "a person. This is the one agent whose work has a conventional substitute"
+verified = "2026-09-11"
+note = "Arguably not a roster entry at all — it is a coding agent pointed at this repository with an instruction file per area."
+
+[[agent]]
+id = "J"
+name = "frontend-visualisation"
+expected_from = "the first panel or figure change after the panel specs exist"
+why_kept = "Silent because the web face was built before panels were declared. The three panel specs and their checks now exist, so a change here has something to be checked against — which is what makes delegating it safe rather than a matter of looking at the screenshot and hoping."
+source = "ADOPT"
+upstream = "the frontend-developer category, plus areas/document.md"
+pinned = "vendored 2026-09-09"
+licence = "ours, as written"
+owner = "platform engineer"
+model = "sonnet"
+why_model = "ordinary frontend work"
+fallback = "a person"
+verified = "2026-09-11"
+note = "The lane it works in is where this codebase's defects have actually been. A wrong number crashes a test; a wrong chart looks beautiful."
+
+# The five that are not agents. Kept here because the register has to say what
+# replaced each one, or a dead roster entry looks like an oversight.
+[[replaced]]
+id = "D"
+name = "reviewer"
+checks = "every producer — so its family must differ from whichever wrote the change, decided per pull request rather than pinned here"
+replaced_by = "tools/review_report.py, plus a slot in the pipeline for an adopted review model"
+upstream_if_adopted = "PR-Agent (now community-owned, docs at pr-agent.ai) or kodus. NOT coderabbitai/ai-pr-reviewer — archived and read-only since March 2024"
+must_be = "a different model family from whichever wrote the change, and never a required check"
+verified = "2026-09-11"
+
+[[replaced]]
+id = "G"
+name = "repository-hand"
+replaced_by = "tools/commit_message.py, the commit-msg hook, CODEOWNERS, and the platform merge queue"
+upstream_if_adopted = "gac, for generating the message from the staged diff"
+must_be = "incapable of merging, force-pushing or touching keys"
+verified = "2026-09-11"
+
+[[replaced]]
+id = "H"
+name = "pipeline"
+replaced_by = ".github/dependabot.yml (rung 1) and tools/recipe.py (rung 2); F diagnoses and I fix at rung 3"
+upstream_if_adopted = "Renovate, if the app is installed. OpenRewrite does NOT apply — no Rust support, tiered licence; the pattern is kept and the tool is not"
+must_be = "confined to the bot's own branch"
+verified = "2026-09-11"
+
+[[replaced]]
+id = "K"
+name = "data-engineering"
+replaced_by = "the manifest schema in vleo-data and `xtask bundle publish`"
+upstream_if_adopted = "maturin emits a bill of materials for free, which is most of this job"
+must_be = "unable to publish without a hash and a licence term"
+verified = "2026-09-11"
+
+[[replaced]]
+id = "L"
+name = "release-and-platform"
+replaced_by = ".github/workflows/release.yml and tools/release_notes.py, plus one human approval"
+upstream_if_adopted = "release-plz with cargo-semver-checks; cargo-dist and maturin for the artefacts"
+must_be = "unable to change branch protection or hold a signing key"
+verified = "2026-09-11"

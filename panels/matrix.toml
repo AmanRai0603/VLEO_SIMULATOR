@@ -1,0 +1,39 @@
+id = "matrix"
+label = "The coupling matrix"
+module = "web/js/matrix.js"
+mount = "#matrix-cells"
+draws = """
+Rows and columns are the display list in tree order, with the hierarchy drawn
+as nested boxes on the diagonal. Only cells that carry something are in the
+document; the empty ones are paper, and paper does not need a div.
+"""
+correct = """
+A mark inside a diagonal box is coupling that subtree owns. A mark outside one
+crosses a boundary and needs an interface. The diagonal is continuous — a gap
+in it means a row was dropped between the tree and the matrix.
+"""
+tolerance = 0.02
+
+# Wide enough that the pane fits in one shot. An element screenshot larger than
+# the viewport is stitched, and a transparent pane then composites whatever the
+# page had scrolled behind it — which made the tree's row labels appear inside
+# the matrix and the diagonal look as though it started at row 9.
+width = 1800
+height = 1600
+
+# Taken at layer 3, where the matrix has coupling to be wrong about. The layer-1
+# view is six groups and a clean diagonal, which would match even if every mark
+# were dropped.
+reference_state = "document.querySelector('.tab[data-layer=\"3\"]').click()"
+
+[[input]]
+name = "layer"
+drive = "document.querySelector('.tab[data-layer=\"2\"]').click()"
+why = "the matrix is built from the same display list as the tree, so it must move with it"
+
+[[input]]
+name = "selected"
+drive = "select((S.disp.find(d => d.kind === 'node') || S.disp[S.disp.length - 1]).id)"
+why = "the selected row's band is highlighted; a static highlight is a highlight reading stale state"
+
+reference_state = "document.querySelector('.tab[data-layer=\"3\"]').click()"

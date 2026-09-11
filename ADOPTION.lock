@@ -9,42 +9,61 @@
 # Re-verify quarterly: still maintained, licence unchanged, still does what this
 # file says. Update the date. On a load-bearing row going dead, switch to the
 # recorded fallback — it is already named, so that is a decision of minutes.
+#
+# Eight fields per row, and two of them exist because of specific failures:
+#
+#   upstream  the exact address. NOT the name — four separate projects answer
+#             to "AgentLint" and one tool appears under two organisations, so a
+#             name does not identify anything
+#   licence   as read, not as assumed. One row in the wider audit turned out to
+#             run a tiered licence rather than being uniformly open
+#
+# The agent definitions have their own register, in agents/provenance.toml,
+# because a vendored prompt needs the same treatment as a vendored library.
 
 [[adopted]]
 name = "toml"
+upstream = "https://github.com/toml-rs/toml"
+licence = "MIT OR Apache-2.0"
 version = "0.8"
 used_by = "vleo-sheet, vleo-data, xtask"
 load_bearing = true
 why = "reads the sheets, the layer files, the cases and the bundle manifests"
 fallback = "a hand-written parser for the subset used here — the schema is small and fixed"
-verified = "2026-09-09"
+verified = "2026-09-11"
 
 [[adopted]]
 name = "wasm-bindgen"
+upstream = "https://github.com/rustwasm/wasm-bindgen"
+licence = "MIT OR Apache-2.0"
 version = "0.2"
 used_by = "vleo-wasm"
 load_bearing = false
 why = "the browser binding surface, and it emits the TypeScript declarations"
 fallback = "the daemon face already covers everything the browser face does"
-verified = "2026-09-09"
+verified = "2026-09-11"
 
 [[adopted]]
 name = "pyo3"
+upstream = "https://github.com/PyO3/pyo3"
+licence = "MIT OR Apache-2.0"
 version = "0.22"
 used_by = "vleo-py"
 load_bearing = false
 why = "the Python wheel, which is how MATLAB reaches the engine"
 fallback = "the C ABI in vleo-ffi, called from MATLAB through loadlibrary"
-verified = "2026-09-09"
+verified = "2026-09-11"
 
 [[adopted]]
 name = "maturin"
+upstream = "https://github.com/PyO3/maturin"
+licence = "MIT OR Apache-2.0"
 version = ">=1.5,<2"
 used_by = "the wheel build"
 load_bearing = false
 why = "builds and publishes the stable-ABI wheel"
 fallback = "setuptools-rust, or shipping the shared library and a ctypes shim"
-verified = "2026-09-09"
+verified = "2026-09-11"
 
 # --- deliberately not adopted, with the reason -------------------------------
 #

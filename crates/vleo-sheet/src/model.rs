@@ -103,6 +103,25 @@ pub struct Sheet {
     pub reason_upper: String,
     pub value: Option<f64>,
     pub confirmed_by: String,
+    /// Criticality: `"minor"` or `"significant"`.
+    ///
+    /// Set by the engineer who wrote the sheet, and it decides two things: how
+    /// many people read the node, and whether the hole is filled twice by
+    /// different model families and the two compared numerically over the
+    /// declared domain. Everything cannot be significant — a person asked to
+    /// approve too many things stops evaluating each one — so the default is
+    /// `"minor"` and raising it is a decision somebody makes on purpose.
+    pub criticality: String,
+    /// The prior implementation this node was translated from, if there is one.
+    ///
+    /// Eighteen months of working MATLAB exists and most rows with mathematics
+    /// exist there in some form. Its outputs may never be fixtures: an
+    /// implementation cannot supply its own expected values, and that is an
+    /// implementation. So it is recorded here and its numbers go in
+    /// `parity.csv` beside the node, where a disagreement is a finding about
+    /// one of the two rather than a check either has passed. The check numbers
+    /// still come from the paper or measurement the MATLAB was built from.
+    pub migrated_from: String,
     /// The derivation graph, declared by the consumer, because knowing its
     /// inputs is what changes *this* node's implementation. Each entry is the
     /// binding name, the variable it reads, and the quantity type the consumer

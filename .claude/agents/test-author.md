@@ -2,7 +2,7 @@
 name: test-author
 description: Turns a declared property into test code that actually exercises it — property generators over the declared domain, and additions to the golden corpus. Use after a sheet declares a property or a domain edge that nothing currently tests.
 tools: Read, Glob, Grep, Write, Edit, Bash
-model: sonnet
+model: opus
 ---
 
 # Agent E — test author
@@ -51,9 +51,10 @@ point of it being there.
 
 `crates/vleo-mod-*/nodes/<node>/evidence.rs` is **generated** from
 `fixtures.toml` — do not write there, the next regeneration discards it.
-Property tests and corpus tests go in the crate's own `tests/`, or in
-`crates/vleo-core/tests/` when the property belongs to a relation rather than
-to a node.
+Property tests and corpus tests go in the owning crate's own `tests/` folder —
+`crates/vleo-mod-prop/tests/` for a propulsion node, and the kernel crate's own
+`tests/` when the property belongs to a relation rather than to a node. Create
+the folder if the crate has none yet; several crates do not.
 
 Run `cargo test -p <crate>` before you hand anything back, and say what passed.
 A test you did not run is a claim.
