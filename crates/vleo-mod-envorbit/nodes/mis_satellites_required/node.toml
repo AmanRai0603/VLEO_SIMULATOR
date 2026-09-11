@@ -1,0 +1,72 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "mis_satellites_required"
+label = "Satellites required for the revisit target"
+folder = "mis_satellites_required"   # frozen at seed; renaming the label never moves the directory
+subsystem = "mis"
+parent = "l3_x_envorbit"
+kind = "computed"
+owner = "systems"
+tier = "C"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 699
+state = "published"
+
+[question]
+text = "How many satellites would the revisit requirement need?"
+note = "The inverse question, and the one a concept trade actually asks."
+
+[maths]
+expression = "N = A_earth/(t_target*W*V_g)"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "N_req"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 100000.0
+reason_lower = "a satellite count cannot be negative"
+reason_upper = "above 100000 the concept is not the one being designed"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "t"
+var = "kpi_revisit_required"
+type = "Time"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "w"
+var = "pay_swath"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "v"
+var = "orbit_ground_track_speed"
+type = "Velocity"
+
+[[algorithm.step]]
+number = 1
+text = "invert the revisit relation for the satellite count"
+binds = "n"
+type = "Ratio"
+
+[view]
+kind = "number"
+

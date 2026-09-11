@@ -1,0 +1,47 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pwr_discharge_efficiency"
+label = "Battery discharge path efficiency"
+folder = "pwr_discharge_efficiency"   # frozen at seed; renaming the label never moves the directory
+subsystem = "power"
+parent = "l3_power"
+kind = "declared"
+owner = "power"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 574
+state = "published"
+
+[question]
+text = "How efficiently does stored energy reach the loads?"
+
+[maths]
+expression = "eta_dis = 0.92"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "eta_dis"
+type = "Ratio"
+unit = "One"
+lower = 0.6
+upper = 0.99
+reason_lower = "below 60% the discharge path dissipates more than the loads receive"
+reason_upper = "above 99% has not been demonstrated end to end including the regulator"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 0.92
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

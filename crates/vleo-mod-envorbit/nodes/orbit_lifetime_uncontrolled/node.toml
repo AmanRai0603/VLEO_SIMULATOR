@@ -1,0 +1,78 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "orbit_lifetime_uncontrolled"
+label = "Uncontrolled orbital lifetime"
+folder = "orbit_lifetime_uncontrolled"   # frozen at seed; renaming the label never moves the directory
+subsystem = "orbit"
+parent = "l3_x_envorbit"
+kind = "computed"
+owner = "systems"
+tier = "C"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 528
+state = "published"
+
+[question]
+text = "If propulsion stops, how long before the satellite re-enters?"
+
+[maths]
+expression = "t = INT da/(da/dt) from h to 120 km"
+source = "vallado2013"
+
+[[assumption]]
+text = "Atmospheric conditions fixed at the current activity for the whole decay"
+fails_when = "over a solar cycle the density at a given altitude changes by more than an order of magnitude, so this is an order-of-magnitude answer and is reported as one"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "t_life"
+type = "Time"
+unit = "Day"
+lower = 0.0
+upper = 36500.0
+reason_lower = "a lifetime cannot be negative"
+reason_upper = "above 100 years the 25-year debris rule is violated and the number's precision is irrelevant"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "h"
+var = "orbit_altitude"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "bc"
+var = "aero_ballistic_coefficient"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "t_inf"
+var = "env_exospheric_temperature"
+type = "Temperature"
+
+[[algorithm.step]]
+number = 1
+text = "integrate the decay rate down to the 120 km model base at fixed atmospheric conditions"
+binds = "t"
+type = "Time"
+
+[contributes]
+kpis = ["kpi_service_lifetime"]
+
+[view]
+kind = "number"
+

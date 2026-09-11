@@ -1,0 +1,79 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "com_cn0"
+label = "Carrier to noise density ratio"
+folder = "com_cn0"   # frozen at seed; renaming the label never moves the directory
+subsystem = "com"
+parent = "l3_ttc"
+kind = "computed"
+owner = "comms"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 645
+state = "published"
+
+[question]
+text = "How strong is the received carrier relative to the noise floor?"
+
+[maths]
+expression = "C/N0 = EIRP - L_fs - L_atm + G/T - 10*log10(k)"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "CN0"
+type = "Ratio"
+unit = "Decibel"
+lower = 20.0
+upper = 120.0
+reason_lower = "below 20 dB-Hz no link in this design closes"
+reason_upper = "above 120 dB-Hz the geometry is not one this tool covers"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "e"
+var = "com_eirp"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "lf"
+var = "com_path_loss"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "la"
+var = "com_atmospheric_loss"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "gt"
+var = "com_g_over_t"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "assemble the link equation in decibels"
+binds = "c"
+type = "Ratio"
+
+[view]
+kind = "number"
+

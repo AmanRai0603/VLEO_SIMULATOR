@@ -11,7 +11,7 @@
 use crate::emit;
 use crate::load::{read_holes, Tree};
 use crate::model::*;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// Format a candidate the way the generator does before writing it, so the
 /// regeneration check asks "did the content drift" rather than "has the
@@ -554,6 +554,51 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
         Check::pass("V11 declared cycles are well formed")
     } else {
         Check::fail("V11 declared cycles are well formed", badcy.join(", "))
+    });
+
+    // V12 — one crate per owner.
+    //
+    // Every row of a group lives in the same crate, and no crate holds rows
+    // from two layers. This is the isolation rule checked rather than trusted:
+    // a group whose rows are in two crates is a group that two teams have to
+    // edit together, and it happens silently — a routing rule that keys on the
+    // wrong field, a row added under the old convention — until somebody
+    // notices a change to one layer touching three crates.
+    let mut byg: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::new();
+    let mut byc: BTreeMap<&str, BTreeSet<u8>> = BTreeMap::new();
+    for sh in tree.sheets.values() {
+        byg.entry(sh.parent.as_str())
+            .or_default()
+            .insert(sh.crate_name.as_str());
+        byc.entry(sh.crate_name.as_str())
+            .or_default()
+            .insert(sh.layer);
+    }
+    let mut spread: Vec<String> = byg
+        .iter()
+        .filter(|(_, c)| c.len() > 1)
+        .map(|(g, c)| {
+            format!(
+                "{} is split across {}",
+                g,
+                c.iter().copied().collect::<Vec<_>>().join(" and ")
+            )
+        })
+        .collect();
+    spread.extend(byc.iter().filter(|(_, l)| l.len() > 1).map(|(c, l)| {
+        format!(
+            "{} holds layers {}",
+            c,
+            l.iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>()
+                .join(" and ")
+        )
+    }));
+    out.push(if spread.is_empty() {
+        Check::pass("V12 one crate per owner")
+    } else {
+        Check::fail("V12 one crate per owner", spread.join(", "))
     });
 
     out

@@ -200,35 +200,35 @@ dependencies = [
 ]
 
 [[package]]
-name = "vleo-mod-aero"
+name = "vleo-mod-acs"
 version = "0.1.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
-name = "vleo-mod-comms"
+name = "vleo-mod-atthw"
 version = "0.1.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
-name = "vleo-mod-cost"
+name = "vleo-mod-closure"
 version = "0.1.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
-name = "vleo-mod-env"
+name = "vleo-mod-envorbit"
 version = "0.1.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
-name = "vleo-mod-gnc"
+name = "vleo-mod-fsw"
 version = "0.1.0"
 dependencies = [
  "vleo-core",
@@ -242,21 +242,35 @@ dependencies = [
 ]
 
 [[package]]
-name = "vleo-mod-mass"
+name = "vleo-mod-massaero"
 version = "0.1.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
-name = "vleo-mod-mission"
+name = "vleo-mod-multipay"
 version = "0.1.0"
 dependencies = [
  "vleo-core",
 ]
 
 [[package]]
-name = "vleo-mod-orbit"
+name = "vleo-mod-navod"
+version = "0.1.0"
+dependencies = [
+ "vleo-core",
+]
+
+[[package]]
+name = "vleo-mod-navsense"
+version = "0.1.0"
+dependencies = [
+ "vleo-core",
+]
+
+[[package]]
+name = "vleo-mod-orbmaint"
 version = "0.1.0"
 dependencies = [
  "vleo-core",
@@ -264,6 +278,13 @@ dependencies = [
 
 [[package]]
 name = "vleo-mod-payload"
+version = "0.1.0"
+dependencies = [
+ "vleo-core",
+]
+
+[[package]]
+name = "vleo-mod-pointing"
 version = "0.1.0"
 dependencies = [
  "vleo-core",
@@ -284,7 +305,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "vleo-mod-subsystem"
+name = "vleo-mod-struct"
 version = "0.1.0"
 dependencies = [
  "vleo-core",
@@ -305,26 +326,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "vleo-mod-ttc"
+version = "0.1.0"
+dependencies = [
+ "vleo-core",
+]
+
+[[package]]
 name = "vleo-modules"
 version = "0.1.0"
 dependencies = [
  "vleo-bus",
  "vleo-core",
- "vleo-mod-aero",
- "vleo-mod-comms",
- "vleo-mod-cost",
- "vleo-mod-env",
- "vleo-mod-gnc",
+ "vleo-mod-acs",
+ "vleo-mod-atthw",
+ "vleo-mod-closure",
+ "vleo-mod-envorbit",
+ "vleo-mod-fsw",
  "vleo-mod-management",
- "vleo-mod-mass",
- "vleo-mod-mission",
- "vleo-mod-orbit",
+ "vleo-mod-massaero",
+ "vleo-mod-multipay",
+ "vleo-mod-navod",
+ "vleo-mod-navsense",
+ "vleo-mod-orbmaint",
  "vleo-mod-payload",
+ "vleo-mod-pointing",
  "vleo-mod-power",
  "vleo-mod-prop",
- "vleo-mod-subsystem",
+ "vleo-mod-struct",
  "vleo-mod-system",
  "vleo-mod-thermal",
+ "vleo-mod-ttc",
  "vleo-sheet",
  "vleo-units",
 ]

@@ -1,0 +1,63 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pwr_battery_mass"
+label = "Battery mass"
+folder = "pwr_battery_mass"   # frozen at seed; renaming the label never moves the directory
+subsystem = "power"
+parent = "l3_power"
+kind = "computed"
+owner = "power"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 589
+state = "published"
+
+[question]
+text = "What does the battery weigh?"
+
+[maths]
+expression = "m = E/e_batt"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "m_batt"
+type = "Mass"
+unit = "Kilogram"
+lower = 0.0
+upper = 1000.0
+reason_lower = "a mass cannot be negative"
+reason_upper = "above a tonne the battery is not part of this spacecraft"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "e"
+var = "pwr_battery_energy"
+type = "Energy"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "se"
+var = "pwr_battery_specific_energy"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "divide the required energy by the specific energy"
+binds = "m"
+type = "Mass"
+
+[view]
+kind = "number"
+

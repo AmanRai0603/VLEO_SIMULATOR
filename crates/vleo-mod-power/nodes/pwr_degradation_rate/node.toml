@@ -1,0 +1,48 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pwr_degradation_rate"
+label = "Annual array degradation rate"
+folder = "pwr_degradation_rate"   # frozen at seed; renaming the label never moves the directory
+subsystem = "power"
+parent = "l3_power"
+kind = "declared"
+owner = "power"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 571
+state = "published"
+
+[question]
+text = "How much output does the array lose each year?"
+note = "VLEO is below the inner belt, so the dominant mechanism is atomic-oxygen erosion of coverglass adhesive and thermal cycling, not displacement damage. This is the one place a VLEO power design differs from the textbook figure."
+
+[maths]
+expression = "d_yr = 0.025"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "d_yr"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 0.15
+reason_lower = "a degradation rate cannot be negative"
+reason_upper = "above 15% a year the array is gone within the mission and the design does not close"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 0.025
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

@@ -1,0 +1,56 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "orbit_makeup_delta_v"
+label = "Drag make-up delta-v per year"
+folder = "orbit_makeup_delta_v"   # frozen at seed; renaming the label never moves the directory
+subsystem = "orbit"
+parent = "l3_x_envorbit"
+kind = "computed"
+owner = "systems"
+tier = "B"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 526
+state = "published"
+
+[question]
+text = "How much delta-v a year does holding this altitude cost?"
+note = "This is the number an air-breathing system exists to make free. A stored-propellant design at 250 km spends several kilometres per second a year on it."
+
+[maths]
+expression = "dv = (D/m)*t"
+source = "vallado2013"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "dv_dm"
+type = "Velocity"
+unit = "MetrePerSecond"
+lower = 0.0
+upper = 100000.0
+reason_lower = "make-up delta-v cannot be negative"
+reason_upper = "above 100 km/s a year no propulsion system of any kind closes, and the answer is that the altitude is wrong"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "a_drag"
+var = "aero_drag_acceleration"
+type = "Acceleration"
+
+[[algorithm.step]]
+number = 1
+text = "integrate the drag deceleration over one Julian year"
+binds = "dv"
+type = "Velocity"
+
+[view]
+kind = "number"
+

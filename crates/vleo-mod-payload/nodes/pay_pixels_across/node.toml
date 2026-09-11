@@ -1,0 +1,47 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pay_pixels_across"
+label = "Detector pixels across track"
+folder = "pay_pixels_across"   # frozen at seed; renaming the label never moves the directory
+subsystem = "pay"
+parent = "l3_payload"
+kind = "declared"
+owner = "payload"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 657
+state = "published"
+
+[question]
+text = "How many pixels does the detector have across the swath?"
+
+[maths]
+expression = "N_x = 8192"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "N_x"
+type = "Ratio"
+unit = "One"
+lower = 256.0
+upper = 40000.0
+reason_lower = "below 256 pixels the swath is too narrow to be useful"
+reason_upper = "above 40000 pixels no single space detector array is that wide"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 8192.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

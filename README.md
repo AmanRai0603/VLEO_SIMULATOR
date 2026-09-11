@@ -62,7 +62,7 @@ This repository is one answer to what they described:
       vleo-units/     RING 0  units and frames as types, constants, portable maths
       vleo-core/      RING 1  every formula, the fault taxonomy, credibility, the resolver
       vleo-bus/       RING 2  the wire contract every face speaks
-      vleo-mod-*/     RING 3  fifteen subsystem crates, 1329 node folders between them
+      vleo-mod-*/     RING 3  nineteen crates — one per owner, 1329 node folders
       vleo-modules/           the facade: the graph tables, compiled in
       vleo-sheet/      BUILD  what a sheet means — read by the generators and the build
       vleo-data/              versioned bundles, a lockfile, verification before use
@@ -96,6 +96,48 @@ one is a remove, its history is the log of a directory, and ownership is a path
 rule.
 
 ---
+
+## One crate per owner
+
+A node's folder lives in the crate of the thing that owns it: the management
+layer, the system layer, or one of the seventeen subsystem layers. Nineteen
+crates, derived from the tree rather than listed — the skeletons, the workspace
+members and the facade's dependencies are all generated from it, because a
+hand-kept list of crates drifts from the tree it mirrors and nobody notices.
+
+Not per discipline. `aero` and `mass` both answer the mass-and-aero layer's
+targets, and a crate split along discipline put one layer's rows in three
+places: nine of the seventeen layers were spread across two to eight crates, so
+a propulsion engineer filling in propulsion rows had to touch two of them and
+`vleo-mod-subsystem` was one crate that seventeen teams would all edit. The
+tree said `l3_prop` was one layer with one owner; the folders said otherwise.
+
+This is the isolation rule made enforceable rather than stated. Inside one
+crate `use crate::prop::…` from `power` compiles and nothing stops it; across
+crates it is a manifest line. **`V12 one crate per owner`** checks it on every
+assembly — no group's rows in two crates, no crate holding two layers — so the
+structure cannot decay quietly back.
+
+The folder is the identifier, for every row. That used to be three rules, and
+the third collided the moment two disciplines answered the same layer:
+`pwr_margin` and `thm_margin` both wanted `margin`. One rule cannot collide,
+because identifiers cannot.
+
+## The seeder, one file per subsystem
+
+    tools/seed_helpers.py    the row helpers, and the lists they append to
+    tools/nodes/env.py       one module per subsystem — the rows, and nothing else
+    tools/nodes/aero.py      …twelve of them
+    tools/seed_tree.py       the tree, the layers, the emitter, the assembly
+    tools/cd06_extract.py    CD-06's tree, out of the document
+    tools/cd06_rows.py       …turned into rows
+    tools/crate_skeleton.py  one crate per owner, written from the tree
+
+It was one 3,311-line file holding the rows for every subsystem and the
+machinery that emits them, so changing what propulsion declares meant opening
+the file that declares everything else. Import order is authoring order, which
+is the order the rows read in on the tree, so `seed_tree` decides it and each
+module only says what its rows are.
 
 ## The shell, segmented
 
@@ -388,7 +430,7 @@ crate reaching the platform library.
     cargo run -p xtask -- gap                  # what the sheets promised and nothing covers
     cargo run -p xtask -- docs                 # the six per-node generators
     cargo run -p xtask -- gate                 # the checks, in order
-    cargo run -p xtask -- assemble             # the eleven assembly validations
+    cargo run -p xtask -- assemble             # the twelve assembly validations
     cargo run -p xtask -- variables            # regenerate docs/VARIABLES.md
     cargo run -p xtask -- new <id> --like <sibling>
 

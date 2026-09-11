@@ -1,0 +1,56 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "env_density_uncertainty"
+label = "Density model uncertainty"
+folder = "env_density_uncertainty"   # frozen at seed; renaming the label never moves the directory
+subsystem = "env"
+parent = "l3_x_envorbit"
+kind = "computed"
+owner = "environment"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 507
+state = "published"
+
+[question]
+text = "How wrong might the density be, and therefore how wrong is every margin built on it?"
+note = "A node that consumes density and does not carry this forward is a node whose margin is fictional."
+
+[maths]
+expression = "sigma_rho = 0.15 + 0.03*Kp"
+source = "doornbos2011"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "sigma_rho"
+type = "Ratio"
+unit = "One"
+lower = 0.05
+upper = 1.0
+reason_lower = "no published comparison of an empirical thermosphere model against measured drag does better than 5%"
+reason_upper = "an uncertainty above 100% of the value is not an uncertainty, it is an absence of a model"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "kp"
+var = "env_kp"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "apply the quiet-time residual and grow it with geomagnetic activity"
+binds = "s"
+type = "Ratio"
+
+[view]
+kind = "number"
+

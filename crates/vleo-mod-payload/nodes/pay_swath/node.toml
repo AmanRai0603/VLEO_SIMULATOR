@@ -1,0 +1,66 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pay_swath"
+label = "Optical swath width"
+folder = "pay_swath"   # frozen at seed; renaming the label never moves the directory
+subsystem = "pay"
+parent = "l3_payload"
+kind = "computed"
+owner = "payload"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 672
+state = "published"
+
+[question]
+text = "How wide a strip does one optical pass image?"
+
+[maths]
+expression = "W = GSD*N_x"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "W_o"
+type = "Length"
+unit = "Kilometre"
+lower = 0.1
+upper = 1000.0
+reason_lower = "below 100 m the swath is not a swath"
+reason_upper = "above 1000 km the field of view is not one this telescope has"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "g"
+var = "pay_gsd"
+type = "Length"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "n"
+var = "pay_pixels_across"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "multiply the ground sample distance by the across-track pixel count"
+binds = "w"
+type = "Length"
+
+[contributes]
+kpis = ["kpi_revisit"]
+
+[view]
+kind = "number"
+

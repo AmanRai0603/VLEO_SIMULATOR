@@ -1,0 +1,66 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "mass_margin"
+label = "Mass margin"
+folder = "mass_margin"   # frozen at seed; renaming the label never moves the directory
+subsystem = "mass"
+parent = "l3_x_closure"
+kind = "computed"
+owner = "mass"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 691
+state = "published"
+
+[question]
+text = "Does the spacecraft fit the mass it is allowed?"
+
+[maths]
+expression = "M = (m_lim - m_wet)/m_lim"
+source = "ecss_e_st_10_02"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "M_mass"
+type = "Ratio"
+unit = "One"
+lower = -5.0
+upper = 1.0
+reason_lower = "a margin below -500% means the design is five times over and the inputs are wrong"
+reason_upper = "a margin of one means the spacecraft weighs nothing"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "l"
+var = "mass_limit"
+type = "Mass"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "w"
+var = "mass_wet"
+type = "Mass"
+
+[[algorithm.step]]
+number = 1
+text = "form the signed fractional margin against the declared limit"
+binds = "m"
+type = "Ratio"
+
+[contributes]
+kpis = ["kpi_mass_margin"]
+
+[view]
+kind = "number"
+

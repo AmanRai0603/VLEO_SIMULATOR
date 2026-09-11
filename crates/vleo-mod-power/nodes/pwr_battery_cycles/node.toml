@@ -1,0 +1,63 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "pwr_battery_cycles"
+label = "Battery charge cycles"
+folder = "pwr_battery_cycles"   # frozen at seed; renaming the label never moves the directory
+subsystem = "power"
+parent = "l3_power"
+kind = "computed"
+owner = "power"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 588
+state = "published"
+
+[question]
+text = "How many charge and discharge cycles does the battery see?"
+
+[maths]
+expression = "N = t_mission/T_orbit"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "N_cyc"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 1000000.0
+reason_lower = "a cycle count cannot be negative"
+reason_upper = "above a million cycles no cell chemistry has data"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "tm"
+var = "orbit_mission_duration"
+type = "Time"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "to"
+var = "orbit_period"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "divide the mission duration by the orbital period"
+binds = "n"
+type = "Ratio"
+
+[view]
+kind = "number"
+

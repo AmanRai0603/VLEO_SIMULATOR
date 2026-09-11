@@ -1,0 +1,48 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "env_f107a"
+label = "Solar radio flux F10.7, 81-day mean"
+folder = "env_f107a"   # frozen at seed; renaming the label never moves the directory
+subsystem = "env"
+parent = "l3_x_envorbit"
+kind = "declared"
+owner = "environment"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 494
+state = "published"
+
+[question]
+text = "Where has the Sun been sitting over the last three solar rotations?"
+note = "Separate from the daily value on purpose: the mean sets where the atmosphere sits, the daily value sets how far it is from there today."
+
+[maths]
+expression = "F107A = 150"
+source = "noaa_swpc"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "F107A"
+type = "Ratio"
+unit = "One"
+lower = 60.0
+upper = 400.0
+reason_lower = "same support limit as the daily value"
+reason_upper = "same support limit as the daily value"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 150.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

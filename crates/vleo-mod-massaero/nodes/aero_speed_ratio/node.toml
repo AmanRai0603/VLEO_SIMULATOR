@@ -1,0 +1,71 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "aero_speed_ratio"
+label = "Molecular speed ratio"
+folder = "aero_speed_ratio"   # frozen at seed; renaming the label never moves the directory
+subsystem = "aero"
+parent = "l3_massaero"
+kind = "computed"
+owner = "aero"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 534
+state = "published"
+
+[question]
+text = "How hyperthermal is the flow — does the gas arrive as a beam or as a cloud?"
+
+[maths]
+expression = "s = V/sqrt(2*R*T/M)"
+source = "sentman1961"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "s"
+type = "Ratio"
+unit = "One"
+lower = 1.0
+upper = 30.0
+reason_lower = "below a speed ratio of one the flow is thermal rather than hyperthermal, and Sentman's relations lose their meaning"
+reason_upper = "above 30 the exponential terms underflow and the relations are numerically dead"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "v"
+var = "orbit_velocity"
+type = "Velocity"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "t"
+var = "env_local_temperature"
+type = "Temperature"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "m"
+var = "env_mean_molar_mass"
+type = "MolarMass"
+
+[[algorithm.step]]
+number = 1
+text = "divide the bulk speed by the most probable thermal speed of the local mixture"
+binds = "s"
+type = "Ratio"
+
+[view]
+kind = "number"
+

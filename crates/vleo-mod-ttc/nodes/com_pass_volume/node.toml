@@ -1,0 +1,63 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "com_pass_volume"
+label = "Data volume per pass"
+folder = "com_pass_volume"   # frozen at seed; renaming the label never moves the directory
+subsystem = "com"
+parent = "l3_ttc"
+kind = "computed"
+owner = "comms"
+tier = "B"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 650
+state = "published"
+
+[question]
+text = "How much data comes down in one pass?"
+
+[maths]
+expression = "V = R*t*eta_link"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "V_pass"
+type = "DataVolume"
+unit = "Gigabit"
+lower = 0.0
+upper = 1000000.0
+reason_lower = "a data volume cannot be negative"
+reason_upper = "above a petabit per pass no modem in this class runs"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "r"
+var = "com_data_rate"
+type = "DataRate"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "t"
+var = "com_contact_time"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "multiply rate by contact time and apply a 60% mean-pass and protocol efficiency"
+binds = "v"
+type = "DataVolume"
+
+[view]
+kind = "number"
+

@@ -1,0 +1,48 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "orbit_eccentricity"
+label = "Orbit eccentricity"
+folder = "orbit_eccentricity"   # frozen at seed; renaming the label never moves the directory
+subsystem = "orbit"
+parent = "l3_x_envorbit"
+kind = "declared"
+owner = "systems"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 510
+state = "published"
+
+[question]
+text = "How circular is the orbit?"
+note = "Moving this reaches 3 nodes. Moving the altitude reaches 54. The difference is the answer to how much of the design a change just invalidated."
+
+[maths]
+expression = "e = 0"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "e"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 0.05
+reason_lower = "a negative eccentricity is not an orbit"
+reason_upper = "above 0.05 the perigee of a 250 km orbit is below 200 km, where the drag per revolution stops being a small perturbation and the circular-orbit relations used throughout this tree no longer apply"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 0.0
+confirmed_by = "A. Rai / 2026-09-01"
+
+[view]
+kind = "number"
+

@@ -1,0 +1,63 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "gnc_magnetic_torque"
+label = "Residual dipole torque"
+folder = "gnc_magnetic_torque"   # frozen at seed; renaming the label never moves the directory
+subsystem = "gnc"
+parent = "l3_acs"
+kind = "computed"
+owner = "gnc"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 619
+state = "published"
+
+[question]
+text = "How much torque does the residual magnetic dipole produce in the geomagnetic field?"
+
+[maths]
+expression = "T = m_res x B"
+source = "larson_wertz"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "T_mag"
+type = "Torque"
+unit = "NewtonMetre"
+lower = 0.0
+upper = 1.0
+reason_lower = "a torque magnitude cannot be negative"
+reason_upper = "above 1 N.m no wheel that fits this vehicle can hold attitude"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "m"
+var = "gnc_residual_dipole"
+type = "DipoleMoment"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "b"
+var = "env_magnetic_field"
+type = "MagneticFluxDensity"
+
+[[algorithm.step]]
+number = 1
+text = "take the worst-case cross product of the residual dipole with the local field"
+binds = "t"
+type = "Torque"
+
+[view]
+kind = "number"
+
