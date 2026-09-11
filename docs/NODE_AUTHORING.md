@@ -94,7 +94,9 @@ everything left that is yours.
 added to a sheet and not explained here fails the lint rather than waiting to be
 noticed.
 
-- **`[maths] confirmed_by`** — who supplied the relation, and when. An agent may
+- **`[maths] confirmed_by`** — who supplied the relation, and when. Write it
+  with `cargo xtask confirm <node> --by "<your name>"`, which shows you the
+  relation and its source first and refuses a name belonging to an agent. An agent may
   never supply mathematics, and without a name nothing can tell whether one
   did. A relation with nobody against it is a gap, so the node cannot reach H2.
   It does not make the formula right; it makes it somebody's, which is what H1b
