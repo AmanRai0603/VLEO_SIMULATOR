@@ -27,17 +27,23 @@ By H2 the node has already survived the gate, the gap pass and its own
 fixtures, so the reviewer **accepts** rather than hunts. That is what makes two
 reviews per node affordable.
 
-## What needs two reviewers
+## How many reviewers, by what changed
 
-- A change to a generator, the gate, or `vleo-sheet`. A defect there reaches
-  every node at once.
-- A change to `vleo-units` or `vleo-core`: everything reads them.
-- **A tolerance change.** The commonest way a gate stops meaning anything is
-  somebody widening a tolerance to get green, so a tolerance change is a gate
-  change.
-- Publishing a licensed bundle. Publication is irreversible by design.
-- Moving a branch in `layers/`: the tree is the decomposition, and moving a
-  branch moves everyone's work.
+This table is the only statement of the rule in the repository. `AGENTS.md`
+points here rather than repeating it: two copies of a review policy are two
+policies within a month, and they had already begun to differ.
+
+| change | reviewers | why |
+|---|---|---|
+| a generator, the gate, `vleo-sheet`, or a `tools/` script | two | a defect there reaches all 1329 rows at once |
+| `vleo-units` or `vleo-core` | two | everything reads them |
+| an instruction file — `AGENTS.md`, `areas/*.md`, an agent definition | two | it shapes what every agent produces, so it is reviewed like code |
+| **a tolerance** | two | the commonest way a gate stops meaning anything is somebody widening one to get green, so a tolerance change is a gate change |
+| publishing a licensed bundle | two | publication is irreversible by design |
+| moving a branch in `layers/` | two | the tree is the decomposition, and moving a branch moves everyone's work |
+| a node sheet | H1a completeness, then H1b physics | above |
+| fixtures and filled holes | H2, after the machine stages pass | above |
+| anything else | one | ordinary blast radius |
 
 ## What you may not do
 

@@ -132,7 +132,7 @@ crates/vleo-mod-prop/nodes/prop_throat_area/
   node.toml      ← the sheet. yours.
   model.rs       generated, except the numbered holes
   contract.rs    generated
-  evidence.rs    generated
+  evidence.rs    generated — the fixture tests, plus three properties
   fixtures.toml  the known-good values
   meta.json      generated
   mod.rs         generated
@@ -158,7 +158,28 @@ expression = ""       # REQUIRED — re-decide, do not inherit
 source = ""           # REQUIRED — re-decide, do not inherit
 ```
 
-### 3.2 Fill the sheet
+### 3.2 Ask what is still open
+
+```
+cargo run -p xtask -- declare prop_intake_mouth --source papers/romano2021.pdf
+```
+
+It prints every field that is still blank, with what cannot be emitted without
+it, and stops when there are none:
+
+```
+  ?  what one question does it answer
+     question — without it: an equation with no question gets reused for the wrong thing
+  ?  cited where — book, paper, page
+     source — without it: this is the claim everything else rests on
+  ...
+6 question(s) open. Generation refuses until they are answered.
+```
+
+The open set is computed from the same list `xtask docs` refuses on, so there
+is never a question that blocks generation and is not on this page.
+
+### 3.3 Fill the sheet
 
 Seven things, and they are all questions a person has to answer:
 
@@ -171,8 +192,18 @@ Seven things, and they are all questions a person has to answer:
 | `lower`, `upper` | where the relation is valid | outside it the answer is a refusal, by name |
 | `reason_lower`, `reason_upper` | why each bound is there | a guard with no written reason gets deleted by whoever next finds it awkward |
 | `value` + `confirmed_by` | for a declared number: who picked it | every margin in the design is built out of these |
+| `[maths] confirmed_by` | who supplied the relation | an agent may never supply mathematics, and without a name nothing can tell whether one did |
 
-### 3.3 Generate
+Two more that are decisions rather than drafting:
+
+- **`criticality`** — `minor` or `significant`. Significant means two reviewers
+  and the hole filled twice by different model families. The default is minor;
+  raising it is done on purpose, because a person asked to approve too many
+  things stops evaluating each one.
+- **`migrated_from`** — set it when the node exists in the MATLAB tool. Its
+  numbers then go in `parity.csv` beside the node and never in `fixtures.toml`.
+
+### 3.4 Generate
 
 ```
 cargo run -p xtask -- docs prop_intake_mouth
@@ -182,7 +213,18 @@ docs: 1 node(s), 6 artefact(s) written
 Six generators run, and none of them reads another row — which is what makes
 1329 rows 1329 independent pieces of work rather than one large one.
 
-### 3.4 See what is still open
+While any field is still open it refuses instead, names them, and writes
+nothing:
+
+```
+  refused prop_intake_mouth — nothing to generate from: label, question,
+          expression, source, reason_lower, reason_upper
+```
+
+That refusal is the mechanism. It turns ambiguity from something an implementer
+settles quietly into a blocking item on an engineer's screen.
+
+### 3.5 See what the gate says
 
 ```
 cargo run -p xtask -- gate prop_intake_mouth
@@ -204,9 +246,26 @@ Every one names the field. This is the design: an open decision becomes a line
 on your screen rather than something an implementer settles quietly at two in
 the afternoon.
 
-### 3.5 Write the maths
+### 3.6 Write the maths
 
-Open `model.rs`. Find the numbered holes:
+You do not open `model.rs`. The body of each numbered hole goes in as text:
+
+```
+echo 'let e: Length = gnc::along_track_error_from_drag(
+    Acceleration::new(a.get() * s.get()), Time::from_days(1.0));' \
+  | cargo run -p xtask -- fill prop_intake_mouth --hole 1 --body -
+```
+
+`fill` is the only thing in this system that puts text into a generated file.
+It refuses, before writing anything: a hole the sheet does not declare, a body
+carrying its own `HOLE` marker, a guard, an early return, and a platform maths
+call. Then it re-reads the file and proves the body landed.
+
+This is why agent C has no write tool at all. An agent handed the file and told
+not to stray is not constrained, it is asked — and the same applies to a person
+in a hurry.
+
+What the hole looks like once it is in:
 
 ```rust
 pub fn evaluate(a: Acceleration, s: Ratio) -> Result<Length, Fault> {
@@ -216,16 +275,16 @@ pub fn evaluate(a: Acceleration, s: Ratio) -> Result<Length, Fault> {
     // ---- end HOLE 1
 ```
 
-Write between the markers, and nowhere else. Everything outside them is
-regenerated, so an edit there is discarded the next time anybody runs `docs` —
-and the gate catches it before that happens, which is the only version of "the
-generator owns this file" that is actually true.
+Everything outside the markers is regenerated, so an edit there is discarded
+the next time anybody runs `docs`, and the gate catches it before that happens.
+`tools/agent_lanes.py --holes-only HEAD~1` names any `model.rs` line changed
+outside a hole, by anyone.
 
 The signature is already correct. `Acceleration`, `Ratio` and `Length` are
 distinct types, so adding a mass to a length does not compile. A hole body is
 usually two or three lines that compose relations already in `vleo-core`.
 
-### 3.6 Get evidence
+### 3.7 Get evidence
 
 A number the code produced is not evidence that the code is right.
 `fixtures.toml` holds values from somewhere else — a paper, a measurement, a
@@ -252,10 +311,33 @@ and `agent-generated`: an expected value may never come from the code under
 test. That is the one rule the whole evidence model rests on, and it is worth
 knowing before you are tempted.
 
-### 3.7 Close it
+**Three properties come with the fixture, generated from the declared domain.**
+One per cent either side of the known-good point the node must still answer;
+every answer it gives must be finite and inside its declared domain, with no
+input scaling making it panic; and the same inputs must give a bit-identical
+answer. They catch discontinuity, a panic, non-determinism, and a domain
+declared tighter than the physics. They do not catch a relation wrong in shape
+that stays inside its domain — that is what a fixture and H2 are for.
+
+### 3.8 Ask whether a person should look yet
 
 ```
-cargo run -p xtask -- gate prop_intake_mouth && cargo test -p vleo-mod-prop
+cargo run -p xtask -- ready prop_intake_mouth
+cargo test -p vleo-mod-prop
+```
+
+`ready` runs the gate, then the gap pass, then what criticality demands, and
+stops at the first that is not clean. A node it holds is a node where a person
+would be doing first-pass defect-finding — work a machine does better, faster
+and free. When it says `1 of 1 … waiting on H2`, the node has earned a review.
+
+Across the whole tree it counts what is holding rather than listing every row:
+
+```
+ready: 0 of 250 node(s) have passed every machine stage and are waiting on H2
+250 held, by what is holding them:
+    250  the relation has nobody's name against it
+    120  no fixture — nothing outside this code has agreed with it
 ```
 
 Then commit. The message form is checked (§6).
@@ -310,6 +392,28 @@ read what came back, run the gate. Three things are worth doing every time:
 
 `docs/AGENT_EVIDENCE.md` records what each one actually produced when it was
 first used here, including the defect that scrutiny found.
+
+---
+
+## 4b · The rest of the commands
+
+Everything `xtask` does that the walkthrough above did not need. All of it is
+reporting or regeneration; none of it decides anything.
+
+| command | what it does |
+|---|---|
+| `cargo run -p xtask -- assemble` | the three assembly generators — the index, the document fragments, the graph tables |
+| `cargo run -p xtask -- status` | counts by layer and by subsystem, and what is blocking |
+| `cargo run -p xtask -- gap` | what every sheet promised and nothing yet covers |
+| `cargo run -p xtask -- graph` | the three graphs, their sizes, the deepest chain, and the crate-direction check |
+| `cargo run -p xtask -- variables` | regenerate `docs/VARIABLES.md` — every variable, its unit, its bounds and the reason for each |
+| `cargo run -p xtask -- codeowners` | regenerate `CODEOWNERS` from the owner field on each layer group |
+| `cargo run -p xtask -- bundle publish <dir>` | hash a bundle's payload and write the result into its manifest |
+| `cargo run -p xtask -- bundle verify` | re-check every hash in `bundles/` |
+
+`variables` and `codeowners` write files that are committed, so run them after
+a change that moves a bound or an owner, and commit what they produce. The
+regeneration diff in the pipeline catches it if you forget.
 
 ---
 

@@ -74,14 +74,11 @@ it go red, and put it back.
 
 ## Review standards
 
-| change | reviewers |
-|---|---|
-| a generator, the gate, or a `tools/` script | two — one mistake reaches all 1329 rows |
-| common content: symbols, units, frames, constants | two, one outside the family |
-| an instruction file, this one included | two — it shapes what every agent produces |
-| a node sheet | H1a completeness, then H1b physics |
-| fixtures and filled holes | H2, after the machine checks pass |
-| anything else | one |
+How many reviewers a change needs is stated once, in
+[`CONTRIBUTING.md`](CONTRIBUTING.md). Read it there. It is not repeated here
+because it was, and the two copies had already begun to differ — one listed
+tolerance changes and bundle publication, the other listed `tools/` scripts and
+instruction files, and neither was complete.
 
 ## House rules
 
