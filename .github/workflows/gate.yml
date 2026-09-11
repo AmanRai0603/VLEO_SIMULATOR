@@ -108,6 +108,8 @@ jobs:
         run: python3 tools/review_report.py --selftest
       - name: the recipe runner
         run: python3 tools/recipe.py --selftest
+      - name: the release notes
+        run: python3 tools/release_notes.py --selftest
       # Every recipe, applied twice on a copy; the second must change nothing.
       - name: every recipe is idempotent
         run: python3 tools/recipe.py --check

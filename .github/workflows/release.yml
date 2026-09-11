@@ -1,0 +1,162 @@
+# The release pipeline, and the one human approval.
+#
+# The working model's line for this is short: "the release pipeline itself, plus
+# one human approval". The two halves matter equally. Everything mechanical is
+# mechanical — the version, the notes, the builds, the checks — so that the one
+# thing left for a person is the only thing a person is better at: deciding
+# whether this is the state of the tool that goes to a customer.
+#
+# Two things this workflow may never do, and does not:
+#
+#   - change branch protection. The rules that decide what may merge are set by
+#     a person in repository settings. A pipeline that can widen its own gate
+#     has no gate.
+#   - hold a signing key. Signing and notarisation take a certificate that
+#     lives in an organisation secret a release engineer controls, requested at
+#     the approval step rather than read by this file. The signing job is
+#     deliberately absent until that certificate exists; a workflow that
+#     pretends to sign is worse than one that admits it does not.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "the version to release, without the leading v"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Nothing is built before the tool is proven. The order is the point: a
+  # release that discovers its own failure after the artefacts are uploaded has
+  # already told somebody the wrong thing.
+  prove:
+    name: the tool is green before anything is built
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: v
+        run: |
+          v="${{ inputs.version }}"
+          [ -n "$v" ] || v="${GITHUB_REF_NAME#v}"
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "releasing $v"
+
+      # The version in the manifests is the version being released. A tag that
+      # disagrees with Cargo.toml produces a binary that reports a version
+      # nobody can find in the history.
+      - name: the tag and the manifest agree
+        run: |
+          have="$(grep -m1 '^version = ' Cargo.toml | cut -d'"' -f2)"
+          want="${{ steps.v.outputs.version }}"
+          [ "$have" = "$want" ] || {
+            echo "::error::Cargo.toml says $have, the release says $want"
+            exit 1
+          }
+
+      - name: the gate
+        run: cargo run -p xtask -- gate
+
+      - name: the generated artefacts match the sheets
+        run: |
+          cargo run -p xtask -- docs
+          git diff --quiet || { echo "::error::regeneration changes the tree"; exit 1; }
+
+      - name: reference data verifies
+        run: cargo run -p xtask -- bundle verify
+
+      # The profile that ships is the profile that is proven. Link-time
+      # optimisation changes inlining, which can change a floating-point
+      # result, so a release proved only in debug is not proved.
+      - name: golden vectors against the shipping build
+        run: cargo test --release --workspace
+
+      - name: the notes, read off the log
+        run: |
+          python3 tools/release_notes.py \
+            --version "${{ steps.v.outputs.version }}" \
+            --out notes.md
+          cat notes.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: notes
+          path: notes.md
+
+  build:
+    name: the shipping binaries
+    needs: prove
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup target add ${{ matrix.target }}
+      # The three doors onto one kernel: the command line, the local server the
+      # browser face talks to, and the shared library the wheel and MATLAB bind.
+      - run: cargo build --release --target ${{ matrix.target }} -p vleo-cli -p vleo-daemon -p vleo-ffi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vleo-${{ matrix.target }}
+          path: |
+            target/${{ matrix.target }}/release/vleo*
+            !target/${{ matrix.target }}/release/*.d
+
+  # The one human approval. It is a GitHub environment with required reviewers,
+  # which is a repository setting a person configures — this file only names it.
+  # That separation is the whole safety property: the workflow cannot grant
+  # itself the approval by editing itself.
+  #
+  # Set it up once: Settings → Environments → New environment → "release" →
+  # Required reviewers. Until that is done the environment approves instantly,
+  # so the setting is the control and this line is only where it attaches.
+  publish:
+    name: one human says yes
+    needs: [prove, build]
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artefacts
+
+      # What the approver is agreeing to, in front of them at the moment they
+      # agree. An approval given against a page that does not say what is in
+      # the release is a button press, not a decision.
+      - name: what is being released
+        run: |
+          cat artefacts/notes/notes.md >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Artefacts" >> "$GITHUB_STEP_SUMMARY"
+          find artefacts -type f | sed 's/^/- /' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="${{ needs.prove.outputs.version }}"
+          find artefacts -type f ! -name notes.md -exec sh -c 'mv "$1" "upload-$(basename "$1")"' _ {} \;
+          gh release create "v$v" \
+            --title "v$v" \
+            --notes-file artefacts/notes/notes.md \
+            upload-* || gh release edit "v$v" --notes-file artefacts/notes/notes.md
