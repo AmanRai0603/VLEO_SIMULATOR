@@ -480,8 +480,12 @@ tools/release_notes.py --version 0.2.0
 If the hook is not firing, it has not been pointed at the tracked folder:
 
 ```
-git config core.hooksPath tools/githooks
+cargo xtask setup
 ```
+
+That sets `core.hooksPath`, reads it back to check nothing overrode it, and
+refuses if a hook is not executable — git skips a non-executable hook silently,
+which looks exactly like a hook that passed.
 
 ---
 

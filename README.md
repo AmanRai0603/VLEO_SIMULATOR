@@ -399,11 +399,15 @@ showing an optimum near 300 km](docs/img/sweep.png)
 
 ## Two things a fresh clone needs from a person
 
-1. `git config core.hooksPath tools/githooks` — the commit-message hook. A
-   session opened through the authoring tool sets this itself.
-2. A GitHub environment named `release` with required reviewers. Until it
-   exists the release approval passes instantly, and nothing in this repository
-   can create it.
+1. `cargo xtask setup` — points git at `tools/githooks` so the commit-message
+   hook runs. Git will not follow a committed hooks path on its own, because a
+   hook that ran because it was cloned would be arbitrary code from a pull
+   request. The authoring commands say so until it is done.
+2. A GitHub environment named `release` with required reviewers. Nothing in
+   this repository can create it — an environment named in a workflow but never
+   configured is created empty and approves instantly. The release job's first
+   step reads the environment's protection rules and stops if nobody is
+   required, so the absence fails the release rather than passing it quietly.
 
 ---
 

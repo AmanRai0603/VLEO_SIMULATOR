@@ -16,6 +16,12 @@ fn main() -> ExitCode {
     let root = repo_root();
     let rest: Vec<&str> = args.iter().skip(1).map(|s| s.as_str()).collect();
 
+    // The commands in the authoring loop. A person running one of these is
+    // about to commit; a person running `status` or `graph` is reading.
+    if matches!(cmd, "gate" | "ready" | "fill" | "declare" | "new" | "docs") {
+        warn_if_hooks_are_not_wired(&root);
+    }
+
     let r = match cmd {
         "docs" => cmd_docs(&root, &rest),
         "assemble" => cmd_assemble(&root, &rest),
@@ -30,6 +36,7 @@ fn main() -> ExitCode {
         "codeowners" => cmd_codeowners(&root),
         "bundle" => cmd_bundle(&root, &rest),
         "variables" => cmd_variables(&root),
+        "setup" => cmd_setup(&root),
         "help" | "--help" | "-h" => {
             help();
             Ok(())
@@ -90,6 +97,9 @@ cargo xtask <command>
                      same hash, which is what makes verification mean anything.
                      Publication is irreversible by design.
   bundle verify      re-check every hash in bundles/.
+  setup              point git at tools/githooks, so the commit-message hook
+                     runs on this clone. One command per person per clone, and
+                     the commands that matter say so until it is done.
   variables          write docs/VARIABLES.md — every variable in the tree, its
                      unit, its range, the reason for each bound, and what reads
                      it. Generated, because a register maintained by hand is a
@@ -127,6 +137,119 @@ fn write_if_changed(path: &Path, text: &str) -> Result<bool, String> {
     }
     fs::write(path, text).map_err(|e| format!("{}: {e}", path.display()))?;
     Ok(true)
+}
+
+// ---------------------------------------------------------------------------
+
+/// Where the hooks live, relative to the repository root.
+const HOOKS_PATH: &str = "tools/githooks";
+
+/// What `core.hooksPath` is set to on this clone, if anything.
+///
+/// Read through git rather than by parsing `.git/config`: the setting can come
+/// from the repository, the user or the system, and only git knows which one
+/// won.
+fn configured_hooks_path(root: &Path) -> Option<String> {
+    let out = std::process::Command::new("git")
+        .current_dir(root)
+        .args(["config", "--get", "core.hooksPath"])
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    let v = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    if v.is_empty() {
+        None
+    } else {
+        Some(v)
+    }
+}
+
+/// Whether the commit-message hook will actually run here.
+fn hooks_are_wired(root: &Path) -> bool {
+    configured_hooks_path(root).is_some_and(|p| p == HOOKS_PATH)
+}
+
+/// Say so, once, on the commands a person runs by hand.
+///
+/// A warning rather than a refusal: the pipeline has no hooks and does not need
+/// them — it re-checks every rule a hook checks, which is the point of a hook
+/// being a convenience and not a control. But a person whose hook never ran
+/// finds out at review, and that is the expensive place to find out.
+fn warn_if_hooks_are_not_wired(root: &Path) {
+    if std::env::var_os("CI").is_some() || hooks_are_wired(root) {
+        return;
+    }
+    eprintln!(
+        "\x1b[33mnote: the commit-message hook is not installed on this clone.\n      \
+         Run `cargo xtask setup` once. Without it a bad commit subject is\n      \
+         caught in the pipeline instead of before the commit.\x1b[0m"
+    );
+}
+
+/// Install the hooks on this clone.
+///
+/// Git will not follow a path committed to the repository on its own: a hook
+/// that ran because it was cloned would be arbitrary code from a pull request.
+/// So it is one command per person, and this is that command rather than a
+/// line of prose someone has to find.
+fn cmd_setup(root: &Path) -> Result<(), String> {
+    let hooks = root.join(HOOKS_PATH);
+    if !hooks.is_dir() {
+        return Err(format!("{} is not a directory", hooks.display()));
+    }
+
+    match configured_hooks_path(root) {
+        Some(p) if p == HOOKS_PATH => {
+            println!("core.hooksPath is already {HOOKS_PATH}");
+        }
+        other => {
+            if let Some(p) = &other {
+                println!("core.hooksPath was {p}");
+            }
+            let st = std::process::Command::new("git")
+                .current_dir(root)
+                .args(["config", "core.hooksPath", HOOKS_PATH])
+                .status()
+                .map_err(|e| format!("running git: {e}"))?;
+            if !st.success() {
+                return Err("git config core.hooksPath failed".into());
+            }
+            // Read it back. Setting a value and reporting success without
+            // looking is how a setup command comes to be trusted wrongly.
+            if !hooks_are_wired(root) {
+                return Err(format!(
+                    "git config accepted core.hooksPath={HOOKS_PATH} and reading it back \
+                     gave something else — a user or system setting is overriding it"
+                ));
+            }
+            println!("core.hooksPath is now {HOOKS_PATH}");
+        }
+    }
+
+    let mut listed = 0usize;
+    for e in fs::read_dir(&hooks).map_err(|e| format!("{}: {e}", hooks.display()))? {
+        let e = e.map_err(|e| format!("{e}"))?;
+        let name = e.file_name().to_string_lossy().to_string();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let m = e.metadata().map_err(|e| format!("{e}"))?;
+            if m.permissions().mode() & 0o111 == 0 {
+                return Err(format!(
+                    "{name} is not executable — git runs hooks by executing them, so this \
+                     one would be skipped silently"
+                ));
+            }
+        }
+        println!("  hook: {name}");
+        listed += 1;
+    }
+    if listed == 0 {
+        return Err(format!("{} is empty", hooks.display()));
+    }
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------
