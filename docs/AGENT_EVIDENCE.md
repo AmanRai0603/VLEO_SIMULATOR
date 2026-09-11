@@ -82,6 +82,46 @@ twice before anybody went looking for it.
 
 ---
 
+## E · test author — a property that nothing tested
+
+**Asked.** `prop_capture_efficiency`'s sheet states a property in prose —
+*"the collection efficiency does not depend on the flight speed at all, only on
+geometry. Speed buys compression, not capture."* Nothing tested it. Write a test
+that would fail if it stopped being true, plus domain-edge tests that refuse by
+name. Invent no expected value.
+
+**Returned.** `crates/vleo-mod-prop/tests/prop_capture_efficiency_property.rs`,
+220 lines, three tests. It found the relation in `vleo-core::physics::prop`
+rather than reimplementing it. The property test sweeps velocity across
+`orbit_velocity`'s declared domain and asserts capture efficiency is
+**bit-identical** at every point — *and* that the compression ratio from the
+same call strictly increases. Both halves of the sentence, which is what stops
+it passing against a relation that ignores all its inputs.
+
+**Scrutinised by mutation, not by reading.** A test that passes proves nothing
+until it has been made to fail:
+
+| the relation, broken | result |
+|---|---|
+| `eta_c` gains a velocity term | **FAILED** — *"collection efficiency moved with velocity: v=100 gave 0.00527…, v=1 gave 0.0000527…"* |
+| `cr` loses its velocity term | **FAILED** — on the other half, so it cannot pass vacuously |
+| restored | 3 passed |
+
+Both directions caught, with the failure naming the values. That is the
+difference between a property test and a test that runs.
+
+**Expected values.** None invented. Every assertion is either the relation
+compared against itself at two points, or a check against the node's own
+declared `bound`, `edge` and `reason` strings read from `node.toml`.
+
+**Lane.** `tools/agent_lanes.py --agent test-author` → one path,
+`crates/vleo-mod-prop/tests/`, inside the lane. No sheet, hole or generated
+file touched.
+
+**Workspace.** 33 tests before, 36 after. Gate still 0 failures on 1329 nodes.
+
+---
+
 ## The defect both of them surfaced
 
 `cargo xtask new <id> --like <sibling>` kept its own copy of the folder rule,
