@@ -38,13 +38,31 @@ wrong chart looks beautiful.
 
 ## Three checks, all mechanical
 
-Where a panel is declared (see `panels/*.toml`), these run and none needs a
-person:
+A panel is declared in `panels/<id>.toml` and checked by
+`tools/panel_check.py`, which drives the real page in a real browser against
+the real daemon. None of the three needs a person:
 
-1. **It renders.** Not blank, not an exception, in its first state.
-2. **It moves.** Change the input the panel declares it reads; the picture must
-   change. A panel wired to nothing passes every other check.
-3. **It matches.** Against a stored reference image, within tolerance.
+1. **It renders.** The mount is not empty, occupies space, and the page threw
+   nothing. An all-violated panel left white is what this catches.
+2. **It moves.** Change each input the panel declares it `reads`; the mount's
+   content must change. A panel wired to nothing passes every other check —
+   including the screenshot, because it draws the same correct picture whatever
+   the data says.
+3. **It matches.** Against `panels/reference/<id>.png`, by pixels rather than
+   compressed bytes, within the spec's `tolerance`. Recorded with `--record` by
+   somebody who looked at the picture and agreed with it.
+
+Two things learned recording the first three references, both worth knowing
+before adding a panel:
+
+- **Take the reference where the panel has something to be wrong about.** The
+  path ribbon draws no arcs with nothing selected — correctly — so a reference
+  taken there would still match if every arc were dropped. `reference_state`
+  names the state to reach first.
+- **Give the panel a viewport it fits inside.** An element screenshot larger
+  than the viewport is stitched, and a transparent pane then composites
+  whatever the page had scrolled behind it. That put the tree's row labels
+  inside the matrix and made its diagonal look as though it started at row 9.
 
 ## The depth filter
 

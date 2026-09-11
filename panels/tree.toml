@@ -1,0 +1,25 @@
+id = "tree"
+label = "The layer tree"
+module = "web/js/tree.js"
+mount = "#tree"
+draws = """
+Every row at the selected layer, as nested boxes in document order. A row with
+no content yet is hatched rather than absent, because a tree that hides what is
+missing reports a design as further along than it is.
+"""
+correct = """
+One box per visible row. Children sit inside their parent's box and never
+overlap it. The order down the pane is the order the source wrote, not
+alphabetical. Hatching appears on exactly the rows the engine calls seeded.
+"""
+tolerance = 0.02
+
+[[input]]
+name = "layer"
+drive = "document.querySelector('.tab[data-layer=\"2\"]').click()"
+why = "a different layer is a different set of rows; a tree that does not change is a tree wired to nothing"
+
+[[input]]
+name = "selected"
+drive = "select((S.disp.find(d => d.kind === 'node') || S.disp[S.disp.length - 1]).id)"
+why = "selection marks a row; if the mark never moves, the pane is not reading the selection"

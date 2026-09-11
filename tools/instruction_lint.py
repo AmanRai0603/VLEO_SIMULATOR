@@ -49,7 +49,7 @@ FRONTMATTER = ["name", "description", "tools", "model"]
 #: as a path is how a lint starts reporting things that are not wrong, and a
 #: lint that cries wolf is a lint people turn off.
 PATHISH = re.compile(
-    r"`((?:crates|tools|xtask|web|docs|areas|agents|bundles|sources|cases|\.github|\.claude)"
+    r"`((?:crates|tools|xtask|web|docs|areas|agents|panels|bundles|sources|cases|\.github|\.claude)"
     r"/[A-Za-z0-9_./*-]+"
     r"|[A-Za-z0-9_-]+\.(?:rs|toml|py|md|json|html|js|yml|lock|sh|csv))`"
 )

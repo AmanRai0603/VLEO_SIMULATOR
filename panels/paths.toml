@@ -1,0 +1,38 @@
+id = "paths"
+label = "The path ribbon"
+module = "web/js/paths.js"
+mount = "#paths"
+draws = """
+One numbered marker per visible row, and one arc per direct neighbour of the
+selected row — outward edges in one colour, inward in another, both in a third.
+It is the join between a name in the tree and a mark in the grid: without it a
+reader counts rows, and counting rows is where a reader stops trusting the
+picture.
+"""
+correct = """
+Exactly as many markers as there are rows on the display list, numbered from
+one, with the selected row's marker emphasised. An arc exists only where the
+derivation graph declares an edge to or from the selection — an arc drawn from
+proximity rather than from an edge is the failure this panel could have. With
+no row selected there are no arcs, which is correct and is why the reference
+below selects one.
+"""
+tolerance = 0.03
+
+# A layer switch clears the selection, and with no selection this panel draws
+# no arcs at all — correctly. A reference taken there would still match if
+# every arc were dropped, so the reference selects a row first.
+reference_state = """
+document.querySelector('.tab[data-layer="3"]').click();
+select(S.disp.filter(d => d.kind === 'node')[2].id);
+"""
+
+[[input]]
+name = "layer"
+drive = "document.querySelector('.tab[data-layer=\"2\"]').click()"
+why = "different layer, different rows, so a different number of markers"
+
+[[input]]
+name = "selected"
+drive = "select((S.disp.filter(d => d.kind === 'node')[2] || S.disp[S.disp.length - 1]).id)"
+why = "the arcs are drawn from the selection; if nothing changes, the panel is not reading it"
