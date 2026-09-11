@@ -13,10 +13,20 @@ agent understood the instruction, ignored it, or never saw it.
 Exit status is 0 when every changed path is inside the lane and 1 when any is
 outside, so it can sit in a hook or a pipeline.
 
-The hole filler is the interesting one. Its lane includes `model.rs` — it has
-to, that is where a hole body goes — so the path check alone would pass a
-rewrite of the whole file. `holes_only` reads the diff instead and requires
-every changed line to fall inside a numbered `HOLE` block.
+The hole filler used to be the interesting one: its lane included `model.rs`,
+so a path check alone would have passed a rewrite of the whole file. It writes
+nothing now — it returns hole bodies as text and `cargo xtask fill` splices
+them — so its lane is simply closed.
+
+The diff check that guarded it is still worth having, and is now separate from
+any agent:
+
+    tools/agent_lanes.py --holes-only HEAD~1
+
+It reads every `model.rs` change in a range and requires each changed line to
+fall inside a numbered `HOLE` block, whoever made it. A person editing the
+generated region is the same defect as an agent doing it, and the regeneration
+diff catches it a step later and less legibly.
 """
 
 import argparse
@@ -96,7 +106,9 @@ def outside_holes(diff, path):
 #
 #   (agent, path, allowed?)
 CASES = [
-    ("hole-filler", "crates/vleo-mod-prop/nodes/prop_capture_efficiency/model.rs", True),
+    # Refused, and this is the change that matters: the hole filler is not
+    # given the file. It returns text and `xtask fill` splices it.
+    ("hole-filler", "crates/vleo-mod-prop/nodes/prop_capture_efficiency/model.rs", False),
     ("hole-filler", "crates/vleo-mod-prop/nodes/prop_capture_efficiency/node.toml", False),
     ("hole-filler", "crates/vleo-core/src/physics/prop.rs", False),
     ("hole-filler", "xtask/src/main.rs", False),
@@ -166,13 +178,55 @@ def selftest():
         bad += 1
         print("   WRONG a change outside a hole was not caught: %s" % outside)
     print("holes: 2 case(s), %d wrong" % (0 if not inside and outside else 1))
+
+    # The hole filler writes nothing at all now. If that ever loosens, the
+    # working model's one fully-enforced prohibition quietly becomes a request.
+    c = all_lanes["hole-filler"]
+    if c.get("writes") or c.get("never") != ["**"]:
+        bad += 1
+        print("   WRONG the hole filler has a write path again: writes=%r never=%r"
+              % (c.get("writes"), c.get("never")))
+    if "add a guard" not in c["may_not"]:
+        bad += 1
+        print("   WRONG the hole filler's guard prohibition is missing from its lane")
+    for L in lanes():
+        if "enforced_by" not in L:
+            bad += 1
+            print("   WRONG %s does not say what enforces its prohibition" % L["name"])
+    print("lanes: %d agent(s) checked for a stated enforcement" % len(all_lanes))
     print("selftest: %s" % ("every case as expected" if bad == 0 else "%d FAILED" % bad))
+    return 1 if bad else 0
+
+
+def holes_only(since):
+    """Every model.rs line changed outside a numbered HOLE block, by anyone."""
+    paths, diff = changed(since)
+    models = [p for p in paths if p.endswith("model.rs")]
+    if not models:
+        print("holes-only: no model.rs changed.")
+        return 0
+    bad = 0
+    for p in models:
+        out = outside_holes(diff, p)
+        if out:
+            bad += 1
+            print("  OUT  %s" % p)
+            for line in out:
+                print("         %s" % line)
+        else:
+            print("  ok   %s — every changed line is inside a HOLE block" % p)
+    if bad:
+        print("\n%d file(s) edited outside a hole. That region is regenerated from the" % bad)
+        print("sheet, so the edit is discarded by the next `xtask docs` and fails the")
+        print("regeneration diff. `cargo xtask fill <node> --hole n --body -` is the way in.")
     return 1 if bad else 0
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--agent")
+    ap.add_argument("--holes-only", nargs="?", const="", metavar="SINCE",
+                    help="check every model.rs change in a range against the HOLE markers")
     ap.add_argument("--since", help="a commit or range; default is the working tree")
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--selftest", action="store_true",
@@ -181,6 +235,8 @@ def main():
 
     if a.selftest:
         return selftest()
+    if a.holes_only is not None:
+        return holes_only(a.holes_only or None)
 
     all_lanes = lanes()
     if a.list or not a.agent:
@@ -205,12 +261,6 @@ def main():
             bad.append((p, "outside the lane — %s may not touch it" % lane["name"]))
         elif not matches(p, lane.get("writes", [])):
             bad.append((p, "not in %s's lane" % lane["name"]))
-
-    if lane.get("holes_only"):
-        for p in paths:
-            if p.endswith("model.rs") and not matches(p, lane.get("never", [])):
-                for line in outside_holes(diff, p):
-                    bad.append((p, "changed outside a HOLE block: %s" % line))
 
     ok = [p for p in paths if p not in {b[0] for b in bad}]
     print("%s: %d path(s) changed, %d inside the lane" % (a.agent, len(paths), len(ok)))

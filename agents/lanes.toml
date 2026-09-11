@@ -8,11 +8,20 @@
 # `tools/agent_lanes.py --agent <name>` checks the working tree or a commit
 # range against the lane and names every file that left it.
 #
-#   writes     glob patterns the agent may add to or modify
-#   never      glob patterns it may not touch, whatever `writes` says
-#   holes_only when true, changes to model.rs must fall inside a numbered
-#              HOLE block; anything outside one is a violation even though the
-#              file itself is in the lane
+#   writes      glob patterns the agent may add to or modify
+#   never       glob patterns it may not touch, whatever `writes` says
+#   may_not     the prohibition, in the working model's own words
+#   enforced_by what actually stops it, and how completely. The working model
+#               grades its own twelve prohibitions — eight enforced, three
+#               partly, one not at all — and refusing to write that down is how
+#               a plan looks safer on paper than it is in a repository. So the
+#               honest grades are here: `none` and `partial` are not defects to
+#               be hidden, they are the reason H1b and H2 exist as human
+#               decisions.
+#
+# `tools/agent_lanes.py --holes-only <since>` is separate: it checks any
+# model.rs change in a range, by anyone, against the HOLE markers. It is not
+# tied to an agent, because a person editing outside a hole is the same defect.
 
 [[agent]]
 id = "A"
@@ -21,6 +30,7 @@ does = "turns a source into the sheet's fields and raises what must be answered 
 writes = ["crates/vleo-mod-*/nodes/*/node.toml", "sources/sources.toml", "docs/**"]
 never = ["crates/vleo-mod-*/nodes/*/fixtures.toml", "crates/vleo-core/**", "xtask/**", "tools/**"]
 may_not = "supply mathematics, a reason, or a value"
+enforced_by = "none — if A invents a formula, only a person catches it. This is exactly why H1b reads the physics"
 
 [[agent]]
 id = "B"
@@ -29,15 +39,22 @@ does = "records the known-good rows with where each came from, and says which ra
 writes = ["crates/vleo-mod-*/nodes/*/fixtures.toml"]
 never = ["crates/vleo-mod-*/nodes/*/node.toml", "crates/vleo-core/**", "xtask/**", "tools/**", "web/**"]
 may_not = "produce an expected value"
+enforced_by = "partial — the gate refuses a provenance of self-snapshot or agent-generated, so an undeclared invention is stopped. A plausible-looking wrong citation is not. That is what H2 is for"
 
 [[agent]]
 id = "C"
 name = "hole-filler"
 does = "returns the few typed lines for each numbered hole"
-writes = ["crates/vleo-mod-*/nodes/*/model.rs"]
-never = ["crates/vleo-mod-*/nodes/*/node.toml", "crates/vleo-mod-*/nodes/*/fixtures.toml", "crates/vleo-core/**", "xtask/**", "tools/**", "web/**"]
-holes_only = true
-may_not = "write outside the hole"
+# It writes nothing. The body of each numbered hole comes back as text and
+# `cargo xtask fill <node> --hole n --body -` splices it in, refusing a guard, a
+# fault, an early return, a smuggled HOLE marker and a platform maths call
+# before anything reaches the file. The working model is explicit that the
+# prohibition holds only in this form: an agent given the file and told not to
+# stray is not constrained, it is asked.
+writes = []
+never = ["**"]
+may_not = "write outside the hole; add a guard — guards are generated"
+enforced_by = "full — it is never given the file, and the splice refuses a guard by name"
 
 [[agent]]
 id = "E"
@@ -46,6 +63,7 @@ does = "turns a declared property into a test that exercises it, and extends the
 writes = ["crates/*/tests/**", "crates/vleo-mod-*/tests/**"]
 never = ["crates/vleo-mod-*/nodes/*/node.toml", "crates/vleo-mod-*/nodes/*/fixtures.toml", "crates/vleo-mod-*/nodes/*/model.rs", "crates/vleo-mod-*/nodes/*/evidence.rs", "xtask/**", "tools/**"]
 may_not = "invent an expected value"
+enforced_by = "partial — the fixtures lane is closed to it, so a value has to arrive through B and the schema. A number written straight into a test assertion is not caught by the machine"
 
 [[agent]]
 id = "F"
@@ -54,6 +72,9 @@ does = "gathers the evidence on a failed run: which node, which change, which ma
 writes = []
 never = ["**"]
 may_not = "fix, or judge whether it is acceptable"
+enforced_by = """
+partial, twice over. It keeps Bash, because the smallest reproducing case is found by running the thing — so a shell could write a file, and the working model's \"read-only tools, so it cannot write\" does not fully hold. What holds is detection: this lane is `never = [\"**\"]`, so any file it moved is named by the lane check. And the judge half has nothing at all behind it — it can write an opinion into its report and a tired reader takes that as the verdict. H5 and H6 exist for exactly this.
+"""
 
 [[agent]]
 id = "I"
@@ -62,6 +83,7 @@ does = "the generators, kernel plumbing, the task runner, the server, the data p
 writes = ["crates/vleo-units/**", "crates/vleo-core/**", "crates/vleo-bus/**", "crates/vleo-sheet/**", "crates/vleo-data/**", "crates/vleo-modules/**", "crates/vleo-daemon/**", "crates/vleo-cli/**", "crates/vleo-ffi/**", "crates/vleo-py/**", "crates/vleo-wasm/**", "xtask/**", "tools/**", ".github/**", "Cargo.toml", "docs/**"]
 never = ["crates/vleo-mod-*/nodes/**", "web/**"]
 may_not = "edit a sheet or a hole"
+enforced_by = "full — path ownership over every node folder"
 
 [[agent]]
 id = "J"
@@ -70,3 +92,4 @@ does = "the shell, the tree, the matrix, panel code and plot components"
 writes = ["web/**", "docs/img/**", "docs/**"]
 never = ["crates/**", "xtask/**", "tools/**"]
 may_not = "invent a style token, or ship a figure nobody rendered"
+enforced_by = "partial — path ownership holds it out of the crates. Whether a figure was ever rendered is what the panel checks answer; until a panel is declared, nothing asks"

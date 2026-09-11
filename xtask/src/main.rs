@@ -24,6 +24,7 @@ fn main() -> ExitCode {
         "gap" => cmd_gap(&root),
         "graph" => cmd_graph(&root),
         "new" => cmd_new(&root, &rest),
+        "fill" => cmd_fill(&root, &rest),
         "codeowners" => cmd_codeowners(&root),
         "bundle" => cmd_bundle(&root, &rest),
         "variables" => cmd_variables(&root),
@@ -67,6 +68,11 @@ cargo xtask <command>
                      clone the shape of a sibling and blank what must be
                      re-decided. Not a copy: a real copy drags a stale source
                      citation through thirty nodes.
+  fill <node> --hole <n> --body <file|->
+                     splice one hole body into a generated model.rs. The hole
+                     filler is never handed the file: it returns the few typed
+                     lines as text and this puts them where they go. An agent
+                     given the file and told not to stray is not constrained.
   codeowners         regenerate CODEOWNERS from the layer files.
   bundle publish <dir>
                      hash every payload file and write the result into the
@@ -443,6 +449,141 @@ fn deepest_chain(tree: &Tree) -> Vec<String> {
         }
     }
     best
+}
+
+/// Splice one hole body into a node's `model.rs`.
+///
+/// This exists so that the hole filler never touches the file. The working
+/// model is explicit that its prohibition holds *only* in that form: an agent
+/// given write access to a file and told not to stray is not constrained, it is
+/// asked. So the agent returns the body of one numbered step as text, and this
+/// is the only thing that puts text into a generated file.
+///
+/// Four refusals, all before anything is written:
+///
+///   * a hole number the sheet does not declare
+///   * a body carrying a `HOLE` marker of its own, which would let one body
+///     claim the block after it as well
+///   * a guard. Guards are generated from the declared domain and travel with
+///     their reason; one added here has no reason attached and is deleted by
+///     the next person who finds it awkward
+///   * a platform maths call. The gate catches this later, but later means
+///     after it is committed, and the message is more useful at the moment
+///     somebody is holding the two lines in their head
+fn cmd_fill(root: &Path, args: &[&str]) -> Result<(), String> {
+    let id = args
+        .first()
+        .ok_or("usage: cargo xtask fill <node> --hole <n> --body <file|->")?;
+    let n: u32 = args
+        .iter()
+        .position(|a| *a == "--hole")
+        .and_then(|i| args.get(i + 1))
+        .ok_or("which hole: --hole <n>")?
+        .parse()
+        .map_err(|_| "--hole takes a number".to_string())?;
+    let src = args
+        .iter()
+        .position(|a| *a == "--body")
+        .and_then(|i| args.get(i + 1))
+        .ok_or("the body, as a file or - for standard input: --body <file|->")?;
+
+    let body = if *src == "-" {
+        let mut buf = String::new();
+        std::io::Read::read_to_string(&mut std::io::stdin(), &mut buf)
+            .map_err(|e| e.to_string())?;
+        buf
+    } else {
+        fs::read_to_string(src).map_err(|e| format!("{src}: {e}"))?
+    };
+    if body.trim().is_empty() {
+        return Err(
+            "the body is empty. An empty hole is a gap, and the gap pass already says so".into(),
+        );
+    }
+
+    let tree = load(root)?;
+    let sh = tree
+        .sheets
+        .get(*id)
+        .ok_or_else(|| format!("no node '{id}'"))?;
+    if sh.is_declared() {
+        return Err(format!(
+            "'{id}' is a declared value — a person picked its number, so it has no holes"
+        ));
+    }
+    let step = sh
+        .steps
+        .iter()
+        .find(|st| st.number == n)
+        .ok_or_else(|| {
+            format!(
+                "'{id}' declares {} step(s); there is no hole {n}. The algorithm in the sheet decides how many there are",
+                sh.steps.len()
+            )
+        })?;
+
+    for (needle, why) in [
+        ("---- HOLE", "a body may not carry a HOLE marker — one body would claim the next block as well"),
+        ("---- end HOLE", "a body may not carry a HOLE marker — one body would claim the next block as well"),
+        ("Fault::", "a body may not construct a fault. The guards are generated from the declared domain, with the reason attached"),
+        ("return Err(", "a body may not return early. The generated tail maps the answer and its faults"),
+    ] {
+        if body.contains(needle) {
+            return Err(format!("refused: {why} (found {needle:?})"));
+        }
+    }
+    for bad in [
+        ".sin()", ".cos()", ".exp()", ".ln()", ".powf(", ".sqrt()", ".atan2(", ".tan()", ".log10(",
+    ] {
+        if body.contains(bad) {
+            return Err(format!(
+                "refused: the body calls {bad} — route it through pmath, or cross-face agreement \
+                 fails on the first night for a reason that is not a defect"
+            ));
+        }
+    }
+
+    let mut holes = vleo_sheet::load::read_holes(&sh.dir);
+    let before = holes.get(&n).cloned().unwrap_or_default();
+    holes.insert(n, body.clone());
+    let text = gate::formatted(&emit::model_rs(sh, &holes));
+    write_if_changed(&sh.dir.join("model.rs"), &text)?;
+
+    // Read it back and prove the body landed where it was meant to. Writing a
+    // file and announcing success is how a splice that silently dropped the
+    // last line gets discovered three nodes later.
+    let after = vleo_sheet::load::read_holes(&sh.dir);
+    let landed = after
+        .get(&n)
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default();
+    if landed.is_empty() {
+        return Err(format!(
+            "hole {n} is still empty after the splice — nothing was written"
+        ));
+    }
+    println!(
+        "{id} hole {n} ({}) — {} line(s) spliced{}",
+        step.text,
+        landed.lines().count(),
+        if before.trim().is_empty() {
+            ""
+        } else {
+            ", replacing what was there"
+        }
+    );
+    // The crate is the folder the node lives in, not its subsystem tag: gnc
+    // rows live in vleo-mod-acs, and a command line that names a crate nobody
+    // has is worse than no command line.
+    let krate = sh
+        .dir
+        .ancestors()
+        .nth(2)
+        .and_then(|p| p.file_name())
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
+    println!("Now: cargo xtask gate {id} && cargo test -p {krate}");
+    Ok(())
 }
 
 fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
