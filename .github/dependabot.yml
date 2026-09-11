@@ -1,0 +1,60 @@
+# Rung one of the escalation ladder: a bot opens the pull request.
+#
+# The ladder, from the working model, is three rungs and each fires only when
+# the one below could not:
+#
+#   1  a bot opens the pull request                    this file
+#   2  a transform solved once, replayed               tools/recipes/
+#   3  an agent, only when the first two could not     F diagnoses, I fixes
+#
+# The model names Renovate for this rung. Dependabot is used instead because it
+# runs on this platform with nothing to install, and the three safety settings
+# that actually matter are the same ones and are all set below: the bot works
+# on its own branch under its own identity, a release must have been public for
+# a while before it is proposed, and a major version is never proposed
+# automatically. A bot nobody installed is a rung that does not exist, which is
+# worse than a different bot with the same guarantees.
+version: 2
+
+updates:
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    # The bot's own branch, and only ever its own branch. That is the whole
+    # boundary: a bot that edits anything else is an agent with no definition.
+    target-branch: main
+    labels: ["rung-1", "dependencies"]
+    open-pull-requests-limit: 5
+    # A release that is days old has not yet had its first bad week. Waiting is
+    # free; a yanked crate discovered by our pipeline is not.
+    cooldown:
+      default-days: 7
+    # Never automatically. A major version is a contract change, and the
+    # semantic-version check exists to fire a human decision rather than to be
+    # satisfied by one.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # One pull request, one pipeline run, one review. Twenty separate patch
+      # bumps is twenty chances for a flake to look like a break.
+      patch-and-minor:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels: ["rung-1", "pipeline"]
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns: ["*"]
+
+# Deliberately not here: rust-toolchain.toml. A compiler change can move a
+# floating-point result, and this whole system rests on the same numbers
+# everywhere. That bump is a decision a person makes with the golden vectors in
+# front of them, not a pull request that appears on a Monday.
