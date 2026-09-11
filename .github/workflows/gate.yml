@@ -85,6 +85,12 @@ jobs:
       - name: the gap pass
         run: cargo run -p xtask -- gap || true
 
+      # Which nodes have passed every machine stage and are waiting on a
+      # person. Reported, never targeted: a number that must go up is a number
+      # somebody makes go up.
+      - name: ready for review
+        run: cargo run -p xtask -- ready
+
       - name: the tree, reported
         run: |
           cargo run -p xtask -- status

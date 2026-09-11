@@ -25,6 +25,7 @@ fn main() -> ExitCode {
         "graph" => cmd_graph(&root),
         "new" => cmd_new(&root, &rest),
         "fill" => cmd_fill(&root, &rest),
+        "ready" => cmd_ready(&root, &rest),
         "codeowners" => cmd_codeowners(&root),
         "bundle" => cmd_bundle(&root, &rest),
         "variables" => cmd_variables(&root),
@@ -73,6 +74,10 @@ cargo xtask <command>
                      filler is never handed the file: it returns the few typed
                      lines as text and this puts them where they go. An agent
                      given the file and told not to stray is not constrained.
+  ready [<node>]     whether a person should be asked to look yet: the gate,
+                     then the gap pass, then what criticality demands. A node
+                     with an open gap does not enter H2 — the reviewer accepts,
+                     they do not hunt for defects a machine finds free.
   codeowners         regenerate CODEOWNERS from the layer files.
   bundle publish <dir>
                      hash every payload file and write the result into the
@@ -121,14 +126,55 @@ fn write_if_changed(path: &Path, text: &str) -> Result<bool, String> {
 
 // ---------------------------------------------------------------------------
 
+/// The fields the scaffold cannot be emitted without.
+///
+/// Not a style rule. Without a type there is no signature, without a bound
+/// there is no guard, without a reason the guard is deleted by the next person
+/// who finds it awkward, and without a source nothing downstream knows what it
+/// is resting on.
+fn unfilled(sh: &vleo_sheet::model::Sheet) -> Vec<&'static str> {
+    let mut missing = Vec::new();
+    for (name, v) in [
+        ("label", &sh.label),
+        ("question", &sh.question),
+        ("expression", &sh.expression),
+        ("source", &sh.source),
+        ("type", &sh.ty),
+        ("unit", &sh.unit),
+        ("symbol", &sh.symbol),
+        ("reason_lower", &sh.reason_lower),
+        ("reason_upper", &sh.reason_upper),
+    ] {
+        if v.trim().is_empty() {
+            missing.push(name);
+        }
+    }
+    missing
+}
+
 fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
     let tree = load(root)?;
     let only = args.first().copied();
     let mut written = 0usize;
     let mut touched = 0usize;
+    let mut refused: Vec<(String, Vec<&'static str>)> = Vec::new();
     for sh in tree.ordered() {
         if let Some(o) = only {
             if sh.id != o {
+                continue;
+            }
+        }
+        // An open field is not a warning. The scaffold cannot be emitted
+        // without every type, bound and precondition, so generation refuses
+        // rather than producing a file that looks finished and is not. That
+        // refusal is the mechanism: it turns ambiguity from something an
+        // implementer settles quietly into a blocking item on an engineer's
+        // screen. A seeded row is exempt — it has not been started, and its
+        // page and metadata say exactly that.
+        if !sh.is_seeded() {
+            let missing = unfilled(sh);
+            if !missing.is_empty() {
+                refused.push((sh.id.clone(), missing));
                 continue;
             }
         }
@@ -168,6 +214,20 @@ fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
                 written += 1;
             }
         }
+    }
+    if !refused.is_empty() {
+        for (id, missing) in &refused {
+            println!(
+                "  \x1b[31mrefused\x1b[0m {id} — nothing to generate from: {}",
+                missing.join(", ")
+            );
+        }
+        return Err(format!(
+            "{} node(s) have an open field. The scaffold is a function of the sheet: no type, \n\
+             no signature; no bound, no guard; no reason, and the guard is deleted by whoever \n\
+             next finds it awkward. Answer them and run this again.",
+            refused.len()
+        ));
     }
     if touched == 0 {
         return Err(format!("no node matched '{}'", only.unwrap_or("")));
@@ -451,6 +511,85 @@ fn deepest_chain(tree: &Tree) -> Vec<String> {
     best
 }
 
+/// Has this node earned a person's attention yet?
+///
+/// The working model's change 2: a node tester that must pass before anybody is
+/// asked to look. Both human reviews used to sit at the front of the work, and
+/// nothing human sat where "done" is decided except a merge approval that is a
+/// formality by then — so the person was being spent on specification, where
+/// they are irreplaceable, and also on first-pass defect-finding, where a
+/// machine is better, faster and free.
+///
+/// Three stages, in order, stopping at the first that is not clean:
+///
+///   1. the gate — does what exists pass
+///   2. the gap pass — is anything the sheet promised absent
+///   3. what criticality demands — a significant node gets a second
+///      independent check, and a migrated one gets its parity grid
+fn cmd_ready(root: &Path, args: &[&str]) -> Result<(), String> {
+    let tree = load(root)?;
+    let only = args.first().copied();
+    let mut asked = 0usize;
+    let mut ready = 0usize;
+    let mut held: Vec<(String, String, String)> = Vec::new();
+
+    for sh in tree.ordered() {
+        if let Some(o) = only {
+            if sh.id != o {
+                continue;
+            }
+        }
+        if sh.is_seeded() && only.is_none() {
+            continue;
+        }
+        asked += 1;
+        let checks = gate::gate_node(sh, &tree);
+        if let Some(c) = checks.iter().find(|c: &&gate::Check| c.failed()) {
+            let why = match &c.verdict {
+                gate::Verdict::Fail(w) => w.clone(),
+                _ => String::new(),
+            };
+            held.push((
+                sh.id.clone(),
+                "the gate".into(),
+                format!("{} — {why}", c.name),
+            ));
+            continue;
+        }
+        let gaps = emit::gap_pass(sh, &vleo_sheet::load::read_holes(&sh.dir));
+        if !gaps.is_empty() {
+            held.push((sh.id.clone(), "the gap pass".into(), gaps.join("; ")));
+            continue;
+        }
+        if sh.criticality == "significant" && sh.fixtures.len() < 2 {
+            held.push((
+                sh.id.clone(),
+                "criticality".into(),
+                "significant, and fewer than two independent checks behind it".into(),
+            ));
+            continue;
+        }
+        ready += 1;
+    }
+
+    if asked == 0 {
+        return Err(format!("no node matched '{}'", only.unwrap_or("")));
+    }
+    for (id, stage, why) in &held {
+        println!("  \x1b[33mhold\x1b[0m {id} — {stage}: {why}");
+    }
+    println!(
+        "ready: {ready} of {asked} node(s) have passed every machine stage and are waiting on H2"
+    );
+    if !held.is_empty() {
+        println!(
+            "{} held. A person asked to look at these is being asked to find what a machine finds free.",
+            held.len()
+        );
+    }
+    Ok(())
+}
+
 /// Splice one hole body into a node's `model.rs`.
 ///
 /// This exists so that the hole filler never touches the file. The working
@@ -660,8 +799,9 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
     )
     .map_err(|e| e.to_string())?;
     println!("new: {}", dir.display());
-    println!("Now fill the sheet, then `cargo xtask docs {id}` and `cargo xtask gate {id}`.");
-    println!("An open field fails the gate by name, which is the mechanism: ambiguity becomes a blocking item on an engineer's screen rather than something an implementer resolves silently.");
+    println!("Now fill the sheet, then `cargo xtask docs {id}`.");
+    println!("Generation refuses while any field is open, and names the fields. That refusal is the mechanism: ambiguity becomes a blocking item on an engineer's screen rather than something an implementer resolves silently.");
+    println!("When it generates, `cargo xtask ready {id}` says whether a person should be asked to look yet.");
     Ok(())
 }
 

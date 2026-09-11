@@ -11,7 +11,7 @@
 # runs on this platform with nothing to install, and the three safety settings
 # that actually matter are the same ones and are all set below: the bot works
 # on its own branch under its own identity, a release must have been public for
-# a while before it is proposed, and a major version is never proposed
+# fourteen days before it is proposed, and a major version is never proposed
 # automatically. A bot nobody installed is a rung that does not exist, which is
 # worse than a different bot with the same guarantees.
 version: 2
@@ -27,10 +27,12 @@ updates:
     target-branch: main
     labels: ["rung-1", "dependencies"]
     open-pull-requests-limit: 5
-    # A release that is days old has not yet had its first bad week. Waiting is
-    # free; a yanked crate discovered by our pipeline is not.
+    # Fourteen days, as the working model specifies. A release that is days old
+    # has not yet had its first bad week, and the yank usually comes inside the
+    # first fortnight. Waiting is free; a yanked crate discovered by our
+    # pipeline is not.
     cooldown:
-      default-days: 7
+      default-days: 14
     # Never automatically. A major version is a contract change, and the
     # semantic-version check exists to fire a human decision rather than to be
     # satisfied by one.

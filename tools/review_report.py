@@ -112,6 +112,15 @@ def review(paths):
                "reviewers, because one mistake here is 1329 mistakes."],
         ))
 
+    sheets = sorted(n.rsplit("/", 1)[1] for n in nodes if "node.toml" in nodes[n] or "model.rs" in nodes[n])
+    if sheets:
+        out.append((
+            "before a person is asked to look",
+            ["`cargo run -p xtask -- ready %s`" % s for s in sheets]
+            + ["A node with an open gap does not enter H2. The reviewer accepts; they do "
+               "not hunt for defects a machine finds free."],
+        ))
+
     fx = [p for p in paths if p.endswith("fixtures.toml")]
     if fx:
         out.append((
@@ -190,6 +199,8 @@ CASES = [
     (["web/js/app.js"], "reaches every node", False),
     (["crates/vleo-mod-prop/nodes/prop_thrust/fixtures.toml"], "evidence changed", True),
     (["README.md"], "Nothing this pass knows how to ask about", True),
+    (["crates/vleo-mod-prop/nodes/prop_thrust/node.toml"], "before a person is asked to look", True),
+    (["README.md"], "before a person is asked to look", False),
 ]
 
 
