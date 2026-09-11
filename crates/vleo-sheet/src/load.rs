@@ -113,6 +113,12 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
             }
         },
         migrated_from: s(t.get("migrated_from")),
+        // Five or six significant figures is what a MATLAB export prints, so
+        // this is the floor set by the format rather than by the physics.
+        parity_tolerance: t
+            .get("parity_tolerance")
+            .and_then(|v| v.as_float())
+            .unwrap_or(1e-4),
         state: s(t.get("state")),
         layer: u(t.get("layer")) as u8,
         order: u(t.get("order")),

@@ -135,6 +135,16 @@ pub struct Sheet {
     /// one of the two rather than a check either has passed. The check numbers
     /// still come from the paper or measurement the MATLAB was built from.
     pub migrated_from: String,
+    /// How far the prior implementation may disagree before the grid is a
+    /// finding.
+    ///
+    /// Defaults to 1e-4. Not a physics tolerance and not negotiable downward
+    /// per row: a MATLAB grid is an export, printed to five or six significant
+    /// figures, so a tighter default would fail on the printing rather than on
+    /// the mathematics. Anything looser is hiding a disagreement, and the
+    /// resolution for a disagreement is to find which of the two is wrong, not
+    /// to widen this.
+    pub parity_tolerance: f64,
     /// The derivation graph, declared by the consumer, because knowing its
     /// inputs is what changes *this* node's implementation. Each entry is the
     /// binding name, the variable it reads, and the quantity type the consumer

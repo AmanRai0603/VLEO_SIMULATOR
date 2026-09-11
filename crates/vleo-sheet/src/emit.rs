@@ -326,18 +326,27 @@ pub fn evidence_rs(sh: &Sheet) -> String {
          //! refuses a fixture whose provenance is the implementation.\n\n",
         sh.id
     ));
+    let has_parity = has_parity_grid(sh);
     if sh.fixtures.is_empty() {
         o.push_str(
             "// No fixtures yet. The gap pass reports this node as unevidenced and\n\
              // its validation credibility factor is zero, which governs the whole\n\
              // vector — an unvalidated node cannot be quietly relied on.\n",
         );
-        return o;
+        if !has_parity {
+            return o;
+        }
+        // A parity grid is not evidence and does not change that verdict. It is
+        // still a second implementation's numbers, and comparing against them
+        // is worth doing before the fixtures arrive rather than after.
+        o.push('\n');
     }
     // A fixture input that happens to equal a named constant is still a fixture
     // input: substituting the constant would make the test compare the
     // implementation against itself.
-    o.push_str("#![allow(clippy::approx_constant, clippy::excessive_precision)]\n\n");
+    if !sh.fixtures.is_empty() {
+        o.push_str("#![allow(clippy::approx_constant, clippy::excessive_precision)]\n\n");
+    }
     o.push_str("use super::model;\nuse vleo_core::units::*;\n\n");
     o.push_str("fn relative_error(got: f64, expected: f64) -> f64 {\n");
     o.push_str("    if expected == 0.0 { pmath::abs(got) } else { pmath::abs((got - expected) / expected) }\n}\n\n");
@@ -376,7 +385,157 @@ pub fn evidence_rs(sh: &Sheet) -> String {
     }
 
     properties(sh, &mut o);
+    parity(sh, &mut o);
     o
+}
+
+/// Whether a prior implementation's grid sits beside this node.
+pub fn has_parity_grid(sh: &Sheet) -> bool {
+    sh.dir.join("parity.csv").is_file()
+}
+
+/// The parity grid, as a test.
+///
+/// Deliberately not a fixture, and the generated message says so at the moment
+/// it matters. An expected value may not come from the implementation being
+/// tested, and the MATLAB is an implementation — so a disagreement here is a
+/// finding about one of the two, and both classes have been found before. What
+/// the test asserts is only that the two agree; which one is right when they do
+/// not is a question for a person, and the answer is never to widen the
+/// tolerance.
+///
+/// Read at compile time from the file beside the node, so a grid that is edited
+/// and a test that is not cannot drift apart: there is no second copy.
+fn parity(sh: &Sheet, o: &mut String) {
+    if sh.is_declared() || sh.inputs.is_empty() || !has_parity_grid(sh) {
+        return;
+    }
+    let bindings: Vec<String> = sh
+        .inputs
+        .iter()
+        .map(|i| format!("{:?}", i.binding))
+        .collect();
+    let args = sh
+        .inputs
+        .iter()
+        .enumerate()
+        .map(|(n, i)| format!("{}::new(row[col[{n}]])", i.ty))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    o.push_str(&format!(
+        "/// The prior implementation, over the grid it was exported on.\n\
+         ///\n\
+         /// Migrated from `{from}`. These numbers are a second opinion and never\n\
+         /// an expected value: an implementation cannot supply its own, and the\n\
+         /// prior tool is an implementation. A disagreement is a finding about\n\
+         /// one of the two.\n\
+         #[test]\n\
+         fn agrees_with_the_prior_implementation() {{\n",
+        from = esc(&sh.migrated_from)
+    ));
+    o.push_str("    const GRID: &str = include_str!(\"parity.csv\");\n");
+    o.push_str(&format!(
+        "    const TOL: f64 = {:?};\n\n",
+        sh.parity_tolerance
+    ));
+    o.push_str(
+        "    let mut lines = GRID\n\
+         \x20       .lines()\n\
+         \x20       .map(str::trim)\n\
+         \x20       .filter(|l| !l.is_empty() && !l.starts_with('#'));\n\
+         \x20   let header: Vec<&str> = lines\n\
+         \x20       .next()\n\
+         \x20       .expect(\"parity.csv is empty — a grid with no header is not a grid\")\n\
+         \x20       .split(',')\n\
+         \x20       .map(str::trim)\n\
+         \x20       .collect();\n\n",
+    );
+    o.push_str(&format!(
+        "    // Columns are keyed by binding, as fixtures are, so a grid exported\n\
+         \x20   // with the columns in another order still lines up — and one missing\n\
+         \x20   // a column this node reads fails by name rather than by position.\n\
+         \x20   let want = [{}];\n",
+        bindings.join(", ")
+    ));
+    o.push_str(
+        "    let col: Vec<usize> = want\n\
+         \x20       .iter()\n\
+         \x20       .map(|w| {\n\
+         \x20           header.iter().position(|h| h == w).unwrap_or_else(|| {\n\
+         \x20               panic!(\"parity.csv has no column '{w}' — this node reads it, so the grid cannot be compared. Columns present: {header:?}\")\n\
+         \x20           })\n\
+         \x20       })\n\
+         \x20       .collect();\n\
+         \x20   let out = header.len() - 1;\n\
+         \x20   assert!(\n\
+         \x20       header[out].starts_with(\"matlab_\"),\n\
+         \x20       \"the last column of parity.csv is '{}' — it must be the prior implementation's answer, named matlab_<symbol>, so that a column added on the end cannot silently become the thing being compared\",\n\
+         \x20       header[out]\n\
+         \x20   );\n\n",
+    );
+    o.push_str(&format!(
+        "    let mut rows = 0usize;\n\
+         \x20   let mut worst = 0.0f64;\n\
+         \x20   let mut findings = Vec::<String>::new();\n\
+         \x20   for (n, line) in lines.enumerate() {{\n\
+         \x20       let line_no = n + 2;\n\
+         \x20       let row: Vec<f64> = line\n\
+         \x20           .split(',')\n\
+         \x20           .map(|c| {{\n\
+         \x20               c.trim().parse::<f64>().unwrap_or_else(|_| {{\n\
+         \x20                   panic!(\"parity.csv line {{line_no}}: '{{}}' is not a number\", c.trim())\n\
+         \x20               }})\n\
+         \x20           }})\n\
+         \x20           .collect();\n\
+         \x20       assert_eq!(\n\
+         \x20           row.len(),\n\
+         \x20           header.len(),\n\
+         \x20           \"parity.csv line {{line_no}}: {{}} value(s) against {{}} column(s)\",\n\
+         \x20           row.len(),\n\
+         \x20           header.len()\n\
+         \x20       );\n\
+         \x20       rows += 1;\n\n\
+         \x20       // A refusal here is itself a finding: the prior implementation\n\
+         \x20       // answered this point, so either its inputs were outside a domain\n\
+         \x20       // this node declares too narrowly, or the guard is wrong.\n\
+         \x20       let got = match model::evaluate({args}) {{\n\
+         \x20           Ok(v) => v.get(),\n\
+         \x20           Err(e) => {{\n\
+         \x20               findings.push(format!(\n\
+         \x20                   \"line {{line_no}}: this engine refused a point the prior implementation answered ({{e:?}})\"\n\
+         \x20               ));\n\
+         \x20               continue;\n\
+         \x20           }}\n\
+         \x20       }};\n\
+         \x20       let err = relative_error(got, row[out]);\n\
+         \x20       if err > worst {{\n\
+         \x20           worst = err;\n\
+         \x20       }}\n\
+         \x20       if err > TOL {{\n\
+         \x20           findings.push(format!(\n\
+         \x20               \"line {{line_no}}: this engine {{got}}, the prior implementation {{}}, relative difference {{err}}\",\n\
+         \x20               row[out]\n\
+         \x20           ));\n\
+         \x20       }}\n\
+         \x20   }}\n\n",
+        args = args
+    ));
+    o.push_str(&format!(
+        "    assert!(\n\
+         \x20       rows > 0,\n\
+         \x20       \"parity.csv has a header and no rows — a grid that compares nothing passes, which is worse than not having one\"\n\
+         \x20   );\n\
+         \x20   assert!(\n\
+         \x20       findings.is_empty(),\n\
+         \x20       \"{id}: {{}} of {{rows}} grid row(s) disagree with the prior implementation `{from}` beyond {{TOL}} (worst {{worst}}).\\n{{}}\\nThis is a finding about one of the two implementations, not a build failure and not proof this one is wrong — both classes have been found before. Take it to the node owner. Do not widen parity_tolerance and do not edit parity.csv to agree.\",\n\
+         \x20       findings.len(),\n\
+         \x20       findings.join(\"\\n\")\n\
+         \x20   );\n\
+         }}\n\n",
+        id = esc(&sh.id),
+        from = esc(&sh.migrated_from)
+    ));
 }
 
 /// The property strategies, generated from the declared domain.
@@ -661,6 +820,13 @@ pub fn gap_pass(sh: &Sheet, holes: &BTreeMap<u32, String>) -> Vec<String> {
         g.push(
             "significant, and one fixture or none — a significant node is the one that gets a \
              second independent check, which is the whole reason for the word"
+                .into(),
+        );
+    }
+    if sh.migrated_from.trim().is_empty() && has_parity_grid(sh) {
+        g.push(
+            "a parity.csv with no migrated_from — the grid is some other implementation's \
+             numbers and nothing says whose, which makes a disagreement unattributable"
                 .into(),
         );
     }

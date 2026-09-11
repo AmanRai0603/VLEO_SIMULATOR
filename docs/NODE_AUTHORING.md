@@ -83,12 +83,16 @@ type = "Ratio"
   the whole graph is visible, so it is the only place the question can honestly
   be asked.
 
-### The five fields this page used to omit
+### The rest of the fields you write
 
-Found by checking what the loader reads against what this page explains — the
-loader took forty-five fields from a sheet and fifteen were not on this page.
-Most of those fifteen belong to `layers/`, `cases/` or `sources/` rather than to
-a node. These five are yours.
+This page once explained two thirds of what the loader reads. The rest was
+found by checking one against the other, and most of what was missing belongs
+to `layers/`, `cases/` or `sources/` rather than to a node. What follows is
+everything left that is yours.
+
+`tools/instruction_lint.py` now holds this list against the loader, so a field
+added to a sheet and not explained here fails the lint rather than waiting to be
+noticed.
 
 - **`[maths] confirmed_by`** — who supplied the relation, and when. An agent may
   never supply mathematics, and without a name nothing can tell whether one
@@ -104,6 +108,14 @@ a node. These five are yours.
   **never** in `fixtures.toml`: an implementation cannot supply its own expected
   values, and that is an implementation. A disagreement between the two is a
   finding about one of them, not a check either has passed.
+- **`parity_tolerance`** — how far the prior implementation may disagree before
+  the grid is a finding. Defaults to `1e-4`, and that number is set by the
+  format rather than by the physics: a MATLAB grid is an export printed to five
+  or six significant figures, so anything tighter fails on the printing. The
+  generated test names both engines, the row and the difference, and says what
+  it is not — a disagreement is a finding about one of the two implementations,
+  not proof this one is wrong. The two things never to do about one are widening
+  this and editing `parity.csv` to agree.
 - **`note`** — anything a reader of the node page needs that is not one of the
   fields above: what the relation is usually misused for, what a number is
   sensitive to, why an obvious simplification was not taken. Optional, and the
