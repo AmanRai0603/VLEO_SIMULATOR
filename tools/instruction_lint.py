@@ -205,6 +205,26 @@ def check():
             if ("xtask -- %s" % c) not in prose and ("xtask %s" % c) not in prose:
                 bad.append(("docs", "`xtask %s` exists and no document names it" % c))
 
+    # Every sheet field the loader reads is explained where an author reads.
+    # This page had forty-five fields to explain and was missing fifteen,
+    # including two added the same week. A reference with holes in it is worse
+    # than none: it reads as complete.
+    loader = ROOT / "crates" / "vleo-sheet" / "src" / "load.rs"
+    authoring = ROOT / "docs" / "NODE_AUTHORING.md"
+    if loader.is_file() and authoring.is_file():
+        # Only the fields a person writes on a node sheet. The rest belong to
+        # layers/, cases/ or sources/ and are documented with those.
+        AUTHOR_FIELDS = {
+            "label", "question", "expression", "source", "confirmed_by", "symbol",
+            "unit", "lower", "upper", "reason_lower", "reason_upper", "kind",
+            "owner", "tier", "criticality", "migrated_from", "note", "contributes",
+            "fails_when", "state",
+        }
+        text = authoring.read_text()
+        for f in sorted(AUTHOR_FIELDS):
+            if f not in text:
+                bad.append(("docs/NODE_AUTHORING.md", "does not explain the sheet field '%s'" % f))
+
     # The review policy is stated once. Two copies are two policies within a
     # month: they had already begun to differ, one listing tolerance changes and
     # bundle publication and the other listing tools/ scripts.
