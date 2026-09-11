@@ -26,6 +26,18 @@
 # Re-verify quarterly, and whenever an upstream collection publishes. Promoting
 # a change to any definition is H10: the fleet owner, with the evaluation set
 # passing at k=3.
+#
+# THE MODEL-FAMILY RULE. A checker may not run the model family of the thing it
+# checks. The reason is not that one family is better: it is that a model given
+# its own reasoning to grade approves it. The working model states this twice —
+# for the reviewer, "pinned to a different model family from the producer", and
+# for differential fill, "the same hole filled independently by a second model
+# family and the two compared numerically over the declared domain".
+#
+# `checks = "<agent>"` on a row below declares the pairing, and
+# tools/instruction_lint.py refuses a pair whose models match. Without that,
+# the rule is a sentence and the default — everything on one family, because
+# that is what the last person configured — silently wins.
 
 [[agent]]
 id = "A"
@@ -36,7 +48,7 @@ pinned = ""
 licence = "ours"
 owner = "integrator"
 model = "sonnet"
-why_model = "reads unstructured sources into a fixed schema; no reasoning depth needed beyond following the field list"
+why_model = "reads unstructured sources into a fixed schema — following a field list, not reasoning about physics"
 fallback = "the sheet template and its REQUIRED markers — a person fills it, slower"
 verified = "2026-09-11"
 note = "Written here because nothing off the shelf knows these fields. Its prohibition — supply mathematics, a reason, or a value — has nothing mechanical behind it."
@@ -50,7 +62,7 @@ pinned = ""
 licence = "ours"
 owner = "integrator"
 model = "sonnet"
-why_model = "formatting and shape-checking against a schema"
+why_model = "formats and shape-checks against a schema"
 fallback = "fixtures.toml written by hand; the gate already refuses a bad provenance either way"
 verified = "2026-09-11"
 note = "Written here because the provenance rule is ours. The gate enforces the half that can be enforced."
@@ -64,7 +76,7 @@ pinned = "vendored 2026-09-09; no upstream commit — the definition was written
 licence = "ours, as written"
 owner = "platform engineer"
 model = "sonnet"
-why_model = "two or three typed lines composing existing kernel relations; the constraint is the types, not the model"
+why_model = "two or three typed lines composing existing kernel relations; the types are the constraint, not the model"
 fallback = "a person writes the hole. It is two or three lines"
 verified = "2026-09-11"
 note = "The only prohibition in the roster that is fully enforced: it has no write path at all. `cargo xtask fill` is the sole route from its output into a file."
@@ -72,13 +84,14 @@ note = "The only prohibition in the roster that is fully enforced: it has no wri
 [[agent]]
 id = "E"
 name = "test-author"
+checks = "hole-filler"
 source = "ADOPT"
 upstream = "the test-generation category; tuned to generate over a declared domain rather than from code"
 pinned = "vendored 2026-09-09"
 licence = "ours, as written"
 owner = "platform engineer"
-model = "sonnet"
-why_model = "property generators over a stated domain"
+model = "opus"
+why_model = "a checker: it must be able to see that a test is vacuous, which is the thing the producer's family is worst at seeing about itself"
 fallback = "gen_tests already emits the harness and the property strategies from the sheet; E extends, it does not originate"
 verified = "2026-09-11"
 note = "Its scope is smaller than the roster implies, because most property tests are generated deterministically from the sheet."
@@ -86,13 +99,14 @@ note = "Its scope is smaller than the roster implies, because most property test
 [[agent]]
 id = "F"
 name = "diagnostician"
+checks = "systems-backend"
 source = "ADOPT, tuned heavily"
 upstream = "the debugging and site-reliability agent category"
 pinned = "vendored 2026-09-09"
 licence = "ours, as written"
 owner = "integrator"
-model = "sonnet"
-why_model = "the messiest work in the system — parallel hypotheses over a declared topology"
+model = "opus"
+why_model = "the messiest work in the system — parallel hypotheses over a declared topology, on the day something broke"
 fallback = "the chain printed by `vleo run` and `git log` — slower, and it is what F reads anyway"
 verified = "2026-09-11"
 note = "Keeps Bash, so its read-only guarantee is detection rather than prevention. The judge half of its prohibition has nothing behind it at all."
@@ -130,6 +144,7 @@ note = "The lane it works in is where this codebase's defects have actually been
 [[replaced]]
 id = "D"
 name = "reviewer"
+checks = "every producer — so its family must differ from whichever wrote the change, decided per pull request rather than pinned here"
 replaced_by = "tools/review_report.py, plus a slot in the pipeline for an adopted review model"
 upstream_if_adopted = "PR-Agent (now community-owned, docs at pr-agent.ai) or kodus. NOT coderabbitai/ai-pr-reviewer — archived and read-only since March 2024"
 must_be = "a different model family from whichever wrote the change, and never a required check"

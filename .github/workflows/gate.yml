@@ -133,9 +133,12 @@ jobs:
   # says something.
   #
   # It is deliberately not a required check, and must never become one. An
-  # adopted review model — pinned to a different family from whichever wrote
-  # the change — belongs in this job beside the mechanical pass, under the same
-  # rule: it writes to the summary, and it has no say in the merge.
+  # adopted review model belongs in this job beside the mechanical pass, under
+  # two rules: it writes to the summary and has no say in the merge, and its
+  # family must differ from whichever model wrote the change. A model handed its
+  # own reasoning to grade approves it — which is why agents/provenance.toml
+  # declares the producer/checker pairings and the instruction lint refuses a
+  # pair whose models match.
   review:
     name: advisory review (never blocks)
     runs-on: ubuntu-latest

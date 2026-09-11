@@ -2,7 +2,7 @@
 name: diagnostician
 description: On a failed run, a flipped verdict or an interface mismatch, gathers the evidence — which node, which change, which margin moved, and the smallest reproducing case. Use when something moved and nobody expected it.
 tools: Read, Glob, Grep, Bash
-model: sonnet
+model: opus
 ---
 
 # Agent F — diagnostician

@@ -165,6 +165,20 @@ def check():
         for need in ("source", "licence", "owner", "model", "fallback", "verified"):
             if not a.get(need):
                 bad.append(("agents/provenance.toml", "%s has no %s" % (a["name"], need)))
+        # A checker may not run the family of the thing it checks. A model
+        # handed its own reasoning to grade approves it, which is the whole
+        # reason the working model states this rule twice.
+        if a.get("checks"):
+            other = next((x for x in prov["agent"] if x["name"] == a["checks"]), None)
+            if other is None:
+                bad.append(("agents/provenance.toml", "%s checks %r, which is not an agent" % (a["name"], a["checks"])))
+            elif other.get("model") == a.get("model"):
+                bad.append((
+                    "agents/provenance.toml",
+                    "%s checks %s and both run %r — a checker on the producer's own family "
+                    "approves the producer's own reasoning"
+                    % (a["name"], a["checks"], a.get("model")),
+                ))
         if a["name"] in defs and defs[a["name"]].get("model") != a.get("model"):
             bad.append((
                 "agents/provenance.toml",
@@ -212,6 +226,13 @@ def selftest():
          lambda d: (d / ".claude" / "agents" / "hole-filler.md").write_text(
              (d / ".claude" / "agents" / "hole-filler.md").read_text().replace("model: sonnet", "model: opus")),
          "the register says"),
+        ("a checker on the producer's family",
+         lambda d: (d / "agents" / "provenance.toml").write_text(
+             (d / "agents" / "provenance.toml").read_text().replace(
+                 'checks = "hole-filler"\nsource = "ADOPT"\nupstream = "the test-generation',
+                 'checks = "hole-filler"\nsource = "ADOPT"\nupstream = "XX the test-generation')
+             .replace('model = "opus"\nwhy_model = "a checker', 'model = "sonnet"\nwhy_model = "a checker')),
+         "approves the producer"),
         ("an adopted row with no licence",
          lambda d: (d / "ADOPTION.lock").write_text(
              (d / "ADOPTION.lock").read_text().replace('licence = "MIT OR Apache-2.0"', 'licence = ""', 1)),

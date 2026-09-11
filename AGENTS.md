@@ -103,3 +103,8 @@ prompt:
 Each lane also records what actually enforces its prohibition — `full`,
 `partial` or `none`. Read your own before you start. Where it says `none`, a
 person is the only thing between you and a defect, and that is worth knowing.
+
+`agents/provenance.toml` says where each definition came from, who owns it,
+what it falls back to, and which model runs it. A checker never runs the model
+family of the thing it checks: a model given its own reasoning to grade
+approves it. `tools/instruction_lint.py` refuses a pair whose models match.

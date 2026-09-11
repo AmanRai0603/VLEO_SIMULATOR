@@ -2,7 +2,7 @@
 name: test-author
 description: Turns a declared property into test code that actually exercises it — property generators over the declared domain, and additions to the golden corpus. Use after a sheet declares a property or a domain edge that nothing currently tests.
 tools: Read, Glob, Grep, Write, Edit, Bash
-model: sonnet
+model: opus
 ---
 
 # Agent E — test author
