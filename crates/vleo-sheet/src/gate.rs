@@ -283,6 +283,38 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         Check::note("gap-pass", gaps.join("; "))
     });
 
+    // 7b — criticality, and what it buys. It decides how many people read the
+    //      node and whether the hole is filled twice by different model
+    //      families, so a word nobody recognises would silently choose the
+    //      cheaper answer.
+    let crit = sh.criticality.as_str();
+    out.push(if crit == "minor" || crit == "significant" {
+        Check::pass("criticality")
+    } else {
+        Check::fail(
+            "criticality",
+            format!("'{crit}' is neither 'minor' nor 'significant' — it decides reviewer count and whether differential fill runs"),
+        )
+    });
+
+    // 7c — the prior implementation, when there is one. Its numbers may never
+    //      be fixtures: an implementation cannot supply its own expected
+    //      values. They belong in parity.csv, where a disagreement is a finding
+    //      about one of the two rather than a check either has passed.
+    let migrated = !sh.migrated_from.trim().is_empty();
+    out.push(if !migrated || sh.dir.join("parity.csv").is_file() {
+        Check::pass("parity")
+    } else {
+        Check::note(
+            "parity",
+            format!(
+                "migrated_from names '{}' and there is no parity.csv beside it — the old \
+                 implementation is a second opinion only once its numbers are recorded",
+                sh.migrated_from
+            ),
+        )
+    });
+
     // 8 — fixture provenance. The one rule the evidence model rests on.
     let mut badfx = Vec::new();
     for f in &sh.fixtures {

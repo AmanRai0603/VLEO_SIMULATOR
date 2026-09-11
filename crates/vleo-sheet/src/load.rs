@@ -101,6 +101,18 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
         kind: s(t.get("kind")),
         owner: s(t.get("owner")),
         tier: s(t.get("tier")),
+        // Minor unless somebody said otherwise. A default of "significant"
+        // would put every node through two reviewers and a differential fill,
+        // which is how a gate becomes a queue.
+        criticality: {
+            let c = s(t.get("criticality"));
+            if c.is_empty() {
+                "minor".to_string()
+            } else {
+                c
+            }
+        },
+        migrated_from: s(t.get("migrated_from")),
         state: s(t.get("state")),
         layer: u(t.get("layer")) as u8,
         order: u(t.get("order")),

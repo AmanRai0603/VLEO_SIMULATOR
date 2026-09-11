@@ -397,6 +397,20 @@ pub fn meta_json(sh: &Sheet, gaps: &[String]) -> String {
     o.push_str(&format!("  \"owner\": \"{}\",\n", esc(&sh.owner)));
     o.push_str(&format!("  \"tier\": \"{}\",\n", esc(&sh.tier)));
     o.push_str(&format!("  \"fixtures\": {},\n", sh.fixtures.len()));
+    o.push_str(&format!("  \"criticality\": {:?},\n", sh.criticality));
+    o.push_str(&format!(
+        "  \"reviewers\": {},\n",
+        if sh.criticality == "significant" {
+            2
+        } else {
+            1
+        }
+    ));
+    o.push_str(&format!(
+        "  \"differential_fill\": {},\n",
+        sh.criticality == "significant"
+    ));
+    o.push_str(&format!("  \"migrated_from\": {:?},\n", sh.migrated_from));
     o.push_str(&format!("  \"holes\": {},\n", sh.steps.len()));
     o.push_str("  \"inputs\": [");
     o.push_str(
@@ -469,6 +483,23 @@ pub fn gap_pass(sh: &Sheet, holes: &BTreeMap<u32, String>) -> Vec<String> {
     }
     if sh.owner.trim().is_empty() {
         g.push("no owner — reviews on this node route nowhere".into());
+    }
+    if sh.criticality == "significant"
+        && !sh.dir.join("parity.csv").is_file()
+        && sh.fixtures.len() < 2
+    {
+        g.push(
+            "significant, and one fixture or none — a significant node is the one that gets a \
+             second independent check, which is the whole reason for the word"
+                .into(),
+        );
+    }
+    if !sh.migrated_from.trim().is_empty() && !sh.dir.join("parity.csv").is_file() {
+        g.push(format!(
+            "migrated from {} and no parity.csv — the prior implementation is a liability until \
+             its numbers sit beside this one",
+            sh.migrated_from
+        ));
     }
     if sh.symbol.trim().is_empty() || sh.ty.trim().is_empty() || sh.unit.trim().is_empty() {
         g.push("the output is not fully declared: symbol, type and unit are all required".into());

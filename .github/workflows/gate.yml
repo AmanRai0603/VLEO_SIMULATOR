@@ -108,6 +108,13 @@ jobs:
         run: python3 tools/review_report.py --selftest
       - name: the recipe runner
         run: python3 tools/recipe.py --selftest
+      # Gap W8: the instruction files are an input to every node and were the
+      # only input nothing checked. Stale references are what they will really
+      # have — a path renamed by a commit that never opened one.
+      - name: the instruction-file lint
+        run: |
+          python3 tools/instruction_lint.py --selftest
+          python3 tools/instruction_lint.py
       - name: the release notes
         run: python3 tools/release_notes.py --selftest
       # Every recipe, applied twice on a copy; the second must change nothing.

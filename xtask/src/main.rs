@@ -640,6 +640,16 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
         } else {
             out.push_str(line);
             out.push('\n');
+            // Criticality decides how many people read this node and whether
+            // its hole is filled twice by different model families. A sibling's
+            // answer is not this node's answer, so it is asked here rather than
+            // inherited silently.
+            if l.starts_with("tier = ") && !sheet.contains("criticality") {
+                out.push_str(
+                    "criticality = \"minor\"   # minor | significant — significant means two \
+                     reviewers and a differential fill\n",
+                );
+            }
         }
     }
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
