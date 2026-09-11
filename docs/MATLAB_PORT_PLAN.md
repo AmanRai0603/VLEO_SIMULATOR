@@ -355,3 +355,121 @@ So: a new version of the existing `solar-drivers` bundle, daily resolution,
 provenance `noaa_swpc`, that caveat recorded, hashed by `xtask bundle publish`.
 The `.mat` itself never enters the repository, and nothing depends on where it
 sits on anybody's machine.
+
+---
+
+# Part III · The shape that keeps the node count down
+
+Part II proposed eight nodes. That was the wrong instinct: it decomposed the
+*working* into rows, when the working is not what the design consumes.
+
+## 11 · Only four quantities leave the study
+
+38 analysis methods, ~57 views, eight tabs — and the whole of it exists to
+produce four numbers that anything downstream actually reads:
+
+| what leaves | to whom |
+|---|---|
+| **F10.7 at a lead and a confidence** | `sys_space_environment_f10_7`, then density |
+| **Ap at a storm return period** | `sys_space_environment_ap`, then Kp |
+| **Kp** | what DTM2020 is actually given |
+| **the 81-day centred mean** | DTM2020 carries most of its solar response on it |
+
+Everything else — repeatability, recurrence, segmentation, forecast skill, storm
+climatology — is not a separate answer. It is **the evidence that those four can
+be trusted**, which in this tree has a first-class home already: the credibility
+vector, and a node's own evidence page.
+
+So: **four nodes, not eight**, and the study's substance goes where it is
+checked rather than into rows that publish nothing.
+
+## 12 · The tabs are panels, not nodes
+
+`panels/README.md` opens with the reason this is the right home:
+
+> A wrong number crashes a test. A wrong chart looks beautiful.
+
+A panel declares `draws`, `reads`, `correct`, and carries a reference image with
+a tolerance. `tools/panel_check.py` then drives a real browser against the real
+daemon and checks three things with no person involved: **it renders**, **it
+moves when each input it claims to read is changed**, and **it matches the
+reference**.
+
+That is a stronger contract than a node page would give these figures, and check
+two is the one that matters here — a tab wired to nothing renders perfectly and
+matches yesterday's reference every time.
+
+One panel per tab, eight of them:
+
+| panel | draws | the number it is evidence for |
+|---|---|---|
+| `sw_repeatability` | mean cycle against every cycle, Ap by cycle, storm scale | how much of F10.7 the cycle explains |
+| `sw_pattern` | 27-day recurrence lag and decay, spike classification and timing | the rotation term in the central expectation |
+| `sw_segmentation` | cycle phases, activity bands | which regime a date sits in |
+| `sw_predict` | 27-day prediction for F10.7 and Ap, significance, by cycle | where skill stops |
+| `sw_forecast` | issued-window verification, rolling windows, daily skill, issue age | how much the outlook beats persistence |
+| `sw_design` | **the design window for F10.7 and for Ap** | the two that flow out |
+| `sw_density` | profile, spread, sensitivity, by driver, by altitude | what the drivers are worth as density |
+| `sw_climate` | yearly F10.7 and Ap, Kp–ap, F10.7A, semiannual | the long-run context |
+
+## 13 · The group
+
+```
+l3_solar                          layer 3, owner environment, parent root
+  ├─ l3_solar_interface           kind = "required"
+  │                               crosses_to = "sys_space_environment"   ← the missing link
+  ├─ sw_ap_design                 Ap at a storm return period
+  ├─ sw_kp_from_ap                Kp from daily Ap
+  ├─ sw_f107_81day                the 81-day centred mean
+  └─ sw_f107_design               F10.7 at a lead and a confidence
+```
+
+Five rows, one of which is the interface the convention requires. `env_f107`,
+`env_f107a` and `env_kp` are not touched — the window-derived sky becomes
+available beside the design point, not instead of it.
+
+## 14 · How this executes, in order
+
+Each step stops for review before the next.
+
+**Step 0 — the data, before anything claims to be evidenced.**
+Extract the daily series from `prf_study.mat` to CSV, write the manifest with
+provenance `noaa_swpc` and the `ap_planetary is SWPC estimated, not GFZ
+definitive` caveat, then `xtask bundle publish` and `xtask bundle verify`.
+Nothing downstream can be honestly evidenced until this exists.
+
+**Step 1 — the tree's shape.** `layers/l3_solar.toml`: the group, the interface
+node with `crosses_to`, and the relation edges. A change to the decomposition, so
+it is reviewed by two people, and `xtask codeowners` is regenerated after.
+
+**Step 2 — `sw_ap_design`.** First node, and deliberately not the most
+interesting one: an empirical exceedance curve to a return level is the smallest
+honest relation in the study, it needs only Ap, and it proves the whole loop —
+sheet from the source, fixtures from the record, `parity.csv` from the MATLAB,
+hole, gate, ready — on the smallest surface that can carry it.
+
+**Step 3 — `sw_kp_from_ap`.** The published Bartels/IAGA table. Fixtures from
+the published scale; `parity.csv` from `prf_ap2kp`'s own self-test anchors, which
+are already known: ap = 0, 4, 7, 15, 27, 48, 80, 132, 207, 400 → Kp = 0…9.
+
+**Step 4 — `sw_f107_81day`.** A centred mean, where the whole content is the edge
+handling and what happens at the ends of the record.
+
+**Step 5 — `sw_f107_design`.** The largest: persistence decaying into the mean
+cycle, plus the percentile growth of the L-day change. Needs `prf_cycles`
+understood first, which is why it is last of the four.
+
+**Step 6 — wire upward.** `sys_space_environment_f10_7` and
+`sys_space_environment_ap` stop being empty and start reading from the group.
+
+**Step 7 — the panels**, one at a time, each with its reference image recorded
+and its three checks passing.
+
+## 15 · What is settled, and what is not
+
+Settled: four nodes, eight panels, one bundle, the interface that was missing,
+and an order that proves the loop on the smallest node first.
+
+Not settled, and not blocking step 0 or step 1: whether `env_f107`, `env_f107a`
+and `env_kp` eventually read from layer 2 instead of holding their declared
+constants. That decision is better taken when there is something real to read.
