@@ -643,8 +643,23 @@ fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
         }
     }
 
-    // The decisions that are not fields on the sheet but change what happens.
+    // Authorship. Not a blocking field for generation — a relation with no name
+    // against it still generates — but a gap, so the node cannot reach H2.
     println!();
+    if sh.expression.trim().is_empty() {
+    } else if sh.relation_by.trim().is_empty() {
+        println!("  \x1b[33m?\x1b[0m  who supplied this relation, and when");
+        println!("     [maths] confirmed_by — an agent may never supply mathematics, and without");
+        println!("     a name nothing can tell whether one did. It does not make the formula");
+        println!("     right; it makes it somebody's, which is what H1b needs to be a review.");
+    } else {
+        println!(
+            "  \x1b[32m·\x1b[0m  relation supplied by {}",
+            sh.relation_by
+        );
+    }
+
+    // The decisions that are not fields on the sheet but change what happens.
     println!(
         "  criticality = {} — {}",
         sh.criticality,
@@ -754,16 +769,55 @@ fn cmd_ready(root: &Path, args: &[&str]) -> Result<(), String> {
     if asked == 0 {
         return Err(format!("no node matched '{}'", only.unwrap_or("")));
     }
-    for (id, stage, why) in &held {
-        println!("  \x1b[33mhold\x1b[0m {id} — {stage}: {why}");
+    // Named individually for one node, counted by kind for the tree. A list of
+    // 250 lines is a list nobody reads, and the useful question at tree scale is
+    // which *kind* of thing is holding the most.
+    if only.is_some() {
+        for (id, stage, why) in &held {
+            println!("  \x1b[33mhold\x1b[0m {id} — {stage}: {why}");
+        }
     }
     println!(
         "ready: {ready} of {asked} node(s) have passed every machine stage and are waiting on H2"
     );
     if !held.is_empty() {
+        let mut by: BTreeMap<&str, usize> = BTreeMap::new();
+        for (_, _, why) in &held {
+            // The gap pass joins its findings with "; ", and a node is usually
+            // held by more than one. Counting the node once per kind says what
+            // to fix; counting nodes says only that there is work.
+            for one in why.split("; ") {
+                let kind = match one {
+                    w if w.contains("no fixture") => {
+                        "no fixture — nothing outside this code has agreed with it"
+                    }
+                    w if w.contains("nobody's name against it") => {
+                        "the relation has nobody's name against it"
+                    }
+                    w if w.contains("seeded") => "seeded, not yet specified",
+                    w if w.contains("no source") => "no source cited",
+                    w if w.contains("parity") || w.contains("migrated") => {
+                        "migrated, and no parity grid beside it"
+                    }
+                    w if w.contains("significant") => {
+                        "significant, with fewer than two checks behind it"
+                    }
+                    w if w.contains("domain edge") || w.contains("range edge") => {
+                        "a declared range edge with no case behind it"
+                    }
+                    _ => "other",
+                };
+                *by.entry(kind).or_default() += 1;
+            }
+        }
+        println!("{} held, by what is holding them:", held.len());
+        let mut rows: Vec<(&&str, &usize)> = by.iter().collect();
+        rows.sort_by(|a, b| b.1.cmp(a.1));
+        for (kind, n) in rows {
+            println!("  {n:>5}  {kind}");
+        }
         println!(
-            "{} held. A person asked to look at these is being asked to find what a machine finds free.",
-            held.len()
+            "A person asked to look at these is being asked to find what a machine finds free."
         );
     }
     Ok(())

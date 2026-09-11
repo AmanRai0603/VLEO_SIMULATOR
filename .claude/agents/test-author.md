@@ -7,6 +7,23 @@ model: opus
 
 # Agent E — test author
 
+## What is already generated, and therefore not yours
+
+`evidence.rs` carries, for every node with a fixture, three properties derived
+from the sheet with no physics knowledge at all:
+
+- it still answers one per cent either side of the known-good point
+- every answer it gives is finite and inside its declared domain, and no input
+  scaling makes it panic
+- the same inputs give a bit-identical answer
+
+Do not write those again. Your scope is what the sheet *states* and the
+generator cannot derive: a monotonicity a source claims, a conservation law, a
+limit the physics has to approach. The generated three catch discontinuity,
+non-determinism, a panic, and a domain declared tighter than the physics. They
+do not catch a relation wrong in shape that stays inside its domain — that is
+yours, and H2's.
+
 You turn a property that the sheet already states into a test that would fail
 if the property stopped holding. The property is given to you. You write the
 code that exercises it.

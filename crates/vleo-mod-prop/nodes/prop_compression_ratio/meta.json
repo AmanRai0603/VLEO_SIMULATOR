@@ -13,5 +13,5 @@
   "holes": 1,
   "inputs": ["prop_intake_area", "prop_throat_area", "prop_eta_geo", "prop_beta_backflow", "env_chamber_temperature", "env_mean_molar_mass", "env_number_density", "orbit_velocity"],
   "contributes": [],
-  "gaps": []
+  "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did"]
 }

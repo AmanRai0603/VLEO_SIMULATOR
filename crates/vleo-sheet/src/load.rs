@@ -128,6 +128,7 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
     if let Some(m) = t.get("maths").and_then(|m| m.as_table()) {
         sh.expression = s(m.get("expression"));
         sh.source = s(m.get("source"));
+        sh.relation_by = s(m.get("confirmed_by"));
     }
     for a in t
         .get("assumption")
