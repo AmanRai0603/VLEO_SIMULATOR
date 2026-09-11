@@ -186,6 +186,39 @@ def check():
                     a["name"], defs[a["name"]].get("model"), a.get("model")),
             ))
 
+    # Every command the tool has is named in a document somebody reads. This is
+    # the check for the staleness that actually happened: three commands were
+    # added — declare, fill, ready — and docs/USING_IT.md, which calls itself
+    # the page to read first, still described the workflow they replaced. A
+    # document that is merely out of date reads as authoritative.
+    xt = ROOT / "xtask" / "src" / "main.rs"
+    if xt.is_file():
+        m = re.search(r'match cmd \{(.*?)\n    \};', xt.read_text(), re.S)
+        listed = set(re.findall(r'"([a-z]+)" =>', m.group(1))) if m else set()
+        prose = "\n".join(
+            (ROOT / f).read_text() for f in ("README.md", "AGENTS.md", "docs/USING_IT.md")
+            if (ROOT / f).is_file()
+        )
+        for c in sorted(listed):
+            if c in {"help"}:
+                continue
+            if ("xtask -- %s" % c) not in prose and ("xtask %s" % c) not in prose:
+                bad.append(("docs", "`xtask %s` exists and no document names it" % c))
+
+    # The review policy is stated once. Two copies are two policies within a
+    # month: they had already begun to differ, one listing tolerance changes and
+    # bundle publication and the other listing tools/ scripts.
+    owner = ROOT / "CONTRIBUTING.md"
+    if owner.is_file() and "How many reviewers, by what changed" not in owner.read_text():
+        bad.append(("CONTRIBUTING.md", "no longer states the review policy, which AGENTS.md points at"))
+    for p in files():
+        rel = p.relative_to(ROOT).as_posix()
+        if rel == "CONTRIBUTING.md":
+            continue
+        t = p.read_text()
+        if "| reviewers |" in t or "| how many reviewers |" in t.lower():
+            bad.append((rel, "restates the review policy — CONTRIBUTING.md is its one home"))
+
     # Adopted libraries carry the two fields that exist because of real failures.
     try:
         lock = tomllib.loads((ROOT / "ADOPTION.lock").read_text())
