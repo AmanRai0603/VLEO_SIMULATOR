@@ -145,16 +145,27 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          rules=$(gh api "repos/${{ github.repository }}/environments/release" \
-                    --jq '[.protection_rules[]?.type] | join(",")' 2>/dev/null || echo "")
+          # Three outcomes, not two. "No reviewers are configured" and "this
+          # token cannot read the setting" both stop the release, and must —
+          # but they are different problems and telling somebody the wrong one
+          # sends them to the wrong page. docs/RELEASE_SETUP.md explains both.
+          if ! body=$(gh api "repos/${{ github.repository }}/environments/release" 2>&1); then
+            echo "::error::Could not read the 'release' environment. Either it does not"
+            echo "::error::exist, or this token cannot see it. The response was:"
+            echo "$body" | sed 's/^/::error::  /'
+            echo "::error::See docs/RELEASE_SETUP.md. Nothing has been published."
+            exit 1
+          fi
+          rules=$(printf '%s' "$body" | jq -r '[.protection_rules[]?.type] | join(",")')
           echo "protection rules on 'release': ${rules:-<none>}"
           case ",$rules," in
             *,required_reviewers,*) echo "a person is required to approve this release" ;;
             *)
-              echo "::error::The 'release' environment has no required reviewers, so this"
-              echo "::error::release would publish with nobody approving it. Configure it at"
-              echo "::error::Settings -> Environments -> release -> Required reviewers,"
-              echo "::error::then re-run this job. Nothing has been published."
+              echo "::error::The 'release' environment exists and has no required reviewers,"
+              echo "::error::so this release would publish with nobody approving it. Add them"
+              echo "::error::at Settings -> Environments -> release -> Required reviewers,"
+              echo "::error::then re-run this job. See docs/RELEASE_SETUP.md."
+              echo "::error::Nothing has been published."
               exit 1
               ;;
           esac

@@ -6,8 +6,14 @@ step below was performed.
 ## Day one — the environment nobody configures
 
     git clone <this repository> && cd vleo_simulator
+    cargo xtask setup
     cargo run -p vleo-cli --bin vleo -- data sync
     cargo run -p xtask -- gate && cargo test
+
+`setup` points git at `tools/githooks`; git will not follow a committed hooks
+path on its own, because a hook that ran because it was cloned would be
+arbitrary code from a pull request. The authoring commands warn until it is
+done.
 
 If that is not green on the first try, nothing else matters. The toolchain is
 pinned in `rust-toolchain.toml` and the container in `.devcontainer/`, because
