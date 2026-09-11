@@ -473,3 +473,136 @@ and an order that proves the loop on the smallest node first.
 Not settled, and not blocking step 0 or step 1: whether `env_f107`, `env_f107a`
 and `env_kp` eventually read from layer 2 instead of holding their declared
 constants. That decision is better taken when there is something real to read.
+
+---
+
+# Part IV · The subsystem, and what the system sees
+
+Part III got the count right and the *architecture* wrong. It treated the study
+as four outputs plus pictures. The tree's own shape says otherwise:
+
+> **Layer 3 is the subsystem — where a person works, and where everything is a
+> row. Layer 2 is the system — which sees only what crosses.**
+
+So solar weather becomes a subsystem with everything in it as a node, and the
+system layer receives the conclusions, not the working.
+
+## 16 · Two findings that change how step 1 is done
+
+**Not one interface node has ever been written.** All seventeen `l3_*_interface`
+rows are `state = "empty"`. The layer-3-to-layer-2 seam exists in the seed and
+has never been exercised.
+
+**`kind = "required"` has no published instance either** — 213 rows carry it,
+none is written. The generator maps it (`"required" => "Kind::Required"`), but
+`is_declared()` is true only for `"declared"`, so the gap pass treats a
+`required` row like a computed one and will demand inputs, fixtures and holes of
+it. Whether that is right for an interface row is an open question, and it is
+the first thing step 1 has to answer.
+
+This means writing `l3_solar_interface` is not routine work: **it establishes the
+pattern the other sixteen subsystems will copy.** It should be done deliberately
+and reviewed as such.
+
+## 17 · The subsystem: every row a person works on
+
+`l3_solar` — "Solar weather", layer 3, owner `environment`. Derived from the
+eight tabs and the methods' own returned fields, one question per row.
+
+### The record and its structure — *Repeatability, Pattern*
+
+| node | the question | from |
+|---|---|---|
+| `sw_cycle_number` | Which solar cycle is this date in? | `C.cycle_no` |
+| `sw_cycle_phase` | How far through that cycle? | `C.member` |
+| `sw_mean_cycle_level` | What F10.7 does the mean cycle hold at that phase? | `C.superposed` |
+| `sw_cycle_repeatability` | How much does one cycle repeat the last? | `C.repeat` |
+| `sw_recurrence_lag` | At what lag does the rotation signal peak? | `C.rot_peak_lag` |
+| `sw_recurrence_strength` | How strong is that recurrence? | `C.rot_peak_r` |
+| `sw_spike_threshold` | What counts as a spike? | `prf_spikes` |
+| `sw_event_duration` | How long does a burst last? | `prf_events` |
+
+### Where the record sits today — *Segmentation*
+
+| node | the question | from |
+|---|---|---|
+| `sw_regime` | Quiet, active or storm, for this day? | `prf_cluster` |
+| `sw_activity_band` | Which flux band? | `prf_segment` |
+
+### How far ahead it is knowable — *Predict, Forecast*
+
+| node | the question | from |
+|---|---|---|
+| `sw_uncertainty_growth` | How far does F10.7 move over L days, at percentile q? | `prf_design` |
+| `sw_horizon_climatology` | Beyond how many days is climatology as good? | `F.horizon_clim` |
+| `sw_horizon_persistence` | Beyond how many days is persistence as good? | `F.horizon_persist` |
+| `sw_forecast_skill` | How much does the issued outlook beat the baseline? | `F.skill_clim` |
+| `sw_forecast_bias` | Does it run high or low, and by how much? | `F.bias_fc` |
+| `sw_band_coverage` | Does the stated band actually contain the truth? | `F.band_cov` |
+
+### Storms
+
+| node | the question | from |
+|---|---|---|
+| `sw_storm_rate` | How many storms a year, at each level? | `R.per_year` |
+| `sw_storm_return_level` | What Ap recurs once per N years? | `prf_design` |
+| `sw_kp_from_ap` | What Kp does this daily Ap mean? | `prf_ap2kp` table |
+| `sw_kp_slot_bias` | By how much does the table miss the mean and the peak? | `prf_ap2kp` fit |
+
+### What the design is told — *Design, Climate*
+
+| node | the question | from |
+|---|---|---|
+| `sw_central_expectation` | Persistence decaying into the mean cycle | `prf_design` |
+| `sw_f107_81day` | The 81-day centred mean | `prf_drivers` |
+| `sw_semiannual_amplitude` | How large is the semiannual variation? | Climate tab |
+| **`sw_f107_design`** | **The F10.7 to design to, at a lead and a confidence** | `prf_design` |
+| **`sw_ap_design`** | **The Ap to design to, at a return period** | `prf_design` |
+
+**Twenty-four nodes**, plus the interface. That is the subsystem: everything the
+study establishes, each as one row a person can open, review and own.
+
+## 18 · What crosses, and what the system sees
+
+`l3_solar_interface` is the single seam — the convention is one crossing node per
+subsystem, and this repository has seventeen of them and no exceptions.
+
+Everything above it is the subsystem's business. What crosses is the conclusion:
+**the design drivers, at a stated lead and confidence, with the credibility that
+travelled with them.**
+
+At layer 2, `sys_space_environment` then stops being empty:
+
+| layer-2 row | receives |
+|---|---|
+| `sys_space_environment_solar_flux` | the subsystem's headline — the drivers and what they are worth |
+| `sys_space_environment_f10_7` | `sw_f107_design` |
+| `sys_space_environment_ap` | `sw_ap_design` |
+
+A person working at system level opens `sys_space_environment_solar_flux` and
+sees a number, a confidence and a source. A person working the subsystem opens
+`l3_solar` and sees all twenty-four rows. Neither has to read the other's layer,
+which is the entire point of having two.
+
+The eight tabs remain **panels** (Part III, §12) — pictures with a declared
+`draws`, `reads`, `correct` and a reference, checked by `panel_check.py`. A
+figure is not a row, and this repository already has the better home for one.
+
+## 19 · The steps, in order, each stopping for review
+
+| # | step | what it produces | why here |
+|---|---|---|---|
+| **1** | **The seam** | `layers/l3_solar.toml` — the group; `l3_solar_interface` written | Nothing else can hang anywhere until the subsystem exists. First interface in the repo, so it also settles what `kind = "required"` demands. |
+| **2** | **The data** | `solar-drivers/<version>` bundle, daily, from `prf_study.mat` | Nothing below can be evidenced without it |
+| **3** | `sw_kp_from_ap` | first node | Smallest honest relation: a published table. Parity anchors already in hand (ap 0,4,7,…,400 → Kp 0…9). Proves sheet → fixtures → parity → hole → gate → ready. |
+| **4** | `sw_storm_return_level` | | Needs only Ap and the bundle. One empirical curve. |
+| **5** | `sw_f107_81day` | | A centred mean; the content is the edges |
+| **6** | `sw_cycle_number`, `sw_cycle_phase`, `sw_mean_cycle_level` | three nodes | The cycle structure everything else leans on |
+| **7** | `sw_uncertainty_growth`, `sw_central_expectation` | | The two halves of the design value |
+| **8** | **`sw_f107_design`**, **`sw_ap_design`** | the conclusions | Everything they need now exists |
+| **9** | **The crossing** | `sys_space_environment_f10_7`, `_ap`, `_solar_flux` written | The system layer starts answering |
+| **10** | The remaining subsystem rows | skill, bias, coverage, regime, storms, spikes, semiannual | Evidence and context; none blocks the crossing |
+| **11** | The eight panels | one at a time, each with its reference | The visuals, where visuals are checked |
+
+Steps 1 and 2 are the only ones that must happen in that order. From step 3 the
+nodes are independent enough to reorder if something proves harder than it looks.
