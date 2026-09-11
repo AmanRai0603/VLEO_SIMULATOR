@@ -193,7 +193,15 @@ jobs:
                     | sed -n 's|^crates/[^/]*/nodes/\([^/]*\)/.*$|\1|p' \
                     | sort -u)
           echo "changed: ${nodes:-<none>}"
-          printf '%s\n' "$nodes" > changed-nodes.txt
+          # An empty list must write an empty file. `printf '%s\n' ""` writes a
+          # newline, so the file is one byte, `[ -s ]` is true, and the branch
+          # that says why nothing ran can never fire — the job goes silent
+          # instead, which is the failure mode this whole change is about.
+          if [ -n "$nodes" ]; then
+            printf '%s\n' "$nodes" > changed-nodes.txt
+          else
+            : > changed-nodes.txt
+          fi
       - name: mutate each of them
         run: |
           if [ ! -s changed-nodes.txt ]; then
