@@ -37,6 +37,8 @@ fn main() -> ExitCode {
         "bundle" => cmd_bundle(&root, &rest),
         "variables" => cmd_variables(&root),
         "setup" => cmd_setup(&root),
+        "mutate" => cmd_mutate(&root, &rest),
+        "differential" => cmd_differential(&root, &rest),
         "help" | "--help" | "-h" => {
             help();
             Ok(())
@@ -86,6 +88,12 @@ cargo xtask <command>
                      filler is never handed the file: it returns the few typed
                      lines as text and this puts them where they go. An agent
                      given the file and told not to stray is not constrained.
+  differential <node>
+                     re-run the node against every other recorded body for the
+                     same hole. A significant node is filled twice by different
+                     models and the two are compared; this is the comparison.
+                     Recorded by `fill --by`, which refuses a second body from
+                     the model that wrote the first.
   ready [<node>]     whether a person should be asked to look yet: the gate,
                      then the gap pass, then what criticality demands. A node
                      with an open gap does not enter H2 — the reviewer accepts,
@@ -97,6 +105,10 @@ cargo xtask <command>
                      same hash, which is what makes verification mean anything.
                      Publication is irreversible by design.
   bundle verify      re-check every hash in bundles/.
+  mutate [<node>]    perturb the answer by a tenth of a percent and require the
+                     node's own tests to notice. A test that passes against a
+                     wrong number proves nothing, and nothing else in the gate
+                     can tell the difference between evidence and decoration.
   setup              point git at tools/githooks, so the commit-message hook
                      runs on this clone. One command per person per clone, and
                      the commands that matter say so until it is done.
@@ -137,6 +149,435 @@ fn write_if_changed(path: &Path, text: &str) -> Result<bool, String> {
     }
     fs::write(path, text).map_err(|e| format!("{}: {e}", path.display()))?;
     Ok(true)
+}
+
+// ---------------------------------------------------------------------------
+
+/// One recorded fill: a hole, who wrote its body, on what model, and the body.
+///
+/// The body is kept rather than hashed because the point of keeping it is to
+/// run it again. A hash would prove two bodies differed and leave the
+/// comparison — the thing the rule is actually asking for — impossible.
+struct Fill {
+    hole: u32,
+    by: String,
+    model: String,
+    body: String,
+}
+
+fn fills_path(dir: &Path) -> PathBuf {
+    dir.join("fills.toml")
+}
+
+fn read_fills(dir: &Path) -> Vec<Fill> {
+    let Ok(text) = fs::read_to_string(fills_path(dir)) else {
+        return Vec::new();
+    };
+    let Ok(v) = text.parse::<toml::Value>() else {
+        return Vec::new();
+    };
+    v.get("fill")
+        .and_then(toml::Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|f| {
+                    Some(Fill {
+                        hole: f.get("hole")?.as_integer()? as u32,
+                        by: f.get("by")?.as_str()?.to_string(),
+                        model: f.get("model")?.as_str()?.to_string(),
+                        body: f.get("body")?.as_str()?.to_string(),
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// What model an agent runs, from the one file that records it.
+fn agent_model(root: &Path, who: &str) -> Result<String, String> {
+    let text = fs::read_to_string(root.join("agents/provenance.toml"))
+        .map_err(|e| format!("agents/provenance.toml: {e}"))?;
+    let v: toml::Value = text
+        .parse()
+        .map_err(|e| format!("agents/provenance.toml: {e}"))?;
+    let agents = v
+        .get("agent")
+        .and_then(|a| a.as_array())
+        .ok_or("agents/provenance.toml declares no agents")?;
+    let known: Vec<String> = agents
+        .iter()
+        .filter_map(|a| a.get("name")?.as_str().map(str::to_string))
+        .collect();
+    agents
+        .iter()
+        .find(|a| {
+            a.get("name").and_then(|n| n.as_str()) == Some(who)
+                || a.get("id").and_then(|n| n.as_str()) == Some(who)
+        })
+        .and_then(|a| a.get("model")?.as_str().map(str::to_string))
+        .ok_or_else(|| {
+            format!(
+                "no agent '{who}' with a model in agents/provenance.toml. Known: {}",
+                known.join(", ")
+            )
+        })
+}
+
+/// Append a fill record.
+///
+/// The model-family rule, enforced as a fact about the file rather than as a
+/// sentence in a prompt: a second body for the same hole from the same model is
+/// refused. A model handed its own reasoning to check approves it, so two
+/// bodies from one model are one body written twice.
+fn check_fill_attribution(
+    root: &Path,
+    sh: &vleo_sheet::model::Sheet,
+    hole: u32,
+    who: &str,
+    body: &str,
+) -> Result<(), String> {
+    let model = agent_model(root, who)?;
+    for f in read_fills(&sh.dir) {
+        if f.hole == hole && f.body.trim() == body.trim() {
+            return Ok(());
+        }
+        if f.hole == hole && f.model == model {
+            return Err(format!(
+                "hole {hole} already has a body from {} on {model}, and this one is also on \
+                 {model}. Two bodies from one model are one body written twice: a model given \
+                 its own reasoning to check approves it. A second body has to come from a \
+                 different model. Nothing was written.",
+                f.by
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn record_fill(
+    root: &Path,
+    sh: &vleo_sheet::model::Sheet,
+    hole: u32,
+    who: &str,
+    body: &str,
+) -> Result<(), String> {
+    let model = agent_model(root, who)?;
+    let existing = read_fills(&sh.dir);
+    if existing
+        .iter()
+        .any(|f| f.hole == hole && f.body.trim() == body.trim())
+    {
+        return Ok(());
+    }
+    let mut out = String::new();
+    if existing.is_empty() {
+        out.push_str(
+            "# Every body written for this node's holes, and what wrote each.\n\
+             #\n\
+             # A significant node is filled twice by different models and the two\n\
+             # compared over the declared domain. That comparison needs both bodies,\n\
+             # so both are kept here rather than hashed. `cargo xtask differential\n\
+             # <node>` runs it.\n\
+             #\n\
+             # Written by `cargo xtask fill --by`. Editing it by hand defeats the\n\
+             # one thing it is for.\n",
+        );
+    } else {
+        out.push_str(&fs::read_to_string(fills_path(&sh.dir)).unwrap_or_default());
+    }
+    out.push_str(&format!(
+        "\n[[fill]]\nhole = {hole}\nby = {who:?}\nmodel = {model:?}\nbody = \"\"\"\n{}\"\"\"\n",
+        if body.ends_with('\n') {
+            body.to_string()
+        } else {
+            format!("{body}\n")
+        }
+    ));
+    fs::write(fills_path(&sh.dir), out).map_err(|e| format!("fills.toml: {e}"))?;
+    println!("  recorded: hole {hole} by {who} on {model}");
+    Ok(())
+}
+
+/// Differential fill: run the node against every other body recorded for the
+/// same hole.
+///
+/// The working model asks for the same hole filled independently by a second
+/// model family and the two compared numerically over the declared domain. The
+/// comparison is the node's own evidence — its fixtures, its generated
+/// properties and its parity grid if it has one — because those are exactly the
+/// numeric checks over the declared domain, and running a second, private grid
+/// beside them would be a second definition of correct.
+///
+/// What this cannot do here is produce the second body: every agent in this
+/// repository runs one vendor's models, so the rule separates model tiers and
+/// not training. That is recorded in agents/provenance.toml and it is a
+/// decision with a cost attached, not something this command can close.
+fn cmd_differential(root: &Path, args: &[&str]) -> Result<(), String> {
+    let id = args
+        .first()
+        .ok_or("usage: cargo xtask differential <node>")?;
+    let tree = load(root)?;
+    let sh = tree
+        .sheets
+        .get(*id)
+        .ok_or_else(|| format!("no node '{id}'"))?;
+    if sh.is_declared() {
+        return Err(format!("'{id}' is a declared value — it has no holes"));
+    }
+
+    let fills = read_fills(&sh.dir);
+    if fills.is_empty() {
+        return Err(format!(
+            "no fills recorded for '{id}'. `cargo xtask fill --by <agent>` records one; \
+             without a record there is nothing to compare and saying so is the only \
+             honest answer"
+        ));
+    }
+
+    let current = vleo_sheet::load::read_holes(&sh.dir);
+    let path = sh.dir.join("model.rs");
+    let original = fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let mut compared = 0usize;
+    let mut disagreed: Vec<String> = Vec::new();
+
+    // Every recorded body, including whichever one is currently in the file.
+    // Running only the alternatives reports "agrees" when the body that shipped
+    // is the wrong one and the alternative is right — which is the disagreement
+    // stated backwards, and the one case where getting this wrong is expensive.
+    for f in &fills {
+        let mut holes = current.clone();
+        holes.insert(f.hole, f.body.clone());
+        let text = gate::formatted(&emit::model_rs(sh, &holes));
+        fs::write(&path, &text).map_err(|e| format!("{}: {e}", path.display()))?;
+        let out = std::process::Command::new("cargo")
+            .current_dir(root)
+            .args(["test", "-q", "-p", &sh.crate_name, "--", &sh.id])
+            .output();
+        fs::write(&path, &original).map_err(|e| format!("{}: {e}", path.display()))?;
+        let out = out.map_err(|e| format!("running cargo test: {e}"))?;
+        compared += 1;
+        if out.status.success() {
+            println!(
+                "  \x1b[32magrees\x1b[0m   hole {} — {} on {}",
+                f.hole, f.by, f.model
+            );
+        } else {
+            println!(
+                "  \x1b[31mDISAGREES\x1b[0m hole {} — {} on {}",
+                f.hole, f.by, f.model
+            );
+            disagreed.push(format!("hole {} ({} on {})", f.hole, f.by, f.model));
+        }
+    }
+
+    // Two records that are the same body are one body recorded twice, whatever
+    // two names sit against it.
+    let distinct: std::collections::BTreeSet<&str> = fills.iter().map(|f| f.body.trim()).collect();
+    if distinct.len() < 2 {
+        return Err(format!(
+            "'{id}' has {} recorded fill(s) and {} distinct body/bodies. A hole filled once \
+             is not a differential fill, whatever the record says",
+            fills.len(),
+            distinct.len()
+        ));
+    }
+    println!("differential: {compared} recorded body/bodies run against this node's evidence");
+    if disagreed.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "{} recorded body/bodies disagree with this node's evidence: {}. Two \
+             independent readings of the same sheet produced different answers, so at \
+             least one of them read it wrong — or the sheet says less than the author \
+             thought. This is a finding for the node owner, not something to resolve by \
+             picking the body that passes.",
+            disagreed.len(),
+            disagreed.join(", ")
+        ))
+    }
+}
+
+/// How far the mutant's answer moves, for a node with no fixture to size it.
+const MUTANT_FLOOR: f64 = 1e-3;
+
+/// How far to move this node's answer.
+///
+/// Sized by the node's own loosest fixture tolerance rather than fixed. A fixed
+/// perturbation asks an arbitrary question — a first run at a tenth of a percent
+/// reported five nodes as unevidenced whose fixtures declare half a percent,
+/// which is not a finding about those nodes but about the number chosen here.
+///
+/// Twice the loosest tolerance asks the question the node itself poses: the
+/// evidence claims the answer is known to within so much, so an error larger
+/// than that must be caught. If it is not, the tolerance is wider than anything
+/// actually checks.
+fn mutant_scale(sh: &vleo_sheet::model::Sheet) -> f64 {
+    let loosest = sh
+        .fixtures
+        .iter()
+        .map(|f| f.tolerance)
+        .filter(|t| t.is_finite() && *t > 0.0)
+        .fold(0.0f64, f64::max);
+    1.0 + 2.0 * loosest.max(MUTANT_FLOOR)
+}
+
+/// Mutation testing, by the one mutation that applies to every node.
+///
+/// The gate proves the tests pass. It cannot prove they would fail, and those
+/// are different claims: a fixture whose tolerance is wide enough to swallow
+/// the relation being wrong passes for the whole life of the node and is read
+/// by everyone as evidence. The only way to tell the two apart is to break the
+/// implementation on purpose and check that something objects.
+///
+/// One mutation rather than a catalogue of them, and it is deliberately not a
+/// clever one: every generated model.rs ends in `let answer: T = ...`, so
+/// scaling that is type-correct everywhere and asks the question that matters —
+/// if this node answered a tenth of a percent differently, would anything
+/// notice? A node that says no has evidence that is decoration.
+///
+/// The file is restored from the bytes read before the edit. If a run is killed
+/// between the two, `cargo xtask docs <node>` regenerates the file and the
+/// mutation is outside every hole, so it does not survive.
+fn cmd_mutate(root: &Path, args: &[&str]) -> Result<(), String> {
+    let tree = load(root)?;
+    let only = args.first().copied();
+    let mut targets: Vec<&vleo_sheet::model::Sheet> = tree
+        .ordered()
+        .into_iter()
+        .filter(|sh| sh.state == "published")
+        // A declared value has no relation to get wrong: the number is the
+        // source, not a derivation from one. Perturbing it asks whether some
+        // other node pins it, which is a different question and one the
+        // contribution graph already answers. Two thirds of the tree is
+        // declared values, so including them would bury the signal.
+        .filter(|sh| !sh.is_declared())
+        .filter(|sh| only.is_none_or(|o| sh.id == o))
+        .collect();
+    targets.sort_by(|a, b| a.id.cmp(&b.id));
+
+    if targets.is_empty() {
+        return Err(match only {
+            Some(o) => format!("{o} is not a written node"),
+            None => "no written nodes".into(),
+        });
+    }
+
+    let mut survived: Vec<String> = Vec::new();
+    let mut unevidenced: Vec<String> = Vec::new();
+    let mut unmutatable: Vec<String> = Vec::new();
+    let mut killed = 0usize;
+
+    for sh in &targets {
+        let path = sh.dir.join("model.rs");
+        let original = fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+
+        let Some(mutant) = mutate_answer(&original, mutant_scale(sh)) else {
+            unmutatable.push(sh.id.clone());
+            continue;
+        };
+
+        fs::write(&path, &mutant).map_err(|e| format!("{}: {e}", path.display()))?;
+        let out = std::process::Command::new("cargo")
+            .current_dir(root)
+            .args(["test", "-q", "-p", &sh.crate_name, "--", &sh.id])
+            .output();
+        // Restore before anything else can fail. A mutant left on disk is a
+        // wrong implementation committed by whoever runs git add next.
+        fs::write(&path, &original).map_err(|e| format!("{}: {e}", path.display()))?;
+
+        let out = out.map_err(|e| format!("running cargo test: {e}"))?;
+        let text = format!(
+            "{}{}",
+            String::from_utf8_lossy(&out.stdout),
+            String::from_utf8_lossy(&out.stderr)
+        );
+
+        // A non-zero exit is not a detection on its own. A mutant that does not
+        // compile exits non-zero too, and counting that as a kill reports the
+        // strongest possible evidence for a node nothing has ever checked.
+        if !text.contains("test result:") {
+            unmutatable.push(format!("{} — the mutant did not build", sh.id));
+            continue;
+        }
+        // Zero tests is a passing run said differently.
+        if out.status.success() && text.contains("0 passed; 0 failed") {
+            unevidenced.push(sh.id.clone());
+            continue;
+        }
+        if out.status.success() {
+            // Two different results wearing one word. A node with a fixture
+            // that survives is a finding: something claims to check this and
+            // does not. A node with no fixture that survives is a gap already
+            // counted against that row, and 102 rows of restatement is how a
+            // check stops being read.
+            //
+            // The split is not obvious from the outside — eighteen rows with no
+            // fixture were killed anyway, by a guard or by a test elsewhere in
+            // their crate — so it is measured here rather than assumed.
+            if sh.fixtures.is_empty() {
+                unevidenced.push(sh.id.clone());
+            } else {
+                println!(
+                    "  \x1b[31mSURVIVED\x1b[0m {} (moved {:.3}%)",
+                    sh.id,
+                    (mutant_scale(sh) - 1.0) * 100.0
+                );
+                survived.push(sh.id.clone());
+            }
+        } else {
+            println!("  \x1b[32mkilled\x1b[0m   {}", sh.id);
+            killed += 1;
+        }
+    }
+
+    println!(
+        "mutate: {} of {} mutant(s) killed{}",
+        killed,
+        killed + survived.len() + unevidenced.len(),
+        if unevidenced.is_empty() {
+            String::new()
+        } else {
+            format!(
+                " — {} of the survivor(s) have no fixture at all, which is a gap already \
+                 counted against those rows rather than a finding here",
+                unevidenced.len()
+            )
+        }
+    );
+    for id in &unmutatable {
+        println!("  no answer to perturb: {id}");
+    }
+    if !survived.is_empty() {
+        return Err(format!(
+            "{} node(s) answered by more than twice their own declared tolerance and every \
+             test still passed: {}. The evidence on these rows is decoration — a tolerance \
+             wider than anything that actually checks it, or no fixture reaching this answer \
+             at all. Add the case that pins it, or tighten the tolerance to what the source \
+             supports. Do not weaken this check.",
+            survived.len(),
+            survived.join(", ")
+        ));
+    }
+    Ok(())
+}
+
+/// Scale the one line every generated model.rs ends with.
+///
+/// Returns `None` when there is nothing to perturb, which is a real state and
+/// not a failure: a node whose scaffold has never been generated has no answer
+/// line yet.
+fn mutate_answer(src: &str, scale: f64) -> Option<String> {
+    let at = src.find("    let answer: ")?;
+    let rest = &src[at..];
+    let semi = rest.find(";\n")?;
+    let line = &rest[..semi];
+    let (decl, expr) = line.split_once(" = ")?;
+    let ty = decl.trim_start().strip_prefix("let answer: ")?;
+    Some(format!(
+        "{}{decl} = {ty}::new(({expr}).get() * {scale:?}){}",
+        &src[..at],
+        &rest[semi..]
+    ))
 }
 
 // ---------------------------------------------------------------------------
@@ -1038,6 +1479,26 @@ fn cmd_fill(root: &Path, args: &[&str]) -> Result<(), String> {
         }
     }
 
+    // Everything that can refuse, refuses before the file is touched. A splice
+    // that lands and then reports "nothing was written" is worse than either
+    // outcome on its own.
+    let attribution = args
+        .iter()
+        .position(|a| *a == "--by")
+        .and_then(|i| args.get(i + 1))
+        .copied();
+    match attribution {
+        Some(who) => check_fill_attribution(root, sh, n, who, &body)?,
+        None if sh.criticality == "significant" => {
+            return Err(format!(
+                "'{id}' is significant, so its holes are filled twice by different models and \
+                 the two compared. An unattributed body cannot be compared to anything: pass \
+                 --by <agent>. Nothing was written."
+            ))
+        }
+        None => {}
+    }
+
     let mut holes = vleo_sheet::load::read_holes(&sh.dir);
     let before = holes.get(&n).cloned().unwrap_or_default();
     holes.insert(n, body.clone());
@@ -1056,6 +1517,9 @@ fn cmd_fill(root: &Path, args: &[&str]) -> Result<(), String> {
         return Err(format!(
             "hole {n} is still empty after the splice — nothing was written"
         ));
+    }
+    if let Some(who) = attribution {
+        record_fill(root, sh, n, who, &body)?;
     }
     println!(
         "{id} hole {n} ({}) — {} line(s) spliced{}",

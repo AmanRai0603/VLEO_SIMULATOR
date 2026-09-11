@@ -1,4 +1,4 @@
-# Six passes, every night, over everything.
+# Eight passes, every night, over everything.
 #
 # Three of them cannot run in the per-change pipeline: they need the whole tree,
 # the whole ledger and yesterday's state. That is what makes the audit a
@@ -44,6 +44,12 @@ jobs:
 
       - name: 6 · reference data freshness
         run: cargo run -p xtask -- bundle verify
+
+      # The one check that asks whether the tests would fail, not whether they
+      # pass. It is nightly rather than per-change because it is 138 cargo test
+      # runs; the per-change pipeline mutates only what the change touched.
+      - name: 8 · the tests are load-bearing
+        run: cargo run -p xtask -- mutate
 
       # Gaps W6 and W7. Cost per agent and firing rate were declared as things
       # to watch with no instrument behind them, and a target with no meter is

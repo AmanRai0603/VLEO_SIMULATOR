@@ -410,10 +410,44 @@ reporting or regeneration; none of it decides anything.
 | `cargo run -p xtask -- codeowners` | regenerate `CODEOWNERS` from the owner field on each layer group |
 | `cargo run -p xtask -- bundle publish <dir>` | hash a bundle's payload and write the result into its manifest |
 | `cargo run -p xtask -- bundle verify` | re-check every hash in `bundles/` |
+| `cargo run -p xtask -- setup` | point git at `tools/githooks` on this clone |
 
 `variables` and `codeowners` write files that are committed, so run them after
 a change that moves a bound or an owner, and commit what they produce. The
 regeneration diff in the pipeline catches it if you forget.
+
+### Two commands that ask whether the evidence is real
+
+Everything else in the gate proves the tests pass. These two ask the other
+question, and it is a different one: a test that passes against a wrong number
+proves nothing, and there is no way to tell the two apart by reading.
+
+`cargo run -p xtask -- mutate [<node>]` moves the node's answer by twice its own
+loosest fixture tolerance and requires the node's tests to notice. The size is
+taken from the node rather than fixed, because a fixed perturbation asks an
+arbitrary question — a first run at a tenth of a percent reported five rows as
+unevidenced whose fixtures declare half a percent, which was a finding about the
+number chosen and not about those rows. A survivor with a fixture is a finding:
+something claims to check this and does not. A survivor with no fixture is a gap
+already counted against that row, and is reported as a count rather than named.
+
+Over the whole tree today: 18 of 138 written computed rows are mutated and all
+18 are killed. The other 120 have no fixture. Nothing in the tree has evidence
+that fails to catch an error larger than the evidence's own claim.
+
+`cargo run -p xtask -- differential <node>` runs every body recorded for a hole
+against that node's evidence. Bodies are recorded by `fill --by <agent>`, which
+refuses a second body for a hole from the model that wrote the first: two bodies
+from one model are one body written twice, because a model handed its own
+reasoning to check approves it. A significant node refuses an unattributed body
+outright. If two recorded bodies disagree, that is a finding for the node owner
+— at least one reading of the sheet is wrong, or the sheet says less than its
+author thought — and never something to settle by keeping the body that passes.
+
+What neither closes is the vendor half of the rule. Every agent here runs one
+vendor's models, so `--by` separates model tiers and not training; that is
+recorded in `agents/provenance.toml` and it needs a second provider, not more
+code.
 
 ---
 
