@@ -106,6 +106,34 @@ jobs:
       - name: every commit this branch adds
         run: python3 tools/commit_message.py --range "$(git rev-list --max-parents=0 HEAD | tail -1)..HEAD"
 
+  # The advisory review. It cannot fail the build, and that is the design
+  # rather than an oversight: a review that can fail a build is a review people
+  # learn to satisfy rather than to read, and within a month its findings are
+  # worded to pass rather than to be true. The gate blocks; this one only ever
+  # says something.
+  #
+  # It is deliberately not a required check, and must never become one. An
+  # adopted review model — pinned to a different family from whichever wrote
+  # the change — belongs in this job beside the mechanical pass, under the same
+  # rule: it writes to the summary, and it has no say in the merge.
+  review:
+    name: advisory review (never blocks)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: the reviewer checks itself first
+        run: python3 tools/review_report.py --selftest
+      - name: report on what changed
+        run: |
+          base="${{ github.event.pull_request.base.sha || github.event.before }}"
+          git cat-file -e "$base^{commit}" 2>/dev/null || base="$(git rev-list --max-parents=0 HEAD | tail -1)"
+          python3 tools/review_report.py --range "$base..HEAD" | tee -a "$GITHUB_STEP_SUMMARY"
+
   # Both profiles build on every merge. A customer build that fails only at
   # release time fails on the day it can least be afforded — and link-time
   # optimisation with a single codegen unit changes inlining, so the profile
