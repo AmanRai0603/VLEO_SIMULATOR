@@ -633,7 +633,126 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
         Check::fail("V12 one crate per owner", spread.join(", "))
     });
 
+    // V13 — the browser face offers only rows it can actually answer.
+    //
+    // The demonstration subset is a hand-written list in a crate outside the
+    // workspace, so `cargo test` never sees it and it drifts silently. Every
+    // way it can drift ends the same way: a visitor clicks a node the page
+    // offered and gets an error instead of a number, on the one face chosen
+    // for people who have not installed anything.
+    //
+    // Read as text rather than linked, because linking it would put a
+    // wasm-target crate in the workspace to check a list of sixteen strings.
+    // The parse is deliberately narrow: a list it cannot find is a failure, not
+    // a pass, so a rename cannot turn this check off by accident.
+    //
+    // What this deliberately does not check is whether a listed row has a
+    // fixture. Five of the sixteen do not, which is a real finding and already
+    // a counted gap on each of those rows. Whether the public face should offer
+    // an unevidenced number is a decision about what the face is for — it shows
+    // credibility beside every answer, so the number is not presented as more
+    // than it is — and encoding an answer to that here would be this check
+    // inventing policy rather than enforcing it.
+    out.push(demonstration_subset(tree));
+
     out
+}
+
+/// V13, kept separate because it is the one assembly check that reads a file
+/// outside the tree.
+fn demonstration_subset(tree: &Tree) -> Check {
+    const NAME: &str = "V13 the demonstration subset is answerable";
+    let path = tree.root.join("crates/vleo-wasm/src/lib.rs");
+    let text = match std::fs::read_to_string(&path) {
+        Ok(t) => t,
+        // Not a pass. The face existing and this check not finding it is the
+        // same situation as the face being wrong, from here.
+        Err(e) => return Check::fail(NAME, format!("{}: {e}", path.display())),
+    };
+    let Some(start) = text.find("const DEMONSTRATION: &[&str] = &[") else {
+        return Check::fail(
+            NAME,
+            format!(
+                "{} has no `const DEMONSTRATION: &[&str] = &[` — if the list was renamed, rename \
+                 it here too rather than leaving a check that silently passes",
+                path.display()
+            ),
+        );
+    };
+    let body = &text[start..];
+    let Some(end) = body.find("];") else {
+        return Check::fail(NAME, "the DEMONSTRATION list is not terminated".into());
+    };
+    let listed: Vec<String> = body[..end]
+        .lines()
+        .filter_map(|l| {
+            let l = l.trim();
+            l.strip_prefix('"')
+                .and_then(|l| l.split('"').next())
+                .filter(|_| l.starts_with('"'))
+                .map(str::to_string)
+        })
+        .collect();
+
+    let mut bad = Vec::new();
+    if listed.is_empty() {
+        bad.push("the list is empty or did not parse".to_string());
+    }
+    for id in &listed {
+        match tree.sheets.get(id) {
+            None => bad.push(format!("{id} is offered and is not a row in the tree")),
+            // A seeded row refuses by name when run. That refusal is correct
+            // everywhere else in the tool and wrong here: this face exists to
+            // be clicked by somebody who has installed nothing.
+            Some(sh) if sh.state != "published" => bad.push(format!(
+                "{id} is offered and its state is '{}' — it would refuse rather than answer",
+                sh.state
+            )),
+            Some(_) => {}
+        }
+    }
+
+    // The prose beside the list counts it. A count in a comment is the first
+    // thing to go stale, and this is cheaper than noticing later.
+    let spelled = [
+        (0, "zero"),
+        (1, "one"),
+        (2, "two"),
+        (3, "three"),
+        (4, "four"),
+        (5, "five"),
+        (6, "six"),
+        (7, "seven"),
+        (8, "eight"),
+        (9, "nine"),
+        (10, "ten"),
+        (11, "eleven"),
+        (12, "twelve"),
+        (13, "thirteen"),
+        (14, "fourteen"),
+        (15, "fifteen"),
+        (16, "sixteen"),
+        (17, "seventeen"),
+        (18, "eighteen"),
+        (19, "nineteen"),
+        (20, "twenty"),
+    ];
+    if let Some((_, word)) = spelled.iter().find(|(n, _)| *n == listed.len()) {
+        for (n, other) in spelled.iter() {
+            if *n != listed.len() && text.contains(&format!("{other} of them")) {
+                bad.push(format!(
+                    "the file says '{other} of them' and the list holds {} — write '{word} of them'",
+                    listed.len()
+                ));
+            }
+        }
+    }
+
+    if bad.is_empty() {
+        Check::pass(NAME)
+    } else {
+        Check::fail(NAME, bad.join(", "))
+    }
 }
 
 /// Depth-first search for a cycle that no case declares. Returns the loop it

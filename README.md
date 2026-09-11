@@ -388,9 +388,12 @@ showing an optimum near 300 km](docs/img/sweep.png)
   libraries to adopt on the first node that needs one, and why they are not
   dependencies yet.
 - **Not a multi-user service.** One local daemon, one store, no accounts.
-- **No differential fill and no mutation testing in the pipeline.** Both are
-  named in the working model; the sheet carries the flag and the runner does not
-  exist. Mutation testing has been done by hand and recorded per change.
+- **The model-family rule separates model tiers, not vendors.** The working
+  model means family in the vendor sense. Every agent here runs one vendor's
+  models, so `fill --by` refusing a second body from the model that wrote the
+  first is the weaker rule, honestly enforced: `agents/provenance.toml` says so
+  rather than claiming the stronger one. Closing it needs a second provider in
+  the harness, which is a decision with a cost, not an oversight.
 - **Signing is absent, not stubbed.** The release workflow builds and gates but
   does not sign, because no certificate exists yet.
 - **Two faces sit outside the workspace.** `vleo-wasm` and `vleo-py` need
@@ -399,11 +402,15 @@ showing an optimum near 300 km](docs/img/sweep.png)
 
 ## Two things a fresh clone needs from a person
 
-1. `git config core.hooksPath tools/githooks` — the commit-message hook. A
-   session opened through the authoring tool sets this itself.
-2. A GitHub environment named `release` with required reviewers. Until it
-   exists the release approval passes instantly, and nothing in this repository
-   can create it.
+1. `cargo xtask setup` — points git at `tools/githooks` so the commit-message
+   hook runs. Git will not follow a committed hooks path on its own, because a
+   hook that ran because it was cloned would be arbitrary code from a pull
+   request. The authoring commands say so until it is done.
+2. A GitHub environment named `release` with required reviewers. Nothing in
+   this repository can create it — an environment named in a workflow but never
+   configured is created empty and approves instantly. The release job's first
+   step reads the environment's protection rules and stops if nobody is
+   required, so the absence fails the release rather than passing it quietly.
 
 ---
 

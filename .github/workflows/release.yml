@@ -125,8 +125,10 @@ jobs:
   # itself the approval by editing itself.
   #
   # Set it up once: Settings → Environments → New environment → "release" →
-  # Required reviewers. Until that is done the environment approves instantly,
-  # so the setting is the control and this line is only where it attaches.
+  # Required reviewers. An environment named here but never configured is
+  # created empty and approves instantly, which looks exactly like an approval
+  # that happened. The first step below refuses that: no required reviewers, no
+  # release. The setting is still the control; this makes its absence loud.
   publish:
     name: one human says yes
     needs: [prove, build]
@@ -135,6 +137,28 @@ jobs:
     permissions:
       contents: write
     steps:
+      # Fail closed. An unconfigured environment approves instantly and leaves
+      # the same green tick as a reviewed one, so the difference has to be
+      # asserted rather than assumed. Read the environment's own protection
+      # rules and stop if nobody is required.
+      - name: the approval is real
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rules=$(gh api "repos/${{ github.repository }}/environments/release" \
+                    --jq '[.protection_rules[]?.type] | join(",")' 2>/dev/null || echo "")
+          echo "protection rules on 'release': ${rules:-<none>}"
+          case ",$rules," in
+            *,required_reviewers,*) echo "a person is required to approve this release" ;;
+            *)
+              echo "::error::The 'release' environment has no required reviewers, so this"
+              echo "::error::release would publish with nobody approving it. Configure it at"
+              echo "::error::Settings -> Environments -> release -> Required reviewers,"
+              echo "::error::then re-run this job. Nothing has been published."
+              exit 1
+              ;;
+          esac
+
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:

@@ -386,6 +386,7 @@ dependencies = [
 name = "xtask"
 version = "0.1.0"
 dependencies = [
+ "toml",
  "vleo-data",
  "vleo-sheet",
  "vleo-units",

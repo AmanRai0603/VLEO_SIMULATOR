@@ -13,6 +13,7 @@ publish = false
 vleo-sheet = { workspace = true }
 vleo-units = { workspace = true }
 vleo-data = { workspace = true }
+toml = { workspace = true }
 
 [lints.rust]
 unsafe_code = "forbid"
