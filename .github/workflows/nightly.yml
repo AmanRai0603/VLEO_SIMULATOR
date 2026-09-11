@@ -44,3 +44,11 @@ jobs:
 
       - name: 6 · reference data freshness
         run: cargo run -p xtask -- bundle verify
+
+      # Gaps W6 and W7. Cost per agent and firing rate were declared as things
+      # to watch with no instrument behind them, and a target with no meter is
+      # an intention. Read from the harness's own local logs, so it reports
+      # nothing on a runner that has none — which is the honest answer, and
+      # different from a fleet that costs nothing.
+      - name: 7 · the fleet — what fired, and what it cost
+        run: python3 tools/fleet_report.py || true

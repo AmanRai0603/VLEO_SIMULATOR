@@ -117,6 +117,8 @@ jobs:
       # Gap W8: the instruction files are an input to every node and were the
       # only input nothing checked. Stale references are what they will really
       # have — a path renamed by a commit that never opened one.
+      - name: the fleet instrument
+        run: python3 tools/fleet_report.py --selftest
       - name: the instruction-file lint
         run: |
           python3 tools/instruction_lint.py --selftest

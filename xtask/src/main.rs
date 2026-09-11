@@ -24,6 +24,7 @@ fn main() -> ExitCode {
         "gap" => cmd_gap(&root),
         "graph" => cmd_graph(&root),
         "new" => cmd_new(&root, &rest),
+        "declare" => cmd_declare(&root, &rest),
         "fill" => cmd_fill(&root, &rest),
         "ready" => cmd_ready(&root, &rest),
         "codeowners" => cmd_codeowners(&root),
@@ -69,6 +70,10 @@ cargo xtask <command>
                      clone the shape of a sibling and blank what must be
                      re-decided. Not a copy: a real copy drags a stale source
                      citation through thirty nodes.
+  declare <node>     the completion questions, in order, with what each one is
+                     for. A gap left open is not a warning: generation refuses
+                     until every one is answered. Add --source <path> to record
+                     where the drafting started.
   fill <node> --hole <n> --body <file|->
                      splice one hole body into a generated model.rs. The hole
                      filler is never handed the file: it returns the few typed
@@ -511,6 +516,180 @@ fn deepest_chain(tree: &Tree) -> Vec<String> {
     best
 }
 
+/// The completion questions, and which of them are still open.
+///
+/// The questions are derived from what the generator will need, not composed
+/// freely: a fixed set is repeatable across engineers and nodes, and an open
+/// conversation is not. Each one exists because something downstream cannot be
+/// emitted without it, and this says which thing.
+///
+/// It answers nothing. Agent A drafts from a source, an engineer decides, and
+/// this is the list they are deciding against — the same list `xtask docs`
+/// refuses on, so there is never a question that blocks generation and is not
+/// on this page.
+fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
+    let id = args
+        .first()
+        .ok_or("usage: cargo xtask declare <node> [--source <path>]")?;
+    let source = args
+        .iter()
+        .position(|a| *a == "--source")
+        .and_then(|i| args.get(i + 1));
+    let tree = load(root)?;
+    let sh = tree.sheets.get(*id).ok_or_else(|| {
+        format!("no node '{id}'. `cargo xtask new {id} --like <sibling>` starts one")
+    })?;
+
+    println!(
+        "\x1b[1m{}\x1b[0m — {}",
+        sh.id,
+        if sh.label.is_empty() {
+            "(no label yet)"
+        } else {
+            &sh.label
+        }
+    );
+    if let Some(src) = source {
+        println!("  drafting from {src}");
+    }
+    println!("  {}", sh.dir.join("node.toml").display());
+    println!();
+
+    // (field, question, what cannot be emitted without it)
+    let asks: Vec<(&str, &str, &str)> = vec![
+        (
+            "label",
+            "what is this row called, in the tree",
+            "the page title and every reference to it",
+        ),
+        (
+            "question",
+            "what one question does it answer",
+            "an equation with no question gets reused for the wrong thing",
+        ),
+        (
+            "expression",
+            "what is the relation",
+            "the algorithm, and what a reviewer compares against the source",
+        ),
+        (
+            "source",
+            "cited where — book, paper, page",
+            "this is the claim everything else rests on",
+        ),
+        (
+            "symbol",
+            "what is the answer's symbol",
+            "the binding name in the generated signature",
+        ),
+        (
+            "type",
+            "what quantity is it",
+            "the signature; a dimensional error has to fail to compile",
+        ),
+        (
+            "unit",
+            "in what unit",
+            "the conversion at every face boundary",
+        ),
+        (
+            "reason_lower",
+            "why is the lower bound there",
+            "a guard whose reason is not written gets deleted by the next person",
+        ),
+        (
+            "reason_upper",
+            "why is the upper bound there",
+            "the same, at the other end",
+        ),
+    ];
+    let have = |f: &str| -> &str {
+        match f {
+            "label" => &sh.label,
+            "question" => &sh.question,
+            "expression" => &sh.expression,
+            "source" => &sh.source,
+            "symbol" => &sh.symbol,
+            "type" => &sh.ty,
+            "unit" => &sh.unit,
+            "reason_lower" => &sh.reason_lower,
+            "reason_upper" => &sh.reason_upper,
+            _ => "",
+        }
+    };
+
+    // The open set comes from the same function `xtask docs` refuses on, so
+    // there can never be a question that blocks generation and is not on this
+    // page. Two lists that must agree are two lists that will not.
+    let blocking = unfilled(sh);
+    for (field, _, _) in &asks {
+        if !blocking.contains(field) && have(field).trim().is_empty() {
+            return Err(format!(
+                "'{field}' is blank and does not block generation — declare and docs disagree \
+                 about what a finished sheet is"
+            ));
+        }
+    }
+
+    let mut open = 0usize;
+    for (field, ask, why) in &asks {
+        let v = have(field);
+        if blocking.contains(field) {
+            open += 1;
+            println!("  \x1b[33m?\x1b[0m  {ask}");
+            println!("     {field} — without it: {why}");
+        } else {
+            println!("  \x1b[32m·\x1b[0m  {field} = {}", truncate(v, 68));
+        }
+    }
+
+    // The decisions that are not fields on the sheet but change what happens.
+    println!();
+    println!(
+        "  criticality = {} — {}",
+        sh.criticality,
+        if sh.criticality == "significant" {
+            "two reviewers, and the hole filled twice by different model families"
+        } else {
+            "one reviewer; raise it on purpose, not by default"
+        }
+    );
+    if !sh.migrated_from.is_empty() {
+        println!(
+            "  migrated_from = {} — its numbers go in parity.csv, never in fixtures.toml",
+            sh.migrated_from
+        );
+    }
+    if !sh.is_declared() {
+        println!(
+            "  {} numbered step(s), {} declared input(s)",
+            sh.steps.len(),
+            sh.inputs.len()
+        );
+    }
+
+    println!();
+    if open == 0 {
+        println!("0 gaps open · ready to generate — `cargo xtask docs {id}`");
+    } else {
+        println!(
+            "\x1b[33m{open} question(s) open.\x1b[0m Generation refuses until they are answered. \
+             That refusal is the mechanism: it turns ambiguity from something an implementer \
+             settles quietly into a blocking item on an engineer's screen."
+        );
+    }
+    Ok(())
+}
+
+fn truncate(s: &str, n: usize) -> String {
+    let one = s.split_whitespace().collect::<Vec<_>>().join(" ");
+    if one.chars().count() <= n {
+        one
+    } else {
+        format!("{}…", one.chars().take(n - 1).collect::<String>())
+    }
+}
+
 /// Has this node earned a person's attention yet?
 ///
 /// The working model's change 2: a node tester that must pass before anybody is
@@ -799,7 +978,8 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
     )
     .map_err(|e| e.to_string())?;
     println!("new: {}", dir.display());
-    println!("Now fill the sheet, then `cargo xtask docs {id}`.");
+    println!("`cargo xtask declare {id}` lists what must be answered first.");
+    println!("Then `cargo xtask docs {id}`.");
     println!("Generation refuses while any field is open, and names the fields. That refusal is the mechanism: ambiguity becomes a blocking item on an engineer's screen rather than something an implementer resolves silently.");
     println!("When it generates, `cargo xtask ready {id}` says whether a person should be asked to look yet.");
     Ok(())

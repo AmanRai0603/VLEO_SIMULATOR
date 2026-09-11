@@ -45,11 +45,14 @@ the blocked. A sweep records refused points; it never drops them.
 
 ## The commands
 
+    cargo run -p xtask -- declare <node>    the completion questions, and which
+                                            are still open
     cargo run -p xtask -- docs [<node>]     the six per-node generators
     cargo run -p xtask -- assemble          the three assembly generators
     cargo run -p xtask -- gate [<node>]     the checks, in order
     cargo run -p xtask -- fill <node> --hole <n> --body -
                                             splice one hole body
+    cargo run -p xtask -- ready [<node>]    has it earned a person's attention
     cargo run -p xtask -- status            what exists, what is blocking
     cargo run -p xtask -- gap               what the sheets promised and
                                             nothing covers
