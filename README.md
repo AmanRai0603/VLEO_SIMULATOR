@@ -411,6 +411,8 @@ showing an optimum near 300 km](docs/img/sweep.png)
    configured is created empty and approves instantly. The release job's first
    step reads the environment's protection rules and stops if nobody is
    required, so the absence fails the release rather than passing it quietly.
+   `docs/RELEASE_SETUP.md` is the whole procedure, including the plan
+   constraint that applies to a private repository on a personal account.
 
 ---
 
