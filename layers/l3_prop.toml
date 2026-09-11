@@ -11,12 +11,13 @@ label = "Propulsion · ICP plasma thruster"
 parent = "root"
 owner = "propulsion"
 layer = 3
+order = 105
 box = true   # drawn as a nested box on the diagonal
 tone = "teal"
 cases = []   # empty means every case
 
 [[relates]]
 from = "l3_prop"
-to = "sys_keep_orbit"
+to = "sys_propulsion"
 why = "the subsystem's only route to the system is its interface node"
 

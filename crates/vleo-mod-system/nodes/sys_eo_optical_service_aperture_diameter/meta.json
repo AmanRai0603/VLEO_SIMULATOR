@@ -1,0 +1,13 @@
+{
+  "id": "sys_eo_optical_service_aperture_diameter",
+  "state": "empty",
+  "sheet_hash": "0afaa1",
+  "impl_hash": "222325",
+  "owner": "payload",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": ["sys_kpi_achieved_eo_isr_gsd", "sys_kpi_achieved_eo_isr_image_snr", "sys_kpi_achieved_eo_isr_dwell_time"],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

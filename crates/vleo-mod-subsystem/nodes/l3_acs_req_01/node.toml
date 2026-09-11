@@ -2,7 +2,7 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "l3_acs_req_01"
-label = "Target 1 from the system layer — to be named"
+label = "Attitude deadband"
 folder = "l3_acs_req_01"   # frozen at seed; renaming the label never moves the directory
 subsystem = "acs"
 parent = "l3_acs"
@@ -10,6 +10,12 @@ kind = "required"
 owner = "gnc"
 tier = ""
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 1130
 state = "empty"
 
 # SEEDED — the folder exists and nothing has been specified in it.

@@ -1,0 +1,23 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "sys_mission_requirements"
+label = "Mission requirements"
+parent = "sys_mission_performance"
+owner = "systems"
+layer = 2
+order = 68
+box = false   # drawn as a nested box on the diagonal
+tone = "violet"
+cases = []   # empty means every case
+
+[[relates]]
+from = "sys_mission_requirements"
+to = "sys_orbit_geometry"
+why = "coverage band, revisit and access gap drive the orbit"
+

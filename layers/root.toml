@@ -11,6 +11,7 @@ label = "VLEO multipayload programme"
 parent = ""
 owner = "systems"
 layer = 0
+order = 0
 box = true   # drawn as a nested box on the diagonal
 tone = "slate"
 cases = []   # empty means every case

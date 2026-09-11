@@ -1,0 +1,13 @@
+{
+  "id": "sys_pnt_service_clock_stability",
+  "state": "empty",
+  "sheet_hash": "9c6156",
+  "impl_hash": "222325",
+  "owner": "payload",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": [],
+  "contributes": ["sys_kpi_achieved_comms_time_transfer", "sys_kpi_achieved_pnt_time_transfer", "sys_kpi_achieved_eo_isr_cep90", "sys_kpi_achieved_pnt_cep90", "sys_kpi_achieved_pnt_position_accuracy", "sys_kpi_achieved_pnt_time_to_first_fix", "sys_kpi_achieved_pnt_integrity_risk"],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

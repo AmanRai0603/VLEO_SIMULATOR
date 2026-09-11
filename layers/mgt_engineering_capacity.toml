@@ -1,0 +1,38 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "mgt_engineering_capacity"
+label = "Engineering capacity"
+parent = "mgt_orbitt_capability"
+owner = "programme"
+layer = 1
+order = 52
+box = false   # drawn as a nested box on the diagonal
+tone = "violet"
+cases = []   # empty means every case
+
+[[relates]]
+from = "mgt_engineering_capacity"
+to = "mgt_customer_1"
+why = "the engineering capacity available to it"
+
+[[relates]]
+from = "mgt_engineering_capacity"
+to = "mgt_customer_2"
+why = "the engineering capacity available to it"
+
+[[relates]]
+from = "mgt_engineering_capacity"
+to = "mgt_customer_3"
+why = "the engineering capacity available to it"
+
+[[relates]]
+from = "mgt_engineering_capacity"
+to = "mgt_schedule_and_critical_path"
+why = "capacity against the plan"
+

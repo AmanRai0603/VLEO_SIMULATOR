@@ -1,0 +1,13 @@
+{
+  "id": "sys_multi_payload_payload_mass_fraction",
+  "state": "empty",
+  "sheet_hash": "047ac9",
+  "impl_hash": "222325",
+  "owner": "mass",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": ["sys_payload_interface_payload_mass", "sys_mass_and_aero_spacecraft_dry_mass"],
+  "contributes": [],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

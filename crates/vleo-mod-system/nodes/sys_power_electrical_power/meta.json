@@ -1,0 +1,13 @@
+{
+  "id": "sys_power_electrical_power",
+  "state": "empty",
+  "sheet_hash": "92549e",
+  "impl_hash": "222325",
+  "owner": "power",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": ["sys_power_ppu_power", "sys_power_bus_power_demand"],
+  "contributes": ["sys_kpi_achieved_comms_throughput", "sys_kpi_achieved_eo_isr_collection_capacity", "sys_kpi_achieved_eo_isr_dwell_time"],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

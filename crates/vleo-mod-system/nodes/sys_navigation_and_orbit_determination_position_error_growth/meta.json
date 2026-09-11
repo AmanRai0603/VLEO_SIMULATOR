@@ -1,0 +1,13 @@
+{
+  "id": "sys_navigation_and_orbit_determination_position_error_growth",
+  "state": "empty",
+  "sheet_hash": "e5f2e3",
+  "impl_hash": "222325",
+  "owner": "gnc",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": ["sys_navigation_sensing_unmodelled_acceleration", "sys_navigation_and_orbit_determination_navigation_filter_rate"],
+  "contributes": [],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

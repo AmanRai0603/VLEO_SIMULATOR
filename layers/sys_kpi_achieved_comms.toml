@@ -1,0 +1,23 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "sys_kpi_achieved_comms"
+label = "KPI achieved · comms"
+parent = "sys_communications"
+owner = "systems"
+layer = 2
+order = 59
+box = false   # drawn as a nested box on the diagonal
+tone = "amber"
+cases = []   # empty means every case
+
+[[relates]]
+from = "sys_kpi_achieved_comms"
+to = "sys_kpi_required_comms"
+why = "achieved against required — the comms design closes only if every target is met"
+

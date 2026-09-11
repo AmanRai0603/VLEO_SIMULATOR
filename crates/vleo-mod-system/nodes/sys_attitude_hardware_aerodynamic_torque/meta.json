@@ -1,0 +1,13 @@
+{
+  "id": "sys_attitude_hardware_aerodynamic_torque",
+  "state": "empty",
+  "sheet_hash": "95e375",
+  "impl_hash": "222325",
+  "owner": "gnc",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": ["sys_mass_and_aero_drag_acceleration", "sys_mass_and_aero_centre_of_pressure_offset"],
+  "contributes": [],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

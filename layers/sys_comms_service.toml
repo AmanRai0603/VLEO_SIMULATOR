@@ -1,0 +1,33 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "sys_comms_service"
+label = "Comms service"
+parent = "sys_service_payloads"
+owner = "payload"
+layer = 2
+order = 101
+box = false   # drawn as a nested box on the diagonal
+tone = "amber"
+cases = []   # empty means every case
+
+[[relates]]
+from = "sys_comms_service"
+to = "sys_kpi_achieved_comms"
+why = "carrier frequency, EIRP, G/T, number of beams"
+
+[[relates]]
+from = "sys_comms_service"
+to = "sys_kpi_achieved_eo_isr"
+why = "EIRP, G/T and carrier frequency set the link margin allocation"
+
+[[relates]]
+from = "sys_comms_service"
+to = "sys_kpi_achieved_pnt"
+why = "EIRP, G/T and carrier frequency set the link margin allocation"
+

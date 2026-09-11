@@ -1,0 +1,18 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "sys_kpi_required_eo_isr"
+label = "KPI required · EO / ISR"
+parent = "sys_earth_observation_and_isr"
+owner = "systems"
+layer = 2
+order = 61
+box = false   # drawn as a nested box on the diagonal
+tone = "amber"
+cases = []   # empty means every case
+

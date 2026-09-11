@@ -719,7 +719,7 @@ pub fn tables_rs(tree: &Tree) -> String {
             .join(", ");
         o.push_str(&format!(
             "    NodeDef {{ id: \"{id}\", label: \"{label}\", subsystem: \"{sub}\", folder: \"{folder}\", \
-             parent: \"{par}\", layer: {layer}, crosses_to: \"{crosses}\", \
+             parent: \"{par}\", layer: {layer}, order: {order}, crosses_to: \"{crosses}\", \
              kind: {kind}, state: {state}, retirement: Retirement::Live, owner: \"{owner}\", tier: {tier}, \
              question: \"{q}\", expression: \"{e}\", source: \"{src}\", assumptions: &[{asm}], steps: &[{steps}], \
              inputs: &[{inputs}], outputs: &[{outputs}], contributes: &[{kpis}], bundles: &[{bundles}], \
@@ -730,6 +730,7 @@ pub fn tables_rs(tree: &Tree) -> String {
             folder = esc(&format!("crates/{}/nodes/{}", sh.crate_name, sh.folder)),
             par = esc(&sh.parent),
             layer = sh.layer,
+            order = sh.order,
             crosses = esc(&sh.crosses_to),
             kind = kind_variant(&sh.kind),
             state = state_variant(&sh.state),
@@ -854,6 +855,10 @@ pub fn tables_rs(tree: &Tree) -> String {
          \x20   pub owner: &'static str,\n\
          \x20   /// 1 management · 2 the system · 3 subsystem · 4 the run.\n\
          \x20   pub layer: u8,\n\
+         \x20   /// Where the heading sits among its siblings, as it was written.\n\
+         \x20   /// A face that draws the tree sorts by this; the table itself is\n\
+         \x20   /// folder-ordered so that generation stays deterministic.\n\
+         \x20   pub order: u32,\n\
          \x20   /// Drawn as a nested box on the diagonal. A mark inside a box is\n\
          \x20   /// coupling that subtree owns; a mark outside it crosses a boundary.\n\
          \x20   pub is_box: bool,\n\
@@ -870,12 +875,13 @@ pub fn tables_rs(tree: &Tree) -> String {
     ));
     for g in tree.groups.values() {
         o.push_str(&format!(
-            "    GroupDef {{ id: \"{}\", label: \"{}\", parent: \"{}\", owner: \"{}\", layer: {}, is_box: {}, tone: \"{}\", cases: &[{}] }},\n",
+            "    GroupDef {{ id: \"{}\", label: \"{}\", parent: \"{}\", owner: \"{}\", layer: {}, order: {}, is_box: {}, tone: \"{}\", cases: &[{}] }},\n",
             esc(&g.id),
             esc(&g.label),
             esc(&g.parent),
             esc(&g.owner),
             g.layer,
+            g.order,
             g.is_box,
             esc(&g.tone),
             g.cases

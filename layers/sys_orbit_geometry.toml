@@ -1,0 +1,53 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "sys_orbit_geometry"
+label = "Orbit geometry"
+parent = "sys_orbit_and_environment"
+owner = "environment"
+layer = 2
+order = 70
+box = false   # drawn as a nested box on the diagonal
+tone = "violet"
+cases = []   # empty means every case
+
+[[relates]]
+from = "sys_orbit_geometry"
+to = "sys_kpi_achieved_comms"
+why = "altitude, inclination, LTAN, eccentricity"
+
+[[relates]]
+from = "sys_orbit_geometry"
+to = "sys_kpi_achieved_eo_isr"
+why = "altitude, inclination, LTAN, eccentricity"
+
+[[relates]]
+from = "sys_orbit_geometry"
+to = "sys_kpi_achieved_pnt"
+why = "altitude, inclination, LTAN, eccentricity"
+
+[[relates]]
+from = "sys_orbit_geometry"
+to = "sys_constellation_trade_output"
+why = "the orbit the constellation is built from"
+
+[[relates]]
+from = "sys_orbit_geometry"
+to = "sys_space_environment"
+why = "altitude and epoch fix the environment"
+
+[[relates]]
+from = "sys_orbit_geometry"
+to = "sys_eo_optical_service"
+why = "altitude sets ground sample distance and swath"
+
+[[relates]]
+from = "sys_orbit_geometry"
+to = "sys_comms_service"
+why = "altitude sets slant range and Doppler"
+

@@ -103,6 +103,7 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
         tier: s(t.get("tier")),
         state: s(t.get("state")),
         layer: u(t.get("layer")) as u8,
+        order: u(t.get("order")),
         crosses_to: s(t.get("crosses_to")),
         crate_name: crate_name.to_string(),
         dir: dir.to_path_buf(),
@@ -341,6 +342,7 @@ fn load_layers(tree: &mut Tree) -> Result<(), String> {
                 parent: s(g.get("parent")),
                 owner: s(g.get("owner")),
                 layer: u(g.get("layer")) as u8,
+                order: u(g.get("order")),
                 is_box: g.get("box").and_then(|b| b.as_bool()).unwrap_or(false),
                 tone: s(g.get("tone")),
                 cases: g

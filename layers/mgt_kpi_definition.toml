@@ -1,0 +1,28 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "mgt_kpi_definition"
+label = "KPI definition"
+parent = "mgt_customer_1"
+owner = "systems"
+layer = 1
+order = 5
+box = false   # drawn as a nested box on the diagonal
+tone = "teal"
+cases = []   # empty means every case
+
+[[relates]]
+from = "mgt_kpi_definition"
+to = "mgt_concept_decision"
+why = "the targets the concepts are compared on"
+
+[[relates]]
+from = "mgt_kpi_definition"
+to = "mgt_customer_1"
+why = "the targets it must hit"
+

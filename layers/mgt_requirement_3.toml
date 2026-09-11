@@ -1,0 +1,28 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "mgt_requirement_3"
+label = "Requirement"
+parent = "mgt_customer_3"
+owner = "systems"
+layer = 1
+order = 16
+box = false   # drawn as a nested box on the diagonal
+tone = "teal"
+cases = []   # empty means every case
+
+[[relates]]
+from = "mgt_requirement_3"
+to = "mgt_kpi_definition_3"
+why = "the requirement the KPIs are drawn from"
+
+[[relates]]
+from = "mgt_requirement_3"
+to = "mgt_value_proposition_3"
+why = "judged against what was asked for"
+

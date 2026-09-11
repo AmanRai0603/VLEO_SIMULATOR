@@ -1,0 +1,23 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "sys_structure"
+label = "Structure"
+parent = "sys_satellite_system"
+owner = "mass"
+layer = 2
+order = 76
+box = false   # drawn as a nested box on the diagonal
+tone = "slate"
+cases = []   # empty means every case
+
+[[relates]]
+from = "sys_structure"
+to = "sys_payload_interface"
+why = "accommodation volume for the instruments"
+

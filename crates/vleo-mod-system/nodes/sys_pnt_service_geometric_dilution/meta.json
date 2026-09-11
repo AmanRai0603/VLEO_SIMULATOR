@@ -1,0 +1,13 @@
+{
+  "id": "sys_pnt_service_geometric_dilution",
+  "state": "empty",
+  "sheet_hash": "4f2bb3",
+  "impl_hash": "222325",
+  "owner": "payload",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": ["sys_constellation_trade_output_number_of_planes", "sys_constellation_trade_output_satellites_per_plane"],
+  "contributes": [],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

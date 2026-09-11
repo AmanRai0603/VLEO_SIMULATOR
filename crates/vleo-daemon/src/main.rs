@@ -435,6 +435,7 @@ fn index_json() -> String {
         j.str_field("label", d.label);
         j.str_field("parent", d.parent);
         j.num_field("layer", d.layer as f64);
+        j.num_field("order", d.order as f64);
         j.str_field("crosses", d.crosses_to);
         j.str_field("sub", d.subsystem);
         j.str_field("kind", d.kind.name());
@@ -477,6 +478,7 @@ fn index_json() -> String {
         j.str_field("parent", g.parent);
         j.str_field("owner", g.owner);
         j.num_field("layer", g.layer as f64);
+        j.num_field("order", g.order as f64);
         j.bool_field("box", g.is_box);
         j.str_field("tone", g.tone);
         j.key("cases").open_arr();

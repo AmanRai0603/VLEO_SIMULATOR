@@ -1,0 +1,13 @@
+{
+  "id": "sys_launch_ground_and_disposal_daily_contact_time",
+  "state": "empty",
+  "sheet_hash": "6f7218",
+  "impl_hash": "222325",
+  "owner": "environment",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": ["sys_launch_ground_and_disposal_pass_duration", "sys_launch_ground_and_disposal_passes_per_day"],
+  "contributes": [],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

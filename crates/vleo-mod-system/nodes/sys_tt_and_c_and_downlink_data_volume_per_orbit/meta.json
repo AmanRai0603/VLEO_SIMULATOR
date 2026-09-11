@@ -1,0 +1,13 @@
+{
+  "id": "sys_tt_and_c_and_downlink_data_volume_per_orbit",
+  "state": "empty",
+  "sheet_hash": "7e3e94",
+  "impl_hash": "222325",
+  "owner": "comms",
+  "tier": "",
+  "fixtures": 0,
+  "holes": 0,
+  "inputs": ["sys_tt_and_c_and_downlink_telemetry_rate", "sys_orbit_geometry_orbital_period"],
+  "contributes": [],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

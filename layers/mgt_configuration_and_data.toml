@@ -1,0 +1,18 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "mgt_configuration_and_data"
+label = "Configuration & data"
+parent = "mgt_programme_control"
+owner = "programme"
+layer = 1
+order = 26
+box = false   # drawn as a nested box on the diagonal
+tone = "green"
+cases = []   # empty means every case
+

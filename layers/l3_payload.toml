@@ -11,12 +11,13 @@ label = "Payload"
 parent = "root"
 owner = "payload"
 layer = 3
+order = 107
 box = true   # drawn as a nested box on the diagonal
 tone = "teal"
 cases = []   # empty means every case
 
 [[relates]]
 from = "l3_payload"
-to = "sys_payloads"
+to = "sys_payload_interface"
 why = "the subsystem's only route to the system is its interface node"
 

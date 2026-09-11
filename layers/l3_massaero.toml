@@ -7,16 +7,17 @@
 
 [[group]]
 id = "l3_massaero"
-label = "Mass and aerodynamics"
+label = "Mass and aero"
 parent = "root"
 owner = "mass"
 layer = 3
+order = 106
 box = true   # drawn as a nested box on the diagonal
 tone = "teal"
 cases = []   # empty means every case
 
 [[relates]]
 from = "l3_massaero"
-to = "sys_satellite"
+to = "sys_mass_and_aero"
 why = "the subsystem's only route to the system is its interface node"
 

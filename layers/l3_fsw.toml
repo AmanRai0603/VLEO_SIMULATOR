@@ -11,12 +11,13 @@ label = "Flight software"
 parent = "root"
 owner = "avionics"
 layer = 3
+order = 110
 box = true   # drawn as a nested box on the diagonal
 tone = "teal"
 cases = []   # empty means every case
 
 [[relates]]
 from = "l3_fsw"
-to = "sys_command"
+to = "sys_avionics_and_software"
 why = "the subsystem's only route to the system is its interface node"
 

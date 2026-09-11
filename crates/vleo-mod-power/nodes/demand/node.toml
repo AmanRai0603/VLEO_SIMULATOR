@@ -5,11 +5,17 @@ id = "pwr_demand"
 label = "Total bus power demand"
 folder = "demand"   # frozen at seed; renaming the label never moves the directory
 subsystem = "power"
-parent = "sys_power"
+parent = "l3_power"
 kind = "computed"
 owner = "power"
 tier = "A"
-layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 585
 state = "published"
 
 [question]

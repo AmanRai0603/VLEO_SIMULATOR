@@ -1,0 +1,43 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "sys_space_environment"
+label = "Space environment"
+parent = "sys_orbit_and_environment"
+owner = "environment"
+layer = 2
+order = 72
+box = false   # drawn as a nested box on the diagonal
+tone = "violet"
+cases = []   # empty means every case
+
+[[relates]]
+from = "sys_space_environment"
+to = "sys_mass_and_aero"
+why = "ρ and thermospheric wind — the drag input"
+
+[[relates]]
+from = "sys_space_environment"
+to = "sys_propulsion"
+why = "ρ · V², the drag the thruster must beat"
+
+[[relates]]
+from = "sys_space_environment"
+to = "sys_thermal"
+why = "free-molecular heat flux"
+
+[[relates]]
+from = "sys_space_environment"
+to = "sys_orbit_maintenance"
+why = "density variability — the re-plan trigger"
+
+[[relates]]
+from = "sys_space_environment"
+to = "sys_navigation_and_orbit_determination"
+why = "unmodelled acceleration to be estimated"
+

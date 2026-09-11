@@ -11,12 +11,13 @@ label = "Navigation sensing"
 parent = "root"
 owner = "gnc"
 layer = 3
+order = 119
 box = true   # drawn as a nested box on the diagonal
 tone = "teal"
 cases = []   # empty means every case
 
 [[relates]]
 from = "l3_navsense"
-to = "sys_know"
+to = "sys_navigation_sensing"
 why = "the subsystem's only route to the system is its interface node"
 

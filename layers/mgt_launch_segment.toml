@@ -1,0 +1,38 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+[[group]]
+id = "mgt_launch_segment"
+label = "Launch segment"
+parent = "mgt_mission_segments"
+owner = "systems"
+layer = 1
+order = 29
+box = false   # drawn as a nested box on the diagonal
+tone = "green"
+cases = []   # empty means every case
+
+[[relates]]
+from = "mgt_launch_segment"
+to = "mgt_cost_and_price"
+why = "launch cost and slot"
+
+[[relates]]
+from = "mgt_launch_segment"
+to = "mgt_cost_and_price_2"
+why = "launch cost and slot"
+
+[[relates]]
+from = "mgt_launch_segment"
+to = "mgt_cost_and_price_3"
+why = "launch cost and slot"
+
+[[relates]]
+from = "mgt_launch_segment"
+to = "mgt_schedule_and_critical_path"
+why = "the launch date the schedule hangs on"
+

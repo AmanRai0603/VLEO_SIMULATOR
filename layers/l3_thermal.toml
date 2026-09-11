@@ -11,12 +11,13 @@ label = "Thermal"
 parent = "root"
 owner = "thermal"
 layer = 3
+order = 109
 box = true   # drawn as a nested box on the diagonal
 tone = "teal"
 cases = []   # empty means every case
 
 [[relates]]
 from = "l3_thermal"
-to = "sys_cool"
+to = "sys_thermal"
 why = "the subsystem's only route to the system is its interface node"
 

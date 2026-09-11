@@ -84,10 +84,16 @@ function secNode() {
     total + ' times.') +
 
   h4('what is specified, and what is deliberately not') +
+  '<p class="prose">Layers 1 and 2 are CD-06\'s own rows, verbatim — 228 and 367 of them, with the ' +
+  'edges the document declares between them. Nothing here names a variable those two layers do not ' +
+  'already contain. Layer 3 the document specifies by shape only, so its targets are derived (a target ' +
+  'equals the parent\'s variable, one for one) and its own working stays unnamed until somebody ' +
+  'names it.</p>' +
   '<p class="prose">The ' + withCode + ' specified rows are the <b>engine-sizing chain</b> — atmosphere, ' +
   'aerodynamics, intake, thruster, power — carried end to end to the thrust-against-drag closure, plus ' +
-  'one simple reference design case to run it against. That is enough to exercise every mechanism in ' +
-  'the tool: units, guards, cycles, evidence, credibility, the chain hash and the sweep.</p>' +
+  'one simple reference design case to run it against. They sit at layer 3, which is where a ' +
+  'decomposition of a layer-2 variable belongs: CD-06 holds <i>Drag coefficient</i> as one row and this ' +
+  'chain decomposes it into dynamic pressure, speed ratio, frontal area and drag force.</p>' +
   '<p class="prose">Not all of them return a number. A declared limit that refuses is the guard ' +
   'doing its job, and at the reference case two of them fire — the atomic oxygen fluence sits above ' +
   'the ceiling an external surface survives, and the geolocation error sits below the floor any ' +
