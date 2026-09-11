@@ -28,6 +28,7 @@ vleo-mod-payload = { path = "../vleo-mod-payload" }
 vleo-mod-pointing = { path = "../vleo-mod-pointing" }
 vleo-mod-power = { path = "../vleo-mod-power" }
 vleo-mod-prop = { path = "../vleo-mod-prop" }
+vleo-mod-solar = { path = "../vleo-mod-solar" }
 vleo-mod-struct = { path = "../vleo-mod-struct" }
 vleo-mod-system = { path = "../vleo-mod-system" }
 vleo-mod-thermal = { path = "../vleo-mod-thermal" }

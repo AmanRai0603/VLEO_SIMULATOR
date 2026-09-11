@@ -1,0 +1,45 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+# THE FIRST SUBSYSTEM ADDED AFTER THE SEED.
+#
+# The seeded tree gave sys_space_environment six rows at layer 2 — solar flux,
+# F10.7, Ap, atmospheric density, thermospheric wind, atomic oxygen fluence —
+# and no layer-3 group to answer them. Every other layer-2 heading has one;
+# this one did not, which is why all six sit empty.
+#
+# l3_x_envorbit crosses to sys_orbit_and_environment, the level ABOVE space
+# environment, so it does not answer them either. The gap is a subsystem, not a
+# missing row: the solar-weather record is somebody's whole job, and the system
+# layer wants one conclusion from it rather than the working.
+
+[[group]]
+id = "l3_solar"
+label = "Solar weather — addition"
+parent = "root"
+owner = "environment"
+layer = 3
+order = 120
+box = true   # drawn as a nested box on the diagonal
+tone = "amber"
+cases = []   # empty means every case
+
+# The seam. One crossing node per subsystem is the rule with seventeen
+# instances and no exceptions, and this edge is its group-level twin.
+[[relates]]
+from = "l3_solar"
+to = "sys_space_environment"
+why = "it decomposes the solar-weather record into the drivers the system designs to"
+
+# Why the drivers matter, stated where the reader meets the group rather than
+# left to be inferred from the graph. Each of these is a real consumer today:
+# the exospheric temperature reads F10.7, F10.7A and Kp directly, and density
+# carries most of its solar response on the 81-day mean.
+[[relates]]
+from = "l3_solar"
+to = "l3_x_envorbit"
+why = "F10.7, the 81-day mean and Kp are what the exospheric temperature is computed from"

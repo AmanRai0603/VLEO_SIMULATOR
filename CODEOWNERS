@@ -612,6 +612,7 @@
 /crates/vleo-mod-prop/nodes/l3_prop_req_17/ @propulsion
 /crates/vleo-mod-prop/nodes/l3_prop_req_18/ @propulsion
 /crates/vleo-mod-prop/nodes/l3_prop_req_19/ @propulsion
+/crates/vleo-mod-solar/nodes/l3_solar_interface/ @environment
 /crates/vleo-mod-struct/nodes/l3_struct_ach_01/ @mass
 /crates/vleo-mod-struct/nodes/l3_struct_ach_02/ @mass
 /crates/vleo-mod-struct/nodes/l3_struct_ach_03/ @mass

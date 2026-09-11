@@ -27,6 +27,7 @@ members = [
     "crates/vleo-mod-pointing",
     "crates/vleo-mod-power",
     "crates/vleo-mod-prop",
+    "crates/vleo-mod-solar",
     "crates/vleo-mod-struct",
     "crates/vleo-mod-system",
     "crates/vleo-mod-thermal",
