@@ -459,16 +459,17 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
         .sheets
         .get(*like)
         .ok_or_else(|| format!("no node '{like}' to clone the shape of"))?;
-    let folder = id.split('_').skip(1).collect::<Vec<_>>().join("_");
+    // The folder is the identifier. This used to strip the subsystem prefix,
+    // which is how it came to disagree with the seeder: `prop_throat_area`
+    // landed in `nodes/throat_area` while the tree already held it under its
+    // own name, and two folders then claimed one id. The gate caught it, but
+    // the rule only has to exist once for that not to happen at all.
+    let folder = id.to_string();
     let dir = root
         .join("crates")
         .join(&src.crate_name)
         .join("nodes")
-        .join(if folder.is_empty() {
-            id.to_string()
-        } else {
-            folder.clone()
-        });
+        .join(&folder);
     if dir.exists() {
         return Err(format!("{} already exists", dir.display()));
     }
@@ -481,14 +482,7 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
         if l.starts_with("id = ") {
             out.push_str(&format!("id = \"{id}\"\n"));
         } else if l.starts_with("folder = ") {
-            out.push_str(&format!(
-                "folder = \"{}\"   # frozen at seed\n",
-                if folder.is_empty() {
-                    id.to_string()
-                } else {
-                    folder.clone()
-                }
-            ));
+            out.push_str(&format!("folder = \"{folder}\"   # frozen at seed\n"));
         } else if l.starts_with("label = ")
             || l.starts_with("text = ")
             || l.starts_with("expression = ")
