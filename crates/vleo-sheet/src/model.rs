@@ -93,6 +93,19 @@ pub struct Sheet {
     pub note: String,
     pub expression: String,
     pub source: String,
+    /// Who supplied this relation, and when.
+    ///
+    /// Agent A may never supply mathematics, and that prohibition had nothing
+    /// mechanical behind it: an invented formula that runs cleanly is the worst
+    /// failure this system can have, and it looked exactly like a cited one.
+    /// A name here is the authorship record the completion questions are
+    /// supposed to produce — so an agent cannot supply a relation without
+    /// forging a person's attribution, which is a different and much larger
+    /// thing than filling a blank field.
+    ///
+    /// It does not make the formula right. It makes the formula *somebody's*,
+    /// which is what H1b needs in order to be a review rather than a reading.
+    pub relation_by: String,
     pub assumptions: Vec<Assumption>,
     pub symbol: String,
     pub ty: String,

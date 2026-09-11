@@ -30,7 +30,9 @@ does = "turns a source into the sheet's fields and raises what must be answered 
 writes = ["crates/vleo-mod-*/nodes/*/node.toml", "sources/sources.toml", "docs/**"]
 never = ["crates/vleo-mod-*/nodes/*/fixtures.toml", "crates/vleo-core/**", "xtask/**", "tools/**"]
 may_not = "supply mathematics, a reason, or a value"
-enforced_by = "none — if A invents a formula, only a person catches it. This is exactly why H1b reads the physics"
+enforced_by = """
+partial. It was none: a formula A invented ran cleanly and looked exactly like a cited one. The sheet now carries `[maths] confirmed_by` — who supplied the relation — and a relation with nobody's name against it is a gap, so the node cannot reach H2. An agent can still fill that field, but forging a person's attribution is a different and much larger thing than filling a blank, and it is visible in the diff. What is still not enforced is whether the formula is right, and nothing mechanical will ever be: that is H1b, and it is the reason H1b exists.
+"""
 
 [[agent]]
 id = "B"
@@ -92,4 +94,6 @@ does = "the shell, the tree, the matrix, panel code and plot components"
 writes = ["web/**", "docs/img/**", "docs/**"]
 never = ["crates/**", "xtask/**", "tools/**"]
 may_not = "invent a style token, or ship a figure nobody rendered"
-enforced_by = "partial — path ownership holds it out of the crates. Whether a figure was ever rendered is what the panel checks answer; until a panel is declared, nothing asks"
+enforced_by = """
+partial, and the two halves differ. "Ship a figure nobody rendered" is now enforced: a declared panel is driven in a real browser and must render, must move when each input it claims to read moves, and must match a reference somebody looked at — so an unrendered figure fails in the pipeline. What is not enforced is "invent a style token": nothing compares a colour against the token list, so a hex value typed into a panel passes everything. A panel added with no spec is also unchecked, which is why the definition says the spec goes in the same change as the panel.
+"""

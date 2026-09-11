@@ -647,6 +647,13 @@ pub fn gap_pass(sh: &Sheet, holes: &BTreeMap<u32, String>) -> Vec<String> {
     if sh.owner.trim().is_empty() {
         g.push("no owner — reviews on this node route nowhere".into());
     }
+    if !sh.expression.trim().is_empty() && sh.relation_by.trim().is_empty() {
+        g.push(
+            "the relation has nobody's name against it — an agent may never supply \
+             mathematics, and without an attribution nothing can tell whether one did"
+                .into(),
+        );
+    }
     if sh.criticality == "significant"
         && !sh.dir.join("parity.csv").is_file()
         && sh.fixtures.len() < 2

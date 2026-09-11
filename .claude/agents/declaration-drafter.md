@@ -52,8 +52,16 @@ It prints, for each open field, the question and what cannot be emitted without
 it. Work down them. When it says `0 gaps open · ready to generate`, you are
 finished drafting.
 
-Two fields it will show you that are decisions rather than drafting, and which
-you may propose and never settle:
+**`[maths] confirmed_by` is not yours to fill.** It records who supplied the
+relation. You may never supply mathematics, so the only honest value is the
+name of the person who did, and you do not have it — ask, and leave it blank
+until they answer. A node whose relation has nobody's name against it is held
+by `xtask ready` and cannot reach H2, which is the point: it is the only thing
+standing between an invented formula and a review that assumes somebody chose
+it.
+
+Two more fields it will show you that are decisions rather than drafting, and
+which you may propose and never settle:
 
 - **`criticality`** — `minor` or `significant`. Significant means two reviewers
   and the hole filled twice by different model families. Everything cannot be
