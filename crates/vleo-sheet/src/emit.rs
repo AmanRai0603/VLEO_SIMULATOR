@@ -548,7 +548,7 @@ fn parity(sh: &Sheet, o: &mut String) {
 /// relation away from the one place somebody checked it?
 ///
 /// Four properties, all from this node's own sheet and its own fixtures. None
-/// reads another node, so 1329 rows stay 1329 independent acts.
+/// reads another node, so 1361 rows stay 1361 independent acts.
 ///
 /// 1. **It answers near the known-good point.** Across a decade either side of
 ///    every fixture input, the node must return a value, not a refusal. A hole

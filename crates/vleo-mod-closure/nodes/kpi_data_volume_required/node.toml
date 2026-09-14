@@ -17,6 +17,8 @@ layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 # what the source said.
 order = 1315
 state = "published"
+# delivered volume: more is better, and 500 Gbit is the floor
+sense = ">="
 
 [question]
 text = "What does the customer require for daily downlink volume?"

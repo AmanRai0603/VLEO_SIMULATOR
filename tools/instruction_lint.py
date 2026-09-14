@@ -226,6 +226,23 @@ def check():
             if f not in text:
                 bad.append(("docs/NODE_AUTHORING.md", "does not explain the sheet field '%s'" % f))
 
+    # The row count is a fact about the tree, written in prose in nine places.
+    # It went stale the moment a subsystem was added, and nothing said so: the
+    # gate was green, the lint was clean, and four files claimed a size the tree
+    # no longer had. A number repeated in prose is a number that will be wrong.
+    rows = len([d for d in ROOT.glob("crates/vleo-mod-*/nodes/*") if d.is_dir()])
+    if rows:
+        stale = set()
+        for f in ("README.md", "AGENTS.md", "areas/generators.md"):
+            p = ROOT / f
+            if not p.is_file():
+                continue
+            for n in re.findall(r"\b(1[0-9]{3})\b(?= rows| across)", p.read_text()):
+                if int(n) != rows:
+                    stale.add((f, n))
+        for f, n in sorted(stale):
+            bad.append((f, "says %s rows and the tree has %d" % (n, rows)))
+
     # The review policy is stated once. Two copies are two policies within a
     # month: they had already begun to differ, one listing tolerance changes and
     # bundle publication and the other listing tools/ scripts.

@@ -17,6 +17,8 @@ layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 # what the source said.
 order = 1325
 state = "published"
+# kelvin of headroom: it must reach 10 K
+sense = ">="
 
 [question]
 text = "What does the customer require for thermal margin?"

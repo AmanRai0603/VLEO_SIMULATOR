@@ -323,13 +323,19 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     //      reports a comfortable margin for a spacecraft that is about to be
     //      destroyed.
     //
-    //      The twelve written KPI closures carry this in prose — their
-    //      expression says "in the sense the requirement is stated" and nothing
-    //      states it. This check makes it a field on the rows that are
-    //      requirements by kind; the KPI rows are `declared` and are a separate
-    //      decision, recorded rather than assumed.
+    //      Which rows this reaches is taken from the graph rather than from a
+    //      naming convention: a row is a requirement if it is declared one, or
+    //      if some closure reads it as its `req` binding. A convention can be
+    //      dodged by renaming a folder; a contract edge cannot, and the edge is
+    //      the thing that actually makes the comparison happen.
+    let bound_as_requirement = tree.sheets.values().any(|o| {
+        o.inputs
+            .iter()
+            .any(|i| i.var == sh.id && i.binding == "req")
+    });
+    let is_requirement = sh.kind == "required" || bound_as_requirement;
     let stated = matches!(sh.sense.trim(), "<=" | ">=");
-    out.push(if sh.kind != "required" || stated {
+    out.push(if !is_requirement || stated {
         Check::pass("sense")
     } else if sh.sense.trim().is_empty() {
         Check::fail(
@@ -347,6 +353,49 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
                 sh.sense.trim()
             ),
         )
+    });
+
+    // 7e — the sense the sheet declares is the sense the code applies.
+    //
+    //      The closure's hole says `Sense::AtLeast` or `Sense::AtMost`, and that
+    //      is what actually runs. The requirement row now declares the same
+    //      thing. Two statements of one fact drift, and this one drifts
+    //      silently: the margin still computes, still has a plausible sign, and
+    //      is wrong in the direction nobody looks.
+    //
+    //      Checked here rather than trusted because the whole point of 7d is
+    //      that a bound read the wrong way is invisible.
+    let mut disagree = Vec::new();
+    for i in &sh.inputs {
+        if i.binding != "req" {
+            continue;
+        }
+        let Some(req) = tree.sheets.get(&i.var) else {
+            continue;
+        };
+        let want = match req.sense.trim() {
+            "<=" => "Sense::AtMost",
+            ">=" => "Sense::AtLeast",
+            _ => continue,
+        };
+        let other = if want == "Sense::AtMost" {
+            "Sense::AtLeast"
+        } else {
+            "Sense::AtMost"
+        };
+        let body: String = holes.values().cloned().collect::<Vec<_>>().join("\n");
+        if body.contains(other) && !body.contains(want) {
+            disagree.push(format!(
+                "{} declares sense {:?} so this must apply {want}, and it applies {other}",
+                req.id,
+                req.sense.trim()
+            ));
+        }
+    }
+    out.push(if disagree.is_empty() {
+        Check::pass("sense-applied")
+    } else {
+        Check::fail("sense-applied", disagree.join(", "))
     });
 
     // 8 — fixture provenance. The one rule the evidence model rests on.

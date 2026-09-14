@@ -17,6 +17,8 @@ layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 # what the source said.
 order = 1311
 state = "published"
+# time to the customer: 30 minutes is the longest acceptable, not the shortest
+sense = "<="
 
 [question]
 text = "What does the customer require for end to end latency?"

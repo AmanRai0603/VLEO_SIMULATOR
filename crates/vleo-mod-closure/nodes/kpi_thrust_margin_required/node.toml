@@ -17,6 +17,8 @@ layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 # what the source said.
 order = 1321
 state = "published"
+# thrust over drag: it must reach 1, which is the design closing at all
+sense = ">="
 
 [question]
 text = "What does the customer require for thrust to drag closure?"

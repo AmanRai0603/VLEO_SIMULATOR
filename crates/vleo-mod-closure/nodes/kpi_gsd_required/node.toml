@@ -17,6 +17,8 @@ layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 # what the source said.
 order = 1307
 state = "published"
+# a ground sample distance in metres: smaller is sharper, so 1 m is a ceiling
+sense = "<="
 
 [question]
 text = "What does the customer require for ground sample distance?"

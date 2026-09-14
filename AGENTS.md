@@ -15,7 +15,7 @@ computes every number; four rings depend inward only:
     vleo-units  →  vleo-core  →  vleo-bus  →  vleo-mod-*  →  the faces
     RING 0         RING 1        RING 2       RING 3
 
-The tree is 1329 rows across four layers. Each row is one small question with
+The tree is 1361 rows across four layers. Each row is one small question with
 one answer, one folder, and one variable whose id is the row's id.
 
 ## The five rules that do not bend
@@ -42,6 +42,40 @@ the gate refuse it by name.
 **5 · A refusal is never a substitution.** A row with no content returns
 `NotRun` under its own name. A run always prints "n ran, m blocked" and names
 the blocked. A sweep records refused points; it never drops them.
+
+## Requirements and closure — the contract between layers
+
+A layer does not read into the layer below it. What crosses is a **closure**: a
+requirement, an achieved value, and a margin between them. That is the only
+contract there is, so it is the one thing that must not be ambiguous.
+
+**A requirement declares which way it binds.** `sense = "<="` means the achieved
+value must stay **under** the bound; `sense = ">="` means it must **reach** it.
+Never defaulted, and gate check 7d refuses a written requirement without it —
+where a requirement is any row of `kind = "required"` **or** any row some
+closure reads as its `req` binding. That second half is taken from the graph
+rather than from a naming convention, because a convention can be dodged by
+renaming a folder and a contract edge cannot.
+
+The reason is not tidiness. *The design sustains Ap 200* and *the design needs
+Ap 200* are the same number and opposite requirements. Read the wrong way, the
+closure still computes, still has a plausible sign, and reports a comfortable
+margin for a spacecraft that is about to be destroyed. The prior MATLAB was
+stricter than this repository here for exactly that reason: its contract
+declares an adverse direction per requirement and fails its build without one,
+because "defaulting either is how a silently wrong bound gets shipped".
+
+**The sheet's sense and the hole's sense are checked against each other.** A
+closure's hole applies `mission::Sense::AtLeast` or `mission::Sense::AtMost`,
+and that is what actually runs. Gate check 7e refuses a node whose hole applies
+the opposite of what its requirement declares. Two statements of one fact drift,
+and this one drifts in the direction nobody looks.
+
+**Not every closure runs in the same direction.** Most of this tree is a promise
+— a subsystem must reach what it was asked for. The environment is not promised:
+nobody builds the Sun, and a solar requirement is the worst sky the design can
+sustain, closing when the achieved sky stays under it. Both senses are correct
+and they are opposite, which is the whole reason the field exists.
 
 ## The commands
 

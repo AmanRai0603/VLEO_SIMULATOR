@@ -63,7 +63,7 @@ def crate_of(path):
 
 
 #: A change to any of these reaches every node at once. The work model files
-#: that under H7: two reviewers, because one mistake there is 1329 mistakes.
+#: that under H7: two reviewers, because one mistake there is 1361 mistakes.
 WIDE = ("xtask/", "tools/seed_", "tools/nodes/", "tools/crate_skeleton", "crates/vleo-sheet/")
 
 
@@ -109,7 +109,7 @@ def review(paths):
             "this reaches every node at once",
             ["%s" % p for p in sorted(wide)]
             + ["The work model files a generator or gate change under H7: two "
-               "reviewers, because one mistake here is 1329 mistakes."],
+               "reviewers, because one mistake here is 1361 mistakes."],
         ))
 
     sheets = sorted(n.rsplit("/", 1)[1] for n in nodes if "node.toml" in nodes[n] or "model.rs" in nodes[n])
