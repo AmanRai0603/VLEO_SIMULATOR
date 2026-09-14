@@ -110,6 +110,13 @@ noticed.
   **never** in `fixtures.toml`: an implementation cannot supply its own expected
   values, and that is an implementation. A disagreement between the two is a
   finding about one of them, not a check either has passed.
+- **`sense`** — on a requirement row only, which way the bound binds: `"<="` if
+  the achieved value must stay **under** it, `">="` if it must **reach** it. A
+  bound is meaningless until it says which side of it is safe: *the design
+  sustains Ap 200* and *the design needs Ap 200* are the same number and
+  opposite requirements, and a closure read the wrong way reports a comfortable
+  margin for a spacecraft that is about to be destroyed. Never defaulted —
+  gate check 7d refuses a written `required` row without it.
 - **`parity_tolerance`** — how far the prior implementation may disagree before
   the grid is a finding. Defaults to `1e-4`, and that number is set by the
   format rather than by the physics: a MATLAB grid is an export printed to five

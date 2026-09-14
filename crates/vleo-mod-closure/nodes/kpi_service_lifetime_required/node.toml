@@ -17,6 +17,8 @@ layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 # what the source said.
 order = 1317
 state = "published"
+# years of service: it must last at least 5
+sense = ">="
 
 [question]
 text = "What does the customer require for service lifetime?"

@@ -17,6 +17,8 @@ layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 # what the source said.
 order = 1327
 state = "published"
+# a margin fraction: it must reach 10%
+sense = ">="
 
 [question]
 text = "What does the customer require for mass margin?"

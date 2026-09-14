@@ -1,0 +1,67 @@
+# A layer file: the rows in the tree that are not nodes.
+#
+# Headings, their parents, the relation edges between groups, and
+# subsystem ownership — which CODEOWNERS is generated from. Changed
+# rarely and reviewed by two people, because the tree is the
+# decomposition and moving a branch moves everyone's work.
+
+# THE FIRST SUBSYSTEM ADDED AFTER THE SEED.
+#
+# The seeded tree gave sys_space_environment six rows at layer 2 — solar flux,
+# F10.7, Ap, atmospheric density, thermospheric wind, atomic oxygen fluence —
+# and no layer-3 group to answer them. Every other layer-2 heading has one;
+# this one did not, which is why all six sit empty.
+#
+# l3_x_envorbit crosses to sys_orbit_and_environment, the level ABOVE space
+# environment, so it does not answer them either. The gap is a subsystem, not a
+# missing row: the solar-weather record is somebody's whole job, and the system
+# layer wants one conclusion from it rather than the working.
+
+# WHAT ITS TARGET AND ACHIEVED PAIRS MEAN, WHICH IS NOT THE USUAL SENSE.
+#
+# Everywhere else in this tree a target is something the subsystem must deliver
+# and the closure asks whether it delivered enough. The environment is not
+# delivered. Nobody builds the Sun, and the design does not get to ask it for
+# less — so these three pairs are a CONSTRAINT rather than a promise:
+#
+#   required   the worst sky this design can sustain — a limit the spacecraft
+#              sets, and the one number a system reader actually needs
+#   achieved   the worst sky the record says the mission window will present
+#   closes     when achieved stays UNDER required
+#
+# The direction is declared on each requirement row as `sense = "<="`, not left
+# to prose. "The design sustains Ap 200" and "the design needs Ap 200" are the
+# same number and opposite requirements, and a closure read the wrong way
+# reports a comfortable margin for a spacecraft that is about to be destroyed.
+#
+# THE HORIZON IS A PROPERTY OF THE ROW, NOT A ROW OF ITS OWN. A long-term and a
+# short-term prediction of F10.7 are the same quantity known to different
+# precision, so they are one row carrying a lead and a confidence, not two rows
+# that would have to be kept in step by hand.
+
+[[group]]
+id = "l3_solar"
+label = "Solar weather — addition"
+parent = "root"
+owner = "environment"
+layer = 3
+order = 120
+box = true   # drawn as a nested box on the diagonal
+tone = "amber"
+cases = []   # empty means every case
+
+# The seam. One crossing node per subsystem is the rule with seventeen
+# instances and no exceptions, and this edge is its group-level twin.
+[[relates]]
+from = "l3_solar"
+to = "sys_space_environment"
+why = "it decomposes the solar-weather record into the drivers the system designs to"
+
+# Why the drivers matter, stated where the reader meets the group rather than
+# left to be inferred from the graph. Each of these is a real consumer today:
+# the exospheric temperature reads F10.7, F10.7A and Kp directly, and density
+# carries most of its solar response on the 81-day mean.
+[[relates]]
+from = "l3_solar"
+to = "l3_x_envorbit"
+why = "F10.7, the 81-day mean and Kp are what the exospheric temperature is computed from"

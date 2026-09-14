@@ -17,6 +17,8 @@ layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 # what the source said.
 order = 1305
 state = "published"
+# hours between revisits: fewer hours is more often, so 6 h is a ceiling
+sense = "<="
 
 [question]
 text = "What does the customer require for mean revisit time?"

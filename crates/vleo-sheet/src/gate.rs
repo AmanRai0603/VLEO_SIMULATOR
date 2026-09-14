@@ -315,6 +315,89 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         )
     });
 
+    // 7d — a requirement says which way it binds.
+    //
+    //      A bound is meaningless until it states which side of it is safe.
+    //      "The design sustains Ap 200" and "the design needs Ap 200" are the
+    //      same number and opposite requirements: read the wrong way, a closure
+    //      reports a comfortable margin for a spacecraft that is about to be
+    //      destroyed.
+    //
+    //      Which rows this reaches is taken from the graph rather than from a
+    //      naming convention: a row is a requirement if it is declared one, or
+    //      if some closure reads it as its `req` binding. A convention can be
+    //      dodged by renaming a folder; a contract edge cannot, and the edge is
+    //      the thing that actually makes the comparison happen.
+    let bound_as_requirement = tree.sheets.values().any(|o| {
+        o.inputs
+            .iter()
+            .any(|i| i.var == sh.id && i.binding == "req")
+    });
+    let is_requirement = sh.kind == "required" || bound_as_requirement;
+    let stated = matches!(sh.sense.trim(), "<=" | ">=");
+    out.push(if !is_requirement || stated {
+        Check::pass("sense")
+    } else if sh.sense.trim().is_empty() {
+        Check::fail(
+            "sense",
+            "a requirement with no declared sense — say `sense = \"<=\"` if the achieved value \
+             must stay under this bound, or `sense = \">=\"` if it must reach it. Defaulting \
+             either is how a silently wrong bound gets shipped"
+                .to_string(),
+        )
+    } else {
+        Check::fail(
+            "sense",
+            format!(
+                "sense is '{}' — it must be exactly \"<=\" or \">=\"",
+                sh.sense.trim()
+            ),
+        )
+    });
+
+    // 7e — the sense the sheet declares is the sense the code applies.
+    //
+    //      The closure's hole says `Sense::AtLeast` or `Sense::AtMost`, and that
+    //      is what actually runs. The requirement row now declares the same
+    //      thing. Two statements of one fact drift, and this one drifts
+    //      silently: the margin still computes, still has a plausible sign, and
+    //      is wrong in the direction nobody looks.
+    //
+    //      Checked here rather than trusted because the whole point of 7d is
+    //      that a bound read the wrong way is invisible.
+    let mut disagree = Vec::new();
+    for i in &sh.inputs {
+        if i.binding != "req" {
+            continue;
+        }
+        let Some(req) = tree.sheets.get(&i.var) else {
+            continue;
+        };
+        let want = match req.sense.trim() {
+            "<=" => "Sense::AtMost",
+            ">=" => "Sense::AtLeast",
+            _ => continue,
+        };
+        let other = if want == "Sense::AtMost" {
+            "Sense::AtLeast"
+        } else {
+            "Sense::AtMost"
+        };
+        let body: String = holes.values().cloned().collect::<Vec<_>>().join("\n");
+        if body.contains(other) && !body.contains(want) {
+            disagree.push(format!(
+                "{} declares sense {:?} so this must apply {want}, and it applies {other}",
+                req.id,
+                req.sense.trim()
+            ));
+        }
+    }
+    out.push(if disagree.is_empty() {
+        Check::pass("sense-applied")
+    } else {
+        Check::fail("sense-applied", disagree.join(", "))
+    });
+
     // 8 — fixture provenance. The one rule the evidence model rests on.
     let mut badfx = Vec::new();
     for f in &sh.fixtures {
@@ -631,6 +714,31 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
         Check::pass("V12 one crate per owner")
     } else {
         Check::fail("V12 one crate per owner", spread.join(", "))
+    });
+
+    // V14 — no two rows claim the same place on the tree.
+    //
+    // `order` is what the display list sorts by, so two rows sharing one puts
+    // them in an arbitrary order that depends on the map's iteration — stable
+    // within a run, and free to swap when a row is added anywhere. It reads as
+    // a reordering nobody made.
+    //
+    // Added because a subsystem added after the seed collided with an existing
+    // interface row and nothing said so: the gate was green, the assembly was
+    // green, and two rows sat at 720.
+    let mut at: BTreeMap<u32, Vec<&str>> = BTreeMap::new();
+    for sh in tree.ordered() {
+        at.entry(sh.order).or_default().push(sh.id.as_str());
+    }
+    let clashes: Vec<String> = at
+        .iter()
+        .filter(|(_, ids)| ids.len() > 1)
+        .map(|(o, ids)| format!("{o}: {}", ids.join(" and ")))
+        .collect();
+    out.push(if clashes.is_empty() {
+        Check::pass("V14 one row per place")
+    } else {
+        Check::fail("V14 one row per place", clashes.join(", "))
     });
 
     // V13 — the browser face offers only rows it can actually answer.

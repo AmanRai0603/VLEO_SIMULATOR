@@ -411,6 +411,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "vleo-mod-solar"
+version = "0.1.0"
+dependencies = [
+ "vleo-core",
+]
+
+[[package]]
 name = "vleo-mod-struct"
 version = "0.1.0"
 dependencies = [
@@ -459,6 +466,7 @@ dependencies = [
  "vleo-mod-pointing",
  "vleo-mod-power",
  "vleo-mod-prop",
+ "vleo-mod-solar",
  "vleo-mod-struct",
  "vleo-mod-system",
  "vleo-mod-thermal",

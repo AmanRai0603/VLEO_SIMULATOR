@@ -17,6 +17,8 @@ layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 # what the source said.
 order = 1313
 state = "published"
+# a service availability fraction: it must reach 0.99, not stay under it
+sense = ">="
 
 [question]
 text = "What does the customer require for service availability?"

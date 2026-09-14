@@ -1,0 +1,17 @@
+{
+  "id": "l3_solar_ach_02",
+  "state": "empty",
+  "sheet_hash": "38351b",
+  "impl_hash": "222325",
+  "owner": "environment",
+  "tier": "",
+  "fixtures": 0,
+  "criticality": "minor",
+  "reviewers": 1,
+  "differential_fill": false,
+  "migrated_from": "",
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}

@@ -17,6 +17,8 @@ layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 # what the source said.
 order = 1309
 state = "published"
+# an error in metres: it must stay inside 500 m, and a larger error is worse
+sense = "<="
 
 [question]
 text = "What does the customer require for emitter geolocation accuracy?"
