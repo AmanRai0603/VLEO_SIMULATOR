@@ -355,6 +355,16 @@ def selftest():
         with tempfile.TemporaryDirectory() as tmp:
             work = Path(tmp) / "tree"
             shutil.copytree(real_root, work, ignore=shutil.ignore_patterns(".git", "target"))
+            # The canvas cases need a canvas panel to break, and there is no
+            # declared one: a panel in panels/ needs a reference image, and a
+            # reference image needs a person to look at the picture. So the
+            # spec is kept outside panels/ and installed into the throwaway
+            # tree here. The selftest then exercises the canvas path without
+            # the repository carrying a panel nobody has vouched for, which
+            # would turn the panels check red for everybody.
+            if "canvas" in label:
+                shutil.copy(real_root / "tools" / "selftest_panels" / "sweep.toml",
+                            work / "panels" / "sweep.toml")
             break_it(work)
             ROOT, PANELS, REFERENCE = work, work / "panels", work / "panels" / "reference"
             try:

@@ -1,3 +1,17 @@
+# NOT A DECLARED PANEL. This lives outside panels/ on purpose.
+#
+# tools/panel_check.py --selftest copies it into a throwaway tree so the two
+# canvas cases have a canvas panel to break. It is not in panels/ because a
+# declared panel needs a reference image, and a reference image needs a person
+# to look at the picture and vouch that the chart is right. Nobody has done
+# that for this one yet, and a panel declared without one turns the panels
+# check red for everybody.
+#
+# To promote it: look at the picture, correct the `correct` block below — it
+# describes a note beneath the plot that the mount, a bare canvas, cannot
+# capture — move this file to panels/sweep.toml, and record the reference with
+# `tools/panel_check.py --record --panel sweep`.
+
 id = "sweep"
 label = "The behaviour sweep"
 module = "web/js/run.js"
