@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1368 rows** — 659 a person picked, 709 worked out. Two thirds of any design tree is
+**1369 rows** — 659 a person picked, 710 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -19220,7 +19220,7 @@ Not a property of the sky but of the people watching it, and it is the operation
 - **lower bound** — the lowest value this relation can return is 48, at G1. A bound at 40 sits just under it and refuses anything that would design to less than a minor storm, which is not a design case: the record has 1358 days at G1 or above, 47 a year
 - **upper bound** — the highest this relation can return is 132, at G3, which is the top of the declared G range. A bound at 140 sits just above it and catches a G level outside the range or a misread table. It does NOT bound the sky: the record's largest daily Ap is 273 and the five-year return level is 158.4, both above this bound, and neither passes through this row
 - **reads** — `sw_storm_design_level`
-- **read by** — `sw_exceedance_duration`, `sw_exceedance_phase`, `sw_exceedance_rate`
+- **read by** — `sw_design_safe_duration`, `sw_exceedance_duration`, `sw_exceedance_phase`, `sw_exceedance_rate`
 - **assumes** The design value is BELOW what the record expects over the mission, and that is not a defect in either row — fails when the two are read as competing answers. At G3 this row gives 132; sw_storm_return_level at the declared five-year mission gives 158.4, and the record's days nearest that Ap all reached Kp_max 9. So the sky a five-year mission should expect is stronger than the sky the vehicle is sized for, by about 20 per cent in daily Ap. The gap is real and is closed by operations rather than by structure: 49 days in 29 years reach G4 and 16 reach G5, and a mission flies through those rather than being built for them. Both numbers belong in the tree precisely so the gap is on a row instead of in somebody's head
 - **assumes** The ceiling of the band, not its middle, and that choice is worth twice the number — fails when a typical G3 day is wanted rather than a bound. Days in the record whose Kp_max is exactly 7 have daily Ap from 15 to 96 with a median of 51 — so the typical G3 day is 51 and this row publishes 132. The ceiling is correct for sizing, because a design bound must hold for the worst day inside the level it claims, and 132 is the value a day would reach if all eight slots sat at Kp 7. It is conservative by construction: no G3 day in 29 years came within a third of it
 - **assumes** The published ap table is the conversion and it is not linear — fails when a G level is interpolated. The ap values at Kp 5, 6 and 7 are 48, 80 and 132 — ratios of 1.67 and 1.65, so the scale is close to geometric and a linear reading between levels is wrong by tens of nanotesla. The relation is a lookup on three integer levels and nothing between them is defined, which is why sw_storm_design_level is bounded to integers 1 to 3 and why this row does not interpolate
@@ -19377,6 +19377,36 @@ Zero at the cycle's start and one at its end. This is the row the whole cycle-de
 - **assumes** Twenty equal-width phase bins, and cycle length is taken from the published boundaries — fails when the boundaries move. Cycle 23 spans 4338 days and cycle 24 spans 4017, an 8 per cent difference, so an equal-PHASE bin is a different number of DAYS in each cycle — 217 against 201. Stacking on phase rather than on days since minimum is the choice that lets two unequal cycles be compared at all, and it means this row says nothing about whether the two cycles took the same TIME to do the same thing. They did not
 
 The correlation between cycles 23 and 24 after stacking both on phase. It is the credibility of sw_mean_cycle_level: that row hands a design a mean-cycle curve, and this row says how much a single cycle can be expected to look like it. The answer is that the SHAPE repeats and the AMPLITUDE does not, and a design that reads only the correlation will miss the second half.
+
+### `sw_design_safe_duration` — How long the design Ap lasts
+
+> How long can the mission be before the record expects to exceed the design Ap?
+
+| | |
+|---|---|
+| symbol | `T_safe` |
+| type | `Time` |
+| unit | yr |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `T_safe(Ap_design) = exp((Ap_design - 92.515531) / 40.926516)` |
+| source | `noaa_swpc` |
+| valid over | 0.3 … 3 yr |
+
+- **lower bound** — the shortest this relation can return is 0.3370 years, at the G1 bound of Ap 48. A bound at 0.3 sits just under it. A value below would mean a design level under Ap 46, which is beneath anything the G scale calls a storm
+- **upper bound** — the longest is 2.6242 years, at the G3 bound of Ap 132, which is the top of the declared G range. A bound at 3 sits just above it. It is NOT a claim that no design survives longer: Ap 207 at G4 would reach 16.4 years, and sw_storm_design_level refuses G4 deliberately rather than this guard forbidding it
+- **reads** — `sw_ap_design`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** It is exceeded, and the number is when rather than whether — fails when the row is read as a safety margin. At G3 the answer is 2.6242 years and orbit_mission_duration is declared at 5, so the mission is 1.9 times longer than the design bound survives. At G2 it is 0.7365 years and at G1 0.3370 — every level the G scale offers below G4 is exceeded well inside a five-year mission. A design that must not be exceeded at five years needs Ap 158.4, which is G4 territory, and sw_storm_design_level refuses G4 on purpose
+- **assumes** It inherits the whole fit, including the part of it that rests on two storms — fails when the answer lands near the top of the fitted range. This is sw_storm_return_level's relation read backwards, so every limitation of that row applies here unchanged: the fit is log-linear through ranks 2 to 14 of a 28.197-year sample, the fitted domain is 0.5035 to 14.0986 years, and the top of it rests on two observations. At the G3 bound the answer of 2.62 years sits comfortably inside the fitted range, which is the one thing that makes this row trustworthy at the declared level and would not survive a design bound near Ap 200
+- **assumes** A return period is not a countdown and a mission is not guaranteed its share — fails when 2.62 years is read as time before failure. A once-per-2.62-years storm can arrive in the first month or not in ten years; what the number means is that the expected count of such days over a 2.62-year window is one. Over the declared five-year mission the expected count is 1.42 days, which sw_exceedance_rate measures directly and which is the figure to plan with. This row is the threshold where that count passes one, not a date on which anything happens
+- **assumes** Closed form, so it is exact where the table rows are not — fails when it is compared against an interpolated row and they disagree. The three exceedance rows read a three-point table and interpolate between anchors, which their sheets declare is wrong between them. This row evaluates the fit itself at any Ap the producer can supply, so it is exact at every point including the ones between G levels. If the two ever disagree about a value between anchors, this row is right and the tables are the approximation
+- **evidence** the G2 bound, Ap 80 — exceeded beyond a 0.7365-year mission — expect 23243127.613750264 ± 0.000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the G1 bound, Ap 48 — exceeded beyond a 0.3370-year mission — expect 10634679.615335282 ± 0.000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the G3 bound, Ap 132 — the declared design level — exceeded beyond 2.6242 years, against a declared mission of 5 — expect 82812533.26941039 ± 0.000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The inverse of sw_storm_return_level, read against sw_ap_design. At the declared G3 it is 2.62 years against a declared mission of 5 — so the answer to whether the design is exceeded is yes, and this is when it starts.
 
 ### `sw_event_duration` — F10.7 burst duration
 

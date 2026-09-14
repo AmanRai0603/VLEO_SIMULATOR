@@ -1026,6 +1026,7 @@
 /crates/vleo-mod-solar/nodes/sw_cycle_number/ @environment
 /crates/vleo-mod-solar/nodes/sw_cycle_phase/ @environment
 /crates/vleo-mod-solar/nodes/sw_cycle_repeatability/ @environment
+/crates/vleo-mod-solar/nodes/sw_design_safe_duration/ @environment
 /crates/vleo-mod-solar/nodes/sw_event_duration/ @environment
 /crates/vleo-mod-solar/nodes/sw_exceedance_duration/ @environment
 /crates/vleo-mod-solar/nodes/sw_exceedance_phase/ @environment

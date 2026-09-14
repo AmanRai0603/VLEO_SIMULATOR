@@ -1,0 +1,149 @@
+<article class="node" data-node="sw_design_safe_duration" data-sheet-hash="869082" data-impl-hash="c12cf1">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>How long the design Ap lasts</h2>
+  <p class="ident"><code>sw_design_safe_duration</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">interface</button>
+  <button role="tab" class="tab" data-tab="2">algorithm</button>
+  <button role="tab" class="tab" data-tab="3">generated code</button>
+  <button role="tab" class="tab" data-tab="4">evidence</button>
+  <button role="tab" class="tab" data-tab="5">flags</button>
+  <button role="tab" class="tab" data-tab="6">credibility</button>
+  <button role="tab" class="tab" data-tab="7">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How long can the mission be before the record expects to exceed the design Ap?</p>
+<p class="maths"><code>T_safe(Ap_design) = exp((Ap_design - 92.515531) / 40.926516)</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The inverse of sw_storm_return_level, read against sw_ap_design. At the declared G3 it is 2.62 years against a declared mission of 5 — so the answer to whether the design is exceeded is yes, and this is when it starts.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>It is exceeded, and the number is when rather than whether</dt><dd>fails when the row is read as a safety margin. At G3 the answer is 2.6242 years and orbit_mission_duration is declared at 5, so the mission is 1.9 times longer than the design bound survives. At G2 it is 0.7365 years and at G1 0.3370 — every level the G scale offers below G4 is exceeded well inside a five-year mission. A design that must not be exceeded at five years needs Ap 158.4, which is G4 territory, and sw_storm_design_level refuses G4 on purpose</dd>
+<dt>It inherits the whole fit, including the part of it that rests on two storms</dt><dd>fails when the answer lands near the top of the fitted range. This is sw_storm_return_level's relation read backwards, so every limitation of that row applies here unchanged: the fit is log-linear through ranks 2 to 14 of a 28.197-year sample, the fitted domain is 0.5035 to 14.0986 years, and the top of it rests on two observations. At the G3 bound the answer of 2.62 years sits comfortably inside the fitted range, which is the one thing that makes this row trustworthy at the declared level and would not survive a design bound near Ap 200</dd>
+<dt>A return period is not a countdown and a mission is not guaranteed its share</dt><dd>fails when 2.62 years is read as time before failure. A once-per-2.62-years storm can arrive in the first month or not in ten years; what the number means is that the expected count of such days over a 2.62-year window is one. Over the declared five-year mission the expected count is 1.42 days, which sw_exceedance_rate measures directly and which is the figure to plan with. This row is the threshold where that count passes one, not a date on which anything happens</dd>
+<dt>Closed form, so it is exact where the table rows are not</dt><dd>fails when it is compared against an interpolated row and they disagree. The three exceedance rows read a three-point table and interpolate between anchors, which their sheets declare is wrong between them. This row evaluates the fit itself at any Ap the producer can supply, so it is exact at every point including the ones between G levels. If the two ever disagree about a value between anchors, this row is right and the tables are the approximation</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>ap_design</code></td><td><a class="xref" data-goto="sw_ap_design">sw_ap_design</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>T_safe</code></td><td>sw_design_safe_duration</td><td>Time</td><td>yr</td></tr>
+</tbody></table>
+<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+</section>
+<section class="panel" data-panel="2">
+<ol class="algo">
+<li><span class="step">invert the storm return fit: the mission length at which this Ap recurs once</span> <span class="binds">→ <code>out: Time</code></span></li>
+</ol>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>T_safe &ge; 0.3</code> — the shortest this relation can return is 0.3370 years, at the G1 bound of Ap 48. A bound at 0.3 sits just under it. A value below would mean a design level under Ap 46, which is beneath anything the G scale calls a storm</li>
+<li><code>T_safe &le; 3</code> — the longest is 2.6242 years, at the G3 bound of Ap 132, which is the top of the declared G range. A bound at 3 sits just above it. It is NOT a claim that no design survives longer: Ap 207 at G4 would reach 16.4 years, and sw_storm_design_level refuses G4 deliberately rather than this guard forbidding it</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How long can the mission be before the record expects to exceed the design Ap?
+///
+/// `T_safe(Ap_design) = exp((Ap_design - 92.515531) / 40.926516)`
+///
+/// Source: `noaa_swpc`
+///
+/// The inverse of sw_storm_return_level, read against sw_ap_design. At the
+/// declared G3 it is 2.62 years against a declared mission of 5 — so the
+/// answer to whether the design is exceeded is yes, and this is when it
+/// starts.
+///
+/// # Assumptions
+///
+/// * It is exceeded, and the number is when rather than whether — fails when the row is read as a safety margin. At G3 the answer is 2.6242 years and orbit_mission_duration is declared at 5, so the mission is 1.9 times longer than the design bound survives. At G2 it is 0.7365 years and at G1 0.3370 — every level the G scale offers below G4 is exceeded well inside a five-year mission. A design that must not be exceeded at five years needs Ap 158.4, which is G4 territory, and sw_storm_design_level refuses G4 on purpose
+/// * It inherits the whole fit, including the part of it that rests on two storms — fails when the answer lands near the top of the fitted range. This is sw_storm_return_level's relation read backwards, so every limitation of that row applies here unchanged: the fit is log-linear through ranks 2 to 14 of a 28.197-year sample, the fitted domain is 0.5035 to 14.0986 years, and the top of it rests on two observations. At the G3 bound the answer of 2.62 years sits comfortably inside the fitted range, which is the one thing that makes this row trustworthy at the declared level and would not survive a design bound near Ap 200
+/// * A return period is not a countdown and a mission is not guaranteed its share — fails when 2.62 years is read as time before failure. A once-per-2.62-years storm can arrive in the first month or not in ten years; what the number means is that the expected count of such days over a 2.62-year window is one. Over the declared five-year mission the expected count is 1.42 days, which sw_exceedance_rate measures directly and which is the figure to plan with. This row is the threshold where that count passes one, not a date on which anything happens
+/// * Closed form, so it is exact where the table rows are not — fails when it is compared against an interpolated row and they disagree. The three exceedance rows read a three-point table and interpolate between anchors, which their sheets declare is wrong between them. This row evaluates the fit itself at any Ap the producer can supply, so it is exact at every point including the ones between G levels. If the two ever disagree about a value between anchors, this row is right and the tables are the approximation
+pub const NODE_ID: &amp;str = &quot;sw_design_safe_duration&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xc1857582e6869082;
+
+pub fn evaluate(ap_design: Ratio) -&gt; Result&lt;Time, Fault&gt; {
+    // ---- HOLE 1 : invert the storm return fit: the mission length at which this Ap recurs once -&gt; Time
+    // sw_storm_return_level's own fit, read backwards. Its constants, not a
+    // second fit: Ap(T) = A + B ln(T) inverts to T = exp((Ap - A) / B), so the
+    // two rows cannot disagree about any point.
+    //
+    // Closed form rather than a table, so this is exact at every Ap the
+    // producer can supply and not only at the three G anchors.
+    const A: f64 = 92.515531;
+    const B: f64 = 40.926516;
+    let years: f64 = pmath::exp((ap_design.get() - A) / B);
+    let out: Time = match Time::from_unit(years, Unit::Year) {
+        Some(q) =&gt; q,
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;T_safe&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+    };
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Time = out;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;T_safe&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 9467280.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;T_safe&quot;, value: answer.get(), bound: 9467280.0, edge: Edge::Lower, unit: Time::UNIT, reason: &quot;the shortest this relation can return is 0.3370 years, at the G1 bound of Ap 48. A bound at 0.3 sits just under it. A value below would mean a design level under Ap 46, which is beneath anything the G scale calls a storm&quot; });
+    }
+    if answer.get() &gt; 94672800.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;T_safe&quot;, value: answer.get(), bound: 94672800.0, edge: Edge::Upper, unit: Time::UNIT, reason: &quot;the longest is 2.6242 years, at the G3 bound of Ap 132, which is the top of the declared G range. A bound at 3 sits just above it. It is NOT a claim that no design survives longer: Ap 207 at G4 would reach 16.4 years, and sw_storm_design_level refuses G4 deliberately rather than this guard forbidding it&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="4">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="the G2 bound, Ap 80 — exceeded beyond a 0.7365-year mission"><td>the G2 bound, Ap 80 — exceeded beyond a 0.7365-year mission</td><td class="num">23243127.613750264</td><td class="num">0.000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the G1 bound, Ap 48 — exceeded beyond a 0.3370-year mission"><td>the G1 bound, Ap 48 — exceeded beyond a 0.3370-year mission</td><td class="num">10634679.615335282</td><td class="num">0.000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the G3 bound, Ap 132 — the declared design level — exceeded beyond 2.6242 years, against a declared mission of 5"><td>the G3 bound, Ap 132 — the declared design level — exceeded beyond 2.6242 years, against a declared mission of 5</td><td class="num">82812533.26941039</td><td class="num">0.000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0.3 — the shortest this relation can return is 0.3370 years, at the G1 bound of Ap 48. A bound at 0.3 sits just under it. A value below would mean a design level under Ap 46, which is beneath anything the G scale calls a storm</li>
+<li><code>OutOfDomain</code> above 3 — the longest is 2.6242 years, at the G3 bound of Ap 132, which is the top of the declared G range. A bound at 3 sits just above it. It is NOT a claim that no design survives longer: Ap 207 at G4 would reach 16.4 years, and sw_storm_design_level refuses G4 deliberately rather than this guard forbidding it</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="6">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_design_safe_duration"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="7">
+<p>Valid over <code>0.3 &hellip; 3</code> yr.</p>
+<ul class="guards"><li>lower — the shortest this relation can return is 0.3370 years, at the G1 bound of Ap 48. A bound at 0.3 sits just under it. A value below would mean a design level under Ap 46, which is beneath anything the G scale calls a storm</li><li>upper — the longest is 2.6242 years, at the G3 bound of Ap 132, which is the top of the declared G range. A bound at 3 sits just above it. It is NOT a claim that no design survives longer: Ap 207 at G4 would reach 16.4 years, and sw_storm_design_level refuses G4 deliberately rather than this guard forbidding it</li></ul>
+<div class="sweep" data-over="sw_storm_design_level" data-points="40" data-y="sw_design_safe_duration"><p class="muted">Sweeps against <a class="xref" data-goto="sw_storm_design_level">sw_storm_design_level</a> over 40 points. Run the branch to draw it.</p></div>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>
