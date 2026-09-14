@@ -17,11 +17,11 @@ Measured on `main`, 11 September 2026.
 
 | | |
 |---|---|
-| rows in the tree | 1362 across four layers — 271 written, 1091 seeded |
+| rows in the tree | 1362 across four layers — 275 written, 1087 seeded |
 | layer 1 · management | 174 rows, from CD-06 verbatim |
 | layer 2 · the system | 319 rows, from CD-06 verbatim |
 | layer 3 · subsystem | 836 rows across 17 subsystems |
-| of the 271 written | 114 declared values · 141 computed · 12 KPI closures · 1 requirement · 3 achieved |
+| of the 275 written | 118 declared values · 141 computed · 12 KPI closures · 1 requirement · 3 achieved |
 | declared edges | 463 derivation · 298 contribution · 177 relation |
 | crates | 30 — 19 node crates, 11 engine and face crates |
 | faces | browser · daemon · command line · C ABI · Python wheel · MATLAB |
@@ -347,7 +347,7 @@ achievable and the nightly check becomes one people learn to ignore.
 ## Where it stands
 
 The tree is built and mostly empty, which is the state it is designed to be
-useful in. 271 rows of 1362 have content. `xtask ready` reports what is holding
+useful in. 275 rows of 1362 have content. `xtask ready` reports what is holding
 the rest:
 
 ```

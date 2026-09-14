@@ -1,8 +1,8 @@
-<article class="node" data-node="sw_cycle_repeatability" data-sheet-hash="2ab786" data-impl-hash="222325">
+<article class="node" data-node="sw_cycle_repeatability" data-sheet-hash="dbb0b9" data-impl-hash="222325">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>Cycle repeatability</h2>
-  <p class="ident"><code>sw_cycle_repeatability</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <h2>Cycle-to-cycle repeatability</h2>
+  <p class="ident"><code>sw_cycle_repeatability</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
@@ -15,29 +15,95 @@
   <button role="tab" class="tab" data-tab="7">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">How much does one solar cycle repeat the shape of the last one?</p>
+<p class="maths"><code>r_cyc = corr(F107 of cycle 23 by phase, F107 of cycle 24 by phase) = 0.7701</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The correlation between cycles 23 and 24 after stacking both on phase. It is the credibility of sw_mean_cycle_level: that row hands a design a mean-cycle curve, and this row says how much a single cycle can be expected to look like it. The answer is that the SHAPE repeats and the AMPLITUDE does not, and a design that reads only the correlation will miss the second half.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>It is one pair of cycles, so there is no distribution behind this number</dt><dd>fails when 0.77 is read as an expected repeatability with an uncertainty. The record holds exactly two complete cycles, 23 and 24, and cycle 25 is still running, so this is a single observation of a correlation and not an estimate of one. Two samples cannot tell a repeatable shape from a coincidence between two particular cycles, and nothing in this bundle can fix that: it needs a longer record. Every consumer of sw_mean_cycle_level inherits this limit</dd>
+<dt>The shape repeats at 0.77 and the amplitude does not repeat at all, and these are separate findings</dt><dd>fails when the correlation is taken as the whole answer. A correlation is scale-free, so it is blind to exactly the thing a drag design cares about. Cycle 23's binned peak is 206.9 sfu and cycle 24's is 149.4, a ratio of 0.722 — the published smoothed peaks, 196.4 and 146.1, agree at 0.744 — and the rms difference between the two phase-stacked curves is 37.7 sfu against a pooled mean near 112. So the two cycles rise and fall alike and are not the same size. A mission sized on the mean of the two is sized for neither</dd>
+<dt>Two of the twenty phase bins are excluded, because 273 consecutive days are absent from the record</dt><dd>fails when the bin count is assumed complete. observed_daily.csv carries 10319 rows across a 10592-day span and the whole shortfall is one contiguous gap, 2017-01-01 to 2017-09-30. That gap sits at cycle 24 phase 0.735 to 0.803, which empties bin 15 entirely and leaves bin 14 with 141 days against the usual 201. The correlation is therefore taken over the 18 bins both cycles populate. The gap is on the declining side where F10.7 is low and slowly varying, so its effect on a shape correlation is small; it is excluded rather than interpolated because interpolating across nine months invents the data</dd>
+<dt>Twenty equal-width phase bins, and cycle length is taken from the published boundaries</dt><dd>fails when the boundaries move. Cycle 23 spans 4338 days and cycle 24 spans 4017, an 8 per cent difference, so an equal-PHASE bin is a different number of DAYS in each cycle — 217 against 201. Stacking on phase rather than on days since minimum is the choice that lets two unequal cycles be compared at all, and it means this row says nothing about whether the two cycles took the same TIME to do the same thing. They did not</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sw_cycle_repeatability</td><td></td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>r_cyc</code></td><td>sw_cycle_repeatability</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
 <section class="panel" data-panel="2">
 <p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>0</b> -, confirmed by <b></b>.</p>
+<p>This is a declared value: <b>0.7701397224</b> -, confirmed by <b>A. Rai / 2026-09-14</b>.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>r_cyc &ge; 0.4</code> — below 0.4 the two stacked cycles would share less than 16 per cent of their variance, which would say the solar cycle has no repeatable shape at all. The measured value is 0.770 for 59 per cent shared, and the asymmetric fast rise and slow decline is present in both cycles, so a value that low means the stacking or the boundaries are wrong rather than the Sun being irregular</li>
+<li><code>r_cyc &le; 0.95</code> — above 0.95 the two cycles would be near-identical in shape, which the record contradicts: the rms difference between the two phase-stacked curves is 37.7 sfu on a pooled mean near 112, and their peaks differ by 28 per cent. An answer that high means the correlation was taken over too few bins or after a normalisation that removed the disagreement</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How much does one solar cycle repeat the shape of the last one?
+///
+/// `r_cyc = corr(F107 of cycle 23 by phase, F107 of cycle 24 by phase) = 0.7701`
+///
+/// Source: `noaa_swpc`
+///
+/// The correlation between cycles 23 and 24 after stacking both on phase. It
+/// is the credibility of sw_mean_cycle_level: that row hands a design a
+/// mean-cycle curve, and this row says how much a single cycle can be
+/// expected to look like it. The answer is that the SHAPE repeats and the
+/// AMPLITUDE does not, and a design that reads only the correlation will miss
+/// the second half.
+///
+/// # Assumptions
+///
+/// * It is one pair of cycles, so there is no distribution behind this number — fails when 0.77 is read as an expected repeatability with an uncertainty. The record holds exactly two complete cycles, 23 and 24, and cycle 25 is still running, so this is a single observation of a correlation and not an estimate of one. Two samples cannot tell a repeatable shape from a coincidence between two particular cycles, and nothing in this bundle can fix that: it needs a longer record. Every consumer of sw_mean_cycle_level inherits this limit
+/// * The shape repeats at 0.77 and the amplitude does not repeat at all, and these are separate findings — fails when the correlation is taken as the whole answer. A correlation is scale-free, so it is blind to exactly the thing a drag design cares about. Cycle 23's binned peak is 206.9 sfu and cycle 24's is 149.4, a ratio of 0.722 — the published smoothed peaks, 196.4 and 146.1, agree at 0.744 — and the rms difference between the two phase-stacked curves is 37.7 sfu against a pooled mean near 112. So the two cycles rise and fall alike and are not the same size. A mission sized on the mean of the two is sized for neither
+/// * Two of the twenty phase bins are excluded, because 273 consecutive days are absent from the record — fails when the bin count is assumed complete. observed_daily.csv carries 10319 rows across a 10592-day span and the whole shortfall is one contiguous gap, 2017-01-01 to 2017-09-30. That gap sits at cycle 24 phase 0.735 to 0.803, which empties bin 15 entirely and leaves bin 14 with 141 days against the usual 201. The correlation is therefore taken over the 18 bins both cycles populate. The gap is on the declining side where F10.7 is low and slowly varying, so its effect on a shape correlation is small; it is excluded rather than interpolated because interpolating across nine months invents the data
+/// * Twenty equal-width phase bins, and cycle length is taken from the published boundaries — fails when the boundaries move. Cycle 23 spans 4338 days and cycle 24 spans 4017, an 8 per cent difference, so an equal-PHASE bin is a different number of DAYS in each cycle — 217 against 201. Stacking on phase rather than on days since minimum is the choice that lets two unequal cycles be compared at all, and it means this row says nothing about whether the two cycles took the same TIME to do the same thing. They did not
+pub const NODE_ID: &amp;str = &quot;sw_cycle_repeatability&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x637bf7d85cdbb0b9;
+
+pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
+    // generated · a declared value, converted from the unit it was written in
+    let declared: Ratio = match Ratio::from_unit(0.7701397224, Unit::One) {
+        Some(q) =&gt; q,
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;r_cyc&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+    };
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = declared;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;r_cyc&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.4 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;r_cyc&quot;, value: answer.get(), bound: 0.4, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;below 0.4 the two stacked cycles would share less than 16 per cent of their variance, which would say the solar cycle has no repeatable shape at all. The measured value is 0.770 for 59 per cent shared, and the asymmetric fast rise and slow decline is present in both cycles, so a value that low means the stacking or the boundaries are wrong rather than the Sun being irregular&quot; });
+    }
+    if answer.get() &gt; 0.95 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;r_cyc&quot;, value: answer.get(), bound: 0.95, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;above 0.95 the two cycles would be near-identical in shape, which the record contradicts: the rms difference between the two phase-stacked curves is 37.7 sfu on a pooled mean near 112, and their peaks differ by 28 per cent. An answer that high means the correlation was taken over too few bins or after a normalisation that removed the disagreement&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
 </section>
 <section class="panel" data-panel="4">
 <p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
@@ -45,24 +111,21 @@
 <section class="panel" data-panel="5">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 0.4 — below 0.4 the two stacked cycles would share less than 16 per cent of their variance, which would say the solar cycle has no repeatable shape at all. The measured value is 0.770 for 59 per cent shared, and the asymmetric fast rise and slow decline is present in both cycles, so a value that low means the stacking or the boundaries are wrong rather than the Sun being irregular</li>
+<li><code>OutOfDomain</code> above 0.95 — above 0.95 the two cycles would be near-identical in shape, which the record contradicts: the rms difference between the two phase-stacked curves is 37.7 sfu on a pooled mean near 112, and their peaks differ by 28 per cent. An answer that high means the correlation was taken over too few bins or after a normalisation that removed the disagreement</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
 <section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_cycle_repeatability"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
 <section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
+<p>Valid over <code>0.4 &hellip; 0.95</code> -.</p>
+<ul class="guards"><li>lower — below 0.4 the two stacked cycles would share less than 16 per cent of their variance, which would say the solar cycle has no repeatable shape at all. The measured value is 0.770 for 59 per cent shared, and the asymmetric fast rise and slow decline is present in both cycles, so a value that low means the stacking or the boundaries are wrong rather than the Sun being irregular</li><li>upper — above 0.95 the two cycles would be near-identical in shape, which the record contradicts: the rms difference between the two phase-stacked curves is 37.7 sfu on a pooled mean near 112, and their peaks differ by 28 per cent. An answer that high means the correlation was taken over too few bins or after a normalisation that removed the disagreement</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
-<section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
-</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

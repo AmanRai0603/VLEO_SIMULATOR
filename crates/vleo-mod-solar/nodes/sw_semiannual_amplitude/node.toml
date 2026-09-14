@@ -2,32 +2,69 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sw_semiannual_amplitude"
-label = "Semiannual amplitude"
+label = "Semiannual Ap amplitude"
 folder = "sw_semiannual_amplitude"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
 kind = "declared"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1359
-state = "empty"
+state = "published"
+
+# A statistic of the pinned record with no input, so it is declared rather than
+# computed. It is the AMPLITUDE of the annual pattern, which is one number; the
+# pattern's value at a particular date would be a different row and would read
+# sys_mission_requirements_mission_epoch for the day of year.
 
 [question]
-text = ""
+text = "How large is the semiannual variation in geomagnetic activity?"
+note = "Geomagnetic activity is higher near the equinoxes than near the solstices — the equinoctial or Russell-McPherron effect, from the changing angle between the interplanetary field and the geomagnetic dipole. This row says how big that seasonal swing is in Ap. It matters for a drag design because Ap drives the density model, but the size of the effect is the point: it moves the mean by about a tenth and predicts almost nothing about a given day."
 
 [maths]
-expression = ""
-source = ""
+confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
+expression = "Ap(doy) = 10.4936 + A*cos(4*pi*(doy-1)/365.25 - phi),  A = 1.2781"
+source = "noaa_swpc"
+
+[[assumption]]
+text = "The seasonal signal is real and explains 0.63 per cent of the daily variance"
+fails_when = "the amplitude is used to predict a day. Least squares over 10299 daily Ap values from 1997-01-09 to 2025-12-31 gives an amplitude of 1.278 on an offset of 10.494 — a swing of about 12 per cent about the mean — and the fit accounts for 0.006347 of the total variance. Daily Ap has a standard deviation of 11.34 against a mean of 10.50, so storm-to-storm variation dwarfs the season by more than an order of magnitude. The signal is a shift in the MEAN, visible only in aggregate: it belongs in a monthly or annual budget and is worthless as a daily correction"
+
+[[assumption]]
+text = "The maxima land on the equinoxes, which is how the fit is known to be the physical effect and not a fitting artefact"
+fails_when = "the phase is ignored. The fitted maxima are at day of year 96.8 and 279.4 — 6 April and 6 October — within a week of both equinoxes, and the fit was given no knowledge of them. The monthly means agree independently: September 11.88 and October 11.84 at the top, December 8.33 and January 8.61 at the bottom, a peak-to-trough ratio of 1.43. Nothing was tuned to make that happen, so the 1.278 is measuring the equinoctial effect rather than an arbitrary harmonic"
+
+[[assumption]]
+text = "It is an additive amplitude in Ap, not a multiplicative one, and the distinction matters at high activity"
+fails_when = "it is applied at an activity level far from the record's mean. The fit adds and subtracts 1.278 Ap regardless of the underlying level, so at the record's mean of 10.5 it is a 12 per cent modulation and at a storm level of 100 it would be 1.3 per cent. The physical mechanism is a modulation of coupling efficiency and so is closer to multiplicative, which means this additive form understates the seasonal effect during active periods and overstates it during quiet ones. It is carried additively because that is the form the record was fitted in, and a multiplicative version would need refitting on the log"
+
+[[assumption]]
+text = "One harmonic, so the annual and the semiannual are not separated"
+fails_when = "an annual asymmetry is present, and one is: the two fitted maxima should be equal by construction, and the monthly means are not — the autumn peak near September and October reaches 11.88 while the spring peak near May reaches 11.39. A single semiannual term cannot represent that difference and folds it into the residual. Separating an annual from a semiannual term would be a better fit and a different row"
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "A_sa"
+type = "Ratio"
+unit = "One"
+lower = 0.5
+upper = 3.0
+reason_lower = "below 0.5 Ap the seasonal swing would be under 5 per cent of the mean and indistinguishable from the scatter between the record's individual months, whose means range 8.33 to 11.88. A value there means the fit lost the signal"
+reason_upper = "above 3.0 Ap the modelled peak-to-trough swing would exceed 6 Ap, more than half the record's mean of 10.5 and larger than the observed spread of the monthly means, which is 3.55 from December to September. An answer that large means an annual or cycle term leaked into the semiannual one"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 1.278112
+confirmed_by = "A. Rai / 2026-09-14"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# numbers must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
 
 [view]
 kind = "number"

@@ -19284,25 +19284,33 @@ The coarsest dated fact about the mission: which cycle it flies in. Everything e
 
 Zero at the cycle's start and one at its end. This is the row the whole cycle-dependent half of the subsystem turns on: at the declared epoch it is 0.619, which is past maximum on the declining side — the storm-rich phase.
 
-### `sw_cycle_repeatability` — Cycle repeatability
+### `sw_cycle_repeatability` — Cycle-to-cycle repeatability
 
-> 
+> How much does one solar cycle repeat the shape of the last one?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `r_cyc` |
+| type | `Ratio` |
+| unit | - |
 | kind | declared |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `r_cyc = corr(F107 of cycle 23 by phase, F107 of cycle 24 by phase) = 0.7701` |
+| source | `noaa_swpc` |
+| declared value | **0.7701397224** - |
+| confirmed by | A. Rai / 2026-09-14 |
+| valid over | 0.4 … 0.95 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — below 0.4 the two stacked cycles would share less than 16 per cent of their variance, which would say the solar cycle has no repeatable shape at all. The measured value is 0.770 for 59 per cent shared, and the asymmetric fast rise and slow decline is present in both cycles, so a value that low means the stacking or the boundaries are wrong rather than the Sun being irregular
+- **upper bound** — above 0.95 the two cycles would be near-identical in shape, which the record contradicts: the rms difference between the two phase-stacked curves is 37.7 sfu on a pooled mean near 112, and their peaks differ by 28 per cent. An answer that high means the correlation was taken over too few bins or after a normalisation that removed the disagreement
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** It is one pair of cycles, so there is no distribution behind this number — fails when 0.77 is read as an expected repeatability with an uncertainty. The record holds exactly two complete cycles, 23 and 24, and cycle 25 is still running, so this is a single observation of a correlation and not an estimate of one. Two samples cannot tell a repeatable shape from a coincidence between two particular cycles, and nothing in this bundle can fix that: it needs a longer record. Every consumer of sw_mean_cycle_level inherits this limit
+- **assumes** The shape repeats at 0.77 and the amplitude does not repeat at all, and these are separate findings — fails when the correlation is taken as the whole answer. A correlation is scale-free, so it is blind to exactly the thing a drag design cares about. Cycle 23's binned peak is 206.9 sfu and cycle 24's is 149.4, a ratio of 0.722 — the published smoothed peaks, 196.4 and 146.1, agree at 0.744 — and the rms difference between the two phase-stacked curves is 37.7 sfu against a pooled mean near 112. So the two cycles rise and fall alike and are not the same size. A mission sized on the mean of the two is sized for neither
+- **assumes** Two of the twenty phase bins are excluded, because 273 consecutive days are absent from the record — fails when the bin count is assumed complete. observed_daily.csv carries 10319 rows across a 10592-day span and the whole shortfall is one contiguous gap, 2017-01-01 to 2017-09-30. That gap sits at cycle 24 phase 0.735 to 0.803, which empties bin 15 entirely and leaves bin 14 with 141 days against the usual 201. The correlation is therefore taken over the 18 bins both cycles populate. The gap is on the declining side where F10.7 is low and slowly varying, so its effect on a shape correlation is small; it is excluded rather than interpolated because interpolating across nine months invents the data
+- **assumes** Twenty equal-width phase bins, and cycle length is taken from the published boundaries — fails when the boundaries move. Cycle 23 spans 4338 days and cycle 24 spans 4017, an 8 per cent difference, so an equal-PHASE bin is a different number of DAYS in each cycle — 217 against 201. Stacking on phase rather than on days since minimum is the choice that lets two unequal cycles be compared at all, and it means this row says nothing about whether the two cycles took the same TIME to do the same thing. They did not
+
+The correlation between cycles 23 and 24 after stacking both on phase. It is the credibility of sw_mean_cycle_level: that row hands a design a mean-cycle curve, and this row says how much a single cycle can be expected to look like it. The answer is that the SHAPE repeats and the AMPLITUDE does not, and a design that reads only the correlation will miss the second half.
 
 ### `sw_event_duration` — Burst duration
 
@@ -19685,43 +19693,57 @@ The lead the forecast-verification rows are evaluated at. sw_forecast_skill and 
 
 ### `sw_recurrence_lag` — Rotation recurrence lag
 
-> 
+> At what lag does the solar-rotation signal in F10.7 peak?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `L_rot` |
+| type | `Time` |
+| unit | d |
 | kind | declared |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `L_rot = argmax over lag of corr(F107', F107' shifted by lag) = 26 d` |
+| source | `noaa_swpc` |
+| declared value | **26** d |
+| confirmed by | A. Rai / 2026-09-14 |
+| valid over | 20 … 35 d |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — below 20 days the autocorrelation is still on the steep descent from lag 1 and is falling, not peaking: it reads +0.186 at lag 20 against +0.376 at the peak. A value there would mean the detrending removed the rotation instead of the cycle
+- **upper bound** — above 35 days the first bump has closed — the correlation is +0.031 at lag 35 and negative by 36 — and anything beyond is the second harmonic near lag 54, which is the same signal counted twice. A value there would be reporting a harmonic as the fundamental
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** 26 is where the first peak sits and 27 is the period, and the one-day gap is a known bias in the estimator rather than a disagreement — fails when the first peak is read as the rotation period. The autocorrelation of the detrended series decays steeply from +0.936 at lag 1 to -0.066 at lag 13, and the rotation bump rides on the tail of that decay, so its apparent peak is pulled toward zero lag. The harmonics settle it: the second peak is at lag 54 and the third at lag 81, both exactly 27.0 days per cycle, and they sit far enough out that the decay no longer tilts them. So the period is 27 days and the first-peak estimate is one day short. This row reports the measured peak, which is what the MATLAB field C.rot_peak_lag holds; a row that needs the period should use 27 and cite the harmonics
+- **assumes** The bump is broad, so the single lag overstates how sharp the recurrence is — fails when it is treated as a period a design can phase-lock to. Correlation exceeds +0.34 at every lag from 24 to 28 and exceeds +0.30 from 23 to 29 — a seven-day-wide shoulder. The Sun does not rotate as a solid body: the equator turns in about 25 days and mid-latitudes in about 28, and active regions emerge and decay within a rotation. So the recurrence is a tendency over a week-wide window, not a clock
+- **assumes** The 11-year cycle was removed with a 365-day centred mean, and that choice sets what is left — fails when the detrending window is comparable to the signal. At 365 days it is thirteen rotations long, so it removes the cycle and the annual terms while leaving the rotation untouched; the residual has a standard deviation of 19.85 sfu about a mean of -0.03. A window near 27 days would remove the rotation itself and this row would measure nothing. 3 of 10319 days in the record have no F10.7 and are excluded pairwise rather than interpolated
+
+The lag at which today's F10.7 best predicts a future day, once the 11-year cycle is removed. It is the reason a 27-day outlook is 27 days long, and it is the shortest horizon at which a design can expect an active region to come back round.
 
 ### `sw_recurrence_strength` — Rotation recurrence strength
 
-> 
+> How strong is the solar-rotation recurrence in F10.7?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `r_rot` |
+| type | `Ratio` |
+| unit | - |
 | kind | declared |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `r_rot = corr(F107', F107' shifted by L_rot) = 0.375988` |
+| source | `noaa_swpc` |
+| declared value | **0.375988** - |
+| confirmed by | A. Rai / 2026-09-14 |
+| valid over | 0.1 … 0.7 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — below 0.1 the rotation bump would be indistinguishable from the noise floor of the detrended series, whose correlation sits between -0.09 and +0.03 across lags 36 to 47. A value there means the detrending removed the signal
+- **upper bound** — above 0.7 a rotation-ahead correlation would be stronger than the measured one-day correlation of the same series at lag 5 (+0.531), which would mean F10.7 is more predictable 26 days out than 5 days out. The measured value is 0.376 and nothing in the record approaches 0.7
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** A correlation of 0.376 explains 14 per cent of the variance, and that is the number a design should hear — fails when the correlation is read as the fraction of the signal that recurs. Squared it is 0.1414, so a rotation ahead the recurrence accounts for one seventh of the detrended variation and the other six sevenths is new. It is enough to make a 27-day outlook better than nothing — sw_forecast_skill measures +0.018 still at lead 23 — and nowhere near enough to size anything on
+- **assumes** It is the strength at the FIRST peak and the signal keeps going — fails when the recurrence is assumed to die within one rotation. The second harmonic at lag 54 still carries +0.136 and the third at lag 81 carries +0.067, so an active region is faintly detectable three rotations out. This row reports only the first peak, which is what the MATLAB field C.rot_peak_r holds. The decay across harmonics — 0.376, 0.136, 0.067 — is roughly geometric and is the physical lifetime of an active region showing up in the statistics
+- **assumes** Pooled over cycles 23, 24 and the rise of 25, and the recurrence is certainly not constant across them — fails when a design at a known cycle phase wants the recurrence it will actually see. At solar maximum there are many active regions and their overlap blurs the rotation signal; near minimum a single long-lived region can dominate it. This is one correlation over 10242 detrended days spanning all three, so it averages regimes in which the mechanism differs. A phase-conditioned version would be a separate row and would need the epoch, which now exists
+
+The correlation at the recurrence lag sw_recurrence_lag reports. It says how much of a future day a design can actually infer from an active region coming back round, and the answer is a useful tendency rather than a prediction: 0.376 is 14 per cent of the variance.
 
 ### `sw_regime` — Geomagnetic regime
 
@@ -19743,25 +19765,33 @@ The lead the forecast-verification rows are evaluated at. sw_forecast_skill and 
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
-### `sw_semiannual_amplitude` — Semiannual amplitude
+### `sw_semiannual_amplitude` — Semiannual Ap amplitude
 
-> 
+> How large is the semiannual variation in geomagnetic activity?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `A_sa` |
+| type | `Ratio` |
+| unit | - |
 | kind | declared |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `Ap(doy) = 10.4936 + A*cos(4*pi*(doy-1)/365.25 - phi),  A = 1.2781` |
+| source | `noaa_swpc` |
+| declared value | **1.278112** - |
+| confirmed by | A. Rai / 2026-09-14 |
+| valid over | 0.5 … 3 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — below 0.5 Ap the seasonal swing would be under 5 per cent of the mean and indistinguishable from the scatter between the record's individual months, whose means range 8.33 to 11.88. A value there means the fit lost the signal
+- **upper bound** — above 3.0 Ap the modelled peak-to-trough swing would exceed 6 Ap, more than half the record's mean of 10.5 and larger than the observed spread of the monthly means, which is 3.55 from December to September. An answer that large means an annual or cycle term leaked into the semiannual one
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** The seasonal signal is real and explains 0.63 per cent of the daily variance — fails when the amplitude is used to predict a day. Least squares over 10299 daily Ap values from 1997-01-09 to 2025-12-31 gives an amplitude of 1.278 on an offset of 10.494 — a swing of about 12 per cent about the mean — and the fit accounts for 0.006347 of the total variance. Daily Ap has a standard deviation of 11.34 against a mean of 10.50, so storm-to-storm variation dwarfs the season by more than an order of magnitude. The signal is a shift in the MEAN, visible only in aggregate: it belongs in a monthly or annual budget and is worthless as a daily correction
+- **assumes** The maxima land on the equinoxes, which is how the fit is known to be the physical effect and not a fitting artefact — fails when the phase is ignored. The fitted maxima are at day of year 96.8 and 279.4 — 6 April and 6 October — within a week of both equinoxes, and the fit was given no knowledge of them. The monthly means agree independently: September 11.88 and October 11.84 at the top, December 8.33 and January 8.61 at the bottom, a peak-to-trough ratio of 1.43. Nothing was tuned to make that happen, so the 1.278 is measuring the equinoctial effect rather than an arbitrary harmonic
+- **assumes** It is an additive amplitude in Ap, not a multiplicative one, and the distinction matters at high activity — fails when it is applied at an activity level far from the record's mean. The fit adds and subtracts 1.278 Ap regardless of the underlying level, so at the record's mean of 10.5 it is a 12 per cent modulation and at a storm level of 100 it would be 1.3 per cent. The physical mechanism is a modulation of coupling efficiency and so is closer to multiplicative, which means this additive form understates the seasonal effect during active periods and overstates it during quiet ones. It is carried additively because that is the form the record was fitted in, and a multiplicative version would need refitting on the log
+- **assumes** One harmonic, so the annual and the semiannual are not separated — fails when an annual asymmetry is present, and one is: the two fitted maxima should be equal by construction, and the monthly means are not — the autumn peak near September and October reaches 11.88 while the spring peak near May reaches 11.39. A single semiannual term cannot represent that difference and folds it into the residual. Separating an annual from a semiannual term would be a better fit and a different row
+
+Geomagnetic activity is higher near the equinoxes than near the solstices — the equinoctial or Russell-McPherron effect, from the changing angle between the interplanetary field and the geomagnetic dipole. This row says how big that seasonal swing is in Ap. It matters for a drag design because Ap drives the density model, but the size of the effect is the point: it moves the mean by about a tenth and predicts almost nothing about a given day.
 
 ### `sw_spike_threshold` — Spike threshold
 

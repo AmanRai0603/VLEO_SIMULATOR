@@ -2,32 +2,68 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sw_cycle_repeatability"
-label = "Cycle repeatability"
+label = "Cycle-to-cycle repeatability"
 folder = "sw_cycle_repeatability"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
 kind = "declared"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1339
-state = "empty"
+state = "published"
+
+# A statistic of the pinned record with no input, so it is declared rather than
+# computed. There is nothing to compute it FROM inside the tree, and the number
+# must be re-measured if the bundle version changes.
 
 [question]
-text = ""
+text = "How much does one solar cycle repeat the shape of the last one?"
+note = "The correlation between cycles 23 and 24 after stacking both on phase. It is the credibility of sw_mean_cycle_level: that row hands a design a mean-cycle curve, and this row says how much a single cycle can be expected to look like it. The answer is that the SHAPE repeats and the AMPLITUDE does not, and a design that reads only the correlation will miss the second half."
 
 [maths]
-expression = ""
-source = ""
+confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
+expression = "r_cyc = corr(F107 of cycle 23 by phase, F107 of cycle 24 by phase) = 0.7701"
+source = "noaa_swpc"
+
+[[assumption]]
+text = "It is one pair of cycles, so there is no distribution behind this number"
+fails_when = "0.77 is read as an expected repeatability with an uncertainty. The record holds exactly two complete cycles, 23 and 24, and cycle 25 is still running, so this is a single observation of a correlation and not an estimate of one. Two samples cannot tell a repeatable shape from a coincidence between two particular cycles, and nothing in this bundle can fix that: it needs a longer record. Every consumer of sw_mean_cycle_level inherits this limit"
+
+[[assumption]]
+text = "The shape repeats at 0.77 and the amplitude does not repeat at all, and these are separate findings"
+fails_when = "the correlation is taken as the whole answer. A correlation is scale-free, so it is blind to exactly the thing a drag design cares about. Cycle 23's binned peak is 206.9 sfu and cycle 24's is 149.4, a ratio of 0.722 — the published smoothed peaks, 196.4 and 146.1, agree at 0.744 — and the rms difference between the two phase-stacked curves is 37.7 sfu against a pooled mean near 112. So the two cycles rise and fall alike and are not the same size. A mission sized on the mean of the two is sized for neither"
+
+[[assumption]]
+text = "Two of the twenty phase bins are excluded, because 273 consecutive days are absent from the record"
+fails_when = "the bin count is assumed complete. observed_daily.csv carries 10319 rows across a 10592-day span and the whole shortfall is one contiguous gap, 2017-01-01 to 2017-09-30. That gap sits at cycle 24 phase 0.735 to 0.803, which empties bin 15 entirely and leaves bin 14 with 141 days against the usual 201. The correlation is therefore taken over the 18 bins both cycles populate. The gap is on the declining side where F10.7 is low and slowly varying, so its effect on a shape correlation is small; it is excluded rather than interpolated because interpolating across nine months invents the data"
+
+[[assumption]]
+text = "Twenty equal-width phase bins, and cycle length is taken from the published boundaries"
+fails_when = "the boundaries move. Cycle 23 spans 4338 days and cycle 24 spans 4017, an 8 per cent difference, so an equal-PHASE bin is a different number of DAYS in each cycle — 217 against 201. Stacking on phase rather than on days since minimum is the choice that lets two unequal cycles be compared at all, and it means this row says nothing about whether the two cycles took the same TIME to do the same thing. They did not"
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "r_cyc"
+type = "Ratio"
+unit = "One"
+lower = 0.4
+upper = 0.95
+reason_lower = "below 0.4 the two stacked cycles would share less than 16 per cent of their variance, which would say the solar cycle has no repeatable shape at all. The measured value is 0.770 for 59 per cent shared, and the asymmetric fast rise and slow decline is present in both cycles, so a value that low means the stacking or the boundaries are wrong rather than the Sun being irregular"
+reason_upper = "above 0.95 the two cycles would be near-identical in shape, which the record contradicts: the rms difference between the two phase-stacked curves is 37.7 sfu on a pooled mean near 112, and their peaks differ by 28 per cent. An answer that high means the correlation was taken over too few bins or after a normalisation that removed the disagreement"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 0.7701397224
+confirmed_by = "A. Rai / 2026-09-14"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# numbers must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
 
 [view]
 kind = "number"
