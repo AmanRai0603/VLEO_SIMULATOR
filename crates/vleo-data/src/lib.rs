@@ -437,3 +437,176 @@ pub fn read_drivers(b: &Bundle) -> Result<Vec<DriverRow>, String> {
     }
     Ok(out)
 }
+
+// ---------------------------------------------------------------------------
+// The solar-weather record
+// ---------------------------------------------------------------------------
+
+/// One day of the observed record.
+///
+/// The eight three-hourly Kp are kept as the eight they are rather than
+/// averaged on the way in. A daily mean and a daily peak are different
+/// questions — the peak is what a storm looks like and the mean is what a
+/// daily Ap can support — and a reader that collapsed them here would decide
+/// that for every caller.
+#[derive(Clone, Copy, Debug)]
+pub struct SolarDay {
+    /// Days since 2000-01-01. The same epoch `DriverRow` uses, so the two
+    /// tables join without a calendar library and without a clock.
+    pub day: i32,
+    pub f107: Option<f64>,
+    pub ap: Option<f64>,
+    /// The eight three-hourly Kp, 00-03z first. `None` where the record has a
+    /// gap, which is not the same as zero and must not become it.
+    pub kp: [Option<f64>; 8],
+    pub kp_max: Option<f64>,
+}
+
+/// Days since 2000-01-01 from `YYYY-MM-DD`.
+///
+/// Public because a caller with a date needs the same epoch the tables use,
+/// and two implementations of one calendar is one implementation too many.
+///
+/// Written out rather than taken from a date crate: this is the only calendar
+/// arithmetic the store does, a dependency for it would be the largest thing in
+/// the crate, and the algorithm is a published one (Howard Hinnant's
+/// `days_from_civil`), not something invented here.
+pub fn days_since_2000(s: &str) -> Option<i32> {
+    let b = s.as_bytes();
+    if b.len() != 10 || b[4] != b'-' || b[7] != b'-' {
+        return None;
+    }
+    let n = |a: usize, z: usize| -> Option<i64> { s[a..z].parse::<i64>().ok() };
+    let (y, m, d) = (n(0, 4)?, n(5, 7)?, n(8, 10)?);
+    if !(1..=12).contains(&m) || !(1..=31).contains(&d) {
+        return None;
+    }
+    let y = if m <= 2 { y - 1 } else { y };
+    let era = if y >= 0 { y } else { y - 399 } / 400;
+    let yoe = y - era * 400;
+    let mp = (m + 9) % 12;
+    let doy = (153 * mp + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    // 719468 puts the epoch at 1970-01-01; 10957 shifts it to 2000-01-01.
+    i32::try_from(era * 146_097 + doe - 719_468 - 10_957).ok()
+}
+
+fn cell(v: &str) -> Option<f64> {
+    let v = v.trim();
+    if v.is_empty() {
+        None
+    } else {
+        v.parse().ok()
+    }
+}
+
+/// Read the daily observed record out of a `solar-weather` bundle.
+///
+/// Refuses an unverified bundle for the same reason `read_drivers` does: a
+/// number whose bytes were not checked is not evidence, and reading it anyway
+/// is how an unverified file ends up under a published result.
+pub fn read_solar_days(b: &Bundle) -> Result<Vec<SolarDay>, String> {
+    if !b.verified {
+        return Err(format!(
+            "{} is present but does not verify — refusing to read it",
+            b.manifest.name
+        ));
+    }
+    let p = b.dir.join("observed_daily.csv");
+    let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+
+    let mut cols: Option<Vec<String>> = None;
+    let mut out = Vec::new();
+    for (n, line) in text.lines().enumerate() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let f: Vec<&str> = line.split(',').map(str::trim).collect();
+        // The header names the columns, and every read below goes through it.
+        // Reading by position would survive a column being inserted and return
+        // the wrong quantity, silently, which is the failure this file format
+        // exists to avoid.
+        let Some(h) = &cols else {
+            cols = Some(f.iter().map(|s| s.to_string()).collect());
+            continue;
+        };
+        let at = |name: &str| -> Option<&str> {
+            h.iter()
+                .position(|c| c == name)
+                .and_then(|i| f.get(i).copied())
+        };
+        let date = at("date").ok_or_else(|| format!("{}: no 'date' column", p.display()))?;
+        let day = days_since_2000(date)
+            .ok_or_else(|| format!("{}:{}: '{date}' is not a date", p.display(), n + 1))?;
+        let mut kp = [None; 8];
+        for (i, slot) in kp.iter_mut().enumerate() {
+            *slot = at(&format!("kp_{:02}z", i * 3)).and_then(cell);
+        }
+        out.push(SolarDay {
+            day,
+            f107: at("f107").and_then(cell),
+            ap: at("ap_planetary").and_then(cell),
+            kp,
+            kp_max: at("kp_max").and_then(cell),
+        });
+    }
+    if out.is_empty() {
+        return Err(format!("{}: no rows", p.display()));
+    }
+    // The record is a time series and everything downstream will bisect it. A
+    // file that arrived out of order would make every lookup silently wrong, so
+    // it is checked once here rather than assumed at every call site.
+    if out.windows(2).any(|w| w[1].day <= w[0].day) {
+        return Err(format!(
+            "{}: rows are not in strictly increasing date order",
+            p.display()
+        ));
+    }
+    Ok(out)
+}
+
+/// The row for one day, or `None` if the record does not cover it.
+///
+/// Binary search rather than a scan: the caller is a design window asking for
+/// three hundred and sixty-five consecutive days, and a scan per day is a scan
+/// of ten thousand rows three hundred and sixty-five times.
+pub fn solar_day(rows: &[SolarDay], day: i32) -> Option<&SolarDay> {
+    rows.binary_search_by_key(&day, |r| r.day)
+        .ok()
+        .map(|i| &rows[i])
+}
+
+/// Every row in `[from, to]`, inclusive, as a slice of the record.
+///
+/// A slice, not a copy: a mission window is a contiguous run of the table and
+/// there is no reason for the caller to own a second copy of it.
+///
+/// **The record has a hole in it.** 2017-01-01 to 2017-09-30 is absent — 273
+/// days, and the source's own metadata calls the record "gap-free". A window
+/// overlapping that range comes back shorter than the days asked for, and
+/// nothing here treats that as an error, because a shorter window is the
+/// truthful answer. A caller sizing a design against it wants
+/// [`days_missing`] first.
+pub fn solar_window(rows: &[SolarDay], from: i32, to: i32) -> &[SolarDay] {
+    if from > to {
+        return &[];
+    }
+    let a = rows.partition_point(|r| r.day < from);
+    let b = rows.partition_point(|r| r.day <= to);
+    &rows[a..b]
+}
+
+/// How many days of `[from, to]` the record does not have.
+///
+/// Zero means the window is complete. Anything else is the number of days a
+/// caller would be averaging over without knowing it — which for the 2017 hole
+/// is nine months, and is the difference between a design window and most of a
+/// design window.
+pub fn days_missing(rows: &[SolarDay], from: i32, to: i32) -> i32 {
+    if from > to {
+        return 0;
+    }
+    let asked = to - from + 1;
+    asked - solar_window(rows, from, to).len() as i32
+}

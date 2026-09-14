@@ -12,9 +12,18 @@ note = """
 The whole solar-weather record, as CSV anyone can open.
 
 WHAT THIS IS. Twenty-nine years of daily observation — 1997-01-01 to
-2025-12-31, gap-free — plus every issued 27-day forecast, every alert, the
-monthly means, the three solar cycles the record spans, and a per-day
-geomagnetic regime. 70,415 rows across seven files.
+2025-12-31 — plus every issued 27-day forecast, every alert, the monthly means,
+the three solar cycles the record spans, and a per-day geomagnetic regime.
+70,415 rows across seven files.
+
+THE RECORD IS NOT GAP-FREE, WHATEVER ITS OWN METADATA SAYS. The .mat this came
+from describes its daily table as "gap-free daily observed". It is not:
+2017-01-01 to 2017-09-30 is absent — 273 days, nine months, one continuous run
+and the only gap in twenty-nine years. 10,319 rows across a 10,592-day span.
+A mission window overlapping 2017 gets fewer days than it asked for, and
+`vleo_data::days_missing` is how a caller finds that out before averaging over
+a hole. The claim was inherited from the source and repeated here before it was
+checked; it is written down now because the next person will inherit it too.
 
 It arrived as a MATLAB .mat, which is openable by MATLAB and by people who know
 which Python library to reach for. It is CSV here because data nobody can open
@@ -36,6 +45,14 @@ daily record — the last of those is a three-component Gaussian mixture's
 opinion, carrying its own confidence per day, and a day labelled 'storm' is a
 day a model put there.
 
+WHAT IS FACTORED OUT, AND WHAT IS NOT. forecast_issues.csv stores the archive
+path under a base URL named in its own header, rather than the full address on
+every row — 119 KB of one repeated prefix. Only the shared base is factored out.
+Thirteen of the 1,437 paths disagree with their row's own date and issue number:
+1998-08-25 carries issue 1199 and was fetched from 1998/09/prf1200.pdf. Those
+are facts about the archive, and deriving the path from date and number instead
+of storing it would have erased them.
+
 ONE CAVEAT THE SOURCE ITSELF STATES. ap_planetary is the SWPC *estimated*
 planetary A, not the GFZ definitive value. Anyone reconciling against GFZ will
 find differences, and they are not transcription errors.
@@ -47,6 +64,7 @@ every node the solar-weather subsystem will publish, and evidence behind a
 registry nobody can reach is evidence nobody checks.
 """
 files = [
+  "INDEX.md",
   "observed_daily.csv",
   "forecast_issued.csv",
   "forecast_issues.csv",
@@ -57,4 +75,4 @@ files = [
 ]
 # Filled by `xtask bundle publish`; publishing twice from the same input gives
 # the same hash, which is what makes the check meaningful.
-content_hash = "b6c093261109af95"
+content_hash = "f3557eb8443bfdaa"
