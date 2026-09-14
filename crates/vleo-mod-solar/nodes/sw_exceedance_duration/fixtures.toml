@@ -1,0 +1,45 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# Runs of consecutive days at or above the bound, counted over observed_daily.csv.
+# A one-day dip below the bound ends a run. The counts are exact: 131 days in 103
+# runs at G1, 35 in 29 at G2, 8 in 7 at G3, so the means are the exact rationals
+# 131/103, 35/29 and 8/7.
+#
+# EXPECTED VALUES ARE IN SECONDS. This node's answer is a Time, and a Time
+# crosses the boundary in seconds whatever unit the sheet declares it in. Each
+# is the rational above times 86400, worked out apart from the engine.
+#
+# THE ORDER MATTERS AND IT IS NOT COSMETIC. The generated robustness test
+# perturbs the FIRST fixture's input by plus and minus one per cent and requires
+# the node not to refuse. Ap 80 is interior to the producer's declared range of
+# 40 to 140; Ap 132 at the top would be perturbed to 133.3, which is still in
+# range, but 80 is chosen because it is also interior to the table's own anchors.
+
+[[fixture]]
+label = "the G2 bound, Ap 80 — 29 runs, mean 1.21 days"
+expect = 104275.86206896552
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap_design = 80.0 }
+
+[[fixture]]
+label = "the G1 bound, Ap 48 — the lowest level the G scale defines"
+expect = 109887.3786407767
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap_design = 48.0 }
+
+[[fixture]]
+label = "the G3 bound, Ap 132 — the declared design level"
+expect = 98742.85714285713
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap_design = 132.0 }

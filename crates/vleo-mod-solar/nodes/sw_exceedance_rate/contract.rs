@@ -6,14 +6,15 @@
 use vleo_core::fault::Fault;
 use vleo_core::units::*;
 
-/// What this node publishes: `Ap_req` (Ap), in `-`.
-pub const NODE_ID: &str = "l3_solar_req_03";
-pub const SHEET_HASH: u64 = 0xdf931c1506528848;
+/// What this node publishes: `R_exc` (Days a year above the design level), in `-`.
+pub const NODE_ID: &str = "sw_exceedance_rate";
+pub const SHEET_HASH: u64 = 0x7251b4673e76443c;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
+    "sw_ap_design",
 ];
 /// The variables this node publishes.
-pub const OUTPUT_VARS: &[&str] = &["l3_solar_req_03"];
+pub const OUTPUT_VARS: &[&str] = &["sw_exceedance_rate"];
 /// The SI unit every value crossing this boundary is expressed in.
 pub const OUTPUT_UNIT: Unit = Ratio::UNIT;
 
@@ -21,10 +22,11 @@ pub const OUTPUT_UNIT: Unit = Ratio::UNIT;
 /// so the bus carries no quantity types and a face cannot pass arguments
 /// in the wrong order.
 pub fn call(inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {
-    if outputs.is_empty() {
+    if inputs.is_empty() || outputs.is_empty() {
         return Err(Fault::Blocked { node: NODE_ID, missing: "an input the contract declares" });
     }
-    let answer = super::model::evaluate()?;
+    let ap_design: Ratio = Ratio::new(inputs[0]);
+    let answer = super::model::evaluate(ap_design)?;
     outputs[0] = answer.get();
     Ok(())
 }

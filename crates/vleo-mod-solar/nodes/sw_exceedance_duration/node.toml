@@ -1,0 +1,79 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_exceedance_duration"
+label = "How long one exceedance lasts"
+folder = "sw_exceedance_duration"   # frozen at seed; renaming the label never moves the directory
+subsystem = "solar"
+parent = "l3_solar"
+kind = "computed"
+owner = "environment"
+tier = "A"
+criticality = "significant"   # minor | significant — significant means two reviewers and a differential fill
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1366
+state = "published"
+
+# The second of the three exceedance rows. sw_exceedance_rate says how often the
+# design bound is passed; this says how long the vehicle stays outside it once
+# it is. The two together are what decides whether an exceedance is an event to
+# ride out or a condition to survive.
+
+[question]
+text = "Once the record goes above the design Ap, how long does it stay there?"
+note = "The mean length of a run of consecutive days at or above sw_ap_design. At G3 it is 1.14 days — an exceedance is one disturbed day, not a siege. That is the reason 1.42 days of exceedance per mission is survivable rather than fatal."
+
+[maths]
+expression = "D_exc(Ap_design) = mean length of a run of consecutive days with Ap >= Ap_design"
+source = "noaa_swpc"
+
+[[assumption]]
+text = "Just over one day at every level, and that is the finding"
+fails_when = "a long exceedance is assumed. Measured, the mean run is 1.271845 days at the G1 bound, 1.206897 at G2 and 1.142857 at G3, and the maxima are 5, 3 and 2 days. The higher the bound the shorter the run, which is what a threshold cutting further into a peaked distribution must do. So at G3 the vehicle is above its design Ap for about one day at a time, at most two — long enough to matter to an attitude budget or a drag transient, not long enough to be a sustained environment. The three numbers are so close together that switching G level changes how OFTEN far more than how LONG"
+
+[[assumption]]
+text = "The mean is over 7 events at G3, and one of them is half the information"
+fails_when = "the third decimal place is believed. At G3 the runs are six of one day and one of two, so the mean of 1.142857 is exactly 8 divided by 7. Remove the single two-day event and it is 1.000. The number is a mean over a sample small enough to write out, and it is published as a mean because that is what the study's field holds — but a designer should read it as 'one day, occasionally two'"
+
+[[assumption]]
+text = "A one-day dip below the bound ends the exceedance"
+fails_when = "a storm rides just under the threshold for a day and comes back. Runs break on the first day that fails the test, so a disturbed week with one quieter day in the middle counts as two exceedances rather than one, shortening the mean and raising the event count in sw_exceedance_rate. Allowing a one-day bridge would be as defensible and would give a different pair of numbers. The rule is stated rather than the number being presented as unique — and it is the same rule sw_event_duration uses for F10.7, so the two are at least consistent with each other"
+
+[[assumption]]
+text = "Daily means, so a violent six hours and a disturbed day look the same"
+fails_when = "the exceedance is short and sharp. Ap is the mean of eight three-hourly slots, so a storm that peaks for six hours and subsides can fail to lift the daily mean above the bound at all, and one that sits moderately high all day can pass it. This row therefore measures days on which the DAILY average exceeded the design value, which is a coarser event than the one a spacecraft feels. The record's three-hourly Kp is in observed_daily.csv and nothing in this group reads it yet"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "D_exc"
+type = "Time"
+unit = "Day"
+lower = 1.0
+upper = 5.0
+reason_lower = "a run is at least one day by construction. A value below 1 means the run-finding is broken rather than that exceedances are brief"
+reason_upper = "the longest run at any design level in 29 years is 5 days, at the G1 bound. A mean above that would exceed every single event the record contains, which no averaging can produce"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "ap_design"
+var = "sw_ap_design"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "read the measured mean length of a consecutive run at or above this Ap"
+binds = "out"
+type = "Time"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# numbers must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
+
+[view]
+kind = "line"
+over = "sw_storm_design_level"
+points = 40

@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1365 rows** — 659 a person picked, 706 worked out. Two thirds of any design tree is
+**1368 rows** — 659 a person picked, 709 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -19121,21 +19121,22 @@ The same quantity as req_01 and the same number, because in this subsystem the s
 | kind | declared |
 | owner | environment |
 | evidence tier | A |
-| relation | `Ap_req = 200` |
+| relation | `Ap_req = Ap_design(G3) * 1.14 = 150` |
 | source | `orbitt_case_c1` |
-| declared value | **200** - |
+| declared value | **150** - |
 | confirmed by | A. Rai / 2026-09-14 |
 | valid over | 20 … 400 - |
 
 - **lower bound** — below 20 the requirement would be under the level at which the record's storms begin — the median day is Ap 7 and sw_storm_return_level's own floor is 20 — so a requirement there could not be met by any mission and is not a requirement
 - **upper bound** — 400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **assumes** 200 is the record's expectation with a round margin, and it lands one G level above the design — fails when the requirement is read as describing the vehicle. sw_storm_return_level at the declared five-year mission gives 158.4 and 200 is the next round number with usable headroom, about 26 per cent. On the G scale 200 sits between G3's ceiling of 132 and G4's of 207, so what has been committed to is G4-class survival while sw_storm_design_level declares G3. A requirement and a design value that disagree by a whole level is a thing to resolve, not a rounding.
-- **assumes** Switching the G level moves the design value and not this row — fails when somebody expects the requirement to follow the switch. sw_storm_design_level is the input a design turns to ask what a different storm level costs — G1 gives 48, G2 gives 80, G3 gives 132 — and sw_ap_design moves with it. This row does not: it is a commitment, and a commitment that silently tracked the design would never be violated and would therefore never be a requirement. Changing it is a separate, deliberate act.
+- **assumes** 150 is a capability plus a margin, and the margin is a decision with no derivation behind it — fails when somebody looks for where 14 per cent came from. sw_ap_design at the declared G3 gives 132 and 150 is the next round number with usable room above it. Nothing in the record picks it. What it is NOT is a number chosen so the closure passes: 150 is below the 158.4 the record expects over the mission, so this requirement is violated by design rather than by accident. A margin chosen to make a closure pass would have been 200, which sits in G4 territory and would have committed the vehicle to a level it is not built for.
+- **assumes** The closure fails and the exceedance rows are the reason that is acceptable — fails when a failing closure is treated as a blocking defect. sw_storm_return_level gives 158.4 at five years against this 150, so l3_solar_ach_03 comes in above the requirement. What a designer needs next is not a bigger number here but the size of the violation, and it is small and bounded: 0.284 days a year above the design Ap of 132, which is 1.42 days over the mission in about 1.24 events averaging 1.14 days each, with the longest run in 29 years being 2 days. The vehicle is outside its design environment for roughly thirty-four hours of a five-year mission. If that is unacceptable the answer is to move sw_storm_design_level, not to raise this row until the arithmetic stops complaining.
+- **assumes** Switching the G level moves the design value and the exceedance statistics, and not this row — fails when somebody expects the requirement to follow the switch. sw_storm_design_level is the input a design turns to ask what a different storm level costs — G1 gives 48, G2 gives 80, G3 gives 132 — and sw_ap_design and all three exceedance rows move with it. At G2 the exceedance rate is 1.24 days a year, 6.21 days over the mission in 5.1 events. This row does not move: it is a commitment, and a commitment that silently tracked the design would never be violated and would therefore never be a requirement. Changing it is a separate, deliberate act.
 - **assumes** A daily mean, which is the wrong shape for what a storm does — fails when the storm is short or long. Daily Ap averages eight three-hourly slots, so a violent six-hour storm and a mild day-long disturbance can share a value, and a requirement written on the daily mean is satisfied by both. The atmosphere responds to the integral with a lag, not to the daily mean. The record's largest daily Ap is 273 — above this requirement — and it is one day in 29 years.
 - **assumes** It is met by the record and the record is 29 years long — fails when the mission meets something the record has not seen. The return level this is checked against is fitted through ranks 2 and 3 of a 28.2-year sample at the mission's five-year period, and the largest event in that sample, Ap 273, has an apparent return period of 28.2 years for no reason but that it is the largest thing in 28.2 years. Events well beyond this requirement are known from longer proxy records. A requirement that a 29-year record cannot violate is not thereby safe.
 
-A G4-class ceiling at 200. The vehicle is designed to G3, which is Ap 132, and the record expects 158.4 over a five-year mission — so the requirement is met while the design value is exceeded. The comment above sets out the three numbers and why they are in that order.
+The G3 design capability of Ap 132 with a 14 per cent margin on it. The record expects 158.4 over the declared five-year mission, so this requirement is NOT met — and the three exceedance rows say what that costs: about 1.42 days outside the bound over the mission, in one or two one-day events, on the declining side of the cycle where the epoch sits.
 
 ### `sw_activity_band` — F10.7 activity band
 
@@ -19219,7 +19220,7 @@ Not a property of the sky but of the people watching it, and it is the operation
 - **lower bound** — the lowest value this relation can return is 48, at G1. A bound at 40 sits just under it and refuses anything that would design to less than a minor storm, which is not a design case: the record has 1358 days at G1 or above, 47 a year
 - **upper bound** — the highest this relation can return is 132, at G3, which is the top of the declared G range. A bound at 140 sits just above it and catches a G level outside the range or a misread table. It does NOT bound the sky: the record's largest daily Ap is 273 and the five-year return level is 158.4, both above this bound, and neither passes through this row
 - **reads** — `sw_storm_design_level`
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **read by** — `sw_exceedance_duration`, `sw_exceedance_phase`, `sw_exceedance_rate`
 - **assumes** The design value is BELOW what the record expects over the mission, and that is not a defect in either row — fails when the two are read as competing answers. At G3 this row gives 132; sw_storm_return_level at the declared five-year mission gives 158.4, and the record's days nearest that Ap all reached Kp_max 9. So the sky a five-year mission should expect is stronger than the sky the vehicle is sized for, by about 20 per cent in daily Ap. The gap is real and is closed by operations rather than by structure: 49 days in 29 years reach G4 and 16 reach G5, and a mission flies through those rather than being built for them. Both numbers belong in the tree precisely so the gap is on a row instead of in somebody's head
 - **assumes** The ceiling of the band, not its middle, and that choice is worth twice the number — fails when a typical G3 day is wanted rather than a bound. Days in the record whose Kp_max is exactly 7 have daily Ap from 15 to 96 with a median of 51 — so the typical G3 day is 51 and this row publishes 132. The ceiling is correct for sizing, because a design bound must hold for the worst day inside the level it claims, and 132 is the value a day would reach if all eight slots sat at Kp 7. It is conservative by construction: no G3 day in 29 years came within a third of it
 - **assumes** The published ap table is the conversion and it is not linear — fails when a G level is interpolated. The ap values at Kp 5, 6 and 7 are 48, 80 and 132 — ratios of 1.67 and 1.65, so the scale is close to geometric and a linear reading between levels is wrong by tens of nanotesla. The relation is a lookup on three integer levels and nothing between them is defined, which is why sw_storm_design_level is bounded to integers 1 to 3 and why this row does not interpolate
@@ -19404,6 +19405,96 @@ The correlation between cycles 23 and 24 after stacking both on phase. It is the
 - **assumes** The 273 absent days can neither start nor end a run — fails when an event straddled 2017. observed_daily.csv is missing 2017-01-01 to 2017-09-30, so a burst in those nine months is absent, and a burst that ran into 2017-01-01 or out of 2017-09-30 is truncated at the gap rather than followed. With 61 events over the record, one or two truncations would move the mean by a tenth of a day, which is the order of the effect and is not corrected for
 
 The dwell that turns a threshold into an event. A design cares about duration rather than about the crossing, because a single elevated day and a week of them are different loads on a drag budget and on a power one.
+
+### `sw_exceedance_duration` — How long one exceedance lasts
+
+> Once the record goes above the design Ap, how long does it stay there?
+
+| | |
+|---|---|
+| symbol | `D_exc` |
+| type | `Time` |
+| unit | d |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `D_exc(Ap_design) = mean length of a run of consecutive days with Ap >= Ap_design` |
+| source | `noaa_swpc` |
+| valid over | 1 … 5 d |
+
+- **lower bound** — a run is at least one day by construction. A value below 1 means the run-finding is broken rather than that exceedances are brief
+- **upper bound** — the longest run at any design level in 29 years is 5 days, at the G1 bound. A mean above that would exceed every single event the record contains, which no averaging can produce
+- **reads** — `sw_ap_design`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** Just over one day at every level, and that is the finding — fails when a long exceedance is assumed. Measured, the mean run is 1.271845 days at the G1 bound, 1.206897 at G2 and 1.142857 at G3, and the maxima are 5, 3 and 2 days. The higher the bound the shorter the run, which is what a threshold cutting further into a peaked distribution must do. So at G3 the vehicle is above its design Ap for about one day at a time, at most two — long enough to matter to an attitude budget or a drag transient, not long enough to be a sustained environment. The three numbers are so close together that switching G level changes how OFTEN far more than how LONG
+- **assumes** The mean is over 7 events at G3, and one of them is half the information — fails when the third decimal place is believed. At G3 the runs are six of one day and one of two, so the mean of 1.142857 is exactly 8 divided by 7. Remove the single two-day event and it is 1.000. The number is a mean over a sample small enough to write out, and it is published as a mean because that is what the study's field holds — but a designer should read it as 'one day, occasionally two'
+- **assumes** A one-day dip below the bound ends the exceedance — fails when a storm rides just under the threshold for a day and comes back. Runs break on the first day that fails the test, so a disturbed week with one quieter day in the middle counts as two exceedances rather than one, shortening the mean and raising the event count in sw_exceedance_rate. Allowing a one-day bridge would be as defensible and would give a different pair of numbers. The rule is stated rather than the number being presented as unique — and it is the same rule sw_event_duration uses for F10.7, so the two are at least consistent with each other
+- **assumes** Daily means, so a violent six hours and a disturbed day look the same — fails when the exceedance is short and sharp. Ap is the mean of eight three-hourly slots, so a storm that peaks for six hours and subsides can fail to lift the daily mean above the bound at all, and one that sits moderately high all day can pass it. This row therefore measures days on which the DAILY average exceeded the design value, which is a coarser event than the one a spacecraft feels. The record's three-hourly Kp is in observed_daily.csv and nothing in this group reads it yet
+- **evidence** the G2 bound, Ap 80 — 29 runs, mean 1.21 days — expect 104275.86206896552 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the G1 bound, Ap 48 — the lowest level the G scale defines — expect 109887.3786407767 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the G3 bound, Ap 132 — the declared design level — expect 98742.85714285713 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The mean length of a run of consecutive days at or above sw_ap_design. At G3 it is 1.14 days — an exceedance is one disturbed day, not a siege. That is the reason 1.42 days of exceedance per mission is survivable rather than fatal.
+
+### `sw_exceedance_phase` — When in the cycle exceedances fall
+
+> Where in the solar cycle do the exceedances of the design Ap fall?
+
+| | |
+|---|---|
+| symbol | `P_exc` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `P_exc(Ap_design) = median cycle phase of the days with Ap >= Ap_design` |
+| source | `noaa_swpc` |
+| valid over | 0 … 1 - |
+
+- **lower bound** — cycle phase runs 0 at minimum to 1 at the next minimum, so 0 is the floor by definition. A median at 0 would mean every exceedance fell on the first day of a cycle
+- **upper bound** — 1 is the end of a cycle by the same definition. A median at 1 would mean every exceedance fell on the last day of one
+- **reads** — `sw_ap_design`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** A median with no spread beside it, and the spread is the part a schedule needs — fails when 0.603 is read as when exceedances happen. It is where the middle one happened. At G3 the eight days run from phase 0.294 to 0.736 — a band nearly half a cycle wide, about five years — and they fall in phase deciles 0.2-0.3, 0.3-0.4, 0.5-0.6 twice, 0.6-0.7 three times and 0.7-0.8 once. Half of them sit between 0.2 and 0.6. A design that reads only this row plans for a date; a design that reads the assumption plans for a five-year window
+- **assumes** It is stable across G level, which means it is the cycle rather than the threshold — fails when the median is expected to move with the bound. It barely does: 0.571692 at the G1 bound, 0.576302 at G2 and 0.602697 at G3, a drift of three hundredths across a factor of nearly three in threshold. So the timing is a property of the solar cycle — disturbed days cluster after maximum, on the declining phase, where coronal holes dominate — and not of where the line is drawn. That stability is the reason the row is worth having: it would be meaningless if it tracked the threshold
+- **assumes** Eight days at G3, and a median of eight numbers is a coarse instrument — fails when precision is read into 0.603. The sample is 131 days at G1, 35 at G2 and 8 at G3, so at the declared level the median sits between the fourth and fifth of eight values. Moving one storm moves the median by a few hundredths. The three levels agreeing to within 0.03 on samples of 8, 35 and 131 is better evidence for the timing than any one of them alone
+- **assumes** Phase is folded on three cycles, one of which is incomplete, and 273 days are missing from the risky part — fails when the phase scale is assumed uniform. Cycle 25's end in solar_cycles.csv is the record's end rather than a real minimum, so phases inside it are computed against a cycle whose length is not yet known; cycles 23 and 24 differ in length by 8 per cent, so equal phase is unequal time. And the 2017 gap sits at phase 0.74 to 0.80 of cycle 24, just past the upper edge of the G3 exceedance band — so whatever fell there is absent from this median and from sw_exceedance_rate's count
+- **evidence** the G2 bound, Ap 80 — median phase 0.576 — expect 0.5763024435 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the G1 bound, Ap 48 — the lowest level the G scale defines — expect 0.571692024 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the G3 bound, Ap 132 — the declared design level — expect 0.6026970954 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The median cycle phase of the days above sw_ap_design, on the 0-to-1 scale sw_cycle_phase uses. At G3 it is 0.603 — the declining side, just past maximum — and the declared epoch sits at 0.619.
+
+### `sw_exceedance_rate` — Days a year above the design level
+
+> How many days a year does the record go above the design Ap?
+
+| | |
+|---|---|
+| symbol | `R_exc` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `R_exc(Ap_design) = days with Ap >= Ap_design, per year of record` |
+| source | `noaa_swpc` |
+| valid over | 0.1 … 6 - |
+
+- **lower bound** — the lowest rate this relation can return is 0.284, at the G3 bound of Ap 132. A bound at 0.1 sits under it and catches a table read at the wrong end; it is NOT a claim that no design level is exceeded less often, because a higher bound than G3 is outside the declared G range
+- **upper bound** — the highest is 4.65, at the G1 bound of Ap 48. A bound at 6 sits just above it. A rate above 6 days a year would mean the design level had fallen to around Ap 40, which is below anything the G scale defines as a storm and below what sw_ap_design can return
+- **reads** — `sw_ap_design`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** The design bound IS exceeded, and the rate is the whole argument for accepting it — fails when the bound is read as a limit the sky respects. At G3, Ap 132, the record holds 8 days above it in 28.197 years — 0.284 a year, one day in 1287. Over the declared five-year mission that is 1.42 days. At G2, Ap 80, it is 35 days, 1.24 a year, 6.21 days per mission; at G1, Ap 48, it is 131 days, 4.65 a year, 23.2 days per mission. A design that must never be exceeded cannot be built at any of these levels, and the decision is about how many days of exceedance are tolerable rather than whether there are any
+- **assumes** Three points and a straight line between them, on a quantity that is anything but straight — fails when the answer is read anywhere except at 48, 80 or 132. Those are the only three values sw_ap_design can return, because the G scale is defined on integers and the producer's range is 1 to 3. The relation interpolates between them because Table1 must do something, and the interpolation is wrong: exceedance rate against threshold is close to exponential — 4.65, 1.24, 0.284 falls by a factor of 3.7 then 4.4 — so a linear reading between anchors overstates the rate badly in the middle. Nothing in the tree can reach those points, and this assumption exists so that the day something can, it is not believed
+- **assumes** It is a rate over a record, not a forecast, and the record is short where it matters — fails when the mission is the one that meets the rare event. 8 days above G3 in 28 years is a small sample: remove the single worst storm and the count is 7. The rate has a counting uncertainty of roughly its own square root, so 0.284 a year is 0.284 give or take 0.10 — a third of itself. Sizing on 1.42 days per mission when the honest range is roughly 0.9 to 2.0 is the correct use of it; treating 1.42 as a number with two decimal places of meaning is not
+- **assumes** 273 absent days, and they are not spread evenly over the risk — fails when the count is read as complete. observed_daily.csv is missing 2017-01-01 to 2017-09-30. That window sits on cycle 24's decline at phase 0.74 to 0.80, which is inside the band where exceedances concentrate — sw_exceedance_phase puts their median at 0.603 and their spread at 0.29 to 0.74. So the gap is in the risky part of the cycle, not the quiet part, and the true rate is more likely above this figure than below it. The denominator used is 28.197 years, the days actually present, so the gap does not dilute the rate; what it does is remove whatever happened in it
+- **evidence** the G2 bound, Ap 80 — 35 days above in the record, 1.24 a year — expect 1.2412612875 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the G1 bound, Ap 48 — the lowest level the G scale defines — expect 4.6458636761 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the G3 bound, Ap 132 — the declared design level — expect 0.2837168657 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The exceedance rate of sw_ap_design, measured over 28.197 years. Multiply by the mission length for the number of days the vehicle spends outside what it was built for: at G3 and five years that is 1.42 days.
 
 ### `sw_f107_81day` — F10.7 81-day centred mean
 

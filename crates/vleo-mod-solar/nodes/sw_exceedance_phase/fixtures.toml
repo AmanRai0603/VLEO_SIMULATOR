@@ -1,0 +1,38 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# The cycle phase of each day above the bound, from the boundaries in solar_cycles.csv, and the median of those phases.
+#
+# THE ORDER MATTERS AND IT IS NOT COSMETIC. The generated robustness test
+# perturbs the FIRST fixture's input by plus and minus one per cent and requires
+# the node not to refuse. Ap 80 is interior to the producer's declared range of
+# 40 to 140; Ap 132 at the top would be perturbed to 133.3, which is still in
+# range, but 80 is chosen because it is also interior to the table's own anchors.
+
+[[fixture]]
+label = "the G2 bound, Ap 80 — median phase 0.576"
+expect = 0.5763024435
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap_design = 80.0 }
+
+[[fixture]]
+label = "the G1 bound, Ap 48 — the lowest level the G scale defines"
+expect = 0.5716920240
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap_design = 48.0 }
+
+[[fixture]]
+label = "the G3 bound, Ap 132 — the declared design level"
+expect = 0.6026970954
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap_design = 132.0 }
