@@ -2,32 +2,73 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sw_mean_cycle_level"
-label = "Mean-cycle F10.7 level"
+label = "Mean-cycle F10.7 at a phase"
 folder = "sw_mean_cycle_level"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1338
-state = "empty"
+state = "published"
+
+# No migrated_from and no parity grid: the numbers are statistics of the record
+# rather than a closed form, and there is no MATLAB here to run. Same reasoning
+# as every measured row in this group.
 
 [question]
-text = ""
+text = "What F10.7 does the average solar cycle show at this phase?"
+note = "The climatology that knows where in the cycle it is. sw_central_expectation currently hands over to the record's unconditional mean of 114.8 sfu because no date was available; at the declared epoch's phase of 0.619 this row says 105.8 instead. That difference is what having a date buys."
 
 [maths]
-expression = ""
-source = ""
+expression = "F107_cyc(phase) = mean over complete cycles of F10.7 at that phase"
+source = "noaa_swpc"
+
+[[assumption]]
+text = "Two cycles, stacked on phase, in twenty bins"
+fails_when = "cycles 23 and 24 are the only complete ones in the record, so every bin is the mean of two cycles and nothing more. Two samples cannot separate a cycle's shape from a cycle's individuality: cycle 23 peaked at 196 sfu and cycle 24 at 146, a 34% difference, and this row averages them into one curve that matches neither. The bins hold 358 to 418 days each except the 0.775 bin, which holds 217 because the two cycles' lengths differ and the stacking leaves it thin"
+
+[[assumption]]
+text = "It is a mean and not a band"
+fails_when = "half the days at any phase sit above this line. It is the CENTRE for a design value, and sw_uncertainty_growth supplies the spread that makes it safe. Sizing anything on this row alone would be sizing on the average day of the average cycle, which is the one thing a mission is guaranteed not to get"
+
+[[assumption]]
+text = "The curve is not symmetric and the asymmetry is real"
+fails_when = "the mean rises from 71.8 sfu at phase 0.025 to 165.3 at 0.425 and falls to 67.7 by 0.975 — a fast rise and a slow decline, which is the known shape of a solar cycle and not a binning artefact. A design at phase 0.2 and one at phase 0.8 are both 'mid-cycle' and are owed 111 and 76 sfu respectively"
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "F107_cyc"
+type = "Ratio"
+unit = "One"
+lower = 60.0
+upper = 400.0
+reason_lower = "the same floor as env_f107: below 60 sfu has never been observed and no relation reading F10.7 has support there"
+reason_upper = "the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating. The largest binned mean is 165.3, so this bound is unreachable by the relation and catches a broken table"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "phase"
+var = "sw_cycle_phase"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "read the phase-binned mean F10.7 of the complete cycles at this phase"
+binds = "out"
+type = "Ratio"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# numbers must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
 
 [view]
-kind = "number"
+kind = "line"
+over = "sys_mission_requirements_mission_epoch"
+points = 60

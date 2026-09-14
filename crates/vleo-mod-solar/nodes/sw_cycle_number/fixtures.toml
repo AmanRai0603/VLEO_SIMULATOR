@@ -1,0 +1,52 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# The three cycle starts in solar_cycles.csv, as days since 2000-01-01:
+# cycle 23 at -1081 (1997-01-15), 24 at 3257 (2008-12-01), 25 at 7274
+# (2019-12-01). Every fixture sits on or one day either side of a boundary,
+# because that is the only place a step function can be wrong. Lead is a Time in
+# SECONDS at the boundary, so each is days * 86400.
+
+[[fixture]]
+label = "one day before cycle 24 begins — still 23"
+expect = 23.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { epoch = 281318400.0 }
+
+[[fixture]]
+label = "the day cycle 24 begins — 24, because a boundary belongs to the cycle it opens"
+expect = 24.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { epoch = 281404800.0 }
+
+[[fixture]]
+label = "one day before cycle 25 begins — still 24"
+expect = 24.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { epoch = 628387200.0 }
+
+[[fixture]]
+label = "the day cycle 25 begins — 25"
+expect = 25.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { epoch = 628473600.0 }
+
+[[fixture]]
+label = "the declared mission epoch, 2027-01-01 — cycle 25, past the record's end"
+expect = 25.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { epoch = 852076800.0 }

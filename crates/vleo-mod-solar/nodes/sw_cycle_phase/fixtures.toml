@@ -1,0 +1,49 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# Phase is (epoch - 7274 d) / (11.44 * 365.25 d), where 7274 is cycle 25's start
+# from solar_cycles.csv and 11.44 years is the mean of cycles 23 and 24 at 11.88
+# and 11.00. Worked through outside this crate.
+#
+# THE ORDER MATTERS HERE AND IT IS NOT COSMETIC. The generated robustness test
+# perturbs the FIRST fixture's input by plus and minus one per cent and requires
+# the node not to refuse. The cycle-25 boundary was first, where the phase is
+# exactly zero — and one per cent of that date is about 73 days, which crosses
+# the cycle start and makes the phase negative, so the node refused and the test
+# failed. Correctly: a boundary case is not a representative operating point, and
+# that test exists to ask whether the node is sound near one. The declared epoch
+# leads instead, at phase 0.619 where plus or minus one per cent moves the answer
+# to 0.596 or 0.643 and nothing is near a limit. The boundary is still pinned,
+# second.
+#
+# These were also wrong once by 8e-10, derived from a rounded mean length rather
+# than from the expression the node evaluates. A fixture derived from a
+# paraphrase of the relation is not evidence about the relation.
+
+[[fixture]]
+label = "the declared mission epoch, 2027-01-01 — 2588 days into cycle 25"
+expect = 0.6193669438022621
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { epoch = 852076800.0 }
+
+[[fixture]]
+label = "the day cycle 25 begins — phase must be exactly zero"
+expect = 0.0
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { epoch = 628473600.0 }
+
+[[fixture]]
+label = "half a mean cycle after the start — phase one half, to the last bit float allows"
+expect = 0.4999999999999999
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { epoch = 808983072.0 }

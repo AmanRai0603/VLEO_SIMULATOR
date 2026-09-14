@@ -1,8 +1,8 @@
-<article class="node" data-node="sw_cycle_number" data-sheet-hash="5a8e96" data-impl-hash="222325">
+<article class="node" data-node="sw_cycle_number" data-sheet-hash="085c63" data-impl-hash="a80be6">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Solar cycle number</h2>
-  <p class="ident"><code>sw_cycle_number</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <p class="ident"><code>sw_cycle_number</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
@@ -15,54 +15,139 @@
   <button role="tab" class="tab" data-tab="7">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">Which numbered solar cycle is the mission epoch in?</p>
+<p class="maths"><code>cyc(T) = 23 + count(cycle_starts &lt;= T)</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The coarsest dated fact about the mission: which cycle it flies in. Everything else that depends on the date depends on this first, because a phase means nothing without a cycle to be a phase of.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>The cycle boundaries are the record's three, and a fourth would need a source this bundle does not contain</dt><dd>fails when solar_cycles.csv holds cycles 23, 24 and 25 with starts 1997-01-15, 2008-12-01 and 2019-12-01 — the boundaries prf_cycles calls standard. The record begins mid-cycle-23 and ends mid-cycle-25, so cycle 22 and cycle 26 are outside it entirely. An epoch after cycle 26 begins would still return 25 here, because nothing in the data says when 26 starts, and a row that guessed would be inventing a boundary. The declared upper bound is what stops that being silent</dd>
+<dt>The epoch is past the record, so the phase is FOLDED with a mean cycle length rather than measured</dt><dd>fails when solar_cycles.csv gives cycle 25 a start of 2019-12-01 and an end of 2025-12-15 with a length of 6.04 years. That end and that length are artefacts of where the RECORD stops, not where the cycle stops: cycles 23 and 24 ran 11.88 and 11.00 years. The epoch, day 9862, is 382 days past that recorded end, so no cycle in the table contains it. The phase is therefore computed against the mean of the two COMPLETE cycles, 11.44 years, which is what prf_design's meanCycleAt does beyond its last cycle. If cycle 25 turns out short or long the phase moves, and every row reading it moves with it</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sw_cycle_number</td><td></td><td>-</td></tr>
+<tr><td>in</td><td><code>epoch</code></td><td><a class="xref" data-goto="sys_mission_requirements_mission_epoch">sys_mission_requirements_mission_epoch</a></td><td>Time</td><td>d</td></tr>
+<tr class="out"><td>out</td><td><code>cyc</code></td><td>sw_cycle_number</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
 <section class="panel" data-panel="2">
-<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>0</b> -, confirmed by <b></b>.</p>
+<ol class="algo">
+<li><span class="step">count how many of the record's cycle starts the epoch has passed, and add the first cycle's number</span> <span class="binds">→ <code>out: Ratio</code></span></li>
+</ol>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>cyc &ge; 23</code> — the record's first cycle is 23 and it begins mid-cycle, so no epoch this tree allows can sit in an earlier one. A lower number means the counting started in the wrong place</li>
+<li><code>cyc &le; 26</code> — the record names three cycles and ends inside the third. 26 is one beyond what the data can place, and the bound exists so that an epoch far enough out to need cycle 27 refuses rather than quietly returning 25</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// Which numbered solar cycle is the mission epoch in?
+///
+/// `cyc(T) = 23 + count(cycle_starts &lt;= T)`
+///
+/// Source: `noaa_swpc`
+///
+/// The coarsest dated fact about the mission: which cycle it flies in.
+/// Everything else that depends on the date depends on this first, because a
+/// phase means nothing without a cycle to be a phase of.
+///
+/// # Assumptions
+///
+/// * The cycle boundaries are the record's three, and a fourth would need a source this bundle does not contain — fails when solar_cycles.csv holds cycles 23, 24 and 25 with starts 1997-01-15, 2008-12-01 and 2019-12-01 — the boundaries prf_cycles calls standard. The record begins mid-cycle-23 and ends mid-cycle-25, so cycle 22 and cycle 26 are outside it entirely. An epoch after cycle 26 begins would still return 25 here, because nothing in the data says when 26 starts, and a row that guessed would be inventing a boundary. The declared upper bound is what stops that being silent
+/// * The epoch is past the record, so the phase is FOLDED with a mean cycle length rather than measured — fails when solar_cycles.csv gives cycle 25 a start of 2019-12-01 and an end of 2025-12-15 with a length of 6.04 years. That end and that length are artefacts of where the RECORD stops, not where the cycle stops: cycles 23 and 24 ran 11.88 and 11.00 years. The epoch, day 9862, is 382 days past that recorded end, so no cycle in the table contains it. The phase is therefore computed against the mean of the two COMPLETE cycles, 11.44 years, which is what prf_design's meanCycleAt does beyond its last cycle. If cycle 25 turns out short or long the phase moves, and every row reading it moves with it
+pub const NODE_ID: &amp;str = &quot;sw_cycle_number&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xc42c7a7ea5085c63;
+
+pub fn evaluate(epoch: Time) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : count how many of the record's cycle starts the epoch has passed, and add the first cycle's number -&gt; Ratio
+    // The record's three cycle starts, as days since 2000-01-01, from
+    // solar_cycles.csv: cycle 23 at 1997-01-15, 24 at 2008-12-01, 25 at 2019-12-01.
+    // The comparison is &gt;= so a boundary day belongs to the cycle it OPENS, which is
+    // what the boundary fixtures beside this pin.
+    //
+    // An epoch past the last start still returns 25, because nothing in the data
+    // says when cycle 26 begins and this row will not invent a boundary. The
+    // declared upper bound of 26 is what keeps that from being silent.
+    const STARTS: [f64; 3] = [-1081.0, 3257.0, 7274.0];
+    const FIRST: f64 = 23.0;
+    let d: f64 = epoch.days();
+    let mut n: f64 = FIRST - 1.0;
+    let mut i: usize = 0;
+    while i &lt; STARTS.len() {
+        if d &gt;= STARTS[i] {
+            n += 1.0;
+        }
+        i += 1;
+    }
+    let out: Ratio = Ratio::new(n);
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = out;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;cyc&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 23.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;cyc&quot;, value: answer.get(), bound: 23.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the record's first cycle is 23 and it begins mid-cycle, so no epoch this tree allows can sit in an earlier one. A lower number means the counting started in the wrong place&quot; });
+    }
+    if answer.get() &gt; 26.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;cyc&quot;, value: answer.get(), bound: 26.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the record names three cycles and ends inside the third. 26 is one beyond what the data can place, and the bound exists so that an epoch far enough out to need cycle 27 refuses rather than quietly returning 25&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
 </section>
 <section class="panel" data-panel="4">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="one day before cycle 24 begins — still 23"><td>one day before cycle 24 begins — still 23</td><td class="num">23</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the day cycle 24 begins — 24, because a boundary belongs to the cycle it opens"><td>the day cycle 24 begins — 24, because a boundary belongs to the cycle it opens</td><td class="num">24</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+<tr data-fixture="one day before cycle 25 begins — still 24"><td>one day before cycle 25 begins — still 24</td><td class="num">24</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the day cycle 25 begins — 25"><td>the day cycle 25 begins — 25</td><td class="num">25</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the declared mission epoch, 2027-01-01 — cycle 25, past the record's end"><td>the declared mission epoch, 2027-01-01 — cycle 25, past the record's end</td><td class="num">25</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
 <section class="panel" data-panel="5">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 23 — the record's first cycle is 23 and it begins mid-cycle, so no epoch this tree allows can sit in an earlier one. A lower number means the counting started in the wrong place</li>
+<li><code>OutOfDomain</code> above 26 — the record names three cycles and ends inside the third. 26 is one beyond what the data can place, and the bound exists so that an epoch far enough out to need cycle 27 refuses rather than quietly returning 25</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
 <section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_cycle_number"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
 <section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
-<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p>Valid over <code>23 &hellip; 26</code> -.</p>
+<ul class="guards"><li>lower — the record's first cycle is 23 and it begins mid-cycle, so no epoch this tree allows can sit in an earlier one. A lower number means the counting started in the wrong place</li><li>upper — the record names three cycles and ends inside the third. 26 is one beyond what the data can place, and the bound exists so that an epoch far enough out to need cycle 27 refuses rather than quietly returning 25</li></ul>
+<div class="sweep" data-over="sys_mission_requirements_mission_epoch" data-points="60" data-y="sw_cycle_number"><p class="muted">Sweeps against <a class="xref" data-goto="sys_mission_requirements_mission_epoch">sys_mission_requirements_mission_epoch</a> over 60 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

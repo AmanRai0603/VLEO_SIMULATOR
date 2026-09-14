@@ -6,28 +6,65 @@ label = "Solar cycle number"
 folder = "sw_cycle_number"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1336
-state = "empty"
+state = "published"
+
+# No migrated_from and no parity grid: the numbers are statistics of the record
+# rather than a closed form, and there is no MATLAB here to run. Same reasoning
+# as every measured row in this group.
 
 [question]
-text = ""
+text = "Which numbered solar cycle is the mission epoch in?"
+note = "The coarsest dated fact about the mission: which cycle it flies in. Everything else that depends on the date depends on this first, because a phase means nothing without a cycle to be a phase of."
 
 [maths]
-expression = ""
-source = ""
+expression = "cyc(T) = 23 + count(cycle_starts <= T)"
+source = "noaa_swpc"
+
+[[assumption]]
+text = "The cycle boundaries are the record's three, and a fourth would need a source this bundle does not contain"
+fails_when = "solar_cycles.csv holds cycles 23, 24 and 25 with starts 1997-01-15, 2008-12-01 and 2019-12-01 — the boundaries prf_cycles calls standard. The record begins mid-cycle-23 and ends mid-cycle-25, so cycle 22 and cycle 26 are outside it entirely. An epoch after cycle 26 begins would still return 25 here, because nothing in the data says when 26 starts, and a row that guessed would be inventing a boundary. The declared upper bound is what stops that being silent"
+
+[[assumption]]
+text = "The epoch is past the record, so the phase is FOLDED with a mean cycle length rather than measured"
+fails_when = "solar_cycles.csv gives cycle 25 a start of 2019-12-01 and an end of 2025-12-15 with a length of 6.04 years. That end and that length are artefacts of where the RECORD stops, not where the cycle stops: cycles 23 and 24 ran 11.88 and 11.00 years. The epoch, day 9862, is 382 days past that recorded end, so no cycle in the table contains it. The phase is therefore computed against the mean of the two COMPLETE cycles, 11.44 years, which is what prf_design's meanCycleAt does beyond its last cycle. If cycle 25 turns out short or long the phase moves, and every row reading it moves with it"
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "cyc"
+type = "Ratio"
+unit = "One"
+lower = 23.0
+upper = 26.0
+reason_lower = "the record's first cycle is 23 and it begins mid-cycle, so no epoch this tree allows can sit in an earlier one. A lower number means the counting started in the wrong place"
+reason_upper = "the record names three cycles and ends inside the third. 26 is one beyond what the data can place, and the bound exists so that an epoch far enough out to need cycle 27 refuses rather than quietly returning 25"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "epoch"
+var = "sys_mission_requirements_mission_epoch"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "count how many of the record's cycle starts the epoch has passed, and add the first cycle's number"
+binds = "out"
+type = "Ratio"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# numbers must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
 
 [view]
-kind = "number"
+kind = "line"
+over = "sys_mission_requirements_mission_epoch"
+points = 60

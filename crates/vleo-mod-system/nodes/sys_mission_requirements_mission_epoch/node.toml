@@ -8,7 +8,8 @@ subsystem = "sys"
 parent = "sys_mission_requirements"
 kind = "declared"
 owner = "systems"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 # Where this row sits among its siblings, as whoever wrote them ordered
 # them. Folders sort alphabetically and a tree that reads alphabetically
@@ -16,33 +17,49 @@ layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 # reverses the order the source put them in, and the order is part of
 # what the source said.
 order = 274
-state = "empty"
+state = "published"
 
-# SEEDED — the folder exists and nothing has been specified in it.
-# Every field below is required before anything can be generated. An
-# open field blocks generation, which is the mechanism: ambiguity
-# becomes a blocking item on an engineer's screen rather than
-# something an implementer resolves silently.
+# WHY THIS ROW IS AT THE SYSTEM LAYER.
+#
+# A date is not a property of any subsystem. The mission picks it, and every
+# subsystem that asks a dated question has to ask it about the same date or the
+# design is internally inconsistent. Carried as days since 2000-01-01, in
+# seconds across the interface like every other Time, so that no row downstream
+# needs a calendar.
 
 [question]
-text = ""
+text = "On what date does the mission begin?"
+note = "The date every dated question in the design keys off. It is a mission requirement and it lives here, at the system layer, because the mission owns it and several subsystems read it — the solar-weather subsystem is the first to do so. Carried as days since 2000-01-01 so that nothing downstream needs a calendar."
 
 [maths]
-expression = ""
-source = ""
+confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
+expression = "T_epoch = 9862 d  (2027-01-01)"
+source = "orbitt_case_c1"
+
+[[assumption]]
+text = "It is a single date, so the design is sized for a mission that starts then and not for one that slips"
+fails_when = "solar activity is cyclical, so slipping the start changes the sky the mission flies through rather than merely delaying it. 2027-01-01 sits past the maximum of cycle 25 on the declining side, which is the storm-rich phase; a slip to 2030 would move it toward minimum and every cycle-phase row would return a quieter sky. The record's F10.7 runs 64 to 343 sfu across a cycle, so this is not a rounding difference. A mission whose launch date is uncertain needs the design re-run at both ends of the window, and this row is the one to change."
+
+[[assumption]]
+text = "It is 366 days past the end of the solar-weather record"
+fails_when = "the record runs to 2025-12-31, day 9496, and this epoch is day 9862. So every row that reads it is answering about a date the record does not cover, by extrapolating a pattern rather than reading an observation. That is the correct thing to do for a design — a mission in the future has no record — and it means the cycle-phase rows fold the phase using a mean cycle length instead of measuring one. Which is exactly what prf_design does beyond its last cycle, and is declared on each row that does it."
 
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.
-# A unit is a decision, not data. None of these is filled yet.
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+symbol = "T_epoch"
+type = "Time"
+unit = "Day"
+lower = 6575.0
+upper = 14610.0
+reason_lower = "day 6575 is 2018-01-01. A mission epoch before it would sit inside the archive rather than ahead of the design, and every forward-looking row would be answering a question about the past while presenting it as a prediction"
+reason_upper = "day 14610 is 2040-01-01. Beyond it the cycle-phase rows would be folding the phase through more than one unobserved cycle, and the mean cycle length they fold with is measured from two complete cycles. Extrapolating a 11.4-year mean across fifteen years is not a design input, it is a guess with a date on it"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 9862.0
+confirmed_by = "A. Rai / 2026-09-14"
 
 [view]
 kind = "number"
-

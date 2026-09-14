@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1361 rows** — 660 a person picked, 701 worked out. Two thirds of any design tree is
+**1362 rows** — 658 a person picked, 704 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -19227,43 +19227,62 @@ The centre of the F10.7 design value; sw_uncertainty_growth supplies the spread 
 
 ### `sw_cycle_number` — Solar cycle number
 
-> 
+> Which numbered solar cycle is the mission epoch in?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | declared |
+| symbol | `cyc` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `cyc(T) = 23 + count(cycle_starts <= T)` |
+| source | `noaa_swpc` |
+| valid over | 23 … 26 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — the record's first cycle is 23 and it begins mid-cycle, so no epoch this tree allows can sit in an earlier one. A lower number means the counting started in the wrong place
+- **upper bound** — the record names three cycles and ends inside the third. 26 is one beyond what the data can place, and the bound exists so that an epoch far enough out to need cycle 27 refuses rather than quietly returning 25
+- **reads** — `sys_mission_requirements_mission_epoch`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** The cycle boundaries are the record's three, and a fourth would need a source this bundle does not contain — fails when solar_cycles.csv holds cycles 23, 24 and 25 with starts 1997-01-15, 2008-12-01 and 2019-12-01 — the boundaries prf_cycles calls standard. The record begins mid-cycle-23 and ends mid-cycle-25, so cycle 22 and cycle 26 are outside it entirely. An epoch after cycle 26 begins would still return 25 here, because nothing in the data says when 26 starts, and a row that guessed would be inventing a boundary. The declared upper bound is what stops that being silent
+- **assumes** The epoch is past the record, so the phase is FOLDED with a mean cycle length rather than measured — fails when solar_cycles.csv gives cycle 25 a start of 2019-12-01 and an end of 2025-12-15 with a length of 6.04 years. That end and that length are artefacts of where the RECORD stops, not where the cycle stops: cycles 23 and 24 ran 11.88 and 11.00 years. The epoch, day 9862, is 382 days past that recorded end, so no cycle in the table contains it. The phase is therefore computed against the mean of the two COMPLETE cycles, 11.44 years, which is what prf_design's meanCycleAt does beyond its last cycle. If cycle 25 turns out short or long the phase moves, and every row reading it moves with it
+- **evidence** one day before cycle 24 begins — still 23 — expect 23 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+- **evidence** the day cycle 24 begins — 24, because a boundary belongs to the cycle it opens — expect 24 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+- **evidence** one day before cycle 25 begins — still 24 — expect 24 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+- **evidence** the day cycle 25 begins — 25 — expect 25 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+- **evidence** the declared mission epoch, 2027-01-01 — cycle 25, past the record's end — expect 25 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+
+The coarsest dated fact about the mission: which cycle it flies in. Everything else that depends on the date depends on this first, because a phase means nothing without a cycle to be a phase of.
 
 ### `sw_cycle_phase` — Solar cycle phase
 
-> 
+> How far through its solar cycle is the mission epoch?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | declared |
+| symbol | `phase` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `phase(T) = (T - start_of_cycle) / mean_cycle_length` |
+| source | `noaa_swpc` |
+| valid over | 0 … 1 - |
 
-- **lower bound** — 
-- **upper bound** — 
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **lower bound** — a phase is a fraction of the way through a cycle and cannot be negative. A negative value means the epoch precedes the cycle it was assigned to
+- **upper bound** — one is the end of the cycle. Above it the epoch belongs to the next cycle, and this row cannot name it because the record does not contain its start — so it refuses instead of folding round silently
+- **reads** — `sys_mission_requirements_mission_epoch`
+- **read by** — `sw_mean_cycle_level`
+- **assumes** The epoch is past the record, so the phase is FOLDED with a mean cycle length rather than measured — fails when solar_cycles.csv gives cycle 25 a start of 2019-12-01 and an end of 2025-12-15 with a length of 6.04 years. That end and that length are artefacts of where the RECORD stops, not where the cycle stops: cycles 23 and 24 ran 11.88 and 11.00 years. The epoch, day 9862, is 382 days past that recorded end, so no cycle in the table contains it. The phase is therefore computed against the mean of the two COMPLETE cycles, 11.44 years, which is what prf_design's meanCycleAt does beyond its last cycle. If cycle 25 turns out short or long the phase moves, and every row reading it moves with it
+- **assumes** It is a fraction of a cycle and not a measure of activity — fails when phase 0.619 does not mean 61.9% of anything physical. The cycle is not symmetric — the record's mean F10.7 by phase rises from 72 sfu at phase 0.025 to about 165 at 0.425 and falls to 68 by 0.975, so the rise is faster than the decline and equal phase steps are not equal activity steps. sw_mean_cycle_level is the row that turns a phase into a flux; reading the phase as a proxy for activity would get the asymmetry backwards
+- **assumes** It cannot exceed one, and an epoch late in an unobserved cycle would want it to — fails when the fold divides elapsed time by a mean length, so an epoch more than 11.44 years past 2019-12-01 gives a phase above 1 and the declared bound refuses it. That is correct rather than convenient: past one cycle length the right answer is a new cycle number, and this row cannot supply one because the data does not say when cycle 26 begins
+- **evidence** the declared mission epoch, 2027-01-01 — 2588 days into cycle 25 — expect 0.6193669438022621 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the day cycle 25 begins — phase must be exactly zero — expect 0 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** half a mean cycle after the start — phase one half, to the last bit float allows — expect 0.4999999999999999 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+Zero at the cycle's start and one at its end. This is the row the whole cycle-dependent half of the subsystem turns on: at the declared epoch it is 0.619, which is past maximum on the declining side — the storm-rich phase.
 
 ### `sw_cycle_repeatability` — Cycle repeatability
 
@@ -19563,25 +19582,78 @@ The atmosphere model wants Kp; the design product carries Ap. This is that conve
 
 sw_kp_from_ap applies the published scale as published, and the scale is defined for the three-hourly ap while the design product carries a daily mean. This row measures the resulting bias for the slot that sizes a drag design — the daily peak — and publishes it as a correction to be added. The 24-hour-mean slot has its own, smaller and oppositely-signed bias, recorded in the assumptions rather than published, because a node answers one question.
 
-### `sw_mean_cycle_level` — Mean-cycle F10.7 level
+### `sw_mean_cycle_level` — Mean-cycle F10.7 at a phase
 
-> 
+> What F10.7 does the average solar cycle show at this phase?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `F107_cyc` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `F107_cyc(phase) = mean over complete cycles of F10.7 at that phase` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the same floor as env_f107: below 60 sfu has never been observed and no relation reading F10.7 has support there
+- **upper bound** — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating. The largest binned mean is 165.3, so this bound is unreachable by the relation and catches a broken table
+- **reads** — `sw_cycle_phase`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** Two cycles, stacked on phase, in twenty bins — fails when cycles 23 and 24 are the only complete ones in the record, so every bin is the mean of two cycles and nothing more. Two samples cannot separate a cycle's shape from a cycle's individuality: cycle 23 peaked at 196 sfu and cycle 24 at 146, a 34% difference, and this row averages them into one curve that matches neither. The bins hold 358 to 418 days each except the 0.775 bin, which holds 217 because the two cycles' lengths differ and the stacking leaves it thin
+- **assumes** It is a mean and not a band — fails when half the days at any phase sit above this line. It is the CENTRE for a design value, and sw_uncertainty_growth supplies the spread that makes it safe. Sizing anything on this row alone would be sizing on the average day of the average cycle, which is the one thing a mission is guaranteed not to get
+- **assumes** The curve is not symmetric and the asymmetry is real — fails when the mean rises from 71.8 sfu at phase 0.025 to 165.3 at 0.425 and falls to 67.7 by 0.975 — a fast rise and a slow decline, which is the known shape of a solar cycle and not a binning artefact. A design at phase 0.2 and one at phase 0.8 are both 'mid-cycle' and are owed 111 and 76 sfu respectively
+- **evidence** phase 0.025 — 418 days from two cycles — mean F10.7 71.76 sfu — expect 71.7632 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.075 — 418 days from two cycles — mean F10.7 83.89 sfu — expect 83.8947 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.125 — 418 days from two cycles — mean F10.7 99.22 sfu — expect 99.2177 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.175 — 418 days from two cycles — mean F10.7 111.05 sfu — expect 111.0502 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.225 — 418 days from two cycles — mean F10.7 135.66 sfu — expect 135.6555 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.275 — 418 days from two cycles — mean F10.7 159.66 sfu — expect 159.6603 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.325 — 416 days from two cycles — mean F10.7 145.37 sfu — expect 145.3702 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.375 — 418 days from two cycles — mean F10.7 146.73 sfu — expect 146.7273 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.425 — 418 days from two cycles — mean F10.7 165.28 sfu — expect 165.2799 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.475 — 415 days from two cycles — mean F10.7 160.33 sfu — expect 160.3301 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.525 — 418 days from two cycles — mean F10.7 135.32 sfu — expect 135.3182 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.575 — 418 days from two cycles — mean F10.7 126.23 sfu — expect 126.2321 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.625 — 418 days from two cycles — mean F10.7 105.84 sfu — expect 105.8445 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.675 — 417 days from two cycles — mean F10.7 95.51 sfu — expect 95.5084 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.725 — 358 days from two cycles — mean F10.7 86.99 sfu — expect 86.9916 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.775 — 217 days from two cycles — mean F10.7 80.92 sfu — expect 80.9171 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.825 — 406 days from two cycles — mean F10.7 76.21 sfu — expect 76.2094 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.875 — 418 days from two cycles — mean F10.7 71.05 sfu — expect 71.0478 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.925 — 418 days from two cycles — mean F10.7 71.54 sfu — expect 71.5383 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** phase 0.975 — 416 days from two cycles — mean F10.7 67.65 sfu — expect 67.6538 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the declared epoch's phase of 0.6194 falls in the 0.625 bin — 105.84 sfu, against the unconditional mean of 114.84 — expect 105.8445 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The climatology that knows where in the cycle it is. sw_central_expectation currently hands over to the record's unconditional mean of 114.8 sfu because no date was available; at the declared epoch's phase of 0.619 this row says 105.8 instead. That difference is what having a date buys.
+
+### `sw_outlook_lead` — Short-term forecast lead
+
+> How far ahead does the published short-term outlook reach?
+
+| | |
+|---|---|
+| symbol | `L_short` |
+| type | `Time` |
+| unit | d |
 | kind | declared |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `L_short = 27 d` |
+| source | `noaa_swpc` |
+| declared value | **27** d |
+| confirmed by | A. Rai / 2026-09-14 |
+| valid over | 1 … 27 d |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — a lead of less than a day is not a forecast the published outlook makes; its first row is lead 1
+- **upper bound** — 27 is the length of the published window and the last lead the forecast table contains. Beyond it there is no issued forecast to verify against, so a larger value would be asking the verification rows about rows that do not exist
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** One lead, and the skill of the outlook is strongly lead-dependent — fails when measured on this record the issued outlook LOSES to persistence at leads 1 to 4, beats it from 5 to 23 with a peak skill of +0.24 near 13, and loses again from 24. So a single lead cannot characterise the product: 27 days is the pessimistic end and a row evaluated there says nothing about the useful middle. It is chosen because a design wants to know how bad the far edge is, not how good the centre is, and because it is the window's own length rather than a point somebody picked inside it.
+- **assumes** 27 days is the rotation and the window at once, and those are two different reasons — fails when the synodic solar rotation is about 27.3 days and the published outlook is exactly 27 rows, so the two coincide closely enough that the sheet cannot tell them apart. If SWPC changed the outlook length the row would need to say which reason it meant. It is carried as 27 exactly, matching the data rather than the rotation, because what it indexes is the forecast table.
+
+The lead the forecast-verification rows are evaluated at. sw_forecast_skill and sw_forecast_bias both answer 'at what lead', and this is the lead worth asking about: the end of the published window, where the outlook is weakest and a design reading it is most exposed.
 
 ### `sw_recurrence_lag` — Rotation recurrence lag
 
@@ -24659,23 +24731,29 @@ Half of the F10.7 design value. sw_central_expectation says where F10.7 is headi
 
 ### `sys_mission_requirements_mission_epoch` — Mission epoch
 
-> 
+> On what date does the mission begin?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `T_epoch` |
+| type | `Time` |
+| unit | d |
 | kind | declared |
 | owner | systems |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `T_epoch = 9862 d  (2027-01-01)` |
+| source | `orbitt_case_c1` |
+| declared value | **9862** d |
+| confirmed by | A. Rai / 2026-09-14 |
+| valid over | 6575 … 14610 d |
 
-- **lower bound** — 
-- **upper bound** — 
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **lower bound** — day 6575 is 2018-01-01. A mission epoch before it would sit inside the archive rather than ahead of the design, and every forward-looking row would be answering a question about the past while presenting it as a prediction
+- **upper bound** — day 14610 is 2040-01-01. Beyond it the cycle-phase rows would be folding the phase through more than one unobserved cycle, and the mean cycle length they fold with is measured from two complete cycles. Extrapolating a 11.4-year mean across fifteen years is not a design input, it is a guess with a date on it
+- **read by** — `sw_cycle_number`, `sw_cycle_phase`
+- **assumes** It is a single date, so the design is sized for a mission that starts then and not for one that slips — fails when solar activity is cyclical, so slipping the start changes the sky the mission flies through rather than merely delaying it. 2027-01-01 sits past the maximum of cycle 25 on the declining side, which is the storm-rich phase; a slip to 2030 would move it toward minimum and every cycle-phase row would return a quieter sky. The record's F10.7 runs 64 to 343 sfu across a cycle, so this is not a rounding difference. A mission whose launch date is uncertain needs the design re-run at both ends of the window, and this row is the one to change.
+- **assumes** It is 366 days past the end of the solar-weather record — fails when the record runs to 2025-12-31, day 9496, and this epoch is day 9862. So every row that reads it is answering about a date the record does not cover, by extrapolating a pattern rather than reading an observation. That is the correct thing to do for a design — a mission in the future has no record — and it means the cycle-phase rows fold the phase using a mean cycle length instead of measuring one. Which is exactly what prf_design does beyond its last cycle, and is declared on each row that does it.
+
+The date every dated question in the design keys off. It is a mission requirement and it lives here, at the system layer, because the mission owns it and several subsystems read it — the solar-weather subsystem is the first to do so. Carried as days since 2000-01-01 so that nothing downstream needs a calendar.
 
 ### `sys_mission_requirements_revisit_requirement` — Revisit requirement
 

@@ -1,0 +1,124 @@
+<article class="node" data-node="sw_outlook_lead" data-sheet-hash="0c337b" data-impl-hash="222325">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Short-term forecast lead</h2>
+  <p class="ident"><code>sw_outlook_lead</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">interface</button>
+  <button role="tab" class="tab" data-tab="2">algorithm</button>
+  <button role="tab" class="tab" data-tab="3">generated code</button>
+  <button role="tab" class="tab" data-tab="4">evidence</button>
+  <button role="tab" class="tab" data-tab="5">flags</button>
+  <button role="tab" class="tab" data-tab="6">credibility</button>
+  <button role="tab" class="tab" data-tab="7">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How far ahead does the published short-term outlook reach?</p>
+<p class="maths"><code>L_short = 27 d</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The lead the forecast-verification rows are evaluated at. sw_forecast_skill and sw_forecast_bias both answer 'at what lead', and this is the lead worth asking about: the end of the published window, where the outlook is weakest and a design reading it is most exposed.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>One lead, and the skill of the outlook is strongly lead-dependent</dt><dd>fails when measured on this record the issued outlook LOSES to persistence at leads 1 to 4, beats it from 5 to 23 with a peak skill of +0.24 near 13, and loses again from 24. So a single lead cannot characterise the product: 27 days is the pessimistic end and a row evaluated there says nothing about the useful middle. It is chosen because a design wants to know how bad the far edge is, not how good the centre is, and because it is the window's own length rather than a point somebody picked inside it.</dd>
+<dt>27 days is the rotation and the window at once, and those are two different reasons</dt><dd>fails when the synodic solar rotation is about 27.3 days and the published outlook is exactly 27 rows, so the two coincide closely enough that the sheet cannot tell them apart. If SWPC changed the outlook length the row would need to say which reason it meant. It is carried as 27 exactly, matching the data rather than the rotation, because what it indexes is the forecast table.</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
+<tr class="out"><td>out</td><td><code>L_short</code></td><td>sw_outlook_lead</td><td>Time</td><td>d</td></tr>
+</tbody></table>
+<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+</section>
+<section class="panel" data-panel="2">
+<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
+<p>This is a declared value: <b>27</b> d, confirmed by <b>A. Rai / 2026-09-14</b>.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>L_short &ge; 1</code> — a lead of less than a day is not a forecast the published outlook makes; its first row is lead 1</li>
+<li><code>L_short &le; 27</code> — 27 is the length of the published window and the last lead the forecast table contains. Beyond it there is no issued forecast to verify against, so a larger value would be asking the verification rows about rows that do not exist</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How far ahead does the published short-term outlook reach?
+///
+/// `L_short = 27 d`
+///
+/// Source: `noaa_swpc`
+///
+/// The lead the forecast-verification rows are evaluated at.
+/// sw_forecast_skill and sw_forecast_bias both answer 'at what lead', and
+/// this is the lead worth asking about: the end of the published window,
+/// where the outlook is weakest and a design reading it is most exposed.
+///
+/// # Assumptions
+///
+/// * One lead, and the skill of the outlook is strongly lead-dependent — fails when measured on this record the issued outlook LOSES to persistence at leads 1 to 4, beats it from 5 to 23 with a peak skill of +0.24 near 13, and loses again from 24. So a single lead cannot characterise the product: 27 days is the pessimistic end and a row evaluated there says nothing about the useful middle. It is chosen because a design wants to know how bad the far edge is, not how good the centre is, and because it is the window's own length rather than a point somebody picked inside it.
+/// * 27 days is the rotation and the window at once, and those are two different reasons — fails when the synodic solar rotation is about 27.3 days and the published outlook is exactly 27 rows, so the two coincide closely enough that the sheet cannot tell them apart. If SWPC changed the outlook length the row would need to say which reason it meant. It is carried as 27 exactly, matching the data rather than the rotation, because what it indexes is the forecast table.
+pub const NODE_ID: &amp;str = &quot;sw_outlook_lead&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x5de6ab75180c337b;
+
+pub fn evaluate() -&gt; Result&lt;Time, Fault&gt; {
+    // generated · a declared value, converted from the unit it was written in
+    let declared: Time = match Time::from_unit(27.0, Unit::Day) {
+        Some(q) =&gt; q,
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;L_short&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+    };
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Time = declared;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;L_short&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 86400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;L_short&quot;, value: answer.get(), bound: 86400.0, edge: Edge::Lower, unit: Time::UNIT, reason: &quot;a lead of less than a day is not a forecast the published outlook makes; its first row is lead 1&quot; });
+    }
+    if answer.get() &gt; 2332800.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;L_short&quot;, value: answer.get(), bound: 2332800.0, edge: Edge::Upper, unit: Time::UNIT, reason: &quot;27 is the length of the published window and the last lead the forecast table contains. Beyond it there is no issued forecast to verify against, so a larger value would be asking the verification rows about rows that do not exist&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="4">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 1 — a lead of less than a day is not a forecast the published outlook makes; its first row is lead 1</li>
+<li><code>OutOfDomain</code> above 27 — 27 is the length of the published window and the last lead the forecast table contains. Beyond it there is no issued forecast to verify against, so a larger value would be asking the verification rows about rows that do not exist</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="6">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_outlook_lead"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="7">
+<p>Valid over <code>1 &hellip; 27</code> d.</p>
+<ul class="guards"><li>lower — a lead of less than a day is not a forecast the published outlook makes; its first row is lead 1</li><li>upper — 27 is the length of the published window and the last lead the forecast table contains. Beyond it there is no issued forecast to verify against, so a larger value would be asking the verification rows about rows that do not exist</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+</article>

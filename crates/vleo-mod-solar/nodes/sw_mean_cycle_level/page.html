@@ -1,8 +1,8 @@
-<article class="node" data-node="sw_mean_cycle_level" data-sheet-hash="3f7cf9" data-impl-hash="222325">
+<article class="node" data-node="sw_mean_cycle_level" data-sheet-hash="4cf7b2" data-impl-hash="6b5c23">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>Mean-cycle F10.7 level</h2>
-  <p class="ident"><code>sw_mean_cycle_level</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <h2>Mean-cycle F10.7 at a phase</h2>
+  <p class="ident"><code>sw_mean_cycle_level</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
@@ -15,54 +15,160 @@
   <button role="tab" class="tab" data-tab="7">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">What F10.7 does the average solar cycle show at this phase?</p>
+<p class="maths"><code>F107_cyc(phase) = mean over complete cycles of F10.7 at that phase</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The climatology that knows where in the cycle it is. sw_central_expectation currently hands over to the record's unconditional mean of 114.8 sfu because no date was available; at the declared epoch's phase of 0.619 this row says 105.8 instead. That difference is what having a date buys.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>Two cycles, stacked on phase, in twenty bins</dt><dd>fails when cycles 23 and 24 are the only complete ones in the record, so every bin is the mean of two cycles and nothing more. Two samples cannot separate a cycle's shape from a cycle's individuality: cycle 23 peaked at 196 sfu and cycle 24 at 146, a 34% difference, and this row averages them into one curve that matches neither. The bins hold 358 to 418 days each except the 0.775 bin, which holds 217 because the two cycles' lengths differ and the stacking leaves it thin</dd>
+<dt>It is a mean and not a band</dt><dd>fails when half the days at any phase sit above this line. It is the CENTRE for a design value, and sw_uncertainty_growth supplies the spread that makes it safe. Sizing anything on this row alone would be sizing on the average day of the average cycle, which is the one thing a mission is guaranteed not to get</dd>
+<dt>The curve is not symmetric and the asymmetry is real</dt><dd>fails when the mean rises from 71.8 sfu at phase 0.025 to 165.3 at 0.425 and falls to 67.7 by 0.975 — a fast rise and a slow decline, which is the known shape of a solar cycle and not a binning artefact. A design at phase 0.2 and one at phase 0.8 are both 'mid-cycle' and are owed 111 and 76 sfu respectively</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sw_mean_cycle_level</td><td></td><td>-</td></tr>
+<tr><td>in</td><td><code>phase</code></td><td><a class="xref" data-goto="sw_cycle_phase">sw_cycle_phase</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>F107_cyc</code></td><td>sw_mean_cycle_level</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
 <section class="panel" data-panel="2">
-<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>0</b> -, confirmed by <b></b>.</p>
+<ol class="algo">
+<li><span class="step">read the phase-binned mean F10.7 of the complete cycles at this phase</span> <span class="binds">→ <code>out: Ratio</code></span></li>
+</ol>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>F107_cyc &ge; 60</code> — the same floor as env_f107: below 60 sfu has never been observed and no relation reading F10.7 has support there</li>
+<li><code>F107_cyc &le; 400</code> — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating. The largest binned mean is 165.3, so this bound is unreachable by the relation and catches a broken table</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What F10.7 does the average solar cycle show at this phase?
+///
+/// `F107_cyc(phase) = mean over complete cycles of F10.7 at that phase`
+///
+/// Source: `noaa_swpc`
+///
+/// The climatology that knows where in the cycle it is.
+/// sw_central_expectation currently hands over to the record's unconditional
+/// mean of 114.8 sfu because no date was available; at the declared epoch's
+/// phase of 0.619 this row says 105.8 instead. That difference is what having
+/// a date buys.
+///
+/// # Assumptions
+///
+/// * Two cycles, stacked on phase, in twenty bins — fails when cycles 23 and 24 are the only complete ones in the record, so every bin is the mean of two cycles and nothing more. Two samples cannot separate a cycle's shape from a cycle's individuality: cycle 23 peaked at 196 sfu and cycle 24 at 146, a 34% difference, and this row averages them into one curve that matches neither. The bins hold 358 to 418 days each except the 0.775 bin, which holds 217 because the two cycles' lengths differ and the stacking leaves it thin
+/// * It is a mean and not a band — fails when half the days at any phase sit above this line. It is the CENTRE for a design value, and sw_uncertainty_growth supplies the spread that makes it safe. Sizing anything on this row alone would be sizing on the average day of the average cycle, which is the one thing a mission is guaranteed not to get
+/// * The curve is not symmetric and the asymmetry is real — fails when the mean rises from 71.8 sfu at phase 0.025 to 165.3 at 0.425 and falls to 67.7 by 0.975 — a fast rise and a slow decline, which is the known shape of a solar cycle and not a binning artefact. A design at phase 0.2 and one at phase 0.8 are both 'mid-cycle' and are owed 111 and 76 sfu respectively
+pub const NODE_ID: &amp;str = &quot;sw_mean_cycle_level&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x9c8ab20dbc4cf7b2;
+
+pub fn evaluate(phase: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : read the phase-binned mean F10.7 of the complete cycles at this phase -&gt; Ratio
+    // The mean F10.7 of cycles 23 and 24 stacked on phase, twenty bins, counted on
+    // solar-weather@2026.09.14. x is the bin centre.
+    //
+    // The curve is asymmetric — 71.8 sfu at phase 0.025 rising to 165.3 at 0.425 and
+    // falling to 67.7 by 0.975 — and that is the known shape of a solar cycle, a
+    // fast rise and a slow decline. It is not smoothed. Two cycles is all the record
+    // has, and the sheet says what that costs: cycle 23 peaked at 196 sfu and 24 at
+    // 146, so this curve matches neither.
+    use vleo_core::math::Table1;
+    const LEVEL: Table1 = Table1 {
+        x: &amp;[
+            0.025, 0.075, 0.125, 0.175, 0.225, 0.275, 0.325, 0.375, 0.425, 0.475, 0.525, 0.575,
+            0.625, 0.675, 0.725, 0.775, 0.825, 0.875, 0.925, 0.975,
+        ],
+        y: &amp;[
+            71.7632, 83.8947, 99.2177, 111.0502, 135.6555, 159.6603, 145.3702, 146.7273, 165.2799,
+            160.3301, 135.3182, 126.2321, 105.8445, 95.5084, 86.9916, 80.9171, 76.2094, 71.0478,
+            71.5383, 67.6538,
+        ],
+    };
+    let out: Ratio = Ratio::new(LEVEL.at(phase.get()));
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = out;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_cyc&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_cyc&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the same floor as env_f107: below 60 sfu has never been observed and no relation reading F10.7 has support there&quot; });
+    }
+    if answer.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_cyc&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating. The largest binned mean is 165.3, so this bound is unreachable by the relation and catches a broken table&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
 </section>
 <section class="panel" data-panel="4">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="phase 0.025 — 418 days from two cycles — mean F10.7 71.76 sfu"><td>phase 0.025 — 418 days from two cycles — mean F10.7 71.76 sfu</td><td class="num">71.7632</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.075 — 418 days from two cycles — mean F10.7 83.89 sfu"><td>phase 0.075 — 418 days from two cycles — mean F10.7 83.89 sfu</td><td class="num">83.8947</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.125 — 418 days from two cycles — mean F10.7 99.22 sfu"><td>phase 0.125 — 418 days from two cycles — mean F10.7 99.22 sfu</td><td class="num">99.2177</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.175 — 418 days from two cycles — mean F10.7 111.05 sfu"><td>phase 0.175 — 418 days from two cycles — mean F10.7 111.05 sfu</td><td class="num">111.0502</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.225 — 418 days from two cycles — mean F10.7 135.66 sfu"><td>phase 0.225 — 418 days from two cycles — mean F10.7 135.66 sfu</td><td class="num">135.6555</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.275 — 418 days from two cycles — mean F10.7 159.66 sfu"><td>phase 0.275 — 418 days from two cycles — mean F10.7 159.66 sfu</td><td class="num">159.6603</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.325 — 416 days from two cycles — mean F10.7 145.37 sfu"><td>phase 0.325 — 416 days from two cycles — mean F10.7 145.37 sfu</td><td class="num">145.3702</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.375 — 418 days from two cycles — mean F10.7 146.73 sfu"><td>phase 0.375 — 418 days from two cycles — mean F10.7 146.73 sfu</td><td class="num">146.7273</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.425 — 418 days from two cycles — mean F10.7 165.28 sfu"><td>phase 0.425 — 418 days from two cycles — mean F10.7 165.28 sfu</td><td class="num">165.2799</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.475 — 415 days from two cycles — mean F10.7 160.33 sfu"><td>phase 0.475 — 415 days from two cycles — mean F10.7 160.33 sfu</td><td class="num">160.3301</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.525 — 418 days from two cycles — mean F10.7 135.32 sfu"><td>phase 0.525 — 418 days from two cycles — mean F10.7 135.32 sfu</td><td class="num">135.3182</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.575 — 418 days from two cycles — mean F10.7 126.23 sfu"><td>phase 0.575 — 418 days from two cycles — mean F10.7 126.23 sfu</td><td class="num">126.2321</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.625 — 418 days from two cycles — mean F10.7 105.84 sfu"><td>phase 0.625 — 418 days from two cycles — mean F10.7 105.84 sfu</td><td class="num">105.8445</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.675 — 417 days from two cycles — mean F10.7 95.51 sfu"><td>phase 0.675 — 417 days from two cycles — mean F10.7 95.51 sfu</td><td class="num">95.5084</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.725 — 358 days from two cycles — mean F10.7 86.99 sfu"><td>phase 0.725 — 358 days from two cycles — mean F10.7 86.99 sfu</td><td class="num">86.9916</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.775 — 217 days from two cycles — mean F10.7 80.92 sfu"><td>phase 0.775 — 217 days from two cycles — mean F10.7 80.92 sfu</td><td class="num">80.9171</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.825 — 406 days from two cycles — mean F10.7 76.21 sfu"><td>phase 0.825 — 406 days from two cycles — mean F10.7 76.21 sfu</td><td class="num">76.2094</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.875 — 418 days from two cycles — mean F10.7 71.05 sfu"><td>phase 0.875 — 418 days from two cycles — mean F10.7 71.05 sfu</td><td class="num">71.0478</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.925 — 418 days from two cycles — mean F10.7 71.54 sfu"><td>phase 0.925 — 418 days from two cycles — mean F10.7 71.54 sfu</td><td class="num">71.5383</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="phase 0.975 — 416 days from two cycles — mean F10.7 67.65 sfu"><td>phase 0.975 — 416 days from two cycles — mean F10.7 67.65 sfu</td><td class="num">67.6538</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the declared epoch's phase of 0.6194 falls in the 0.625 bin — 105.84 sfu, against the unconditional mean of 114.84"><td>the declared epoch's phase of 0.6194 falls in the 0.625 bin — 105.84 sfu, against the unconditional mean of 114.84</td><td class="num">105.8445</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
 <section class="panel" data-panel="5">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 60 — the same floor as env_f107: below 60 sfu has never been observed and no relation reading F10.7 has support there</li>
+<li><code>OutOfDomain</code> above 400 — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating. The largest binned mean is 165.3, so this bound is unreachable by the relation and catches a broken table</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
 <section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_mean_cycle_level"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
 <section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
-<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p>Valid over <code>60 &hellip; 400</code> -.</p>
+<ul class="guards"><li>lower — the same floor as env_f107: below 60 sfu has never been observed and no relation reading F10.7 has support there</li><li>upper — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating. The largest binned mean is 165.3, so this bound is unreachable by the relation and catches a broken table</li></ul>
+<div class="sweep" data-over="sys_mission_requirements_mission_epoch" data-points="60" data-y="sw_mean_cycle_level"><p class="muted">Sweeps against <a class="xref" data-goto="sys_mission_requirements_mission_epoch">sys_mission_requirements_mission_epoch</a> over 60 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>
