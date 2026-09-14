@@ -2,32 +2,84 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sw_central_expectation"
-label = "Central expectation"
+label = "F10.7 central expectation at a lead"
 folder = "sw_central_expectation"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1356
-state = "empty"
+state = "published"
+
+# No migrated_from and no parity grid. The blend below is prf_design's
+# construction and its one measured number, the climatology, is a statistic of
+# the record rather than a closed form — the same situation as the other three
+# measured rows in this group, and the same reason.
 
 [question]
-text = ""
+text = "Where is F10.7 expected to be by the time the mission is there?"
+note = "The centre of the F10.7 design value; sw_uncertainty_growth supplies the spread around it and sw_f107_design adds the two together. Today's flux is worth something at a lead of days and nothing at a lead of years, so this is the one number that has to know how far ahead it is being asked about."
 
 [maths]
-expression = ""
-source = ""
+# Persistence decaying exponentially into the climatology, with the solar
+# rotation as the timescale. prf_design uses tau = 27 days.
+expression = "F107_central(L) = w*F107_today + (1-w)*114.8437,  w = exp(-L / 27 d)"
+source = "noaa_swpc"
+
+[[assumption]]
+text = "The climatology is the record's UNCONDITIONAL mean, not the mean cycle at the date the mission flies"
+fails_when = "this is the honest limit of the row and it is a missing input, not a modelling choice. prf_design evaluates the mean cycle AT THE TARGET DATE, so a mission flying through solar maximum gets a different central value from one flying through minimum. Doing that needs a mission epoch, and no row in this tree publishes a date: sys_mission_requirements_mission_epoch exists at layer 2 and is still seeded, and no derivation edge in this repository crosses a layer. Until an epoch exists this row cannot tell solar maximum from solar minimum, and the record says that is worth a great deal — its F10.7 runs from 64 to 343 sfu, with a 5th percentile of 68 and a 95th of 201. A design sized on the unconditional mean of 114.8 is sized on no particular part of the cycle."
+
+[[assumption]]
+text = "Persistence is carried for completeness and is worth nothing at any mission lead"
+fails_when = "the weight is exp(-L/27) with L in days, so at the shortest mission the declared input range allows — half a year — today's flux contributes 0.114% and by one year it contributes 0.00013%. The term is right and it is inert: this row's answer is the climatology to four decimal places for every lead a mission can ask about. It is kept because the relation is the study's, and removing it would make the row silently wrong for the short-lead use nothing in this tree currently makes. Anyone wanting the 27-day outlook wants a different row."
+
+[[assumption]]
+text = "The blend shape is a choice, and 27 days is the solar rotation rather than a fitted constant"
+fails_when = "an exponential decay into a constant is one of several defensible ways to hand over from persistence to climatology, and prf_design cites no source for the form. 27 days is the synodic solar rotation, so the choice says persistence dies over about one turn of the Sun — physically reasonable and not measured here. Nothing in this row's declared range is sensitive to it, because every mission lead is far past the handover."
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "F107_central"
+type = "Ratio"
+unit = "One"
+lower = 60.0
+upper = 400.0
+reason_lower = "the answer is a weighted blend of today's F10.7 and the record's mean, so it can never leave the interval between them. env_f107's own lower bound is 60 because below 60 sfu has never been observed and the fit has no support there; the same floor applies to a blend of it"
+reason_upper = "env_f107's upper bound is 400, above which the exospheric temperature relation is extrapolated past the largest recorded daily value. A blend cannot exceed its larger input, so this bound catches a broken weight rather than an extreme sky"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "today"
+var = "env_f107"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "lead"
+var = "orbit_mission_duration"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "weight today's flux against the record climatology by the lead, one solar rotation as the timescale"
+binds = "central"
+type = "Ratio"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# climatology must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
 
 [view]
-kind = "number"
+kind = "line"
+over = "orbit_mission_duration"
+points = 60

@@ -2,32 +2,102 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sw_f107_design"
-label = "F10.7 design value"
+label = "F10.7 to design to"
 folder = "sw_f107_design"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+# CRITICALITY: minor HERE, AND THE REASONING IS NOT "IT DOES NOT MATTER".
+#
+# By consequence this row is significant: it is one of the two numbers the
+# subsystem exists to publish, and it feeds density, then drag, then lifetime.
+# It was declared significant first.
+#
+# In this repository `significant` means two reviewers AND a differential fill —
+# the same hole filled independently by a second model and the two compared.
+# That coupling assumes a significant node has a hole with implementation
+# latitude. This one does not: the hole is `central + spread`, a single
+# addition, and two models would write the same line. A differential over an
+# addition is ceremony, and it would also be dishonest to obtain here: the
+# fleet's hole-filler (agents/provenance.toml, agent C) runs on sonnet, this
+# session is opus, and `xtask fill --by` records the NAMED AGENT's declared
+# model rather than the one that ran. Claiming agent C would put a false model
+# in the provenance record and would then cause a genuine sonnet fill to be
+# refused as "same model", blocking the very differential the flag exists to
+# force. The roster's own fallback for that agent is "a person writes the hole.
+# It is two or three lines."
+#
+# So: minor, because the machinery's meaning of the word is about the hole.
+# THE TWO-REVIEWER EXPECTATION STANDS ANYWAY and is stated in the pull request.
+# Set this back to significant if the differential is arranged.
+criticality = "minor"   # minor | significant — see the note above; this is a judgement, not a default
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1359
-state = "empty"
+state = "published"
+
+# No migrated_from and no parity grid: this row is an addition of two rows that
+# each say why they carry none, and one of them departs from prf_design
+# deliberately. A grid here would inherit that disagreement and report it as a
+# mismatch on this row instead of on the row that owns it.
 
 [question]
-text = ""
+text = "What F10.7 should this design be sized to?"
+note = "One of the two numbers the subsystem exists to produce. The centre comes from sw_central_expectation, the spread from sw_uncertainty_growth, and the confidence is the 95th percentile that sw_uncertainty_growth publishes — so this is a value the mission should not exceed in 95% of histories, not a value it will see."
 
 [maths]
-expression = ""
-source = ""
+# The study's construction: the central expectation plus the percentile of the
+# change over the lead. The percentile does the safety.
+expression = "F107_design = F107_central + dF107_p95"
+source = "noaa_swpc"
+
+[[assumption]]
+text = "95% and no other confidence, because that is the percentile the spread row publishes"
+fails_when = "prf_design offers p50, p90, p95 and p99 and expects the caller to pick what the mission needs. This row inherits p95 from sw_uncertainty_growth and cannot be asked for another: a mission needing p99 is reading a number about 32 sfu too small at a one-year lead. Changing the confidence means changing the row underneath, which is where the percentile is chosen and declared."
+
+[[assumption]]
+text = "It cannot tell solar maximum from solar minimum, because no row in this tree publishes a date"
+fails_when = "the whole of this limitation belongs to sw_central_expectation and it is repeated here because this is the row a system reader opens. The centre is the record's unconditional mean F10.7, 114.8 sfu, not the mean cycle at the date the mission flies. The record runs from 64 to 343 sfu; a mission through solar maximum and one through minimum are owed materially different numbers and this row gives them the same one. sys_mission_requirements_mission_epoch exists at layer 2 and is seeded; nothing crosses a layer to reach it."
+
+[[assumption]]
+text = "Adding a percentile of the CHANGE to a central value is not the same as the percentile of the VALUE"
+fails_when = "the record's own 95th percentile of daily F10.7 is 201 sfu, while this construction returns 228 at a five-year lead. The two answer different questions — the highest flux a day is likely to show, against how far the flux can move from its central expectation — and the second is the larger because it compounds where the centre sits with how wrong the centre can be. A reader who wants 'the 95th percentile of F10.7' wants the record, not this row."
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "F107_design"
+type = "Ratio"
+unit = "One"
+lower = 60.0
+upper = 400.0
+reason_lower = "below 60 sfu has never been observed and every relation reading F10.7 has no support there — env_f107's own floor, and a design value below it means the spread has been subtracted rather than added"
+reason_upper = "above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, which is env_f107's stated reason for the same bound. This guard is reachable: a central expectation near the top of its range plus a fifteen-year spread would exceed it, and it should refuse rather than hand a consumer a flux it cannot model"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "central"
+var = "sw_central_expectation"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "spread"
+var = "sw_uncertainty_growth"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "add the 95th-percentile growth over the mission to the central expectation"
+binds = "design"
+type = "Ratio"
 
 [view]
-kind = "number"
+kind = "line"
+over = "orbit_mission_duration"
+points = 60

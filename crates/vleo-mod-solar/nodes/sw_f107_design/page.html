@@ -1,8 +1,8 @@
-<article class="node" data-node="sw_f107_design" data-sheet-hash="96052f" data-impl-hash="222325">
+<article class="node" data-node="sw_f107_design" data-sheet-hash="76d8c7" data-impl-hash="2acde7">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>F10.7 design value</h2>
-  <p class="ident"><code>sw_f107_design</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <h2>F10.7 to design to</h2>
+  <p class="ident"><code>sw_f107_design</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
@@ -15,54 +15,129 @@
   <button role="tab" class="tab" data-tab="7">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">What F10.7 should this design be sized to?</p>
+<p class="maths"><code>F107_design = F107_central + dF107_p95</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">One of the two numbers the subsystem exists to produce. The centre comes from sw_central_expectation, the spread from sw_uncertainty_growth, and the confidence is the 95th percentile that sw_uncertainty_growth publishes — so this is a value the mission should not exceed in 95% of histories, not a value it will see.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>95% and no other confidence, because that is the percentile the spread row publishes</dt><dd>fails when prf_design offers p50, p90, p95 and p99 and expects the caller to pick what the mission needs. This row inherits p95 from sw_uncertainty_growth and cannot be asked for another: a mission needing p99 is reading a number about 32 sfu too small at a one-year lead. Changing the confidence means changing the row underneath, which is where the percentile is chosen and declared.</dd>
+<dt>It cannot tell solar maximum from solar minimum, because no row in this tree publishes a date</dt><dd>fails when the whole of this limitation belongs to sw_central_expectation and it is repeated here because this is the row a system reader opens. The centre is the record's unconditional mean F10.7, 114.8 sfu, not the mean cycle at the date the mission flies. The record runs from 64 to 343 sfu; a mission through solar maximum and one through minimum are owed materially different numbers and this row gives them the same one. sys_mission_requirements_mission_epoch exists at layer 2 and is seeded; nothing crosses a layer to reach it.</dd>
+<dt>Adding a percentile of the CHANGE to a central value is not the same as the percentile of the VALUE</dt><dd>fails when the record's own 95th percentile of daily F10.7 is 201 sfu, while this construction returns 228 at a five-year lead. The two answer different questions — the highest flux a day is likely to show, against how far the flux can move from its central expectation — and the second is the larger because it compounds where the centre sits with how wrong the centre can be. A reader who wants 'the 95th percentile of F10.7' wants the record, not this row.</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sw_f107_design</td><td></td><td>-</td></tr>
+<tr><td>in</td><td><code>central</code></td><td><a class="xref" data-goto="sw_central_expectation">sw_central_expectation</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>spread</code></td><td><a class="xref" data-goto="sw_uncertainty_growth">sw_uncertainty_growth</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>F107_design</code></td><td>sw_f107_design</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
 <section class="panel" data-panel="2">
-<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>0</b> -, confirmed by <b></b>.</p>
+<ol class="algo">
+<li><span class="step">add the 95th-percentile growth over the mission to the central expectation</span> <span class="binds">→ <code>design: Ratio</code></span></li>
+</ol>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>F107_design &ge; 60</code> — below 60 sfu has never been observed and every relation reading F10.7 has no support there — env_f107's own floor, and a design value below it means the spread has been subtracted rather than added</li>
+<li><code>F107_design &le; 400</code> — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, which is env_f107's stated reason for the same bound. This guard is reachable: a central expectation near the top of its range plus a fifteen-year spread would exceed it, and it should refuse rather than hand a consumer a flux it cannot model</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What F10.7 should this design be sized to?
+///
+/// `F107_design = F107_central + dF107_p95`
+///
+/// Source: `noaa_swpc`
+///
+/// One of the two numbers the subsystem exists to produce. The centre comes
+/// from sw_central_expectation, the spread from sw_uncertainty_growth, and
+/// the confidence is the 95th percentile that sw_uncertainty_growth publishes
+/// — so this is a value the mission should not exceed in 95% of histories,
+/// not a value it will see.
+///
+/// # Assumptions
+///
+/// * 95% and no other confidence, because that is the percentile the spread row publishes — fails when prf_design offers p50, p90, p95 and p99 and expects the caller to pick what the mission needs. This row inherits p95 from sw_uncertainty_growth and cannot be asked for another: a mission needing p99 is reading a number about 32 sfu too small at a one-year lead. Changing the confidence means changing the row underneath, which is where the percentile is chosen and declared.
+/// * It cannot tell solar maximum from solar minimum, because no row in this tree publishes a date — fails when the whole of this limitation belongs to sw_central_expectation and it is repeated here because this is the row a system reader opens. The centre is the record's unconditional mean F10.7, 114.8 sfu, not the mean cycle at the date the mission flies. The record runs from 64 to 343 sfu; a mission through solar maximum and one through minimum are owed materially different numbers and this row gives them the same one. sys_mission_requirements_mission_epoch exists at layer 2 and is seeded; nothing crosses a layer to reach it.
+/// * Adding a percentile of the CHANGE to a central value is not the same as the percentile of the VALUE — fails when the record's own 95th percentile of daily F10.7 is 201 sfu, while this construction returns 228 at a five-year lead. The two answer different questions — the highest flux a day is likely to show, against how far the flux can move from its central expectation — and the second is the larger because it compounds where the centre sits with how wrong the centre can be. A reader who wants 'the 95th percentile of F10.7' wants the record, not this row.
+pub const NODE_ID: &amp;str = &quot;sw_f107_design&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x83cf717ba776d8c7;
+
+pub fn evaluate(central: Ratio, spread: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : add the 95th-percentile growth over the mission to the central expectation -&gt; Ratio
+    // The study's construction, and the whole of it: the centre plus the spread.
+    // Both come from rows that declare where their numbers came from and what
+    // they cannot do, so there is nothing to measure or choose here. The
+    // confidence is whatever sw_uncertainty_growth publishes, which is the 95th
+    // percentile, and the sheet says a mission needing another one must change
+    // that row rather than this one.
+    let design: Ratio = Ratio::new(central.get() + spread.get());
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = design;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_design&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_design&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;below 60 sfu has never been observed and every relation reading F10.7 has no support there — env_f107's own floor, and a design value below it means the spread has been subtracted rather than added&quot; });
+    }
+    if answer.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_design&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, which is env_f107's stated reason for the same bound. This guard is reachable: a central expectation near the top of its range plus a fifteen-year spread would exceed it, and it should refuse rather than hand a consumer a flux it cannot model&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
 </section>
 <section class="panel" data-panel="4">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="five years — climatology 114.8437 plus the 1826-day p95 growth of 113.294"><td>five years — climatology 114.8437 plus the 1826-day p95 growth of 113.294</td><td class="num">228.1374378829</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="half a year — the shortest mission the tree allows, and the narrowest band"><td>half a year — the shortest mission the tree allows, and the narrowest band</td><td class="num">171.8843338669</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="ten years — the cycle's own turn brings the band IN, so the design value falls"><td>ten years — the cycle's own turn brings the band IN, so the design value falls</td><td class="num">180.8437378829</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="fifteen years — the widest band the record supports"><td>fifteen years — the widest band the record supports</td><td class="num">229.8437378829</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
 <section class="panel" data-panel="5">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 60 — below 60 sfu has never been observed and every relation reading F10.7 has no support there — env_f107's own floor, and a design value below it means the spread has been subtracted rather than added</li>
+<li><code>OutOfDomain</code> above 400 — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, which is env_f107's stated reason for the same bound. This guard is reachable: a central expectation near the top of its range plus a fifteen-year spread would exceed it, and it should refuse rather than hand a consumer a flux it cannot model</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
 <section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_f107_design"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
 <section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
-<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p>Valid over <code>60 &hellip; 400</code> -.</p>
+<ul class="guards"><li>lower — below 60 sfu has never been observed and every relation reading F10.7 has no support there — env_f107's own floor, and a design value below it means the spread has been subtracted rather than added</li><li>upper — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, which is env_f107's stated reason for the same bound. This guard is reachable: a central expectation near the top of its range plus a fifteen-year spread would exceed it, and it should refuse rather than hand a consumer a flux it cannot model</li></ul>
+<div class="sweep" data-over="orbit_mission_duration" data-points="60" data-y="sw_f107_design"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a> over 60 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1361 rows** — 666 a person picked, 695 worked out. Two thirds of any design tree is
+**1361 rows** — 664 a person picked, 697 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -2579,7 +2579,7 @@ A node that consumes density and does not carry this forward is a node whose mar
 
 - **lower bound** — below 60 sfu has never been observed; the fit has no support there
 - **upper bound** — above 400 sfu is beyond the largest recorded daily value, so the temperature relation is extrapolated
-- **read by** — `env_exospheric_temperature`
+- **read by** — `env_exospheric_temperature`, `sw_central_expectation`
 
 Shipped climatology stands in when no solar-drivers bundle is synced, and the run is marked amber.
 
@@ -12316,7 +12316,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 
 - **lower bound** — below six months the programme cannot amortise a satellite, so it is not the mission being designed
 - **upper bound** — above 15 years the cost model, the degradation model and the battery cycle model are all extrapolated well past their fits
-- **read by** — `aero_ao_fluence`, `cost_per_year`, `cost_programme`, `pwr_battery_cycles`, `pwr_degradation`, `sw_storm_return_level`, `sw_uncertainty_growth`
+- **read by** — `aero_ao_fluence`, `cost_per_year`, `cost_programme`, `pwr_battery_cycles`, `pwr_degradation`, `sw_central_expectation`, `sw_storm_return_level`, `sw_uncertainty_growth`
 - **contributes to** — kpi_cost_per_year
 
 ### `orbit_nodal_regression` — Nodal regression rate
@@ -19151,25 +19151,37 @@ At or above one the orbit holds indefinitely. Below one the mission has a lifeti
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
-### `sw_central_expectation` — Central expectation
+### `sw_central_expectation` — F10.7 central expectation at a lead
 
-> 
+> Where is F10.7 expected to be by the time the mission is there?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | declared |
+| symbol | `F107_central` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `F107_central(L) = w*F107_today + (1-w)*114.8437,  w = exp(-L / 27 d)` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
 
-- **lower bound** — 
-- **upper bound** — 
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **lower bound** — the answer is a weighted blend of today's F10.7 and the record's mean, so it can never leave the interval between them. env_f107's own lower bound is 60 because below 60 sfu has never been observed and the fit has no support there; the same floor applies to a blend of it
+- **upper bound** — env_f107's upper bound is 400, above which the exospheric temperature relation is extrapolated past the largest recorded daily value. A blend cannot exceed its larger input, so this bound catches a broken weight rather than an extreme sky
+- **reads** — `env_f107`, `orbit_mission_duration`
+- **read by** — `sw_f107_design`
+- **assumes** The climatology is the record's UNCONDITIONAL mean, not the mean cycle at the date the mission flies — fails when this is the honest limit of the row and it is a missing input, not a modelling choice. prf_design evaluates the mean cycle AT THE TARGET DATE, so a mission flying through solar maximum gets a different central value from one flying through minimum. Doing that needs a mission epoch, and no row in this tree publishes a date: sys_mission_requirements_mission_epoch exists at layer 2 and is still seeded, and no derivation edge in this repository crosses a layer. Until an epoch exists this row cannot tell solar maximum from solar minimum, and the record says that is worth a great deal — its F10.7 runs from 64 to 343 sfu, with a 5th percentile of 68 and a 95th of 201. A design sized on the unconditional mean of 114.8 is sized on no particular part of the cycle.
+- **assumes** Persistence is carried for completeness and is worth nothing at any mission lead — fails when the weight is exp(-L/27) with L in days, so at the shortest mission the declared input range allows — half a year — today's flux contributes 0.114% and by one year it contributes 0.00013%. The term is right and it is inert: this row's answer is the climatology to four decimal places for every lead a mission can ask about. It is kept because the relation is the study's, and removing it would make the row silently wrong for the short-lead use nothing in this tree currently makes. Anyone wanting the 27-day outlook wants a different row.
+- **assumes** The blend shape is a choice, and 27 days is the solar rotation rather than a fitted constant — fails when an exponential decay into a constant is one of several defensible ways to hand over from persistence to climatology, and prf_design cites no source for the form. 27 days is the synodic solar rotation, so the choice says persistence dies over about one turn of the Sun — physically reasonable and not measured here. Nothing in this row's declared range is sensitive to it, because every mission lead is far past the handover.
+- **evidence** five years — persistence is gone, so the answer is the record climatology exactly — expect 114.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** fifteen years — still the climatology, and it must not drift with lead once persistence has died — expect 114.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** one year — today's flux contributes 1.3e-06 of the answer — expect 114.8437847603 ± 0.00000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** half a Julian year, the shortest mission — today's 150 sfu is worth 0.04 sfu of the answer — expect 114.8843338669462 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** a quiet day today makes no difference at five years — the answer is still the climatology — expect 114.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** nor does a very active day — the record's mean is what a five-year mission is owed — expect 114.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The centre of the F10.7 design value; sw_uncertainty_growth supplies the spread around it and sw_f107_design adds the two together. Today's flux is worth something at a lead of days and nothing at a lead of years, so this is the one number that has to know how far ahead it is being asked about.
 
 ### `sw_cycle_number` — Solar cycle number
 
@@ -19271,25 +19283,35 @@ At or above one the orbit holds indefinitely. Below one the mission has a lifeti
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
-### `sw_f107_design` — F10.7 design value
+### `sw_f107_design` — F10.7 to design to
 
-> 
+> What F10.7 should this design be sized to?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | declared |
+| symbol | `F107_design` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `F107_design = F107_central + dF107_p95` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — below 60 sfu has never been observed and every relation reading F10.7 has no support there — env_f107's own floor, and a design value below it means the spread has been subtracted rather than added
+- **upper bound** — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, which is env_f107's stated reason for the same bound. This guard is reachable: a central expectation near the top of its range plus a fifteen-year spread would exceed it, and it should refuse rather than hand a consumer a flux it cannot model
+- **reads** — `sw_central_expectation`, `sw_uncertainty_growth`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** 95% and no other confidence, because that is the percentile the spread row publishes — fails when prf_design offers p50, p90, p95 and p99 and expects the caller to pick what the mission needs. This row inherits p95 from sw_uncertainty_growth and cannot be asked for another: a mission needing p99 is reading a number about 32 sfu too small at a one-year lead. Changing the confidence means changing the row underneath, which is where the percentile is chosen and declared.
+- **assumes** It cannot tell solar maximum from solar minimum, because no row in this tree publishes a date — fails when the whole of this limitation belongs to sw_central_expectation and it is repeated here because this is the row a system reader opens. The centre is the record's unconditional mean F10.7, 114.8 sfu, not the mean cycle at the date the mission flies. The record runs from 64 to 343 sfu; a mission through solar maximum and one through minimum are owed materially different numbers and this row gives them the same one. sys_mission_requirements_mission_epoch exists at layer 2 and is seeded; nothing crosses a layer to reach it.
+- **assumes** Adding a percentile of the CHANGE to a central value is not the same as the percentile of the VALUE — fails when the record's own 95th percentile of daily F10.7 is 201 sfu, while this construction returns 228 at a five-year lead. The two answer different questions — the highest flux a day is likely to show, against how far the flux can move from its central expectation — and the second is the larger because it compounds where the centre sits with how wrong the centre can be. A reader who wants 'the 95th percentile of F10.7' wants the record, not this row.
+- **evidence** five years — climatology 114.8437 plus the 1826-day p95 growth of 113.294 — expect 228.1374378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** half a year — the shortest mission the tree allows, and the narrowest band — expect 171.8843338669 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** ten years — the cycle's own turn brings the band IN, so the design value falls — expect 180.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** fifteen years — the widest band the record supports — expect 229.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+One of the two numbers the subsystem exists to produce. The centre comes from sw_central_expectation, the spread from sw_uncertainty_growth, and the confidence is the 95th percentile that sw_uncertainty_growth publishes — so this is a value the mission should not exceed in 95% of histories, not a value it will see.
 
 ### `sw_forecast_bias` — Forecast bias
 
@@ -19638,7 +19660,7 @@ Geomagnetic activity has no usable long-term forecast, so a design does not pred
 - **lower bound** — the 95th percentile of the change in F10.7 over a lead of at least half a year is positive everywhere in this record — the smallest measured is +57 sfu. A negative value means the difference has been taken the wrong way round, which would turn a safety margin into a reduction
 - **upper bound** — the largest measured percentile is +115.0 sfu at a fifteen-year lead and the relation is a table that clamps at its ends, so no input can produce more. 120 is unreachable by this relation and exists to catch a broken table rather than an extreme sky
 - **reads** — `orbit_mission_duration`
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **read by** — `sw_f107_design`
 - **assumes** A table over measured leads, not a fitted curve, because the shape is the solar cycle and a smooth fit would erase it — fails when the measured p95 growth is NOT monotone in lead: it rises to +114 sfu at four years, falls to +66 at ten to eleven, and rises again to +115 at fifteen. That is the eleven-year cycle showing through — a lead of half a cycle can put you furthest from where you started, while a lead of a full cycle returns you to a similar phase. Any monotone form, log-linear included, would report roughly +90 at eleven years where the record says +66, overstating the band by a third at exactly the lead a long mission cares about. The table is faithful and the interpolation between its points is this node's choice.
 - **assumes** Only pairs of REAL observations exactly L days apart — which is not what prf_design does — fails when prf_design.m:29 builds a full daily grid from the first date to the last and fills it by linear interpolation, so the record's 273 absent days become 273 straight-line days with no variability at all, and every L-day difference spanning them is understated. Measured both ways on this record, the MATLAB's grid gives a p95 between 1.0 and 2.3 sfu LOWER across leads from 7 to 1826 days — a design band narrower than the record supports, in the unsafe direction. This node pairs only days that were both observed, which costs sample size and buys a number that is not partly invented. It is therefore expected to DISAGREE with prf_design by about that much, and a parity grid would have recorded the disagreement rather than a match.
 - **assumes** The 95th percentile, and the sample thins as the lead grows — fails when prf_design computes p50, p90, p95 and p99 and lets the caller pick the confidence the mission needs; this row publishes p95 only, because a node answers one question. At a one-year lead the four are +1, +53, +68 and +100 sfu — so a mission that needs p99 is reading a number 32 sfu too small here. The pair count also falls from 9,947 at a half-year lead to 4,838 at fifteen years, and twenty-eight years of record hold barely two and a half solar cycles, so the longest leads are sampled by very few independent cycle phases.
