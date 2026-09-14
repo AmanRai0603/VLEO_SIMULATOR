@@ -2,32 +2,82 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sw_kp_slot_bias"
-label = "Kp slot bias"
+label = "Kp slot bias, daily peak"
 folder = "sw_kp_slot_bias"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1355
-state = "empty"
+state = "published"
+
+# NO migrated_from AND NO PARITY GRID, FOR THE SAME REASON AS
+# sw_storm_return_level.
+#
+# prf_ap2kp.m's fitOffset_ computes this by binning the record and taking a
+# median per bin. There is no closed form to transcribe and no MATLAB in this
+# environment to run, so a grid would be my own reading of that binning twice
+# over. What saves the node is that the MATLAB's answer IS a statistic of the
+# record: the fixtures below are the same nine medians a grid would have
+# carried, computed outside this crate from the data both implementations read.
 
 [question]
-text = ""
+text = "By how much does the published table under-read the daily PEAK Kp at this Ap?"
+note = "sw_kp_from_ap applies the published scale as published, and the scale is defined for the three-hourly ap while the design product carries a daily mean. This row measures the resulting bias for the slot that sizes a drag design — the daily peak — and publishes it as a correction to be added. The 24-hour-mean slot has its own, smaller and oppositely-signed bias, recorded in the assumptions rather than published, because a node answers one question."
 
 [maths]
-expression = ""
-source = ""
+# Nine bins, nine medians, interpolated between the bin centres and held at the
+# ends. The bin edges are prf_ap2kp's own: 0 5 10 15 20 30 45 70 110 400.
+expression = "dKp_peak(Ap) = piecewise_linear(ap_bin_centres -> measured_medians, Ap)"
+source = "noaa_swpc"
+
+[[assumption]]
+text = "The correction is a median per bin, so it describes the typical day at that Ap and not the day in hand"
+fails_when = "the offset is a distribution, not a number. Adding the median recovers the typical peak and still misses any individual day, and the spread within a bin is not published by this row. A design that needs the worst case at a given Ap needs a percentile of the offset, not its median."
+
+[[assumption]]
+text = "The nine bin medians are not monotone, and the top bin sits exactly at the record's support limit"
+fails_when = "the offset rises with Ap as the concavity argument predicts — +1.000 at Ap 2.5 through +1.747 at Ap 90 — and then FALLS to +1.317 in the 110-to-400 bin. That bin holds 20 days, which is exactly prf_ap2kp's own minimum for using a bin at all, so the fall is as likely to be a small-sample artefact as a real saturation of the table near its top. It is carried through rather than smoothed away, because smoothing it would be this node inventing a shape the record does not show. Anyone designing at Ap above 110 is reading a correction supported by twenty days."
+
+[[assumption]]
+text = "The 24-hour-mean slot is NOT what this publishes"
+fails_when = "the two slots have opposite signs, and using this row for the mean slot would double the error rather than remove it. Measured on the same 10,297 days, the mean-slot offset runs from +0.042 at Ap 2.5 down to -0.462 in the top bin — the table reads HIGH against the 24-hour mean and LOW against the peak. DTM2020_Oper wants both: akp(1) is a single three-hourly value, akp(3) the mean of the eight. Only the peak is published here."
 
 [output]
-symbol = ""
-type = ""
-unit = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "dKp_peak"
+type = "Ratio"
+unit = "One"
 lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+upper = 2.0
+reason_lower = "Kp(ap) is concave, so by Jensen's inequality the daily peak three-hourly Kp cannot sit below the table's reading of the daily mean. A negative correction contradicts the inequality the whole row rests on, and means the sign or the slot has been swapped. The smallest measured bin median is +0.833"
+reason_upper = "the largest measured bin median is +1.747 and the relation is a table that clamps at its ends, so no input can produce more than that. 2.0 is therefore unreachable by this relation and exists to catch a broken table rather than an extreme sky"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "ap"
+var = "sw_storm_return_level"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "read the measured peak-slot offset off the nine binned medians at this Ap"
+binds = "off"
+type = "Ratio"
+
+[data]
+# Pinned to solar-weather@2026.09.14, and this list can only pin the NAME —
+# crates/vleo-modules compares `d == b`. The nine medians must be re-measured
+# if the bundle version changes. Same obligation as sw_storm_return_level.
+bundles = ["solar-weather"]
 
 [view]
-kind = "number"
+kind = "line"
+over = "orbit_mission_duration"
+points = 60

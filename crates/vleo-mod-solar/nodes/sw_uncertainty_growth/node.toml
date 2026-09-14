@@ -2,32 +2,78 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sw_uncertainty_growth"
-label = "Uncertainty growth with lead"
+label = "F10.7 growth at 95% over a lead"
 folder = "sw_uncertainty_growth"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1346
-state = "empty"
+state = "published"
+
+# NO migrated_from AND NO PARITY GRID. prf_design's growthPct is an empirical
+# percentile of the record, not a closed form, and there is no MATLAB here to
+# run. The fixtures are the same percentiles, computed outside this crate from
+# the data both implementations read — with one deliberate difference, declared
+# below, because the MATLAB's version of this number is biased and this one
+# is not.
 
 [question]
-text = ""
+text = "By how much can F10.7 rise over a lead this long, at 95% confidence?"
+note = "Half of the F10.7 design value. sw_central_expectation says where F10.7 is heading; this says how wrong that can be by the time the mission is there, so the band widens with lead exactly as knowledge fades. The percentile does the safety: the design value is the central expectation plus this."
 
 [maths]
-expression = ""
-source = ""
+# The empirical 95th percentile of F107(t+L) - F107(t), measured at seventeen
+# leads spanning the declared input range and interpolated between them.
+expression = "dF107_p95(L) = piecewise_linear(measured_leads -> measured_p95, L)"
+source = "noaa_swpc"
+
+[[assumption]]
+text = "A table over measured leads, not a fitted curve, because the shape is the solar cycle and a smooth fit would erase it"
+fails_when = "the measured p95 growth is NOT monotone in lead: it rises to +114 sfu at four years, falls to +66 at ten to eleven, and rises again to +115 at fifteen. That is the eleven-year cycle showing through — a lead of half a cycle can put you furthest from where you started, while a lead of a full cycle returns you to a similar phase. Any monotone form, log-linear included, would report roughly +90 at eleven years where the record says +66, overstating the band by a third at exactly the lead a long mission cares about. The table is faithful and the interpolation between its points is this node's choice."
+
+[[assumption]]
+text = "Only pairs of REAL observations exactly L days apart — which is not what prf_design does"
+fails_when = "prf_design.m:29 builds a full daily grid from the first date to the last and fills it by linear interpolation, so the record's 273 absent days become 273 straight-line days with no variability at all, and every L-day difference spanning them is understated. Measured both ways on this record, the MATLAB's grid gives a p95 between 1.0 and 2.3 sfu LOWER across leads from 7 to 1826 days — a design band narrower than the record supports, in the unsafe direction. This node pairs only days that were both observed, which costs sample size and buys a number that is not partly invented. It is therefore expected to DISAGREE with prf_design by about that much, and a parity grid would have recorded the disagreement rather than a match."
+
+[[assumption]]
+text = "The 95th percentile, and the sample thins as the lead grows"
+fails_when = "prf_design computes p50, p90, p95 and p99 and lets the caller pick the confidence the mission needs; this row publishes p95 only, because a node answers one question. At a one-year lead the four are +1, +53, +68 and +100 sfu — so a mission that needs p99 is reading a number 32 sfu too small here. The pair count also falls from 9,947 at a half-year lead to 4,838 at fifteen years, and twenty-eight years of record hold barely two and a half solar cycles, so the longest leads are sampled by very few independent cycle phases."
 
 [output]
-symbol = ""
-type = ""
-unit = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "dF107_p95"
+type = "Ratio"
+unit = "One"
 lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+upper = 120.0
+reason_lower = "the 95th percentile of the change in F10.7 over a lead of at least half a year is positive everywhere in this record — the smallest measured is +57 sfu. A negative value means the difference has been taken the wrong way round, which would turn a safety margin into a reduction"
+reason_upper = "the largest measured percentile is +115.0 sfu at a fifteen-year lead and the relation is a table that clamps at its ends, so no input can produce more. 120 is unreachable by this relation and exists to catch a broken table rather than an extreme sky"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "lead"
+var = "orbit_mission_duration"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "take the lead in days and read the measured 95th-percentile F10.7 growth at that lead"
+binds = "growth"
+type = "Ratio"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# seventeen percentiles must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
 
 [view]
-kind = "number"
+kind = "line"
+over = "orbit_mission_duration"
+points = 60

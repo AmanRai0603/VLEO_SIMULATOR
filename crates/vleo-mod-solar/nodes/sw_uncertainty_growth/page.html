@@ -1,8 +1,8 @@
-<article class="node" data-node="sw_uncertainty_growth" data-sheet-hash="0ea2fa" data-impl-hash="222325">
+<article class="node" data-node="sw_uncertainty_growth" data-sheet-hash="36bfab" data-impl-hash="2abe4f">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>Uncertainty growth with lead</h2>
-  <p class="ident"><code>sw_uncertainty_growth</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <h2>F10.7 growth at 95% over a lead</h2>
+  <p class="ident"><code>sw_uncertainty_growth</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
@@ -15,54 +15,160 @@
   <button role="tab" class="tab" data-tab="7">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">By how much can F10.7 rise over a lead this long, at 95% confidence?</p>
+<p class="maths"><code>dF107_p95(L) = piecewise_linear(measured_leads -&gt; measured_p95, L)</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">Half of the F10.7 design value. sw_central_expectation says where F10.7 is heading; this says how wrong that can be by the time the mission is there, so the band widens with lead exactly as knowledge fades. The percentile does the safety: the design value is the central expectation plus this.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>A table over measured leads, not a fitted curve, because the shape is the solar cycle and a smooth fit would erase it</dt><dd>fails when the measured p95 growth is NOT monotone in lead: it rises to +114 sfu at four years, falls to +66 at ten to eleven, and rises again to +115 at fifteen. That is the eleven-year cycle showing through — a lead of half a cycle can put you furthest from where you started, while a lead of a full cycle returns you to a similar phase. Any monotone form, log-linear included, would report roughly +90 at eleven years where the record says +66, overstating the band by a third at exactly the lead a long mission cares about. The table is faithful and the interpolation between its points is this node's choice.</dd>
+<dt>Only pairs of REAL observations exactly L days apart — which is not what prf_design does</dt><dd>fails when prf_design.m:29 builds a full daily grid from the first date to the last and fills it by linear interpolation, so the record's 273 absent days become 273 straight-line days with no variability at all, and every L-day difference spanning them is understated. Measured both ways on this record, the MATLAB's grid gives a p95 between 1.0 and 2.3 sfu LOWER across leads from 7 to 1826 days — a design band narrower than the record supports, in the unsafe direction. This node pairs only days that were both observed, which costs sample size and buys a number that is not partly invented. It is therefore expected to DISAGREE with prf_design by about that much, and a parity grid would have recorded the disagreement rather than a match.</dd>
+<dt>The 95th percentile, and the sample thins as the lead grows</dt><dd>fails when prf_design computes p50, p90, p95 and p99 and lets the caller pick the confidence the mission needs; this row publishes p95 only, because a node answers one question. At a one-year lead the four are +1, +53, +68 and +100 sfu — so a mission that needs p99 is reading a number 32 sfu too small here. The pair count also falls from 9,947 at a half-year lead to 4,838 at fifteen years, and twenty-eight years of record hold barely two and a half solar cycles, so the longest leads are sampled by very few independent cycle phases.</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sw_uncertainty_growth</td><td></td><td>-</td></tr>
+<tr><td>in</td><td><code>lead</code></td><td><a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a></td><td>Time</td><td>yr</td></tr>
+<tr class="out"><td>out</td><td><code>dF107_p95</code></td><td>sw_uncertainty_growth</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
 <section class="panel" data-panel="2">
-<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>0</b> -, confirmed by <b></b>.</p>
+<ol class="algo">
+<li><span class="step">take the lead in days and read the measured 95th-percentile F10.7 growth at that lead</span> <span class="binds">→ <code>growth: Ratio</code></span></li>
+</ol>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>dF107_p95 &ge; 0</code> — the 95th percentile of the change in F10.7 over a lead of at least half a year is positive everywhere in this record — the smallest measured is +57 sfu. A negative value means the difference has been taken the wrong way round, which would turn a safety margin into a reduction</li>
+<li><code>dF107_p95 &le; 120</code> — the largest measured percentile is +115.0 sfu at a fifteen-year lead and the relation is a table that clamps at its ends, so no input can produce more. 120 is unreachable by this relation and exists to catch a broken table rather than an extreme sky</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// By how much can F10.7 rise over a lead this long, at 95% confidence?
+///
+/// `dF107_p95(L) = piecewise_linear(measured_leads -&gt; measured_p95, L)`
+///
+/// Source: `noaa_swpc`
+///
+/// Half of the F10.7 design value. sw_central_expectation says where F10.7 is
+/// heading; this says how wrong that can be by the time the mission is there,
+/// so the band widens with lead exactly as knowledge fades. The percentile
+/// does the safety: the design value is the central expectation plus this.
+///
+/// # Assumptions
+///
+/// * A table over measured leads, not a fitted curve, because the shape is the solar cycle and a smooth fit would erase it — fails when the measured p95 growth is NOT monotone in lead: it rises to +114 sfu at four years, falls to +66 at ten to eleven, and rises again to +115 at fifteen. That is the eleven-year cycle showing through — a lead of half a cycle can put you furthest from where you started, while a lead of a full cycle returns you to a similar phase. Any monotone form, log-linear included, would report roughly +90 at eleven years where the record says +66, overstating the band by a third at exactly the lead a long mission cares about. The table is faithful and the interpolation between its points is this node's choice.
+/// * Only pairs of REAL observations exactly L days apart — which is not what prf_design does — fails when prf_design.m:29 builds a full daily grid from the first date to the last and fills it by linear interpolation, so the record's 273 absent days become 273 straight-line days with no variability at all, and every L-day difference spanning them is understated. Measured both ways on this record, the MATLAB's grid gives a p95 between 1.0 and 2.3 sfu LOWER across leads from 7 to 1826 days — a design band narrower than the record supports, in the unsafe direction. This node pairs only days that were both observed, which costs sample size and buys a number that is not partly invented. It is therefore expected to DISAGREE with prf_design by about that much, and a parity grid would have recorded the disagreement rather than a match.
+/// * The 95th percentile, and the sample thins as the lead grows — fails when prf_design computes p50, p90, p95 and p99 and lets the caller pick the confidence the mission needs; this row publishes p95 only, because a node answers one question. At a one-year lead the four are +1, +53, +68 and +100 sfu — so a mission that needs p99 is reading a number 32 sfu too small here. The pair count also falls from 9,947 at a half-year lead to 4,838 at fifteen years, and twenty-eight years of record hold barely two and a half solar cycles, so the longest leads are sampled by very few independent cycle phases.
+pub const NODE_ID: &amp;str = &quot;sw_uncertainty_growth&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x4b1bd73cba36bfab;
+
+pub fn evaluate(lead: Time) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : take the lead in days and read the measured 95th-percentile F10.7 growth at that lead -&gt; Ratio
+    // Seventeen leads, seventeen measured percentiles, from
+    // solar-weather@2026.09.14. x is the lead in DAYS, y the 95th percentile of
+    // F107(t+L) - F107(t) over pairs where both days were observed.
+    //
+    // The y values fall and rise again — +114 at four years, +66 at ten, +115 at
+    // fifteen — and that is the eleven-year cycle, not noise. The sheet says why a
+    // table and not a fitted curve, and why these numbers are expected to sit
+    // 1 to 2.3 sfu ABOVE prf_design's, which interpolates the record's absent days.
+    //
+    // Table1::at clamps at both ends rather than extrapolating: past fifteen years
+    // the record has too few pairs to say anything new, and below half a year the
+    // declared input range does not reach.
+    use vleo_core::math::Table1;
+    const GROWTH: Table1 = Table1 {
+        x: &amp;[
+            183.0, 365.0, 548.0, 730.0, 1096.0, 1461.0, 1826.0, 2191.0, 2557.0, 2922.0, 3287.0,
+            3653.0, 4018.0, 4383.0, 4748.0, 5113.0, 5478.0,
+        ],
+        y: &amp;[
+            57.0, 68.3, 77.0, 91.0, 107.0, 114.0, 113.3, 104.0, 92.0, 88.0, 78.0, 66.0, 66.0, 76.0,
+            91.0, 106.0, 115.0,
+        ],
+    };
+    let growth: Ratio = Ratio::new(GROWTH.at(lead.days()));
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = growth;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;dF107_p95&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;dF107_p95&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the 95th percentile of the change in F10.7 over a lead of at least half a year is positive everywhere in this record — the smallest measured is +57 sfu. A negative value means the difference has been taken the wrong way round, which would turn a safety margin into a reduction&quot; });
+    }
+    if answer.get() &gt; 120.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;dF107_p95&quot;, value: answer.get(), bound: 120.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the largest measured percentile is +115.0 sfu at a fifteen-year lead and the relation is a table that clamps at its ends, so no input can produce more. 120 is unreachable by this relation and exists to catch a broken table rather than an extreme sky&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
 </section>
 <section class="panel" data-panel="4">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="lead 183 days (0.50 yr) — 9947 observed pairs"><td>lead 183 days (0.50 yr) — 9947 observed pairs</td><td class="num">57</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 365 days (1.00 yr) — 9675 observed pairs"><td>lead 365 days (1.00 yr) — 9675 observed pairs</td><td class="num">68.3</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 548 days (1.50 yr) — 9492 observed pairs"><td>lead 548 days (1.50 yr) — 9492 observed pairs</td><td class="num">77</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 730 days (2.00 yr) — 9310 observed pairs"><td>lead 730 days (2.00 yr) — 9310 observed pairs</td><td class="num">91</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 1096 days (3.00 yr) — 8946 observed pairs"><td>lead 1096 days (3.00 yr) — 8946 observed pairs</td><td class="num">107</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 1461 days (4.00 yr) — 8579 observed pairs"><td>lead 1461 days (4.00 yr) — 8579 observed pairs</td><td class="num">114</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 1826 days (5.00 yr) — 8215 observed pairs"><td>lead 1826 days (5.00 yr) — 8215 observed pairs</td><td class="num">113.3</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 2191 days (6.00 yr) — 7849 observed pairs"><td>lead 2191 days (6.00 yr) — 7849 observed pairs</td><td class="num">104</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 2557 days (7.00 yr) — 7483 observed pairs"><td>lead 2557 days (7.00 yr) — 7483 observed pairs</td><td class="num">92</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 2922 days (8.00 yr) — 7118 observed pairs"><td>lead 2922 days (8.00 yr) — 7118 observed pairs</td><td class="num">88</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 3287 days (9.00 yr) — 7026 observed pairs"><td>lead 3287 days (9.00 yr) — 7026 observed pairs</td><td class="num">78</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 3653 days (10.00 yr) — 6660 observed pairs"><td>lead 3653 days (10.00 yr) — 6660 observed pairs</td><td class="num">66</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 4018 days (11.00 yr) — 6295 observed pairs"><td>lead 4018 days (11.00 yr) — 6295 observed pairs</td><td class="num">66</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 4383 days (12.00 yr) — 5932 observed pairs"><td>lead 4383 days (12.00 yr) — 5932 observed pairs</td><td class="num">76</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 4748 days (13.00 yr) — 5567 observed pairs"><td>lead 4748 days (13.00 yr) — 5567 observed pairs</td><td class="num">91</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 5113 days (14.00 yr) — 5203 observed pairs"><td>lead 5113 days (14.00 yr) — 5203 observed pairs</td><td class="num">106</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 5478 days (15.00 yr) — 4838 observed pairs"><td>lead 5478 days (15.00 yr) — 4838 observed pairs</td><td class="num">115</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="below the first measured lead — 100 days holds the 183-day value rather than extrapolating"><td>below the first measured lead — 100 days holds the 183-day value rather than extrapolating</td><td class="num">57</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="above the last measured lead — 20 years holds the 15-year value"><td>above the last measured lead — 20 years holds the 15-year value</td><td class="num">115</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
 <section class="panel" data-panel="5">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 0 — the 95th percentile of the change in F10.7 over a lead of at least half a year is positive everywhere in this record — the smallest measured is +57 sfu. A negative value means the difference has been taken the wrong way round, which would turn a safety margin into a reduction</li>
+<li><code>OutOfDomain</code> above 120 — the largest measured percentile is +115.0 sfu at a fifteen-year lead and the relation is a table that clamps at its ends, so no input can produce more. 120 is unreachable by this relation and exists to catch a broken table rather than an extreme sky</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
 <section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_uncertainty_growth"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
 <section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
-<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p>Valid over <code>0 &hellip; 120</code> -.</p>
+<ul class="guards"><li>lower — the 95th percentile of the change in F10.7 over a lead of at least half a year is positive everywhere in this record — the smallest measured is +57 sfu. A negative value means the difference has been taken the wrong way round, which would turn a safety margin into a reduction</li><li>upper — the largest measured percentile is +115.0 sfu at a fifteen-year lead and the relation is a table that clamps at its ends, so no input can produce more. 120 is unreachable by this relation and exists to catch a broken table rather than an extreme sky</li></ul>
+<div class="sweep" data-over="orbit_mission_duration" data-points="60" data-y="sw_uncertainty_growth"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a> over 60 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

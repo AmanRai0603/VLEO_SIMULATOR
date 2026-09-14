@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1361 rows** — 668 a person picked, 693 worked out. Two thirds of any design tree is
+**1361 rows** — 666 a person picked, 695 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -12316,7 +12316,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 
 - **lower bound** — below six months the programme cannot amortise a satellite, so it is not the mission being designed
 - **upper bound** — above 15 years the cost model, the degradation model and the battery cycle model are all extrapolated well past their fits
-- **read by** — `aero_ao_fluence`, `cost_per_year`, `cost_programme`, `pwr_battery_cycles`, `pwr_degradation`, `sw_storm_return_level`
+- **read by** — `aero_ao_fluence`, `cost_per_year`, `cost_programme`, `pwr_battery_cycles`, `pwr_degradation`, `sw_storm_return_level`, `sw_uncertainty_growth`
 - **contributes to** — kpi_cost_per_year
 
 ### `orbit_nodal_regression` — Nodal regression rate
@@ -19408,25 +19408,42 @@ At or above one the orbit holds indefinitely. Below one the mission has a lifeti
 
 The atmosphere model wants Kp; the design product carries Ap. This is that conversion and only that — the published table, applied as published. What flows in is the design storm from sw_storm_return_level, so what flows out is the Kp of that storm and not of an average day. The bias the table carries when a daily mean is fed to a three-hourly scale is measured separately, in sw_kp_slot_bias, and is not corrected here.
 
-### `sw_kp_slot_bias` — Kp slot bias
+### `sw_kp_slot_bias` — Kp slot bias, daily peak
 
-> 
+> By how much does the published table under-read the daily PEAK Kp at this Ap?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | declared |
+| symbol | `dKp_peak` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `dKp_peak(Ap) = piecewise_linear(ap_bin_centres -> measured_medians, Ap)` |
+| source | `noaa_swpc` |
+| valid over | 0 … 2 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — Kp(ap) is concave, so by Jensen's inequality the daily peak three-hourly Kp cannot sit below the table's reading of the daily mean. A negative correction contradicts the inequality the whole row rests on, and means the sign or the slot has been swapped. The smallest measured bin median is +0.833
+- **upper bound** — the largest measured bin median is +1.747 and the relation is a table that clamps at its ends, so no input can produce more than that. 2.0 is therefore unreachable by this relation and exists to catch a broken table rather than an extreme sky
+- **reads** — `sw_storm_return_level`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** The correction is a median per bin, so it describes the typical day at that Ap and not the day in hand — fails when the offset is a distribution, not a number. Adding the median recovers the typical peak and still misses any individual day, and the spread within a bin is not published by this row. A design that needs the worst case at a given Ap needs a percentile of the offset, not its median.
+- **assumes** The nine bin medians are not monotone, and the top bin sits exactly at the record's support limit — fails when the offset rises with Ap as the concavity argument predicts — +1.000 at Ap 2.5 through +1.747 at Ap 90 — and then FALLS to +1.317 in the 110-to-400 bin. That bin holds 20 days, which is exactly prf_ap2kp's own minimum for using a bin at all, so the fall is as likely to be a small-sample artefact as a real saturation of the table near its top. It is carried through rather than smoothed away, because smoothing it would be this node inventing a shape the record does not show. Anyone designing at Ap above 110 is reading a correction supported by twenty days.
+- **assumes** The 24-hour-mean slot is NOT what this publishes — fails when the two slots have opposite signs, and using this row for the mean slot would double the error rather than remove it. Measured on the same 10,297 days, the mean-slot offset runs from +0.042 at Ap 2.5 down to -0.462 in the top bin — the table reads HIGH against the 24-hour mean and LOW against the peak. DTM2020_Oper wants both: akp(1) is a single three-hourly value, akp(3) the mean of the eight. Only the peak is published here.
+- **evidence** Ap bin 0-5, centre 2.5 — 2529 days — expect 1 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Ap bin 5-10, centre 7.5 — 3938 days — expect 0.8333333333333333 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Ap bin 10-15, centre 12.5 — 1836 days — expect 1.114406779661017 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Ap bin 15-20, centre 17.5 — 839 days — expect 1 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Ap bin 20-30, centre 25 — 707 days — expect 1.2 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Ap bin 30-45, centre 37.5 — 288 days — expect 1.333333333333333 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Ap bin 45-70, centre 57.5 — 115 days — expect 1.545454545454545 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Ap bin 70-110, centre 90 — 25 days — expect 1.746913580246914 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Ap bin 110-400, centre 255 — 20 days — expect 1.317460317460317 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** below the first bin centre — Ap 0 holds the 0-to-5 bin rather than extrapolating — expect 1 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** above the last bin centre — Ap 1000 holds the 110-to-400 bin — expect 1.3174603174603174 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+sw_kp_from_ap applies the published scale as published, and the scale is defined for the three-hourly ap while the design product carries a daily mean. This row measures the resulting bias for the slot that sizes a drag design — the daily peak — and publishes it as a correction to be added. The 24-hour-mean slot has its own, smaller and oppositely-signed bias, recorded in the assumptions rather than published, because a node answers one question.
 
 ### `sw_mean_cycle_level` — Mean-cycle F10.7 level
 
@@ -19587,7 +19604,7 @@ The atmosphere model wants Kp; the design product carries Ap. This is that conve
 - **lower bound** — ap is an equivalent amplitude in nanotesla. Below 20 the answer is not a storm at all — the record's median day is 7 — so a return level under it means the input or the fit reached somewhere neither was meant to go
 - **upper bound** — THE BOUND IS THE RECORD'S LENGTH, NOT THE TABLE'S END. The fit evaluated at a return period equal to the record itself, 28.1971 years, is Ap 229.18; 230 is the first round number above it, so a return period beyond the record refuses instead of answering. The previous bound was 400 — the last point of the published ap/Kp table — which first bites at a return period of 1832 years, sixty-five times the record, and so enforced nothing: this node would answer a once-per-century question with Ap 281 while its own assumptions said a century needs a longer record. Note that 230 is BELOW the record's largest single day, Ap 273: rank 1 sits above the log-linear trend and was deliberately left out of the fitting range, so the fit does not chase it. This bound is the fit's own reach, not the record's extreme
 - **reads** — `orbit_mission_duration`
-- **read by** — `sw_kp_from_ap`
+- **read by** — `sw_kp_from_ap`, `sw_kp_slot_bias`
 - **assumes** The tail is log-linear in the return period, with the two coefficients fitted on this record — fails when the form is a choice, not the source's. Fitted over ranks 2 to 56 of the record, which is return periods 0.5035 to 14.0986 years; it carries a residual rms of 4.95 Ap against the empirical curve, worst +8.6 and -12.9. A power law on the same points is more than twice as bad (rms 9.10, worst -47.7), which is why this form and not that one. Anyone who needs the empirical step rather than a smooth curve should read the record, not this row.
 - **assumes** 28.2 years of record support the whole curve, and its top end rests on two observations — fails when the empirical method cannot see past its own record length. At T = 15 years the answer is fitted through the second-largest daily Ap in 28.2 years, and at T = 10 years the third; the record's largest value, Ap 273, has an apparent return period of exactly 28.2 years for no reason other than that it is the largest thing in 28.2 years. The fitted domain is 0.5035 to 14.0986 years, and the declared input range 0.5 to 15 years reaches past BOTH ends of it: the curve is extrapolated by 0.285 Ap at a half-year mission and by 2.54 Ap at a fifteen-year one, because there is no rank between 1 and 2 and rank 1 is the record length itself. Small, but it is an extrapolation and an earlier version of this sheet claimed it was never one. A mission at the 15-year bound is being sized on a curve whose top is two data points. A design that needs the once-per-century storm needs a longer record or a fitted extreme-value model, not this row.
 - **assumes** Every day in the record is treated as an independent draw — fails when storms cluster — a coronal hole returns once per solar rotation and a single event runs for more than one day — so the record holds fewer independent storms than it holds storm days. Clustering does not bias the exceedance level itself, which is a quantile of the marginal distribution, but it does mean the effective sample behind the tail is smaller than N and the uncertainty on the answer is wider than the residual above suggests. sw_event_duration and sw_recurrence_lag measure the clustering; neither is written yet.
@@ -19602,25 +19619,50 @@ The atmosphere model wants Kp; the design product carries Ap. This is that conve
 
 Geomagnetic activity has no usable long-term forecast, so a design does not predict the storm — it sizes for the worst one the mission is likely to meet. That makes the mission length the input: a five-year mission and a fifteen-year one are owed different skies, and this row moves when orbit_mission_duration moves.
 
-### `sw_uncertainty_growth` — Uncertainty growth with lead
+### `sw_uncertainty_growth` — F10.7 growth at 95% over a lead
 
-> 
+> By how much can F10.7 rise over a lead this long, at 95% confidence?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | declared |
+| symbol | `dF107_p95` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `dF107_p95(L) = piecewise_linear(measured_leads -> measured_p95, L)` |
+| source | `noaa_swpc` |
+| valid over | 0 … 120 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — the 95th percentile of the change in F10.7 over a lead of at least half a year is positive everywhere in this record — the smallest measured is +57 sfu. A negative value means the difference has been taken the wrong way round, which would turn a safety margin into a reduction
+- **upper bound** — the largest measured percentile is +115.0 sfu at a fifteen-year lead and the relation is a table that clamps at its ends, so no input can produce more. 120 is unreachable by this relation and exists to catch a broken table rather than an extreme sky
+- **reads** — `orbit_mission_duration`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** A table over measured leads, not a fitted curve, because the shape is the solar cycle and a smooth fit would erase it — fails when the measured p95 growth is NOT monotone in lead: it rises to +114 sfu at four years, falls to +66 at ten to eleven, and rises again to +115 at fifteen. That is the eleven-year cycle showing through — a lead of half a cycle can put you furthest from where you started, while a lead of a full cycle returns you to a similar phase. Any monotone form, log-linear included, would report roughly +90 at eleven years where the record says +66, overstating the band by a third at exactly the lead a long mission cares about. The table is faithful and the interpolation between its points is this node's choice.
+- **assumes** Only pairs of REAL observations exactly L days apart — which is not what prf_design does — fails when prf_design.m:29 builds a full daily grid from the first date to the last and fills it by linear interpolation, so the record's 273 absent days become 273 straight-line days with no variability at all, and every L-day difference spanning them is understated. Measured both ways on this record, the MATLAB's grid gives a p95 between 1.0 and 2.3 sfu LOWER across leads from 7 to 1826 days — a design band narrower than the record supports, in the unsafe direction. This node pairs only days that were both observed, which costs sample size and buys a number that is not partly invented. It is therefore expected to DISAGREE with prf_design by about that much, and a parity grid would have recorded the disagreement rather than a match.
+- **assumes** The 95th percentile, and the sample thins as the lead grows — fails when prf_design computes p50, p90, p95 and p99 and lets the caller pick the confidence the mission needs; this row publishes p95 only, because a node answers one question. At a one-year lead the four are +1, +53, +68 and +100 sfu — so a mission that needs p99 is reading a number 32 sfu too small here. The pair count also falls from 9,947 at a half-year lead to 4,838 at fifteen years, and twenty-eight years of record hold barely two and a half solar cycles, so the longest leads are sampled by very few independent cycle phases.
+- **evidence** lead 183 days (0.50 yr) — 9947 observed pairs — expect 57 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 365 days (1.00 yr) — 9675 observed pairs — expect 68.3 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 548 days (1.50 yr) — 9492 observed pairs — expect 77 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 730 days (2.00 yr) — 9310 observed pairs — expect 91 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 1096 days (3.00 yr) — 8946 observed pairs — expect 107 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 1461 days (4.00 yr) — 8579 observed pairs — expect 114 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 1826 days (5.00 yr) — 8215 observed pairs — expect 113.3 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 2191 days (6.00 yr) — 7849 observed pairs — expect 104 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 2557 days (7.00 yr) — 7483 observed pairs — expect 92 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 2922 days (8.00 yr) — 7118 observed pairs — expect 88 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 3287 days (9.00 yr) — 7026 observed pairs — expect 78 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 3653 days (10.00 yr) — 6660 observed pairs — expect 66 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 4018 days (11.00 yr) — 6295 observed pairs — expect 66 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 4383 days (12.00 yr) — 5932 observed pairs — expect 76 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 4748 days (13.00 yr) — 5567 observed pairs — expect 91 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 5113 days (14.00 yr) — 5203 observed pairs — expect 106 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 5478 days (15.00 yr) — 4838 observed pairs — expect 115 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** below the first measured lead — 100 days holds the 183-day value rather than extrapolating — expect 57 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** above the last measured lead — 20 years holds the 15-year value — expect 115 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+Half of the F10.7 design value. sw_central_expectation says where F10.7 is heading; this says how wrong that can be by the time the mission is there, so the band widens with lead exactly as knowledge fades. The percentile does the safety: the design value is the central expectation plus this.
 
 
 ## `struct` — Structure
