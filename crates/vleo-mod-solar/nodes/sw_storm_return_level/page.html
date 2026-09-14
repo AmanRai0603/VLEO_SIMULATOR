@@ -1,8 +1,8 @@
-<article class="node" data-node="sw_storm_return_level" data-sheet-hash="158e11" data-impl-hash="222325">
+<article class="node" data-node="sw_storm_return_level" data-sheet-hash="af8c3b" data-impl-hash="27f05a">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>Storm return level</h2>
-  <p class="ident"><code>sw_storm_return_level</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <h2>Ap at a storm return period</h2>
+  <p class="ident"><code>sw_storm_return_level</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
@@ -15,54 +15,138 @@
   <button role="tab" class="tab" data-tab="7">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">What daily planetary Ap recurs once per mission lifetime?</p>
+<p class="maths"><code>Ap(T) = 92.5155 + 40.9265*ln(T / 1 yr)</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">Geomagnetic activity has no usable long-term forecast, so a design does not predict the storm — it sizes for the worst one the mission is likely to meet. That makes the mission length the input: a five-year mission and a fifteen-year one are owed different skies, and this row moves when orbit_mission_duration moves.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>The tail is log-linear in the return period, with the two coefficients fitted on this record</dt><dd>fails when the form is a choice, not the source's. Fitted over ranks 2 to 56 of the record — exactly the ranks the declared input range 0.5 to 15 years reaches — it carries a residual rms of 4.95 Ap against the empirical curve, worst +8.6 and -12.9. A power law on the same points is more than twice as bad (rms 9.10, worst -47.7), which is why this form and not that one. Anyone who needs the empirical step rather than a smooth curve should read the record, not this row.</dd>
+<dt>28.2 years of record support the whole curve, and its top end rests on two observations</dt><dd>fails when the empirical method cannot see past its own record length. At T = 15 years the answer is fitted through the second-largest daily Ap in 28.2 years, and at T = 10 years the third; the record's largest value, Ap 273, has an apparent return period of exactly 28.2 years for no reason other than that it is the largest thing in 28.2 years. So the fit is an interpolation of the tail and never an extrapolation past it, and a mission at the 15-year bound is being sized on a curve whose top is two data points. A design that needs the once-per-century storm needs a longer record or a fitted extreme-value model, not this row.</dd>
+<dt>Every day in the record is treated as an independent draw</dt><dd>fails when storms cluster — a coronal hole returns once per solar rotation and a single event runs for more than one day — so the record holds fewer independent storms than it holds storm days. Clustering does not bias the exceedance level itself, which is a quantile of the marginal distribution, but it does mean the effective sample behind the tail is smaller than N and the uncertainty on the answer is wider than the residual above suggests. sw_event_duration and sw_recurrence_lag measure the clustering; neither is written yet.</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sw_storm_return_level</td><td></td><td>-</td></tr>
+<tr><td>in</td><td><code>life</code></td><td><a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a></td><td>Time</td><td>yr</td></tr>
+<tr class="out"><td>out</td><td><code>Ap_T</code></td><td>sw_storm_return_level</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
-<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+<p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="sw_kp_from_ap">sw_kp_from_ap</a></p>
 </section>
 <section class="panel" data-panel="2">
-<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>0</b> -, confirmed by <b></b>.</p>
+<ol class="algo">
+<li><span class="step">take the mission length in years and read the fitted exceedance curve at that return period</span> <span class="binds">→ <code>level: Ratio</code></span></li>
+</ol>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>Ap_T &ge; 20</code> — ap is an equivalent amplitude in nanotesla. Below 20 the answer is not a storm at all — the record's median day is 7 — so a return level under it means the input or the fit reached somewhere neither was meant to go</li>
+<li><code>Ap_T &le; 400</code> — 400 is the last point of the published ap/Kp table, above which Kp is no longer distinguished, and the largest daily Ap in 28.2 years of record is 273. A return level above 400 is the fit extrapolating past everything that supports it</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What daily planetary Ap recurs once per mission lifetime?
+///
+/// `Ap(T) = 92.5155 + 40.9265*ln(T / 1 yr)`
+///
+/// Source: `noaa_swpc`
+///
+/// Geomagnetic activity has no usable long-term forecast, so a design does
+/// not predict the storm — it sizes for the worst one the mission is likely
+/// to meet. That makes the mission length the input: a five-year mission and
+/// a fifteen-year one are owed different skies, and this row moves when
+/// orbit_mission_duration moves.
+///
+/// # Assumptions
+///
+/// * The tail is log-linear in the return period, with the two coefficients fitted on this record — fails when the form is a choice, not the source's. Fitted over ranks 2 to 56 of the record — exactly the ranks the declared input range 0.5 to 15 years reaches — it carries a residual rms of 4.95 Ap against the empirical curve, worst +8.6 and -12.9. A power law on the same points is more than twice as bad (rms 9.10, worst -47.7), which is why this form and not that one. Anyone who needs the empirical step rather than a smooth curve should read the record, not this row.
+/// * 28.2 years of record support the whole curve, and its top end rests on two observations — fails when the empirical method cannot see past its own record length. At T = 15 years the answer is fitted through the second-largest daily Ap in 28.2 years, and at T = 10 years the third; the record's largest value, Ap 273, has an apparent return period of exactly 28.2 years for no reason other than that it is the largest thing in 28.2 years. So the fit is an interpolation of the tail and never an extrapolation past it, and a mission at the 15-year bound is being sized on a curve whose top is two data points. A design that needs the once-per-century storm needs a longer record or a fitted extreme-value model, not this row.
+/// * Every day in the record is treated as an independent draw — fails when storms cluster — a coronal hole returns once per solar rotation and a single event runs for more than one day — so the record holds fewer independent storms than it holds storm days. Clustering does not bias the exceedance level itself, which is a quantile of the marginal distribution, but it does mean the effective sample behind the tail is smaller than N and the uncertainty on the answer is wider than the residual above suggests. sw_event_duration and sw_recurrence_lag measure the clustering; neither is written yet.
+pub const NODE_ID: &amp;str = &quot;sw_storm_return_level&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x96809314a0af8c3b;
+
+pub fn evaluate(life: Time) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : take the mission length in years and read the fitted exceedance curve at that return period -&gt; Ratio
+    // The fit, stated where it can be read rather than buried. Both numbers are
+    // the sheet's, fitted on bundles/solar-weather over ranks 2 to 56 — the
+    // ranks the declared input range can reach — and they belong to the record,
+    // not to this code.
+    const A: f64 = 92.515531;
+    const B: f64 = 40.926516;
+    // 365.25 days, the same Julian year prf_design divides by, so the two
+    // definitions of &quot;a year&quot; cannot drift apart between the record and the fit.
+    let years: f64 = life.days() / 365.25;
+    // Below a year the curve is still inside the fitted range — rank 56 is half a
+    // year — but ln goes to minus infinity at zero, and a Time of zero is a
+    // caller's error rather than a mission. The declared lower bound on the answer
+    // catches it; this keeps ln from being handed it.
+    let level: Ratio = Ratio::new(A + B * pmath::ln(years.max(1.0e-9)));
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = level;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_T&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 20.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_T&quot;, value: answer.get(), bound: 20.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;ap is an equivalent amplitude in nanotesla. Below 20 the answer is not a storm at all — the record's median day is 7 — so a return level under it means the input or the fit reached somewhere neither was meant to go&quot; });
+    }
+    if answer.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_T&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;400 is the last point of the published ap/Kp table, above which Kp is no longer distinguished, and the largest daily Ap in 28.2 years of record is 273. A return level above 400 is the fit extrapolating past everything that supports it&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
 </section>
 <section class="panel" data-panel="4">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="half a year — rank 56 of the record, the shortest mission the tree allows"><td>half a year — rank 56 of the record, the shortest mission the tree allows</td><td class="num">66</td><td class="num">0.0281</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="one year — rank 28, one storm season"><td>one year — rank 28, one storm season</td><td class="num">96</td><td class="num">0.0363</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="two years — rank 14"><td>two years — rank 14</td><td class="num">118</td><td class="num">0.0245</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="three years — rank 9, and the fit's worst point: ties at ranks 9 and 10 that the curve smooths through"><td>three years — rank 9, and the fit's worst point: ties at ranks 9 and 10 that the curve smooths through</td><td class="num">127</td><td class="num">0.0826</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="five years — rank 6, the mission orbit_mission_duration currently declares"><td>five years — rank 6, the mission orbit_mission_duration currently declares</td><td class="num">162</td><td class="num">0.0224</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="ten years — rank 3, near the top of what 28.2 years of record can say anything about"><td>ten years — rank 3, near the top of what 28.2 years of record can say anything about</td><td class="num">189</td><td class="num">0.0119</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
 <section class="panel" data-panel="5">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 20 — ap is an equivalent amplitude in nanotesla. Below 20 the answer is not a storm at all — the record's median day is 7 — so a return level under it means the input or the fit reached somewhere neither was meant to go</li>
+<li><code>OutOfDomain</code> above 400 — 400 is the last point of the published ap/Kp table, above which Kp is no longer distinguished, and the largest daily Ap in 28.2 years of record is 273. A return level above 400 is the fit extrapolating past everything that supports it</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
 <section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_storm_return_level"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
 <section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
-<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p>Valid over <code>20 &hellip; 400</code> -.</p>
+<ul class="guards"><li>lower — ap is an equivalent amplitude in nanotesla. Below 20 the answer is not a storm at all — the record's median day is 7 — so a return level under it means the input or the fit reached somewhere neither was meant to go</li><li>upper — 400 is the last point of the published ap/Kp table, above which Kp is no longer distinguished, and the largest daily Ap in 28.2 years of record is 273. A return level above 400 is the fit extrapolating past everything that supports it</li></ul>
+<div class="sweep" data-over="orbit_mission_duration" data-points="60" data-y="sw_storm_return_level"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a> over 60 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

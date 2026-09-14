@@ -1,7 +1,7 @@
 {
   "id": "sw_kp_from_ap",
   "state": "published",
-  "sheet_hash": "5039fa",
+  "sheet_hash": "9f62b5",
   "impl_hash": "a9a45d",
   "owner": "environment",
   "tier": "A",
@@ -11,7 +11,7 @@
   "differential_fill": false,
   "migrated_from": "prf_ap2kp.m:100 (01_kernel/sw_study/06_density, local function tbl_)",
   "holes": 1,
-  "inputs": ["sw_ap_climatology"],
+  "inputs": ["sw_storm_return_level"],
   "contributes": [],
   "gaps": []
 }

@@ -6,14 +6,15 @@
 use vleo_core::fault::Fault;
 use vleo_core::units::*;
 
-/// What this node publishes: `Ap` (Climatological daily Ap), in `-`.
-pub const NODE_ID: &str = "sw_ap_climatology";
-pub const SHEET_HASH: u64 = 0x6a39b6613e7a40d4;
+/// What this node publishes: `Ap_T` (Ap at a storm return period), in `-`.
+pub const NODE_ID: &str = "sw_storm_return_level";
+pub const SHEET_HASH: u64 = 0x96809314a0af8c3b;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
+    "orbit_mission_duration",
 ];
 /// The variables this node publishes.
-pub const OUTPUT_VARS: &[&str] = &["sw_ap_climatology"];
+pub const OUTPUT_VARS: &[&str] = &["sw_storm_return_level"];
 /// The SI unit every value crossing this boundary is expressed in.
 pub const OUTPUT_UNIT: Unit = Ratio::UNIT;
 
@@ -21,10 +22,11 @@ pub const OUTPUT_UNIT: Unit = Ratio::UNIT;
 /// so the bus carries no quantity types and a face cannot pass arguments
 /// in the wrong order.
 pub fn call(inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {
-    if outputs.is_empty() {
+    if inputs.is_empty() || outputs.is_empty() {
         return Err(Fault::Blocked { node: NODE_ID, missing: "an input the contract declares" });
     }
-    let answer = super::model::evaluate()?;
+    let life: Time = Time::new(inputs[0]);
+    let answer = super::model::evaluate(life)?;
     outputs[0] = answer.get();
     Ok(())
 }

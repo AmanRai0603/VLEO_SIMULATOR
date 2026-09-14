@@ -46,14 +46,14 @@ fn fixture_2() {
     assert!(err <= 1e-12, "Kp 2 — ap 7: got {} want 2.0, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
-/// Kp 3 — ap 15, which is what sw_ap_climatology declares
+/// Kp 3 — ap 15, the legacy study's own climatology constant, and what env_kp declares by hand
 ///
 /// Provenance: `published-source`, source `iaga_kp_ap`.
 #[test]
 fn fixture_3() {
     let got = model::evaluate(Ratio::new(15.0)).expect("the fixture case must not be refused");
     let err = relative_error(got.get(), 3.0);
-    assert!(err <= 1e-12, "Kp 3 — ap 15, which is what sw_ap_climatology declares: got {} want 3.0, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    assert!(err <= 1e-12, "Kp 3 — ap 15, the legacy study's own climatology constant, and what env_kp declares by hand: got {} want 3.0, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
 /// Kp 4 — ap 27

@@ -8,10 +8,10 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Kp` (Kp from daily Ap), in `-`.
 pub const NODE_ID: &str = "sw_kp_from_ap";
-pub const SHEET_HASH: u64 = 0x8fd9b56d955039fa;
+pub const SHEET_HASH: u64 = 0x938c0600d69f62b5;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
-    "sw_ap_climatology",
+    "sw_storm_return_level",
 ];
 /// The variables this node publishes.
 pub const OUTPUT_VARS: &[&str] = &["sw_kp_from_ap"];

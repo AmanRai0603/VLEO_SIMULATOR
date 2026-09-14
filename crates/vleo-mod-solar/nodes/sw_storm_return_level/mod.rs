@@ -1,9 +1,9 @@
 // GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
 // regeneration and fails the regeneration diff in the gate.
-//! `sw_ap_climatology` — Climatological daily Ap
+//! `sw_storm_return_level` — Ap at a storm return period
 //!
-//! What daily planetary Ap does the design assume when no window has been chosen?
+//! What daily planetary Ap recurs once per mission lifetime?
 
 #[path = "model.rs"]
 pub mod model;

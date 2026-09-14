@@ -2,32 +2,85 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sw_storm_return_level"
-label = "Storm return level"
+label = "Ap at a storm return period"
 folder = "sw_storm_return_level"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1353
-state = "empty"
+state = "published"
+
+# NO migrated_from, AND THAT IS NOT AN OVERSIGHT.
+#
+# prf_design.m:35-38 computes this by sorting the record descending, assigning
+# rank i the exceedance probability i/N, and returning the i-th largest value
+# whose return period is nearest the one asked for. There is no closed form to
+# transcribe and no MATLAB in this environment to run, so a parity grid would
+# have to be a reimplementation of that sort — which is my own reading of it
+# twice over, not the prior implementation's opinion.
+#
+# What saves this node from needing one is that the MATLAB's answer IS an order
+# statistic of the record, and the record is in bundles/solar-weather. So the
+# fixtures below are the same numbers a parity export would have carried, read
+# from the data both implementations read rather than from either of them.
 
 [question]
-text = ""
+text = "What daily planetary Ap recurs once per mission lifetime?"
+note = "Geomagnetic activity has no usable long-term forecast, so a design does not predict the storm — it sizes for the worst one the mission is likely to meet. That makes the mission length the input: a five-year mission and a fifteen-year one are owed different skies, and this row moves when orbit_mission_duration moves."
 
 [maths]
-expression = ""
-source = ""
+# The exceedance curve of the daily record, fitted. Return period is the
+# reciprocal of exceedance probability by definition; the log-linear form and
+# its two coefficients are the fit, and both are declared here rather than
+# hidden in the hole body.
+expression = "Ap(T) = 92.5155 + 40.9265*ln(T / 1 yr)"
+source = "noaa_swpc"
+
+[[assumption]]
+text = "The tail is log-linear in the return period, with the two coefficients fitted on this record"
+fails_when = "the form is a choice, not the source's. Fitted over ranks 2 to 56 of the record — exactly the ranks the declared input range 0.5 to 15 years reaches — it carries a residual rms of 4.95 Ap against the empirical curve, worst +8.6 and -12.9. A power law on the same points is more than twice as bad (rms 9.10, worst -47.7), which is why this form and not that one. Anyone who needs the empirical step rather than a smooth curve should read the record, not this row."
+
+[[assumption]]
+text = "28.2 years of record support the whole curve, and its top end rests on two observations"
+fails_when = "the empirical method cannot see past its own record length. At T = 15 years the answer is fitted through the second-largest daily Ap in 28.2 years, and at T = 10 years the third; the record's largest value, Ap 273, has an apparent return period of exactly 28.2 years for no reason other than that it is the largest thing in 28.2 years. So the fit is an interpolation of the tail and never an extrapolation past it, and a mission at the 15-year bound is being sized on a curve whose top is two data points. A design that needs the once-per-century storm needs a longer record or a fitted extreme-value model, not this row."
+
+[[assumption]]
+text = "Every day in the record is treated as an independent draw"
+fails_when = "storms cluster — a coronal hole returns once per solar rotation and a single event runs for more than one day — so the record holds fewer independent storms than it holds storm days. Clustering does not bias the exceedance level itself, which is a quantile of the marginal distribution, but it does mean the effective sample behind the tail is smaller than N and the uncertainty on the answer is wider than the residual above suggests. sw_event_duration and sw_recurrence_lag measure the clustering; neither is written yet."
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "Ap_T"
+type = "Ratio"
+unit = "One"
+lower = 20.0
+upper = 400.0
+reason_lower = "ap is an equivalent amplitude in nanotesla. Below 20 the answer is not a storm at all — the record's median day is 7 — so a return level under it means the input or the fit reached somewhere neither was meant to go"
+reason_upper = "400 is the last point of the published ap/Kp table, above which Kp is no longer distinguished, and the largest daily Ap in 28.2 years of record is 273. A return level above 400 is the fit extrapolating past everything that supports it"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "life"
+var = "orbit_mission_duration"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "take the mission length in years and read the fitted exceedance curve at that return period"
+binds = "level"
+type = "Ratio"
+
+[data]
+bundles = ["solar-weather"]
 
 [view]
-kind = "number"
+kind = "line"
+over = "orbit_mission_duration"
+points = 60

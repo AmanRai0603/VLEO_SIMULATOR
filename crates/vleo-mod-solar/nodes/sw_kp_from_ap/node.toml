@@ -11,7 +11,7 @@ owner = "environment"
 tier = "A"
 criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1355
+order = 1354
 state = "published"
 
 # The prior implementation, named so the parity grid beside this node has
@@ -26,7 +26,7 @@ parity_tolerance = 1e-12
 
 [question]
 text = "What Kp does this daily planetary Ap mean?"
-note = "The atmosphere model wants Kp; the design product carries Ap. This is that conversion and only that — the published table, applied as published. The bias the table carries when a daily mean is fed to a three-hourly scale is measured separately, in sw_kp_slot_bias, and is not corrected here."
+note = "The atmosphere model wants Kp; the design product carries Ap. This is that conversion and only that — the published table, applied as published. What flows in is the design storm from sw_storm_return_level, so what flows out is the Kp of that storm and not of an average day. The bias the table carries when a daily mean is fed to a three-hourly scale is measured separately, in sw_kp_slot_bias, and is not corrected here."
 
 [maths]
 confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
@@ -63,7 +63,7 @@ reason_upper = "Kp is defined on 0..9 and the table's last point is Kp 9 at ap 4
 # against what the producer publishes — which is the only place the
 # whole graph is visible and therefore the only place to ask.
 binding = "ap"
-var = "sw_ap_climatology"
+var = "sw_storm_return_level"
 type = "Ratio"
 
 [[algorithm.step]]
@@ -74,5 +74,5 @@ type = "Ratio"
 
 [view]
 kind = "line"
-over = "sw_ap_climatology"
+over = "orbit_mission_duration"
 points = 60

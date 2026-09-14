@@ -1,4 +1,4 @@
-<article class="node" data-node="sw_kp_from_ap" data-sheet-hash="5039fa" data-impl-hash="a9a45d">
+<article class="node" data-node="sw_kp_from_ap" data-sheet-hash="9f62b5" data-impl-hash="a9a45d">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Kp from daily Ap</h2>
@@ -18,7 +18,7 @@
 <p class="question">What Kp does this daily planetary Ap mean?</p>
 <p class="maths"><code>Kp = piecewise_linear(ap_28 -&gt; kp_28, clamp(Ap, 0, 400))</code></p>
 <p class="src">Source <b>iaga_kp_ap</b> — Bartels, J. — The standardized index Ks and the planetary index Kp, with the ap equivalent-amplitude table <span class="where">IATME Bulletin 12b, IUGG Publication Office, 1949; the 28-point table as published by IAGA and distributed by GFZ Potsdam</span></p>
-<p class="note">The atmosphere model wants Kp; the design product carries Ap. This is that conversion and only that — the published table, applied as published. The bias the table carries when a daily mean is fed to a three-hourly scale is measured separately, in sw_kp_slot_bias, and is not corrected here.</p>
+<p class="note">The atmosphere model wants Kp; the design product carries Ap. This is that conversion and only that — the published table, applied as published. What flows in is the design storm from sw_storm_return_level, so what flows out is the Kp of that storm and not of an average day. The bias the table carries when a daily mean is fed to a three-hourly scale is measured separately, in sw_kp_slot_bias, and is not corrected here.</p>
 <h4>Assumptions</h4>
 <dl class="asm">
 <dt>The table is defined for the three-hourly ap and is being fed a daily mean Ap</dt><dd>fails when Kp(ap) is concave, so by Jensen's inequality the table run on a daily mean returns a Kp above the mean of the eight three-hourly Kp and well below the daily peak. Measured on the solar-weather record over 10,297 days with both an Ap and all eight Kp: against the 24-hour mean the table reads high by 0.083 Kp (median), against the daily peak it reads low by 1.000 Kp; on disturbed days (Ap &gt;= 48, 131 of them) those become 0.397 high and 1.606 low. Both signs are what the concavity argument predicts. A design sized on the peak slot through this node alone is sized on a sky 1.6 Kp quieter than the record's, and that is on exactly the days a drag design is sized by. sw_kp_slot_bias measures and publishes both offsets; until it is written this node's answer carries them uncorrected.</dd>
@@ -29,7 +29,7 @@
 <section class="panel" data-panel="1">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr><td>in</td><td><code>ap</code></td><td><a class="xref" data-goto="sw_ap_climatology">sw_ap_climatology</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>ap</code></td><td><a class="xref" data-goto="sw_storm_return_level">sw_storm_return_level</a></td><td>Ratio</td><td>-</td></tr>
 <tr class="out"><td>out</td><td><code>Kp</code></td><td>sw_kp_from_ap</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
@@ -65,9 +65,10 @@ use vleo_core::units::*;
 ///
 /// The atmosphere model wants Kp; the design product carries Ap. This is that
 /// conversion and only that — the published table, applied as published.
-/// The bias the table carries when a daily mean is fed to a three-hourly
-/// scale is measured separately, in sw_kp_slot_bias, and is not corrected
-/// here.
+/// What flows in is the design storm from sw_storm_return_level, so what
+/// flows out is the Kp of that storm and not of an average day. The bias the
+/// table carries when a daily mean is fed to a three-hourly scale is measured
+/// separately, in sw_kp_slot_bias, and is not corrected here.
 ///
 /// # Assumptions
 ///
@@ -77,7 +78,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &amp;str = &quot;sw_kp_from_ap&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x8fd9b56d955039fa;
+pub const SHEET_HASH: u64 = 0x938c0600d69f62b5;
 
 pub fn evaluate(ap: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
     // ---- HOLE 1 : clamp the daily Ap to the table's domain, then read Kp off the published 28-point scale -&gt; Ratio
@@ -151,7 +152,7 @@ pub fn evaluate(ap: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 <tr data-fixture="Kp 0 — ap 0, the table's first point"><td>Kp 0 — ap 0, the table's first point</td><td class="num">0</td><td class="num">0.000000000001</td><td>published-source</td><td>iaga_kp_ap</td></tr>
 <tr data-fixture="Kp 1 — ap 4"><td>Kp 1 — ap 4</td><td class="num">1</td><td class="num">0.000000000001</td><td>published-source</td><td>iaga_kp_ap</td></tr>
 <tr data-fixture="Kp 2 — ap 7"><td>Kp 2 — ap 7</td><td class="num">2</td><td class="num">0.000000000001</td><td>published-source</td><td>iaga_kp_ap</td></tr>
-<tr data-fixture="Kp 3 — ap 15, which is what sw_ap_climatology declares"><td>Kp 3 — ap 15, which is what sw_ap_climatology declares</td><td class="num">3</td><td class="num">0.000000000001</td><td>published-source</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="Kp 3 — ap 15, the legacy study's own climatology constant, and what env_kp declares by hand"><td>Kp 3 — ap 15, the legacy study's own climatology constant, and what env_kp declares by hand</td><td class="num">3</td><td class="num">0.000000000001</td><td>published-source</td><td>iaga_kp_ap</td></tr>
 <tr data-fixture="Kp 4 — ap 27"><td>Kp 4 — ap 27</td><td class="num">4</td><td class="num">0.000000000001</td><td>published-source</td><td>iaga_kp_ap</td></tr>
 <tr data-fixture="Kp 5 — ap 48, the storm threshold"><td>Kp 5 — ap 48, the storm threshold</td><td class="num">5</td><td class="num">0.000000000001</td><td>published-source</td><td>iaga_kp_ap</td></tr>
 <tr data-fixture="Kp 6 — ap 80"><td>Kp 6 — ap 80</td><td class="num">6</td><td class="num">0.000000000001</td><td>published-source</td><td>iaga_kp_ap</td></tr>
@@ -179,7 +180,7 @@ pub fn evaluate(ap: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 <section class="panel" data-panel="7">
 <p>Valid over <code>0 &hellip; 9</code> -.</p>
 <ul class="guards"><li>lower — Kp is defined on 0..9 and the table's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet day</li><li>upper — Kp is defined on 0..9 and the table's last point is Kp 9 at ap 400. This is the same guard env_kp carries, and it catches an ap value reaching a consumer that wanted Kp</li></ul>
-<div class="sweep" data-over="sw_ap_climatology" data-points="60" data-y="sw_kp_from_ap"><p class="muted">Sweeps against <a class="xref" data-goto="sw_ap_climatology">sw_ap_climatology</a> over 60 points. Run the branch to draw it.</p></div>
+<div class="sweep" data-over="orbit_mission_duration" data-points="60" data-y="sw_kp_from_ap"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a> over 60 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 </article>

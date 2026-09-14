@@ -587,13 +587,11 @@ eight tabs and the methods' own returned fields, one question per row.
 | `sw_semiannual_amplitude` | How large is the semiannual variation? | Climate tab |
 | **`sw_f107_design`** | **The F10.7 to design to, at a lead and a confidence** | `prf_design` |
 | **`sw_ap_design`** | **The Ap to design to, at a return period** | `prf_design` |
-| `sw_ap_climatology` | What Ap when no window has been chosen? | `vleo_mission` fallback constants |
-
-**Twenty-six nodes**, plus the interface and the three target/achieved pairs —
-thirty-three rows in the group. That is the subsystem: everything the study
+**Twenty-five nodes**, plus the interface and the three target/achieved pairs —
+thirty-two rows in the group. That is the subsystem: everything the study
 establishes, each as one row a person can open, review and own. The count was
-written as twenty-four here and the tables listed twenty-five; it is the tables
-that were right, and `sw_ap_climatology` is the twenty-sixth, added by step 3.
+written as twenty-four here while the tables listed twenty-five; it is the tables
+that are right.
 
 ## 18 · What crosses, and what the system sees
 
@@ -640,25 +638,37 @@ figure is not a row, and this repository already has the better home for one.
 Steps 1 and 2 are the only ones that must happen in that order. From step 3 the
 nodes are independent enough to reorder if something proves harder than it looks.
 
-### What step 3 corrected about this table
+### What step 3 corrected about this table: steps 3 and 4 are the wrong way round
 
-The claim above that the nodes are independent from step 3 was wrong, and step 3
-found out how. A computed row needs at least one declared input, the input must
-name a row that is written, and **no row anywhere in the tree published an Ap**.
-`sw_ap_design` and `sw_storm_return_level` both would, and both are later steps;
-binding to either while it is unwritten fails the contract check, because a
-seeded row publishes no type. So the smallest relation in the plan turned out to
-be the one row that could not be written alone.
+The claim above that the nodes are independent from step 3 is wrong. A computed
+row needs at least one declared input, the input must name a row that is
+**written**, and no row anywhere in the tree published an Ap. So `sw_kp_from_ap`,
+the smallest relation in the plan, was the one row that could not be written
+first: binding it to a seeded `sw_ap_design` or `sw_storm_return_level` fails the
+contract check, because a seeded row publishes no type.
 
-It was unblocked by `sw_ap_climatology`: a declared row carrying the legacy
-study's own labelled constant, Ap = 15, in the arrangement §13 already describes
-for `env_f107` — the window-derived value will stand beside it, not replace it.
-That is a twenty-sixth row in the group, and the count in §17 is now twenty-five
-working rows plus the interface.
+**The order the tree already encoded was the right one.** `sw_storm_return_level`
+sits at order 1353 and `sw_kp_from_ap` at 1354 — the argument before the
+function — and that is the dependency: the storm return level publishes the Ap,
+and the conversion reads it. The table above had them as 4 then 3. They are now
+written in tree order, and the chain runs
+`orbit_mission_duration → sw_storm_return_level → sw_kp_from_ap`, three rows deep
+from a declared value that already existed.
+
+Two things made that possible without inventing a declared row. First,
+`sw_storm_return_level`'s natural input is the **mission length** — the design
+storm is the worst one the mission is likely to meet — and `orbit_mission_duration`
+is already declared and confirmed. Second, a declared row cannot be invented by an
+agent anyway: `[value] confirmed_by` needs a person, and the gate refuses without
+one. Between them those two facts point at the same answer, which is a good sign
+the decomposition is sound.
 
 The general rule this leaves for the remaining nodes: **before picking the next
-step, check that every input it needs is a written row.** Three of the twenty-five
-read the record rather than another row (`sw_f107_81day`, `sw_kp_slot_bias`,
-`sw_storm_rate`), and nodes cannot read bundles — a bundle reaches the tree as a
-declared value somebody confirmed, or not at all. Those three need that decided
-before they are started, not during.
+step, check that every input it needs is a written row, and prefer the input the
+tree's own `order` already implies.** Three of the twenty-five read the record
+rather than another row (`sw_f107_81day`, `sw_kp_slot_bias`, `sw_storm_rate`), and
+nodes cannot read bundles. `sw_storm_return_level` shows the way round that: the
+statistic is fitted on the record **outside** the kernel, and the fit's
+coefficients are declared in the sheet where a reviewer can see them, with the
+residual against the empirical curve declared as an assumption. What must never
+happen is a coefficient appearing only in a hole body.

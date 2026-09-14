@@ -16,9 +16,10 @@ use vleo_core::units::*;
 ///
 /// The atmosphere model wants Kp; the design product carries Ap. This is that
 /// conversion and only that — the published table, applied as published.
-/// The bias the table carries when a daily mean is fed to a three-hourly
-/// scale is measured separately, in sw_kp_slot_bias, and is not corrected
-/// here.
+/// What flows in is the design storm from sw_storm_return_level, so what
+/// flows out is the Kp of that storm and not of an average day. The bias the
+/// table carries when a daily mean is fed to a three-hourly scale is measured
+/// separately, in sw_kp_slot_bias, and is not corrected here.
 ///
 /// # Assumptions
 ///
@@ -28,7 +29,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_kp_from_ap";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x8fd9b56d955039fa;
+pub const SHEET_HASH: u64 = 0x938c0600d69f62b5;
 
 pub fn evaluate(ap: Ratio) -> Result<Ratio, Fault> {
     // ---- HOLE 1 : clamp the daily Ap to the table's domain, then read Kp off the published 28-point scale -> Ratio

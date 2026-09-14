@@ -1,0 +1,85 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# WHAT THESE ARE
+#
+# The empirical exceedance curve of bundles/solar-weather, read straight off the
+# record: sort the 10,299 daily Ap values descending, and the i-th largest has
+# an exceedance probability of i/10299 per day, so a return period of
+# 10299/(i*365.25) years. That is a property of the data, computed outside this
+# crate, and it is also exactly what prf_design.m returns — which is why this
+# node carries no parity grid and says so in its sheet.
+#
+# WHERE THE TOLERANCES COME FROM, AND WHY ONE OF THEM IS WIDE
+#
+# Tolerance here is RELATIVE — |got - expected| / expected — so these are
+# fractions, not Ap. The node is a log-linear FIT to these points, not the points
+# themselves, so each tolerance is the fit's measured departure at that return
+# period and nothing more: 1.2% to 3.6% at five of the six points.
+#
+# The sixth is 8.3% and it is here on purpose. T = 3 years is where the fit is
+# worst, +10.5 Ap, because the record has ties at ranks 9 and 10 that the curve
+# smooths through. A fixture set that quietly stopped at the five comfortable
+# points would be choosing its own evidence, so the worst case is pinned too, at
+# the tolerance it actually needs.
+#
+# These tolerances were wrong once, and the way they were wrong is worth keeping
+# written down: they were first set to the ABSOLUTE departures — 2.0, 3.6, 10.6 —
+# which as fractions meant 200% to 1060%, and all six then accepted anything.
+# A deliberate +3.0 error in the fit's intercept passed every one of them, and
+# `xtask mutate` still reported the node killed, because mutate sizes its
+# perturbation by the node's own loosest tolerance and that tolerance was
+# nonsense. Six green fixtures and a killed mutant, all of it meaningless. The
+# +3.0 error now fails the two-year and three-year points.
+
+[[fixture]]
+label = "half a year — rank 56 of the record, the shortest mission the tree allows"
+expect = 66.0
+tolerance = 0.0281
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { life = 15778800.0 }
+
+[[fixture]]
+label = "one year — rank 28, one storm season"
+expect = 96.0
+tolerance = 0.0363
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { life = 31557600.0 }
+
+[[fixture]]
+label = "two years — rank 14"
+expect = 118.0
+tolerance = 0.0245
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { life = 63115200.0 }
+
+[[fixture]]
+label = "three years — rank 9, and the fit's worst point: ties at ranks 9 and 10 that the curve smooths through"
+expect = 127.0
+tolerance = 0.0826
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { life = 94672800.0 }
+
+[[fixture]]
+label = "five years — rank 6, the mission orbit_mission_duration currently declares"
+expect = 162.0
+tolerance = 0.0224
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { life = 157788000.0 }
+
+[[fixture]]
+label = "ten years — rank 3, near the top of what 28.2 years of record can say anything about"
+expect = 189.0
+tolerance = 0.0119
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { life = 315576000.0 }
