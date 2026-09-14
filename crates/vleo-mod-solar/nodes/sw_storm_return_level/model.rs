@@ -30,7 +30,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_storm_return_level";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x96809314a0af8c3b;
+pub const SHEET_HASH: u64 = 0x5c0748e8da3c2868;
 
 pub fn evaluate(life: Time) -> Result<Ratio, Fault> {
     // ---- HOLE 1 : take the mission length in years and read the fitted exceedance curve at that return period -> Ratio
@@ -69,8 +69,8 @@ pub fn evaluate(life: Time) -> Result<Ratio, Fault> {
     if answer.get() < 20.0 {
         return Err(Fault::OutOfDomain { node: NODE_ID, field: "Ap_T", value: answer.get(), bound: 20.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "ap is an equivalent amplitude in nanotesla. Below 20 the answer is not a storm at all — the record's median day is 7 — so a return level under it means the input or the fit reached somewhere neither was meant to go" });
     }
-    if answer.get() > 400.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "Ap_T", value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "400 is the last point of the published ap/Kp table, above which Kp is no longer distinguished, and the largest daily Ap in 28.2 years of record is 273. A return level above 400 is the fit extrapolating past everything that supports it" });
+    if answer.get() > 230.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "Ap_T", value: answer.get(), bound: 230.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "THE BOUND IS THE RECORD'S LENGTH, NOT THE TABLE'S END. The fit evaluated at a return period equal to the record itself, 28.1971 years, is Ap 229.18; 230 is the first round number above it, so a return period beyond the record refuses instead of answering. The previous bound was 400 — the last point of the published ap/Kp table — which first bites at a return period of 1832 years, sixty-five times the record, and so enforced nothing: this node would answer a once-per-century question with Ap 281 while its own assumptions said a century needs a longer record. Note that 230 is BELOW the record's largest single day, Ap 273: rank 1 sits above the log-linear trend and was deliberately left out of the fitting range, so the fit does not chase it. This bound is the fit's own reach, not the record's extreme" });
     }
     Ok(answer)
 }
