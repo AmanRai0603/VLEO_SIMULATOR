@@ -1,8 +1,8 @@
-<article class="node" data-node="l3_solar_req_01" data-sheet-hash="ee79fe" data-impl-hash="222325">
+<article class="node" data-node="l3_solar_req_01" data-sheet-hash="fd300b" data-impl-hash="222325">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Solar flux</h2>
-  <p class="ident"><code>l3_solar_req_01</code> · <span class="kind kind-required">required</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <p class="ident"><code>l3_solar_req_01</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
@@ -15,28 +15,92 @@
   <button role="tab" class="tab" data-tab="7">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">What solar flux must this design survive?</p>
+<p class="maths"><code>F107_req = 250 sfu</code></p>
+<p class="src">Source <b>orbitt_case_c1</b> — Orbitt Space — VLEO multipayload reference case C1 <span class="where">internal, 2026-09-01</span></p>
+<p class="note">The headline requirement of the three, and the first `required` row written anywhere in this repository — no other subsystem has one, so the shape here is the shape the other sixteen will copy. It is a ceiling the environment must not exceed, and l3_solar_ach_01 is the number the record actually presents.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>250 is the design value with a round margin on it, and the margin is a decision rather than a calculation</dt><dd>fails when somebody looks for the derivation. At the declared five-year mission sw_f107_design comes to roughly 220 sfu — the central expectation plus the 95th-percentile growth — and 250 is the next round number above it, about 14 per cent of headroom. Nothing in the record picks 250. It is chosen so the closure passes with visible room rather than by a hair, and so that a modest change in mission length or epoch does not silently break it. A design that wants the margin to mean something specific should replace this with a number that has a derivation.</dd>
+<dt>It is a ceiling on the DRIVER and says nothing about what the driver does to the vehicle</dt><dd>fails when the requirement is read as a survivability statement. F10.7 is an index of solar radio flux; what a spacecraft actually feels is the density that flux produces at its altitude, through a model this subsystem does not own. A design that meets F10.7 &lt;= 250 and is sized on a density model with the wrong drag coefficient has met this requirement and will still deorbit early. The closure this row takes part in is on the environment, and the environment is only the first half.</dd>
+<dt>One number for the whole mission, with no epoch and no phase in it</dt><dd>fails when the mission slips. The record runs 64 to 343 sfu across a cycle, so the flux a mission sees depends on where in the cycle it flies; the declared epoch of 2027-01-01 sits at phase 0.619, past maximum on the declining side. A mission starting in 2030 would sit near minimum and 250 would be enormously conservative. The requirement does not move with the epoch and is not meant to — it is the vehicle's capability, and the sky's variation belongs on the achieved side.</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>l3_solar_req_01</td><td></td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>F107_req</code></td><td>l3_solar_req_01</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
 <section class="panel" data-panel="2">
 <p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
+<p>This is a declared value: <b>250</b> -, confirmed by <b>A. Rai / 2026-09-14</b>.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>F107_req &ge; 60</code> — the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement</li>
+<li><code>F107_req &le; 400</code> — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What solar flux must this design survive?
+///
+/// `F107_req = 250 sfu`
+///
+/// Source: `orbitt_case_c1`
+///
+/// The headline requirement of the three, and the first `required` row
+/// written anywhere in this repository — no other subsystem has one, so the
+/// shape here is the shape the other sixteen will copy. It is a ceiling the
+/// environment must not exceed, and l3_solar_ach_01 is the number the record
+/// actually presents.
+///
+/// # Assumptions
+///
+/// * 250 is the design value with a round margin on it, and the margin is a decision rather than a calculation — fails when somebody looks for the derivation. At the declared five-year mission sw_f107_design comes to roughly 220 sfu — the central expectation plus the 95th-percentile growth — and 250 is the next round number above it, about 14 per cent of headroom. Nothing in the record picks 250. It is chosen so the closure passes with visible room rather than by a hair, and so that a modest change in mission length or epoch does not silently break it. A design that wants the margin to mean something specific should replace this with a number that has a derivation.
+/// * It is a ceiling on the DRIVER and says nothing about what the driver does to the vehicle — fails when the requirement is read as a survivability statement. F10.7 is an index of solar radio flux; what a spacecraft actually feels is the density that flux produces at its altitude, through a model this subsystem does not own. A design that meets F10.7 &lt;= 250 and is sized on a density model with the wrong drag coefficient has met this requirement and will still deorbit early. The closure this row takes part in is on the environment, and the environment is only the first half.
+/// * One number for the whole mission, with no epoch and no phase in it — fails when the mission slips. The record runs 64 to 343 sfu across a cycle, so the flux a mission sees depends on where in the cycle it flies; the declared epoch of 2027-01-01 sits at phase 0.619, past maximum on the declining side. A mission starting in 2030 would sit near minimum and 250 would be enormously conservative. The requirement does not move with the epoch and is not meant to — it is the vehicle's capability, and the sky's variation belongs on the achieved side.
+pub const NODE_ID: &amp;str = &quot;l3_solar_req_01&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x97ebce8d28fd300b;
+
+pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
+    // generated · a declared value, converted from the unit it was written in
+    let declared: Ratio = match Ratio::from_unit(250.0, Unit::One) {
+        Some(q) =&gt; q,
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_req&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+    };
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = declared;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_req&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_req&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement&quot; });
+    }
+    if answer.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_req&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
 </section>
 <section class="panel" data-panel="4">
 <p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
@@ -44,24 +108,23 @@
 <section class="panel" data-panel="5">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 60 — the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement</li>
+<li><code>OutOfDomain</code> above 400 — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
 <section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="l3_solar_req_01"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
 <section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
+<p>Valid over <code>60 &hellip; 400</code> -.</p>
+<ul class="guards"><li>lower — the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement</li><li>upper — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
+<li>significant, and one fixture or none — a significant node is the one that gets a second independent check, which is the whole reason for the word</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

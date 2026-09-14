@@ -1,0 +1,17 @@
+{
+  "id": "sw_alert_threshold",
+  "state": "published",
+  "sheet_hash": "bccae5",
+  "impl_hash": "222325",
+  "owner": "environment",
+  "tier": "A",
+  "fixtures": 0,
+  "criticality": "minor",
+  "reviewers": 1,
+  "differential_fill": false,
+  "migrated_from": "",
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

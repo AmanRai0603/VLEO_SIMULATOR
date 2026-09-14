@@ -8,26 +8,72 @@ subsystem = "solar"
 parent = "l3_solar"
 kind = "declared"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "significant"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1352
-state = "empty"
+order = 1353
+state = "published"
+
+# THE ROW THAT CHECKS ANOTHER ROW.
+#
+# sw_uncertainty_growth publishes a 95th percentile of F10.7 growth at seventeen
+# leads, and sw_f107_design adds it to the central expectation to make the number
+# a mission is sized on. This row asks whether that band is worth what it claims:
+# over every pair of observed days separated by each of those seventeen leads,
+# how often did the actual change come in at or under the stated percentile?
+#
+# A design value with an unverified band is a decoration. This is the check.
+#
+# It needed no confidence to be chosen. The band IS the 95th percentile, so the
+# stated confidence is 95 per cent by construction, and the only question is
+# whether the record honours it.
 
 [question]
-text = ""
+text = "Does the stated 95 per cent band actually contain the truth 95 per cent of the time?"
+note = "Counted over 128135 day pairs at the same seventeen leads sw_uncertainty_growth is tabulated on. The answer is 0.9509 — the band is honest and very slightly conservative."
 
 [maths]
-expression = ""
-source = ""
+confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
+expression = "C_band = fraction of pairs with F107(t+L) - F107(t) <= dF107_p95(L), pooled over the seventeen leads"
+source = "noaa_swpc"
+
+[[assumption]]
+text = "It is an in-sample check and cannot be anything else on this record"
+fails_when = "0.9509 is read as out-of-sample validation. The percentiles in sw_uncertainty_growth were measured on these same pairs, so a coverage near 0.95 is close to arithmetic rather than evidence — it confirms the percentile was computed correctly, not that it will hold. What makes the number worth publishing is that it could have come back wrong: an off-by-one in the lead, a percentile taken on the absolute change rather than the signed one, or a table read at the wrong index would all show here. It is a check on the implementation, and it is honest about being only that"
+
+[[assumption]]
+text = "The coverage is uniform across leads, which is the part that is evidence"
+fails_when = "the pooled figure hides a bad lead. It does not: per-lead coverage runs from 0.949970 at 365 and 1826 days to 0.952425 at 2557 days, a spread of 0.0025 across seventeen leads spanning half a year to fifteen years. A table that was right at short leads and wrong at long ones would show as a drift and there is none. The pooled 0.9509 is therefore a fair summary rather than an average over disagreeing parts"
+
+[[assumption]]
+text = "Signed, not absolute — this counts only the band being exceeded UPWARD"
+fails_when = "a two-sided band is wanted. The growth percentile is the 95th of the SIGNED change, so this row asks how often F10.7 rose by more than the stated amount, and a large fall counts as inside the band. For a drag design that is the right test, because the unsafe direction is flux arriving higher than planned. A mission exposed to F10.7 being LOWER than planned — a power budget, for instance — is not checked by this row at all"
+
+[[assumption]]
+text = "Pairs are massively overlapping, so the sample is far smaller than 128135"
+fails_when = "the count is read as independent evidence. Consecutive pairs at a given lead share all but one day, and at a lead of fifteen years two pairs a day apart are nearly the same measurement. The effective sample is closer to the number of independent intervals — the record divided by the lead, which at the longest leads is five or six — than to the 4838 to 9947 pairs each lead contributes. Nothing here is a confidence interval, and the third decimal place of 0.9509 means nothing"
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "C_band"
+type = "Ratio"
+unit = "One"
+lower = 0.9
+upper = 1.0
+reason_lower = "below 0.9 a band sold as 95 per cent would be missing the truth twice as often as it claims, and every margin built on sw_f107_design would be smaller than it reads. That is a defect in the percentile table, not a property of the sky, and it should stop a run"
+reason_upper = "a coverage cannot exceed 1. A value at exactly 1 would mean the band was never exceeded in 29 years, which for a 95th percentile would mean the table is far too wide and the design is paying for margin it does not need"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 0.9509267569
+confirmed_by = "A. Rai / 2026-09-14"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# numbers must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
 
 [view]
 kind = "number"

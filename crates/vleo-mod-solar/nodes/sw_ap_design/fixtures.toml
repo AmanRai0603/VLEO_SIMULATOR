@@ -1,0 +1,40 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# The three expected values are the published ap equivalent amplitude at the top
+# Kp of each G band — Kp 5 is ap 48, Kp 6 is ap 80, Kp 7 is ap 132 — read from
+# the same tabulated pairs sw_kp_from_ap cites. Not computed here.
+#
+# THE ORDER MATTERS. The generated robustness test perturbs the FIRST fixture by
+# plus and minus one per cent; G2 at 2.0 moves to 1.98 and 2.02, both of which
+# stay inside the same band and inside the producer's declared range of 1 to 3.
+# G3 at the top of the range would be perturbed to 3.03 and the node would
+# correctly refuse.
+
+[[fixture]]
+label = "G2 moderate — Kp 6 — daily Ap bounded at 80"
+expect = 80.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "iaga_kp_ap"
+inputs = { g_level = 2.0 }
+
+[[fixture]]
+label = "G1 minor — Kp 5 — daily Ap bounded at 48"
+expect = 48.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "iaga_kp_ap"
+inputs = { g_level = 1.0 }
+
+[[fixture]]
+label = "G3 strong — Kp 7 — daily Ap bounded at 132, the declared default"
+expect = 132.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "iaga_kp_ap"
+inputs = { g_level = 3.0 }

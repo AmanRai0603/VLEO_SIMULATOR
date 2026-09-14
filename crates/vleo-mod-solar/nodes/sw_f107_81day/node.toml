@@ -6,28 +6,83 @@ label = "F10.7 81-day centred mean"
 folder = "sw_f107_81day"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1358
-state = "empty"
+order = 1359
+state = "published"
+
+# WHY THIS ROW IS A PASS-THROUGH, AND WHY IT IS STILL A ROW.
+#
+# F10.7A — the 81-day centred mean — is not an analysis result. It is an INPUT
+# that every empirical density model takes beside the daily flux, and a design
+# that cannot hand one over cannot call NRLMSISE-00 or JB2008. So the tree needs
+# a row that answers "what F10.7A at the design epoch".
+#
+# At the declared epoch it cannot be measured. 2027-01-01 is 366 days past the
+# end of the record, so there are no 81 days to centre on, and the honest answer
+# is the phase-conditioned mean-cycle level — which sw_mean_cycle_level already
+# computes. This row therefore returns that number under a different question.
+#
+# The redundancy is real and is not hidden. What distinguishes the two rows is
+# what a caller is entitled to assume: sw_mean_cycle_level is a climatology and
+# says so, while this row is a named density-model input with a declared
+# smoothing width. If a future epoch falls inside the record, this row becomes a
+# measurement and sw_mean_cycle_level does not.
 
 [question]
-text = ""
+text = "What 81-day centred mean F10.7 should a density model be given at the mission epoch?"
+note = "The second driver every empirical density model wants, beside the daily flux. At an epoch past the record it is a prediction rather than an observation, and the prediction is the mean cycle at that phase."
 
 [maths]
-expression = ""
-source = ""
+expression = "F107A(epoch) = F107_cyc(phase(epoch))"
+source = "noaa_swpc"
+
+[[assumption]]
+text = "It is a prediction, not a centred mean, because there is nothing to centre on"
+fails_when = "the epoch is inside the record and a caller expects the measured value. The declared epoch is day 9862 and the record ends at day 9496, so this row is 366 days beyond any observation and 407 days beyond the last day that could have a full centred window. What it returns is the mean of cycles 23 and 24 at the same phase — a climatology with two samples behind it — and the difference between that and a real 81-day mean is a whole cycle's individuality. sw_cycle_repeatability puts the shape agreement between those two cycles at 0.770 and the peak disagreement at 28 per cent"
+
+[[assumption]]
+text = "The mean-cycle bin is 217 days wide and this row calls it an 81-day mean"
+fails_when = "the smoothing width matters to the caller. sw_mean_cycle_level bins a cycle into twenty phase bins, which for cycle 23 is 217 days and for cycle 24 is 201 — between two and three times the 81-day window this row is named for. So the number is smoother than a true F10.7A, and a density model given it sees less structure than it would from the real driver. In the direction that matters the error is conservative for a design point and wrong for a time history: it cannot reproduce a rotation, because it is already averaged over eight of them"
+
+[[assumption]]
+text = "A single day's F10.7 strays from this by about twelve per cent, one standard deviation"
+fails_when = "F10.7A is used where the daily value belongs. Measured over 10284 days the ratio of daily F10.7 to its own 81-day centred mean has mean 0.999340 and standard deviation 0.122210, and reaches 2.11 at the extreme — sw_f107a_ratio carries that figure. Handing a density model F10.7A for both of its two drivers loses every spike the atmosphere actually felt"
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "F107A"
+type = "Ratio"
+unit = "One"
+lower = 60.0
+upper = 400.0
+reason_lower = "the same floor as env_f107: below 60 sfu has never been observed and no relation reading F10.7 has support there"
+reason_upper = "the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating. An 81-day mean is smoother than the daily value and the largest binned mean-cycle level is 165.3, so this bound is unreachable by the relation and catches a broken input"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "level"
+var = "sw_mean_cycle_level"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "take the mean-cycle level at the epoch's phase as the 81-day mean a density model should be given"
+binds = "out"
+type = "Ratio"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# numbers must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
 
 [view]
-kind = "number"
+kind = "line"
+over = "sys_mission_requirements_mission_epoch"
+points = 60

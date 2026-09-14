@@ -1,17 +1,17 @@
 {
   "id": "sw_ap_design",
-  "state": "empty",
-  "sheet_hash": "203c44",
-  "impl_hash": "222325",
+  "state": "published",
+  "sheet_hash": "5bb31a",
+  "impl_hash": "e5fc60",
   "owner": "environment",
-  "tier": "",
-  "fixtures": 0,
-  "criticality": "minor",
-  "reviewers": 1,
-  "differential_fill": false,
+  "tier": "A",
+  "fixtures": 3,
+  "criticality": "significant",
+  "reviewers": 2,
+  "differential_fill": true,
   "migrated_from": "",
-  "holes": 0,
-  "inputs": [],
+  "holes": 1,
+  "inputs": ["sw_storm_design_level"],
   "contributes": [],
-  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+  "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did"]
 }

@@ -1,0 +1,17 @@
+{
+  "id": "sw_f107a_ratio",
+  "state": "published",
+  "sheet_hash": "10368c",
+  "impl_hash": "222325",
+  "owner": "environment",
+  "tier": "A",
+  "fixtures": 0,
+  "criticality": "minor",
+  "reviewers": 1,
+  "differential_fill": false,
+  "migrated_from": "",
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

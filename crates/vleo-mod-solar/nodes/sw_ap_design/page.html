@@ -1,8 +1,8 @@
-<article class="node" data-node="sw_ap_design" data-sheet-hash="203c44" data-impl-hash="222325">
+<article class="node" data-node="sw_ap_design" data-sheet-hash="5bb31a" data-impl-hash="e5fc60">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Ap design value</h2>
-  <p class="ident"><code>sw_ap_design</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <p class="ident"><code>sw_ap_design</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
@@ -15,54 +15,143 @@
   <button role="tab" class="tab" data-tab="7">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">What daily Ap is this design built to survive?</p>
+<p class="maths"><code>Ap_design(G) = ap at the top Kp of that G band: G1 -&gt; 48, G2 -&gt; 80, G3 -&gt; 132</code></p>
+<p class="src">Source <b>iaga_kp_ap</b> — Bartels, J. — The standardized index Ks and the planetary index Kp, with the ap equivalent-amplitude table <span class="where">IATME Bulletin 12b, IUGG Publication Office, 1949; the 28-point table as published by IAGA and distributed by GFZ Potsdam</span></p>
+<p class="note">The design-side companion to sw_storm_return_level. That row says what the record will present over the mission; this says what the vehicle is built for, from the G level sw_storm_design_level declares. At the default G3 the answer is 132 and the record's five-year expectation is 158.4, and the gap between them is the finding.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>The design value is BELOW what the record expects over the mission, and that is not a defect in either row</dt><dd>fails when the two are read as competing answers. At G3 this row gives 132; sw_storm_return_level at the declared five-year mission gives 158.4, and the record's days nearest that Ap all reached Kp_max 9. So the sky a five-year mission should expect is stronger than the sky the vehicle is sized for, by about 20 per cent in daily Ap. The gap is real and is closed by operations rather than by structure: 49 days in 29 years reach G4 and 16 reach G5, and a mission flies through those rather than being built for them. Both numbers belong in the tree precisely so the gap is on a row instead of in somebody's head</dd>
+<dt>The ceiling of the band, not its middle, and that choice is worth twice the number</dt><dd>fails when a typical G3 day is wanted rather than a bound. Days in the record whose Kp_max is exactly 7 have daily Ap from 15 to 96 with a median of 51 — so the typical G3 day is 51 and this row publishes 132. The ceiling is correct for sizing, because a design bound must hold for the worst day inside the level it claims, and 132 is the value a day would reach if all eight slots sat at Kp 7. It is conservative by construction: no G3 day in 29 years came within a third of it</dd>
+<dt>The published ap table is the conversion and it is not linear</dt><dd>fails when a G level is interpolated. The ap values at Kp 5, 6 and 7 are 48, 80 and 132 — ratios of 1.67 and 1.65, so the scale is close to geometric and a linear reading between levels is wrong by tens of nanotesla. The relation is a lookup on three integer levels and nothing between them is defined, which is why sw_storm_design_level is bounded to integers 1 to 3 and why this row does not interpolate</dd>
+<dt>Daily Ap ignores everything about the storm except its size</dt><dd>fails when duration or timing matters. A day at Ap 132 that recovers overnight and the first day of a three-day storm at the same Ap are the same number here. The atmosphere does not treat them alike — density lags the driver and a sustained storm heats the thermosphere far more than a single disturbed day — so a drag design taking this number alone gets the peak and not the integral. sw_event_duration carries the dwell for F10.7; nothing in this group yet carries it for Ap</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sw_ap_design</td><td></td><td>-</td></tr>
+<tr><td>in</td><td><code>g_level</code></td><td><a class="xref" data-goto="sw_storm_design_level">sw_storm_design_level</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>Ap_design</code></td><td>sw_ap_design</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
 <section class="panel" data-panel="2">
-<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>0</b> -, confirmed by <b></b>.</p>
+<ol class="algo">
+<li><span class="step">convert the chosen G level to the daily Ap that level bounds, from the published ap table</span> <span class="binds">→ <code>out: Ratio</code></span></li>
+</ol>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>Ap_design &ge; 40</code> — the lowest value this relation can return is 48, at G1. A bound at 40 sits just under it and refuses anything that would design to less than a minor storm, which is not a design case: the record has 1358 days at G1 or above, 47 a year</li>
+<li><code>Ap_design &le; 140</code> — the highest this relation can return is 132, at G3, which is the top of the declared G range. A bound at 140 sits just above it and catches a G level outside the range or a misread table. It does NOT bound the sky: the record's largest daily Ap is 273 and the five-year return level is 158.4, both above this bound, and neither passes through this row</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What daily Ap is this design built to survive?
+///
+/// `Ap_design(G) = ap at the top Kp of that G band: G1 -&gt; 48, G2 -&gt; 80, G3 -&gt; 132`
+///
+/// Source: `iaga_kp_ap`
+///
+/// The design-side companion to sw_storm_return_level. That row says what the
+/// record will present over the mission; this says what the vehicle is built
+/// for, from the G level sw_storm_design_level declares. At the default G3
+/// the answer is 132 and the record's five-year expectation is 158.4, and the
+/// gap between them is the finding.
+///
+/// # Assumptions
+///
+/// * The design value is BELOW what the record expects over the mission, and that is not a defect in either row — fails when the two are read as competing answers. At G3 this row gives 132; sw_storm_return_level at the declared five-year mission gives 158.4, and the record's days nearest that Ap all reached Kp_max 9. So the sky a five-year mission should expect is stronger than the sky the vehicle is sized for, by about 20 per cent in daily Ap. The gap is real and is closed by operations rather than by structure: 49 days in 29 years reach G4 and 16 reach G5, and a mission flies through those rather than being built for them. Both numbers belong in the tree precisely so the gap is on a row instead of in somebody's head
+/// * The ceiling of the band, not its middle, and that choice is worth twice the number — fails when a typical G3 day is wanted rather than a bound. Days in the record whose Kp_max is exactly 7 have daily Ap from 15 to 96 with a median of 51 — so the typical G3 day is 51 and this row publishes 132. The ceiling is correct for sizing, because a design bound must hold for the worst day inside the level it claims, and 132 is the value a day would reach if all eight slots sat at Kp 7. It is conservative by construction: no G3 day in 29 years came within a third of it
+/// * The published ap table is the conversion and it is not linear — fails when a G level is interpolated. The ap values at Kp 5, 6 and 7 are 48, 80 and 132 — ratios of 1.67 and 1.65, so the scale is close to geometric and a linear reading between levels is wrong by tens of nanotesla. The relation is a lookup on three integer levels and nothing between them is defined, which is why sw_storm_design_level is bounded to integers 1 to 3 and why this row does not interpolate
+/// * Daily Ap ignores everything about the storm except its size — fails when duration or timing matters. A day at Ap 132 that recovers overnight and the first day of a three-day storm at the same Ap are the same number here. The atmosphere does not treat them alike — density lags the driver and a sustained storm heats the thermosphere far more than a single disturbed day — so a drag design taking this number alone gets the peak and not the integral. sw_event_duration carries the dwell for F10.7; nothing in this group yet carries it for Ap
+pub const NODE_ID: &amp;str = &quot;sw_ap_design&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x004a983c165bb31a;
+
+pub fn evaluate(g_level: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : convert the chosen G level to the daily Ap that level bounds, from the published ap table -&gt; Ratio
+    // The published ap equivalent amplitude at the top Kp of each G band:
+    // G1 is Kp 5 is ap 48, G2 is Kp 6 is ap 80, G3 is Kp 7 is ap 132. Daily Ap
+    // is the mean of eight three-hourly slots, so a day whose worst slot is at
+    // that Kp cannot exceed the value every slot would need — which is why the
+    // ceiling is the right end of the band for a design bound.
+    //
+    // A lookup on three integer levels, not an interpolation: the ap scale is
+    // close to geometric (ratios 1.67 and 1.65) and a linear reading between
+    // levels would be wrong by tens of nanotesla. The producer's declared range
+    // is 1 to 3, so nothing outside reaches here.
+    const AP_AT_G: [f64; 3] = [48.0, 80.0, 132.0];
+    let g: f64 = g_level.get();
+    let idx: usize = if g &lt; 1.5 {
+        0
+    } else if g &lt; 2.5 {
+        1
+    } else {
+        2
+    };
+    let out: Ratio = Ratio::new(AP_AT_G[idx]);
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = out;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_design&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 40.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_design&quot;, value: answer.get(), bound: 40.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the lowest value this relation can return is 48, at G1. A bound at 40 sits just under it and refuses anything that would design to less than a minor storm, which is not a design case: the record has 1358 days at G1 or above, 47 a year&quot; });
+    }
+    if answer.get() &gt; 140.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_design&quot;, value: answer.get(), bound: 140.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the highest this relation can return is 132, at G3, which is the top of the declared G range. A bound at 140 sits just above it and catches a G level outside the range or a misread table. It does NOT bound the sky: the record's largest daily Ap is 273 and the five-year return level is 158.4, both above this bound, and neither passes through this row&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
 </section>
 <section class="panel" data-panel="4">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="G2 moderate — Kp 6 — daily Ap bounded at 80"><td>G2 moderate — Kp 6 — daily Ap bounded at 80</td><td class="num">80</td><td class="num">0.000000000001</td><td>published-source</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="G1 minor — Kp 5 — daily Ap bounded at 48"><td>G1 minor — Kp 5 — daily Ap bounded at 48</td><td class="num">48</td><td class="num">0.000000000001</td><td>published-source</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="G3 strong — Kp 7 — daily Ap bounded at 132, the declared default"><td>G3 strong — Kp 7 — daily Ap bounded at 132, the declared default</td><td class="num">132</td><td class="num">0.000000000001</td><td>published-source</td><td>iaga_kp_ap</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
 <section class="panel" data-panel="5">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 40 — the lowest value this relation can return is 48, at G1. A bound at 40 sits just under it and refuses anything that would design to less than a minor storm, which is not a design case: the record has 1358 days at G1 or above, 47 a year</li>
+<li><code>OutOfDomain</code> above 140 — the highest this relation can return is 132, at G3, which is the top of the declared G range. A bound at 140 sits just above it and catches a G level outside the range or a misread table. It does NOT bound the sky: the record's largest daily Ap is 273 and the five-year return level is 158.4, both above this bound, and neither passes through this row</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
 <section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_ap_design"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
 <section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
+<p>Valid over <code>40 &hellip; 140</code> -.</p>
+<ul class="guards"><li>lower — the lowest value this relation can return is 48, at G1. A bound at 40 sits just under it and refuses anything that would design to less than a minor storm, which is not a design case: the record has 1358 days at G1 or above, 47 a year</li><li>upper — the highest this relation can return is 132, at G3, which is the top of the declared G range. A bound at 140 sits just above it and catches a G level outside the range or a misread table. It does NOT bound the sky: the record's largest daily Ap is 273 and the five-year return level is 158.4, both above this bound, and neither passes through this row</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

@@ -1,0 +1,40 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# The relation is a pass-through, so a fixture here cannot test arithmetic — it
+# tests that the pass-through is faithful and that the declared guards bite
+# where the sheet says. The expected values are the mean-cycle levels
+# sw_mean_cycle_level publishes at three phases, counted outside this crate from
+# bundles/solar-weather and already pinned by that node's own fixtures.
+#
+# THE ORDER MATTERS. The first fixture is perturbed by plus and minus one per
+# cent by the generated robustness test; 105.84 stays well inside the declared
+# 60 to 400.
+
+[[fixture]]
+label = "the declared epoch's phase 0.619 — mean-cycle level 105.84 sfu"
+expect = 105.8398
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { level = 105.8398 }
+
+[[fixture]]
+label = "the mean cycle's peak bin, phase 0.425 — 165.28 sfu"
+expect = 165.2799
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { level = 165.2799 }
+
+[[fixture]]
+label = "the mean cycle's quietest bin, phase 0.975 — 67.65 sfu"
+expect = 67.6538
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { level = 67.6538 }

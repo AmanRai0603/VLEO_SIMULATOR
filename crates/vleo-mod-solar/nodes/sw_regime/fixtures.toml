@@ -1,0 +1,64 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# Every expected label here was read out of daily_regime.csv — the study's own
+# mixture output — by finding days in observed_daily.csv at the stated Ap and
+# taking the label the published table gives them. Nothing was derived from the
+# relation.
+#
+# THE ORDER MATTERS AND IT IS NOT COSMETIC. The generated robustness test
+# perturbs the FIRST fixture's input by plus and minus one per cent and requires
+# the node not to refuse. The first case is interior to the producer's declared
+# range of 20 to 230 and well away from the 25/26 boundary.
+
+[[fixture]]
+label = "Ap 158.38 — the five-year return level — storm, as the table labels every day near it"
+expect = 3.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { ap = 158.38 }
+
+[[fixture]]
+label = "Ap 20 — the bottom of the producer's range — active; the table labels all 20s active"
+expect = 2.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { ap = 20.0 }
+
+[[fixture]]
+label = "Ap 25 — the last active value in the published table; 26 is the first storm"
+expect = 2.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { ap = 25.0 }
+
+[[fixture]]
+label = "Ap 26 — the first storm value in the published table, and the boundary that matters"
+expect = 3.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { ap = 26.0 }
+
+[[fixture]]
+label = "Ap 132 — the G3 design value — storm"
+expect = 3.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { ap = 132.0 }
+
+[[fixture]]
+label = "Ap 230 — the top of the producer's range — storm"
+expect = 3.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { ap = 230.0 }

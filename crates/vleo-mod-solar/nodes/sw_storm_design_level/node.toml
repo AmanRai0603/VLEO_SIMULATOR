@@ -1,0 +1,81 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_storm_design_level"
+label = "Storm level designed for"
+folder = "sw_storm_design_level"   # frozen at seed; renaming the label never moves the directory
+subsystem = "solar"
+parent = "l3_solar"
+kind = "declared"
+owner = "environment"
+tier = "A"
+criticality = "significant"   # minor | significant — significant means two reviewers and a differential fill
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1363
+state = "published"
+
+# THE ONE ROW IN THIS GROUP THAT IS A DECISION RATHER THAN A MEASUREMENT.
+#
+# Everything else here reports what the record does. This says what the design
+# will be built to survive, on the NOAA G scale, and it is set to be changed:
+# move it to 1 or 2 and sw_ap_design moves with it, and the closure against
+# l3_solar_req_03 moves with that. G3 is the default because it is the highest
+# level a spacecraft of this class can reasonably be sized for.
+#
+# The G scale is defined on Kp, not on daily Ap:
+#   G1 minor    Kp 5
+#   G2 moderate Kp 6
+#   G3 strong   Kp 7
+#   G4 severe   Kp 8
+#   G5 extreme  Kp 9
+#
+# The range stops at 3. Beyond G3 the record stops offering a design case and
+# starts offering individual events: 49 days in 29 years reach G4 and 16 reach
+# G5, and those are the spikes sw_spike_threshold and sw_event_duration
+# describe. A vehicle is not sized for them; it is operated through them.
+
+[question]
+text = "Which NOAA G level is this design built to survive?"
+note = "1, 2 or 3 on the G scale — minor, moderate or strong. It is the switch: sw_ap_design reads it and turns it into a daily Ap, so moving this row is how a design asks what a different storm level would cost. Default G3."
+
+[maths]
+confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
+expression = "G_design = 3   (NOAA G3, strong, Kp 7)"
+source = "noaa_swpc"
+
+[[assumption]]
+text = "G3 is a choice and the record says a five-year mission will exceed it"
+fails_when = "the choice is read as sufficient. sw_storm_return_level, fitted on the record and read at the declared five-year mission, gives a daily Ap of 158.4; the days in the record nearest that value all reached Kp_max 9, which is G5. So the storm a five-year mission should expect is two levels above what this row designs to. That is not an error in either row — it is the gap between what the sky does and what a vehicle can be built for, and putting both numbers in the tree is the point. What closes it is operations, not structure"
+
+[[assumption]]
+text = "The scale is on Kp and the design quantity is daily Ap, which are not the same measurement"
+fails_when = "a G level is converted to a daily Ap as though the mapping were exact. Kp is three-hourly and the G level is the WORST slot in a day; daily Ap is the mean of eight slots. So a G3 day has one slot at Kp 7 and seven that may be anything below it, and the record shows exactly that spread: days whose Kp_max is 7 run from daily Ap 15 to 96, median 51. sw_ap_design takes the ceiling of that band rather than its median, and the sheet there says why"
+
+[[assumption]]
+text = "Stopping at 3 is a statement about this vehicle class, not about the scale"
+fails_when = "a mission that must survive G4 or G5 reads this row. The declared range refuses 4 and 5 rather than letting them be selected quietly, because a design sized for G4 is a different vehicle and the rest of this group's numbers — the return level, the band, the requirement — would all need revisiting together. A mission with that requirement should change this bound deliberately and re-run the closure, which is a visible act"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "G_design"
+type = "Ratio"
+unit = "One"
+lower = 1.0
+upper = 3.0
+reason_lower = "G1 is the bottom of the NOAA scale. Below it there is no storm to design for — Kp 4 is 'active' and is where alerts begin, which sw_alert_threshold carries, not where storms do"
+reason_upper = "G3 is the highest level this vehicle class is sized for. G4 occurs on 49 days in 29 years and G5 on 16, and both are handled by operating through the event rather than by building for it. A design that genuinely requires G4 changes this bound on purpose and re-runs the closure"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 3.0
+confirmed_by = "A. Rai / 2026-09-14"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# numbers must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
+
+[view]
+kind = "number"

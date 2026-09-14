@@ -6,28 +6,55 @@ label = "Solar flux"
 folder = "l3_solar_req_01"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "required"
+kind = "declared"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "significant"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1330
-state = "empty"
+state = "published"
+# A ceiling, not a floor. The environment is something the vehicle must
+# survive, so the requirement is satisfied by the sky being no worse than
+# this, and the achieved row beside it must come in at or under.
+sense = "<="
 
 [question]
-text = ""
+text = "What solar flux must this design survive?"
+note = "The headline requirement of the three, and the first `required` row written anywhere in this repository — no other subsystem has one, so the shape here is the shape the other sixteen will copy. It is a ceiling the environment must not exceed, and l3_solar_ach_01 is the number the record actually presents."
 
 [maths]
-expression = ""
-source = ""
+confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
+expression = "F107_req = 250 sfu"
+source = "orbitt_case_c1"
+
+[[assumption]]
+text = "250 is the design value with a round margin on it, and the margin is a decision rather than a calculation"
+fails_when = "somebody looks for the derivation. At the declared five-year mission sw_f107_design comes to roughly 220 sfu — the central expectation plus the 95th-percentile growth — and 250 is the next round number above it, about 14 per cent of headroom. Nothing in the record picks 250. It is chosen so the closure passes with visible room rather than by a hair, and so that a modest change in mission length or epoch does not silently break it. A design that wants the margin to mean something specific should replace this with a number that has a derivation."
+
+[[assumption]]
+text = "It is a ceiling on the DRIVER and says nothing about what the driver does to the vehicle"
+fails_when = "the requirement is read as a survivability statement. F10.7 is an index of solar radio flux; what a spacecraft actually feels is the density that flux produces at its altitude, through a model this subsystem does not own. A design that meets F10.7 <= 250 and is sized on a density model with the wrong drag coefficient has met this requirement and will still deorbit early. The closure this row takes part in is on the environment, and the environment is only the first half."
+
+[[assumption]]
+text = "One number for the whole mission, with no epoch and no phase in it"
+fails_when = "the mission slips. The record runs 64 to 343 sfu across a cycle, so the flux a mission sees depends on where in the cycle it flies; the declared epoch of 2027-01-01 sits at phase 0.619, past maximum on the declining side. A mission starting in 2030 would sit near minimum and 250 would be enormously conservative. The requirement does not move with the epoch and is not meant to — it is the vehicle's capability, and the sky's variation belongs on the achieved side."
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "F107_req"
+type = "Ratio"
+unit = "One"
+lower = 60.0
+upper = 400.0
+reason_lower = "the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement"
+reason_upper = "the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 250.0
+confirmed_by = "A. Rai / 2026-09-14"
 
 [view]
 kind = "number"

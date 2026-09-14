@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1362 rows** — 656 a person picked, 706 worked out. Two thirds of any design tree is
+**1365 rows** — 659 a person picked, 706 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -19057,66 +19057,85 @@ One row, one number, no reaching in. Everything the subsystem establishes — th
 
 ### `l3_solar_req_01` — Solar flux
 
-> 
+> What solar flux must this design survive?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | required |
+| symbol | `F107_req` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `F107_req = 250 sfu` |
+| source | `orbitt_case_c1` |
+| declared value | **250** - |
+| confirmed by | A. Rai / 2026-09-14 |
+| valid over | 60 … 400 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement
+- **upper bound** — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+- **assumes** 250 is the design value with a round margin on it, and the margin is a decision rather than a calculation — fails when somebody looks for the derivation. At the declared five-year mission sw_f107_design comes to roughly 220 sfu — the central expectation plus the 95th-percentile growth — and 250 is the next round number above it, about 14 per cent of headroom. Nothing in the record picks 250. It is chosen so the closure passes with visible room rather than by a hair, and so that a modest change in mission length or epoch does not silently break it. A design that wants the margin to mean something specific should replace this with a number that has a derivation.
+- **assumes** It is a ceiling on the DRIVER and says nothing about what the driver does to the vehicle — fails when the requirement is read as a survivability statement. F10.7 is an index of solar radio flux; what a spacecraft actually feels is the density that flux produces at its altitude, through a model this subsystem does not own. A design that meets F10.7 <= 250 and is sized on a density model with the wrong drag coefficient has met this requirement and will still deorbit early. The closure this row takes part in is on the environment, and the environment is only the first half.
+- **assumes** One number for the whole mission, with no epoch and no phase in it — fails when the mission slips. The record runs 64 to 343 sfu across a cycle, so the flux a mission sees depends on where in the cycle it flies; the declared epoch of 2027-01-01 sits at phase 0.619, past maximum on the declining side. A mission starting in 2030 would sit near minimum and 250 would be enormously conservative. The requirement does not move with the epoch and is not meant to — it is the vehicle's capability, and the sky's variation belongs on the achieved side.
+
+The headline requirement of the three, and the first `required` row written anywhere in this repository — no other subsystem has one, so the shape here is the shape the other sixteen will copy. It is a ceiling the environment must not exceed, and l3_solar_ach_01 is the number the record actually presents.
 
 ### `l3_solar_req_02` — F10.7
 
-> 
+> What F10.7 must this design survive, at 95 per cent confidence?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | required |
+| symbol | `F107_req_95` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `F107_req = 250 sfu at 95% confidence` |
+| source | `orbitt_case_c1` |
+| declared value | **250** - |
+| confirmed by | A. Rai / 2026-09-14 |
+| valid over | 60 … 400 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement
+- **upper bound** — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+- **assumes** It is the same number as req_01 and the duplication is real — fails when the two are treated as independent requirements. l3_solar_ach_01 and l3_solar_ach_02 already say this about the achieved side — the solar flux this subsystem publishes is F10.7 and nothing else — so the two requirement rows are one commitment written twice. They are both written because the layer-2 rows sys_space_environment_solar_flux and sys_space_environment_f10_7 are separate and each needs a partner. Merging them is a change to the layer-2 tree, not to this subsystem.
+- **assumes** The 95 per cent is inherited from the achieved side, not chosen here — fails when a different confidence is wanted. There is no confidence row anywhere in this tree; the figure is 95 because sw_uncertainty_growth publishes a 95th percentile and sw_f107_design adds it. sw_band_coverage checks that the band is worth its label and measures the coverage at 0.9509, so the stated confidence is honest. A requirement at a different confidence would need that percentile re-measured, which is a change to sw_uncertainty_growth.
+- **assumes** A percentile is not a worst case, and a requirement written on one is not a survival guarantee — fails when the mission meets a day in the upper five per cent. By construction one day in twenty exceeds the band, and over a five-year mission that is a great many days. What 250 buys is that the design point is not exceeded by the typical excursion — not that it is never exceeded. The record's largest daily F10.7 is 343 sfu, well above this requirement, and a design that must survive that day needs a worst-case row rather than a percentile one.
+
+The same quantity as req_01 and the same number, because in this subsystem the solar flux IS F10.7. The layer-2 rows separate them and the subsystem does not. That is a finding about the tree rather than a design decision, and it is stated here rather than resolved by inventing a difference.
 
 ### `l3_solar_req_03` — Ap
 
-> 
+> What daily planetary Ap must this design survive?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | required |
+| symbol | `Ap_req` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `Ap_req = 200` |
+| source | `orbitt_case_c1` |
+| declared value | **200** - |
+| confirmed by | A. Rai / 2026-09-14 |
+| valid over | 20 … 400 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — below 20 the requirement would be under the level at which the record's storms begin — the median day is Ap 7 and sw_storm_return_level's own floor is 20 — so a requirement there could not be met by any mission and is not a requirement
+- **upper bound** — 400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+- **assumes** 200 is the record's expectation with a round margin, and it lands one G level above the design — fails when the requirement is read as describing the vehicle. sw_storm_return_level at the declared five-year mission gives 158.4 and 200 is the next round number with usable headroom, about 26 per cent. On the G scale 200 sits between G3's ceiling of 132 and G4's of 207, so what has been committed to is G4-class survival while sw_storm_design_level declares G3. A requirement and a design value that disagree by a whole level is a thing to resolve, not a rounding.
+- **assumes** Switching the G level moves the design value and not this row — fails when somebody expects the requirement to follow the switch. sw_storm_design_level is the input a design turns to ask what a different storm level costs — G1 gives 48, G2 gives 80, G3 gives 132 — and sw_ap_design moves with it. This row does not: it is a commitment, and a commitment that silently tracked the design would never be violated and would therefore never be a requirement. Changing it is a separate, deliberate act.
+- **assumes** A daily mean, which is the wrong shape for what a storm does — fails when the storm is short or long. Daily Ap averages eight three-hourly slots, so a violent six-hour storm and a mild day-long disturbance can share a value, and a requirement written on the daily mean is satisfied by both. The atmosphere responds to the integral with a lag, not to the daily mean. The record's largest daily Ap is 273 — above this requirement — and it is one day in 29 years.
+- **assumes** It is met by the record and the record is 29 years long — fails when the mission meets something the record has not seen. The return level this is checked against is fitted through ranks 2 and 3 of a 28.2-year sample at the mission's five-year period, and the largest event in that sample, Ap 273, has an apparent return period of 28.2 years for no reason but that it is the largest thing in 28.2 years. Events well beyond this requirement are known from longer proxy records. A requirement that a 29-year record cannot violate is not thereby safe.
+
+A G4-class ceiling at 200. The vehicle is designed to G3, which is Ap 132, and the record expects 158.4 over a five-year mission — so the requirement is met while the design value is exceeded. The comment above sets out the three numbers and why they are in that order.
 
 ### `sw_activity_band` — F10.7 activity band
 
@@ -19153,45 +19172,91 @@ One row, one number, no reaching in. Everything the subsystem establishes — th
 
 The coarse label that puts a flux value in context — a reader who sees 228 sfu and does not work with F10.7 daily has no idea whether that is ordinary or extreme. The band says it is the top one, and that 12.8% of the record sits there.
 
-### `sw_ap_design` — Ap design value
+### `sw_alert_threshold` — Geomagnetic alert threshold
 
-> 
+> At what geomagnetic level does the issuing centre put out an alert?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `K_alert` |
+| type | `Ratio` |
+| unit | - |
 | kind | declared |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `K_alert = the lowest threshold_value on threshold_var K in alerts.csv = 4` |
+| source | `noaa_swpc` |
+| declared value | **4** - |
+| confirmed by | A. Rai / 2026-09-14 |
+| valid over | 4 … 9 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — Kp is defined on 0 to 9 and no alert in the record was issued below 4. A value under it would mean an alert on a quiet sky, which the issuing centre has never done in 29 years
+- **upper bound** — Kp 9 is the top of the scale; there is nothing above it to alert on. Only three alerts in the record carry a threshold of 9
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** Kp 4 is the floor and is not a storm — fails when it is read as a storm level. Kp 4 is 'active', one step below the G-scale, which starts at Kp 5 for G1. The record shows 3318 days reaching Kp_max 4 or more — 32.2 per cent of all days, 114 a year — so a mission that treated every alert as a storm would be reacting a third of the time. The alerts carry six distinct K thresholds and their counts fall steeply: 5262 alerts at K 4, 2953 at 5, 901 at 6, 233 at 7, 38 at 8 and 3 at 9. This row publishes the floor because it is the floor that says when watching begins
+- **assumes** There is a second threshold variable and this row does not carry it — fails when somebody needs the A-index alerts. 119 of the alerts are on threshold_var A rather than K, at values 20 (77 alerts), 30 (27) and 50 (15). Those are daily-index alerts and this row is the three-hourly K one. 8444 alerts carry no threshold at all — they are summaries, cancellations and electron-flux notices — so the 9408 K-threshold alerts are the population this number comes from
+- **assumes** Eleven of the parsed thresholds are nonsense and were not filtered out of the source — fails when the threshold column is trusted without looking. Alongside the K values 4 to 9 sit 414, 413, 425, 419, 430 and 408 — two alerts each for the first four, one each for the last two, eleven rows in total. They are a parser running two numbers together, not a Kp of 414. They do not affect this row, which takes the minimum of the legitimate values, but any relation that takes a maximum or a mean of that column will be wrong and nothing in the bundle marks them
+- **assumes** It is what was alerted on, not what should be — fails when a mission adopts it as its own trigger. The number reflects one centre's operational choices over 29 years, including changes in practice nobody recorded in this bundle. A spacecraft whose sensitivity to geomagnetic activity differs from the assumptions behind a public alert service needs its own threshold, and this row is the reference point for setting one rather than the answer
+
+Not a property of the sky but of the people watching it, and it is the operational floor a mission's own alerting should not sit below. Read from the thresholds attached to the alerts as issued rather than chosen here.
+
+### `sw_ap_design` — Ap design value
+
+> What daily Ap is this design built to survive?
+
+| | |
+|---|---|
+| symbol | `Ap_design` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `Ap_design(G) = ap at the top Kp of that G band: G1 -> 48, G2 -> 80, G3 -> 132` |
+| source | `iaga_kp_ap` |
+| valid over | 40 … 140 - |
+
+- **lower bound** — the lowest value this relation can return is 48, at G1. A bound at 40 sits just under it and refuses anything that would design to less than a minor storm, which is not a design case: the record has 1358 days at G1 or above, 47 a year
+- **upper bound** — the highest this relation can return is 132, at G3, which is the top of the declared G range. A bound at 140 sits just above it and catches a G level outside the range or a misread table. It does NOT bound the sky: the record's largest daily Ap is 273 and the five-year return level is 158.4, both above this bound, and neither passes through this row
+- **reads** — `sw_storm_design_level`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** The design value is BELOW what the record expects over the mission, and that is not a defect in either row — fails when the two are read as competing answers. At G3 this row gives 132; sw_storm_return_level at the declared five-year mission gives 158.4, and the record's days nearest that Ap all reached Kp_max 9. So the sky a five-year mission should expect is stronger than the sky the vehicle is sized for, by about 20 per cent in daily Ap. The gap is real and is closed by operations rather than by structure: 49 days in 29 years reach G4 and 16 reach G5, and a mission flies through those rather than being built for them. Both numbers belong in the tree precisely so the gap is on a row instead of in somebody's head
+- **assumes** The ceiling of the band, not its middle, and that choice is worth twice the number — fails when a typical G3 day is wanted rather than a bound. Days in the record whose Kp_max is exactly 7 have daily Ap from 15 to 96 with a median of 51 — so the typical G3 day is 51 and this row publishes 132. The ceiling is correct for sizing, because a design bound must hold for the worst day inside the level it claims, and 132 is the value a day would reach if all eight slots sat at Kp 7. It is conservative by construction: no G3 day in 29 years came within a third of it
+- **assumes** The published ap table is the conversion and it is not linear — fails when a G level is interpolated. The ap values at Kp 5, 6 and 7 are 48, 80 and 132 — ratios of 1.67 and 1.65, so the scale is close to geometric and a linear reading between levels is wrong by tens of nanotesla. The relation is a lookup on three integer levels and nothing between them is defined, which is why sw_storm_design_level is bounded to integers 1 to 3 and why this row does not interpolate
+- **assumes** Daily Ap ignores everything about the storm except its size — fails when duration or timing matters. A day at Ap 132 that recovers overnight and the first day of a three-day storm at the same Ap are the same number here. The atmosphere does not treat them alike — density lags the driver and a sustained storm heats the thermosphere far more than a single disturbed day — so a drag design taking this number alone gets the peak and not the integral. sw_event_duration carries the dwell for F10.7; nothing in this group yet carries it for Ap
+- **evidence** G2 moderate — Kp 6 — daily Ap bounded at 80 — expect 80 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
+- **evidence** G1 minor — Kp 5 — daily Ap bounded at 48 — expect 48 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
+- **evidence** G3 strong — Kp 7 — daily Ap bounded at 132, the declared default — expect 132 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
+
+The design-side companion to sw_storm_return_level. That row says what the record will present over the mission; this says what the vehicle is built for, from the G level sw_storm_design_level declares. At the default G3 the answer is 132 and the record's five-year expectation is 158.4, and the gap between them is the finding.
 
 ### `sw_band_coverage` — Stated band coverage
 
-> 
+> Does the stated 95 per cent band actually contain the truth 95 per cent of the time?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `C_band` |
+| type | `Ratio` |
+| unit | - |
 | kind | declared |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `C_band = fraction of pairs with F107(t+L) - F107(t) <= dF107_p95(L), pooled over the seventeen leads` |
+| source | `noaa_swpc` |
+| declared value | **0.9509267569** - |
+| confirmed by | A. Rai / 2026-09-14 |
+| valid over | 0.9 … 1 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — below 0.9 a band sold as 95 per cent would be missing the truth twice as often as it claims, and every margin built on sw_f107_design would be smaller than it reads. That is a defect in the percentile table, not a property of the sky, and it should stop a run
+- **upper bound** — a coverage cannot exceed 1. A value at exactly 1 would mean the band was never exceeded in 29 years, which for a 95th percentile would mean the table is far too wide and the design is paying for margin it does not need
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** It is an in-sample check and cannot be anything else on this record — fails when 0.9509 is read as out-of-sample validation. The percentiles in sw_uncertainty_growth were measured on these same pairs, so a coverage near 0.95 is close to arithmetic rather than evidence — it confirms the percentile was computed correctly, not that it will hold. What makes the number worth publishing is that it could have come back wrong: an off-by-one in the lead, a percentile taken on the absolute change rather than the signed one, or a table read at the wrong index would all show here. It is a check on the implementation, and it is honest about being only that
+- **assumes** The coverage is uniform across leads, which is the part that is evidence — fails when the pooled figure hides a bad lead. It does not: per-lead coverage runs from 0.949970 at 365 and 1826 days to 0.952425 at 2557 days, a spread of 0.0025 across seventeen leads spanning half a year to fifteen years. A table that was right at short leads and wrong at long ones would show as a drift and there is none. The pooled 0.9509 is therefore a fair summary rather than an average over disagreeing parts
+- **assumes** Signed, not absolute — this counts only the band being exceeded UPWARD — fails when a two-sided band is wanted. The growth percentile is the 95th of the SIGNED change, so this row asks how often F10.7 rose by more than the stated amount, and a large fall counts as inside the band. For a drag design that is the right test, because the unsafe direction is flux arriving higher than planned. A mission exposed to F10.7 being LOWER than planned — a power budget, for instance — is not checked by this row at all
+- **assumes** Pairs are massively overlapping, so the sample is far smaller than 128135 — fails when the count is read as independent evidence. Consecutive pairs at a given lead share all but one day, and at a lead of fifteen years two pairs a day apart are nearly the same measurement. The effective sample is closer to the number of independent intervals — the record divided by the lead, which at the longest leads is five or six — than to the 4838 to 9947 pairs each lead contributes. Nothing here is a confidence interval, and the third decimal place of 0.9509 means nothing
+
+Counted over 128135 day pairs at the same seventeen leads sw_uncertainty_growth is tabulated on. The answer is 0.9509 — the band is honest and very slightly conservative.
 
 ### `sw_central_expectation` — F10.7 central expectation at a lead
 
@@ -19312,45 +19377,62 @@ Zero at the cycle's start and one at its end. This is the row the whole cycle-de
 
 The correlation between cycles 23 and 24 after stacking both on phase. It is the credibility of sw_mean_cycle_level: that row hands a design a mean-cycle curve, and this row says how much a single cycle can be expected to look like it. The answer is that the SHAPE repeats and the AMPLITUDE does not, and a design that reads only the correlation will miss the second half.
 
-### `sw_event_duration` — Burst duration
+### `sw_event_duration` — F10.7 burst duration
 
-> 
+> Once F10.7 goes above the spike threshold, how long does it stay there?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `D_burst` |
+| type | `Time` |
+| unit | d |
 | kind | declared |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `D_burst = mean length of a run of consecutive days with F107/F107A >= S_thr = 3.3115 d` |
+| source | `noaa_swpc` |
+| declared value | **3.3114754098** d |
+| confirmed by | A. Rai / 2026-09-14 |
+| valid over | 1 … 10 d |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — a run is at least one day by construction, because a run of zero days is not an event. A value below 1 means the run-finding is broken rather than that events are short
+- **upper bound** — the longest run in 29 years is 10 days. A mean above it would exceed every single event the record contains, which no averaging can produce
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** A mean over a distribution that is not remotely symmetric — fails when the mean is used as a typical event. The 202 spike days fall into 61 runs: 24 of them are a single day, and the tail runs to 10. The distribution is 24 ones, 3 twos, 10 threes, 7 fours, 4 fives, 7 sixes, 2 sevens, 2 nines and 2 tens — so the modal event is one day and the mean is 3.31 because a handful of long bursts pull it up. The median is 3. A design that sizes on 3.31 days is sizing on neither the common case nor the bad one, and the bad one is what matters
+- **assumes** It is defined entirely by sw_spike_threshold and moves when that moves — fails when this row is quoted without the threshold beside it. At the declared 1.3049 the record gives 61 events averaging 3.31 days; a lower threshold merges neighbouring runs into longer ones and a higher one splits them. The two rows are one definition in two places, and a change to either without the other makes the pair incoherent
+- **assumes** A one-day gap ends an event, and that is a choice with no physics behind it — fails when the sky dips below the threshold for a day and comes back. Runs are broken on the first day that fails the test, so a two-week episode with one quiet day in the middle is counted as two events rather than one, shortening the mean. Allowing a one-day bridge would be as defensible and would give a different answer; nothing in the record says which is right, and this row states the rule rather than pretending the number is unique
+- **assumes** The 273 absent days can neither start nor end a run — fails when an event straddled 2017. observed_daily.csv is missing 2017-01-01 to 2017-09-30, so a burst in those nine months is absent, and a burst that ran into 2017-01-01 or out of 2017-09-30 is truncated at the gap rather than followed. With 61 events over the record, one or two truncations would move the mean by a tenth of a day, which is the order of the effect and is not corrected for
+
+The dwell that turns a threshold into an event. A design cares about duration rather than about the crossing, because a single elevated day and a week of them are different loads on a drag budget and on a power one.
 
 ### `sw_f107_81day` — F10.7 81-day centred mean
 
-> 
+> What 81-day centred mean F10.7 should a density model be given at the mission epoch?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | declared |
+| symbol | `F107A` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `F107A(epoch) = F107_cyc(phase(epoch))` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — the same floor as env_f107: below 60 sfu has never been observed and no relation reading F10.7 has support there
+- **upper bound** — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating. An 81-day mean is smoother than the daily value and the largest binned mean-cycle level is 165.3, so this bound is unreachable by the relation and catches a broken input
+- **reads** — `sw_mean_cycle_level`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** It is a prediction, not a centred mean, because there is nothing to centre on — fails when the epoch is inside the record and a caller expects the measured value. The declared epoch is day 9862 and the record ends at day 9496, so this row is 366 days beyond any observation and 407 days beyond the last day that could have a full centred window. What it returns is the mean of cycles 23 and 24 at the same phase — a climatology with two samples behind it — and the difference between that and a real 81-day mean is a whole cycle's individuality. sw_cycle_repeatability puts the shape agreement between those two cycles at 0.770 and the peak disagreement at 28 per cent
+- **assumes** The mean-cycle bin is 217 days wide and this row calls it an 81-day mean — fails when the smoothing width matters to the caller. sw_mean_cycle_level bins a cycle into twenty phase bins, which for cycle 23 is 217 days and for cycle 24 is 201 — between two and three times the 81-day window this row is named for. So the number is smoother than a true F10.7A, and a density model given it sees less structure than it would from the real driver. In the direction that matters the error is conservative for a design point and wrong for a time history: it cannot reproduce a rotation, because it is already averaged over eight of them
+- **assumes** A single day's F10.7 strays from this by about twelve per cent, one standard deviation — fails when F10.7A is used where the daily value belongs. Measured over 10284 days the ratio of daily F10.7 to its own 81-day centred mean has mean 0.999340 and standard deviation 0.122210, and reaches 2.11 at the extreme — sw_f107a_ratio carries that figure. Handing a density model F10.7A for both of its two drivers loses every spike the atmosphere actually felt
+- **evidence** the declared epoch's phase 0.619 — mean-cycle level 105.84 sfu — expect 105.8398 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the mean cycle's peak bin, phase 0.425 — 165.28 sfu — expect 165.2799 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the mean cycle's quietest bin, phase 0.975 — 67.65 sfu — expect 67.6538 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The second driver every empirical density model wants, beside the daily flux. At an epoch past the record it is a prediction rather than an observation, and the prediction is the mean cycle at that phase.
 
 ### `sw_f107_design` — F10.7 to design to
 
@@ -19381,6 +19463,34 @@ The correlation between cycles 23 and 24 after stacking both on phase. It is the
 - **evidence** fifteen years — the widest band the record supports — expect 229.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 
 One of the two numbers the subsystem exists to produce. The centre comes from sw_central_expectation, the spread from sw_uncertainty_growth, and the confidence is the 95th percentile that sw_uncertainty_growth publishes — so this is a value the mission should not exceed in 95% of histories, not a value it will see.
+
+### `sw_f107a_ratio` — Daily F10.7 scatter about F10.7A
+
+> How far does a single day's F10.7 stray from its own 81-day centred mean?
+
+| | |
+|---|---|
+| symbol | `sd_ratio` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `sd of F107 / F107A over the record = 0.122210` |
+| source | `noaa_swpc` |
+| declared value | **0.1222100376** - |
+| confirmed by | A. Rai / 2026-09-14 |
+| valid over | 0.05 … 0.25 - |
+
+- **lower bound** — below 0.05 the daily flux would sit within five per cent of its 81-day mean on a typical day, which would make the daily driver and the smoothed one interchangeable. The record's 99th percentile ratio is 1.371, so it is not
+- **upper bound** — above 0.25 the typical day would be a quarter away from its own baseline and the 81-day mean would not be describing the same quantity as the day. A value there means the window or the pairing is wrong rather than that the Sun is variable
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** The ratio is centred on one to six parts in ten thousand, and that is a check rather than a coincidence — fails when the 81-day window were not centred, or the record were trending within it. Measured over 10284 days the mean ratio is 0.999340. A centred mean is an unbiased estimate of the day at its centre, so a mean ratio at one is what a correct computation must produce, and a departure would have meant the window was trailing or misaligned. The 0.00066 shortfall is the record's own asymmetry — flux spikes up and decays down — surviving the average
+- **assumes** It is a standard deviation of a distribution that is not normal — fails when 0.1222 is used to build a symmetric interval. The ratio runs to 2.11 at the top, which is nine standard deviations above the mean, and cannot go below zero at all: the distribution is bounded on one side and has a long tail on the other. Two standard deviations does not mean 95 per cent here. The measured percentiles are 1.2188 at the 95th and 1.3711 at the 99th, which are the numbers to use for a band
+- **assumes** Pooled across the whole cycle, and the scatter is not constant across it — fails when a design at a known cycle phase wants the scatter it will actually see. Active regions produce the departures, so the ratio's spread is larger near maximum than near minimum, and this row averages a quiet 2008 with a busy 2002 into one number. The mean-cycle level at the epoch's phase is 105.8 sfu, so a twelve per cent scatter there is about 13 sfu — but that is the pooled twelve per cent applied at one phase, not a phase-conditioned measurement
+- **assumes** The 273 absent days are not in it — fails when the count is read as the whole record. The ratio is defined on 10284 of the 10592 calendar days the record spans: 273 are the 2017 gap, and the rest are days too near an end of the record for a full 81-day centred window to exist. No value is interpolated across the gap — a day whose window overlaps it uses the days that are there, and a day with fewer than 57 of its 81 is left undefined rather than computed from a short window
+
+The scatter of the daily driver about the smoothed one, as a ratio so it applies at any activity level. It is what sw_f107_81day cannot tell you and what a density model driven by a smoothed flux alone will miss.
 
 ### `sw_forecast_bias` — Issued-outlook F10.7 bias
 
@@ -19636,7 +19746,7 @@ sw_kp_from_ap applies the published scale as published, and the scale is defined
 - **lower bound** — the same floor as env_f107: below 60 sfu has never been observed and no relation reading F10.7 has support there
 - **upper bound** — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating. The largest binned mean is 165.3, so this bound is unreachable by the relation and catches a broken table
 - **reads** — `sw_cycle_phase`
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **read by** — `sw_f107_81day`
 - **assumes** Two cycles, stacked on phase, in twenty bins — fails when cycles 23 and 24 are the only complete ones in the record, so every bin is the mean of two cycles and nothing more. Two samples cannot separate a cycle's shape from a cycle's individuality: cycle 23 peaked at 196 sfu and cycle 24 at 146, a 34% difference, and this row averages them into one curve that matches neither. The bins hold 358 to 418 days each except the 0.775 bin, which holds 217 because the two cycles' lengths differ and the stacking leaves it thin
 - **assumes** It is a mean and not a band — fails when half the days at any phase sit above this line. It is the CENTRE for a design value, and sw_uncertainty_growth supplies the spread that makes it safe. Sizing anything on this row alone would be sizing on the average day of the average cycle, which is the one thing a mission is guaranteed not to get
 - **assumes** The curve is not symmetric and the asymmetry is real — fails when the mean rises from 71.8 sfu at phase 0.025 to 165.3 at 0.425 and falls to 67.7 by 0.975 — a fast rise and a slow decline, which is the known shape of a solar cycle and not a binning artefact. A design at phase 0.2 and one at phase 0.8 are both 'mid-cycle' and are owed 111 and 76 sfu respectively
@@ -19747,23 +19857,36 @@ The correlation at the recurrence lag sw_recurrence_lag reports. It says how muc
 
 ### `sw_regime` — Geomagnetic regime
 
-> 
+> Quiet, active or storm — which regime is this daily Ap in?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | declared |
+| symbol | `regime` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `regime(Ap) = 1 if Ap <= 6, 2 if Ap <= 25, 3 otherwise` |
+| source | `noaa_swpc` |
+| valid over | 1 … 3 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — 1 is quiet and is the lowest regime the mixture defines. Below it there is no label
+- **upper bound** — 3 is storm and is the highest. A fourth regime would be a different classifier than the one this row ports
+- **reads** — `sw_storm_return_level`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** It departs from the published table on 171 of 10299 days, deliberately — fails when parity with the study is what is wanted. Every one of the 171 is a day the mixture labelled 'storm' with an Ap of 0 or 1 and a Kp_max of 0 or 1, in 2006 to 2011. This row calls them quiet. On the other 10128 days it reproduces the published label exactly — the disagreement count against the corrected labels is zero, not small. Anyone reconciling against daily_regime.csv will find exactly these days and no others, and the sign of the disagreement is always the same: the table says storm where this row says quiet, never the reverse
+- **assumes** The only Ap this tree publishes is a design storm, so the quiet band is unreachable today — fails when somebody expects to see all three answers in a run. The input is sw_storm_return_level, whose declared range is 20 to 230, so in any run this node can only return active or storm — and at the declared five-year mission it returns 3. The relation carries all three branches because the classifier has three, and the day an ordinary Ap exists in the tree this row already handles it. That no such row exists is a fact about the tree and is worth noticing rather than working around
+- **assumes** Three bands on one variable, which is all the study's mixture turned out to be — fails when a regime is expected to depend on anything but today's Ap. It does not: no history, no rate of change, no F10.7. A day at Ap 26 on the way up and a day at Ap 26 on the way down are the same regime here, and a storm's recovery day is labelled by its level rather than by what it is recovering from. That is the study's model and this row is a port of it, not an improvement on it
+- **assumes** The boundaries are exact integers and the published confidences are discarded — fails when a caller wants to know how sure the label is. daily_regime.csv carries a posterior per day — mean 0.550 for quiet, 0.580 for active, 0.705 for storm, with 21 per cent of quiet days below 0.5 — and this row publishes one number with no confidence beside it. The bands being exact makes the LABEL certain given the Ap; it does not make the label right. A day at Ap 26 is one unit from being called active and the study was only 55 to 70 per cent sure of its labels on average
+- **evidence** Ap 158.38 — the five-year return level — storm, as the table labels every day near it — expect 3 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+- **evidence** Ap 20 — the bottom of the producer's range — active; the table labels all 20s active — expect 2 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+- **evidence** Ap 25 — the last active value in the published table; 26 is the first storm — expect 2 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+- **evidence** Ap 26 — the first storm value in the published table, and the boundary that matters — expect 3 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+- **evidence** Ap 132 — the G3 design value — storm — expect 3 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+- **evidence** Ap 230 — the top of the producer's range — storm — expect 3 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+
+1 is quiet, 2 is active, 3 is storm, in the order the study's own mixture put them. A number rather than a name because the interface carries numbers; the bands are integers and the boundaries are exact, so the encoding loses nothing.
 
 ### `sw_semiannual_amplitude` — Semiannual Ap amplitude
 
@@ -19793,25 +19916,60 @@ The correlation at the recurrence lag sw_recurrence_lag reports. It says how muc
 
 Geomagnetic activity is higher near the equinoxes than near the solstices — the equinoctial or Russell-McPherron effect, from the changing angle between the interplanetary field and the geomagnetic dipole. This row says how big that seasonal swing is in Ap. It matters for a drag design because Ap drives the density model, but the size of the effect is the point: it moves the mean by about a tenth and predicts almost nothing about a given day.
 
-### `sw_spike_threshold` — Spike threshold
+### `sw_spike_threshold` — F10.7 spike threshold
 
-> 
+> How far above its own 81-day mean must F10.7 rise to count as a spike?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `S_thr` |
+| type | `Ratio` |
+| unit | - |
 | kind | declared |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `spike when F107 / F107A >= mean + 2.5*sd = 1.3049` |
+| source | `noaa_swpc` |
+| declared value | **1.3048655732** - |
+| confirmed by | A. Rai / 2026-09-14 |
+| valid over | 1.1 … 1.6 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — below 1.1 the threshold would sit inside one standard deviation of the ratio and catch roughly a fifth of all days. A fifth of the record is not a set of events, it is the weather, and every relation downstream that treats a spike as exceptional would be wrong
+- **upper bound** — above 1.6 nothing is caught: the largest ratio in 29 years is 2.109781 and only 30 days exceed 1.5. A threshold there would make the spike rows describe a handful of days and the event duration would be a statistic of three or four bursts
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** Two and a half standard deviations, and that multiplier is the whole definition — fails when somebody wants a spike count rather than a threshold. Over 10284 days the ratio F10.7 to its 81-day centred mean has mean 0.999340 and standard deviation 0.122210, so 2.5 sd lands at 1.304866 and catches 202 days — 1.96 per cent of the record, 6.97 a year. Moving the multiplier to 2.0 would catch about 6 per cent and to 3.0 about 1 per cent. Nothing in the physics picks 2.5; it is chosen because it sits near the 98th percentile, which is where a day stops being the tail of ordinary variation and starts being an event, and because it is a round number of standard deviations rather than a round number of per cent
+- **assumes** The ratio is very nearly centred on one, which is what makes a symmetric threshold legitimate — fails when the 81-day window is not centred, or is too short to be a baseline. Measured, the mean ratio is 0.999340 — six parts in ten thousand below one — so the centred mean is an unbiased baseline for the day at its centre. A trailing 81-day mean would sit below the current day during a rise and the same multiplier would then catch rises and miss falls. This row's baseline is CENTRED, which means it cannot be computed in real time: it needs 40 days of future. It is a descriptive threshold for a record, not an operational trigger
+- **assumes** It says nothing about the dwell, only the level — fails when a design needs to know how long the sky stays there. A threshold is an instant test and 202 days of the record pass it; they arrive in 61 separate events with a mean length of 3.31 days, which is sw_event_duration's business. The two rows are a pair and neither is usable alone: a threshold with no duration sizes nothing, and a duration with no threshold is not defined
+- **assumes** The 273 absent days cannot spike, and nine months is long enough to matter — fails when the count is read as complete. observed_daily.csv is missing 2017-01-01 to 2017-09-30 entirely, so any spike in those nine months is absent from both the 202 and the 61. 2017 sat on cycle 24's decline where F10.7 was low and the ratio's own scatter was small, so the loss is probably small — but it is a loss, and the per-year figures are over a nominal 29 years that is really 28.25
+
+A spike is a day the smooth cycle does not explain. F10.7 is measured against its own 81-day centred mean rather than against a fixed level, because 150 sfu is an ordinary day at solar maximum and an extraordinary one at minimum. The threshold is the record's own scatter, not a number picked to look round.
+
+### `sw_storm_design_level` — Storm level designed for
+
+> Which NOAA G level is this design built to survive?
+
+| | |
+|---|---|
+| symbol | `G_design` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `G_design = 3   (NOAA G3, strong, Kp 7)` |
+| source | `noaa_swpc` |
+| declared value | **3** - |
+| confirmed by | A. Rai / 2026-09-14 |
+| valid over | 1 … 3 - |
+
+- **lower bound** — G1 is the bottom of the NOAA scale. Below it there is no storm to design for — Kp 4 is 'active' and is where alerts begin, which sw_alert_threshold carries, not where storms do
+- **upper bound** — G3 is the highest level this vehicle class is sized for. G4 occurs on 49 days in 29 years and G5 on 16, and both are handled by operating through the event rather than by building for it. A design that genuinely requires G4 changes this bound on purpose and re-runs the closure
+- **read by** — `sw_ap_design`
+- **assumes** G3 is a choice and the record says a five-year mission will exceed it — fails when the choice is read as sufficient. sw_storm_return_level, fitted on the record and read at the declared five-year mission, gives a daily Ap of 158.4; the days in the record nearest that value all reached Kp_max 9, which is G5. So the storm a five-year mission should expect is two levels above what this row designs to. That is not an error in either row — it is the gap between what the sky does and what a vehicle can be built for, and putting both numbers in the tree is the point. What closes it is operations, not structure
+- **assumes** The scale is on Kp and the design quantity is daily Ap, which are not the same measurement — fails when a G level is converted to a daily Ap as though the mapping were exact. Kp is three-hourly and the G level is the WORST slot in a day; daily Ap is the mean of eight slots. So a G3 day has one slot at Kp 7 and seven that may be anything below it, and the record shows exactly that spread: days whose Kp_max is 7 run from daily Ap 15 to 96, median 51. sw_ap_design takes the ceiling of that band rather than its median, and the sheet there says why
+- **assumes** Stopping at 3 is a statement about this vehicle class, not about the scale — fails when a mission that must survive G4 or G5 reads this row. The declared range refuses 4 and 5 rather than letting them be selected quietly, because a design sized for G4 is a different vehicle and the rest of this group's numbers — the return level, the band, the requirement — would all need revisiting together. A mission with that requirement should change this bound deliberately and re-run the closure, which is a visible act
+
+1, 2 or 3 on the G scale — minor, moderate or strong. It is the switch: sw_ap_design reads it and turns it into a daily Ap, so moving this row is how a design asks what a different storm level would cost. Default G3.
 
 ### `sw_storm_rate` — Days a year above a Kp threshold
 
@@ -19871,7 +20029,7 @@ The row that tells a reader what a declared Kp costs. env_kp declares Kp = 3 by 
 - **lower bound** — ap is an equivalent amplitude in nanotesla. Below 20 the answer is not a storm at all — the record's median day is 7 — so a return level under it means the input or the fit reached somewhere neither was meant to go
 - **upper bound** — THE BOUND IS THE RECORD'S LENGTH, NOT THE TABLE'S END. The fit evaluated at a return period equal to the record itself, 28.1971 years, is Ap 229.18; 230 is the first round number above it, so a return period beyond the record refuses instead of answering. The previous bound was 400 — the last point of the published ap/Kp table — which first bites at a return period of 1832 years, sixty-five times the record, and so enforced nothing: this node would answer a once-per-century question with Ap 281 while its own assumptions said a century needs a longer record. Note that 230 is BELOW the record's largest single day, Ap 273: rank 1 sits above the log-linear trend and was deliberately left out of the fitting range, so the fit does not chase it. This bound is the fit's own reach, not the record's extreme
 - **reads** — `orbit_mission_duration`
-- **read by** — `l3_solar_ach_03`, `sw_kp_from_ap`, `sw_kp_slot_bias`
+- **read by** — `l3_solar_ach_03`, `sw_kp_from_ap`, `sw_kp_slot_bias`, `sw_regime`
 - **assumes** The tail is log-linear in the return period, with the two coefficients fitted on this record — fails when the form is a choice, not the source's. Fitted over ranks 2 to 56 of the record, which is return periods 0.5035 to 14.0986 years; it carries a residual rms of 4.95 Ap against the empirical curve, worst +8.6 and -12.9. A power law on the same points is more than twice as bad (rms 9.10, worst -47.7), which is why this form and not that one. Anyone who needs the empirical step rather than a smooth curve should read the record, not this row.
 - **assumes** 28.2 years of record support the whole curve, and its top end rests on two observations — fails when the empirical method cannot see past its own record length. At T = 15 years the answer is fitted through the second-largest daily Ap in 28.2 years, and at T = 10 years the third; the record's largest value, Ap 273, has an apparent return period of exactly 28.2 years for no reason other than that it is the largest thing in 28.2 years. The fitted domain is 0.5035 to 14.0986 years, and the declared input range 0.5 to 15 years reaches past BOTH ends of it: the curve is extrapolated by 0.285 Ap at a half-year mission and by 2.54 Ap at a fifteen-year one, because there is no rank between 1 and 2 and rank 1 is the record length itself. Small, but it is an extrapolation and an earlier version of this sheet claimed it was never one. A mission at the 15-year bound is being sized on a curve whose top is two data points. A design that needs the once-per-century storm needs a longer record or a fitted extreme-value model, not this row.
 - **assumes** Every day in the record is treated as an independent draw — fails when storms cluster — a coronal hole returns once per solar rotation and a single event runs for more than one day — so the record holds fewer independent storms than it holds storm days. Clustering does not bias the exceedance level itself, which is a quantile of the marginal distribution, but it does mean the effective sample behind the tail is smaller than N and the uncertainty on the answer is wider than the residual above suggests. sw_event_duration and sw_recurrence_lag measure the clustering; neither is written yet.

@@ -1,8 +1,8 @@
-<article class="node" data-node="sw_event_duration" data-sheet-hash="e58fc5" data-impl-hash="222325">
+<article class="node" data-node="sw_event_duration" data-sheet-hash="24ed52" data-impl-hash="222325">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>Burst duration</h2>
-  <p class="ident"><code>sw_event_duration</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <h2>F10.7 burst duration</h2>
+  <p class="ident"><code>sw_event_duration</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
@@ -15,29 +15,92 @@
   <button role="tab" class="tab" data-tab="7">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">Once F10.7 goes above the spike threshold, how long does it stay there?</p>
+<p class="maths"><code>D_burst = mean length of a run of consecutive days with F107/F107A &gt;= S_thr = 3.3115 d</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The dwell that turns a threshold into an event. A design cares about duration rather than about the crossing, because a single elevated day and a week of them are different loads on a drag budget and on a power one.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>A mean over a distribution that is not remotely symmetric</dt><dd>fails when the mean is used as a typical event. The 202 spike days fall into 61 runs: 24 of them are a single day, and the tail runs to 10. The distribution is 24 ones, 3 twos, 10 threes, 7 fours, 4 fives, 7 sixes, 2 sevens, 2 nines and 2 tens — so the modal event is one day and the mean is 3.31 because a handful of long bursts pull it up. The median is 3. A design that sizes on 3.31 days is sizing on neither the common case nor the bad one, and the bad one is what matters</dd>
+<dt>It is defined entirely by sw_spike_threshold and moves when that moves</dt><dd>fails when this row is quoted without the threshold beside it. At the declared 1.3049 the record gives 61 events averaging 3.31 days; a lower threshold merges neighbouring runs into longer ones and a higher one splits them. The two rows are one definition in two places, and a change to either without the other makes the pair incoherent</dd>
+<dt>A one-day gap ends an event, and that is a choice with no physics behind it</dt><dd>fails when the sky dips below the threshold for a day and comes back. Runs are broken on the first day that fails the test, so a two-week episode with one quiet day in the middle is counted as two events rather than one, shortening the mean. Allowing a one-day bridge would be as defensible and would give a different answer; nothing in the record says which is right, and this row states the rule rather than pretending the number is unique</dd>
+<dt>The 273 absent days can neither start nor end a run</dt><dd>fails when an event straddled 2017. observed_daily.csv is missing 2017-01-01 to 2017-09-30, so a burst in those nine months is absent, and a burst that ran into 2017-01-01 or out of 2017-09-30 is truncated at the gap rather than followed. With 61 events over the record, one or two truncations would move the mean by a tenth of a day, which is the order of the effect and is not corrected for</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sw_event_duration</td><td></td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>D_burst</code></td><td>sw_event_duration</td><td>Time</td><td>d</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
 <section class="panel" data-panel="2">
 <p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>0</b> -, confirmed by <b></b>.</p>
+<p>This is a declared value: <b>3.3114754098</b> d, confirmed by <b>A. Rai / 2026-09-14</b>.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>D_burst &ge; 1</code> — a run is at least one day by construction, because a run of zero days is not an event. A value below 1 means the run-finding is broken rather than that events are short</li>
+<li><code>D_burst &le; 10</code> — the longest run in 29 years is 10 days. A mean above it would exceed every single event the record contains, which no averaging can produce</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// Once F10.7 goes above the spike threshold, how long does it stay there?
+///
+/// `D_burst = mean length of a run of consecutive days with F107/F107A &gt;= S_thr = 3.3115 d`
+///
+/// Source: `noaa_swpc`
+///
+/// The dwell that turns a threshold into an event. A design cares about
+/// duration rather than about the crossing, because a single elevated day and
+/// a week of them are different loads on a drag budget and on a power one.
+///
+/// # Assumptions
+///
+/// * A mean over a distribution that is not remotely symmetric — fails when the mean is used as a typical event. The 202 spike days fall into 61 runs: 24 of them are a single day, and the tail runs to 10. The distribution is 24 ones, 3 twos, 10 threes, 7 fours, 4 fives, 7 sixes, 2 sevens, 2 nines and 2 tens — so the modal event is one day and the mean is 3.31 because a handful of long bursts pull it up. The median is 3. A design that sizes on 3.31 days is sizing on neither the common case nor the bad one, and the bad one is what matters
+/// * It is defined entirely by sw_spike_threshold and moves when that moves — fails when this row is quoted without the threshold beside it. At the declared 1.3049 the record gives 61 events averaging 3.31 days; a lower threshold merges neighbouring runs into longer ones and a higher one splits them. The two rows are one definition in two places, and a change to either without the other makes the pair incoherent
+/// * A one-day gap ends an event, and that is a choice with no physics behind it — fails when the sky dips below the threshold for a day and comes back. Runs are broken on the first day that fails the test, so a two-week episode with one quiet day in the middle is counted as two events rather than one, shortening the mean. Allowing a one-day bridge would be as defensible and would give a different answer; nothing in the record says which is right, and this row states the rule rather than pretending the number is unique
+/// * The 273 absent days can neither start nor end a run — fails when an event straddled 2017. observed_daily.csv is missing 2017-01-01 to 2017-09-30, so a burst in those nine months is absent, and a burst that ran into 2017-01-01 or out of 2017-09-30 is truncated at the gap rather than followed. With 61 events over the record, one or two truncations would move the mean by a tenth of a day, which is the order of the effect and is not corrected for
+pub const NODE_ID: &amp;str = &quot;sw_event_duration&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xb9465a7d1124ed52;
+
+pub fn evaluate() -&gt; Result&lt;Time, Fault&gt; {
+    // generated · a declared value, converted from the unit it was written in
+    let declared: Time = match Time::from_unit(3.3114754098, Unit::Day) {
+        Some(q) =&gt; q,
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;D_burst&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+    };
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Time = declared;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;D_burst&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 86400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;D_burst&quot;, value: answer.get(), bound: 86400.0, edge: Edge::Lower, unit: Time::UNIT, reason: &quot;a run is at least one day by construction, because a run of zero days is not an event. A value below 1 means the run-finding is broken rather than that events are short&quot; });
+    }
+    if answer.get() &gt; 864000.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;D_burst&quot;, value: answer.get(), bound: 864000.0, edge: Edge::Upper, unit: Time::UNIT, reason: &quot;the longest run in 29 years is 10 days. A mean above it would exceed every single event the record contains, which no averaging can produce&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
 </section>
 <section class="panel" data-panel="4">
 <p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
@@ -45,24 +108,21 @@
 <section class="panel" data-panel="5">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 1 — a run is at least one day by construction, because a run of zero days is not an event. A value below 1 means the run-finding is broken rather than that events are short</li>
+<li><code>OutOfDomain</code> above 10 — the longest run in 29 years is 10 days. A mean above it would exceed every single event the record contains, which no averaging can produce</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
 <section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_event_duration"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
 <section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
+<p>Valid over <code>1 &hellip; 10</code> d.</p>
+<ul class="guards"><li>lower — a run is at least one day by construction, because a run of zero days is not an event. A value below 1 means the run-finding is broken rather than that events are short</li><li>upper — the longest run in 29 years is 10 days. A mean above it would exceed every single event the record contains, which no averaging can produce</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
-<section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
-</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>
