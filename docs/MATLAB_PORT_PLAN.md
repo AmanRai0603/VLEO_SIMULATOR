@@ -638,6 +638,58 @@ figure is not a row, and this repository already has the better home for one.
 Steps 1 and 2 are the only ones that must happen in that order. From step 3 the
 nodes are independent enough to reorder if something proves harder than it looks.
 
+### Two rows the tree cannot carry yet, and nine nodes waiting on them
+
+Building the group turned up the same wall four times, so it is written here
+once rather than discovered a fifth time. **Nine of the sixteen unwritten rows
+are blocked on two declared values that do not exist**, and each is a single
+number a person has to confirm.
+
+**A mission epoch — a date.** `sys_mission_requirements_mission_epoch` exists at
+layer 2 and is seeded, and no derivation edge in this repository crosses a layer,
+so a layer-3 row cannot read it even once it is written. Without a date the
+subsystem cannot compute a cycle number, a cycle phase, a mean-cycle level, an
+81-day centred mean, a semiannual amplitude, or `prf_apdesign`'s dated model —
+and `sw_central_expectation` already carries the consequence as a declared
+limitation: it uses the record's unconditional mean, so it cannot tell solar
+maximum from solar minimum on a record running 64 to 343 sfu.
+
+**A forecast lead — days.** `sw_forecast_skill`, `sw_forecast_bias` and
+`sw_band_coverage` are all functions of how far ahead the forecast looks, which
+is 1 to 27 days. The only Time row a solar node can reach is
+`orbit_mission_duration`, declared 0.5 to 15 years, so feeding it would clamp
+every answer to the 27-day end of the table and return one number forever. There
+is no row for a lead and inventing one needs a confirmed value.
+
+What is NOT blocked, and was written instead: every row whose input is an
+existing declared value or another written row. That turned out to be ten of the
+twenty-six plus the interface.
+
+### The issued 27-day outlook, measured — two findings worth a row each
+
+`forecast_issued.csv` was verified against the observed record even though the
+two rows that would publish it are blocked, because the findings stand on their
+own and the next person should not have to rediscover them.
+
+**The outlook is biased LOW at every lead**, by 0.6 sfu at one day worsening to
+6.0 sfu at twenty-seven. For a drag design that is the unsafe direction:
+under-predicted flux gives under-predicted density and under-sized drag.
+
+**It loses to persistence for the first four days.** Skill against a persistence
+baseline, as 1 - RMSE_forecast/RMSE_persistence, is -0.52 at a one-day lead —
+the bulletin's RMSE is 10.33 sfu against persistence's 6.79. It becomes useful at
+lead 5, peaks at +0.24 around leads 13 to 14, and goes negative again from lead
+24. So the published outlook is worth having over a window in the middle and is
+worse than yesterday's number at the start of it.
+
+**And `lead_days` in that table is not all forecast.** Every issue carries
+exactly 27 rows and the lead is `target_date - issue_date`, so 742 of the 1,285
+issues contain leads of zero or negative — the bulletin was published after its
+own window had begun, and those rows are a record of days already past. 109 rows
+are negative, 729 are zero, and 39 sit between 60 and 392 days, which one issue
+(prf 1157) accounts for and which cannot be a 27-day outlook at all. Any use of
+this table must filter to leads 1 to 27; the measurements above do.
+
 ### What step 3 corrected about this table: steps 3 and 4 are the wrong way round
 
 The claim above that the nodes are independent from step 3 is wrong. A computed

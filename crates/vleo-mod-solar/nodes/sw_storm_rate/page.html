@@ -1,8 +1,8 @@
-<article class="node" data-node="sw_storm_rate" data-sheet-hash="8817a8" data-impl-hash="222325">
+<article class="node" data-node="sw_storm_rate" data-sheet-hash="490e21" data-impl-hash="490bfd">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>Storm rate</h2>
-  <p class="ident"><code>sw_storm_rate</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <h2>Days a year above a Kp threshold</h2>
+  <p class="ident"><code>sw_storm_rate</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
@@ -15,54 +15,203 @@
   <button role="tab" class="tab" data-tab="7">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">How many days a year does the real sky exceed this Kp?</p>
+<p class="maths"><code>rate(Kp) = days per year with Ap &gt; ap(Kp), measured over the record</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The row that tells a reader what a declared Kp costs. env_kp declares Kp = 3 by hand, and this says the record exceeds it on 63.6 days a year — more than two months of every year. It takes a Kp rather than an Ap because the Kp is what the design declares and what the atmosphere model reads.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>Tabulated at the published scale's own 28 values, so the interpolation has almost nowhere to go</dt><dd>fails when the rate falls by four orders of magnitude across the scale — 364 days a year above Kp 0, 0.04 above Kp 8 — so interpolating it linearly between INTEGER Kp would overstate the rate badly in the middle of each interval. Measuring at all 28 published values instead leaves at most one third of a Kp unit between points, which is the granularity the scale itself has. Within that the answer is still a straight line and still this node's choice, not the record's.</dd>
+<dt>The top of the scale reads zero, and zero here means NOT OBSERVED rather than impossible</dt><dd>fails when the record holds no day above Ap 300, so the rate at Kp 8.67 and Kp 9 is measured as 0.0 days a year. That is 28.2 years of evidence, not a statement about the Sun: a Kp 9 day is a real and documented kind of event and this record simply does not contain one. Reading 0.0 as 'cannot happen' would be the worst possible misuse of this row, and a design sized on it would carry no allowance for the largest storms at all. Kp 8 already rests on a single day.</dd>
+<dt>It counts DAYS, not storms, and a storm lasts more than a day</dt><dd>fails when consecutive disturbed days are counted separately, so 63.6 days a year above Kp 3 is not 63.6 storms a year — it is fewer, longer events. sw_event_duration would give the mean length needed to convert one into the other and is not written. Anyone reading this as an event count will overestimate how often the sky is disturbed AND underestimate how long it stays that way.</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sw_storm_rate</td><td></td><td>-</td></tr>
+<tr><td>in</td><td><code>kp</code></td><td><a class="xref" data-goto="env_kp">env_kp</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>rate</code></td><td>sw_storm_rate</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
 <section class="panel" data-panel="2">
-<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>0</b> -, confirmed by <b></b>.</p>
+<ol class="algo">
+<li><span class="step">read the measured exceedance rate at this Kp, tabulated at the published scale's own values</span> <span class="binds">→ <code>r: Ratio</code></span></li>
+</ol>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>rate &ge; 0</code> — a count of days cannot be negative. Zero is reachable and is the measured value at the top of the scale, which the assumptions say means not observed in 28.2 years rather than impossible</li>
+<li><code>rate &le; 366</code> — there are at most 366 days in a year, so a rate above that is a counting error rather than a sky. The largest measured entry is 364.15 days a year above Kp 0, which is every day the record has an Ap at all</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How many days a year does the real sky exceed this Kp?
+///
+/// `rate(Kp) = days per year with Ap &gt; ap(Kp), measured over the record`
+///
+/// Source: `noaa_swpc`
+///
+/// The row that tells a reader what a declared Kp costs. env_kp declares Kp =
+/// 3 by hand, and this says the record exceeds it on 63.6 days a year —
+/// more than two months of every year. It takes a Kp rather than an Ap
+/// because the Kp is what the design declares and what the atmosphere model
+/// reads.
+///
+/// # Assumptions
+///
+/// * Tabulated at the published scale's own 28 values, so the interpolation has almost nowhere to go — fails when the rate falls by four orders of magnitude across the scale — 364 days a year above Kp 0, 0.04 above Kp 8 — so interpolating it linearly between INTEGER Kp would overstate the rate badly in the middle of each interval. Measuring at all 28 published values instead leaves at most one third of a Kp unit between points, which is the granularity the scale itself has. Within that the answer is still a straight line and still this node's choice, not the record's.
+/// * The top of the scale reads zero, and zero here means NOT OBSERVED rather than impossible — fails when the record holds no day above Ap 300, so the rate at Kp 8.67 and Kp 9 is measured as 0.0 days a year. That is 28.2 years of evidence, not a statement about the Sun: a Kp 9 day is a real and documented kind of event and this record simply does not contain one. Reading 0.0 as 'cannot happen' would be the worst possible misuse of this row, and a design sized on it would carry no allowance for the largest storms at all. Kp 8 already rests on a single day.
+/// * It counts DAYS, not storms, and a storm lasts more than a day — fails when consecutive disturbed days are counted separately, so 63.6 days a year above Kp 3 is not 63.6 storms a year — it is fewer, longer events. sw_event_duration would give the mean length needed to convert one into the other and is not written. Anyone reading this as an event count will overestimate how often the sky is disturbed AND underestimate how long it stays that way.
+pub const NODE_ID: &amp;str = &quot;sw_storm_rate&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x277914b0f3490e21;
+
+pub fn evaluate(kp: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : read the measured exceedance rate at this Kp, tabulated at the published scale's own values -&gt; Ratio
+    // The exceedance rate at each of the 28 PUBLISHED Kp values, counted on
+    // solar-weather@2026.09.14: days whose daily Ap exceeds that Kp's tabulated ap,
+    // per year of record. Tabulating at the scale's own resolution leaves at most a
+    // third of a Kp unit for the interpolation to be wrong in, which matters because
+    // the rate falls four orders of magnitude from end to end.
+    //
+    // The last two entries are 0.0, and the sheet is emphatic that this means the
+    // record contains no such day rather than that no such day occurs.
+    use vleo_core::math::Table1;
+    const RATE: Table1 = Table1 {
+        x: &amp;[
+            0.0,
+            0.333333,
+            0.666667,
+            1.0,
+            1.333333,
+            1.666667,
+            2.0,
+            2.333333,
+            2.666667,
+            3.0,
+            3.333333,
+            3.666667,
+            4.0,
+            4.333333,
+            4.666667,
+            5.0,
+            5.333333,
+            5.666667,
+            6.0,
+            6.333333,
+            6.666667,
+            7.0,
+            7.333333,
+            7.666667,
+            8.0,
+            8.333333,
+            8.666667,
+            9.0,
+        ],
+        y: &amp;[
+            364.1506,
+            343.8648,
+            316.2024,
+            275.5245,
+            239.1733,
+            207.2552,
+            180.4794,
+            135.8649,
+            90.3993,
+            63.588,
+            45.572,
+            30.7478,
+            18.6898,
+            12.5899,
+            7.6958,
+            4.3621,
+            3.1209,
+            1.7378,
+            1.2413,
+            1.0285,
+            0.6738,
+            0.2837,
+            0.2483,
+            0.1419,
+            0.0355,
+            0.0355,
+            0.0,
+            0.0,
+        ],
+    };
+    let r: Ratio = Ratio::new(RATE.at(kp.get()));
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = r;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;rate&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;rate&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;a count of days cannot be negative. Zero is reachable and is the measured value at the top of the scale, which the assumptions say means not observed in 28.2 years rather than impossible&quot; });
+    }
+    if answer.get() &gt; 366.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;rate&quot;, value: answer.get(), bound: 366.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;there are at most 366 days in a year, so a rate above that is a counting error rather than a sky. The largest measured entry is 364.15 days a year above Kp 0, which is every day the record has an Ap at all&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
 </section>
 <section class="panel" data-panel="4">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="Kp 0 — ap 0 — the record exceeds it on 364.1506 days a year"><td>Kp 0 — ap 0 — the record exceeds it on 364.1506 days a year</td><td class="num">364.1506</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Kp 1 — ap 4 — the record exceeds it on 275.5245 days a year"><td>Kp 1 — ap 4 — the record exceeds it on 275.5245 days a year</td><td class="num">275.5245</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Kp 2 — ap 7 — the record exceeds it on 180.4794 days a year"><td>Kp 2 — ap 7 — the record exceeds it on 180.4794 days a year</td><td class="num">180.4794</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Kp 3 — ap 15 — the record exceeds it on 63.5880 days a year"><td>Kp 3 — ap 15 — the record exceeds it on 63.5880 days a year</td><td class="num">63.588</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Kp 4 — ap 27 — the record exceeds it on 18.6898 days a year"><td>Kp 4 — ap 27 — the record exceeds it on 18.6898 days a year</td><td class="num">18.6898</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Kp 5 — ap 48 — the record exceeds it on 4.3621 days a year"><td>Kp 5 — ap 48 — the record exceeds it on 4.3621 days a year</td><td class="num">4.3621</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Kp 6 — ap 80 — the record exceeds it on 1.2413 days a year"><td>Kp 6 — ap 80 — the record exceeds it on 1.2413 days a year</td><td class="num">1.2413</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Kp 7 — ap 132 — the record exceeds it on 0.2837 days a year"><td>Kp 7 — ap 132 — the record exceeds it on 0.2837 days a year</td><td class="num">0.2837</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Kp 8 — ap 207 — the record exceeds it on 0.0355 days a year"><td>Kp 8 — ap 207 — the record exceeds it on 0.0355 days a year</td><td class="num">0.0355</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Kp 9 — ap 400 — the record exceeds it on 0.0000 days a year"><td>Kp 9 — ap 400 — the record exceeds it on 0.0000 days a year</td><td class="num">0</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Kp 3.3333 — a third of a unit, which is the resolution this table is measured at"><td>Kp 3.3333 — a third of a unit, which is the resolution this table is measured at</td><td class="num">45.572</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Kp 7.6667 — a third of a unit, which is the resolution this table is measured at"><td>Kp 7.6667 — a third of a unit, which is the resolution this table is measured at</td><td class="num">0.1419</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the declared env_kp of 3 — 63.59 days a year, more than two months"><td>the declared env_kp of 3 — 63.59 days a year, more than two months</td><td class="num">63.588</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
 <section class="panel" data-panel="5">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 0 — a count of days cannot be negative. Zero is reachable and is the measured value at the top of the scale, which the assumptions say means not observed in 28.2 years rather than impossible</li>
+<li><code>OutOfDomain</code> above 366 — there are at most 366 days in a year, so a rate above that is a counting error rather than a sky. The largest measured entry is 364.15 days a year above Kp 0, which is every day the record has an Ap at all</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
 <section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_storm_rate"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
 <section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
-<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p>Valid over <code>0 &hellip; 366</code> -.</p>
+<ul class="guards"><li>lower — a count of days cannot be negative. Zero is reachable and is the measured value at the top of the scale, which the assumptions say means not observed in 28.2 years rather than impossible</li><li>upper — there are at most 366 days in a year, so a rate above that is a counting error rather than a sky. The largest measured entry is 364.15 days a year above Kp 0, which is every day the record has an Ap at all</li></ul>
+<div class="sweep" data-over="env_kp" data-points="60" data-y="sw_storm_rate"><p class="muted">Sweeps against <a class="xref" data-goto="env_kp">env_kp</a> over 60 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

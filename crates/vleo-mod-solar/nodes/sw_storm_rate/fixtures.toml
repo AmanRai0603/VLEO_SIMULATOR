@@ -1,0 +1,122 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# WHAT THESE ARE
+#
+# For each of the 28 published Kp values: the number of days in
+# bundles/solar-weather whose daily Ap exceeds that Kp's tabulated ap, divided
+# by the 28.197 years the record's 10,299 Ap days cover. Counted outside this
+# crate, from the record.
+#
+# The integer Kp are the ones worth reading, and they are pinned first. The two
+# ends are pinned because they are where the row is most likely to be misread:
+# 364.15 at Kp 0 is every day the record has, and 0.0 at Kp 9 is 28.2 years of
+# not seeing one rather than a statement that it cannot happen.
+
+[[fixture]]
+label = "Kp 0 — ap 0 — the record exceeds it on 364.1506 days a year"
+expect = 364.1506
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { kp = 0 }
+
+[[fixture]]
+label = "Kp 1 — ap 4 — the record exceeds it on 275.5245 days a year"
+expect = 275.5245
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { kp = 1 }
+
+[[fixture]]
+label = "Kp 2 — ap 7 — the record exceeds it on 180.4794 days a year"
+expect = 180.4794
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { kp = 2 }
+
+[[fixture]]
+label = "Kp 3 — ap 15 — the record exceeds it on 63.5880 days a year"
+expect = 63.588
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { kp = 3 }
+
+[[fixture]]
+label = "Kp 4 — ap 27 — the record exceeds it on 18.6898 days a year"
+expect = 18.6898
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { kp = 4 }
+
+[[fixture]]
+label = "Kp 5 — ap 48 — the record exceeds it on 4.3621 days a year"
+expect = 4.3621
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { kp = 5 }
+
+[[fixture]]
+label = "Kp 6 — ap 80 — the record exceeds it on 1.2413 days a year"
+expect = 1.2413
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { kp = 6 }
+
+[[fixture]]
+label = "Kp 7 — ap 132 — the record exceeds it on 0.2837 days a year"
+expect = 0.2837
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { kp = 7 }
+
+[[fixture]]
+label = "Kp 8 — ap 207 — the record exceeds it on 0.0355 days a year"
+expect = 0.0355
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { kp = 8 }
+
+[[fixture]]
+label = "Kp 9 — ap 400 — the record exceeds it on 0.0000 days a year"
+expect = 0
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { kp = 9 }
+
+[[fixture]]
+label = "Kp 3.3333 — a third of a unit, which is the resolution this table is measured at"
+expect = 45.572
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { kp = 3.333333 }
+
+[[fixture]]
+label = "Kp 7.6667 — a third of a unit, which is the resolution this table is measured at"
+expect = 0.1419
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { kp = 7.666667 }
+
+[[fixture]]
+label = "the declared env_kp of 3 — 63.59 days a year, more than two months"
+expect = 63.588
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { kp = 3.0 }

@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1361 rows** — 661 a person picked, 700 worked out. Two thirds of any design tree is
+**1361 rows** — 660 a person picked, 701 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -2649,7 +2649,7 @@ Separate from the daily value on purpose: the mean sets where the atmosphere sit
 
 - **lower bound** — Kp is defined on 0..9; a negative index is not a quiet day, it is a unit error
 - **upper bound** — Kp is defined on 0..9. This is the guard that catches an Ap value passed in by mistake, which would otherwise return an exospheric temperature of 1e18 K without complaint
-- **read by** — `env_density_uncertainty`, `env_exospheric_temperature`
+- **read by** — `env_density_uncertainty`, `env_exospheric_temperature`, `sw_storm_rate`
 
 ### `env_local_temperature` — Local kinetic temperature
 
@@ -19664,25 +19664,44 @@ sw_kp_from_ap applies the published scale as published, and the scale is defined
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
-### `sw_storm_rate` — Storm rate
+### `sw_storm_rate` — Days a year above a Kp threshold
 
-> 
+> How many days a year does the real sky exceed this Kp?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | declared |
+| symbol | `rate` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `rate(Kp) = days per year with Ap > ap(Kp), measured over the record` |
+| source | `noaa_swpc` |
+| valid over | 0 … 366 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — a count of days cannot be negative. Zero is reachable and is the measured value at the top of the scale, which the assumptions say means not observed in 28.2 years rather than impossible
+- **upper bound** — there are at most 366 days in a year, so a rate above that is a counting error rather than a sky. The largest measured entry is 364.15 days a year above Kp 0, which is every day the record has an Ap at all
+- **reads** — `env_kp`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** Tabulated at the published scale's own 28 values, so the interpolation has almost nowhere to go — fails when the rate falls by four orders of magnitude across the scale — 364 days a year above Kp 0, 0.04 above Kp 8 — so interpolating it linearly between INTEGER Kp would overstate the rate badly in the middle of each interval. Measuring at all 28 published values instead leaves at most one third of a Kp unit between points, which is the granularity the scale itself has. Within that the answer is still a straight line and still this node's choice, not the record's.
+- **assumes** The top of the scale reads zero, and zero here means NOT OBSERVED rather than impossible — fails when the record holds no day above Ap 300, so the rate at Kp 8.67 and Kp 9 is measured as 0.0 days a year. That is 28.2 years of evidence, not a statement about the Sun: a Kp 9 day is a real and documented kind of event and this record simply does not contain one. Reading 0.0 as 'cannot happen' would be the worst possible misuse of this row, and a design sized on it would carry no allowance for the largest storms at all. Kp 8 already rests on a single day.
+- **assumes** It counts DAYS, not storms, and a storm lasts more than a day — fails when consecutive disturbed days are counted separately, so 63.6 days a year above Kp 3 is not 63.6 storms a year — it is fewer, longer events. sw_event_duration would give the mean length needed to convert one into the other and is not written. Anyone reading this as an event count will overestimate how often the sky is disturbed AND underestimate how long it stays that way.
+- **evidence** Kp 0 — ap 0 — the record exceeds it on 364.1506 days a year — expect 364.1506 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Kp 1 — ap 4 — the record exceeds it on 275.5245 days a year — expect 275.5245 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Kp 2 — ap 7 — the record exceeds it on 180.4794 days a year — expect 180.4794 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Kp 3 — ap 15 — the record exceeds it on 63.5880 days a year — expect 63.588 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Kp 4 — ap 27 — the record exceeds it on 18.6898 days a year — expect 18.6898 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Kp 5 — ap 48 — the record exceeds it on 4.3621 days a year — expect 4.3621 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Kp 6 — ap 80 — the record exceeds it on 1.2413 days a year — expect 1.2413 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Kp 7 — ap 132 — the record exceeds it on 0.2837 days a year — expect 0.2837 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Kp 8 — ap 207 — the record exceeds it on 0.0355 days a year — expect 0.0355 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Kp 9 — ap 400 — the record exceeds it on 0.0000 days a year — expect 0 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Kp 3.3333 — a third of a unit, which is the resolution this table is measured at — expect 45.572 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Kp 7.6667 — a third of a unit, which is the resolution this table is measured at — expect 0.1419 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the declared env_kp of 3 — 63.59 days a year, more than two months — expect 63.588 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The row that tells a reader what a declared Kp costs. env_kp declares Kp = 3 by hand, and this says the record exceeds it on 63.6 days a year — more than two months of every year. It takes a Kp rather than an Ap because the Kp is what the design declares and what the atmosphere model reads.
 
 ### `sw_storm_return_level` — Ap at a storm return period
 
