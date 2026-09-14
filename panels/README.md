@@ -50,6 +50,38 @@ every time regardless of the data.
 `tolerance`. Recorded with `--record` by a person who has looked at the picture
 and agrees with it; a reference nobody looked at is a snapshot of a bug.
 
+## A canvas needs different eyes
+
+The first three panels all build DOM, so both "is it empty" and "did it change"
+read `innerHTML`. A `<canvas>` has empty `innerHTML` by specification and never
+changes, so for as long as that was the only test, **the one real chart in this
+repository could not be checked at all** — declaring it reported
+`canvas.sw-plot is still empty after the page settled` and stopped there. Three
+structural diagrams were checked; the plot was not, and every node whose
+`[view]` is a line is drawn by it.
+
+A canvas mount is now compared on its rendered pixels — `toDataURL()` — for both
+checks. "Empty" means equal to a fresh canvas of the same size, which is exact
+and needs no threshold. The selftest carries both failures on a canvas panel as
+well as on a DOM one, because the DOM pair passed happily while the gap was
+open.
+
+Two smaller changes came with it:
+
+`ready` — JavaScript run after the page loads and **before** the three checks,
+for a panel that does not draw until somebody asks. The sweep is the example:
+its canvas is created hidden and blank, so checking it at the state the page
+opens in would report a defect that is the panel working as designed. `ready` is
+not `reference_state`: that one runs just before the screenshot, this one before
+anything is checked.
+
+`settle_ms` — check two now waits for the content to *change*, up to this many
+milliseconds, instead of sleeping a fixed 250 ms and comparing. A fixed pause
+has to be long enough for the slowest panel, and a panel that redraws behind a
+fetch is slower than any pause anyone would write. Waiting on the condition is
+faster when it is quick and correct when it is not; a panel wired to nothing
+still fails, it just fails after the timeout rather than before it.
+
 ## Why `correct` is prose
 
 Checks one and two are mechanical and catch the mechanical failures. `correct`

@@ -1,0 +1,69 @@
+id = "sweep"
+label = "The behaviour sweep"
+module = "web/js/run.js"
+mount = "canvas.sw-plot"
+draws = """
+One node's answer against one declared decision, over that decision's whole
+declared range, as a line. The points are the engine's; the page computes
+nothing and draws nothing it was not given. Refused points are counted in the
+note beneath rather than dropped from the line, because a sweep that quietly
+skipped what the engine would not answer is a sweep whose shape means nothing.
+"""
+correct = """
+One line, left to right, with no segment joining across a refused point. The
+vertical axis spans the answers returned and no more; the horizontal axis spans
+the range asked for. Both axis labels name the variable and its unit, and the
+unit is the one the engine returned rather than SI — a sweep over a mission
+length reads in years, not seconds. The note beneath states how many points ran
+and how many were refused, and those two numbers add to the number requested.
+"""
+tolerance = 0.02
+settle_ms = 8000
+
+# The sweep does not exist until somebody asks for one: the canvas is created
+# hidden and blank, so at the state the page opens in there is nothing to check.
+# This drives the run view to a node whose view is a line, picks the axis worth
+# looking at, and runs it.
+#
+# orbit_mission_duration rather than the default: the control defaults to the
+# first declared row alphabetically, which for this node is env_f107, and
+# sw_f107_design is almost flat in env_f107 by construction — persistence has
+# decayed to nothing at any mission lead. A flat line is a reference that would
+# still match if the panel broke.
+ready = """
+(async () => {
+  S.runTarget = 'sw_f107_design';
+  S.view = 'run';
+  draw();
+  await new Promise(r => setTimeout(r, 120));
+  const o = document.querySelector('.sw-over');
+  if (!o) throw new Error('the run view has no sweep control');
+  o.value = 'orbit_mission_duration';
+  o.dispatchEvent(new Event('change'));
+  document.querySelector('.sw-go').click();
+})()
+"""
+
+[[input]]
+name = "over"
+drive = """
+(async () => {
+  const o = document.querySelector('.sw-over');
+  o.value = 'env_f107';
+  o.dispatchEvent(new Event('change'));
+  document.querySelector('.sw-go').click();
+})()
+"""
+why = "a different decision is a different axis and a different shape; a plot that does not change is a plot wired to the last sweep it happened to draw"
+
+[[input]]
+name = "range"
+drive = """
+(async () => {
+  const f = document.querySelector('.sw-from'), t = document.querySelector('.sw-to');
+  f.value = '63115200'; t.value = '157788000';
+  f.dispatchEvent(new Event('input')); t.dispatchEvent(new Event('input'));
+  document.querySelector('.sw-go').click();
+})()
+"""
+why = "narrowing the range must narrow the axis. A plot that redraws the full range whatever it was asked for is reading the declared bounds and not the request"
