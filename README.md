@@ -17,7 +17,7 @@ Measured on `main`, 11 September 2026.
 
 | | |
 |---|---|
-| rows in the tree | 1361 across four layers — 256 written, 1105 seeded |
+| rows in the tree | 1361 across four layers — 257 written, 1104 seeded |
 | layer 1 · management | 174 rows, from CD-06 verbatim |
 | layer 2 · the system | 319 rows, from CD-06 verbatim |
 | layer 3 · subsystem | 836 rows across 17 subsystems |
@@ -347,7 +347,7 @@ achievable and the nightly check becomes one people learn to ignore.
 ## Where it stands
 
 The tree is built and mostly empty, which is the state it is designed to be
-useful in. 256 rows of 1361 have content. `xtask ready` reports what is holding
+useful in. 257 rows of 1361 have content. `xtask ready` reports what is holding
 the rest:
 
 ```

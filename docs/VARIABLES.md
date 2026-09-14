@@ -19009,24 +19009,32 @@ At or above one the orbit holds indefinitely. Below one the mission has a lifeti
 
 ### `l3_solar_interface` — Solar weather — subsystem interface
 
-> 
+> What does the solar-weather subsystem conclude, for a system reader who will not open it?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `F107_crossing` |
+| type | `Ratio` |
+| unit | - |
 | kind | required |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `F107_crossing = F107_design` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — the same floor as env_f107 and sw_f107_design: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A crossing that narrowed or widened the range it carries would be changing the answer, so it declares the producer's own bounds
+- **upper bound** — the same ceiling as env_f107 and sw_f107_design: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. Restating it here means a system reader sees the limit without opening the subsystem
+- **reads** — `sw_f107_design`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+- **assumes** It carries the F10.7 driver only, and the subsystem concludes more than that — fails when sys_space_environment holds six rows — solar flux, F10.7, Ap, atmospheric density, thermospheric wind, atomic oxygen fluence — and this crossing answers one of them. The Ap side is measured and published inside the subsystem (sw_storm_return_level, and the peak-slot correction in sw_kp_slot_bias) and does not cross yet, because one row publishes one number and the convention allows exactly one crossing per subsystem. How a subsystem with more than one conclusion crosses is the same unsettled question as the kind above, and it is unsettled for all twenty-one interfaces, not just this one.
+- **assumes** It inherits every limitation of the row beneath it, and a system reader sees none of them — fails when this is the ordinary cost of a seam and it is worth stating where the seam is. The number crossing here cannot tell solar maximum from solar minimum, because no row in this tree publishes a date; it is a 95th percentile and not a worst case; and its centre is the record's unconditional mean. A reader at layer 2 sees 228 sfu and a credibility vector, and would have to open sw_f107_design and then sw_central_expectation to learn any of that. The credibility travels; the assumptions do not.
+- **evidence** the five-year conclusion crosses unchanged — 228.1374 sfu — expect 228.1374378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the half-year conclusion crosses unchanged — the narrowest band — expect 171.8843338669 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the ten-year conclusion crosses unchanged — where the cycle brings the band in — expect 180.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the record's own climatology crosses unchanged, as the floor case — expect 114.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+One row, one number, no reaching in. Everything the subsystem establishes — the record, the cycle, the storms, the slot bias, the spread — arrives at sw_f107_design, and this carries that across to sys_space_environment. A reader who wants the working opens l3_solar and finds twenty-six rows; a reader who wants the answer opens this one.
 
 ### `l3_solar_req_01` — Solar flux
 
@@ -19302,7 +19310,7 @@ The centre of the F10.7 design value; sw_uncertainty_growth supplies the spread 
 - **lower bound** — below 60 sfu has never been observed and every relation reading F10.7 has no support there — env_f107's own floor, and a design value below it means the spread has been subtracted rather than added
 - **upper bound** — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, which is env_f107's stated reason for the same bound. This guard is reachable: a central expectation near the top of its range plus a fifteen-year spread would exceed it, and it should refuse rather than hand a consumer a flux it cannot model
 - **reads** — `sw_central_expectation`, `sw_uncertainty_growth`
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **read by** — `l3_solar_interface`
 - **assumes** 95% and no other confidence, because that is the percentile the spread row publishes — fails when prf_design offers p50, p90, p95 and p99 and expects the caller to pick what the mission needs. This row inherits p95 from sw_uncertainty_growth and cannot be asked for another: a mission needing p99 is reading a number about 32 sfu too small at a one-year lead. Changing the confidence means changing the row underneath, which is where the percentile is chosen and declared.
 - **assumes** It cannot tell solar maximum from solar minimum, because no row in this tree publishes a date — fails when the whole of this limitation belongs to sw_central_expectation and it is repeated here because this is the row a system reader opens. The centre is the record's unconditional mean F10.7, 114.8 sfu, not the mean cycle at the date the mission flies. The record runs from 64 to 343 sfu; a mission through solar maximum and one through minimum are owed materially different numbers and this row gives them the same one. sys_mission_requirements_mission_epoch exists at layer 2 and is seeded; nothing crosses a layer to reach it.
 - **assumes** Adding a percentile of the CHANGE to a central value is not the same as the percentile of the VALUE — fails when the record's own 95th percentile of daily F10.7 is 201 sfu, while this construction returns 228 at a five-year lead. The two answer different questions — the highest flux a day is likely to show, against how far the flux can move from its central expectation — and the second is the larger because it compounds where the centre sits with how wrong the centre can be. A reader who wants 'the 95th percentile of F10.7' wants the record, not this row.
