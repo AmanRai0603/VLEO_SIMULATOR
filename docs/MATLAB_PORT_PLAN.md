@@ -638,6 +638,44 @@ figure is not a row, and this repository already has the better home for one.
 Steps 1 and 2 are the only ones that must happen in that order. From step 3 the
 nodes are independent enough to reorder if something proves harder than it looks.
 
+### daily_regime.csv cannot be trusted, and the mechanism is understood
+
+The derived regime column in `bundles/solar-weather` labels every day quiet,
+active or storm. **171 of the 827 days it calls "storm" — 20.7% of the positive
+class — have a daily Ap of 6 or less**, which is inside the range its own
+"quiet" label covers exclusively. 2005-12-07 is labelled storm with confidence
+0.992 at Ap 0, kp_max 0 and no flares. The mean confidence of those 171 is
+0.774, *higher* than the 0.705 mean of storm labels overall: the quietest days in
+the record are being called storms, confidently.
+
+The `.mat` records the classifier and it explains itself. A three-component
+Gaussian mixture on one feature, `ap`, transformed `log10(x+1)`. Component means
+0.767, 1.024, 1.039 — Ap 4.85, 9.56, 9.95 — so components 2 and 3 sit at
+essentially the same place and differ only in width, standard deviations 0.235
+and 0.385. **Component 3 is not the high-activity component; it is the broad
+one**, and a mixture assigns by posterior, so it wins at both extremes. Ap 0 and
+Ap 1 map to 0.000 and 0.301 in `log10(x+1)` space, further from component 1's
+mean than most real storms are, and are swept into the broad component — the one
+named "storm". The name describes a width, not a level. It means "unusual", and
+the quietest possible day is unusual.
+
+This is the source study's defect and not a transcription error: 0 of 10,299 CSV
+rows differ from the `.mat`'s own regime index to `regime_name` mapping.
+
+`sw_regime` is therefore **deliberately left seeded**, with all of the above
+written into its sheet so a node author meets it before starting. Making it
+writeable needs either a classifier ordered by level rather than by fit order,
+or an honest threshold on Ap — `prf_segment` already publishes standard ones
+(quiet below 8, unsettled 8 to 15, active 16 to 29, G1 30 to 49, G2+ 50 and
+above) which separate cleanly and need no clustering at all. The second is
+probably the right row, and it is a modelling decision rather than a port.
+
+The bundle's own `INDEX.md` cannot carry the warning without publishing a new
+version: the manifest hashes every payload file, so editing the index changes
+the content hash and a synced copy of 2026.09.14 stops verifying. Sixteen files
+reference that version and the payload is 3.8 MB. Whether to spend a version on
+a prose caveat is the data owner's decision.
+
 ### Two rows the tree cannot carry yet, and nine nodes waiting on them
 
 Building the group turned up the same wall four times, so it is written here

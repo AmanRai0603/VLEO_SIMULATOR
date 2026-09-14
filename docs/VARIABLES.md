@@ -18946,66 +18946,85 @@ At or above one the orbit holds indefinitely. Below one the mission has a lifeti
 
 ### `l3_solar_ach_01` — Solar flux
 
-> 
+> What is the worst solar flux the record says this mission will present?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `F107_ach_flux` |
+| type | `Ratio` |
+| unit | - |
 | kind | achieved |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `F107_ach_flux = sw_f107_design` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — the same floor as env_f107 and sw_f107_design: below 60 sfu has never been observed and no relation reading F10.7 has support there
+- **upper bound** — the same ceiling as env_f107 and sw_f107_design: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value
+- **reads** — `sw_f107_design`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+- **assumes** It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when the same cost as the interface, and worth repeating on the row a closure actually binds. The number cannot tell solar maximum from solar minimum, because no row in this tree publishes a date; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way.
+- **evidence** the five-year conclusion, restated unchanged — expect 228.1374378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the half-year conclusion, restated unchanged — expect 171.8843338669 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the fifteen-year conclusion, restated unchanged — expect 229.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The headline of the three. It is the same number the interface carries to sys_space_environment, restated on the achieved side of the closure so that the comparison against what the spacecraft can sustain happens on a row rather than in somebody's head.
 
 ### `l3_solar_ach_02` — F10.7
 
-> 
+> What F10.7 does the record say this mission will present, at 95% confidence?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `F107_ach` |
+| type | `Ratio` |
+| unit | - |
 | kind | achieved |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `F107_ach = sw_f107_design` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — the same floor as env_f107: below 60 sfu has never been observed
+- **upper bound** — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating
+- **reads** — `sw_f107_design`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+- **assumes** It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when the same cost as the interface, and worth repeating on the row a closure actually binds. The number cannot tell solar maximum from solar minimum, because no row in this tree publishes a date; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way.
+- **assumes** ach_01 and ach_02 carry the same number, because at layer 3 the solar flux IS F10.7 — fails when sys_space_environment declares sys_space_environment_solar_flux and sys_space_environment_f10_7 as separate rows, and the seeder mirrored both into this group. In the study they are one quantity: F10.7 is the solar flux index, and nothing in prf_drivers distinguishes them. So two rows here answer with one number, which is honest but redundant, and the redundancy belongs to the layer-2 decomposition rather than to this subsystem. Whoever settles what an interface publishes should settle this at the same time — either sys_space_environment_solar_flux means something else, such as the headline with its credibility, or one of the two rows should not exist.
+- **evidence** the five-year conclusion, restated unchanged — expect 228.1374378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the half-year conclusion, restated unchanged — expect 171.8843338669 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the fifteen-year conclusion, restated unchanged — expect 229.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The F10.7 driver on the achieved side. It is the same quantity as ach_01 in this subsystem because the solar flux IS F10.7 here — the layer-2 rows separate them and the subsystem does not, which is a finding rather than a design and is stated in the assumptions.
 
 ### `l3_solar_ach_03` — Ap
 
-> 
+> What daily planetary Ap does the record say this mission will present?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `Ap_ach` |
+| type | `Ratio` |
+| unit | - |
 | kind | achieved |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `Ap_ach = sw_storm_return_level` |
+| source | `noaa_swpc` |
+| valid over | 20 … 230 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — the same floor as sw_storm_return_level: below 20 the answer is not a storm at all, and the record's median day is 7
+- **upper bound** — the same ceiling as sw_storm_return_level: the fit's own reach at a return period equal to the record, 28.1971 years, which is Ap 229.18
+- **reads** — `sw_storm_return_level`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+- **assumes** It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when the same cost as the interface, and worth repeating on the row a closure actually binds. The number cannot tell solar maximum from solar minimum, because no row in this tree publishes a date; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way.
+- **evidence** the five-year conclusion, restated unchanged — expect 158.3838 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the half-year conclusion, restated unchanged — expect 64.1474 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the fifteen-year conclusion, restated unchanged — expect 203.3466 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The geomagnetic driver on the achieved side: the storm that recurs once per mission lifetime. Unlike the F10.7 pair this has no confidence attached, because geomagnetic activity has no usable long-term forecast and the study designs to a return period instead.
 
 ### `l3_solar_interface` — Solar weather — subsystem interface
 
@@ -19325,7 +19344,7 @@ The centre of the F10.7 design value; sw_uncertainty_growth supplies the spread 
 - **lower bound** — below 60 sfu has never been observed and every relation reading F10.7 has no support there — env_f107's own floor, and a design value below it means the spread has been subtracted rather than added
 - **upper bound** — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, which is env_f107's stated reason for the same bound. This guard is reachable: a central expectation near the top of its range plus a fifteen-year spread would exceed it, and it should refuse rather than hand a consumer a flux it cannot model
 - **reads** — `sw_central_expectation`, `sw_uncertainty_growth`
-- **read by** — `l3_solar_interface`
+- **read by** — `l3_solar_ach_01`, `l3_solar_ach_02`, `l3_solar_interface`
 - **assumes** 95% and no other confidence, because that is the percentile the spread row publishes — fails when prf_design offers p50, p90, p95 and p99 and expects the caller to pick what the mission needs. This row inherits p95 from sw_uncertainty_growth and cannot be asked for another: a mission needing p99 is reading a number about 32 sfu too small at a one-year lead. Changing the confidence means changing the row underneath, which is where the percentile is chosen and declared.
 - **assumes** It cannot tell solar maximum from solar minimum, because no row in this tree publishes a date — fails when the whole of this limitation belongs to sw_central_expectation and it is repeated here because this is the row a system reader opens. The centre is the record's unconditional mean F10.7, 114.8 sfu, not the mean cycle at the date the mission flies. The record runs from 64 to 343 sfu; a mission through solar maximum and one through minimum are owed materially different numbers and this row gives them the same one. sys_mission_requirements_mission_epoch exists at layer 2 and is seeded; nothing crosses a layer to reach it.
 - **assumes** Adding a percentile of the CHANGE to a central value is not the same as the percentile of the VALUE — fails when the record's own 95th percentile of daily F10.7 is 201 sfu, while this construction returns 228 at a five-year lead. The two answer different questions — the highest flux a day is likely to show, against how far the flux can move from its central expectation — and the second is the larger because it compounds where the centre sits with how wrong the centre can be. A reader who wants 'the 95th percentile of F10.7' wants the record, not this row.
@@ -19722,7 +19741,7 @@ The row that tells a reader what a declared Kp costs. env_kp declares Kp = 3 by 
 - **lower bound** — ap is an equivalent amplitude in nanotesla. Below 20 the answer is not a storm at all — the record's median day is 7 — so a return level under it means the input or the fit reached somewhere neither was meant to go
 - **upper bound** — THE BOUND IS THE RECORD'S LENGTH, NOT THE TABLE'S END. The fit evaluated at a return period equal to the record itself, 28.1971 years, is Ap 229.18; 230 is the first round number above it, so a return period beyond the record refuses instead of answering. The previous bound was 400 — the last point of the published ap/Kp table — which first bites at a return period of 1832 years, sixty-five times the record, and so enforced nothing: this node would answer a once-per-century question with Ap 281 while its own assumptions said a century needs a longer record. Note that 230 is BELOW the record's largest single day, Ap 273: rank 1 sits above the log-linear trend and was deliberately left out of the fitting range, so the fit does not chase it. This bound is the fit's own reach, not the record's extreme
 - **reads** — `orbit_mission_duration`
-- **read by** — `sw_kp_from_ap`, `sw_kp_slot_bias`
+- **read by** — `l3_solar_ach_03`, `sw_kp_from_ap`, `sw_kp_slot_bias`
 - **assumes** The tail is log-linear in the return period, with the two coefficients fitted on this record — fails when the form is a choice, not the source's. Fitted over ranks 2 to 56 of the record, which is return periods 0.5035 to 14.0986 years; it carries a residual rms of 4.95 Ap against the empirical curve, worst +8.6 and -12.9. A power law on the same points is more than twice as bad (rms 9.10, worst -47.7), which is why this form and not that one. Anyone who needs the empirical step rather than a smooth curve should read the record, not this row.
 - **assumes** 28.2 years of record support the whole curve, and its top end rests on two observations — fails when the empirical method cannot see past its own record length. At T = 15 years the answer is fitted through the second-largest daily Ap in 28.2 years, and at T = 10 years the third; the record's largest value, Ap 273, has an apparent return period of exactly 28.2 years for no reason other than that it is the largest thing in 28.2 years. The fitted domain is 0.5035 to 14.0986 years, and the declared input range 0.5 to 15 years reaches past BOTH ends of it: the curve is extrapolated by 0.285 Ap at a half-year mission and by 2.54 Ap at a fifteen-year one, because there is no rank between 1 and 2 and rank 1 is the record length itself. Small, but it is an extrapolation and an earlier version of this sheet claimed it was never one. A mission at the 15-year bound is being sized on a curve whose top is two data points. A design that needs the once-per-century storm needs a longer record or a fitted extreme-value model, not this row.
 - **assumes** Every day in the record is treated as an independent draw — fails when storms cluster — a coronal hole returns once per solar rotation and a single event runs for more than one day — so the record holds fewer independent storms than it holds storm days. Clustering does not bias the exceedance level itself, which is a quantile of the marginal distribution, but it does mean the effective sample behind the tail is smaller than N and the uncertainty on the answer is wider than the residual above suggests. sw_event_duration and sw_recurrence_lag measure the clustering; neither is written yet.

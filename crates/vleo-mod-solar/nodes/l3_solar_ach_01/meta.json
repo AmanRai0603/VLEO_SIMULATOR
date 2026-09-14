@@ -1,17 +1,17 @@
 {
   "id": "l3_solar_ach_01",
-  "state": "empty",
-  "sheet_hash": "9e820a",
-  "impl_hash": "222325",
+  "state": "published",
+  "sheet_hash": "479383",
+  "impl_hash": "6f6f4a",
   "owner": "environment",
-  "tier": "",
-  "fixtures": 0,
+  "tier": "A",
+  "fixtures": 3,
   "criticality": "minor",
   "reviewers": 1,
   "differential_fill": false,
   "migrated_from": "",
-  "holes": 0,
-  "inputs": [],
+  "holes": 1,
+  "inputs": ["sw_f107_design"],
   "contributes": [],
-  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+  "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did"]
 }

@@ -1,6 +1,47 @@
 # The sheet. This is the only file in this folder that must be written by
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
+# DELIBERATELY NOT WRITTEN, AND THE REASON IS A DEFECT IN THE DATA.
+#
+# This row would have read daily_regime.csv, the derived column in
+# bundles/solar-weather that labels every day quiet, active or storm. That
+# column cannot be trusted and the mechanism is fully understood.
+#
+# WHAT IS WRONG. 171 of the 827 days it labels "storm" — 20.7% of the positive
+# class — have a daily Ap of 6 or less, which is inside the range its own
+# "quiet" label covers exclusively. 2005-12-07 is labelled storm with a
+# confidence of 0.992 at Ap 0, kp_max 0 and no flares. The quietest days in the
+# record are being called storms, confidently: the mean confidence of these 171
+# is 0.774, HIGHER than the 0.705 mean of storm labels overall.
+#
+# WHY. The .mat records the classifier: a three-component Gaussian mixture on a
+# single feature, ap, transformed log10(x+1). Its component means are 0.767,
+# 1.024 and 1.039 — Ap 4.85, 9.56 and 9.95 — so components 2 and 3 sit at
+# essentially the SAME place and differ only in width, with standard deviations
+# 0.235 and 0.385. Component 3 is not the high-activity component; it is the
+# BROAD one, and a mixture assigns by posterior, so it wins at both extremes.
+# Ap 0 and Ap 1 map to 0.000 and 0.301 in log10(x+1) space, further from
+# component 1's mean than most real storms are. They are swept into the broad
+# component, which is the one named "storm".
+#
+# So the name describes a width and not a level. It means "unusual", and the
+# quietest possible day is unusual.
+#
+# THIS IS THE SOURCE STUDY'S DEFECT, NOT A TRANSCRIPTION ERROR. Checked: 0 of
+# 10,299 rows in the CSV differ from the .mat's own regime index to
+# regime_name mapping. The bundle faithfully carries what prf_cluster produced.
+#
+# WHAT WOULD MAKE THIS ROW WRITEABLE. Either a classifier whose components are
+# ordered by level rather than accepted in fit order, or an honest threshold on
+# Ap — prf_segment already publishes standard ones (quiet below 8, unsettled 8
+# to 15, active 16 to 29, G1 30 to 49, G2+ 50 and above) which separate cleanly
+# and need no clustering at all. The second is probably the right row. Either
+# way it is a modelling decision and not a port, so it is not taken here.
+#
+# The bundle's own INDEX.md cannot carry this warning without publishing a new
+# version: the manifest hashes every payload file, so editing the index changes
+# the content hash and a synced copy of 2026.09.14 would stop verifying. Whether
+# to spend a version on it is a decision for the data's owner.
 id = "sw_regime"
 label = "Geomagnetic regime"
 folder = "sw_regime"   # frozen at seed; renaming the label never moves the directory
