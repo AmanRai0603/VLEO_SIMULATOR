@@ -1,8 +1,8 @@
-<article class="node" data-node="sw_horizon_persistence" data-sheet-hash="0cdd97" data-impl-hash="222325">
+<article class="node" data-node="sw_horizon_persistence" data-sheet-hash="e268da" data-impl-hash="6d764e">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>Horizon against persistence</h2>
-  <p class="ident"><code>sw_horizon_persistence</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <h2>F10.7 error from persistence at a lead</h2>
+  <p class="ident"><code>sw_horizon_persistence</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
@@ -15,54 +15,160 @@
   <button role="tab" class="tab" data-tab="7">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">If all we know is today's F10.7, how wrong are we L days later?</p>
+<p class="maths"><code>D(L) = RMS[F107(t+L) - F107(t)], from the record</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">prf_horizon's structure function D(L) = RMS[F107(t+L) - F107(t)], its first method. Paired with sw_horizon_climatology it answers the design question directly: which of the two cheapest forecasts is worth using at this lead, and what either costs.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>The error DIPS at 27 days, and that is the Sun's rotation rather than noise</dt><dd>fails when persistence error rises from 7.1 sfu at one day to 29.1 at fourteen, then FALLS to 22.4 at twenty-seven before rising again. Twenty-seven days is the synodic solar rotation: the same active region comes back round, so today's flux is a better guide to the flux one rotation from now than to the flux a fortnight from now. Any monotone model of predictability erases that, and it is the one feature of this curve a forecaster would actually use. It is also why the row is a table and not a fit.</dd>
+<dt>The declared input cannot reach the interesting part of the curve</dt><dd>fails when orbit_mission_duration is declared 0.5 to 15 years, so in a real run this row is only ever asked about leads of 183 days and up — past the rotation dip, past the rise, in the slow tail. The table carries the short-lead structure because the question is about predictability and the structure is the answer, but nothing in this tree currently asks for it. A 27-day outlook wants a lead this tree does not publish.</dd>
+<dt>Persistence has not saturated even at two years, because F10.7 is cyclic and not a random walk</dt><dd>fails when for a process with no memory the structure function saturates at sqrt(2) times the standard deviation, which is 62.77 sfu here. The measured value at a two-year lead is 49.63 and still climbing. So the textbook saturation is not reached inside this record's measurable range, and reading the tail as if it had converged would understate how much worse a longer lead still gets.</dd>
+<dt>Only pairs of REAL observations exactly L days apart, which is again not what the MATLAB does</dt><dd>fails when prf_design and prf_horizon both build a full daily grid and fill the record's 273 absent days by linear interpolation. Interpolated days have no variability, so every error statistic spanning them is understated. This row pairs only days that were both observed, as sw_uncertainty_growth does, and for the same reason: a number that is partly invented is not a measurement of the record. It is therefore expected to disagree slightly with prf_horizon, which is why it carries no parity grid.</dd>
+<dt>Pinned to solar-weather@2026.09.14, and the [data] declaration can only pin the name</dt><dd>fails when crates/vleo-modules compares bundle NAMES, so a run with a later solar-weather satisfies the precondition and still uses this table. Every entry must be re-measured if the bundle version changes. The same obligation sits on every measured row in this group.</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sw_horizon_persistence</td><td></td><td>-</td></tr>
+<tr><td>in</td><td><code>lead</code></td><td><a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a></td><td>Time</td><td>yr</td></tr>
+<tr class="out"><td>out</td><td><code>D_pers</code></td><td>sw_horizon_persistence</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
 <section class="panel" data-panel="2">
-<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>0</b> -, confirmed by <b></b>.</p>
+<ol class="algo">
+<li><span class="step">take the lead in days and read the measured persistence RMS at that lead</span> <span class="binds">→ <code>err: Ratio</code></span></li>
+</ol>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>D_pers &ge; 0</code> — an RMS cannot be negative. Zero would mean persistence is exact, which is true only at a lead of zero and is not a lead this row is asked about</li>
+<li><code>D_pers &le; 65</code> — for a memoryless process the structure function saturates at sqrt(2)*sigma, which is 62.77 sfu on this record, and the largest measured entry is 49.63 at a two-year lead. 65 is above both, so it is unreachable by this relation and exists to catch a broken table rather than an extreme sky</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// If all we know is today's F10.7, how wrong are we L days later?
+///
+/// `D(L) = RMS[F107(t+L) - F107(t)], from the record`
+///
+/// Source: `noaa_swpc`
+///
+/// prf_horizon's structure function D(L) = RMS[F107(t+L) - F107(t)], its
+/// first method. Paired with sw_horizon_climatology it answers the design
+/// question directly: which of the two cheapest forecasts is worth using at
+/// this lead, and what either costs.
+///
+/// # Assumptions
+///
+/// * The error DIPS at 27 days, and that is the Sun's rotation rather than noise — fails when persistence error rises from 7.1 sfu at one day to 29.1 at fourteen, then FALLS to 22.4 at twenty-seven before rising again. Twenty-seven days is the synodic solar rotation: the same active region comes back round, so today's flux is a better guide to the flux one rotation from now than to the flux a fortnight from now. Any monotone model of predictability erases that, and it is the one feature of this curve a forecaster would actually use. It is also why the row is a table and not a fit.
+/// * The declared input cannot reach the interesting part of the curve — fails when orbit_mission_duration is declared 0.5 to 15 years, so in a real run this row is only ever asked about leads of 183 days and up — past the rotation dip, past the rise, in the slow tail. The table carries the short-lead structure because the question is about predictability and the structure is the answer, but nothing in this tree currently asks for it. A 27-day outlook wants a lead this tree does not publish.
+/// * Persistence has not saturated even at two years, because F10.7 is cyclic and not a random walk — fails when for a process with no memory the structure function saturates at sqrt(2) times the standard deviation, which is 62.77 sfu here. The measured value at a two-year lead is 49.63 and still climbing. So the textbook saturation is not reached inside this record's measurable range, and reading the tail as if it had converged would understate how much worse a longer lead still gets.
+/// * Only pairs of REAL observations exactly L days apart, which is again not what the MATLAB does — fails when prf_design and prf_horizon both build a full daily grid and fill the record's 273 absent days by linear interpolation. Interpolated days have no variability, so every error statistic spanning them is understated. This row pairs only days that were both observed, as sw_uncertainty_growth does, and for the same reason: a number that is partly invented is not a measurement of the record. It is therefore expected to disagree slightly with prf_horizon, which is why it carries no parity grid.
+/// * Pinned to solar-weather@2026.09.14, and the [data] declaration can only pin the name — fails when crates/vleo-modules compares bundle NAMES, so a run with a later solar-weather satisfies the precondition and still uses this table. Every entry must be re-measured if the bundle version changes. The same obligation sits on every measured row in this group.
+pub const NODE_ID: &amp;str = &quot;sw_horizon_persistence&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x340e2b7af3e268da;
+
+pub fn evaluate(lead: Time) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : take the lead in days and read the measured persistence RMS at that lead -&gt; Ratio
+    // Eighteen leads, eighteen measured RMS values, from
+    // solar-weather@2026.09.14. x is the lead in DAYS, y the RMS of
+    // F107(t+L) - F107(t) over pairs where both days were observed.
+    //
+    // The dip at x = 27.0 is deliberate and is not a transcription error: the
+    // synodic solar rotation brings the same active region back round, so
+    // persistence is BETTER at one rotation than at a fortnight. Any smoothing of
+    // this table removes the one feature of it a forecaster would use.
+    use vleo_core::math::Table1;
+    const D: Table1 = Table1 {
+        x: &amp;[
+            1.0, 2.0, 3.0, 5.0, 7.0, 10.0, 14.0, 20.0, 27.0, 40.0, 60.0, 90.0, 135.0, 180.0, 270.0,
+            365.0, 547.0, 730.0,
+        ],
+        y: &amp;[
+            7.0784, 10.3796, 13.6671, 19.3021, 23.6294, 27.6511, 29.1328, 25.4695, 22.4321, 29.602,
+            27.9575, 30.1549, 31.0394, 32.9634, 35.7538, 38.8277, 43.7693, 49.6285,
+        ],
+    };
+    let err: Ratio = Ratio::new(D.at(lead.days()));
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = err;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;D_pers&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;D_pers&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;an RMS cannot be negative. Zero would mean persistence is exact, which is true only at a lead of zero and is not a lead this row is asked about&quot; });
+    }
+    if answer.get() &gt; 65.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;D_pers&quot;, value: answer.get(), bound: 65.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;for a memoryless process the structure function saturates at sqrt(2)*sigma, which is 62.77 sfu on this record, and the largest measured entry is 49.63 at a two-year lead. 65 is above both, so it is unreachable by this relation and exists to catch a broken table rather than an extreme sky&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
 </section>
 <section class="panel" data-panel="4">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="lead 1 day — 10312 observed pairs"><td>lead 1 day — 10312 observed pairs</td><td class="num">7.0784</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 2 days — 10309 observed pairs"><td>lead 2 days — 10309 observed pairs</td><td class="num">10.3796</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 3 days — 10307 observed pairs"><td>lead 3 days — 10307 observed pairs</td><td class="num">13.6671</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 5 days — 10303 observed pairs"><td>lead 5 days — 10303 observed pairs</td><td class="num">19.3021</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 7 days — 10299 observed pairs"><td>lead 7 days — 10299 observed pairs</td><td class="num">23.6294</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 10 days — 10293 observed pairs"><td>lead 10 days — 10293 observed pairs</td><td class="num">27.6511</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 14 days — 10285 observed pairs"><td>lead 14 days — 10285 observed pairs</td><td class="num">29.1328</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 20 days — 10273 observed pairs"><td>lead 20 days — 10273 observed pairs</td><td class="num">25.4695</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 27 days — 10259 observed pairs"><td>lead 27 days — 10259 observed pairs</td><td class="num">22.4321</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 40 days — 10233 observed pairs"><td>lead 40 days — 10233 observed pairs</td><td class="num">29.602</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 60 days — 10193 observed pairs"><td>lead 60 days — 10193 observed pairs</td><td class="num">27.9575</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 90 days — 10133 observed pairs"><td>lead 90 days — 10133 observed pairs</td><td class="num">30.1549</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 135 days — 10043 observed pairs"><td>lead 135 days — 10043 observed pairs</td><td class="num">31.0394</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 180 days — 9953 observed pairs"><td>lead 180 days — 9953 observed pairs</td><td class="num">32.9634</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 270 days — 9773 observed pairs"><td>lead 270 days — 9773 observed pairs</td><td class="num">35.7538</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 365 days — 9675 observed pairs"><td>lead 365 days — 9675 observed pairs</td><td class="num">38.8277</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 547 days — 9493 observed pairs"><td>lead 547 days — 9493 observed pairs</td><td class="num">43.7693</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 730 days — 9310 observed pairs"><td>lead 730 days — 9310 observed pairs</td><td class="num">49.6285</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="beyond the last measured lead — five years holds the two-year value rather than extrapolating"><td>beyond the last measured lead — five years holds the two-year value rather than extrapolating</td><td class="num">49.6285</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
 <section class="panel" data-panel="5">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 0 — an RMS cannot be negative. Zero would mean persistence is exact, which is true only at a lead of zero and is not a lead this row is asked about</li>
+<li><code>OutOfDomain</code> above 65 — for a memoryless process the structure function saturates at sqrt(2)*sigma, which is 62.77 sfu on this record, and the largest measured entry is 49.63 at a two-year lead. 65 is above both, so it is unreachable by this relation and exists to catch a broken table rather than an extreme sky</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
 <section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_horizon_persistence"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
 <section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
-<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p>Valid over <code>0 &hellip; 65</code> -.</p>
+<ul class="guards"><li>lower — an RMS cannot be negative. Zero would mean persistence is exact, which is true only at a lead of zero and is not a lead this row is asked about</li><li>upper — for a memoryless process the structure function saturates at sqrt(2)*sigma, which is 62.77 sfu on this record, and the largest measured entry is 49.63 at a two-year lead. 65 is above both, so it is unreachable by this relation and exists to catch a broken table rather than an extreme sky</li></ul>
+<div class="sweep" data-over="orbit_mission_duration" data-points="60" data-y="sw_horizon_persistence"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a> over 60 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

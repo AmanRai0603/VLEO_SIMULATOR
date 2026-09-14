@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1361 rows** — 664 a person picked, 697 worked out. Two thirds of any design tree is
+**1361 rows** — 661 a person picked, 700 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -2579,7 +2579,7 @@ A node that consumes density and does not carry this forward is a node whose mar
 
 - **lower bound** — below 60 sfu has never been observed; the fit has no support there
 - **upper bound** — above 400 sfu is beyond the largest recorded daily value, so the temperature relation is extrapolated
-- **read by** — `env_exospheric_temperature`, `sw_central_expectation`
+- **read by** — `env_exospheric_temperature`, `sw_activity_band`, `sw_central_expectation`
 
 Shipped climatology stands in when no solar-drivers bundle is synced, and the run is marked amber.
 
@@ -12316,7 +12316,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 
 - **lower bound** — below six months the programme cannot amortise a satellite, so it is not the mission being designed
 - **upper bound** — above 15 years the cost model, the degradation model and the battery cycle model are all extrapolated well past their fits
-- **read by** — `aero_ao_fluence`, `cost_per_year`, `cost_programme`, `pwr_battery_cycles`, `pwr_degradation`, `sw_central_expectation`, `sw_storm_return_level`, `sw_uncertainty_growth`
+- **read by** — `aero_ao_fluence`, `cost_per_year`, `cost_programme`, `pwr_battery_cycles`, `pwr_degradation`, `sw_central_expectation`, `sw_horizon_climatology`, `sw_horizon_persistence`, `sw_storm_return_level`, `sw_uncertainty_growth`
 - **contributes to** — kpi_cost_per_year
 
 ### `orbit_nodal_regression` — Nodal regression rate
@@ -19099,25 +19099,40 @@ One row, one number, no reaching in. Everything the subsystem establishes — th
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `sw_activity_band` — Flux activity band
+### `sw_activity_band` — F10.7 activity band
 
-> 
+> Which activity band does this F10.7 fall in?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | declared |
+| symbol | `band` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `band(F107) = 1 + count(edges <= F107),  edges = 90, 130, 170 sfu` |
+| source | `noaa_swpc` |
+| valid over | 1 … 4 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — there are four bands and the lowest is 1. A zero or negative band means the counting started in the wrong place, which would shift every label by one and still look like a valid answer
+- **upper bound** — there are four bands and the highest is 4, unbounded above in flux — band 4 holds everything from 170 sfu upward, including the record's largest day at 343. A fifth band means an edge was added without the range being updated
+- **reads** — `env_f107`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** The bands are a published convention and this row is a lookup, not a measurement — fails when the four levels — low below 90, moderate 90 to 129, elevated 130 to 169, high 170 and above — are the standard NOAA F10.7 activity levels and prf_segment applies exactly these. Nothing here is fitted, so there is nothing in it to be wrong about this record, and equally nothing in it that adapts to this record: prf_segment ALSO offers data-driven terciles of the same quantity, which cut the archive into equal thirds and land in different places. Those are a different row and this is not it.
+- **assumes** A band is an ordinal label carried as a number, and arithmetic on it is meaningless — fails when the answer is 1, 2, 3 or 4 and the gaps between them are not equal in sfu — band 1 spans 26 sfu of observed record, band 4 spans 173. Averaging bands, interpolating between them, or treating band 4 as twice band 2 are all errors this row cannot prevent, because the tree carries one scalar per row and a label has to arrive as one. A consumer that wants a flux wants env_f107 or sw_f107_design.
+- **assumes** It bands a single day's flux, and a mission does not live on one day — fails when F10.7 moves through every band over any mission longer than a few months — the record spends 39.8% of its days in band 1 and 12.8% in band 4 — so banding the design value says which band the DESIGN POINT sits in and not which band the mission will experience. Reading it as the latter would be reading a design percentile as a forecast.
+- **evidence** the record's quietest day, 64 sfu — band 1, low — expect 1 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+- **evidence** 89.9 sfu — still low, the edge is not yet reached — expect 1 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+- **evidence** 90 sfu exactly — moderate begins AT the edge, not after it — expect 2 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+- **evidence** 129.9 sfu — still moderate — expect 2 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+- **evidence** 130 sfu exactly — elevated begins — expect 3 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+- **evidence** 169.9 sfu — still elevated — expect 3 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+- **evidence** 170 sfu exactly — high begins — expect 4 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+- **evidence** the record's largest day, 343 sfu — band 4, which is unbounded above — expect 4 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+- **evidence** the design value this subsystem publishes, 228 sfu — band 4, the top one — expect 4 ± 0.000000000001 relative, from `noaa_swpc` (published-source)
+
+The coarse label that puts a flux value in context — a reader who sees 228 sfu and does not work with F10.7 daily has no idea whether that is ordinary or extreme. The band says it is the top one, and that 12.8% of the record sits there.
 
 ### `sw_ap_design` — Ap design value
 
@@ -19361,45 +19376,99 @@ One of the two numbers the subsystem exists to produce. The centre comes from sw
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
-### `sw_horizon_climatology` — Horizon against climatology
+### `sw_horizon_climatology` — F10.7 error from climatology at a lead
 
-> 
-
-| | |
-|---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | declared |
-| owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
-
-- **lower bound** — 
-- **upper bound** — 
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-
-### `sw_horizon_persistence` — Horizon against persistence
-
-> 
+> If we forecast the record's mean F10.7 and nothing else, how wrong are we L days later?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | declared |
+| symbol | `D_clim` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `C(L) = RMS[F107(t+L) - 114.8437], from the record` |
+| source | `noaa_swpc` |
+| valid over | 0 … 50 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — an RMS cannot be negative, and this one cannot approach zero: it is the spread of the record about its own mean, which is 44 sfu
+- **upper bound** — the measured entries run 44.39 to 45.32 sfu and the relation is a table that clamps, so no input can produce more. 50 is above both and tight enough to catch a broken table, which a bound of 65 would not
+- **reads** — `orbit_mission_duration`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** It is nearly flat, and it is the record's own standard deviation — fails when the climatology forecast ignores the lead entirely, so its error is the spread of the target days about the mean and nothing more: 44.39 sfu at a one-day lead, 45.32 at two years. The whole variation across eighteen leads is under 1 sfu, and it comes from the set of target days shifting rather than from anything getting harder. Anyone expecting a baseline that degrades with lead is expecting the wrong baseline — that is the point of using it as one.
+- **assumes** The crossover is the design answer, and this row does not state it — fails when read against sw_horizon_persistence, persistence is the better forecast out to about 547 days and is beaten by 730 — so today's flux is worth something for roughly a year and a half, which is longer than the 27-day outlook horizon would suggest. That crossover is the number a designer wants and neither row publishes it: it is a property of the pair, and the tree carries one answer per row. A third row could state it; none does yet.
+- **assumes** The mean is the record's unconditional mean, so this baseline knows nothing about the cycle — fails when a climatology that knew the solar cycle phase would be a much better baseline than 114.84 sfu everywhere, and would beat persistence sooner. That needs a date, which no row in this tree publishes — the same missing input that stops sw_central_expectation using the mean cycle. So the horizon this pair implies is the horizon against a DEAF baseline, and a fair baseline would shorten it.
+- **assumes** Only pairs of REAL observations exactly L days apart, which is again not what the MATLAB does — fails when prf_design and prf_horizon both build a full daily grid and fill the record's 273 absent days by linear interpolation. Interpolated days have no variability, so every error statistic spanning them is understated. This row pairs only days that were both observed, as sw_uncertainty_growth does, and for the same reason: a number that is partly invented is not a measurement of the record. It is therefore expected to disagree slightly with prf_horizon, which is why it carries no parity grid.
+- **assumes** Pinned to solar-weather@2026.09.14, and the [data] declaration can only pin the name — fails when crates/vleo-modules compares bundle NAMES, so a run with a later solar-weather satisfies the precondition and still uses this table. Every entry must be re-measured if the bundle version changes. The same obligation sits on every measured row in this group.
+- **evidence** lead 1 day — 10312 observed pairs — expect 44.3929 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 2 days — 10309 observed pairs — expect 44.3953 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 3 days — 10307 observed pairs — expect 44.3968 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 5 days — 10303 observed pairs — expect 44.3993 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 7 days — 10299 observed pairs — expect 44.4012 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 10 days — 10293 observed pairs — expect 44.4036 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 14 days — 10285 observed pairs — expect 44.4069 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 20 days — 10273 observed pairs — expect 44.4071 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 27 days — 10259 observed pairs — expect 44.4147 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 40 days — 10233 observed pairs — expect 44.4242 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 60 days — 10193 observed pairs — expect 44.4344 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 90 days — 10133 observed pairs — expect 44.4458 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 135 days — 10043 observed pairs — expect 44.4635 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 180 days — 9953 observed pairs — expect 44.4714 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 270 days — 9773 observed pairs — expect 44.5344 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 365 days — 9675 observed pairs — expect 44.6734 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 547 days — 9493 observed pairs — expect 45.0333 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 730 days — 9310 observed pairs — expect 45.3201 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** beyond the last measured lead — five years holds the two-year value rather than extrapolating — expect 45.3201 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The baseline that makes sw_horizon_persistence mean something. On its own this number says little; against persistence it says which of the two cheapest forecasts is worth using, and the lead where the answer changes is the horizon prf_horizon exists to find.
+
+### `sw_horizon_persistence` — F10.7 error from persistence at a lead
+
+> If all we know is today's F10.7, how wrong are we L days later?
+
+| | |
+|---|---|
+| symbol | `D_pers` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `D(L) = RMS[F107(t+L) - F107(t)], from the record` |
+| source | `noaa_swpc` |
+| valid over | 0 … 65 - |
+
+- **lower bound** — an RMS cannot be negative. Zero would mean persistence is exact, which is true only at a lead of zero and is not a lead this row is asked about
+- **upper bound** — for a memoryless process the structure function saturates at sqrt(2)*sigma, which is 62.77 sfu on this record, and the largest measured entry is 49.63 at a two-year lead. 65 is above both, so it is unreachable by this relation and exists to catch a broken table rather than an extreme sky
+- **reads** — `orbit_mission_duration`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** The error DIPS at 27 days, and that is the Sun's rotation rather than noise — fails when persistence error rises from 7.1 sfu at one day to 29.1 at fourteen, then FALLS to 22.4 at twenty-seven before rising again. Twenty-seven days is the synodic solar rotation: the same active region comes back round, so today's flux is a better guide to the flux one rotation from now than to the flux a fortnight from now. Any monotone model of predictability erases that, and it is the one feature of this curve a forecaster would actually use. It is also why the row is a table and not a fit.
+- **assumes** The declared input cannot reach the interesting part of the curve — fails when orbit_mission_duration is declared 0.5 to 15 years, so in a real run this row is only ever asked about leads of 183 days and up — past the rotation dip, past the rise, in the slow tail. The table carries the short-lead structure because the question is about predictability and the structure is the answer, but nothing in this tree currently asks for it. A 27-day outlook wants a lead this tree does not publish.
+- **assumes** Persistence has not saturated even at two years, because F10.7 is cyclic and not a random walk — fails when for a process with no memory the structure function saturates at sqrt(2) times the standard deviation, which is 62.77 sfu here. The measured value at a two-year lead is 49.63 and still climbing. So the textbook saturation is not reached inside this record's measurable range, and reading the tail as if it had converged would understate how much worse a longer lead still gets.
+- **assumes** Only pairs of REAL observations exactly L days apart, which is again not what the MATLAB does — fails when prf_design and prf_horizon both build a full daily grid and fill the record's 273 absent days by linear interpolation. Interpolated days have no variability, so every error statistic spanning them is understated. This row pairs only days that were both observed, as sw_uncertainty_growth does, and for the same reason: a number that is partly invented is not a measurement of the record. It is therefore expected to disagree slightly with prf_horizon, which is why it carries no parity grid.
+- **assumes** Pinned to solar-weather@2026.09.14, and the [data] declaration can only pin the name — fails when crates/vleo-modules compares bundle NAMES, so a run with a later solar-weather satisfies the precondition and still uses this table. Every entry must be re-measured if the bundle version changes. The same obligation sits on every measured row in this group.
+- **evidence** lead 1 day — 10312 observed pairs — expect 7.0784 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 2 days — 10309 observed pairs — expect 10.3796 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 3 days — 10307 observed pairs — expect 13.6671 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 5 days — 10303 observed pairs — expect 19.3021 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 7 days — 10299 observed pairs — expect 23.6294 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 10 days — 10293 observed pairs — expect 27.6511 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 14 days — 10285 observed pairs — expect 29.1328 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 20 days — 10273 observed pairs — expect 25.4695 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 27 days — 10259 observed pairs — expect 22.4321 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 40 days — 10233 observed pairs — expect 29.602 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 60 days — 10193 observed pairs — expect 27.9575 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 90 days — 10133 observed pairs — expect 30.1549 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 135 days — 10043 observed pairs — expect 31.0394 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 180 days — 9953 observed pairs — expect 32.9634 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 270 days — 9773 observed pairs — expect 35.7538 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 365 days — 9675 observed pairs — expect 38.8277 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 547 days — 9493 observed pairs — expect 43.7693 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 730 days — 9310 observed pairs — expect 49.6285 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** beyond the last measured lead — five years holds the two-year value rather than extrapolating — expect 49.6285 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+prf_horizon's structure function D(L) = RMS[F107(t+L) - F107(t)], its first method. Paired with sw_horizon_climatology it answers the design question directly: which of the two cheapest forecasts is worth using at this lead, and what either costs.
 
 ### `sw_kp_from_ap` — Kp from daily Ap
 

@@ -2,32 +2,81 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sw_horizon_climatology"
-label = "Horizon against climatology"
+label = "F10.7 error from climatology at a lead"
 folder = "sw_horizon_climatology"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1347
-state = "empty"
+state = "published"
+
+# No migrated_from and no parity grid, for the same two reasons as its pair: an
+# empirical RMS rather than a closed form, and a deliberate departure over the
+# record's absent days.
 
 [question]
-text = ""
+text = "If we forecast the record's mean F10.7 and nothing else, how wrong are we L days later?"
+note = "The baseline that makes sw_horizon_persistence mean something. On its own this number says little; against persistence it says which of the two cheapest forecasts is worth using, and the lead where the answer changes is the horizon prf_horizon exists to find."
 
 [maths]
-expression = ""
-source = ""
+# The RMS departure of the target day from the record mean, measured at the same
+# eighteen leads and interpolated.
+expression = "C(L) = RMS[F107(t+L) - 114.8437], from the record"
+source = "noaa_swpc"
+
+[[assumption]]
+text = "It is nearly flat, and it is the record's own standard deviation"
+fails_when = "the climatology forecast ignores the lead entirely, so its error is the spread of the target days about the mean and nothing more: 44.39 sfu at a one-day lead, 45.32 at two years. The whole variation across eighteen leads is under 1 sfu, and it comes from the set of target days shifting rather than from anything getting harder. Anyone expecting a baseline that degrades with lead is expecting the wrong baseline — that is the point of using it as one."
+
+[[assumption]]
+text = "The crossover is the design answer, and this row does not state it"
+fails_when = "read against sw_horizon_persistence, persistence is the better forecast out to about 547 days and is beaten by 730 — so today's flux is worth something for roughly a year and a half, which is longer than the 27-day outlook horizon would suggest. That crossover is the number a designer wants and neither row publishes it: it is a property of the pair, and the tree carries one answer per row. A third row could state it; none does yet."
+
+[[assumption]]
+text = "The mean is the record's unconditional mean, so this baseline knows nothing about the cycle"
+fails_when = "a climatology that knew the solar cycle phase would be a much better baseline than 114.84 sfu everywhere, and would beat persistence sooner. That needs a date, which no row in this tree publishes — the same missing input that stops sw_central_expectation using the mean cycle. So the horizon this pair implies is the horizon against a DEAF baseline, and a fair baseline would shorten it."
+
+[[assumption]]
+text = "Only pairs of REAL observations exactly L days apart, which is again not what the MATLAB does"
+fails_when = "prf_design and prf_horizon both build a full daily grid and fill the record's 273 absent days by linear interpolation. Interpolated days have no variability, so every error statistic spanning them is understated. This row pairs only days that were both observed, as sw_uncertainty_growth does, and for the same reason: a number that is partly invented is not a measurement of the record. It is therefore expected to disagree slightly with prf_horizon, which is why it carries no parity grid."
+
+[[assumption]]
+text = "Pinned to solar-weather@2026.09.14, and the [data] declaration can only pin the name"
+fails_when = "crates/vleo-modules compares bundle NAMES, so a run with a later solar-weather satisfies the precondition and still uses this table. Every entry must be re-measured if the bundle version changes. The same obligation sits on every measured row in this group."
 
 [output]
-symbol = ""
-type = ""
-unit = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "D_clim"
+type = "Ratio"
+unit = "One"
 lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+upper = 50.0
+reason_lower = "an RMS cannot be negative, and this one cannot approach zero: it is the spread of the record about its own mean, which is 44 sfu"
+reason_upper = "the measured entries run 44.39 to 45.32 sfu and the relation is a table that clamps, so no input can produce more. 50 is above both and tight enough to catch a broken table, which a bound of 65 would not"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "lead"
+var = "orbit_mission_duration"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "take the lead in days and read the measured climatology RMS at that lead"
+binds = "err"
+type = "Ratio"
+
+[data]
+bundles = ["solar-weather"]
 
 [view]
-kind = "number"
+kind = "line"
+over = "orbit_mission_duration"
+points = 60

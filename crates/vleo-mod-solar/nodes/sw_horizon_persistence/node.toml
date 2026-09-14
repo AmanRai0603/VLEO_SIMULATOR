@@ -2,32 +2,80 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sw_horizon_persistence"
-label = "Horizon against persistence"
+label = "F10.7 error from persistence at a lead"
 folder = "sw_horizon_persistence"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1348
-state = "empty"
+state = "published"
+
+# No migrated_from and no parity grid: prf_horizon's structure function is an
+# empirical RMS over the record rather than a closed form, and this row departs
+# from it deliberately over the gap. Same reasoning as sw_uncertainty_growth.
 
 [question]
-text = ""
+text = "If all we know is today's F10.7, how wrong are we L days later?"
+note = "prf_horizon's structure function D(L) = RMS[F107(t+L) - F107(t)], its first method. Paired with sw_horizon_climatology it answers the design question directly: which of the two cheapest forecasts is worth using at this lead, and what either costs."
 
 [maths]
-expression = ""
-source = ""
+# The RMS of the L-day change, measured at eighteen leads and interpolated.
+expression = "D(L) = RMS[F107(t+L) - F107(t)], from the record"
+source = "noaa_swpc"
+
+[[assumption]]
+text = "The error DIPS at 27 days, and that is the Sun's rotation rather than noise"
+fails_when = "persistence error rises from 7.1 sfu at one day to 29.1 at fourteen, then FALLS to 22.4 at twenty-seven before rising again. Twenty-seven days is the synodic solar rotation: the same active region comes back round, so today's flux is a better guide to the flux one rotation from now than to the flux a fortnight from now. Any monotone model of predictability erases that, and it is the one feature of this curve a forecaster would actually use. It is also why the row is a table and not a fit."
+
+[[assumption]]
+text = "The declared input cannot reach the interesting part of the curve"
+fails_when = "orbit_mission_duration is declared 0.5 to 15 years, so in a real run this row is only ever asked about leads of 183 days and up — past the rotation dip, past the rise, in the slow tail. The table carries the short-lead structure because the question is about predictability and the structure is the answer, but nothing in this tree currently asks for it. A 27-day outlook wants a lead this tree does not publish."
+
+[[assumption]]
+text = "Persistence has not saturated even at two years, because F10.7 is cyclic and not a random walk"
+fails_when = "for a process with no memory the structure function saturates at sqrt(2) times the standard deviation, which is 62.77 sfu here. The measured value at a two-year lead is 49.63 and still climbing. So the textbook saturation is not reached inside this record's measurable range, and reading the tail as if it had converged would understate how much worse a longer lead still gets."
+
+[[assumption]]
+text = "Only pairs of REAL observations exactly L days apart, which is again not what the MATLAB does"
+fails_when = "prf_design and prf_horizon both build a full daily grid and fill the record's 273 absent days by linear interpolation. Interpolated days have no variability, so every error statistic spanning them is understated. This row pairs only days that were both observed, as sw_uncertainty_growth does, and for the same reason: a number that is partly invented is not a measurement of the record. It is therefore expected to disagree slightly with prf_horizon, which is why it carries no parity grid."
+
+[[assumption]]
+text = "Pinned to solar-weather@2026.09.14, and the [data] declaration can only pin the name"
+fails_when = "crates/vleo-modules compares bundle NAMES, so a run with a later solar-weather satisfies the precondition and still uses this table. Every entry must be re-measured if the bundle version changes. The same obligation sits on every measured row in this group."
 
 [output]
-symbol = ""
-type = ""
-unit = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "D_pers"
+type = "Ratio"
+unit = "One"
 lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+upper = 65.0
+reason_lower = "an RMS cannot be negative. Zero would mean persistence is exact, which is true only at a lead of zero and is not a lead this row is asked about"
+reason_upper = "for a memoryless process the structure function saturates at sqrt(2)*sigma, which is 62.77 sfu on this record, and the largest measured entry is 49.63 at a two-year lead. 65 is above both, so it is unreachable by this relation and exists to catch a broken table rather than an extreme sky"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "lead"
+var = "orbit_mission_duration"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "take the lead in days and read the measured persistence RMS at that lead"
+binds = "err"
+type = "Ratio"
+
+[data]
+bundles = ["solar-weather"]
 
 [view]
-kind = "number"
+kind = "line"
+over = "orbit_mission_duration"
+points = 60
