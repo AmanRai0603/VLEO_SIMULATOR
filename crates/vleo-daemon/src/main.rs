@@ -25,6 +25,7 @@
 mod json;
 
 use json::Json;
+use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
@@ -37,7 +38,7 @@ fn main() {
         .and_then(|p| p.parse().ok())
         .unwrap_or(7777);
     let root = repo_root();
-    let (data, data_versions) = resolve_data(&root);
+    let (data, data_versions, bundles) = resolve_data(&root);
 
     // Try a range and record the port that actually bound. A daemon that fails
     // to start with a message nobody can act on is a support case that cannot
@@ -81,6 +82,7 @@ fn main() {
         root,
         data,
         data_versions,
+        bundles,
         port,
     };
     for stream in listener.incoming() {
@@ -99,6 +101,14 @@ struct Ctx {
     root: PathBuf,
     data: Vec<String>,
     data_versions: Vec<String>,
+    /// The verified bundles, by name: where each lives and which files its own
+    /// manifest declares.
+    ///
+    /// Held so the reference data can be served to a face. Only what the
+    /// manifest lists is reachable, and only from a bundle that verified — a
+    /// face drawing the record must be drawing the same bytes the engine reads,
+    /// or the picture and the answer are two different claims.
+    bundles: BTreeMap<String, (PathBuf, Vec<String>)>,
     port: u16,
 }
 
@@ -118,7 +128,9 @@ fn repo_root() -> PathBuf {
     }
 }
 
-fn resolve_data(root: &Path) -> (Vec<String>, Vec<String>) {
+type BundleFiles = BTreeMap<String, (PathBuf, Vec<String>)>;
+
+fn resolve_data(root: &Path) -> (Vec<String>, Vec<String>, BundleFiles) {
     let store_root = std::env::var("VLEO_DATA")
         .map(PathBuf::from)
         .unwrap_or_else(|_| {
@@ -133,7 +145,67 @@ fn resolve_data(root: &Path) -> (Vec<String>, Vec<String>) {
             let _ = store.sync(&vleo_data::Source::Shipped(shipped));
         }
     }
-    (store.verified_names(), store.versions())
+    let files = store
+        .bundles
+        .values()
+        .filter(|b| b.verified)
+        .map(|b| {
+            (
+                b.manifest.name.clone(),
+                (b.dir.clone(), b.manifest.files.clone()),
+            )
+        })
+        .collect();
+    (store.verified_names(), store.versions(), files)
+}
+
+/// One file of one verified bundle, as it is on disk.
+///
+/// Serving the reference data rather than a shaped summary of it is deliberate.
+/// The bundle's own index says "open any of them in a spreadsheet; nothing here
+/// needs a library", and a face that reads the same CSV the engine reads cannot
+/// drift from it. A JSON projection here would be a second description of the
+/// data, and the first time it disagreed with the file the disagreement would be
+/// invisible.
+///
+/// Two refusals, and neither is about secrecy — this is public reference data.
+/// A name not in the store, or a file its manifest does not declare, is a
+/// request for something this repository cannot vouch for, and the answer is to
+/// say so rather than to read whatever is at that path.
+fn bundle_file(ctx: &Ctx, rest: &str) -> (&'static str, &'static str, Vec<u8>) {
+    let mut it = rest.splitn(2, '/');
+    let name = it.next().unwrap_or("");
+    let file = it.next().unwrap_or("");
+    let Some((dir, files)) = ctx.bundles.get(name) else {
+        return (
+            "404 Not Found",
+            "text/plain; charset=utf-8",
+            format!(
+                "no verified bundle called '{name}'. Verified bundles here: {}",
+                ctx.data.join(", ")
+            )
+            .into_bytes(),
+        );
+    };
+    if !files.iter().any(|f| f == file) {
+        return (
+            "404 Not Found",
+            "text/plain; charset=utf-8",
+            format!(
+                "'{file}' is not a file '{name}' declares. Its manifest lists: {}",
+                files.join(", ")
+            )
+            .into_bytes(),
+        );
+    }
+    match std::fs::read(dir.join(file)) {
+        Ok(b) => ("200 OK", "text/csv; charset=utf-8", b),
+        Err(e) => (
+            "500 Internal Server Error",
+            "text/plain; charset=utf-8",
+            format!("{file} is declared by {name} and could not be read: {e}").into_bytes(),
+        ),
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -212,6 +284,11 @@ fn route(
         }
         ("POST", "/v1/run") | ("GET", "/v1/run") => ok_json(run_json(params, ctx)),
         ("GET", "/v1/sweep") => ok_json(sweep_json(params, ctx)),
+        // The reference data itself, so a face can draw the record rather than
+        // only the answers computed from it.
+        ("GET", p) if p.starts_with("/v1/bundle/") => {
+            bundle_file(ctx, p.trim_start_matches("/v1/bundle/"))
+        }
         _ => (
             "404 Not Found",
             "text/plain; charset=utf-8",

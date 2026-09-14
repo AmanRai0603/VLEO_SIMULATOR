@@ -418,3 +418,10 @@ table.conn-t td { padding: .45rem 0; border-bottom: 1px solid var(--rule-2); lin
 .tone.t-teal { background: var(--teal); } .tone.t-amber { background: var(--out); }
 .tone.t-violet { background: var(--in); } .tone.t-green { background: var(--both); }
 table.tree-t td:first-child { white-space: nowrap; }
+
+/* the solar weather tabs — eight panels, one canvas each */
+#solarview { padding: 0 0 24px; }
+#solarview .sw-tabs { margin: 10px 0 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+#solarview .sw-panel { width: 100%; max-width: 980px; height: auto; margin: 10px 0 8px; }
+#solarview .sw-panel-note { max-width: 980px; line-height: 1.5; font-size: 12px; }
+#solarview .sweepctl { margin: 6px 0 4px; }
