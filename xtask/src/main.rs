@@ -665,10 +665,33 @@ fn cmd_mutate(root: &Path, args: &[&str]) -> Result<(), String> {
     targets.sort_by(|a, b| a.id.cmp(&b.id));
 
     if targets.is_empty() {
-        return Err(match only {
-            Some(o) => format!("{o} is not a written node"),
-            None => "no written nodes".into(),
-        });
+        // A named row that cannot be mutated is not an error. The per-change
+        // pipeline hands this command every node folder a change touched, and
+        // most of them are legitimately not mutation targets — so erroring here
+        // failed a job for a correct state, and said "is not a written node"
+        // about a row that was written and simply had no relation in it.
+        if let Some(o) = only {
+            // A name that is not a row is still a mistake — a typo must not
+            // pass quietly just because the surrounding cases are benign.
+            let Some(named) = tree.sheets.get(o) else {
+                return Err(format!("{o} is not a row in this tree"));
+            };
+            let why = match Some(named) {
+                None => unreachable!(),
+                Some(sh) if sh.is_seeded() => format!(
+                    "{o} is seeded — nothing is generated from it yet, so there is nothing to \
+                     perturb"
+                ),
+                Some(sh) if sh.is_declared() => format!(
+                    "{o} is a declared value — the number is the source, not a derivation from \
+                     one, so there is no relation to get wrong"
+                ),
+                Some(_) => format!("{o} has no answer to perturb"),
+            };
+            println!("{why}");
+            return Ok(());
+        }
+        return Err("no written nodes".into());
     }
 
     let mut survived: Vec<String> = Vec::new();
