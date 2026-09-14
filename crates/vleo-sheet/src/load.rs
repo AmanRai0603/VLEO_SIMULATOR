@@ -113,6 +113,10 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
             }
         },
         migrated_from: s(t.get("migrated_from")),
+        // Never defaulted. A default here picks a direction for a bound whose
+        // direction nobody stated, which is the one failure this field exists
+        // to prevent.
+        sense: s(t.get("sense")),
         // Five or six significant figures is what a MATLAB export prints, so
         // this is the floor set by the format rather than by the physics.
         parity_tolerance: t

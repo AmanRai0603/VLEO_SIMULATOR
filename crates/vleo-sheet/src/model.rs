@@ -145,6 +145,20 @@ pub struct Sheet {
     /// resolution for a disagreement is to find which of the two is wrong, not
     /// to widen this.
     pub parity_tolerance: f64,
+    /// Which way a requirement binds: `"<="` or `">="`.
+    ///
+    /// A requirement row states a bound, and a bound is meaningless until it
+    /// says which side of it is safe. "The design sustains Ap 200" and "the
+    /// design needs Ap 200" are the same number and opposite requirements, and
+    /// a closure computed without knowing which would report a comfortable
+    /// margin for a spacecraft that is about to be destroyed.
+    ///
+    /// Left blank on every row that is not a requirement. The prior MATLAB
+    /// already declared this per requirement and failed its build without it:
+    /// "a requirement with no driver quantity, or with an undeclared adverse
+    /// direction, FAILS THE BUILD. Defaulting either is how a silently wrong
+    /// bound gets shipped."
+    pub sense: String,
     /// The derivation graph, declared by the consumer, because knowing its
     /// inputs is what changes *this* node's implementation. Each entry is the
     /// binding name, the variable it reads, and the quantity type the consumer

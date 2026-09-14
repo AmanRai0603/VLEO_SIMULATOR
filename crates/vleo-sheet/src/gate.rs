@@ -315,6 +315,40 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         )
     });
 
+    // 7d — a requirement says which way it binds.
+    //
+    //      A bound is meaningless until it states which side of it is safe.
+    //      "The design sustains Ap 200" and "the design needs Ap 200" are the
+    //      same number and opposite requirements: read the wrong way, a closure
+    //      reports a comfortable margin for a spacecraft that is about to be
+    //      destroyed.
+    //
+    //      The twelve written KPI closures carry this in prose — their
+    //      expression says "in the sense the requirement is stated" and nothing
+    //      states it. This check makes it a field on the rows that are
+    //      requirements by kind; the KPI rows are `declared` and are a separate
+    //      decision, recorded rather than assumed.
+    let stated = matches!(sh.sense.trim(), "<=" | ">=");
+    out.push(if sh.kind != "required" || stated {
+        Check::pass("sense")
+    } else if sh.sense.trim().is_empty() {
+        Check::fail(
+            "sense",
+            "a requirement with no declared sense — say `sense = \"<=\"` if the achieved value \
+             must stay under this bound, or `sense = \">=\"` if it must reach it. Defaulting \
+             either is how a silently wrong bound gets shipped"
+                .to_string(),
+        )
+    } else {
+        Check::fail(
+            "sense",
+            format!(
+                "sense is '{}' — it must be exactly \"<=\" or \">=\"",
+                sh.sense.trim()
+            ),
+        )
+    });
+
     // 8 — fixture provenance. The one rule the evidence model rests on.
     let mut badfx = Vec::new();
     for f in &sh.fixtures {

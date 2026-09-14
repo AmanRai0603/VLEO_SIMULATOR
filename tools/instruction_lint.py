@@ -217,7 +217,7 @@ def check():
         AUTHOR_FIELDS = {
             "label", "question", "expression", "source", "confirmed_by", "symbol",
             "unit", "lower", "upper", "reason_lower", "reason_upper", "kind",
-            "owner", "tier", "criticality", "migrated_from", "parity_tolerance",
+            "owner", "tier", "criticality", "migrated_from", "parity_tolerance", "sense",
             "note", "contributes",
             "fails_when", "state",
         }
