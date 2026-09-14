@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Ap_T` (Ap at a storm return period), in `-`.
 pub const NODE_ID: &str = "sw_storm_return_level";
-pub const SHEET_HASH: u64 = 0x96809314a0af8c3b;
+pub const SHEET_HASH: u64 = 0x5c0748e8da3c2868;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "orbit_mission_duration",

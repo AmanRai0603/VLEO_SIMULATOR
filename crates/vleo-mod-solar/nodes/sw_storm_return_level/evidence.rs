@@ -85,7 +85,7 @@ fn fixture_5() {
 
 /// One per cent either side of the known-good point, this node still answers.
 ///
-/// Derived from `half a year — rank 56 of the record, the shortest mission the tree allows` and the declared domain 20 … 400.
+/// Derived from `half a year — rank 56 of the record, the shortest mission the tree allows` and the declared domain 20 … 230.
 ///
 /// One per cent, not a decade. These domains are design bands — an altitude
 /// range somebody chose, not a range over which the mathematics holds — so a
@@ -104,7 +104,7 @@ fn answers_near_the_known_good_point() {
     }
     assert!(
         refused.is_empty(),
-        "sw_storm_return_level refuses near its own known-good point: {:?}. Either the relation is wrong in shape, or the declared domain 20 … 400 is narrower than the physics. Both are sheet questions for the node owner, not tolerances to widen.",
+        "sw_storm_return_level refuses near its own known-good point: {:?}. Either the relation is wrong in shape, or the declared domain 20 … 230 is narrower than the physics. Both are sheet questions for the node owner, not tolerances to widen.",
         refused
     );
 }
@@ -119,7 +119,7 @@ fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Time::new(15778800.0 * scale)) {
             assert!(v.get().is_finite(), "sw_storm_return_level produced a value that is not a number");
-            assert!(v.get() >= 20.0 && v.get() <= 400.0, "sw_storm_return_level answered {}, outside its declared domain 20 … 400 — the guard did not stop it", v.get());
+            assert!(v.get() >= 20.0 && v.get() <= 230.0, "sw_storm_return_level answered {}, outside its declared domain 20 … 230 — the guard did not stop it", v.get());
         }
     }
 }
