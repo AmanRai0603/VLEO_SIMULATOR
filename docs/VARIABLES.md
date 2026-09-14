@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1362 rows** — 658 a person picked, 704 worked out. Two thirds of any design tree is
+**1362 rows** — 656 a person picked, 706 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -19374,45 +19374,72 @@ Zero at the cycle's start and one at its end. This is the row the whole cycle-de
 
 One of the two numbers the subsystem exists to produce. The centre comes from sw_central_expectation, the spread from sw_uncertainty_growth, and the confidence is the 95th percentile that sw_uncertainty_growth publishes — so this is a value the mission should not exceed in 95% of histories, not a value it will see.
 
-### `sw_forecast_bias` — Forecast bias
+### `sw_forecast_bias` — Issued-outlook F10.7 bias
 
-> 
-
-| | |
-|---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | declared |
-| owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
-
-- **lower bound** — 
-- **upper bound** — 
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-
-### `sw_forecast_skill` — Forecast skill
-
-> 
+> By how much does the published outlook miss the F10.7 that arrived?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | declared |
+| symbol | `B_f107` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `B_f107(L) = mean over issues of (F107_forecast - F107_observed) at lead L` |
+| source | `noaa_swpc` |
+| valid over | -4 … -0.5 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — the deepest measured bias is -3.968 sfu, at lead 26, the last verifiable lead. A value below -4 means the table was misread or the bundle changed underneath it
+- **upper bound** — the shallowest measured bias is -0.593 sfu, at lead 1. A value above -0.5 — and certainly a positive one — would say the outlook over-forecasts F10.7 somewhere in the window, which this record does not show at any lead. The guard is deliberately on the safe side of zero rather than at zero, because an answer of -0.1 sfu would be as wrong as +0.1 and a bound at zero would pass it
+- **reads** — `sw_outlook_lead`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** The outlook is low at every lead in the window, and that is the unsafe direction — fails when the sign is read as incidental. Measured over 1997-2025 the bias is negative at all 26 verifiable leads, from -0.593 sfu at lead 1 to -3.968 sfu at lead 26, and it never crosses zero. So this is not scatter about a correct central value: the published outlook systematically under-forecasts F10.7, and a design reading it gets a thinner atmosphere, a lower drag and a longer predicted lifetime than it will fly. The remedy is to add the bias back, not to trust the outlook and widen a margin somewhere else
+- **assumes** One mean over 29 years of a varying Sun — fails when the bias is cycle-dependent, which it will be, because a forecaster's error on a 250 sfu day is not the error on a 70 sfu day. The sample is 866 to 1257 issue-target pairs per lead, pooled across cycles 23, 24 and the rise of 25 without conditioning on activity. A design at a known cycle phase is owed a phase-conditioned bias and this row does not give one; it gives the average over the record, which is the honest thing to publish from a pooled sample and is not the same thing
+- **assumes** The magnitude is small against the quantity and large against the margin — fails when it is compared to F10.7 itself. Minus 4 sfu on a mean of 115 sfu is 3.5%, which sounds negligible, and it is not: sw_uncertainty_growth already carries the spread a design must survive, and this bias sits underneath it as an offset that no amount of spread removes. A symmetric band around a biased centre is still centred in the wrong place
+- **assumes** Non-monotone in lead, and the middle of the curve is not noise — fails when somebody fits a straight line through it. The bias deepens to -2.748 sfu at lead 9, recovers to -1.848 at lead 13, then deepens again to -3.968 by lead 26. That interior minimum is present in a sample of over 1200 pairs per lead, so it is a property of how the outlook is constructed and not sampling scatter. The table interpolates between the measured leads rather than fitting a trend, because there is no trend to fit
+- **evidence** lead 13 — the interior recovery in the bias curve — -1.848 sfu from 1237 pairs — expect -1.8480194018 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 1 — the shallowest bias in the window — -0.593 sfu from 1241 pairs — expect -0.5930701048 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 9 — the interior minimum — -2.748 sfu from 1241 pairs — expect -2.7477840451 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 13.5 — between two measured leads, so this one tests the interpolation and not the table — expect -1.88742433505 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 23 — the last lead where the outlook still beats persistence — -2.945 sfu — expect -2.9447640967 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 26 — the declared lead and the deepest bias in the window — -3.968 sfu from 868 pairs — expect -3.9677419355 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+Signed, forecast minus observed, so a negative answer means the outlook was low. It is measured at the lead sw_outlook_lead declares, which is the far end of the window where the miss is largest. A design that sizes drag on a published outlook is exposed by exactly this number, in the unsafe direction: a low F10.7 is a thin atmosphere and an optimistic lifetime.
+
+### `sw_forecast_skill` — Issued-outlook skill against persistence
+
+> Is the published outlook better than assuming today's F10.7 continues?
+
+| | |
+|---|---|
+| symbol | `S_f107` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `S_f107(L) = 1 - MSE_outlook(L) / MSE_persistence(L)` |
+| source | `noaa_swpc` |
+| valid over | -0.1 … 0.5 - |
+
+- **lower bound** — the worst measured skill is -0.036, at lead 24. A bound at -0.1 leaves room for the three negative leads and refuses anything that would say the published outlook is substantially worse than doing nothing, which the record does not support
+- **upper bound** — the best measured skill is +0.438, at lead 9. A skill above 0.5 against persistence would mean the outlook halves the baseline's mean squared error, and nothing in this record comes close; an answer there means the table was misread or the bundle changed underneath it
+- **reads** — `sw_outlook_lead`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** Persistence is the last observation STRICTLY BEFORE the issue date, and this choice decides the answer — fails when the baseline is allowed the observation on the issue date itself. 719 of the 1281 issues index their rows from lead 0, so the issue date IS a forecast target for most of the record, and handing it to the baseline gives persistence a number the forecaster did not have. The whole short-lead conclusion turns on it: the same arithmetic then reports -1.314 at lead 1 instead of +0.069, and the outlook appears to lose to persistence through lead 4 when it does not. A skill score is a statement about a baseline, so the baseline is declared here rather than left to whoever reads the number
+- **assumes** It goes negative at the far end of the window, and that is the answer, not a defect — fails when the last three verifiable leads are read as noise. Skill is positive from lead 1 through lead 23, peaks at +0.438 at lead 9, and is negative at leads 24, 25 and 26 — -0.036, -0.032 and -0.022 against samples of 866 to 868 pairs each. At the far end of its own published window the outlook is very slightly worse than assuming nothing changes. A design keying off the end of the outlook is paying attention to a forecast that has stopped carrying information
+- **assumes** Skill against persistence is not accuracy — fails when a positive score is read as the forecast being good. The outlook's own RMS error grows from 10.3 sfu at lead 1 to 24.9 sfu at lead 26; what improves through the middle leads is only its ratio to a baseline that degrades faster. Peak skill of +0.438 at lead 9 sits on an RMS error of 21.2 sfu, which is 18% of a typical F10.7. The forecast is never accurate in the window; it is merely better than nothing for most of it
+- **assumes** One score over 29 years, pooled across cycles — fails when the skill is activity-dependent, which it will be: persistence is a strong baseline in a quiet Sun and a weak one in a rising cycle, so pooling cycles 23, 24 and the rise of 25 averages over regimes where the comparison means different things. The sample is 866 to 1257 pairs per lead and is not conditioned on phase. A phase-conditioned skill would be a separate row and would need the epoch, which now exists
+- **evidence** lead 13 — mid-window, still strongly skillful — +0.402 from 1237 pairs — expect 0.4016285468 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 1 — the outlook's weakest positive skill, where persistence is hardest to beat — expect 0.068515911 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 9 — peak skill over the whole window — +0.438 from 1241 pairs — expect 0.4375371731 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 13.5 — between two measured leads, so this one tests the interpolation and not the table — expect 0.41015283365 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 23 — the last positive lead, +0.018, and the outlook is all but worthless here — expect 0.0176508866 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 24 — the sign change: the outlook is now worse than assuming nothing changes — expect -0.0355195984 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** lead 26 — the declared lead — -0.022 from 868 pairs — expect -0.0220863078 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+A skill score against persistence: 1 is perfect, 0 is no better than the naive baseline, negative is worse than doing nothing. It answers whether reading the outlook is worth anything at the lead sw_outlook_lead declares, which is the far end of the window where the answer is worst.
 
 ### `sw_horizon_climatology` — F10.7 error from climatology at a lead
 
@@ -19629,9 +19656,9 @@ sw_kp_from_ap applies the published scale as published, and the scale is defined
 
 The climatology that knows where in the cycle it is. sw_central_expectation currently hands over to the record's unconditional mean of 114.8 sfu because no date was available; at the declared epoch's phase of 0.619 this row says 105.8 instead. That difference is what having a date buys.
 
-### `sw_outlook_lead` — Short-term forecast lead
+### `sw_outlook_lead` — Forecast verification lead
 
-> How far ahead does the published short-term outlook reach?
+> At what lead is the published short-term outlook verified?
 
 | | |
 |---|---|
@@ -19641,19 +19668,20 @@ The climatology that knows where in the cycle it is. sw_central_expectation curr
 | kind | declared |
 | owner | environment |
 | evidence tier | A |
-| relation | `L_short = 27 d` |
+| relation | `L_short = 26 d` |
 | source | `noaa_swpc` |
-| declared value | **27** d |
+| declared value | **26** d |
 | confirmed by | A. Rai / 2026-09-14 |
-| valid over | 1 … 27 d |
+| valid over | 1 … 26 d |
 
-- **lower bound** — a lead of less than a day is not a forecast the published outlook makes; its first row is lead 1
-- **upper bound** — 27 is the length of the published window and the last lead the forecast table contains. Beyond it there is no issued forecast to verify against, so a larger value would be asking the verification rows about rows that do not exist
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **assumes** One lead, and the skill of the outlook is strongly lead-dependent — fails when measured on this record the issued outlook LOSES to persistence at leads 1 to 4, beats it from 5 to 23 with a peak skill of +0.24 near 13, and loses again from 24. So a single lead cannot characterise the product: 27 days is the pessimistic end and a row evaluated there says nothing about the useful middle. It is chosen because a design wants to know how bad the far edge is, not how good the centre is, and because it is the window's own length rather than a point somebody picked inside it.
-- **assumes** 27 days is the rotation and the window at once, and those are two different reasons — fails when the synodic solar rotation is about 27.3 days and the published outlook is exactly 27 rows, so the two coincide closely enough that the sheet cannot tell them apart. If SWPC changed the outlook length the row would need to say which reason it meant. It is carried as 27 exactly, matching the data rather than the rotation, because what it indexes is the forecast table.
+- **lower bound** — a lead of less than a day is not a forecast the published outlook makes; its first verifiable row is lead 1, present for all 1281 issues
+- **upper bound** — 26 is the last lead in the published window that the record can verify, because lead_days is indexed two ways in the same column and only the 1-based minority reaches 27. At 26 the sample is 868 issues drawn from both conventions; at 27 it is 192 drawn from one, and the answer there has a different sign from each of its neighbours. A larger value would be asking the verification rows about a cell whose contents are a property of the indexing rather than of the forecast
+- **read by** — `sw_forecast_bias`, `sw_forecast_skill`
+- **assumes** The product is 27 days long and this row is 26, so it does not answer 'how far ahead does the outlook reach' — fails when somebody reads it as the window length. 899 of 1281 issues span exactly 27 days and the synodic solar rotation is about 27.3 days, so 27 is the honest answer to that question and this row is not asking it. It is asking where the outlook is weakest among the leads the record can verify, and the 27th lead cannot be verified because only 192 of 1281 issues place a row there. If a row is ever needed for the window length it is a second row, not this one.
+- **assumes** One lead, and the skill of the outlook is strongly lead-dependent — fails when measured on this record the outlook's skill against persistence rises from +0.0685 at lead 1 to a peak of +0.4375 at lead 9, falls back through +0.0177 at lead 23, and goes negative at 24, 25 and 26. So a single lead cannot characterise the product: 26 is the pessimistic end and a row evaluated there says nothing about the useful middle. It is chosen because a design wants to know how bad the far edge is, not how good the centre is.
+- **assumes** Skill is measured against persistence defined as the last observation STRICTLY BEFORE the issue date — fails when the baseline is allowed the observation on the issue date itself. That is the lead-0 target for the 719 issues that index from 0, so it hands persistence an answer the forecaster did not have, and it flatters the baseline enormously: the same arithmetic then reports the lead-1 skill as -1.3138 instead of +0.0685, and the outlook appears to lose to persistence at leads 1 through 4 when it does not. One choice of baseline, and the sign of the short-lead conclusion changes. This row's own first version carried the leaky figure and said the outlook loses at short leads; it does not.
 
-The lead the forecast-verification rows are evaluated at. sw_forecast_skill and sw_forecast_bias both answer 'at what lead', and this is the lead worth asking about: the end of the published window, where the outlook is weakest and a design reading it is most exposed.
+The lead the forecast-verification rows are evaluated at. sw_forecast_skill and sw_forecast_bias both answer 'at what lead', and this is the lead worth asking about: the far end of the published window, where the outlook is weakest and a design reading it is most exposed. It is the far end the record can measure, not the nominal far end of the product — see the note above on the two lead conventions in the source column.
 
 ### `sw_recurrence_lag` — Rotation recurrence lag
 

@@ -2,7 +2,7 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sw_outlook_lead"
-label = "Short-term forecast lead"
+label = "Forecast verification lead"
 folder = "sw_outlook_lead"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
@@ -24,32 +24,59 @@ state = "published"
 # read it as a lead today. This is the OTHER lead — the short one — and it is a
 # different kind of thing.
 #
-# 27 days is not a number the mission chose. It is the synodic solar rotation,
-# and it is the length of the outlook SWPC actually publishes: every issue in
-# forecast_issued.csv carries exactly 27 rows. Putting it at layer 2 would imply
-# somebody negotiated it, and nobody did — it is a property of the Sun and of
-# the data source, which is what this subsystem owns.
+# It is not a number the mission chose. It is a property of the published
+# product and of the record that verifies it, which is what this subsystem
+# owns. Putting it at layer 2 would imply somebody negotiated it, and nobody
+# did.
 #
 # The nearest existing system-layer row is
 # sys_navigation_and_orbit_determination_prediction_horizon, which is ephemeris
 # prediction. Different quantity; not reused.
 
+# WHY 26 AND NOT 27, WHICH IS WHAT THIS ROW SAID FIRST.
+#
+# The published outlook is 27 days long. That part is well supported: of 1281
+# issues in forecast_issued.csv, 899 span exactly 27 days. So 27 is the right
+# number for the length of the product, and this row is not the length of the
+# product — it is the lead the verification rows are evaluated at, and those
+# are different numbers because of a defect in the record's own indexing.
+#
+# lead_days is computed two different ways in the same column. 719 issues index
+# their 27 rows as leads 0 to 26, counting the issue date itself as lead 0. Only
+# 175 index them as leads 1 to 27. So selecting lead_days == 27 does not select
+# the far edge of the window: it selects the minority of issues that used the
+# 1-based convention, 192 rows against the 868 that lead 26 draws from both.
+#
+# It shows in the answer. At lead 26 the skill is -0.0221 and the bias -3.9677
+# sfu; at lead 27 the skill is +0.0430 — a different sign from each of its three
+# neighbours — and the bias -5.9583 sfu, half again as large. Neither of those
+# is a property of the forecast at 27 days. Both are properties of which issues
+# happen to be in the cell.
+#
+# So 26 is the last lead this record can actually verify, and that is what this
+# row declares. The 27-day window length is recorded in the assumptions, where a
+# true statement about the product belongs.
+
 [question]
-text = "How far ahead does the published short-term outlook reach?"
-note = "The lead the forecast-verification rows are evaluated at. sw_forecast_skill and sw_forecast_bias both answer 'at what lead', and this is the lead worth asking about: the end of the published window, where the outlook is weakest and a design reading it is most exposed."
+text = "At what lead is the published short-term outlook verified?"
+note = "The lead the forecast-verification rows are evaluated at. sw_forecast_skill and sw_forecast_bias both answer 'at what lead', and this is the lead worth asking about: the far end of the published window, where the outlook is weakest and a design reading it is most exposed. It is the far end the record can measure, not the nominal far end of the product — see the note above on the two lead conventions in the source column."
 
 [maths]
 confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
-expression = "L_short = 27 d"
+expression = "L_short = 26 d"
 source = "noaa_swpc"
 
 [[assumption]]
-text = "One lead, and the skill of the outlook is strongly lead-dependent"
-fails_when = "measured on this record the issued outlook LOSES to persistence at leads 1 to 4, beats it from 5 to 23 with a peak skill of +0.24 near 13, and loses again from 24. So a single lead cannot characterise the product: 27 days is the pessimistic end and a row evaluated there says nothing about the useful middle. It is chosen because a design wants to know how bad the far edge is, not how good the centre is, and because it is the window's own length rather than a point somebody picked inside it."
+text = "The product is 27 days long and this row is 26, so it does not answer 'how far ahead does the outlook reach'"
+fails_when = "somebody reads it as the window length. 899 of 1281 issues span exactly 27 days and the synodic solar rotation is about 27.3 days, so 27 is the honest answer to that question and this row is not asking it. It is asking where the outlook is weakest among the leads the record can verify, and the 27th lead cannot be verified because only 192 of 1281 issues place a row there. If a row is ever needed for the window length it is a second row, not this one."
 
 [[assumption]]
-text = "27 days is the rotation and the window at once, and those are two different reasons"
-fails_when = "the synodic solar rotation is about 27.3 days and the published outlook is exactly 27 rows, so the two coincide closely enough that the sheet cannot tell them apart. If SWPC changed the outlook length the row would need to say which reason it meant. It is carried as 27 exactly, matching the data rather than the rotation, because what it indexes is the forecast table."
+text = "One lead, and the skill of the outlook is strongly lead-dependent"
+fails_when = "measured on this record the outlook's skill against persistence rises from +0.0685 at lead 1 to a peak of +0.4375 at lead 9, falls back through +0.0177 at lead 23, and goes negative at 24, 25 and 26. So a single lead cannot characterise the product: 26 is the pessimistic end and a row evaluated there says nothing about the useful middle. It is chosen because a design wants to know how bad the far edge is, not how good the centre is."
+
+[[assumption]]
+text = "Skill is measured against persistence defined as the last observation STRICTLY BEFORE the issue date"
+fails_when = "the baseline is allowed the observation on the issue date itself. That is the lead-0 target for the 719 issues that index from 0, so it hands persistence an answer the forecaster did not have, and it flatters the baseline enormously: the same arithmetic then reports the lead-1 skill as -1.3138 instead of +0.0685, and the outlook appears to lose to persistence at leads 1 through 4 when it does not. One choice of baseline, and the sign of the short-lead conclusion changes. This row's own first version carried the leaky figure and said the outlook loses at short leads; it does not."
 
 [output]
 # The node's one answer. The variable id is the node id: one small
@@ -58,14 +85,14 @@ symbol = "L_short"
 type = "Time"
 unit = "Day"
 lower = 1.0
-upper = 27.0
-reason_lower = "a lead of less than a day is not a forecast the published outlook makes; its first row is lead 1"
-reason_upper = "27 is the length of the published window and the last lead the forecast table contains. Beyond it there is no issued forecast to verify against, so a larger value would be asking the verification rows about rows that do not exist"
+upper = 26.0
+reason_lower = "a lead of less than a day is not a forecast the published outlook makes; its first verifiable row is lead 1, present for all 1281 issues"
+reason_upper = "26 is the last lead in the published window that the record can verify, because lead_days is indexed two ways in the same column and only the 1-based minority reaches 27. At 26 the sample is 868 issues drawn from both conventions; at 27 it is 192 drawn from one, and the answer there has a different sign from each of its neighbours. A larger value would be asking the verification rows about a cell whose contents are a property of the indexing rather than of the forecast"
 
 [value]
 # A number a person picked. It carries the same discipline as a
 # fixture, because every margin in the design is built out of these.
-number = 27.0
+number = 26.0
 confirmed_by = "A. Rai / 2026-09-14"
 
 [view]

@@ -1,9 +1,9 @@
 // GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
 // regeneration and fails the regeneration diff in the gate.
-//! `sw_outlook_lead` — Forecast verification lead
+//! `sw_forecast_bias` — Issued-outlook F10.7 bias
 //!
-//! At what lead is the published short-term outlook verified?
+//! By how much does the published outlook miss the F10.7 that arrived?
 
 #[path = "model.rs"]
 pub mod model;

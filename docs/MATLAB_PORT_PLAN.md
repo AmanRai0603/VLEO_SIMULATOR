@@ -692,41 +692,67 @@ and `sw_central_expectation` already carries the consequence as a declared
 limitation: it uses the record's unconditional mean, so it cannot tell solar
 maximum from solar minimum on a record running 64 to 343 sfu.
 
-**A forecast lead — days.** `sw_forecast_skill`, `sw_forecast_bias` and
-`sw_band_coverage` are all functions of how far ahead the forecast looks, which
-is 1 to 27 days. The only Time row a solar node can reach is
-`orbit_mission_duration`, declared 0.5 to 15 years, so feeding it would clamp
-every answer to the 27-day end of the table and return one number forever. There
-is no row for a lead and inventing one needs a confirmed value.
+**A forecast lead — days.** ~~There is no row for a lead and inventing one needs
+a confirmed value.~~ RESOLVED. `sw_outlook_lead` now declares it, at layer 3
+rather than layer 2 because it is a property of the published product and the
+record that verifies it, not something the mission negotiated. `sw_forecast_skill`
+and `sw_forecast_bias` are written and read it. `sw_band_coverage` still needs a
+confidence and remains blocked on that, not on the lead.
 
 What is NOT blocked, and was written instead: every row whose input is an
 existing declared value or another written row. That turned out to be ten of the
 twenty-six plus the interface.
 
-### The issued 27-day outlook, measured — two findings worth a row each
+### The issued 27-day outlook, measured — and two figures below were wrong
 
-`forecast_issued.csv` was verified against the observed record even though the
-two rows that would publish it are blocked, because the findings stand on their
-own and the next person should not have to rediscover them.
+`forecast_issued.csv` was verified against the observed record. The first pass
+recorded two findings that a second pass, taken while writing `sw_forecast_skill`
+and `sw_forecast_bias`, contradicted. Both corrections are kept visible rather
+than overwritten, because the wrong versions are the more tempting answers and
+somebody will reach them again.
 
-**The outlook is biased LOW at every lead**, by 0.6 sfu at one day worsening to
-6.0 sfu at twenty-seven. For a drag design that is the unsafe direction:
-under-predicted flux gives under-predicted density and under-sized drag.
+**The outlook is biased LOW at every lead.** This one stands. Measured over
+1997-2025 the mean signed error, forecast minus observed, is negative at all 26
+verifiable leads: -0.593 sfu at lead 1, deepening to an interior minimum of
+-2.748 at lead 9, recovering to -1.848 at lead 13, then deepening again to
+-3.968 at lead 26. For a drag design that is the unsafe direction —
+under-predicted flux gives under-predicted density and under-sized drag — and no
+symmetric uncertainty band removes an offset.
 
-**It loses to persistence for the first four days.** Skill against a persistence
-baseline, as 1 - RMSE_forecast/RMSE_persistence, is -0.52 at a one-day lead —
-the bulletin's RMSE is 10.33 sfu against persistence's 6.79. It becomes useful at
-lead 5, peaks at +0.24 around leads 13 to 14, and goes negative again from lead
-24. So the published outlook is worth having over a window in the middle and is
-worse than yesterday's number at the start of it.
+**It does NOT lose to persistence at short leads.** The first pass reported a
+skill of -0.52 at lead 1 and concluded the outlook was worse than doing nothing
+through lead 4. That was an artefact of the baseline. Persistence had been taken
+as the observed F10.7 on the issue date, and 719 of the 1281 issues index their
+rows from lead 0, so the issue date is itself a forecast target for most of the
+record: the baseline was being handed an observation the forecaster did not have.
+With persistence taken as the last observation strictly BEFORE the issue date,
+the outlook beats it from lead 1 onward — +0.069 at lead 1, peaking at +0.438 at
+lead 9, still +0.018 at lead 23 — and goes negative only at leads 24, 25 and 26
+(-0.036, -0.032, -0.022). The outlook's own RMS error is unchanged by the choice,
+10.33 sfu at lead 1; what changed is persistence's, from 6.79 to 10.70. One
+choice of baseline, and the sign of the short-lead conclusion flips. The written
+rows declare the baseline for exactly this reason.
 
-**And `lead_days` in that table is not all forecast.** Every issue carries
-exactly 27 rows and the lead is `target_date - issue_date`, so 742 of the 1,285
-issues contain leads of zero or negative — the bulletin was published after its
-own window had begun, and those rows are a record of days already past. 109 rows
-are negative, 729 are zero, and 39 sit between 60 and 392 days, which one issue
-(prf 1157) accounts for and which cannot be a 27-day outlook at all. Any use of
-this table must filter to leads 1 to 27; the measurements above do.
+**`lead_days` is indexed two ways in the same column.** The first pass said every
+issue carries exactly 27 rows. It does not: of 1281 issues, 900 carry 27 rows and
+349 carry 14 — the older short-format bulletin — with a dozen other shapes making
+up the rest. More importantly, among the 899 issues that span exactly 27 days,
+719 index their rows as leads 0 to 26 and only 175 as leads 1 to 27. So
+`lead_days == 27` does not select the far edge of the window; it selects the
+minority that used the 1-based convention, 192 rows against the 868 that lead 26
+draws from both. It shows in the answer: lead 27 reports a skill of +0.043, a
+different sign from each of its three neighbours, and a bias of -5.958 sfu, half
+again as large as lead 26's. Neither figure is a property of the forecast at 27
+days.
+
+That is why `sw_outlook_lead` declares 26 and not 27. 27 is the length of the
+product and is recorded in that row's assumptions; 26 is the last lead this
+record can verify.
+
+The column also runs from -26 to 392. 740 issues contain a lead of zero or
+negative — the bulletin published after its own window had begun — and 96 rows
+across 10 issues sit above lead 27, one of them reaching 392. Any use of this
+table must filter to leads 1 to 26; the measurements above do.
 
 ### What step 3 corrected about this table: steps 3 and 4 are the wrong way round
 

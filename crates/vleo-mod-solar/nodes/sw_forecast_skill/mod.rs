@@ -1,9 +1,9 @@
 // GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
 // regeneration and fails the regeneration diff in the gate.
-//! `sw_outlook_lead` — Forecast verification lead
+//! `sw_forecast_skill` — Issued-outlook skill against persistence
 //!
-//! At what lead is the published short-term outlook verified?
+//! Is the published outlook better than assuming today's F10.7 continues?
 
 #[path = "model.rs"]
 pub mod model;

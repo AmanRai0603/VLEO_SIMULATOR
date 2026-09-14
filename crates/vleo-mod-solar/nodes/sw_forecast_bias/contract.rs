@@ -6,25 +6,27 @@
 use vleo_core::fault::Fault;
 use vleo_core::units::*;
 
-/// What this node publishes: `L_short` (Forecast verification lead), in `d`.
-pub const NODE_ID: &str = "sw_outlook_lead";
-pub const SHEET_HASH: u64 = 0x0543d6ab410d48b3;
+/// What this node publishes: `B_f107` (Issued-outlook F10.7 bias), in `-`.
+pub const NODE_ID: &str = "sw_forecast_bias";
+pub const SHEET_HASH: u64 = 0xfdb3c6344d7e038d;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
+    "sw_outlook_lead",
 ];
 /// The variables this node publishes.
-pub const OUTPUT_VARS: &[&str] = &["sw_outlook_lead"];
+pub const OUTPUT_VARS: &[&str] = &["sw_forecast_bias"];
 /// The SI unit every value crossing this boundary is expressed in.
-pub const OUTPUT_UNIT: Unit = Time::UNIT;
+pub const OUTPUT_UNIT: Unit = Ratio::UNIT;
 
 /// The untyped adapter. Values cross as SI `f64` and are re-typed here,
 /// so the bus carries no quantity types and a face cannot pass arguments
 /// in the wrong order.
 pub fn call(inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {
-    if outputs.is_empty() {
+    if inputs.is_empty() || outputs.is_empty() {
         return Err(Fault::Blocked { node: NODE_ID, missing: "an input the contract declares" });
     }
-    let answer = super::model::evaluate()?;
+    let lead: Time = Time::new(inputs[0]);
+    let answer = super::model::evaluate(lead)?;
     outputs[0] = answer.get();
     Ok(())
 }

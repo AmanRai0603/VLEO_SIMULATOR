@@ -2,32 +2,77 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sw_forecast_skill"
-label = "Forecast skill"
+label = "Issued-outlook skill against persistence"
 folder = "sw_forecast_skill"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1350
-state = "empty"
+state = "published"
+
+# No migrated_from and no parity grid: this is a statistic of the record, not a
+# closed form, and there is no MATLAB function that computes it. prf_design.m
+# reads the observed record and never verifies the issued outlook against it.
 
 [question]
-text = ""
+text = "Is the published outlook better than assuming today's F10.7 continues?"
+note = "A skill score against persistence: 1 is perfect, 0 is no better than the naive baseline, negative is worse than doing nothing. It answers whether reading the outlook is worth anything at the lead sw_outlook_lead declares, which is the far end of the window where the answer is worst."
 
 [maths]
-expression = ""
-source = ""
+expression = "S_f107(L) = 1 - MSE_outlook(L) / MSE_persistence(L)"
+source = "noaa_swpc"
+
+[[assumption]]
+text = "Persistence is the last observation STRICTLY BEFORE the issue date, and this choice decides the answer"
+fails_when = "the baseline is allowed the observation on the issue date itself. 719 of the 1281 issues index their rows from lead 0, so the issue date IS a forecast target for most of the record, and handing it to the baseline gives persistence a number the forecaster did not have. The whole short-lead conclusion turns on it: the same arithmetic then reports -1.314 at lead 1 instead of +0.069, and the outlook appears to lose to persistence through lead 4 when it does not. A skill score is a statement about a baseline, so the baseline is declared here rather than left to whoever reads the number"
+
+[[assumption]]
+text = "It goes negative at the far end of the window, and that is the answer, not a defect"
+fails_when = "the last three verifiable leads are read as noise. Skill is positive from lead 1 through lead 23, peaks at +0.438 at lead 9, and is negative at leads 24, 25 and 26 — -0.036, -0.032 and -0.022 against samples of 866 to 868 pairs each. At the far end of its own published window the outlook is very slightly worse than assuming nothing changes. A design keying off the end of the outlook is paying attention to a forecast that has stopped carrying information"
+
+[[assumption]]
+text = "Skill against persistence is not accuracy"
+fails_when = "a positive score is read as the forecast being good. The outlook's own RMS error grows from 10.3 sfu at lead 1 to 24.9 sfu at lead 26; what improves through the middle leads is only its ratio to a baseline that degrades faster. Peak skill of +0.438 at lead 9 sits on an RMS error of 21.2 sfu, which is 18% of a typical F10.7. The forecast is never accurate in the window; it is merely better than nothing for most of it"
+
+[[assumption]]
+text = "One score over 29 years, pooled across cycles"
+fails_when = "the skill is activity-dependent, which it will be: persistence is a strong baseline in a quiet Sun and a weak one in a rising cycle, so pooling cycles 23, 24 and the rise of 25 averages over regimes where the comparison means different things. The sample is 866 to 1257 pairs per lead and is not conditioned on phase. A phase-conditioned skill would be a separate row and would need the epoch, which now exists"
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "S_f107"
+type = "Ratio"
+unit = "One"
+lower = -0.1
+upper = 0.5
+reason_lower = "the worst measured skill is -0.036, at lead 24. A bound at -0.1 leaves room for the three negative leads and refuses anything that would say the published outlook is substantially worse than doing nothing, which the record does not support"
+reason_upper = "the best measured skill is +0.438, at lead 9. A skill above 0.5 against persistence would mean the outlook halves the baseline's mean squared error, and nothing in this record comes close; an answer there means the table was misread or the bundle changed underneath it"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "lead"
+var = "sw_outlook_lead"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "read the measured skill of the issued outlook against persistence at this lead"
+binds = "out"
+type = "Ratio"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# numbers must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
 
 [view]
-kind = "number"
+kind = "line"
+over = "sw_outlook_lead"
+points = 52
