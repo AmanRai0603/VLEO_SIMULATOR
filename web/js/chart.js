@@ -67,8 +67,21 @@ export function drawChart(canvas, spec) {
   if (y0 === y1) { y0 -= 1; y1 += 1; }
   if (x0 === x1) { x0 -= 1; x1 += 1; }
 
+  // A log y axis where the quantity is geometric. ap runs 0 to 400 across the
+  // Kp scale in roughly equal ratios, so a linear axis spends nine tenths of
+  // its height on the top two points and buries everything a design reads.
+  // Zero and negatives have no place on it and are dropped to null rather than
+  // clamped to the floor, which would draw them as the smallest real value.
+  const lg = !!spec.y.log;
+  const tl = v => (v === null || !isFinite(v) || v <= 0 ? null : Math.log10(v));
+  if (lg) { y0 = Math.max(y0, 0.5); }
+  const ly0 = lg ? Math.log10(y0) : y0, ly1 = lg ? Math.log10(y1) : y1;
   const px = v => L + (v - x0) / (x1 - x0) * (W - L - R);
-  const py = v => H - B - (v - y0) / (y1 - y0) * (H - B - T);
+  const py = v => {
+    const t = lg ? tl(v) : v;
+    if (t === null) return H - B;
+    return H - B - (t - ly0) / (ly1 - ly0) * (H - B - T);
+  };
   const fx = spec.x.fmt || nice, fy = spec.y.fmt || nice;
 
   ctx.strokeStyle = INK.grid; ctx.lineWidth = 1;
@@ -78,7 +91,8 @@ export function drawChart(canvas, spec) {
     const y = T + i * (H - B - T) / ny;
     ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(W - R, y); ctx.stroke();
     ctx.textAlign = 'right';
-    ctx.fillText(fy(y1 - i * (y1 - y0) / ny), L - 6, y + 3);
+    const at = lg ? Math.pow(10, ly1 - i * (ly1 - ly0) / ny) : y1 - i * (y1 - y0) / ny;
+    ctx.fillText(fy(at), L - 6, y + 3);
   }
   ctx.textAlign = 'center';
   for (let i = 0; i <= nx; i++) {
@@ -115,7 +129,7 @@ export function drawChart(canvas, spec) {
       ctx.beginPath();
       for (let k = 0; k < s.x.length; k++) {
         const v = s.y[k];
-        if (v === null || !isFinite(v)) { open = false; continue; }
+        if (v === null || !isFinite(v) || (lg && v <= 0)) { open = false; continue; }
         const X = px(s.x[k]), Y = py(v);
         if (!open) { ctx.moveTo(X, Y); open = true; }
         else if (s.kind === 'step') { ctx.lineTo(X, py(s.y[k - 1] === null ? v : s.y[k - 1])); ctx.lineTo(X, Y); }
@@ -149,7 +163,7 @@ export function drawChart(canvas, spec) {
 
   // Everything a hover needs to answer "what is the value here", kept on the
   // canvas so the readout cannot drift from the picture it is drawn over.
-  canvas._chart = { spec, x0, x1, y0, y1, L, R, T, B, px, py, fx, fy };
+  canvas._chart = { spec, x0, x1, y0, y1, L, R, T, B, px, py, fx, fy, log: lg };
 
   const named = spec.series.filter(s => s.name);
   if (named.length > 1) {

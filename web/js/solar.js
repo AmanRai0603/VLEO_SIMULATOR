@@ -20,7 +20,7 @@
 
 import { $, esc, fmt } from './dom.js';
 import { S } from './state.js';
-import { solarRecord, bundleFile, centredMean, corr, quantile, num } from './record.js';
+import { solarRecord, bundleFile, centredMean, corr, quantile, num, daysSince2000 } from './record.js';
 import { drawChart, attachHover, INK } from './chart.js';
 
 // ---------------------------------------------------------------------------
@@ -33,10 +33,12 @@ const PANELS = [
     draws: 'The mean cycle against every cycle the record holds, stacked on phase.',
     asks: 'How much of F10.7 does the cycle explain — and does one cycle repeat the last?',
     controls: [
+      { k: 'view', label: 'view', opts: [['stack', 'the mean cycle'], ['storm', 'storm scale by cycle']] },
       { k: 'v', label: 'variable', opts: [['f107', 'F10.7'], ['ap', 'Ap'], ['ssn', 'sunspot number']] },
       { k: 'bins', label: 'phase bins', opts: [['20', '20'], ['10', '10'], ['40', '40']] },
     ],
     build(rec, o) {
+      if (o.view === 'storm') return stormScale(rec);
       const nb = +o.bins, key = o.v;
       const per = new Map();
       for (const c of rec.cycles) per.set(c.n, Array.from({ length: nb }, () => []));
@@ -93,11 +95,13 @@ const PANELS = [
     draws: 'The autocorrelation of the detrended record against lag, and its harmonics.',
     asks: 'At what lag does the solar rotation come back, and how strongly?',
     controls: [
+      { k: 'view', label: 'view', opts: [['acf', 'recurrence and decay'], ['spikes', 'spikes: size and timing']] },
       { k: 'v', label: 'variable', opts: [['f107', 'F10.7'], ['ap', 'Ap']] },
       { k: 'w', label: 'detrend window', opts: [['365', '365 d'], ['181', '181 d'], ['731', '731 d']] },
       { k: 'lag', label: 'max lag', opts: [['120', '120 d'], ['60', '60 d'], ['200', '200 d']] },
     ],
     build(rec, o) {
+      if (o.view === 'spikes') return spikes(rec);
       const key = o.v, W = +o.w, maxLag = +o.lag;
       const v = rec.days.map(d => d[key]);
       // 0.6, the same completeness rule sw_recurrence_lag and
@@ -152,10 +156,12 @@ const PANELS = [
     draws: 'Where the record actually sits, and the boundaries the study cut it at.',
     asks: 'Quiet, active or storm — and how much of the record is each?',
     controls: [
+      { k: 'view', label: 'view', opts: [['hist', 'where the record sits'], ['phase', 'regime against cycle phase']] },
       { k: 'v', label: 'variable', opts: [['ap', 'Ap — regime'], ['f107', 'F10.7 — activity band']] },
       { k: 'scale', label: 'count axis', opts: [['log', 'log'], ['lin', 'linear']] },
     ],
     build(rec, o) {
+      if (o.view === 'phase') return regimeByPhase(rec);
       const key = o.v;
       const cuts = key === 'ap' ? [6.5, 25.5] : [90, 120, 180];
       const names = key === 'ap' ? ['quiet', 'active', 'storm'] : ['low', 'moderate', 'elevated', 'high'];
@@ -198,13 +204,16 @@ const PANELS = [
     draws: 'How far the flux moves over a lead, at a percentile.',
     asks: 'How far ahead is F10.7 knowable, and what does the band cost?',
     controls: [
+      { k: 'v', label: 'variable', opts: [['f107', 'F10.7'], ['ap', 'Ap']] },
       { k: 'q', label: 'percentile', opts: [['0.95', '95th'], ['0.5', '50th'], ['0.9', '90th'], ['0.99', '99th']] },
       { k: 'span', label: 'lead out to', opts: [['1826', '5 years'], ['365', '1 year'], ['5478', '15 years']] },
+      { k: 'by', label: 'split', opts: [['all', 'the whole record'], ['cycle', 'by cycle']] },
     ],
     build(rec, o) {
-      const q = +o.q, maxL = +o.span;
+      const q = +o.q, maxL = +o.span, key = o.v;
+      if (o.by === 'cycle') return growthByCycle(rec, key, q, maxL);
       const byDay = new Map();
-      for (const d of rec.days) if (d.f107 !== null) byDay.set(d.t, d.f107);
+      for (const d of rec.days) if (d[key] !== null) byDay.set(d.t, d[key]);
       const leads = [];
       for (let L = 30; L <= maxL; L = Math.round(L * 1.35)) leads.push(L);
       const xs = [], ys = [], ns = [];
@@ -220,7 +229,7 @@ const PANELS = [
       return {
         spec: {
           x: { label: 'lead  [years]', min: 0 },
-          y: { label: 'change in F10.7 at the ' + (q * 100) + 'th percentile  [sfu]' },
+          y: { label: 'change in ' + (key === 'f107' ? 'F10.7' : 'Ap') + ' at the ' + (q * 100) + 'th percentile  [' + (key === 'f107' ? 'sfu' : '-') + ']' },
           series: [{ name: '', kind: 'line', x: xs, y: ys }],
         },
         note: 'Signed change, not absolute: the unsafe direction for a drag design is flux arriving ' +
@@ -241,12 +250,20 @@ const PANELS = [
     asks: 'Is the published forecast worth more than assuming nothing changes?',
     needs: ['forecast_issued.csv'],
     controls: [
+      { k: 'view', label: 'view', opts: [['lead', 'against lead'], ['rolling', 'rolling, by year'], ['age', 'issue age']] },
       { k: 'm', label: 'metric', opts: [['skill', 'skill vs persistence'], ['bias', 'bias'], ['rmse', 'RMS error']] },
       { k: 'base', label: 'persistence baseline', opts: [['strict', 'last obs BEFORE issue'], ['leaky', 'obs ON the issue date']] },
     ],
-    async data() { return bundleFile('solar-weather', 'forecast_issued.csv'); },
+    async data() {
+      const [fc, idx] = await Promise.all([
+        bundleFile('solar-weather', 'forecast_issued.csv'),
+        bundleFile('solar-weather', 'forecast_issues.csv'),
+      ]);
+      return { fc, idx };
+    },
     build(rec, o, extra) {
-      const fc = extra.rows;
+      const fc = extra.fc.rows;
+      if (o.view === 'age') return issueAge(extra.idx.rows);
       const byDay = new Map();
       for (const d of rec.days) if (d.f107 !== null) byDay.set(d.t, d.f107);
       const tOf = new Map();
@@ -308,10 +325,12 @@ const PANELS = [
     draws: 'The design window: what the record expects against what the vehicle is built for.',
     asks: 'Will the design be exceeded, and if so beyond what mission length?',
     controls: [
+      { k: 'v', label: 'driver', opts: [['ap', 'Ap — return period'], ['f107', 'F10.7 — lead and confidence']] },
       { k: 'g', label: 'designed for', opts: [['3', 'G3 strong'], ['2', 'G2 moderate'], ['1', 'G1 minor']] },
       { k: 'req', label: 'requirement', opts: [['150', 'Ap 150'], ['132', 'Ap 132'], ['200', 'Ap 200']] },
     ],
     build(rec, o) {
+      if (o.v === 'f107') return f107Window(rec);
       // The fitted return relation, as sw_storm_return_level publishes it. The
       // constants are that row's; this panel does not re-fit, because a figure
       // that fits its own line is drawing a second opinion and calling it the
@@ -360,9 +379,12 @@ const PANELS = [
     asks: 'What is the context a single mission sits inside?',
     controls: [
       { k: 'v', label: 'variable', opts: [['f107', 'F10.7'], ['ap', 'Ap'], ['ssn', 'sunspot number']] },
-      { k: 'by', label: 'aggregate', opts: [['year', 'by year'], ['doy', 'by day of year'], ['month', 'by month']] },
+      { k: 'by', label: 'aggregate', opts: [['year', 'by year'], ['doy', 'by day of year'], ['month', 'by month'], ['smooth', 'the 13-month smoother'], ['kpap', 'Kp against ap']] },
     ],
-    build(rec, o) {
+    async data() { return bundleFile('solar-weather', 'monthly_means.csv'); },
+    build(rec, o, extra) {
+      if (o.by === 'smooth') return smoothed(extra.rows, o.v);
+      if (o.by === 'kpap') return kpAgainstAp(rec);
       const key = o.v;
       const grp = new Map();
       for (const d of rec.days) {
@@ -426,6 +448,275 @@ const PANELS = [
     },
   },
 ];
+
+
+// ---------------------------------------------------------------------------
+// the views the study's tabs name and the first pass did not draw
+
+/** Repeatability · storm scale. How unevenly the storms fall across cycles. */
+function stormScale(rec) {
+  const LV = [[48, 'G1'], [80, 'G2'], [132, 'G3']];
+  const per = rec.cycles.map(c => {
+    const d = rec.days.filter(x => x.cycle === c.n && x.ap !== null);
+    return { c, n: d.length, days: d };
+  });
+  const series = LV.map(([thr, name], i) => ({
+    name: name + ' (Ap \u2265 ' + thr + ')',
+    kind: 'bars',
+    x: per.map(p => p.c.n),
+    // Per YEAR of the cycle, not per cycle: cycle 25 is six years long in this
+    // record and the other two are eleven, so raw counts would say more about
+    // how much of each cycle the record holds than about the Sun.
+    y: per.map(p => (p.n ? p.days.filter(d => d.ap >= thr).length / (p.n / 365.25) : null)),
+    colour: INK.series[i],
+  }));
+  const worst = per.map(p => ({ n: p.c.n, max: Math.max(...p.days.map(d => d.ap)) }));
+  return {
+    spec: {
+      x: { label: 'solar cycle', ticks: 2 },
+      y: { label: 'days a year at or above the level', min: 0 },
+      series,
+    },
+    note: 'Storms are not shared out evenly between cycles. Largest daily Ap by cycle: ' +
+      worst.map(w => w.n + ' \u2192 ' + w.max).join(', ') +
+      '. Counted per year of each cycle rather than per cycle, because this record holds all of 23 ' +
+      'and 24 and only six years of 25. A design sized on the average cycle is sized for neither the ' +
+      'cycle it will fly through nor the worst one here.',
+  };
+}
+
+/** Pattern · spikes. What counts as one, how big, and when they fall. */
+function spikes(rec) {
+  const v = rec.days.map(d => d.f107);
+  const base = centredMean(v, 81, 0.7);
+  const ratio = rec.days.map((d, i) => (v[i] === null || base[i] === null ? null : v[i] / base[i]));
+  const ok = ratio.filter(x => x !== null);
+  const mu = ok.reduce((p, c) => p + c, 0) / ok.length;
+  const sd = Math.sqrt(ok.reduce((p, c) => p + (c - mu) * (c - mu), 0) / ok.length);
+  const thr = mu + 2.5 * sd;
+  const nb = 20, byPhase = new Array(nb).fill(0), allPhase = new Array(nb).fill(0);
+  let n = 0, runs = 0, prev = -99;
+  rec.days.forEach((d, i) => {
+    if (ratio[i] === null || d.phase === null) return;
+    const b = Math.min(nb - 1, Math.floor(d.phase * nb));
+    allPhase[b]++;
+    if (ratio[i] >= thr) {
+      byPhase[b]++; n++;
+      if (d.t !== prev + 1) runs++;
+      prev = d.t;
+    }
+  });
+  const xs = byPhase.map((_, i) => (i + 0.5) / nb);
+  return {
+    spec: {
+      x: { label: 'cycle phase', min: 0, max: 1 },
+      y: { label: 'spike days per 1000 days at that phase', min: 0 },
+      series: [{ name: '', kind: 'bars', x: xs, y: byPhase.map((c, i) => (allPhase[i] ? 1000 * c / allPhase[i] : null)) }],
+    },
+    note: 'A spike is a day whose F10.7 exceeds its own 81-day centred mean by the record\u2019s own ' +
+      'scatter: mean + 2.5 sd = ' + thr.toFixed(6) + ', which sw_spike_threshold declares. That ' +
+      'catches ' + n + ' days in ' + runs + ' separate bursts. Normalised per thousand days at each ' +
+      'phase, so a phase the record simply holds more of does not look spikier. They cluster before ' +
+      'and around maximum \u2014 which is a different answer from where the Ap exceedances fall, and ' +
+      'the two should not be confused: flux spikes and geomagnetic storms are not the same event.',
+  };
+}
+
+/** Segmentation · regime against cycle phase. Where in a cycle a storm is likely. */
+function regimeByPhase(rec) {
+  const nb = 20;
+  const tot = new Array(nb).fill(0), st = new Array(nb).fill(0), qt = new Array(nb).fill(0);
+  for (const d of rec.days) {
+    if (d.phase === null || d.ap === null) continue;
+    const b = Math.min(nb - 1, Math.floor(d.phase * nb));
+    tot[b]++;
+    if (d.ap >= 26) st[b]++;
+    else if (d.ap <= 6) qt[b]++;
+  }
+  const xs = tot.map((_, i) => (i + 0.5) / nb);
+  return {
+    spec: {
+      x: { label: 'cycle phase', min: 0, max: 1 },
+      y: { label: 'share of days at that phase  [%]', min: 0 },
+      series: [
+        { name: 'storm (Ap \u2265 26)', kind: 'line', x: xs, y: st.map((c, i) => (tot[i] ? 100 * c / tot[i] : null)), colour: '#c1440e' },
+        { name: 'quiet (Ap \u2264 6)', kind: 'line', x: xs, y: qt.map((c, i) => (tot[i] ? 100 * c / tot[i] : null)), colour: '#2a6f97' },
+      ],
+      marks: [{ axis: 'x', at: 0.6193669438, label: 'the declared epoch, phase 0.619' }],
+    },
+    note: 'The storm share peaks on the DECLINING side, past maximum, where coronal holes dominate ' +
+      'rather than active regions \u2014 and the declared epoch sits inside that band. This is the ' +
+      'same shape sw_exceedance_phase reports as a median of 0.603 for the days above the design Ap; ' +
+      'here it is the whole distribution rather than its middle.',
+  };
+}
+
+/** Predict · by cycle. The same growth curve, computed inside each cycle. */
+function growthByCycle(rec, key, q, maxL) {
+  const leads = [];
+  for (let L = 30; L <= Math.min(maxL, 1826); L = Math.round(L * 1.5)) leads.push(L);
+  const series = rec.cycles.map((c, i) => {
+    const by = new Map();
+    for (const d of rec.days) if (d.cycle === c.n && d[key] !== null) by.set(d.t, d[key]);
+    const ys = leads.map(L => {
+      const ch = [];
+      for (const [t, v] of by) { const w = by.get(t + L); if (w !== undefined) ch.push(w - v); }
+      ch.sort((a, b) => a - b);
+      return ch.length > 30 ? quantile(ch, q) : null;
+    });
+    return { name: 'cycle ' + c.n, kind: 'line', x: leads.map(L => L / 365.25), y: ys, colour: INK.series[i] };
+  });
+  return {
+    spec: {
+      x: { label: 'lead  [years]', min: 0 },
+      y: { label: 'change at the ' + (q * 100) + 'th percentile' },
+      series,
+    },
+    note: 'Pairs are taken only within a cycle, so a lead cannot straddle a minimum and the curve is ' +
+      'about the cycle rather than about the boundary. Cycle 25 stops early because this record holds ' +
+      'six years of it, and a lead with fewer than thirty pairs is left undrawn rather than computed ' +
+      'from a handful. The three disagree, which is the point: sw_uncertainty_growth pools them.',
+  };
+}
+
+/** Forecast · issue age. How stale the newest outlook is on an average day. */
+function issueAge(idx) {
+  const ds = idx.map(r => daysSince2000(r.issue_date)).filter(x => isFinite(x)).sort((a, b) => a - b);
+  const gaps = [];
+  for (let i = 1; i < ds.length; i++) { const g = ds[i] - ds[i - 1]; if (g > 0) gaps.push(g); }
+  const hist = new Map();
+  for (const g of gaps) hist.set(Math.min(g, 30), (hist.get(Math.min(g, 30)) || 0) + 1);
+  const xs = [...hist.keys()].sort((a, b) => a - b);
+  const mean = gaps.reduce((p, c) => p + c, 0) / gaps.length;
+  gaps.sort((a, b) => a - b);
+  return {
+    spec: {
+      x: { label: 'days between one issue and the next  [30 = 30 or more]', min: 0 },
+      y: { label: 'number of gaps', min: 0 },
+      series: [{ name: '', kind: 'bars', x: xs, y: xs.map(k => hist.get(k)) }],
+    },
+    note: 'From forecast_issues.csv, the index of ' + idx.length + ' issues \u2014 the one table in ' +
+      'this bundle nothing else reads. The outlook is not published daily: the gap between issues is ' +
+      'a median of ' + quantile(gaps, 0.5) + ' days and a mean of ' + mean.toFixed(2) +
+      ', so on a typical day the newest outlook is already that old and its nominal lead understates ' +
+      'the real one. A verification keyed on lead_days alone, as the rows here are, measures the ' +
+      'forecast and not the staleness a user actually meets.',
+  };
+}
+
+/** Design · the F10.7 window, which is the other half of what flows out. */
+function f107Window(rec) {
+  const byDay = new Map();
+  for (const d of rec.days) if (d.f107 !== null) byDay.set(d.t, d.f107);
+  const CENTRAL = 114.8437;
+  const leads = [], design = [], growth = [];
+  for (let L = 183; L <= 5478; L = Math.round(L * 1.25)) {
+    const ch = [];
+    for (const [t, v] of byDay) { const w = byDay.get(t + L); if (w !== undefined) ch.push(w - v); }
+    ch.sort((a, b) => a - b);
+    const p95 = quantile(ch, 0.95);
+    leads.push(L / 365.25); growth.push(p95); design.push(CENTRAL + p95);
+  }
+  return {
+    spec: {
+      x: { label: 'lead  [years]', min: 0 },
+      y: { label: 'F10.7  [sfu]' },
+      series: [
+        { name: 'design value = central + 95th percentile growth', kind: 'line', x: leads, y: design },
+        { name: 'the 95th percentile growth alone', kind: 'line', x: leads, y: growth, colour: '#2a6f97' },
+      ],
+      marks: [
+        { axis: 'y', at: CENTRAL, label: 'central expectation = ' + CENTRAL, colour: '#4a4a4a' },
+        { axis: 'y', at: 250, label: 'required \u2264 250', colour: '#c1440e' },
+      ],
+    },
+    note: 'The F10.7 half of what crosses to the system, built the way sw_f107_design builds it: the ' +
+      'central expectation plus the 95th percentile of the change over the lead. At mission leads the ' +
+      'persistence term has decayed to nothing \u2014 w = exp(-L/27 d) is nil after a year \u2014 so ' +
+      'the central expectation is flat and the whole shape is the growth. It peaks near half a solar ' +
+      'cycle and dips near a full one, which is the cycle showing through a statistic that was never ' +
+      'told about it. The requirement of 250 sfu is met across the whole declared range, unlike the Ap ' +
+      'one.',
+  };
+}
+
+/** Climate · the 13-month smoother, the one view monthly_means.csv exists for. */
+function smoothed(rows, key) {
+  const col = key === 'f107' ? 'f107' : key === 'ap' ? 'ap' : 'ssn';
+  const xs = [], raw = [], sm = [];
+  for (const r of rows) {
+    const t = daysSince2000(r.month) / 365.25 + 2000;
+    xs.push(t);
+    raw.push(num(r[col + '_mean']));
+    sm.push(num(r[col + '_smooth']));
+  }
+  const missing = sm.filter(v => v === null).length;
+  return {
+    spec: {
+      x: { label: 'year' },
+      y: { label: (key === 'f107' ? 'F10.7  [sfu]' : key === 'ap' ? 'Ap  [-]' : 'sunspot number  [-]') + ', monthly' },
+      series: [
+        { name: 'monthly mean', kind: 'line', x: xs, y: raw, width: 1.1, colour: '#c9a227' },
+        { name: '13-month smoother', kind: 'line', x: xs, y: sm, width: 2.2, colour: '#1a1a1a' },
+      ],
+    },
+    note: 'monthly_means.csv, which until now nothing in this repository read \u2014 no row and no ' +
+      'other panel. The 13-month box smoother is the curve solar cycles are conventionally counted ' +
+      'on, and it is undefined for ' + missing + ' of ' + rows.length + ' months at the two ends of ' +
+      'the record, left empty rather than extrapolated. The line breaks there rather than being drawn ' +
+      'across, because a smoother that runs to the edge of a record is claiming to know half a window ' +
+      'it does not have.',
+  };
+}
+
+/** Climate · Kp against ap, which is what the two conversion rows are about. */
+function kpAgainstAp(rec) {
+  const per = new Map();
+  for (const d of rec.days) {
+    if (d.ap === null || d.kp === null) continue;
+    if (!per.has(d.kp)) per.set(d.kp, []);
+    per.get(d.kp).push(d.ap);
+  }
+  const ks = [...per.keys()].sort((a, b) => a - b);
+  const med = ks.map(k => { const v = per.get(k).sort((a, b) => a - b); return quantile(v, 0.5); });
+  const p90 = ks.map(k => quantile(per.get(k).sort((a, b) => a - b), 0.9));
+  const p10 = ks.map(k => quantile(per.get(k).sort((a, b) => a - b), 0.1));
+  // The published three-hourly equivalent amplitude, all 28 points — the same
+  // pairs sw_kp_from_ap carries in its parity grid.
+  //
+  // THIRTY-EIGHT, NOT TEN. Kp is reported in thirds, and the record's kp_max
+  // takes values like 1.33 and 6.67. A lookup on whole Kp returns nothing for
+  // two values in three, and because a null breaks a line rather than being
+  // skipped, the series drew as no line at all — present in the legend and
+  // absent from the picture. That is the failure this view was built to expose
+  // in the DATA, arriving first in the code that draws it.
+  const AP_AT_KP = [
+    0, 2, 3, 4, 5, 6, 7, 9, 12, 15, 18, 22, 27, 32, 39, 48,
+    56, 67, 80, 94, 111, 132, 154, 179, 207, 236, 300, 400,
+  ];
+  const tableAt = kp => {
+    const i = Math.round(kp * 3);
+    return i >= 0 && i < AP_AT_KP.length ? AP_AT_KP[i] : null;
+  };
+  return {
+    spec: {
+      x: { label: 'Kp reached that day  [worst three-hourly slot]', min: 0, max: 9 },
+      y: { label: 'daily Ap  [-], log scale', log: true },
+      series: [
+        { name: 'median daily Ap', kind: 'line', x: ks, y: med },
+        { name: '10th and 90th percentile', kind: 'line', x: ks, y: p10, colour: '#8a8880', width: 1 },
+        { name: '', kind: 'line', x: ks, y: p90, colour: '#8a8880', width: 1 },
+        { name: 'published ap at that Kp', kind: 'line', x: ks, y: ks.map(tableAt), colour: '#c1440e', dash: [5, 4] },
+      ],
+    },
+    note: 'The published table converts a THREE-HOURLY Kp to a three-hourly ap; the record\u2019s daily ' +
+      'Ap is the mean of eight such slots, and a day is labelled by its worst. So the two curves must ' +
+      'diverge and the gap between them is the whole reason sw_kp_slot_bias exists \u2014 at Kp 7 the ' +
+      'table says ' + tableAt(7) + ' and the median day says ' + med[ks.indexOf(7)] + '. Reading the dashed line as ' +
+      'what a disturbed day looks like is the mistake this view is drawn to prevent, and it is also ' +
+      'why sw_ap_design takes the table value as a design CEILING rather than as a typical day.',
+  };
+}
 
 // ---------------------------------------------------------------------------
 // the view
