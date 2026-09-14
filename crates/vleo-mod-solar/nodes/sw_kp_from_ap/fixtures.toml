@@ -1,0 +1,109 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# WHY THESE TEN AND NOT A GRID
+#
+# The published scale is a table, so at its own 28 points there is nothing to
+# derive: the expected value is what IAGA printed. Ten of those points are the
+# integer Kp — 0 through 9 — and those are the ten worth pinning, because an
+# integer Kp is what every consumer and every operational bulletin speaks in,
+# and a transcription error anywhere in the table moves at least one of them.
+#
+# A value strictly between two anchors is NOT here. Between anchors the answer
+# is the interpolation's, not the source's, and a fixture claiming the published
+# table as provenance for a number the published table does not contain would be
+# exactly the thing this file exists to prevent. The interpolation is checked for
+# shape instead — monotone, bounded, clipped — in the property tests, and the
+# table as a whole is checked against the prior implementation in parity.csv.
+
+[[fixture]]
+label = "Kp 0 — ap 0, the table's first point"
+expect = 0.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "iaga_kp_ap"
+inputs = { ap = 0.0 }
+
+[[fixture]]
+label = "Kp 1 — ap 4"
+expect = 1.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "iaga_kp_ap"
+inputs = { ap = 4.0 }
+
+[[fixture]]
+label = "Kp 2 — ap 7"
+expect = 2.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "iaga_kp_ap"
+inputs = { ap = 7.0 }
+
+[[fixture]]
+label = "Kp 3 — ap 15, which is what sw_ap_climatology declares"
+expect = 3.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "iaga_kp_ap"
+inputs = { ap = 15.0 }
+
+[[fixture]]
+label = "Kp 4 — ap 27"
+expect = 4.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "iaga_kp_ap"
+inputs = { ap = 27.0 }
+
+[[fixture]]
+label = "Kp 5 — ap 48, the storm threshold"
+expect = 5.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "iaga_kp_ap"
+inputs = { ap = 48.0 }
+
+[[fixture]]
+label = "Kp 6 — ap 80"
+expect = 6.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "iaga_kp_ap"
+inputs = { ap = 80.0 }
+
+[[fixture]]
+label = "Kp 7 — ap 132"
+expect = 7.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "iaga_kp_ap"
+inputs = { ap = 132.0 }
+
+[[fixture]]
+label = "Kp 8 — ap 207"
+expect = 8.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "iaga_kp_ap"
+inputs = { ap = 207.0 }
+
+[[fixture]]
+label = "Kp 9 — ap 400, the table's last point"
+expect = 9.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "iaga_kp_ap"
+inputs = { ap = 400.0 }
+
+[[fixture]]
+label = "above the table — ap 1000 holds at Kp 9 rather than extrapolating"
+expect = 9.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "iaga_kp_ap"
+inputs = { ap = 1000.0 }

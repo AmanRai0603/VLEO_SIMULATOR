@@ -6,28 +6,73 @@ label = "Kp from daily Ap"
 folder = "sw_kp_from_ap"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1354
-state = "empty"
+order = 1355
+state = "published"
+
+# The prior implementation, named so the parity grid beside this node has
+# something to be the parity of. `tbl_` is the table half of prf_ap2kp and the
+# only half this node is: the measured slot correction is sw_kp_slot_bias.
+migrated_from = "prf_ap2kp.m:100 (01_kernel/sw_study/06_density, local function tbl_)"
+# The published table is exact at its 28 points and the parity grid is read from
+# the MATLAB's own literals, so the two should agree to the last bit. A grid
+# tolerance loose enough to hide a table transcription error would defeat the
+# only thing this grid is here to catch.
+parity_tolerance = 1e-12
 
 [question]
-text = ""
+text = "What Kp does this daily planetary Ap mean?"
+note = "The atmosphere model wants Kp; the design product carries Ap. This is that conversion and only that — the published table, applied as published. The bias the table carries when a daily mean is fed to a three-hourly scale is measured separately, in sw_kp_slot_bias, and is not corrected here."
 
 [maths]
-expression = ""
-source = ""
+confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
+# The published scale is 28 (Kp, ap) pairs. Read in the ap-to-Kp direction it is
+# a monotone piecewise-linear function of ap, clipped at both ends.
+expression = "Kp = piecewise_linear(ap_28 -> kp_28, clamp(Ap, 0, 400))"
+source = "iaga_kp_ap"
+
+[[assumption]]
+text = "The table is defined for the three-hourly ap and is being fed a daily mean Ap"
+fails_when = "Kp(ap) is concave, so by Jensen's inequality the table run on a daily mean returns a Kp above the mean of the eight three-hourly Kp and well below the daily peak. Measured on the solar-weather record over 10,297 days with both an Ap and all eight Kp: against the 24-hour mean the table reads high by 0.083 Kp (median), against the daily peak it reads low by 1.000 Kp; on disturbed days (Ap >= 48, 131 of them) those become 0.397 high and 1.606 low. Both signs are what the concavity argument predicts. A design sized on the peak slot through this node alone is sized on a sky 1.6 Kp quieter than the record's, and that is on exactly the days a drag design is sized by. sw_kp_slot_bias measures and publishes both offsets; until it is written this node's answer carries them uncorrected."
+
+[[assumption]]
+text = "Straight lines between the 28 tabulated points"
+fails_when = "the published scale is a discrete table, so every value strictly between two anchors is this node's choice and not the source's. ap grows roughly geometrically with Kp, so interpolating linearly in ap rather than in its logarithm understates Kp inside a bin; the worst departure between the two over the whole domain is 0.017 Kp, in the 2-to-3 bin. That is the size of the arbitrariness, and it is smaller than the slot bias above by two orders of magnitude."
+
+[[assumption]]
+text = "Clipped to the table's ends: below ap 0 and above ap 400 the answer is 0 and 9"
+fails_when = "above ap 400 every storm returns exactly 9, so the largest storm on record and a merely severe one become the same number and any relation reading Kp stops responding. The largest daily Ap in the solar-weather record is 273, so nothing in this record reaches the clip — but a scenario multiplier applied to a disturbed day can, and it will do so silently."
 
 [output]
-symbol = ""
-type = ""
-unit = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "Kp"
+type = "Ratio"
+unit = "One"
 lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+upper = 9.0
+reason_lower = "Kp is defined on 0..9 and the table's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet day"
+reason_upper = "Kp is defined on 0..9 and the table's last point is Kp 9 at ap 400. This is the same guard env_kp carries, and it catches an ap value reaching a consumer that wanted Kp"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "ap"
+var = "sw_ap_climatology"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "clamp the daily Ap to the table's domain, then read Kp off the published 28-point scale"
+binds = "k"
+type = "Ratio"
 
 [view]
-kind = "number"
+kind = "line"
+over = "sw_ap_climatology"
+points = 60

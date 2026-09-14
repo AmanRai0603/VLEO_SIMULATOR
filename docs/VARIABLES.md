@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1329 rows** — 645 a person picked, 684 worked out. Two thirds of any design tree is
+**1362 rows** — 670 a person picked, 692 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -18940,6 +18940,697 @@ At or above one the orbit holds indefinitely. Below one the mission has a lifeti
 - **upper bound** — above 95% no inductively coupled source has demonstrated utilisation this high on atomic oxygen
 - **read by** — `prop_ion_flow`
 - **contributes to** — kpi_thrust_margin
+
+
+## `solar` — Solar weather — addition
+
+### `l3_solar_ach_01` — Solar flux
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_solar_ach_02` — F10.7
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_solar_ach_03` — Ap
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | achieved |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_solar_interface` — Solar weather — subsystem interface
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_solar_req_01` — Solar flux
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_solar_req_02` — F10.7
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `l3_solar_req_03` — Ap
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | required |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+### `sw_activity_band` — Flux activity band
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_ap_climatology` — Climatological daily Ap
+
+> What daily planetary Ap does the design assume when no window has been chosen?
+
+| | |
+|---|---|
+| symbol | `Ap` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `Ap = 15` |
+| source | `orbitt_case_c1` |
+| declared value | **15** - |
+| confirmed by | A. Rai / 2026-09-14 |
+| valid over | 0 … 400 - |
+
+- **lower bound** — ap is an equivalent amplitude in nanotesla and cannot be negative; a negative value is a unit or sign error, not a quiet day
+- **upper bound** — 400 is the last point of the published ap/Kp table, above which Kp is no longer distinguished. The largest daily Ap in the solar-weather record is 273, so this bound is the table's limit rather than the record's
+- **read by** — `sw_kp_from_ap`
+
+A stand-in, and labelled as one. sw_ap_design will publish the window-derived Ap at a stated return period, and when it does this row stays beside it rather than being replaced — the same arrangement env_f107 has. Nothing here is window-derived.
+
+### `sw_ap_design` — Ap design value
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_band_coverage` — Stated band coverage
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_central_expectation` — Central expectation
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_cycle_number` — Solar cycle number
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_cycle_phase` — Solar cycle phase
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_cycle_repeatability` — Cycle repeatability
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_event_duration` — Burst duration
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_f107_81day` — F10.7 81-day centred mean
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_f107_design` — F10.7 design value
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_forecast_bias` — Forecast bias
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_forecast_skill` — Forecast skill
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_horizon_climatology` — Horizon against climatology
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_horizon_persistence` — Horizon against persistence
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_kp_from_ap` — Kp from daily Ap
+
+> What Kp does this daily planetary Ap mean?
+
+| | |
+|---|---|
+| symbol | `Kp` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `Kp = piecewise_linear(ap_28 -> kp_28, clamp(Ap, 0, 400))` |
+| source | `iaga_kp_ap` |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0..9 and the table's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet day
+- **upper bound** — Kp is defined on 0..9 and the table's last point is Kp 9 at ap 400. This is the same guard env_kp carries, and it catches an ap value reaching a consumer that wanted Kp
+- **reads** — `sw_ap_climatology`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** The table is defined for the three-hourly ap and is being fed a daily mean Ap — fails when Kp(ap) is concave, so by Jensen's inequality the table run on a daily mean returns a Kp above the mean of the eight three-hourly Kp and well below the daily peak. Measured on the solar-weather record over 10,297 days with both an Ap and all eight Kp: against the 24-hour mean the table reads high by 0.083 Kp (median), against the daily peak it reads low by 1.000 Kp; on disturbed days (Ap >= 48, 131 of them) those become 0.397 high and 1.606 low. Both signs are what the concavity argument predicts. A design sized on the peak slot through this node alone is sized on a sky 1.6 Kp quieter than the record's, and that is on exactly the days a drag design is sized by. sw_kp_slot_bias measures and publishes both offsets; until it is written this node's answer carries them uncorrected.
+- **assumes** Straight lines between the 28 tabulated points — fails when the published scale is a discrete table, so every value strictly between two anchors is this node's choice and not the source's. ap grows roughly geometrically with Kp, so interpolating linearly in ap rather than in its logarithm understates Kp inside a bin; the worst departure between the two over the whole domain is 0.017 Kp, in the 2-to-3 bin. That is the size of the arbitrariness, and it is smaller than the slot bias above by two orders of magnitude.
+- **assumes** Clipped to the table's ends: below ap 0 and above ap 400 the answer is 0 and 9 — fails when above ap 400 every storm returns exactly 9, so the largest storm on record and a merely severe one become the same number and any relation reading Kp stops responding. The largest daily Ap in the solar-weather record is 273, so nothing in this record reaches the clip — but a scenario multiplier applied to a disturbed day can, and it will do so silently.
+- **evidence** Kp 0 — ap 0, the table's first point — expect 0 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
+- **evidence** Kp 1 — ap 4 — expect 1 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
+- **evidence** Kp 2 — ap 7 — expect 2 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
+- **evidence** Kp 3 — ap 15, which is what sw_ap_climatology declares — expect 3 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
+- **evidence** Kp 4 — ap 27 — expect 4 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
+- **evidence** Kp 5 — ap 48, the storm threshold — expect 5 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
+- **evidence** Kp 6 — ap 80 — expect 6 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
+- **evidence** Kp 7 — ap 132 — expect 7 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
+- **evidence** Kp 8 — ap 207 — expect 8 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
+- **evidence** Kp 9 — ap 400, the table's last point — expect 9 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
+- **evidence** above the table — ap 1000 holds at Kp 9 rather than extrapolating — expect 9 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
+
+The atmosphere model wants Kp; the design product carries Ap. This is that conversion and only that — the published table, applied as published. The bias the table carries when a daily mean is fed to a three-hourly scale is measured separately, in sw_kp_slot_bias, and is not corrected here.
+
+### `sw_kp_slot_bias` — Kp slot bias
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_mean_cycle_level` — Mean-cycle F10.7 level
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_recurrence_lag` — Rotation recurrence lag
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_recurrence_strength` — Rotation recurrence strength
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_regime` — Geomagnetic regime
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_semiannual_amplitude` — Semiannual amplitude
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_spike_threshold` — Spike threshold
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_storm_rate` — Storm rate
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_storm_return_level` — Storm return level
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
+### `sw_uncertainty_growth` — Uncertainty growth with lead
+
+> 
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier |  |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
 
 ## `struct` — Structure

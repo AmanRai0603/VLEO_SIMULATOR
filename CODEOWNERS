@@ -1019,6 +1019,7 @@
 /crates/vleo-mod-power/nodes/pwr_subsystem_mass/ @power
 /crates/vleo-mod-power/nodes/pwr_thermal_load/ @thermal
 /crates/vleo-mod-solar/nodes/sw_activity_band/ @environment
+/crates/vleo-mod-solar/nodes/sw_ap_climatology/ @environment
 /crates/vleo-mod-solar/nodes/sw_ap_design/ @environment
 /crates/vleo-mod-solar/nodes/sw_band_coverage/ @environment
 /crates/vleo-mod-solar/nodes/sw_central_expectation/ @environment

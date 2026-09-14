@@ -1,0 +1,68 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_ap_climatology"
+label = "Climatological daily Ap"
+folder = "sw_ap_climatology"   # frozen at seed; renaming the label never moves the directory
+subsystem = "solar"
+parent = "l3_solar"
+kind = "declared"
+owner = "environment"
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. It sits immediately before sw_kp_from_ap because that is the row
+# that reads it, and a tree where the argument follows the function reads
+# backwards.
+order = 1354
+state = "published"
+
+[question]
+text = "What daily planetary Ap does the design assume when no window has been chosen?"
+note = "A stand-in, and labelled as one. sw_ap_design will publish the window-derived Ap at a stated return period, and when it does this row stays beside it rather than being replaced — the same arrangement env_f107 has. Nothing here is window-derived."
+
+[maths]
+confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
+expression = "Ap = 15"
+source = "orbitt_case_c1"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "Ap"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 400.0
+reason_lower = "ap is an equivalent amplitude in nanotesla and cannot be negative; a negative value is a unit or sign error, not a quiet day"
+reason_upper = "400 is the last point of the published ap/Kp table, above which Kp is no longer distinguished. The largest daily Ap in the solar-weather record is 273, so this bound is the table's limit rather than the record's"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+#
+# WHERE 15 COMES FROM, AND WHAT THE RECORD SAYS ABOUT IT
+#
+# 15 is the legacy feasibility study's own labelled constant, carried across
+# verbatim so a run with no window reproduces the study's numbers rather than
+# silently substituting something else. The study pairs it with F10.7 = 120 and
+# F10.7bar = 120 and states in the same breath that the three are NOT
+# window-derived.
+#
+# Measured on the solar-weather record (10,299 days with an Ap, 28.2 years):
+# mean 10.50, median 7, 95th percentile 28, maximum 273. So 15 sits above both
+# the mean and the median — mildly conservative for a quiet-day assumption and
+# far below anything a storm case should use. A design sized on this value alone
+# is sized on a slightly disturbed average day, which is what the study intended
+# it for and nothing more.
+#
+# Reading 15 through the published ap/Kp table gives Kp = 3.000 exactly, which
+# is the value env_kp declares by hand. The two were declared independently and
+# they agree, which is the first evidence in this subsystem that the hand-picked
+# sky and the published scale are consistent.
+number = 15.0
+confirmed_by = "A. Rai / 2026-09-14"
+
+[view]
+kind = "number"

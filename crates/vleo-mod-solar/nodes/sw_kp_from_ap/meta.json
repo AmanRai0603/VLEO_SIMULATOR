@@ -1,17 +1,17 @@
 {
   "id": "sw_kp_from_ap",
-  "state": "empty",
-  "sheet_hash": "a5e5d0",
-  "impl_hash": "222325",
+  "state": "published",
+  "sheet_hash": "5039fa",
+  "impl_hash": "a9a45d",
   "owner": "environment",
-  "tier": "",
-  "fixtures": 0,
+  "tier": "A",
+  "fixtures": 11,
   "criticality": "minor",
   "reviewers": 1,
   "differential_fill": false,
-  "migrated_from": "",
-  "holes": 0,
-  "inputs": [],
+  "migrated_from": "prf_ap2kp.m:100 (01_kernel/sw_study/06_density, local function tbl_)",
+  "holes": 1,
+  "inputs": ["sw_ap_climatology"],
   "contributes": [],
-  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+  "gaps": []
 }
