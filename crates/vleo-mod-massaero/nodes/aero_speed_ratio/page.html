@@ -8,11 +8,12 @@
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
   <button role="tab" class="tab" data-tab="1">interface</button>
   <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="3">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="4">generated code</button>
+  <button role="tab" class="tab" data-tab="5">evidence</button>
+  <button role="tab" class="tab" data-tab="6">flags</button>
+  <button role="tab" class="tab" data-tab="7">credibility</button>
+  <button role="tab" class="tab" data-tab="8">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">How hyperthermal is the flow — does the gas arrive as a beam or as a cloud?</p>
@@ -34,6 +35,22 @@
 <ol class="algo">
 <li><span class="step">divide the bulk speed by the most probable thermal speed of the local mixture</span> <span class="binds">→ <code>s: Ratio</code></span></li>
 </ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function aero_speed_ratio(v: Velocity, t: Temperature, m: MolarMass) -> Ratio
+    given v from orbit_velocity
+    given t from env_local_temperature
+    given m from env_mean_molar_mass
+    // divide the bulk speed by the most probable thermal speed of the local mixture
+    s ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require s ≥ 1
+    require s ≤ 30
+    require s is finite
+
+    return s
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
 <li><code>s &ge; 1</code> — below a speed ratio of one the flow is thermal rather than hyperthermal, and Sentman's relations lose their meaning</li>
@@ -42,6 +59,11 @@
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
+<div class="relation-host" data-node="aero_speed_ratio" data-lo="1" data-hi="30" data-symbol="s">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="4">
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -85,13 +107,13 @@ pub fn evaluate(v: Velocity, t: Temperature, m: MolarMass) -&gt; Result&lt;Ratio
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="5">
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
 <tr data-fixture="250 km, moderate activity"><td>250 km, moderate activity</td><td class="num">8.6435</td><td class="num">0.005</td><td>independent-derivation</td><td>sentman1961</td></tr>
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="6">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 1 — below a speed ratio of one the flow is thermal rather than hyperthermal, and Sentman's relations lose their meaning</li>
@@ -101,11 +123,11 @@ pub fn evaluate(v: Velocity, t: Temperature, m: MolarMass) -&gt; Result&lt;Ratio
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="7">
 <p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="aero_speed_ratio"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="8">
 <p>Valid over <code>1 &hellip; 30</code> -.</p>
 <ul class="guards"><li>lower — below a speed ratio of one the flow is thermal rather than hyperthermal, and Sentman's relations lose their meaning</li><li>upper — above 30 the exponential terms underflow and the relations are numerically dead</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>

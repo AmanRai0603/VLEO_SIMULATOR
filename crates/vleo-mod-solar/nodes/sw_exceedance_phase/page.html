@@ -8,11 +8,12 @@
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
   <button role="tab" class="tab" data-tab="1">interface</button>
   <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="3">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="4">generated code</button>
+  <button role="tab" class="tab" data-tab="5">evidence</button>
+  <button role="tab" class="tab" data-tab="6">flags</button>
+  <button role="tab" class="tab" data-tab="7">credibility</button>
+  <button role="tab" class="tab" data-tab="8">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">Where in the solar cycle do the exceedances of the design Ap fall?</p>
@@ -39,6 +40,20 @@
 <ol class="algo">
 <li><span class="step">read the measured median cycle phase of the days at or above this Ap</span> <span class="binds">→ <code>out: Ratio</code></span></li>
 </ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_exceedance_phase(ap_design: Ratio) -> Ratio
+    given ap_design from sw_ap_design
+    // read the measured median cycle phase of the days at or above this Ap
+    P_exc ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require P_exc ≥ 0
+    require P_exc ≤ 1
+    require P_exc is finite
+
+    return P_exc
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
 <li><code>P_exc &ge; 0</code> — cycle phase runs 0 at minimum to 1 at the next minimum, so 0 is the floor by definition. A median at 0 would mean every exceedance fell on the first day of a cycle</li>
@@ -47,6 +62,11 @@
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
+<div class="relation-host" data-node="sw_exceedance_phase" data-lo="0" data-hi="1" data-symbol="P_exc">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="4">
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -114,7 +134,7 @@ pub fn evaluate(ap_design: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="5">
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
 <tr data-fixture="the G2 bound, Ap 80 — median phase 0.576"><td>the G2 bound, Ap 80 — median phase 0.576</td><td class="num">0.5763024435</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
 <tr data-fixture="the G1 bound, Ap 48 — the lowest level the G scale defines"><td>the G1 bound, Ap 48 — the lowest level the G scale defines</td><td class="num">0.571692024</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
@@ -122,7 +142,7 @@ pub fn evaluate(ap_design: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="6">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 0 — cycle phase runs 0 at minimum to 1 at the next minimum, so 0 is the floor by definition. A median at 0 would mean every exceedance fell on the first day of a cycle</li>
@@ -133,11 +153,11 @@ pub fn evaluate(ap_design: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="7">
 <p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_exceedance_phase"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="8">
 <p>Valid over <code>0 &hellip; 1</code> -.</p>
 <ul class="guards"><li>lower — cycle phase runs 0 at minimum to 1 at the next minimum, so 0 is the floor by definition. A median at 0 would mean every exceedance fell on the first day of a cycle</li><li>upper — 1 is the end of a cycle by the same definition. A median at 1 would mean every exceedance fell on the last day of one</li></ul>
 <div class="sweep" data-over="sw_storm_design_level" data-points="40" data-y="sw_exceedance_phase"><p class="muted">Sweeps against <a class="xref" data-goto="sw_storm_design_level">sw_storm_design_level</a> over 40 points. Run the branch to draw it.</p></div>

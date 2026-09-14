@@ -200,6 +200,9 @@ pub fn fragment(
             }
             o.push_str("</ol>\n");
         }
+        if !sh.is_seeded() {
+            o.push_str(&pseudocode(sh));
+        }
         o.push_str("<h4>Guards</h4>\n<ul class=\"guards\">\n");
         o.push_str(&format!(
             "<li><code>{s} &ge; {lo}</code> — {r}</li>\n",
@@ -216,8 +219,37 @@ pub fn fragment(
         o.push_str("</ul>\n<p class=\"muted\">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>\n");
     });
 
-    // --- 4 generated code ---------------------------------------------------
+    // --- 4 the relation, moving ---------------------------------------------
+    //
+    // The same relation the tabs either side of this one state in symbols and
+    // in code, walked. A reader who cannot yet read the expression can watch
+    // the answer move as the input crosses its declared domain, and see where
+    // the guards cut it off.
+    //
+    // The face fills this: the curve comes from the engine's own sweep, so what
+    // animates here is what the node computes and not a second drawing of the
+    // same idea. An empty host is the honest state when the node has nothing
+    // upstream to sweep over.
     tab(&mut o, 3, false, |o| {
+        if sh.is_seeded() {
+            empty(
+                o,
+                "Nothing to walk: the sheet is seeded and the node returns NotRun.",
+            );
+            return;
+        }
+        o.push_str(&format!(
+            "<div class=\"relation-host\" data-node=\"{}\" data-lo=\"{}\" data-hi=\"{}\" data-symbol=\"{}\">\n",
+            h(&sh.id),
+            sh.lower,
+            sh.upper,
+            h(&sh.symbol)
+        ));
+        o.push_str("<p class=\"muted\">asking the engine…</p>\n</div>\n");
+    });
+
+    // --- 4 generated code ---------------------------------------------------
+    tab(&mut o, 4, false, |o| {
         if sh.steps.is_empty() && sh.value.is_none() {
             empty(o, "Nothing generated — the sheet is incomplete.");
         } else {
@@ -229,7 +261,7 @@ pub fn fragment(
     });
 
     // --- 5 evidence ---------------------------------------------------------
-    tab(&mut o, 4, false, |o| {
+    tab(&mut o, 5, false, |o| {
         if sh.fixtures.is_empty() {
             empty(
                 o,
@@ -253,7 +285,7 @@ pub fn fragment(
     });
 
     // --- 6 flags ------------------------------------------------------------
-    tab(&mut o, 5, false, |o| {
+    tab(&mut o, 6, false, |o| {
         o.push_str("<p class=\"muted\">What this node refuses, and what it returns when it refuses.</p>\n<ul class=\"flags\">\n");
         o.push_str(&format!(
             "<li><code>OutOfDomain</code> below {lo} — {rl}</li>\n<li><code>OutOfDomain</code> above {hi} — {ru}</li>\n",
@@ -273,7 +305,7 @@ pub fn fragment(
     });
 
     // --- 7 credibility ------------------------------------------------------
-    tab(&mut o, 6, false, |o| {
+    tab(&mut o, 7, false, |o| {
         if sh.tier.is_empty() || sh.tier == "unset" {
             empty(
                 o,
@@ -297,7 +329,7 @@ pub fn fragment(
     });
 
     // --- 8 design space -----------------------------------------------------
-    tab(&mut o, 7, false, |o| {
+    tab(&mut o, 8, false, |o| {
         o.push_str(&format!(
             "<p>Valid over <code>{lo} &hellip; {hi}</code> {u}.</p>\n",
             lo = sh.lower,
@@ -336,10 +368,11 @@ pub fn fragment(
     o
 }
 
-const TABS: [&str; 8] = [
+const TABS: [&str; 9] = [
     "question &amp; mathematics",
     "interface",
     "algorithm",
+    "the relation, moving",
     "generated code",
     "evidence",
     "flags",
@@ -497,4 +530,70 @@ fn json_num(v: f64) -> String {
     } else {
         "-1e308".into()
     }
+}
+
+/// Pseudocode, derived from the sheet rather than from the generated Rust.
+///
+/// The code tab already shows exactly what runs. This says the same thing in a
+/// form somebody can read who does not read Rust, and — because it is built
+/// from the sheet — it cannot drift from what the sheet declares. What it adds
+/// over the numbered steps is the shape around them: the signature, the order,
+/// and the guards as postconditions rather than as a list underneath.
+fn pseudocode(sh: &Sheet) -> String {
+    let mut o = String::from("<h4>Pseudocode</h4>\n<pre class=\"pseudo\"><code>");
+    let args: Vec<String> = sh
+        .inputs
+        .iter()
+        .map(|i| format!("{}: {}", h(&i.binding), h(&i.ty)))
+        .collect();
+    o.push_str(&format!(
+        "function {}({}) -> {}\n",
+        h(&sh.id),
+        args.join(", "),
+        h(&sh.ty)
+    ));
+    for i in &sh.inputs {
+        o.push_str(&format!("    given {} from {}\n", h(&i.binding), h(&i.var)));
+    }
+    if sh.steps.is_empty() {
+        if sh.is_declared() {
+            // A dimensionless unit prints as "-", which beside a number reads
+            // as a minus sign rather than as an absence of unit.
+            let u = unit_symbol(&sh.unit);
+            let u = if u == "-" {
+                String::new()
+            } else {
+                format!(" {u}")
+            };
+            o.push_str(&format!(
+                "    {} \u{2190} {}{}          // declared, confirmed by {}\n",
+                h(&sh.symbol),
+                sh.value.unwrap_or(0.0),
+                h(&u),
+                h(&sh.confirmed_by)
+            ));
+        }
+    } else {
+        for (n, st) in sh.steps.iter().enumerate() {
+            o.push_str(&format!("    // {}\n", h(&st.text)));
+            // A step that binds `out` IS the answer — that is what the generated
+            // model does with it — so it is named by the symbol here rather than
+            // by the placeholder, or the pseudocode returns something it never
+            // assigned.
+            let bind = if st.binds == "out" {
+                sh.symbol.as_str()
+            } else {
+                st.binds.as_str()
+            };
+            o.push_str(&format!("    {} \u{2190} step {}\n", h(bind), n + 1));
+        }
+    }
+    o.push_str(&format!(
+        "\n    // a guard whose reason is not written down gets deleted\n    require {s} \u{2265} {lo}\n    require {s} \u{2264} {hi}\n    require {s} is finite\n\n    return {s}\n",
+        s = h(&sh.symbol),
+        lo = sh.lower,
+        hi = sh.upper
+    ));
+    o.push_str("</code></pre>\n<p class=\"muted\">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>\n");
+    o
 }

@@ -8,11 +8,12 @@
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
   <button role="tab" class="tab" data-tab="1">interface</button>
   <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="3">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="4">generated code</button>
+  <button role="tab" class="tab" data-tab="5">evidence</button>
+  <button role="tab" class="tab" data-tab="6">flags</button>
+  <button role="tab" class="tab" data-tab="7">credibility</button>
+  <button role="tab" class="tab" data-tab="8">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">How far does a single day's F10.7 stray from its own 81-day centred mean?</p>
@@ -38,6 +39,18 @@
 <section class="panel" data-panel="2">
 <p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
 <p>This is a declared value: <b>0.1222100376</b> -, confirmed by <b>A. Rai / 2026-09-14</b>.</p>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_f107a_ratio() -> Ratio
+    sd_ratio ← 0.1222100376          // declared, confirmed by A. Rai / 2026-09-14
+
+    // a guard whose reason is not written down gets deleted
+    require sd_ratio ≥ 0.05
+    require sd_ratio ≤ 0.25
+    require sd_ratio is finite
+
+    return sd_ratio
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
 <li><code>sd_ratio &ge; 0.05</code> — below 0.05 the daily flux would sit within five per cent of its 81-day mean on a typical day, which would make the daily driver and the smoothed one interchangeable. The record's 99th percentile ratio is 1.371, so it is not</li>
@@ -46,6 +59,11 @@
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
+<div class="relation-host" data-node="sw_f107a_ratio" data-lo="0.05" data-hi="0.25" data-symbol="sd_ratio">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="4">
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -102,10 +120,10 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="5">
 <p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="6">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 0.05 — below 0.05 the daily flux would sit within five per cent of its 81-day mean on a typical day, which would make the daily driver and the smoothed one interchangeable. The record's 99th percentile ratio is 1.371, so it is not</li>
@@ -115,11 +133,11 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="7">
 <p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_f107a_ratio"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="8">
 <p>Valid over <code>0.05 &hellip; 0.25</code> -.</p>
 <ul class="guards"><li>lower — below 0.05 the daily flux would sit within five per cent of its 81-day mean on a typical day, which would make the daily driver and the smoothed one interchangeable. The record's 99th percentile ratio is 1.371, so it is not</li><li>upper — above 0.25 the typical day would be a quarter away from its own baseline and the 81-day mean would not be describing the same quantity as the day. A value there means the window or the pairing is wrong rather than that the Sun is variable</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>

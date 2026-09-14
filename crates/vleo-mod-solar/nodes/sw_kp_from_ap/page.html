@@ -8,11 +8,12 @@
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
   <button role="tab" class="tab" data-tab="1">interface</button>
   <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="3">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="4">generated code</button>
+  <button role="tab" class="tab" data-tab="5">evidence</button>
+  <button role="tab" class="tab" data-tab="6">flags</button>
+  <button role="tab" class="tab" data-tab="7">credibility</button>
+  <button role="tab" class="tab" data-tab="8">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">What Kp does this daily planetary Ap mean?</p>
@@ -38,6 +39,20 @@
 <ol class="algo">
 <li><span class="step">clamp the daily Ap to the table's domain, then read Kp off the published 28-point scale</span> <span class="binds">→ <code>k: Ratio</code></span></li>
 </ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_kp_from_ap(ap: Ratio) -> Ratio
+    given ap from sw_storm_return_level
+    // clamp the daily Ap to the table's domain, then read Kp off the published 28-point scale
+    k ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require Kp ≥ 0
+    require Kp ≤ 9
+    require Kp is finite
+
+    return Kp
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
 <li><code>Kp &ge; 0</code> — Kp is defined on 0..9 and the table's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet day</li>
@@ -46,6 +61,11 @@
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
+<div class="relation-host" data-node="sw_kp_from_ap" data-lo="0" data-hi="9" data-symbol="Kp">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="4">
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -147,7 +167,7 @@ pub fn evaluate(ap: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="5">
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
 <tr data-fixture="Kp 0 — ap 0, the table's first point"><td>Kp 0 — ap 0, the table's first point</td><td class="num">0</td><td class="num">0.000000000001</td><td>published-source</td><td>iaga_kp_ap</td></tr>
 <tr data-fixture="Kp 1 — ap 4"><td>Kp 1 — ap 4</td><td class="num">1</td><td class="num">0.000000000001</td><td>published-source</td><td>iaga_kp_ap</td></tr>
@@ -163,7 +183,7 @@ pub fn evaluate(ap: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="6">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 0 — Kp is defined on 0..9 and the table's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet day</li>
@@ -173,11 +193,11 @@ pub fn evaluate(ap: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="7">
 <p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_kp_from_ap"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="8">
 <p>Valid over <code>0 &hellip; 9</code> -.</p>
 <ul class="guards"><li>lower — Kp is defined on 0..9 and the table's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet day</li><li>upper — Kp is defined on 0..9 and the table's last point is Kp 9 at ap 400. This is the same guard env_kp carries, and it catches an ap value reaching a consumer that wanted Kp</li></ul>
 <div class="sweep" data-over="orbit_mission_duration" data-points="60" data-y="sw_kp_from_ap"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a> over 60 points. Run the branch to draw it.</p></div>

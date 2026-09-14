@@ -12,6 +12,7 @@
 import { $, $$, esc, plural } from './dom.js';
 import { S, isSeeded } from './state.js';
 import { renderRun } from './run.js';
+import { mountRelation } from './relation.js';
 
 export async function openNode(id) {
   const r = S.byId.get(id);
@@ -46,6 +47,11 @@ export async function openNode(id) {
       t.classList.add('sel');
       const p = $('[data-panel="' + t.dataset.tab + '"]', body);
       if (p) p.classList.add('sel');
+      // The relation tab asks the engine, so it is mounted when it is opened
+      // and not before: a page that swept every node on load would ask a
+      // question nobody had.
+      const rel = p && $('.relation-host', p);
+      if (rel && !rel.dataset.mounted) { rel.dataset.mounted = '1'; mountRelation(rel); }
     };
   });
 

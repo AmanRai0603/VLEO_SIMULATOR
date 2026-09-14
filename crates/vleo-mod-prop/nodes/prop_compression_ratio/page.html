@@ -8,11 +8,12 @@
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
   <button role="tab" class="tab" data-tab="1">interface</button>
   <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="3">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="4">generated code</button>
+  <button role="tab" class="tab" data-tab="5">evidence</button>
+  <button role="tab" class="tab" data-tab="6">flags</button>
+  <button role="tab" class="tab" data-tab="7">credibility</button>
+  <button role="tab" class="tab" data-tab="8">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">By how much does the intake concentrate the gas before it reaches the thruster?</p>
@@ -39,6 +40,27 @@
 <ol class="algo">
 <li><span class="step">take the chamber-to-free-stream density ratio from the same flux balance</span> <span class="binds">→ <code>r: Ratio</code></span></li>
 </ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function prop_compression_ratio(a_in: Area, a_out: Area, eta_geo: Ratio, beta: Ratio, t_c: Temperature, m: MolarMass, n: NumberDensity, v: Velocity) -> Ratio
+    given a_in from prop_intake_area
+    given a_out from prop_throat_area
+    given eta_geo from prop_eta_geo
+    given beta from prop_beta_backflow
+    given t_c from env_chamber_temperature
+    given m from env_mean_molar_mass
+    given n from env_number_density
+    given v from orbit_velocity
+    // take the chamber-to-free-stream density ratio from the same flux balance
+    r ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require CR ≥ 1
+    require CR ≤ 100000
+    require CR is finite
+
+    return CR
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
 <li><code>CR &ge; 1</code> — an intake cannot dilute the flow; a compression ratio below one means the geometry is inverted</li>
@@ -47,6 +69,11 @@
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
+<div class="relation-host" data-node="prop_compression_ratio" data-lo="1" data-hi="100000" data-symbol="CR">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="4">
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -90,13 +117,13 @@ pub fn evaluate(a_in: Area, a_out: Area, eta_geo: Ratio, beta: Ratio, t_c: Tempe
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="5">
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
 <tr data-fixture="IRS-class baseline intake"><td>IRS-class baseline intake</td><td class="num">308.09</td><td class="num">0.001</td><td>independent-derivation</td><td>romano2021</td></tr>
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="6">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 1 — an intake cannot dilute the flow; a compression ratio below one means the geometry is inverted</li>
@@ -106,11 +133,11 @@ pub fn evaluate(a_in: Area, a_out: Area, eta_geo: Ratio, beta: Ratio, t_c: Tempe
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="7">
 <p>Evidence tier <b>B</b>. What this tier cannot detect: an error the independent tool shares with this one.</p>
 <div class="cred" data-cred-for="prop_compression_ratio"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="8">
 <p>Valid over <code>1 &hellip; 100000</code> -.</p>
 <ul class="guards"><li>lower — an intake cannot dilute the flow; a compression ratio below one means the geometry is inverted</li><li>upper — above 1e5 the chamber gas becomes collisional and the free-molecular balance no longer holds</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>

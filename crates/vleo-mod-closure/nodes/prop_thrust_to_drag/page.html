@@ -8,11 +8,12 @@
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
   <button role="tab" class="tab" data-tab="1">interface</button>
   <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="3">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="4">generated code</button>
+  <button role="tab" class="tab" data-tab="5">evidence</button>
+  <button role="tab" class="tab" data-tab="6">flags</button>
+  <button role="tab" class="tab" data-tab="7">credibility</button>
+  <button role="tab" class="tab" data-tab="8">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">Does the thrust the air produces exceed the drag the air imposes? This is the closure the whole design exists to reach.</p>
@@ -34,6 +35,21 @@
 <ol class="algo">
 <li><span class="step">divide thrust by drag; at or above one the orbit holds with no stored propellant</span> <span class="binds">→ <code>r: Ratio</code></span></li>
 </ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function prop_thrust_to_drag(t: Force, d: Force) -> Ratio
+    given t from prop_delivered_thrust
+    given d from aero_drag_force
+    // divide thrust by drag; at or above one the orbit holds with no stored propellant
+    r ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require T_D ≥ 0
+    require T_D ≤ 100
+    require T_D is finite
+
+    return T_D
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
 <li><code>T_D &ge; 0</code> — a negative ratio means a sign error in thrust or drag</li>
@@ -42,6 +58,11 @@
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
+<div class="relation-host" data-node="prop_thrust_to_drag" data-lo="0" data-hi="100" data-symbol="T_D">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="4">
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -89,10 +110,10 @@ pub fn evaluate(t: Force, d: Force) -&gt; Result&lt;Ratio, Fault&gt; {
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="5">
 <p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="6">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 0 — a negative ratio means a sign error in thrust or drag</li>
@@ -102,11 +123,11 @@ pub fn evaluate(t: Force, d: Force) -&gt; Result&lt;Ratio, Fault&gt; {
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="7">
 <p>Evidence tier <b>B</b>. What this tier cannot detect: an error the independent tool shares with this one.</p>
 <div class="cred" data-cred-for="prop_thrust_to_drag"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="8">
 <p>Valid over <code>0 &hellip; 100</code> -.</p>
 <ul class="guards"><li>lower — a negative ratio means a sign error in thrust or drag</li><li>upper — above 100 the vehicle is a launch stage, not a satellite</li></ul>
 <div class="sweep" data-over="orbit_altitude" data-points="80" data-y="prop_thrust_to_drag"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_altitude">orbit_altitude</a> over 80 points. Run the branch to draw it.</p></div>

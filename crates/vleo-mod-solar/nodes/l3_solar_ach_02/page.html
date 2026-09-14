@@ -8,11 +8,12 @@
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
   <button role="tab" class="tab" data-tab="1">interface</button>
   <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="3">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="4">generated code</button>
+  <button role="tab" class="tab" data-tab="5">evidence</button>
+  <button role="tab" class="tab" data-tab="6">flags</button>
+  <button role="tab" class="tab" data-tab="7">credibility</button>
+  <button role="tab" class="tab" data-tab="8">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">What F10.7 does the record say this mission will present, at 95% confidence?</p>
@@ -37,6 +38,20 @@
 <ol class="algo">
 <li><span class="step">restate the subsystem's conclusion on the achieved side of the closure</span> <span class="binds">→ <code>ach: Ratio</code></span></li>
 </ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function l3_solar_ach_02(conclusion: Ratio) -> Ratio
+    given conclusion from sw_f107_design
+    // restate the subsystem's conclusion on the achieved side of the closure
+    ach ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require F107_ach ≥ 60
+    require F107_ach ≤ 400
+    require F107_ach is finite
+
+    return F107_ach
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
 <li><code>F107_ach &ge; 60</code> — the same floor as env_f107: below 60 sfu has never been observed</li>
@@ -45,6 +60,11 @@
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="3">
+<div class="relation-host" data-node="l3_solar_ach_02" data-lo="60" data-hi="400" data-symbol="F107_ach">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="4">
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -98,7 +118,7 @@ pub fn evaluate(conclusion: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="5">
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
 <tr data-fixture="the five-year conclusion, restated unchanged"><td>the five-year conclusion, restated unchanged</td><td class="num">228.1374378829</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
 <tr data-fixture="the half-year conclusion, restated unchanged"><td>the half-year conclusion, restated unchanged</td><td class="num">171.8843338669</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
@@ -106,7 +126,7 @@ pub fn evaluate(conclusion: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="6">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 60 — the same floor as env_f107: below 60 sfu has never been observed</li>
@@ -116,11 +136,11 @@ pub fn evaluate(conclusion: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="7">
 <p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="l3_solar_ach_02"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="8">
 <p>Valid over <code>60 &hellip; 400</code> -.</p>
 <ul class="guards"><li>lower — the same floor as env_f107: below 60 sfu has never been observed</li><li>upper — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating</li></ul>
 <div class="sweep" data-over="orbit_mission_duration" data-points="60" data-y="l3_solar_ach_02"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a> over 60 points. Run the branch to draw it.</p></div>

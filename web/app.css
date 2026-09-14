@@ -425,3 +425,10 @@ table.tree-t td:first-child { white-space: nowrap; }
 #solarview .sw-panel { width: 100%; max-width: 980px; height: auto; margin: 10px 0 8px; }
 #solarview .sw-panel-note { max-width: 980px; line-height: 1.5; font-size: 12px; }
 #solarview .sweepctl { margin: 6px 0 4px; }
+
+/* the relation, walked — one more statement of the same mathematics */
+pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 10px 12px;
+  overflow-x: auto; font-size: 12px; line-height: 1.5; }
+.relation-host .rel-plot { width: 100%; max-width: 900px; height: auto; margin: 8px 0; }
+.relation-host .rel-scrub { vertical-align: middle; width: 220px; }
+.relation-host .rel-note { max-width: 900px; line-height: 1.5; font-size: 12px; }
