@@ -89,8 +89,37 @@ be invented; this plan is how that procedure gets applied to 114 files.
 |---|---|
 | the sheet | the cited source, read independently |
 | `fixtures.toml` | the source — a worked example, a published table, a measurement |
-| `parity.csv` | the MATLAB, run over a grid |
+| `parity.csv` | the MATLAB, run over a grid — **but see below** |
 | `[maths] confirmed_by` | a person, via `xtask confirm`. Not me, ever. |
+
+**There is no MATLAB in this environment, and the plan above assumed there was.**
+Step 3 got its grid anyway, because `prf_ap2kp`'s table half is two literal
+arrays and a clip, so its answer at each of its own points is readable from the
+source without running it. That was luck, not method, and it is why step 3 was
+the right first node.
+
+It does not generalise. For a node whose relation is arithmetic rather than a
+table, there are three options and they are not equally good:
+
+1. **Run the MATLAB** on a machine that has it and commit the exported grid.
+   This is the only one that produces what `parity.csv` claims to be, and it
+   needs a person with a licence, once per node.
+2. **Reimplement the MATLAB** in a third language to generate the grid. This is
+   the tempting one and it is close to worthless: a grid produced by a
+   reimplementation is not the prior implementation's opinion, it is a second
+   copy of my own reading of it, and the two will agree for exactly the reasons
+   that make the comparison uninformative.
+3. **Leave `migrated_from` empty** and carry no grid, so the node stands on its
+   fixtures alone. Honest, and it gives up the strongest verification asset the
+   programme has — eighteen months of working code — on every node it is used
+   for.
+
+The machinery already refuses to let (3) be silent: `migrated_from` with no
+`parity.csv` fails, and a `parity.csv` with no `migrated_from` fails, so a node
+either claims a prior implementation and shows the comparison or claims neither.
+What it cannot catch is (2), because a reimplemented grid looks exactly like an
+exported one. **Which of the three applies is a decision to take before starting
+a node, and to record in the node's own comments.**
 
 ### Order of attack, and why
 
@@ -558,9 +587,11 @@ eight tabs and the methods' own returned fields, one question per row.
 | `sw_semiannual_amplitude` | How large is the semiannual variation? | Climate tab |
 | **`sw_f107_design`** | **The F10.7 to design to, at a lead and a confidence** | `prf_design` |
 | **`sw_ap_design`** | **The Ap to design to, at a return period** | `prf_design` |
-
-**Twenty-four nodes**, plus the interface. That is the subsystem: everything the
-study establishes, each as one row a person can open, review and own.
+**Twenty-five nodes**, plus the interface and the three target/achieved pairs —
+thirty-two rows in the group. That is the subsystem: everything the study
+establishes, each as one row a person can open, review and own. The count was
+written as twenty-four here while the tables listed twenty-five; it is the tables
+that are right.
 
 ## 18 · What crosses, and what the system sees
 
@@ -606,3 +637,38 @@ figure is not a row, and this repository already has the better home for one.
 
 Steps 1 and 2 are the only ones that must happen in that order. From step 3 the
 nodes are independent enough to reorder if something proves harder than it looks.
+
+### What step 3 corrected about this table: steps 3 and 4 are the wrong way round
+
+The claim above that the nodes are independent from step 3 is wrong. A computed
+row needs at least one declared input, the input must name a row that is
+**written**, and no row anywhere in the tree published an Ap. So `sw_kp_from_ap`,
+the smallest relation in the plan, was the one row that could not be written
+first: binding it to a seeded `sw_ap_design` or `sw_storm_return_level` fails the
+contract check, because a seeded row publishes no type.
+
+**The order the tree already encoded was the right one.** `sw_storm_return_level`
+sits at order 1353 and `sw_kp_from_ap` at 1354 — the argument before the
+function — and that is the dependency: the storm return level publishes the Ap,
+and the conversion reads it. The table above had them as 4 then 3. They are now
+written in tree order, and the chain runs
+`orbit_mission_duration → sw_storm_return_level → sw_kp_from_ap`, three rows deep
+from a declared value that already existed.
+
+Two things made that possible without inventing a declared row. First,
+`sw_storm_return_level`'s natural input is the **mission length** — the design
+storm is the worst one the mission is likely to meet — and `orbit_mission_duration`
+is already declared and confirmed. Second, a declared row cannot be invented by an
+agent anyway: `[value] confirmed_by` needs a person, and the gate refuses without
+one. Between them those two facts point at the same answer, which is a good sign
+the decomposition is sound.
+
+The general rule this leaves for the remaining nodes: **before picking the next
+step, check that every input it needs is a written row, and prefer the input the
+tree's own `order` already implies.** Three of the twenty-five read the record
+rather than another row (`sw_f107_81day`, `sw_kp_slot_bias`, `sw_storm_rate`), and
+nodes cannot read bundles. `sw_storm_return_level` shows the way round that: the
+statistic is fitted on the record **outside** the kernel, and the fit's
+coefficients are declared in the sheet where a reviewer can see them, with the
+residual against the empirical curve declared as an assumption. What must never
+happen is a coefficient appearing only in a hole body.

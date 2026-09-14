@@ -186,3 +186,10 @@ where = "internal, 2025"
 status = "current"
 used_for = "An independent implementation, used as a second opinion. Its outputs are a parity grid, never a fixture: an implementation cannot supply its own expected values, and this one is an implementation."
 
+
+[[source]]
+id = "iaga_kp_ap"
+title = "Bartels, J. — The standardized index Ks and the planetary index Kp, with the ap equivalent-amplitude table"
+where = "IATME Bulletin 12b, IUGG Publication Office, 1949; the 28-point table as published by IAGA and distributed by GFZ Potsdam"
+status = "current"
+used_for = "The published three-hourly ap equivalent amplitude against Kp — the 28 tabulated pairs the ap-to-Kp conversion is defined on."

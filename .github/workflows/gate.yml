@@ -189,8 +189,19 @@ jobs:
         run: |
           base="${{ github.event.pull_request.base.sha }}"
           if [ -z "$base" ]; then base=$(git rev-parse HEAD~1 2>/dev/null || git rev-parse HEAD); fi
+          # Only folders that still EXIST. `git diff --name-only` lists deleted
+          # paths too, and `xtask mutate` refuses a node that is not in the tree
+          # — correctly, because that refusal is what catches a mistyped node
+          # name. Together those two correct behaviours made every pull request
+          # that DELETES a node fail this job, and it failed asymmetrically:
+          # against the PR base the folder never existed and the job was green,
+          # while against HEAD~1 it had just been removed and the job was red.
+          # One commit, two answers, depending only on which event triggered the
+          # run. A deleted node has no tests left to be load-bearing.
           nodes=$(git diff --name-only "$base" HEAD \
-                    | sed -n 's|^crates/[^/]*/nodes/\([^/]*\)/.*$|\1|p' \
+                    | sed -n 's|^\(crates/[^/]*/nodes/[^/]*\)/.*$|\1|p' \
+                    | sort -u \
+                    | while read -r d; do [ -d "$d" ] && basename "$d"; done \
                     | sort -u)
           echo "changed: ${nodes:-<none>}"
           # An empty list must write an empty file. `printf '%s\n' ""` writes a
