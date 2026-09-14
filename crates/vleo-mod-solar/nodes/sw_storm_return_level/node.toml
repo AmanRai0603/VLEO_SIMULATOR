@@ -42,15 +42,23 @@ source = "noaa_swpc"
 
 [[assumption]]
 text = "The tail is log-linear in the return period, with the two coefficients fitted on this record"
-fails_when = "the form is a choice, not the source's. Fitted over ranks 2 to 56 of the record — exactly the ranks the declared input range 0.5 to 15 years reaches — it carries a residual rms of 4.95 Ap against the empirical curve, worst +8.6 and -12.9. A power law on the same points is more than twice as bad (rms 9.10, worst -47.7), which is why this form and not that one. Anyone who needs the empirical step rather than a smooth curve should read the record, not this row."
+fails_when = "the form is a choice, not the source's. Fitted over ranks 2 to 56 of the record, which is return periods 0.5035 to 14.0986 years; it carries a residual rms of 4.95 Ap against the empirical curve, worst +8.6 and -12.9. A power law on the same points is more than twice as bad (rms 9.10, worst -47.7), which is why this form and not that one. Anyone who needs the empirical step rather than a smooth curve should read the record, not this row."
 
 [[assumption]]
 text = "28.2 years of record support the whole curve, and its top end rests on two observations"
-fails_when = "the empirical method cannot see past its own record length. At T = 15 years the answer is fitted through the second-largest daily Ap in 28.2 years, and at T = 10 years the third; the record's largest value, Ap 273, has an apparent return period of exactly 28.2 years for no reason other than that it is the largest thing in 28.2 years. So the fit is an interpolation of the tail and never an extrapolation past it, and a mission at the 15-year bound is being sized on a curve whose top is two data points. A design that needs the once-per-century storm needs a longer record or a fitted extreme-value model, not this row."
+fails_when = "the empirical method cannot see past its own record length. At T = 15 years the answer is fitted through the second-largest daily Ap in 28.2 years, and at T = 10 years the third; the record's largest value, Ap 273, has an apparent return period of exactly 28.2 years for no reason other than that it is the largest thing in 28.2 years. The fitted domain is 0.5035 to 14.0986 years, and the declared input range 0.5 to 15 years reaches past BOTH ends of it: the curve is extrapolated by 0.285 Ap at a half-year mission and by 2.54 Ap at a fifteen-year one, because there is no rank between 1 and 2 and rank 1 is the record length itself. Small, but it is an extrapolation and an earlier version of this sheet claimed it was never one. A mission at the 15-year bound is being sized on a curve whose top is two data points. A design that needs the once-per-century storm needs a longer record or a fitted extreme-value model, not this row."
 
 [[assumption]]
 text = "Every day in the record is treated as an independent draw"
 fails_when = "storms cluster — a coronal hole returns once per solar rotation and a single event runs for more than one day — so the record holds fewer independent storms than it holds storm days. Clustering does not bias the exceedance level itself, which is a quantile of the marginal distribution, but it does mean the effective sample behind the tail is smaller than N and the uncertainty on the answer is wider than the residual above suggests. sw_event_duration and sw_recurrence_lag measure the clustering; neither is written yet."
+
+[[assumption]]
+text = "The record this is fitted on is missing 273 days, and the missing window contains storms"
+fails_when = "2017-01-01 to 2017-09-30 has no rows in the daily table — nine months absent from a 29-year span, and the node's answer is a tail quantile of what remains. The hole is not empty of weather: the same bundle's alerts.csv records four days inside it with an OBSERVED K of 7 or more, including K = 8 three times on 7-8 September 2017. Bounding those days from the alerts (their other three-hourly intervals held at the record median) puts 2017-09-08 at a daily Ap of at least 104 and 2017-09-07 at 48, which would rank about 24th and 43rd in the record. Restoring them moves the five-year level by -0.0 Ap and the fifteen-year by -0.7: the tail is set by events far larger, so this particular gap does not bias this particular answer. A different gap, or one holding a top-ten storm, would."
+
+[[assumption]]
+text = "ap_planetary is the SWPC estimated planetary A, not the GFZ definitive value"
+fails_when = "anyone reconciling these return levels against GFZ's definitive Ap series will find differences, and they are not transcription errors — they are two different published quantities. The bundle's INDEX.md says so; it is repeated here because a node author reads the sheet and not necessarily the bundle."
 
 [output]
 # The node's one answer. The variable id is the node id: one small
@@ -78,6 +86,17 @@ binds = "level"
 type = "Ratio"
 
 [data]
+# THE COEFFICIENTS ARE PINNED TO A VERSION AND THIS DECLARATION IS NOT.
+#
+# The fit above was made on solar-weather@2026.09.14. This list is matched by
+# NAME only — crates/vleo-modules/src/lib.rs compares `d == b` — so a run with a
+# later solar-weather satisfies the precondition, computes with coefficients
+# fitted on the older data, and records the newer version in its provenance. The
+# answer would then cite data it did not come from.
+#
+# Until the machinery can pin a version, refitting is a manual obligation: if
+# this bundle's version changes, this node's two coefficients must be refitted
+# and its fixtures re-derived before the run is trusted.
 bundles = ["solar-weather"]
 
 [view]
