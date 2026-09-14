@@ -7,6 +7,14 @@ The one exception is the shipped set — coefficients and climatology small
 enough to travel inside the installer, so a fresh install runs before any sync.
 `solar-drivers` is one of them.
 
+`solar-weather` is the second, and for a different reason. It is 3.9 MB of CSV
+carrying the whole record the solar-weather subsystem is evidenced against:
+twenty-nine years of daily observation, every issued forecast, every alert, and
+the derived monthly, cycle and regime tables. It is here rather than in the
+registry because it is *evidence*, and evidence behind a registry nobody can
+reach is evidence nobody checks. A reviewer who wants to know whether a node's
+number is right can open the file it came from in a spreadsheet.
+
 ## Publishing
 
     cargo run -p xtask -- bundle publish bundles/solar-drivers/2026.09.04
