@@ -88,6 +88,19 @@ math = "L = (11.88 + 11.00) / 2 = 11.44 yr = 4178.46 d"
 
 [[theory.step]]
 text = """
+WHICH of the table's two accounts of a length is used has to be stated,
+because solar_cycles.csv publishes both and they disagree. The
+length_years column is printed to two decimals and averages 4178.46 days;
+the boundaries those lengths came from differ by 4338 and 4017 days, which
+average 4177.50. This row folds with the published column — the study's own
+number — and the 0.96-day gap moves the epoch's phase from 0.619509 to
+0.619367. That is far below anything downstream can resolve, and it is a
+choice rather than a rounding, so it is written down.
+"""
+math = "published: 4178.46 d -> phase 0.619367   ·   boundaries: 4177.50 d -> 0.619509"
+
+[[theory.step]]
+text = """
 Which puts the declared epoch a little past the middle of its cycle, on the
 declining side — the storm-rich part, and the same part of the cycle the
 exceedance rows independently point at.
