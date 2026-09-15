@@ -55,10 +55,10 @@ A median per bin, so it recovers the typical day at that Ap and misses any
 individual one; the spread within a bin is not published here, and a design
 needing a worst case at a given Ap needs a percentile of the offset rather
 than its median. It is also the PEAK-slot offset only. The 24-hour-mean slot
-has its own bias of the opposite sign — running from +0.042 down to -0.462 —
+has its own bias of the opposite sign — running from +0.042 down to -0.487 —
 so applying this row to the mean slot would double the error rather than
-remove it. Models like DTM2020 want both kinds of input; only one is
-published here.
+remove it. Models like DTM2020 want both kinds of input, and both are now
+published: the mean-slot offset is sw_kp_mean_bias.
 """
 
 [[theory.step]]
@@ -120,7 +120,7 @@ fails_when = "the offset rises with Ap as the concavity argument predicts — +1
 
 [[assumption]]
 text = "The 24-hour-mean slot is NOT what this publishes"
-fails_when = "the two slots have opposite signs, and using this row for the mean slot would double the error rather than remove it. Measured on the same 10,297 days, the mean-slot offset runs from +0.042 at Ap 2.5 down to -0.462 in the top bin — the table reads HIGH against the 24-hour mean and LOW against the peak. DTM2020_Oper wants both: akp(1) is a single three-hourly value, akp(3) the mean of the eight. Only the peak is published here."
+fails_when = "the two slots have opposite signs, and using this row for the mean slot would double the error rather than remove it. Measured on the same 10,297 days, the mean-slot offset runs from +0.042 at Ap 2.5 down to -0.487 in the top bin — the table reads HIGH against the 24-hour mean and LOW against the peak. DTM2020_Oper wants both: akp(1) is a single three-hourly value, akp(3) the mean of the eight. The mean-slot offset is published by sw_kp_mean_bias; this row is the peak."
 
 [output]
 # The node's one answer. The variable id is the node id: one small

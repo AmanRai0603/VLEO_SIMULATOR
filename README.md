@@ -17,11 +17,11 @@ Measured on `main`, 11 September 2026.
 
 | | |
 |---|---|
-| rows in the tree | 1369 across four layers — 291 written, 1078 seeded |
+| rows in the tree | 1370 across four layers — 292 written, 1078 seeded |
 | layer 1 · management | 174 rows, from CD-06 verbatim |
 | layer 2 · the system | 319 rows, from CD-06 verbatim |
 | layer 3 · subsystem | 836 rows across 17 subsystems |
-| of the 291 written | 127 declared values · 148 computed · 12 KPI closures · 1 requirement · 3 achieved |
+| of the 292 written | 127 declared values · 149 computed · 12 KPI closures · 1 requirement · 3 achieved |
 | declared edges | 463 derivation · 298 contribution · 177 relation |
 | crates | 30 — 19 node crates, 11 engine and face crates |
 | faces | browser · daemon · command line · C ABI · Python wheel · MATLAB |
@@ -161,12 +161,12 @@ part that is neither a decision nor a derivation.
 
 Two human decisions per node, and everything between them is a command. If a
 node takes materially longer than that, the template has a defect worth finding
-— it will be paid 1369 times.
+— it will be paid 1370 times.
 
 ### The nine generators
 
 Six run per node. Each reads that node's sheet and nothing else, which is what
-makes 1369 rows 1369 independent pieces of work rather than one large one.
+makes 1370 rows 1370 independent pieces of work rather than one large one.
 
 | generator | emits | what it is for |
 |---|---|---|
@@ -347,7 +347,7 @@ achievable and the nightly check becomes one people learn to ignore.
 ## Where it stands
 
 The tree is built and mostly empty, which is the state it is designed to be
-useful in. 291 rows of 1369 have content. `xtask ready` reports what is holding
+useful in. 292 rows of 1370 have content. `xtask ready` reports what is holding
 the rest:
 
 ```

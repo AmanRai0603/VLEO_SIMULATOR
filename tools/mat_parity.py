@@ -217,15 +217,39 @@ def check(port):
             if not ok:
                 findings.append(f"sw_kp_slot_bias at {ap:.3f}: {got - want:+.6f}")
 
+    # sw_kp_from_ap publishes the bare table by design, and sw_kp_mean_bias is the
+    # correction that turns it into the number MATLAB's mission run used. The
+    # check that matters is the SUM: a reader composing the two rows the way the
+    # sheets tell them to must land on MATLAB's answer.
+    for tag in ("nominal", "hotmean", "hotday"):
+        ap = ref[tag]["ap"]
+        raw = run_node(port, "sw_kp_from_ap", [("sw_storm_return_level", ap)], "alone")
+        bias = run_node(port, "sw_kp_mean_bias", [("sw_storm_return_level", ap)], "alone")
+        want = ref[tag]["kp_mean"]
+        if raw is None or bias is None:
+            entry("DIFFERS", f"sw_kp_from_ap + sw_kp_mean_bias at Ap {ap:.3f}",
+                  "the engine refused one of the two rows")
+            findings.append(f"kp composition at {ap:.3f}: engine refused")
+            continue
+        got = raw + bias
+        ok = abs(got - want) < 1e-9
+        entry("AGREES" if ok else "DIFFERS",
+              f"sw_kp_from_ap + sw_kp_mean_bias at Ap {ap:.3f}",
+              f"table {raw:.9f} {bias:+.9f} = {got:.9f} vs MATLAB {want:.9f}"
+              + ("" if ok else f" — differs by {got - want:+.3e}"))
+        if not ok:
+            findings.append(f"kp composition at {ap:.3f}: {got - want:+.3e}")
+
+    # And the bare table on its own, which is NOT MATLAB's answer and is not
+    # meant to be. Recorded so that a later change making it agree shows up as a
+    # change rather than as an improvement nobody decided on.
     ap = ref["nominal"]["ap"]
     raw = run_node(port, "sw_kp_from_ap", [("sw_storm_return_level", ap)], "alone")
     if raw is not None:
-        entry("DIFFERS", "sw_kp_from_ap vs MATLAB's mission Kp",
-              f"port {raw:.6f} (the bare table) vs MATLAB {ref['nominal']['kp_mean']:.6f} "
-              f"(table {kp_cal(ap, ctr_m, off_m) - kp_table(ap):+.4f} mean-slot offset). "
-              "EXPECTED: the sheet says it applies no correction and that the mean "
-              "offset is measured but not published. The two answer different "
-              "questions; the port has no row for the one DTM2020 asks for.")
+        entry("DIFFERS", "sw_kp_from_ap alone vs MATLAB's mission Kp",
+              f"port {raw:.6f} (the bare table) vs MATLAB {ref['nominal']['kp_mean']:.6f}. "
+              "EXPECTED and unchanged: the sheet says this row applies no "
+              "correction. The correction is sw_kp_mean_bias, checked above.")
 
     # ---- 2. the centre of the window ------------------------------------
     lead_s = WIN_DAYS * 86400
@@ -246,6 +270,10 @@ def check(port):
         entry("DIFFERS", "the centre of the design window", detail)
 
     # ---- 3. what MATLAB publishes and the port has no row for ------------
+    entry("CLOSED", "the 24-hour-mean Kp slot",
+          "MATLAB's mission run reads Kp in the 'mean' slot, and until "
+          "sw_kp_mean_bias there was no row for it — only the peak sibling. "
+          "Composing the two rows now reproduces that run exactly, above.")
     entry("NO ROW", "a window-driven driver product",
           "MATLAB turns (date, duration, confidence) into five driver sets. The port "
           "has no such row: sys_mission_requirements_mission_duration is still seeded, "
@@ -311,9 +339,9 @@ def main():
         for line in textwrap.wrap(detail, 74):
             print(f"           {line}")
         print()
-    n = {v: sum(1 for e in entries if e[0] == v) for v in ("AGREES", "DIFFERS", "NO ROW")}
+    n = {v: sum(1 for e in entries if e[0] == v) for v in ("AGREES", "DIFFERS", "CLOSED", "NO ROW")}
     print(f"{len(entries)} entries — {n['AGREES']} agree, {n['DIFFERS']} differ as expected, "
-          f"{n['NO ROW']} have no row in the port")
+          f"{n['CLOSED']} closed by a row added since, {n['NO ROW']} have no row in the port")
     for f in findings:
         print(f"  UNEXPECTED: {f}")
     return 1 if findings else 0

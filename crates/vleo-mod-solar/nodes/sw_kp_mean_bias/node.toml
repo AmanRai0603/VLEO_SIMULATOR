@@ -1,0 +1,180 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_kp_mean_bias"
+label = "Kp slot bias, 24-hour mean"
+folder = "sw_kp_mean_bias"   # frozen at seed; renaming the label never moves the directory
+subsystem = "solar"
+parent = "l3_solar"
+kind = "computed"
+owner = "environment"
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1358
+state = "published"
+
+# NO migrated_from AND NO PARITY GRID, FOR THE SAME REASON AS sw_kp_slot_bias.
+#
+# prf_ap2kp.m's fitOffset_ computes this by binning the record and taking a
+# median per bin, so there is no closed form to transcribe. What makes a grid
+# unnecessary is that the MATLAB's answer IS a statistic of the record: the
+# fixtures below are the same nine medians a grid would have carried, computed
+# outside this crate from the data both implementations read.
+#
+# It is nevertheless checked against the MATLAB directly, which its sibling was
+# not: tools/mat_parity.py reimplements prf_ap2kp from the supplied source,
+# fits it on this repository's bundle, and compares against the tool's own saved
+# run. Adding this row's nine medians to the published table reproduces all five
+# of that run's scenario Kp values to 0 ulp.
+
+[question]
+text = "By how much does the published table over-read the 24-hour MEAN Kp at this Ap?"
+note = "The pair to sw_kp_slot_bias, and the half of the pair a thermospheric model actually asks for more often. DTM2020_Oper takes Kp in two senses — akp(1) a single three-hourly value, akp(3) the mean of the day's eight — and the published scale answers neither, because it is defined for a three-hourly ap while the design product carries a daily mean. sw_kp_slot_bias measures the peak-slot gap and this measures the mean-slot one. They have opposite signs, so applying the wrong one doubles the error instead of removing it."
+
+[maths]
+# Nine bins, nine medians, interpolated between the bin centres and held at the
+# ends. The bin edges are prf_ap2kp's own: 0 5 10 15 20 30 45 70 110 400.
+expression = "dKp_mean(Ap) = piecewise_linear(ap_bin_centres -> measured_medians, Ap)"
+source = "noaa_swpc"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+Reading a daily mean Ap through a scale built for three-hourly ap is wrong in
+two directions at once, and which direction depends on what the reader wanted.
+Its sibling handles the case where the reader wanted the day's worst slot. This
+handles the case where the reader wanted the day's average, which is the more
+common ask and the one that looks least like an error: the number arrives
+already labelled as a daily mean, so nothing about it invites a correction.
+
+Jensen's inequality settles the direction before any measurement. Kp is concave
+in ap, so averaging eight Kp values cannot exceed the Kp of their averaged ap —
+the table reads HIGH against the 24-hour mean, and reads high by more on
+disturbed days, which are the days a drag design is sized by. What the
+inequality cannot give is the size, because the size depends on how unevenly a
+real day spreads its disturbance across eight slots. That is a property of
+storms, not of the table, so it is measured.
+"""
+reading = """
+A correction to be ADDED, and it is almost everywhere negative: the answer
+subtracts. Its magnitude is small next to its sibling's — a tenth of a Kp unit
+where the peak-slot gap is well over one — because an average is much closer to
+the table's reading than an extreme is. That smallness is not a reason to skip
+it, since the whole point of a bias is that it does not average out over a
+mission.
+
+It is a median per bin, so it recovers the typical day at that Ap and misses any
+individual one. A design needing a worst case at a given Ap needs a percentile
+of the offset rather than its median, and this row does not publish the spread.
+"""
+
+[[theory.step]]
+text = """
+Define the quantity as the gap between what the day actually averaged and what
+a design reads for it: the mean of the day's eight three-hourly Kp, minus the
+table's reading of the day's mean Ap.
+"""
+math = "dKp_mean(day) = mean_8 Kp(day) - Kp_table(Ap(day))"
+
+[[theory.step]]
+text = """
+Its sign is known in advance, and it is the opposite of the sibling's. Kp is
+concave in ap, so by Jensen's inequality the mean of the eight Kp cannot exceed
+the Kp of their mean ap. The difference is therefore at or below zero wherever
+the published Ap really is the mean of the day's eight ap.
+"""
+math = "mean_8 Kp(ap_i)  <=  Kp(mean_8 ap_i)  =  Kp_table(Ap_daily)"
+
+[[theory.step]]
+text = """
+It is measured as a function of Ap rather than as one number, because the
+unevenness grows with activity: a quiet day is uniformly quiet across its eight
+slots, while a storm concentrates into a few. Nine bins, prf_ap2kp's own edges,
+and the median in each.
+"""
+math = "edges = 0, 5, 10, 15, 20, 30, 45, 70, 110, 400"
+
+[[theory.step]]
+text = """
+The medians deepen with Ap as the concavity argument predicts, from -0.125 at
+Ap 7.5 to -0.487 in the top bin — and unlike the peak-slot offset they do not
+turn back at the top. So the correction a design reads grows steadily with the
+disturbance it is designing for, which is the behaviour that makes ignoring it
+worst exactly where it matters most.
+"""
+
+[[theory.step]]
+text = """
+One bin contradicts the inequality. The quietest, Ap 0 to 5, measures +0.042 —
+the table reads LOW there rather than high. Two things could produce that and
+this row settles neither: the record publishes SWPC's ESTIMATED planetary Ap
+rather than the exact mean of the day's eight ap, so the quantity Jensen applies
+to is not quite the quantity in the column; and at the quiet end both scales are
+coarse next to an offset of one twenty-fourth of a Kp unit. It is carried
+through as measured rather than clipped to zero, because clipping it would hide
+a disagreement between the record and the argument this node rests on.
+"""
+
+[[theory.step]]
+text = """
+Between bin centres the answer is interpolated and at the ends it is held rather
+than extrapolated, which is prf_ap2kp's own rule stated explicitly: hold the end
+bins, never extrapolate.
+"""
+
+
+[[assumption]]
+text = "The correction is a median per bin, so it describes the typical day at that Ap and not the day in hand"
+fails_when = "the offset is a distribution, not a number. Adding the median recovers the typical 24-hour mean and still misses any individual day, and the spread within a bin is not published by this row. A design that needs the worst case at a given Ap needs a percentile of the offset, not its median."
+
+[[assumption]]
+text = "The quietest bin measures the opposite sign to the one Jensen's inequality requires"
+fails_when = "the Ap 0-to-5 bin measures +0.042 against an argument that says the value must be at or below zero. The two candidate causes are that ap_planetary is SWPC's ESTIMATED planetary amplitude rather than the exact mean of the day's eight ap — so the concavity argument is being applied to a number it does not quite describe — and that a twenty-fourth of a Kp unit is below the resolution of either published scale at the quiet end. Neither is settled here. It matters least where it occurs, because a design is not sized by the quietest 2529 days in the record, but a reader who assumes the published sign holds everywhere will be wrong in one bin of nine."
+
+[[assumption]]
+text = "The top two bins rest on 25 and 20 days"
+fails_when = "prf_ap2kp's own minimum for using a bin at all is 20 days, and the 110-to-400 bin sits exactly on it. The correction a design reads above Ap 110 — the largest correction this row publishes, -0.487 — is supported by twenty days. That is stated rather than smoothed, and anyone sizing a design there should know the number is thin rather than discover it later."
+
+[[assumption]]
+text = "This is NOT the daily-peak slot"
+fails_when = "the two slots have opposite signs. The peak-slot offset measured on the same 10,297 days runs from +0.833 to +1.747; this one runs from +0.042 to -0.487. Applying this row where sw_kp_slot_bias was wanted moves the answer the wrong way by roughly one and a half Kp, and the result is still a plausible Kp, so nothing downstream will refuse it."
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "dKp_mean"
+type = "Ratio"
+unit = "One"
+lower = -1.0
+upper = 0.5
+reason_lower = "the deepest measured bin median is -0.487 and the relation is a table that clamps at its ends, so no input can produce less. -1.0 is therefore unreachable by this relation and exists to catch a broken table rather than an extreme sky"
+reason_upper = "Jensen's inequality puts this at or below zero wherever the published Ap is the mean of the day's eight ap, and the one bin that measures positive measures +0.042. +0.5 would say the table under-reads the 24-hour mean by half a Kp, which no bin shows and which is the signature of the peak-slot offset having been put in this row by mistake"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "ap"
+var = "sw_storm_return_level"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "read the measured mean-slot offset off the nine binned medians at this Ap"
+binds = "off"
+type = "Ratio"
+
+[data]
+# Pinned to solar-weather@2026.09.14, and this list can only pin the NAME —
+# crates/vleo-modules compares `d == b`. The nine medians must be re-measured
+# if the bundle version changes. Same obligation as sw_kp_slot_bias.
+bundles = ["solar-weather"]
+
+[view]
+kind = "line"
+over = "orbit_mission_duration"
+points = 60
