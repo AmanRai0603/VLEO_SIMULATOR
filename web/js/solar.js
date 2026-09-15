@@ -18,10 +18,86 @@
 */
 'use strict';
 
-import { $, esc, fmt } from './dom.js';
+import { $, esc } from './dom.js';
 import { S } from './state.js';
 import { solarRecord, bundleFile, centredMean, corr, quantile, num, daysSince2000 } from './record.js';
 import { drawChart, attachHover, INK } from './chart.js';
+
+// ---------------------------------------------------------------------------
+// describing the picture that was actually drawn
+
+/**
+ * What this curve does, measured from the curve.
+ *
+ * A panel with four selectors draws dozens of different pictures, and a caption
+ * written for one of them is telling every other reader a story about a picture
+ * they are not looking at. An audit of this view found 53 of its 95 distinct
+ * pictures sharing a caption with a different picture — the Predict panel alone
+ * had 40 pictures and 7 captions.
+ *
+ * So the part of a caption that describes the shape is computed here from the
+ * series in hand. It is deliberately dull: where it starts, where it ends, where
+ * the extremes are, and whether it moves at all. A flat line is the one a reader
+ * most needs told about, because a flat line and a broken panel look identical.
+ */
+/**
+ * A number as it should appear inside a SENTENCE.
+ *
+ * fmt is tuned for the value a chart reports, where six figures are a readout.
+ * A caption is prose: three significant figures, with an integer left as an
+ * integer — "1 d to 27 d" rather than "1.00 d to 27.0 d", and 0.0685 rather
+ * than 0.0685159.
+ */
+function sig(v) {
+  if (v === null || !isFinite(v)) return String(v);
+  if (Number.isInteger(v)) return String(v);
+  const s = Math.abs(v) >= 1000 ? v.toFixed(0) : v.toPrecision(3);
+  return s.indexOf('.') >= 0 ? s.replace(/0+$/, '').replace(/\.$/, '') : s;
+}
+
+function shape(xs, ys, unit, xunit, xname) {
+  const pts = xs.map((x, i) => [x, ys[i]]).filter(([, y]) => y !== null && isFinite(y));
+  if (pts.length < 2) return 'Too few points to describe a shape.';
+  const u = unit ? ' ' + unit : '', xu = xunit ? ' ' + xunit : '';
+  const vals = pts.map(([, y]) => y);
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  const at = v => pts.find(([, y]) => y === v)[0];
+  if (hi - lo <= Math.max(1e-9, 1e-9 * Math.abs(hi))) {
+    return 'It is FLAT at ' + sig(hi) + u + ' at every ' + (xname || 'point') +
+      ' drawn — which is a finding about the quantity, not a panel that failed to load.';
+  }
+  const first = pts[0], last = pts[pts.length - 1];
+  const rising = last[1] > first[1];
+  let s = 'It runs from ' + sig(first[1]) + u + ' at ' + sig(first[0]) + xu +
+    ' to ' + sig(last[1]) + u + ' at ' + sig(last[0]) + xu + '. ';
+  // WHETHER A CURVE IS "NOT MONOTONE" IS THE WRONG QUESTION TO ANSWER
+  // LITERALLY. Almost no measured curve is monotone to the last decimal, and
+  // saying so of a curve that rises all the way with one small wiggle in it
+  // tells a reader the opposite of what the picture shows. What matters is
+  // whether the extreme is INSIDE the range — a genuine hump or dip — which is
+  // the thing a straight line through the curve would miss.
+  const iHi = pts.findIndex(([, y]) => y === hi), iLo = pts.findIndex(([, y]) => y === lo);
+  const interior = i => i > 0 && i < pts.length - 1;
+  const turns = interior(iHi) || interior(iLo);
+  if (turns) {
+    s += 'It turns inside the range: the highest point is ' + sig(hi) + u + ' at ' + sig(at(hi)) + xu +
+      ' and the lowest ' + sig(lo) + u + ' at ' + sig(at(lo)) + xu +
+      ', so a straight line fitted through it would be describing neither end.';
+  } else {
+    // How far it backs up against its own direction, as a share of the range —
+    // reported only when it is large enough for a reader to see.
+    let back = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const d = (rising ? pts[i - 1][1] - pts[i][1] : pts[i][1] - pts[i - 1][1]);
+      if (d > back) back = d;
+    }
+    s += 'It ' + (rising ? 'rises' : 'falls') + ' across the whole range' +
+      (back > (hi - lo) * 0.05
+        ? ', with a reversal of ' + sig(back) + u + ' along the way.'
+        : ' without turning back.');
+  }
+  return s;
+}
 
 // ---------------------------------------------------------------------------
 // the panels
@@ -29,6 +105,7 @@ import { drawChart, attachHover, INK } from './chart.js';
 const PANELS = [
   {
     id: 'repeatability',
+    rows: ['sw_cycle_phase', 'sw_mean_cycle_level', 'sw_cycle_repeatability'],
     label: 'Repeatability',
     draws: 'The mean cycle against every cycle the record holds, stacked on phase.',
     asks: 'How much of F10.7 does the cycle explain — and does one cycle repeat the last?',
@@ -73,24 +150,34 @@ const PANELS = [
       const b = xs.map((_, i) => (ok(i) ? mean(per.get(24)[i]) : null));
       const r = corr(a, b);
       const usable = a.filter((v, i) => v !== null && b[i] !== null).length;
+      // The peak disagreement is measured for the variable on screen. The figure
+      // used to be 28 per cent under all three, which is F10.7's.
+      const pk = n => Math.max(...xs.map((_, i) => mean(per.get(n)[i])).filter(v => v !== null));
+      const p23 = pk(23), p24 = pk(24);
+      const vname = key === 'f107' ? 'F10.7' : key === 'ap' ? 'Ap' : 'the sunspot number';
       return {
         spec: {
           x: { label: 'cycle phase  [0 = minimum, 1 = the next]', min: 0, max: 1 },
           y: { label: key === 'f107' ? 'F10.7  [sfu]' : key === 'ap' ? 'Ap  [-]' : 'sunspot number  [-]' },
           series,
         },
-        note: 'Cycles 23 and 24 are the only complete ones, and their shapes correlate at ' +
+        note: 'Cycles 23 and 24 are the only complete ones, and their ' + vname + ' shapes correlate at ' +
           (r === null ? '—' : r.toFixed(4)) + ' over the ' + usable + ' of ' + nb +
-          ' bins both populate with at least ' + MIN + ' days. A correlation is scale-free, so it is blind to the thing a drag ' +
-          'design cares about: the two peaks differ by 28 per cent. Cycle 25 is dashed because ' +
-          'its end in solar_cycles.csv is the record’s end, not a minimum, so its phase is ' +
-          'computed against a length nobody yet knows.',
+          ' bins both populate with at least ' + MIN + ' days. A correlation is scale-free, so it is ' +
+          'blind to the thing a drag design cares about, and here that blindness costs: the stacked ' +
+          'peaks are ' + sig(p23) + ' for cycle 23 against ' + sig(p24) + ' for cycle 24, a ratio of ' +
+          (p24 / p23).toFixed(3) + '. The shape repeats and the size does not. Cycle 25 is dashed and ' +
+          'stops part way because it is still running: its end in solar_cycles.csv is the record’s ' +
+          'end rather than a minimum, so its phase is folded against the mean length of the ' +
+          'complete cycles — the same fold sw_cycle_phase uses — and the record simply has no days ' +
+          'past that point to draw.',
       };
     },
   },
 
   {
     id: 'pattern',
+    rows: ['sw_recurrence_lag', 'sw_recurrence_strength', 'sw_spike_threshold', 'sw_event_duration'],
     label: 'Pattern',
     draws: 'The autocorrelation of the detrended record against lag, and its harmonics.',
     asks: 'At what lag does the solar rotation come back, and how strongly?',
@@ -143,7 +230,9 @@ const PANELS = [
                 'steep decay from lag 1, which pulls its apparent peak toward zero; the far ' +
                 'harmonics are clear of it.'
               : '. Raise the max lag to see the harmonics, which are what settle the period.') +
-            ' Shorten the detrend window toward the rotation itself and the signal disappears, ' +
+            ' Drawn out to lag ' + maxLag + ', where the correlation is ' +
+            (ys[maxLag - 1] === null ? 'undefined' : ys[maxLag - 1].toFixed(4)) + '. ' +
+            'Shorten the detrend window toward the rotation itself and the signal disappears, ' +
             'because the window removes what it is meant to leave.'
           : 'No peak in the rotation band at this setting.',
       };
@@ -152,6 +241,7 @@ const PANELS = [
 
   {
     id: 'segmentation',
+    rows: ['sw_regime', 'sw_activity_band'],
     label: 'Segmentation',
     draws: 'Where the record actually sits, and the boundaries the study cut it at.',
     asks: 'Quiet, active or storm — and how much of the record is each?',
@@ -163,7 +253,17 @@ const PANELS = [
     build(rec, o) {
       if (o.view === 'phase') return regimeByPhase(rec);
       const key = o.v;
-      const cuts = key === 'ap' ? [6.5, 25.5] : [90, 120, 180];
+      // THE ROW'S OWN EDGES, AND ITS OWN COMPARISON. sw_activity_band cuts F10.7
+      // at 90, 130 and 170 with `>=`, so a flux sitting exactly on an edge
+      // belongs to the band the edge OPENS. This panel drew 90/120/180 with `>`
+      // and banded 1010 days — 9.8 per cent of the record — differently from the
+      // row it exists to illustrate, reporting the top band at 8.9 per cent where
+      // the row says 12.8. A panel that contradicts its own node is worse than no
+      // panel, so the edges are taken from the node rather than restated.
+      //
+      // Ap is an integer, so its marks sit BETWEEN the bands at 6.5 and 25.5;
+      // F10.7 is continuous and its marks sit on the edges themselves.
+      const cuts = key === 'ap' ? [6.5, 25.5] : [90, 130, 170];
       const names = key === 'ap' ? ['quiet', 'active', 'storm'] : ['low', 'moderate', 'elevated', 'high'];
       const vals = rec.days.map(d => d[key]).filter(x => x !== null);
       const hi = Math.max(...vals);
@@ -175,7 +275,7 @@ const PANELS = [
       const ys = counts.map(c => (o.scale === 'log' ? (c ? Math.log10(c) : null) : c));
       const share = new Array(cuts.length + 1).fill(0);
       for (const x of vals) {
-        let k = 0; while (k < cuts.length && x > cuts[k]) k++;
+        let k = 0; while (k < cuts.length && x >= cuts[k]) k++;
         share[k]++;
       }
       return {
@@ -185,21 +285,31 @@ const PANELS = [
           series: [{ name: '', kind: 'bars', x: xs, y: ys, colour: '#b5731a' }],
           marks: cuts.map((c, i) => ({ axis: 'x', at: c, label: names[i] + ' | ' + names[i + 1] })),
         },
-        note: share.map((n, i) => names[i] + ' ' + (100 * n / vals.length).toFixed(1) + '%').join(' · ') +
+        note: 'Over ' + vals.length + ' days: ' +
+          share.map((n, i) => names[i] + ' ' + (100 * n / vals.length).toFixed(1) + '%').join(' · ') +
           (key === 'ap'
             ? '. These are the study’s own mixture boundaries, and they fell on integers: quiet ' +
               'holds Ap 0 to 6, active 7 to 25, storm 26 and above. sw_regime reproduces ' +
               'daily_regime.csv exactly on 10128 of its 10299 days. The 171 that differ all have ' +
               'Ap 0 or 1 and are labelled storm in the published table — the broad storm component ' +
               'winning at the low tail — and this repository calls them quiet.'
-            : '. A log count axis is the honest default here: on a linear one the tail that matters ' +
-              'to a design is a row of pixels one high.'),
+            : '. The edges are sw_activity_band’s own — 90, 130 and 170 sfu — and so is the rule ' +
+              'that a flux sitting exactly on an edge belongs to the band the edge opens. This ' +
+              'panel used to draw 90/120/180 with a strict comparison, which banded 1010 days ' +
+              'differently from the row it illustrates and reported the top band at 8.9 per cent ' +
+              'where the row says 12.8.') +
+          (o.scale === 'log'
+            ? ' The count axis is logarithmic, so a bar half as tall holds a tenth as many days — ' +
+              'which is the only way the tail a design is sized by is visible at all.'
+            : ' On this linear count axis the tail that matters to a design is a row of pixels one ' +
+              'high; the log axis is what makes it readable.'),
       };
     },
   },
 
   {
     id: 'predict',
+    rows: ['sw_uncertainty_growth', 'sw_band_coverage', 'sw_horizon_persistence', 'sw_horizon_climatology'],
     label: 'Predict',
     draws: 'How far the flux moves over a lead, at a percentile.',
     asks: 'How far ahead is F10.7 knowable, and what does the band cost?',
@@ -226,25 +336,53 @@ const PANELS = [
         ch.sort((a, b) => a - b);
         xs.push(L / 365.25); ys.push(quantile(ch, q)); ns.push(ch.length);
       }
+      const name = key === 'f107' ? 'F10.7' : 'Ap';
+      const unit = key === 'f107' ? 'sfu' : '';
+      const pct = (q * 100).toFixed(q * 100 % 1 ? 1 : 0);
+      // Whether the eleven-year cycle is visible depends on how far out the lead
+      // goes, so the sentence about it is earned by the picture rather than
+      // attached to every one of them.
+      // Keyed on what the reader SELECTED, not on where the geometric lead ladder
+      // happened to stop: choosing five years lands the last lead at 4.08, so a
+      // test on the curve told a reader who had already extended it to extend it.
+      const far = maxL > 400;
+      const drawn = ys.filter(y => y !== null && isFinite(y));
+      const flat = drawn.length > 1 && Math.max(...drawn) - Math.min(...drawn) <= 1e-9;
+      const mid = ys.filter((y, i) => y !== null && xs[i] >= 3 && xs[i] <= 6);
+      const late = ys.filter((y, i) => y !== null && xs[i] >= 9 && xs[i] <= 12);
+      const humped = far && mid.length && late.length &&
+        Math.max(...mid) > Math.max(...late);
       return {
         spec: {
           x: { label: 'lead  [years]', min: 0 },
-          y: { label: 'change in ' + (key === 'f107' ? 'F10.7' : 'Ap') + ' at the ' + (q * 100) + 'th percentile  [' + (key === 'f107' ? 'sfu' : '-') + ']' },
+          y: { label: 'change in ' + name + ' at the ' + pct + 'th percentile  [' + (unit || '-') + ']' },
           series: [{ name: '', kind: 'line', x: xs, y: ys }],
         },
-        note: 'Signed change, not absolute: the unsafe direction for a drag design is flux arriving ' +
-          'HIGHER than planned, so this is the upper tail. The curve rises and falls again — at the ' +
-          '95th it peaks near four years and dips near ten — and that is the eleven-year cycle, not ' +
-          'noise: a lead of half a cycle takes you from minimum to maximum, which is the largest ' +
-          'change available, and a full cycle returns you to similar activity. Pairs at a given lead ' +
-          'overlap almost completely, so the ' + ns[0] + ' to ' + ns[ns.length - 1] + ' counted here ' +
-          'are nothing like that many independent observations.',
+        note: 'The ' + pct + 'th percentile of the SIGNED change in ' + name + ' over a lead — not the ' +
+          'absolute change, because the unsafe direction for a drag design is the driver arriving ' +
+          'higher than planned. ' + shape(xs, ys, unit, 'yr', 'lead') +
+          (q <= 0.5
+            ? ' At the median there is no tail to speak of: half of all changes are above this line ' +
+              'and half below, so a value near zero says the driver has no trend over these leads, ' +
+              'which is what a cyclic quantity looks like when the lead is not tied to its phase.'
+            : '') +
+          (humped
+            ? ' The hump and the dip are the eleven-year cycle rather than noise: a lead of about ' +
+              'half a cycle is the lead most likely to land on the opposite phase, and a lead of ' +
+              'about a full cycle returns to a similar one.'
+            : far || flat
+              ? ''
+              : ' At a lead of a year the cycle is invisible: extend it to five or fifteen years to ' +
+                'see what the solar cycle does to this curve.') +
+          ' Pairs at a given lead overlap almost completely, so the ' + ns[0] + ' to ' +
+          ns[ns.length - 1] + ' counted here are nothing like that many independent observations.',
       };
     },
   },
 
   {
     id: 'forecast',
+    rows: ['sw_outlook_lead', 'sw_forecast_skill', 'sw_forecast_bias'],
     label: 'Forecast',
     draws: 'The issued 27-day outlook, scored against what arrived.',
     asks: 'Is the published forecast worth more than assuming nothing changes?',
@@ -305,13 +443,24 @@ const PANELS = [
           series: [{ name: '', kind: 'line', x: xs, y: ys }],
           marks,
         },
-        note: (o.base === 'leaky'
-          ? 'THIS BASELINE LEAKS. 719 of the 1281 issues index their rows from lead 0, so the issue ' +
-            'date is itself a forecast target for most of the record, and handing it to persistence ' +
-            'gives the baseline a number the forecaster did not have. Switch to the strict baseline ' +
-            'and the sign of the short-lead answer changes.'
-          : 'Persistence is the last observation strictly BEFORE the issue date — what a ' +
-            'forecaster actually had. On this baseline the outlook beats it from lead 1.') +
+        note: (o.m === 'skill'
+          ? 'Skill is one minus the ratio of mean squared errors, so zero is the red line — no ' +
+            'better than assuming nothing changes — and negative is worse than not bothering. '
+          : o.m === 'bias'
+            ? 'Signed error, forecast minus observed, so a negative value means the outlook came in ' +
+              'LOW and a design reading it gets a thinner atmosphere than it will fly. '
+            : 'Root mean square error in sfu, which is accuracy rather than skill: it says nothing ' +
+              'about whether the outlook beats a baseline, only how far it misses. ') +
+          shape(xs, ys, o.m === 'skill' ? '' : 'sfu', 'd', 'lead') + ' ' +
+          (o.base === 'leaky'
+            ? 'THIS BASELINE LEAKS. 719 of the 1281 issues index their rows from lead 0, so the issue ' +
+              'date is itself a forecast target for most of the record, and handing it to persistence ' +
+              'gives the baseline a number the forecaster did not have. Switch to the strict baseline ' +
+              'and the sign of the short-lead answer changes.' +
+              (o.m !== 'skill' ? ' It changes nothing on this metric, which does not use a baseline.' : '')
+            : 'Persistence is the last observation strictly BEFORE the issue date — what a ' +
+              'forecaster actually had.' +
+              (o.m === 'skill' ? ' On this baseline the outlook beats it from lead 1.' : '')) +
           ' Lead ' + last + ' draws on ' + ns[ns.length - 1] + ' pairs against ' + ns[0] + ' at lead 1: ' +
           'lead_days is indexed two ways in one column, and only the 1-based minority reaches 27, ' +
           'which is why sw_outlook_lead declares 26.',
@@ -321,6 +470,7 @@ const PANELS = [
 
   {
     id: 'design',
+    rows: ['sw_storm_return_level', 'sw_storm_design_level', 'sw_ap_design', 'sw_design_safe_duration', 'sw_exceedance_rate', 'sw_exceedance_duration', 'sw_exceedance_phase', 'l3_solar_req_03', 'l3_solar_ach_03'],
     label: 'Design',
     draws: 'The design window: what the record expects against what the vehicle is built for.',
     asks: 'Will the design be exceeded, and if so beyond what mission length?',
@@ -374,6 +524,7 @@ const PANELS = [
 
   {
     id: 'climate',
+    rows: ['sw_central_expectation', 'sw_semiannual_amplitude', 'sw_f107a_ratio', 'sw_f107_81day', 'sw_kp_from_ap', 'sw_kp_slot_bias'],
     label: 'Climate',
     draws: 'The long run: the record by year, and the season inside the year.',
     asks: 'What is the context a single mission sits inside?',
@@ -396,8 +547,15 @@ const PANELS = [
       const ks = [...grp.keys()].sort((a, b) => a - b);
       const xs = o.by === 'month' ? ks.map(k => Math.floor(k / 12) + (k % 12) / 12) : ks;
       const ys = ks.map(k => grp.get(k).reduce((p, c) => p + c, 0) / grp.get(k).length);
-      const overall = ys.reduce((p, c) => p + c, 0) / ys.length;
-      const marks = [{ axis: 'y', at: overall, label: 'mean over the record = ' + overall.toFixed(2) }];
+      // THE RECORD'S MEAN IS OVER DAYS, NOT OVER GROUPS. Averaging the yearly
+      // means weights 1997 — which the record joins in January and holds 357
+      // days of — the same as a full year, and the answer then disagrees with
+      // sw_central_expectation's climatology, which is the day mean. For F10.7
+      // the two are 113.78 and 114.84.
+      const allDays = rec.days.map(d => d[key]).filter(v => v !== null);
+      const overall = allDays.reduce((p, c) => p + c, 0) / allDays.length;
+      const marks = [{ axis: 'y', at: overall,
+        label: 'mean over the record’s ' + allDays.length + ' days = ' + overall.toFixed(2) }];
       if (o.by === 'doy') {
         marks.push({ axis: 'x', at: 80, label: 'March equinox', colour: '#2a6f97' });
         marks.push({ axis: 'x', at: 266, label: 'September equinox', colour: '#2a6f97' });
@@ -409,28 +567,48 @@ const PANELS = [
           series: [{ name: '', kind: o.by === 'year' ? 'bars' : 'line', x: xs, y: ys }],
           marks,
         },
-        note: o.by === 'doy' && key === 'ap'
-          ? 'The equinoctial effect, and its size is the point: the fitted semiannual amplitude is ' +
-            '1.278 on an offset of 10.494, about 12 per cent, and it accounts for 0.63 per cent of ' +
-            'the DAILY variance. It moves a monthly budget and says almost nothing about a given day.'
-          : o.by === 'doy'
-            ? 'F10.7 has no seasonal term — it is a property of the Sun, not of the Earth’s ' +
-              'tilt. Any structure here is the cycle landing unevenly across the calendar. Switch to ' +
-              'Ap to see a real season.'
-            : 'The 2017 gap is 273 consecutive days and shows here as a year drawn from nine months. ' +
-              'Nothing is interpolated across it.',
+        note: (() => {
+          const vname = key === 'f107' ? 'F10.7' : key === 'ap' ? 'Ap' : 'the sunspot number';
+          const unit = key === 'f107' ? 'sfu' : '';
+          const hi = Math.max(...ys), lo = Math.min(...ys);
+          const atHi = xs[ys.indexOf(hi)], atLo = xs[ys.indexOf(lo)];
+          const spread = 'The ' + (o.by === 'doy' ? '5-day bins' : o.by === 'year' ? 'yearly means' : 'monthly means') +
+            ' run from ' + sig(lo) + (unit ? ' ' + unit : '') + ' at ' + sig(atLo) + ' to ' + sig(hi) +
+            (unit ? ' ' + unit : '') + ' at ' + sig(atHi) + ', a ratio of ' + (hi / lo).toFixed(2) +
+            ' about a mean of ' + overall.toFixed(2) + ' over the record’s ' + allDays.length +
+            ' days. ';
+          if (o.by === 'doy' && key === 'ap') {
+            return spread + 'That swing is the equinoctial effect and its SIZE is the point: the ' +
+              'fitted semiannual amplitude is 1.278 on an offset of 10.494, about 12 per cent, and ' +
+              'it accounts for 0.63 per cent of the DAILY variance. It moves a monthly budget and ' +
+              'says almost nothing about a given day.';
+          }
+          if (o.by === 'doy') {
+            return spread + vname + ' has no seasonal term — it is a property of the Sun, not of the ' +
+              'Earth’s tilt — so this spread is the cycle landing unevenly across the calendar ' +
+              'rather than a season. Switch to Ap, where the two equinox marks line up with real peaks.';
+          }
+          return spread + 'The eleven-year cycle is the whole of that range: a mission is sized ' +
+            'against wherever in it the mission falls. The 2017 gap is 273 consecutive days and ' +
+            'shows here as a year drawn from nine months — nothing is interpolated across it.';
+        })(),
       };
     },
   },
 
   {
     id: 'density',
+    rows: [],
     label: 'Density',
     draws: 'Nothing yet, and the reason is worth a panel.',
     asks: 'What are these drivers worth as atmospheric density?',
     controls: [],
     build(rec) {
       const withBoth = rec.days.filter(d => d.f107 !== null && d.ap !== null);
+      // "Close to independent" was an assertion. It is now a measurement, because
+      // it is the claim this panel rests on: if the two drivers carried the same
+      // information a density model would not need both.
+      const r = corr(withBoth.map(d => d.f107), withBoth.map(d => d.ap));
       return {
         spec: {
           x: { label: 'F10.7  [sfu]' },
@@ -442,8 +620,12 @@ const PANELS = [
           'belongs to a different subsystem which has nothing written in it. Drawing a density ' +
           'curve here would mean this face carrying a model no row owns and no reviewer signed.\n\n' +
           'What is drawn instead is the honest precondition: the two drivers a density model takes, ' +
-          'against each other, over ' + withBoth.length + ' days. They are close to independent, ' +
-          'which is why a design needs both and why neither substitutes for the other.',
+          'against each other, over ' + withBoth.length + ' days. They correlate at ' +
+          (r === null ? '—' : r.toFixed(4)) + ', which is ' +
+          (r === null ? '' : (100 * r * r).toFixed(1) + ' per cent of the variance shared') +
+          ' — close to independent, and that is why a density model asks for both and why neither ' +
+          'substitutes for the other. A flux and a disturbance are different physics: EUV heats the ' +
+          'thermosphere from above and a geomagnetic storm deposits energy into it at high latitude.',
       };
     },
   },
@@ -566,16 +748,37 @@ function growthByCycle(rec, key, q, maxL) {
     });
     return { name: 'cycle ' + c.n, kind: 'line', x: leads.map(L => L / 365.25), y: ys, colour: INK.series[i] };
   });
+  // How far apart the cycles actually are, at the longest lead all of them reach.
+  // "They disagree" was the claim and it was never measured; this measures it.
+  const name = key === 'f107' ? 'F10.7' : 'Ap';
+  const unit = key === 'f107' ? ' sfu' : '';
+  let shared = -1, spread = null;
+  for (let i = leads.length - 1; i >= 0; i--) {
+    const vs = series.map(s => s.y[i]).filter(v => v !== null && isFinite(v));
+    if (vs.length === series.length) {
+      shared = leads[i] / 365.25;
+      spread = [Math.min(...vs), Math.max(...vs)];
+      break;
+    }
+  }
   return {
     spec: {
       x: { label: 'lead  [years]', min: 0 },
-      y: { label: 'change at the ' + (q * 100) + 'th percentile' },
+      y: { label: 'change in ' + name + ' at the ' + (q * 100) + 'th percentile  [' + (unit.trim() || '-') + ']' },
       series,
     },
-    note: 'Pairs are taken only within a cycle, so a lead cannot straddle a minimum and the curve is ' +
+    note: 'The ' + (q * 100) + 'th percentile of the change in ' + name + ', one curve per cycle. ' +
+      'Pairs are taken only WITHIN a cycle, so a lead cannot straddle a minimum and the curve is ' +
       'about the cycle rather than about the boundary. Cycle 25 stops early because this record holds ' +
       'six years of it, and a lead with fewer than thirty pairs is left undrawn rather than computed ' +
-      'from a handful. The three disagree, which is the point: sw_uncertainty_growth pools them.',
+      'from a handful. ' +
+      (spread
+        ? 'At the longest lead all three reach, ' + shared.toFixed(2) + ' yr, they run from ' +
+          sig(spread[0]) + unit + ' to ' + sig(spread[1]) + unit +
+          (spread[0] === 0 ? '' : ', a ratio of ' + (spread[1] / spread[0]).toFixed(2)) +
+          ' — and sw_uncertainty_growth pools exactly that disagreement into one number.'
+        : 'No lead here is reached by all three cycles, so there is no like-for-like comparison to ' +
+          'make: shorten the lead until the curves overlap.'),
   };
 }
 
@@ -651,6 +854,17 @@ function smoothed(rows, key) {
     sm.push(num(r[col + '_smooth']));
   }
   const missing = sm.filter(v => v === null).length;
+  // How much the smoother actually removes, for the variable on screen. The
+  // caption used to be the same sentence under all three.
+  const both = xs.map((_, i) => [raw[i], sm[i]]).filter(([a, b]) => a !== null && b !== null);
+  const amp = a => Math.max(...a) - Math.min(...a);
+  const rawAmp = both.length ? amp(both.map(b => b[0])) : 0;
+  const smAmp = both.length ? amp(both.map(b => b[1])) : 0;
+  const resid = both.length
+    ? Math.sqrt(both.reduce((p, [a, b]) => p + (a - b) * (a - b), 0) / both.length)
+    : 0;
+  const vname = key === 'f107' ? 'F10.7' : key === 'ap' ? 'Ap' : 'the sunspot number';
+  const unit = key === 'f107' ? ' sfu' : '';
   return {
     spec: {
       x: { label: 'year' },
@@ -660,10 +874,14 @@ function smoothed(rows, key) {
         { name: '13-month smoother', kind: 'line', x: xs, y: sm, width: 2.2, colour: '#1a1a1a' },
       ],
     },
-    note: 'monthly_means.csv, which until now nothing in this repository read \u2014 no row and no ' +
-      'other panel. The 13-month box smoother is the curve solar cycles are conventionally counted ' +
-      'on, and it is undefined for ' + missing + ' of ' + rows.length + ' months at the two ends of ' +
-      'the record, left empty rather than extrapolated. The line breaks there rather than being drawn ' +
+    note: 'monthly_means.csv, which until the audit that added this view nothing in this repository ' +
+      'read \u2014 no row and no other panel. The 13-month box smoother is the curve solar cycles are ' +
+      'conventionally counted on. For ' + vname + ' it takes a monthly swing of ' + sig(rawAmp) + unit +
+      ' down to ' + sig(smAmp) + unit + ', removing an rms of ' + sig(resid) + unit +
+      ' \u2014 which is what is left of a month once the cycle is taken out, and is the part a ' +
+      'design cannot plan around. ' +
+      'It is undefined for ' + missing + ' of ' + rows.length + ' months at the two ends of ' +
+      'the record, left empty rather than extrapolated: the line breaks there rather than being drawn ' +
       'across, because a smoother that runs to the edge of a record is claiming to know half a window ' +
       'it does not have.',
   };
@@ -723,6 +941,38 @@ function kpAgainstAp(rec) {
 
 const state = { panel: 'design', opts: {} };
 
+/**
+ * Which version of a bundle the engine is actually serving.
+ *
+ * This line used to read `S.index.data_versions[0]`, a field the index has never
+ * carried, so the header rendered `solar-weather@` with nothing after it — a
+ * provenance claim with the provenance missing, on the one view whose whole
+ * argument is that it reads the same bytes the engine reads. The versions live
+ * on /v1/version as `name@date#hash`; the hash is dropped because the header is
+ * an identification, not a checksum.
+ */
+function bundleVersion(name) {
+  const all = (S.version && S.version.data) || [];
+  const hit = all.find(d => d.startsWith(name + '@'));
+  return hit ? hit.split('#')[0] : name + '@(the engine did not say)';
+}
+
+/**
+ * A row named in a caption is a claim the reader can go and check.
+ *
+ * Until now they were plain text: a panel would say `sw_activity_band` and leave
+ * the reader to find it. The tree's own index decides which tokens are rows, so a
+ * name that is not a row — `daily_regime.csv`, `lead_days` — stays plain rather
+ * than becoming a link that leads nowhere.
+ *
+ * Applied AFTER escaping, and the pattern needs an underscore, so it cannot
+ * match the only markup the caption carries.
+ */
+function linkRows(html) {
+  return html.replace(/\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/g, m =>
+    (S.byId && S.byId.has(m)) ? '<a class="xref" data-goto="' + m + '">' + m + '</a>' : m);
+}
+
 function optsFor(p) {
   if (!state.opts[p.id]) {
     state.opts[p.id] = Object.fromEntries(p.controls.map(c => [c.k, c.opts[0][0]]));
@@ -738,8 +988,7 @@ export function drawSolar() {
 
   host.innerHTML =
     '<div class="node-head"><h2>Solar weather</h2>' +
-    '<p class="ident">eight tabs, drawn from <code>solar-weather@' +
-    esc((S.index && S.index.data_versions && S.index.data_versions[0]) || '') +
+    '<p class="ident">eight tabs, drawn from <code>' + esc(bundleVersion('solar-weather')) +
     '</code> — the same bytes the engine reads</p></div>' +
     '<div class="tabrow sub sw-tabs">' +
     PANELS.map(x => '<button class="ctl sw-tab' + (x.id === p.id ? ' sel' : '') +
@@ -747,13 +996,22 @@ export function drawSolar() {
     '</div>' +
     '<p class="caption"><b>' + esc(p.asks) + '</b></p>' +
     '<p class="caption muted">' + esc(p.draws) + '</p>' +
+    // Which rows this picture is an argument about. A panel that illustrates a
+    // claim and does not say which claim leaves the reader to guess, and the
+    // guess is the place the picture and the row quietly stop agreeing.
+    (p.rows && p.rows.length
+      ? '<p class="caption rows muted">the rows this argues about: ' +
+        p.rows.map(r => '<a class="xref" data-goto="' + esc(r) + '">' + esc(r) + '</a>').join(' · ') +
+        '</p>'
+      : '<p class="caption rows muted">no row in this tree answers this tab, which is the panel’s ' +
+        'whole point.</p>') +
     (p.controls.length
       ? '<div class="sweepctl">' + p.controls.map(c =>
           '<span class="lbl">' + esc(c.label) + '</span><select class="ctl sw-opt" data-k="' + c.k + '">' +
           c.opts.map(([v, t]) => '<option value="' + esc(v) + '"' + (o[c.k] === v ? ' selected' : '') +
             '>' + esc(t) + '</option>').join('') + '</select>').join(' ') + '</div>'
       : '') +
-    '<canvas class="plot sw-panel" width="980" height="380" title="point at the chart to read a value"></canvas>' +
+    '<canvas class="plot sw-panel" width="980" height="420" title="point at the chart to read a value"></canvas>' +
     '<div class="sw-panel-note muted">reading the record…</div>';
 
   host.querySelectorAll('.sw-tab').forEach(b => {
@@ -763,7 +1021,31 @@ export function drawSolar() {
     sel.onchange = () => { o[sel.dataset.k] = sel.value; drawSolar(); };
   });
 
+  // The canvas takes the width it is given rather than a width chosen once. The
+  // panels that matter most — a return curve against mission length, a skill
+  // score across 26 leads — are long and thin, and a third of the page left
+  // blank is a third of the resolution thrown away.
+  fitCanvas(host);
+  if (!drawSolar._resize) {
+    drawSolar._resize = () => { if (S.view === 'solar') drawSolar(); };
+    window.addEventListener('resize', debounce(drawSolar._resize, 180));
+  }
+
   render(host, p, o);
+}
+
+/** The drawing surface, sized to the space there actually is. */
+function fitCanvas(host) {
+  const cv = $('.sw-panel', host);
+  if (!cv) return;
+  const w = Math.round(host.getBoundingClientRect().width);
+  if (w > 320) cv.width = Math.min(1600, w);
+  cv.height = Math.round(Math.max(340, Math.min(520, cv.width * 0.40)));
+}
+
+function debounce(fn, ms) {
+  let h = null;
+  return (...a) => { clearTimeout(h); h = setTimeout(() => fn(...a), ms); };
 }
 
 async function render(host, p, o) {
@@ -775,7 +1057,7 @@ async function render(host, p, o) {
     const cv = $('.sw-panel', host);
     drawChart(cv, out.spec);
     attachHover(cv);
-    note.innerHTML = esc(out.note).replace(/\n\n/g, '<br><br>');
+    note.innerHTML = linkRows(esc(out.note).replace(/\n\n/g, '<br><br>'));
   } catch (e) {
     note.textContent = 'the record could not be read: ' + e;
   }

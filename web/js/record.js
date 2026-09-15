@@ -99,12 +99,37 @@ export function solarRecord() {
     // Cycle phase, 0 at the opening minimum to 1 at the next. A day outside
     // every listed cycle gets null rather than a phase folded from the nearest
     // one, because the record starts mid-cycle 23 and ends inside 25.
+    //
+    // THE INCOMPLETE CYCLE IS FOLDED WITH THE MEAN LENGTH, NOT ITS OWN. A cycle
+    // whose end nothing else opens is still running, and the "end" beside it in
+    // solar_cycles.csv is where the RECORD stops rather than where the cycle
+    // stops. Dividing by that length stretched cycle 25 across the whole phase
+    // axis by a factor of 1.894, putting the record's last day at phase 1.007
+    // where sw_cycle_phase puts it at 0.532 — so every phase-indexed panel drew
+    // the running cycle at nearly double the phase the engine assigns it, and
+    // the Repeatability panel's whole argument is a comparison of shapes ON that
+    // axis. The mean of the complete cycles is what sw_cycle_phase folds with,
+    // and it is what the face folds with now.
+    // A cycle is complete when another one opens at or after its end; the last
+    // in the table has no successor and is the one still running.
+    const done = cycles.filter(c => cycles.some(o => o.start >= c.end));
+    const meanLen = done.length
+      ? done.reduce((p, c) => p + (c.end - c.start), 0) / done.length
+      : null;
+    const lengthOf = new Map(cycles.map(c =>
+      [c.n, done.includes(c) ? c.end - c.start : meanLen]));
     for (const d of days) {
       d.cycle = null; d.phase = null;
       for (const c of cycles) {
         if (d.t >= c.start && d.t < c.end) {
           d.cycle = c.n;
-          d.phase = (d.t - c.start) / (c.end - c.start);
+          const len = lengthOf.get(c.n);
+          const ph = len ? (d.t - c.start) / len : null;
+          // A day more than one mean length into a cycle nobody has seen the end
+          // of belongs to a cycle this record cannot name — exactly what the
+          // engine's declared upper bound of 1 says — so it gets no phase rather
+          // than one wrapped round.
+          d.phase = ph !== null && ph <= 1 ? ph : null;
           break;
         }
       }
@@ -158,8 +183,22 @@ export function corr(a, b) {
   return sa && sb ? sab / Math.sqrt(sa * sb) : null;
 }
 
+/**
+ * A percentile of a sorted sample, interpolated between order statistics.
+ *
+ * THE CONVENTION IS THE ONE THE ROWS WERE MEASURED UNDER, and it is not the only
+ * defensible one. A nearest-rank percentile — take the element at floor(q*n) —
+ * was what this used to do, and it disagreed with sw_uncertainty_growth by up to
+ * 0.7 sfu: that row's table holds 68.3 and 113.3 at one- and five-year leads, and
+ * neither is a value the record contains, because they sit between two adjacent
+ * observations. Linear interpolation at h = (n-1)q reproduces both exactly. A
+ * panel that illustrates a row must compute the row's quantity the row's way, or
+ * the picture and the claim drift apart in the fourth figure and nobody notices.
+ */
 export function quantile(sorted, q) {
   if (!sorted.length) return null;
-  const i = Math.min(sorted.length - 1, Math.max(0, Math.floor(q * sorted.length)));
-  return sorted[i];
+  if (sorted.length === 1) return sorted[0];
+  const h = (sorted.length - 1) * q;
+  const lo = Math.floor(h), hi = Math.min(sorted.length - 1, lo + 1);
+  return sorted[lo] + (h - lo) * (sorted[hi] - sorted[lo]);
 }

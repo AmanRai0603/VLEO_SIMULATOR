@@ -109,6 +109,12 @@ main { padding: 1.1rem 2.5rem 3rem; }
   text-transform: uppercase; letter-spacing: .08em;
 }
 .caption + .caption { margin-bottom: 1.1rem; }
+/* The rows a panel argues about, and the row names inside its caption. Set in
+   the mono face so a row id reads as an identifier rather than as prose. */
+.caption.rows { font: 10.5px var(--mono); margin: -.5rem 0 1.1rem;
+  text-transform: none; letter-spacing: 0; }
+.caption.rows .xref { margin-right: .1rem; }
+.sw-panel-note .xref { font: 10.5px var(--mono); }
 
 /* ---------- the figure ---------------------------------------------------- */
 .colheads { display: grid; grid-template-columns: 402px 1fr; margin: .3rem 0 .4rem; }
@@ -439,8 +445,14 @@ table.tree-t td:first-child { white-space: nowrap; }
 /* the solar weather tabs — eight panels, one canvas each */
 #solarview { padding: 0 0 24px; }
 #solarview .sw-tabs { margin: 10px 0 14px; display: flex; flex-wrap: wrap; gap: 6px; }
-#solarview .sw-panel { width: 100%; max-width: 980px; height: auto; margin: 10px 0 8px; }
-#solarview .sw-panel-note { max-width: 980px; line-height: 1.5; font-size: 12px; }
+/* The canvas is sized in script to the width there actually is, so CSS must not
+   then scale the backing store down — that is what made the axis labels shrink
+   the moment the canvas was allowed to be wide. No width here at all: the
+   element's own attributes are the size.
+
+   The caption keeps a reading measure, because prose does not get better wide. */
+#solarview .sw-panel { display: block; margin: 10px 0 8px; }
+#solarview .sw-panel-note { max-width: 96ch; line-height: 1.55; font-size: 12px; }
 #solarview .sweepctl { margin: 6px 0 4px; }
 
 /* the relation, walked — one more statement of the same mathematics */

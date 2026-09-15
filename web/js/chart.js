@@ -47,23 +47,35 @@ export function drawChart(canvas, spec) {
   ctx.fillRect(0, 0, W, H);
 
   const all = spec.series.filter(s => s.x.length);
-  let x0 = spec.x.min, x1 = spec.x.max, y0 = spec.y.min, y1 = spec.y.max;
-  if (x0 === undefined || x0 === null) {
-    x0 = Math.min(...all.map(s => Math.min(...s.x)));
-    x1 = Math.max(...all.map(s => Math.max(...s.x)));
+  // THE EXTENT IS ALWAYS COMPUTED, AND A DECLARED BOUND THEN OVERRIDES ITS OWN
+  // END. This used to be two either-or branches keyed on the MINIMUM: a spec
+  // that supplied `min` and left `max` open skipped the branch entirely and left
+  // the far end undefined, so every tick came out NaN and the chart drew nothing
+  // but gridlines. The Segmentation histogram declares `min: 0` on both axes and
+  // had been rendering blank.
+  const xsAll = all.flatMap(s => s.x.filter(v => v !== null && isFinite(v)));
+  const ysAll = all.flatMap(s => s.y.filter(v => v !== null && isFinite(v)));
+  let x0 = xsAll.length ? Math.min(...xsAll) : 0;
+  let x1 = xsAll.length ? Math.max(...xsAll) : 1;
+  let y0 = ysAll.length ? Math.min(...ysAll) : 0;
+  let y1 = ysAll.length ? Math.max(...ysAll) : 1;
+  // A mark outside the data is still a fact about the data, so the frame
+  // grows to hold it. Clipping a bound off the top draws a picture in which
+  // the bound is always met.
+  for (const m of spec.marks || []) {
+    if (m.axis === 'x') { x0 = Math.min(x0, m.at); x1 = Math.max(x1, m.at); }
+    else { y0 = Math.min(y0, m.at); y1 = Math.max(y1, m.at); }
   }
-  if (y0 === undefined || y0 === null) {
-    const ys = all.flatMap(s => s.y.filter(v => v !== null && isFinite(v)));
-    y0 = Math.min(...ys); y1 = Math.max(...ys);
-    // A mark outside the data is still a fact about the data, so the frame
-    // grows to hold it. Clipping a bound off the top draws a picture in which
-    // the bound is always met.
-    for (const m of spec.marks || []) {
-      if (m.axis !== 'x') { y0 = Math.min(y0, m.at); y1 = Math.max(y1, m.at); }
-    }
+  const given = v => v !== undefined && v !== null && isFinite(v);
+  if (!given(spec.y.min) || !given(spec.y.max)) {
     const pad = (y1 - y0) * 0.06 || 1;
-    y0 -= pad; y1 += pad;
+    if (!given(spec.y.min)) y0 -= pad;
+    if (!given(spec.y.max)) y1 += pad;
   }
+  if (given(spec.x.min)) x0 = spec.x.min;
+  if (given(spec.x.max)) x1 = spec.x.max;
+  if (given(spec.y.min)) y0 = spec.y.min;
+  if (given(spec.y.max)) y1 = spec.y.max;
   if (y0 === y1) { y0 -= 1; y1 += 1; }
   if (x0 === x1) { x0 -= 1; x1 += 1; }
 
@@ -140,6 +152,22 @@ export function drawChart(canvas, spec) {
     ctx.restore();
   });
 
+  // Marks, and their labels stacked so two nearby marks do not print on top of
+  // each other. Two boundaries four Ap apart on a 275-wide axis are four pixels
+  // apart, and their labels used to overlap into something unreadable — which is
+  // the case where a reader most needs to know which boundary is which.
+  ctx.font = '10px ui-monospace, monospace';
+  const taken = { x: [], y: [] };
+  /** The first row in which this label does not overlap one already drawn. */
+  const slotFor = (at, w) => {
+    for (let row = 0; row < 8; row++) {
+      if (!taken.x.some(o => o.row === row && at < o.end && at + w > o.start)) {
+        taken.x.push({ row, start: at, end: at + w });
+        return row;
+      }
+    }
+    return 0;
+  };
   for (const m of spec.marks || []) {
     const col = m.colour || INK.mark;
     ctx.save();
@@ -150,9 +178,19 @@ export function drawChart(canvas, spec) {
     else { ctx.moveTo(L, py(m.at)); ctx.lineTo(W - R, py(m.at)); }
     ctx.stroke();
     ctx.restore();
-    ctx.fillStyle = col; ctx.font = '10px ui-monospace, monospace';
-    if (m.axis === 'x') ctx.fillText(m.label, Math.min(W - R - 90, px(m.at) + 4), T + 11);
-    else ctx.fillText(m.label, L + 4, Math.max(T + 10, py(m.at) - 4));
+    ctx.fillStyle = col;
+    const w = ctx.measureText(m.label).width + 8;
+    if (m.axis === 'x') {
+      const x = Math.min(W - R - w, px(m.at) + 4);
+      ctx.fillText(m.label, x, T + 11 + 12 * slotFor(x, w));
+    } else {
+      // A y label is nudged DOWN rather than sideways: sideways would put it
+      // over the data it is annotating.
+      let y = Math.max(T + 10, py(m.at) - 4);
+      while (taken.y.some(o => Math.abs(o.at - y) < 11) && y < H - B - 2) y += 11;
+      taken.y.push({ at: y });
+      ctx.fillText(m.label, L + 4, y);
+    }
   }
 
   ctx.fillStyle = INK.text; ctx.font = '11px ui-monospace, monospace';
