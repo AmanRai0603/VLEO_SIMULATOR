@@ -131,6 +131,11 @@ jobs:
         run: |
           python3 tools/template_check.py --selftest
           python3 tools/template_check.py
+      # The same port, against the MATLAB tool's own saved run rather than
+      # against the study's published CSVs. Its selftest needs no daemon; the
+      # comparison itself runs in the panels job, where one is already up.
+      - name: the mat comparison checks itself
+        run: python3 tools/mat_parity.py --selftest
       - name: the release notes
         run: python3 tools/release_notes.py --selftest
       # Every recipe, applied twice on a copy; the second must change nothing.
@@ -270,6 +275,7 @@ jobs:
             sleep 2
           done
           python3 tools/matlab_parity.py
+          python3 tools/mat_parity.py
 
   # The two faces the workspace excludes, because they need targets of their
   # own. `cargo build --workspace` does not reach them, so until this job

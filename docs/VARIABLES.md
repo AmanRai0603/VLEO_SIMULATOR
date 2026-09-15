@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1369 rows** — 659 a person picked, 710 worked out. Two thirds of any design tree is
+**1370 rows** — 659 a person picked, 711 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -19811,6 +19811,44 @@ prf_horizon's structure function D(L) = RMS[F107(t+L) - F107(t)], its first meth
 
 The atmosphere model wants Kp; the design product carries Ap. This is that conversion and only that — the published table, applied as published. What flows in is the design storm from sw_storm_return_level, so what flows out is the Kp of that storm and not of an average day. The bias the table carries when a daily mean is fed to a three-hourly scale is measured separately, in sw_kp_slot_bias, and is not corrected here.
 
+### `sw_kp_mean_bias` — Kp slot bias, 24-hour mean
+
+> By how much does the published table over-read the 24-hour MEAN Kp at this Ap?
+
+| | |
+|---|---|
+| symbol | `dKp_mean` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `dKp_mean(Ap) = piecewise_linear(ap_bin_centres -> measured_medians, Ap)` |
+| source | `noaa_swpc` |
+| valid over | -1 … 0.5 - |
+
+- **lower bound** — the deepest measured bin median is -0.487 and the relation is a table that clamps at its ends, so no input can produce less. -1.0 is therefore unreachable by this relation and exists to catch a broken table rather than an extreme sky
+- **upper bound** — Jensen's inequality puts this at or below zero wherever the published Ap is the mean of the day's eight ap, and the one bin that measures positive measures +0.042. +0.5 would say the table under-reads the 24-hour mean by half a Kp, which no bin shows and which is the signature of the peak-slot offset having been put in this row by mistake
+- **reads** — `sw_storm_return_level`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** The correction is a median per bin, so it describes the typical day at that Ap and not the day in hand — fails when the offset is a distribution, not a number. Adding the median recovers the typical 24-hour mean and still misses any individual day, and the spread within a bin is not published by this row. A design that needs the worst case at a given Ap needs a percentile of the offset, not its median.
+- **assumes** The quietest bin measures the opposite sign to the one Jensen's inequality requires — fails when the Ap 0-to-5 bin measures +0.042 against an argument that says the value must be at or below zero. The two candidate causes are that ap_planetary is SWPC's ESTIMATED planetary amplitude rather than the exact mean of the day's eight ap — so the concavity argument is being applied to a number it does not quite describe — and that a twenty-fourth of a Kp unit is below the resolution of either published scale at the quiet end. Neither is settled here. It matters least where it occurs, because a design is not sized by the quietest 2529 days in the record, but a reader who assumes the published sign holds everywhere will be wrong in one bin of nine.
+- **assumes** The top two bins rest on 25 and 20 days — fails when prf_ap2kp's own minimum for using a bin at all is 20 days, and the 110-to-400 bin sits exactly on it. The correction a design reads above Ap 110 — the largest correction this row publishes, -0.487 — is supported by twenty days. That is stated rather than smoothed, and anyone sizing a design there should know the number is thin rather than discover it later.
+- **assumes** This is NOT the daily-peak slot — fails when the two slots have opposite signs. The peak-slot offset measured on the same 10,297 days runs from +0.833 to +1.747; this one runs from +0.042 to -0.487. Applying this row where sw_kp_slot_bias was wanted moves the answer the wrong way by roughly one and a half Kp, and the result is still a plausible Kp, so nothing downstream will refuse it.
+- **evidence** Ap bin 0-5, centre 2.5 — 2529 days — expect 0.041666666666666685 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Ap bin 5-10, centre 7.5 — 3938 days — expect -0.125 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Ap bin 10-15, centre 12.5 — 1836 days — expect -0.09763888888888905 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Ap bin 15-20, centre 17.5 — 839 days — expect -0.11111111111111116 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Ap bin 20-30, centre 25 — 707 days — expect -0.13333333333333286 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Ap bin 30-45, centre 37.5 — 288 days — expect -0.24099537037037067 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Ap bin 45-70, centre 57.5 — 115 days — expect -0.33333333333333304 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Ap bin 70-110, centre 90 — 25 days — expect -0.4487179487179489 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** Ap bin 110-400, centre 255 — 20 days — expect -0.4868948412698413 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** below the first bin centre — Ap 0 holds the 0-to-5 bin rather than extrapolating — expect 0.041666666666666685 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** above the last bin centre — Ap 1000 holds the 110-to-400 bin — expect -0.4868948412698413 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The pair to sw_kp_slot_bias, and the half of the pair a thermospheric model actually asks for more often. DTM2020_Oper takes Kp in two senses — akp(1) a single three-hourly value, akp(3) the mean of the day's eight — and the published scale answers neither, because it is defined for a three-hourly ap while the design product carries a daily mean. sw_kp_slot_bias measures the peak-slot gap and this measures the mean-slot one. They have opposite signs, so applying the wrong one doubles the error instead of removing it.
+
 ### `sw_kp_slot_bias` — Kp slot bias, daily peak
 
 > By how much does the published table under-read the daily PEAK Kp at this Ap?
@@ -19833,7 +19871,7 @@ The atmosphere model wants Kp; the design product carries Ap. This is that conve
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **assumes** The correction is a median per bin, so it describes the typical day at that Ap and not the day in hand — fails when the offset is a distribution, not a number. Adding the median recovers the typical peak and still misses any individual day, and the spread within a bin is not published by this row. A design that needs the worst case at a given Ap needs a percentile of the offset, not its median.
 - **assumes** The nine bin medians are not monotone, and the top bin sits exactly at the record's support limit — fails when the offset rises with Ap as the concavity argument predicts — +1.000 at Ap 2.5 through +1.747 at Ap 90 — and then FALLS to +1.317 in the 110-to-400 bin. That bin holds 20 days, which is exactly prf_ap2kp's own minimum for using a bin at all, so the fall is as likely to be a small-sample artefact as a real saturation of the table near its top. It is carried through rather than smoothed away, because smoothing it would be this node inventing a shape the record does not show. Anyone designing at Ap above 110 is reading a correction supported by twenty days.
-- **assumes** The 24-hour-mean slot is NOT what this publishes — fails when the two slots have opposite signs, and using this row for the mean slot would double the error rather than remove it. Measured on the same 10,297 days, the mean-slot offset runs from +0.042 at Ap 2.5 down to -0.462 in the top bin — the table reads HIGH against the 24-hour mean and LOW against the peak. DTM2020_Oper wants both: akp(1) is a single three-hourly value, akp(3) the mean of the eight. Only the peak is published here.
+- **assumes** The 24-hour-mean slot is NOT what this publishes — fails when the two slots have opposite signs, and using this row for the mean slot would double the error rather than remove it. Measured on the same 10,297 days, the mean-slot offset runs from +0.042 at Ap 2.5 down to -0.487 in the top bin — the table reads HIGH against the 24-hour mean and LOW against the peak. DTM2020_Oper wants both: akp(1) is a single three-hourly value, akp(3) the mean of the eight. The mean-slot offset is published by sw_kp_mean_bias; this row is the peak.
 - **evidence** Ap bin 0-5, centre 2.5 — 2529 days — expect 1 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** Ap bin 5-10, centre 7.5 — 3938 days — expect 0.8333333333333333 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** Ap bin 10-15, centre 12.5 — 1836 days — expect 1.114406779661017 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
@@ -20149,7 +20187,7 @@ The row that tells a reader what a declared Kp costs. env_kp declares Kp = 3 by 
 - **lower bound** — ap is an equivalent amplitude in nanotesla. Below 20 the answer is not a storm at all — the record's median day is 7 — so a return level under it means the input or the fit reached somewhere neither was meant to go
 - **upper bound** — THE BOUND IS THE RECORD'S LENGTH, NOT THE TABLE'S END. The fit evaluated at a return period equal to the record itself, 28.1971 years, is Ap 229.18; 230 is the first round number above it, so a return period beyond the record refuses instead of answering. The previous bound was 400 — the last point of the published ap/Kp table — which first bites at a return period of 1832 years, sixty-five times the record, and so enforced nothing: this node would answer a once-per-century question with Ap 281 while its own assumptions said a century needs a longer record. Note that 230 is BELOW the record's largest single day, Ap 273: rank 1 sits above the log-linear trend and was deliberately left out of the fitting range, so the fit does not chase it. This bound is the fit's own reach, not the record's extreme
 - **reads** — `orbit_mission_duration`
-- **read by** — `l3_solar_ach_03`, `sw_kp_from_ap`, `sw_kp_slot_bias`, `sw_regime`
+- **read by** — `l3_solar_ach_03`, `sw_kp_from_ap`, `sw_kp_mean_bias`, `sw_kp_slot_bias`, `sw_regime`
 - **assumes** The tail is log-linear in the return period, with the two coefficients fitted on this record — fails when the form is a choice, not the source's. Fitted over ranks 2 to 56 of the record, which is return periods 0.5035 to 14.0986 years; it carries a residual rms of 4.95 Ap against the empirical curve, worst +8.6 and -12.9. A power law on the same points is more than twice as bad (rms 9.10, worst -47.7), which is why this form and not that one. Anyone who needs the empirical step rather than a smooth curve should read the record, not this row.
 - **assumes** 28.2 years of record support the whole curve, and its top end rests on two observations — fails when the empirical method cannot see past its own record length. At T = 15 years the answer is fitted through the second-largest daily Ap in 28.2 years, and at T = 10 years the third; the record's largest value, Ap 273, has an apparent return period of exactly 28.2 years for no reason other than that it is the largest thing in 28.2 years. The fitted domain is 0.5035 to 14.0986 years, and the declared input range 0.5 to 15 years reaches past BOTH ends of it: the curve is extrapolated by 0.285 Ap at a half-year mission and by 2.54 Ap at a fifteen-year one, because there is no rank between 1 and 2 and rank 1 is the record length itself. Small, but it is an extrapolation and an earlier version of this sheet claimed it was never one. A mission at the 15-year bound is being sized on a curve whose top is two data points. A design that needs the once-per-century storm needs a longer record or a fitted extreme-value model, not this row.
 - **assumes** Every day in the record is treated as an independent draw — fails when storms cluster — a coronal hole returns once per solar rotation and a single event runs for more than one day — so the record holds fewer independent storms than it holds storm days. Clustering does not bias the exceedance level itself, which is a quantile of the marginal distribution, but it does mean the effective sample behind the tail is smaller than N and the uncertainty on the answer is wider than the residual above suggests. sw_event_duration and sw_recurrence_lag both measure the clustering now — a mean disturbed run of 3.31 days and a recurrence peak at a lag of 26 days — and neither is fed back into this fit, so the widening they imply is declared here rather than applied.

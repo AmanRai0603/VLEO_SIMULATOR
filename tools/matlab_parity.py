@@ -8,9 +8,15 @@ WHAT THIS CAN AND CANNOT COMPARE, STATED FIRST.
 
 The study's own code — `prf_cycles`, `prf_design`, `prf_ap2kp`, `prf_cluster`,
 `prf_drivers`, `prf_horizon`, `prf_segment` — is NOT in this repository. The only
-MATLAB here is a 118-line client that calls this tool *from* MATLAB. So there is
-no way to run the study and diff the two, and any claim of "verified against the
-MATLAB" that implied otherwise would be false.
+MATLAB here is a 118-line client that calls this tool *from* MATLAB, so nothing
+here runs the study and diffs the two.
+
+That is a statement about this repository, and it is narrower than it used to
+read. The source has since been supplied by its author, and where an algorithm
+of it has been reimplemented and checked exactly, that is done in
+`tools/mat_parity.py` and said there. This file remains what it always was: a
+check against the study's published OUTPUT, which is the part of the evidence
+that lives in the repository and can be re-run by anyone who clones it.
 
 What IS here is the study's OUTPUT, published in full as the solar-weather
 bundle: seven CSVs, 70,422 rows, including `daily_regime.csv` — which is
