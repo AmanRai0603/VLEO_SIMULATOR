@@ -1,0 +1,189 @@
+<article class="node" data-node="sw_window_peak_level" data-sheet-hash="999dae" data-impl-hash="76ba19">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>F10.7 peak level inside the mission window</h2>
+  <p class="ident"><code>sw_window_peak_level</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">What is the highest level the cycle analogue reaches during the mission?</p>
+<p class="maths"><code>F107_window_peak(T_e, L) = max over t in [T_e, T_e+L] of A(t)</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The companion to sw_central_expectation, and the number a design that must SURVIVE the window wants rather than the one that describes it. The centre is a mean over the window, which for a five-year mission averages a busy opening against a quiet end and reports neither. This publishes the busiest sustained level inside the same window, from the same analogue, so the two can be read together.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>This is the peak of the EXPECTATION, not a peak of the sky</dt><dd>fails when the analogue is a mean over completed cycles of a smoothed level. The record's daily F10.7 reaches 343 sfu and this row's ceiling anywhere is 225.1; a single rotation can exceed this row's answer by a factor of two and nothing here is wrong when it does. A design wanting a level it will not see exceeded needs this plus an excursion, which is sw_uncertainty_growth, or the 95th percentile the design row already composes.</dd>
+<dt>Outside cycle 25 the amplitude is the mean of TWO completed cycles, and their spread is a factor of 1.41</dt><dd>fails when this row inherits the assumption from the analogue it reads. Cycle 23 peaked at 226.8 sfu and cycle 24 at 160.9, so the 193.9 used for every future cycle is the midpoint of two numbers 41% apart — and because this row reports a MAXIMUM, a long window's answer is usually exactly that amplitude rather than something averaged near it. The fifteen-year case returns 193.858 sfu, which is the assumption showing through undiluted. If the next cycle runs like cycle 23 this row is 17% low.</dd>
+<dt>A maximum is not a duration</dt><dd>fails when the row says how high the expected level gets and says nothing about how long it stays there. A window whose peak is a brief crossing of a cycle maximum and one that sits at maximum for two years return the same number. Anything sizing a propellant budget or a lifetime needs the integral, which is sw_central_expectation, and anything sizing a thermal or power case may need neither.</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">A centre and a design value are different questions and a mission long enough to cross solar-cycle phases separates them sharply. Over the declared five-year window the analogue opens near 105 sfu and ends near 73; its mean is 86.8 and its maximum 110.7. Drag is not linear in flux, a vehicle does not get to average its propellant over five years, and the sizing case for almost everything downstream — thrust, propellant, intake area, achievable lifetime — is the busiest sustained period rather than the typical one.</p>
+<p class="why">So the maximum is published as its own row rather than left for a reader to infer from the centre. It is not a worst case and does not pretend to be: it is the highest the EXPECTED level goes, with no excursion on top, and the excursion is sw_uncertainty_growth's business.</p>
+<div class="theory-walk" data-steps="5">
+<ol class="derive">
+<li><span class="dt">Take the same analogue sw_central_expectation averages: the completed cycles' mean shape, wrapped on one mean cycle length, scaled by cycle 25's own peak inside cycle 25 and by the completed-cycle mean outside it.</span><code class="dm">A(t) = amp(t) * R((t - T_max) mod P)</code></li>
+<li><span class="dt">Maximise it over the window rather than integrating. The relation and the data are identical to the centre's; only the statistic differs, which is why the two rows share one implementation in the kernel and cannot drift apart.</span><code class="dm">F107_window_peak = max over [T_e, T_e + L]</code></li>
+<li><span class="dt">The maximum is EXACT rather than sampled, and it is worth saying why that is possible. The analogue is linear between knots, so on any interval its largest value is at an end of the interval or at a knot inside it — a finite list, not a search.</span></li>
+<li><span class="dt">With one exception, which is the part that is easy to get wrong. The amplitude hands over with a step DOWN at half a period either side of the maximum, so the analogue's supremum just inside cycle 25 is not attained at any knot and is larger than the knot value there. Checking ends and knots alone looks safe and is not: over 6432 windows spanning the declared domain the handover's limit sets the answer in 18 of them, by as much as 4.05 sfu.</span></li>
+<li><span class="dt">So the candidate list is the two ends, every knot strictly inside, and the limit at every handover strictly inside. That list is exhaustive, so the answer carries no discretisation error of its own — unlike the centre, whose window integral is numerical.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">A ceiling on the expectation, not on the sky. A single disturbed day can and does exceed this by a large margin — the record reaches 343 sfu — and nothing about this number bounds one. What it bounds is the level a design must hold for months at a time somewhere inside its window.</p>
+<p class="reading">Read it beside sw_central_expectation and the gap between them says how much the mission's own length is costing it. The two are equal for a window short enough to sit on one part of a cycle, and a fifteen-year window puts 105.7 against 193.9 — at which point a design sized to the centre is sized to roughly half the level it will actually meet.</p>
+<p class="maths concl">which is the relation this node states: <code>F107_window_peak(T_e, L) = max over t in [T_e, T_e+L] of A(t)</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>lead</code></td><td><a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a></td><td>Time</td><td>yr</td></tr>
+<tr><td>in</td><td><code>epoch</code></td><td><a class="xref" data-goto="sys_mission_requirements_mission_epoch">sys_mission_requirements_mission_epoch</a></td><td>Time</td><td>d</td></tr>
+<tr class="out"><td>out</td><td><code>F107_window_peak</code></td><td>sw_window_peak_level</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+</section>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">take the largest value the cycle analogue reaches anywhere inside the mission window</span> <span class="binds">→ <code>peak: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_window_peak_level(lead: Time, epoch: Time) -> Ratio
+    given lead from orbit_mission_duration
+    given epoch from sys_mission_requirements_mission_epoch
+    // take the largest value the cycle analogue reaches anywhere inside the mission window
+    peak ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require F107_window_peak ≥ 60
+    require F107_window_peak ≤ 400
+    require F107_window_peak is finite
+
+    return F107_window_peak
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>F107_window_peak &ge; 60</code> — the analogue's smallest value anywhere is its smallest shape on its smallest amplitude, 0.324026 x 193.8580 = 62.8 sfu, and a maximum over any window is at least that. 60 is env_f107's floor, below which no F10.7 has been observed, so an answer under it means the shape table or an amplitude has been corrupted rather than that the Sun is quiet</li>
+<li><code>F107_window_peak &le; 400</code> — the analogue's largest value anywhere is 1.000000 x 225.1358 = 225.1 sfu, cycle 25's own 81-day peak, because the shape is normalised to one at a cycle maximum. 400 is env_f107's ceiling and is unreachable by this relation; it catches a broken amplitude rather than an extreme sky</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sw_window_peak_level" data-lo="60" data-hi="400" data-symbol="F107_window_peak">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What is the highest level the cycle analogue reaches during the mission?
+///
+/// `F107_window_peak(T_e, L) = max over t in [T_e, T_e+L] of A(t)`
+///
+/// Source: `noaa_swpc`
+///
+/// The companion to sw_central_expectation, and the number a design that must
+/// SURVIVE the window wants rather than the one that describes it. The centre
+/// is a mean over the window, which for a five-year mission averages a busy
+/// opening against a quiet end and reports neither. This publishes the
+/// busiest sustained level inside the same window, from the same analogue, so
+/// the two can be read together.
+///
+/// # Assumptions
+///
+/// * This is the peak of the EXPECTATION, not a peak of the sky — fails when the analogue is a mean over completed cycles of a smoothed level. The record's daily F10.7 reaches 343 sfu and this row's ceiling anywhere is 225.1; a single rotation can exceed this row's answer by a factor of two and nothing here is wrong when it does. A design wanting a level it will not see exceeded needs this plus an excursion, which is sw_uncertainty_growth, or the 95th percentile the design row already composes.
+/// * Outside cycle 25 the amplitude is the mean of TWO completed cycles, and their spread is a factor of 1.41 — fails when this row inherits the assumption from the analogue it reads. Cycle 23 peaked at 226.8 sfu and cycle 24 at 160.9, so the 193.9 used for every future cycle is the midpoint of two numbers 41% apart — and because this row reports a MAXIMUM, a long window's answer is usually exactly that amplitude rather than something averaged near it. The fifteen-year case returns 193.858 sfu, which is the assumption showing through undiluted. If the next cycle runs like cycle 23 this row is 17% low.
+/// * A maximum is not a duration — fails when the row says how high the expected level gets and says nothing about how long it stays there. A window whose peak is a brief crossing of a cycle maximum and one that sits at maximum for two years return the same number. Anything sizing a propellant budget or a lifetime needs the integral, which is sw_central_expectation, and anything sizing a thermal or power case may need neither.
+pub const NODE_ID: &amp;str = &quot;sw_window_peak_level&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xbfee2dafc8999dae;
+
+pub fn evaluate(lead: Time, epoch: Time) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : take the largest value the cycle analogue reaches anywhere inside the mission window -&gt; Ratio
+    // The shape, the period, both amplitudes, the handover between them and the
+    // exhaustive candidate list are env::solar_cycle_analogue_max's. This row
+    // composes it over the window; the sibling composes the mean of the same
+    // analogue, which is why the two cannot disagree about the cycle.
+    let peak: Ratio = Ratio::new(env::solar_cycle_analogue_max(
+        epoch.days(),
+        epoch.days() + lead.days(),
+    ));
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = peak;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_window_peak&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_window_peak&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the analogue's smallest value anywhere is its smallest shape on its smallest amplitude, 0.324026 x 193.8580 = 62.8 sfu, and a maximum over any window is at least that. 60 is env_f107's floor, below which no F10.7 has been observed, so an answer under it means the shape table or an amplitude has been corrupted rather than that the Sun is quiet&quot; });
+    }
+    if answer.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_window_peak&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the analogue's largest value anywhere is 1.000000 x 225.1358 = 225.1 sfu, cycle 25's own 81-day peak, because the shape is normalised to one at a cycle maximum. 400 is env_f107's ceiling and is unreachable by this relation; it catches a broken amplitude rather than an extreme sky&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="the declared case — the highest sustained level a 2027 five-year mission meets"><td>the declared case — the highest sustained level a 2027 five-year mission meets</td><td class="num">110.65627313580244</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="MATLAB's own window, 2027-06-26 for a year"><td>MATLAB's own window, 2027-06-26 for a year</td><td class="num">105.56045788424966</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="half a Julian year from the declared epoch — short enough that the peak is at its own start"><td>half a Julian year from the declared epoch — short enough that the peak is at its own start</td><td class="num">110.65627313580244</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="fifteen years — long enough to contain a whole cycle, so the peak is the next maximum at the mean amplitude"><td>fifteen years — long enough to contain a whole cycle, so the peak is the next maximum at the mean amplitude</td><td class="num">193.85802469135803</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the earliest epoch, 2018-01-01 — the window contains cycle 25's own maximum"><td>the earliest epoch, 2018-01-01 — the window contains cycle 25's own maximum</td><td class="num">174.09864172839502</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the latest epoch, 2040-01-01"><td>the latest epoch, 2040-01-01</td><td class="num">147.97900299382718</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="an epoch near the next maximum, 2032-11-08"><td>an epoch near the next maximum, 2032-11-08</td><td class="num">193.85802469135803</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="a 2039 window straddling the amplitude handover — the maximum is a limit, not a value at any knot"><td>a 2039 window straddling the amplitude handover — the maximum is a limit, not a value at any knot</td><td class="num">82.38214311111112</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 60 — the analogue's smallest value anywhere is its smallest shape on its smallest amplitude, 0.324026 x 193.8580 = 62.8 sfu, and a maximum over any window is at least that. 60 is env_f107's floor, below which no F10.7 has been observed, so an answer under it means the shape table or an amplitude has been corrupted rather than that the Sun is quiet</li>
+<li><code>OutOfDomain</code> above 400 — the analogue's largest value anywhere is 1.000000 x 225.1358 = 225.1 sfu, cycle 25's own 81-day peak, because the shape is normalised to one at a cycle maximum. 400 is env_f107's ceiling and is unreachable by this relation; it catches a broken amplitude rather than an extreme sky</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_window_peak_level"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>60 &hellip; 400</code> -.</p>
+<ul class="guards"><li>lower — the analogue's smallest value anywhere is its smallest shape on its smallest amplitude, 0.324026 x 193.8580 = 62.8 sfu, and a maximum over any window is at least that. 60 is env_f107's floor, below which no F10.7 has been observed, so an answer under it means the shape table or an amplitude has been corrupted rather than that the Sun is quiet</li><li>upper — the analogue's largest value anywhere is 1.000000 x 225.1358 = 225.1 sfu, cycle 25's own 81-day peak, because the shape is normalised to one at a cycle maximum. 400 is env_f107's ceiling and is unreachable by this relation; it catches a broken amplitude rather than an extreme sky</li></ul>
+<div class="sweep" data-over="orbit_mission_duration" data-points="60" data-y="sw_window_peak_level"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a> over 60 points. Run the branch to draw it.</p></div>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

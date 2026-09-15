@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1370 rows** — 659 a person picked, 711 worked out. Two thirds of any design tree is
+**1371 rows** — 659 a person picked, 712 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -12316,7 +12316,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 
 - **lower bound** — below six months the programme cannot amortise a satellite, so it is not the mission being designed
 - **upper bound** — above 15 years the cost model, the degradation model and the battery cycle model are all extrapolated well past their fits
-- **read by** — `aero_ao_fluence`, `cost_per_year`, `cost_programme`, `pwr_battery_cycles`, `pwr_degradation`, `sw_central_expectation`, `sw_horizon_climatology`, `sw_horizon_persistence`, `sw_storm_return_level`, `sw_uncertainty_growth`
+- **read by** — `aero_ao_fluence`, `cost_per_year`, `cost_programme`, `pwr_battery_cycles`, `pwr_degradation`, `sw_central_expectation`, `sw_horizon_climatology`, `sw_horizon_persistence`, `sw_storm_return_level`, `sw_uncertainty_growth`, `sw_window_peak_level`
 - **contributes to** — kpi_cost_per_year
 
 ### `orbit_nodal_regression` — Nodal regression rate
@@ -19271,29 +19271,29 @@ Counted over 128135 day pairs at the same seventeen leads sw_uncertainty_growth 
 | kind | computed |
 | owner | environment |
 | evidence tier | A |
-| relation | `F107_central(T_e, L) = w*F107_today + (1-w)*mean_[T_e, T_e+L] A(t),  w = exp(-L / 27 d),  A(t) = P25 * R((t - T_max) mod P)` |
+| relation | `F107_central(T_e, L) = w*F107_today + (1-w)*mean_[T_e, T_e+L] A(t),  w = exp(-L / 27 d),  A(t) = amp(t) * R((t - T_max) mod P)` |
 | source | `noaa_swpc` |
 | valid over | 60 … 400 - |
 
-- **lower bound** — the answer is a weighted blend of today's F10.7 and a window mean of the analogue, so it cannot leave the interval between them. The analogue is bounded below by 0.325169 x 225.1358 = 73.2 sfu, and env_f107 by 60 because below 60 sfu has never been observed; the blend therefore floors at 60
+- **lower bound** — the answer is a weighted blend of today's F10.7 and a window mean of the analogue, so it cannot leave the interval between them. The analogue is bounded below by 0.324026 x 193.8580 = 62.8 sfu, its smallest shape on its smallest amplitude, and env_f107 by 60 because below 60 sfu has never been observed; the blend therefore floors at 60
 - **upper bound** — env_f107's upper bound is 400, above which the exospheric temperature relation is extrapolated past the largest recorded daily value. The analogue cannot exceed cycle 25's own 81-day peak of 225.1 sfu, and a blend cannot exceed its larger input, so this bound catches a broken weight or a broken table rather than an extreme sky
 - **reads** — `env_f107`, `orbit_mission_duration`, `sys_mission_requirements_mission_epoch`
 - **read by** — `sw_f107_design`
 - **assumes** Two completed cycles is the whole sample, and eleven of the ninety-three grid points rest on one of them — fails when the record spans cycles 23, 24 and the incomplete 25, so the shape R is a mean of TWO curves and its spread between them is not published by this row. Where the two cycles' differing lengths leave only one of them covering a point — eleven of ninety-three, near the wrap — the value is that one cycle's shape rather than an average. Two cycles cannot establish that a shape repeats; they can only establish what the last two did, and this row says the next one resembles them because that is the best the record supports, not because it is known.
-- **assumes** Wrapping assumes future cycles repeat cycle 25's AMPLITUDE, not just its shape — fails when beyond one mean cycle length past 2024-09-04 the analogue repeats, and it repeats scaled by cycle 25's own peak of 225.1 sfu. Cycle amplitude is the thing that does NOT repeat — 226.5 sfu for cycle 23 against 160.6 for cycle 24, a factor of 1.41 — so any window reaching past about 2036 is reading a level whose size has no support at all. It affects the long end of the declared range: a fifteen-year mission spends most of its window there. The fifteen-year answer happens to land near the unconditional climatology, which makes it reasonable by accident rather than by evidence.
+- **assumes** Outside cycle 25 the amplitude is the mean of TWO completed cycles, and their spread is a factor of 1.41 — fails when cycle 23 peaked at 226.8 sfu and cycle 24 at 160.9, so the 193.9 this row uses for every future cycle is the midpoint of two numbers that differ by 41%. A window reaching past about 2030 is reading a level whose size is that average, and if the next cycle runs like cycle 23 the answer is 17% low, if like cycle 24 it is 17% high. That is an honest estimate rather than a repeat of the current cycle, which is what this row used to do, but two cycles cannot support an uncertainty on it and none is published. The row does not know, and does not claim to know, which kind of cycle comes next.
 - **assumes** The answer is a window MEAN, so it understates the early years of a long mission — fails when a five-year mission opening at the declared epoch averages 90.4 sfu, but its first ninety days average 104.6 and it falls to 73.2 by the end of the window — a spread of 39 sfu inside one number. Drag is not linear in flux and a vehicle does not average its propellant over five years, so a design whose sizing case is its worst sustained period is reading the wrong statistic here. This row publishes a centre because it is a centre; the maximum of the analogue over the window is a different number and nothing publishes it yet.
-- **assumes** The grid is 45 days and the window integral is numerical, and both errors are measured rather than assumed — fails when the shape is stored on a 45-day grid and interpolated linearly, which over 328 (epoch, duration) combinations spanning the whole declared domain departs from the same construction on a 10-day grid by at most 0.962 sfu, worst at the shortest windows where the grid is coarsest relative to the window. Simpson's rule with 512 panels adds at most 0.0045 sfu. Both are far inside the spread between the two cycles the shape is built from, which is the error that actually matters and which this row does not publish.
+- **assumes** The grid is 94 knots and the window integral is numerical, and both errors are measured rather than assumed — fails when the shape is stored on 94 knots of 44.4468 days and interpolated linearly. The knot count is even and divides the period exactly, which is not cosmetic: it makes the wrap from the last knot to the first one step like any other, and it puts the amplitude handover on knot 47 rather than somewhere inside a segment. An earlier form of this row used a round 45-day step, which does not divide 4178, and carried a 1.2 sfu discontinuity at the wrap as a result. Simpson's rule with 512 panels adds at most 0.0045 sfu. Both are far inside the spread between the two cycles the shape is built from, which is the error that actually matters and which this row does not publish.
 - **assumes** Persistence is carried for completeness and is worth nothing at any mission lead — fails when the weight is exp(-L/27) with L in days, so at the shortest mission the declared input range allows — half a year — today's flux contributes 0.114% and by one year it contributes 0.00013%. The term is right and it is inert: this row's answer is the window climatology to four decimal places for every lead a mission can ask about. It is kept because the relation is the study's, and removing it would make the row silently wrong for the short-lead use nothing in this tree currently makes.
-- **assumes** This moves the row AWAY from the MATLAB tool, deliberately — fails when the MATLAB tool answers 158.33 sfu for its own 2027 window by freezing its last 27-day rotation forecast and holding it flat; this row now answers 96.5 sfu for the same window and used to answer 114.8. The port therefore agrees with MATLAB LESS than it did. That is the intended direction: over the same span past maximum the two completed cycles ran at 91 sfu scaled onto cycle 25's amplitude, so the record puts MATLAB 74% high and the old answer 26% high. tools/mat_parity.py records the disagreement and its size so that it stays a decision rather than becoming a surprise.
-- **evidence** the declared case — epoch 2027-01-01, a five-year mission — expect 90.38771803612747 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** fifteen years — the window spans more than a cycle, so the mean returns to the record's own climatology of 114.84 — expect 119.1016920687434 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** half a Julian year, the shortest mission — the one lead where today's 150 sfu is still faintly visible — expect 106.23316550208871 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** a quiet day today changes nothing at five years — expect 90.38771803612747 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** nor does a very active one — at five years the answer is the window climatology alone — expect 90.38771803612747 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** the earliest epoch the range allows, 2018-01-01 — a mission rising into cycle 25's maximum — expect 116.83299053750859 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** an epoch near the next maximum, 2032-11-08 — the same mission, a different sky — expect 168.09803922411484 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** the latest epoch the range allows, 2040-01-01 — expect 102.62295653471243 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** one whole cycle period later — epoch 14040 is 4178 days after 9862, and the modulo makes them the same sky — expect 90.38771803612747 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **assumes** This moves the row AWAY from the MATLAB tool, deliberately — fails when the MATLAB tool answers 158.33 sfu for its own 2027 window by freezing its last 27-day rotation forecast and holding it flat; this row now answers 97.0 sfu for the same window and used to answer 114.8. The port therefore agrees with MATLAB LESS than it did. That is the intended direction: over the same span past maximum the two completed cycles ran at 91 sfu scaled onto cycle 25's amplitude, so the record puts MATLAB 74% high and the old answer 26% high, and this row within a few per cent of it. tools/mat_parity.py records the disagreement and its size so that it stays a decision rather than becoming a surprise.
+- **evidence** the declared case — epoch 2027-01-01, a five-year mission — expect 86.84972489094359 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** fifteen years — the window spans more than a cycle, so the mean settles near the record's own level — expect 105.72687096778448 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** half a Julian year, the shortest mission — the one lead where today's 150 sfu is still faintly visible — expect 105.5465798678905 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** a quiet day today changes nothing at five years — expect 86.84972489094359 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** nor does a very active one — at five years the answer is the window climatology alone — expect 86.84972489094359 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the earliest epoch the range allows, 2018-01-01 — a mission rising into cycle 25's maximum — expect 115.03865410832137 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** an epoch near the next maximum, 2032-11-08 — the same mission, a different sky, and one cycle 25's size does not vouch for — expect 144.9367498101883 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the latest epoch the range allows, 2040-01-01 — expect 88.67145559562236 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** one whole cycle period later — epoch 14040 is 4178 days after 9862, so the SHAPE repeats; the answer does not, because the amplitude hands over — expect 78.21016904177215 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 
 The centre of the F10.7 design value; sw_uncertainty_growth supplies the spread around it and sw_f107_design adds the two together. Two things decide the answer and the row needs both: how far ahead it is being asked about, and WHEN. A mission through 2027-2032 flies the declining half of cycle 25 and meets a different sky from one through 2032-2037, and no single number can be right for both.
 
@@ -20252,6 +20252,40 @@ Geomagnetic activity has no usable long-term forecast, so a design does not pred
 - **evidence** above the last measured lead — 20 years holds the 15-year value — expect 115 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 
 Half of the F10.7 design value. sw_central_expectation says where F10.7 is heading; this says how wrong that can be by the time the mission is there, so the band widens with lead exactly as knowledge fades. The percentile does the safety: the design value is the central expectation plus this.
+
+### `sw_window_peak_level` — F10.7 peak level inside the mission window
+
+> What is the highest level the cycle analogue reaches during the mission?
+
+| | |
+|---|---|
+| symbol | `F107_window_peak` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `F107_window_peak(T_e, L) = max over t in [T_e, T_e+L] of A(t)` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the analogue's smallest value anywhere is its smallest shape on its smallest amplitude, 0.324026 x 193.8580 = 62.8 sfu, and a maximum over any window is at least that. 60 is env_f107's floor, below which no F10.7 has been observed, so an answer under it means the shape table or an amplitude has been corrupted rather than that the Sun is quiet
+- **upper bound** — the analogue's largest value anywhere is 1.000000 x 225.1358 = 225.1 sfu, cycle 25's own 81-day peak, because the shape is normalised to one at a cycle maximum. 400 is env_f107's ceiling and is unreachable by this relation; it catches a broken amplitude rather than an extreme sky
+- **reads** — `orbit_mission_duration`, `sys_mission_requirements_mission_epoch`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** This is the peak of the EXPECTATION, not a peak of the sky — fails when the analogue is a mean over completed cycles of a smoothed level. The record's daily F10.7 reaches 343 sfu and this row's ceiling anywhere is 225.1; a single rotation can exceed this row's answer by a factor of two and nothing here is wrong when it does. A design wanting a level it will not see exceeded needs this plus an excursion, which is sw_uncertainty_growth, or the 95th percentile the design row already composes.
+- **assumes** Outside cycle 25 the amplitude is the mean of TWO completed cycles, and their spread is a factor of 1.41 — fails when this row inherits the assumption from the analogue it reads. Cycle 23 peaked at 226.8 sfu and cycle 24 at 160.9, so the 193.9 used for every future cycle is the midpoint of two numbers 41% apart — and because this row reports a MAXIMUM, a long window's answer is usually exactly that amplitude rather than something averaged near it. The fifteen-year case returns 193.858 sfu, which is the assumption showing through undiluted. If the next cycle runs like cycle 23 this row is 17% low.
+- **assumes** A maximum is not a duration — fails when the row says how high the expected level gets and says nothing about how long it stays there. A window whose peak is a brief crossing of a cycle maximum and one that sits at maximum for two years return the same number. Anything sizing a propellant budget or a lifetime needs the integral, which is sw_central_expectation, and anything sizing a thermal or power case may need neither.
+- **evidence** the declared case — the highest sustained level a 2027 five-year mission meets — expect 110.65627313580244 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** MATLAB's own window, 2027-06-26 for a year — expect 105.56045788424966 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** half a Julian year from the declared epoch — short enough that the peak is at its own start — expect 110.65627313580244 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** fifteen years — long enough to contain a whole cycle, so the peak is the next maximum at the mean amplitude — expect 193.85802469135803 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the earliest epoch, 2018-01-01 — the window contains cycle 25's own maximum — expect 174.09864172839502 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the latest epoch, 2040-01-01 — expect 147.97900299382718 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** an epoch near the next maximum, 2032-11-08 — expect 193.85802469135803 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** a 2039 window straddling the amplitude handover — the maximum is a limit, not a value at any knot — expect 82.38214311111112 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The companion to sw_central_expectation, and the number a design that must SURVIVE the window wants rather than the one that describes it. The centre is a mean over the window, which for a five-year mission averages a busy opening against a quiet end and reports neither. This publishes the busiest sustained level inside the same window, from the same analogue, so the two can be read together.
 
 
 ## `struct` — Structure
@@ -25129,7 +25163,7 @@ Half of the F10.7 design value. sw_central_expectation says where F10.7 is headi
 
 - **lower bound** — day 6575 is 2018-01-01. A mission epoch before it would sit inside the archive rather than ahead of the design, and every forward-looking row would be answering a question about the past while presenting it as a prediction
 - **upper bound** — day 14610 is 2040-01-01. Beyond it the cycle-phase rows would be folding the phase through more than one unobserved cycle, and the mean cycle length they fold with is measured from two complete cycles. Extrapolating a 11.4-year mean across fifteen years is not a design input, it is a guess with a date on it
-- **read by** — `sw_central_expectation`, `sw_cycle_number`, `sw_cycle_phase`
+- **read by** — `sw_central_expectation`, `sw_cycle_number`, `sw_cycle_phase`, `sw_window_peak_level`
 - **assumes** It is a single date, so the design is sized for a mission that starts then and not for one that slips — fails when solar activity is cyclical, so slipping the start changes the sky the mission flies through rather than merely delaying it. 2027-01-01 sits past the maximum of cycle 25 on the declining side, which is the storm-rich phase; a slip to 2030 would move it toward minimum and every cycle-phase row would return a quieter sky. The record's F10.7 runs 64 to 343 sfu across a cycle, so this is not a rounding difference. A mission whose launch date is uncertain needs the design re-run at both ends of the window, and this row is the one to change.
 - **assumes** It is 366 days past the end of the solar-weather record — fails when the record runs to 2025-12-31, day 9496, and this epoch is day 9862. So every row that reads it is answering about a date the record does not cover, by extrapolating a pattern rather than reading an observation. That is the correct thing to do for a design — a mission in the future has no record — and it means the cycle-phase rows fold the phase using a mean cycle length instead of measuring one. Which is exactly what prf_design does beyond its last cycle, and is declared on each row that does it.
 

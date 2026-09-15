@@ -27,7 +27,7 @@ note = "The centre of the F10.7 design value; sw_uncertainty_growth supplies the
 # Persistence decaying into a climatology over one solar rotation, as before.
 # What changed is the climatology: it is no longer the record's unconditional
 # mean but the cycle analogue at the dates the mission actually flies.
-expression = "F107_central(T_e, L) = w*F107_today + (1-w)*mean_[T_e, T_e+L] A(t),  w = exp(-L / 27 d),  A(t) = P25 * R((t - T_max) mod P)"
+expression = "F107_central(T_e, L) = w*F107_today + (1-w)*mean_[T_e, T_e+L] A(t),  w = exp(-L / 27 d),  A(t) = amp(t) * R((t - T_max) mod P)"
 source = "noaa_swpc"
 
 # WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
@@ -57,22 +57,27 @@ reading = """
 At every lead a mission can ask about this row IS the climatology, because
 the persistence weight exp(-L/27 d) is 0.00114 at the shortest lead the
 declared range allows. What the answer now carries is the epoch: the same
-five-year mission returns 90.4 sfu opening in 2027, 116.8 sfu opening in
-2018 and 168.1 sfu opening in late 2032. That spread is the content of the
+five-year mission returns 86.8 sfu opening in 2027, 115.0 sfu opening in
+2018 and 144.9 sfu opening in late 2032. That spread is the content of the
 change.
 
 The answer is a MEAN over the mission window, not the flux on any day in it.
-A five-year mission opening in 2027 averages 90.4 sfu while its first ninety
+A five-year mission opening in 2027 averages 86.8 sfu while its first ninety
 days average 104.6 and its last fall to 73.2, so this number understates the
-early years of a long mission and overstates its end. A design sized by its worst sustained period
+early years of a long mission and overstates its end. sw_window_peak_level
+publishes the maximum over the same window for a design that must survive its
+worst sustained period rather than its average one. A design sized by its worst sustained period
 wants the maximum of the analogue over the window, which this row does not
 publish.
 
-One property is worth checking because it is what makes the change safe: as
-the window grows past a full cycle the mean returns to the unconditional
-climatology — 119.1 sfu at fifteen years against the record's 114.8. The new
-relation therefore degrades into the old one exactly where the old one was
-right, and differs from it exactly where it was wrong.
+One property is worth checking because it is what keeps the change anchored:
+as the window grows past a full cycle the mean settles near the record's own
+unconditional climatology — 105.7 sfu at fifteen years against the record's
+114.8. It settles BELOW it rather than on it, and for a stated reason: cycles
+beyond this one are given the mean amplitude of the completed cycles, 193.9
+sfu, where the record's own mean is lifted by cycle 23 at 226.8. The long-run
+answer is therefore the record's level minus the assumption that the future is
+average rather than strong.
 """
 
 [[theory.step]]
@@ -124,21 +129,28 @@ its own construction and runs 0.325 to 1.000.
 
 [[theory.step]]
 text = """
-Put the shape back on this cycle's size. Cycle 25's 81-day peak is 225.1 sfu
-on 2024-09-04, so the expected level at a date is that peak times the shape
-at that date's distance past it.
+Put the shape back on a size, and WHICH size is the question the wrap forces.
+Inside cycle 25 the size has been measured: its 81-day peak is 225.1 sfu on
+2024-09-04. Outside it the size has not happened yet, and the honest estimate
+is not a repeat of this cycle but the mean of the cycles that have finished —
+193.9 sfu, from cycle 23's 226.8 and cycle 24's 160.9. Shape repeats between
+cycles; size is the thing that does not.
 """
-math = "A(t) = 225.1358 * R((t - 9013 d) mod 4178 d)"
+math = "amp(t) = 225.1358 sfu inside cycle 25, 193.8580 sfu outside it"
 
 [[theory.step]]
 text = """
 The modulo is what makes the row answerable over its whole declared domain.
 The epoch may be any date from 2018 to 2040 and the mission up to fifteen
 years, so the window can end well beyond any observed cycle; wrapping at the
-mean completed-cycle length of 4178 days says the next cycle resembles the
-average of the last two in shape AND in size. The shape part is ordinary;
-the size part is the weakest assumption in the row and is declared as one.
+mean completed-cycle length of 4178 days says a future cycle resembles the
+average of the last two. The amplitude handover above is what keeps that
+claim to the shape alone, and the price is a step in the answer at half a
+period either side of the maximum. The step is not smoothed away: it marks
+the boundary between a cycle whose size was measured and cycles whose size
+was assumed, and it falls at the cycle minimum where it is smallest.
 """
+math = "the handover sits at knot 47 of 94, exactly half a period from the maximum"
 
 [[theory.step]]
 text = """
@@ -156,16 +168,16 @@ text = "Two completed cycles is the whole sample, and eleven of the ninety-three
 fails_when = "the record spans cycles 23, 24 and the incomplete 25, so the shape R is a mean of TWO curves and its spread between them is not published by this row. Where the two cycles' differing lengths leave only one of them covering a point — eleven of ninety-three, near the wrap — the value is that one cycle's shape rather than an average. Two cycles cannot establish that a shape repeats; they can only establish what the last two did, and this row says the next one resembles them because that is the best the record supports, not because it is known."
 
 [[assumption]]
-text = "Wrapping assumes future cycles repeat cycle 25's AMPLITUDE, not just its shape"
-fails_when = "beyond one mean cycle length past 2024-09-04 the analogue repeats, and it repeats scaled by cycle 25's own peak of 225.1 sfu. Cycle amplitude is the thing that does NOT repeat — 226.5 sfu for cycle 23 against 160.6 for cycle 24, a factor of 1.41 — so any window reaching past about 2036 is reading a level whose size has no support at all. It affects the long end of the declared range: a fifteen-year mission spends most of its window there. The fifteen-year answer happens to land near the unconditional climatology, which makes it reasonable by accident rather than by evidence."
+text = "Outside cycle 25 the amplitude is the mean of TWO completed cycles, and their spread is a factor of 1.41"
+fails_when = "cycle 23 peaked at 226.8 sfu and cycle 24 at 160.9, so the 193.9 this row uses for every future cycle is the midpoint of two numbers that differ by 41%. A window reaching past about 2030 is reading a level whose size is that average, and if the next cycle runs like cycle 23 the answer is 17% low, if like cycle 24 it is 17% high. That is an honest estimate rather than a repeat of the current cycle, which is what this row used to do, but two cycles cannot support an uncertainty on it and none is published. The row does not know, and does not claim to know, which kind of cycle comes next."
 
 [[assumption]]
 text = "The answer is a window MEAN, so it understates the early years of a long mission"
 fails_when = "a five-year mission opening at the declared epoch averages 90.4 sfu, but its first ninety days average 104.6 and it falls to 73.2 by the end of the window — a spread of 39 sfu inside one number. Drag is not linear in flux and a vehicle does not average its propellant over five years, so a design whose sizing case is its worst sustained period is reading the wrong statistic here. This row publishes a centre because it is a centre; the maximum of the analogue over the window is a different number and nothing publishes it yet."
 
 [[assumption]]
-text = "The grid is 45 days and the window integral is numerical, and both errors are measured rather than assumed"
-fails_when = "the shape is stored on a 45-day grid and interpolated linearly, which over 328 (epoch, duration) combinations spanning the whole declared domain departs from the same construction on a 10-day grid by at most 0.962 sfu, worst at the shortest windows where the grid is coarsest relative to the window. Simpson's rule with 512 panels adds at most 0.0045 sfu. Both are far inside the spread between the two cycles the shape is built from, which is the error that actually matters and which this row does not publish."
+text = "The grid is 94 knots and the window integral is numerical, and both errors are measured rather than assumed"
+fails_when = "the shape is stored on 94 knots of 44.4468 days and interpolated linearly. The knot count is even and divides the period exactly, which is not cosmetic: it makes the wrap from the last knot to the first one step like any other, and it puts the amplitude handover on knot 47 rather than somewhere inside a segment. An earlier form of this row used a round 45-day step, which does not divide 4178, and carried a 1.2 sfu discontinuity at the wrap as a result. Simpson's rule with 512 panels adds at most 0.0045 sfu. Both are far inside the spread between the two cycles the shape is built from, which is the error that actually matters and which this row does not publish."
 
 [[assumption]]
 text = "Persistence is carried for completeness and is worth nothing at any mission lead"
@@ -173,7 +185,7 @@ fails_when = "the weight is exp(-L/27) with L in days, so at the shortest missio
 
 [[assumption]]
 text = "This moves the row AWAY from the MATLAB tool, deliberately"
-fails_when = "the MATLAB tool answers 158.33 sfu for its own 2027 window by freezing its last 27-day rotation forecast and holding it flat; this row now answers 96.5 sfu for the same window and used to answer 114.8. The port therefore agrees with MATLAB LESS than it did. That is the intended direction: over the same span past maximum the two completed cycles ran at 91 sfu scaled onto cycle 25's amplitude, so the record puts MATLAB 74% high and the old answer 26% high. tools/mat_parity.py records the disagreement and its size so that it stays a decision rather than becoming a surprise."
+fails_when = "the MATLAB tool answers 158.33 sfu for its own 2027 window by freezing its last 27-day rotation forecast and holding it flat; this row now answers 97.0 sfu for the same window and used to answer 114.8. The port therefore agrees with MATLAB LESS than it did. That is the intended direction: over the same span past maximum the two completed cycles ran at 91 sfu scaled onto cycle 25's amplitude, so the record puts MATLAB 74% high and the old answer 26% high, and this row within a few per cent of it. tools/mat_parity.py records the disagreement and its size so that it stays a decision rather than becoming a surprise."
 
 [output]
 # The node's one answer. The variable id is the node id: one small
@@ -183,7 +195,7 @@ type = "Ratio"
 unit = "One"
 lower = 60.0
 upper = 400.0
-reason_lower = "the answer is a weighted blend of today's F10.7 and a window mean of the analogue, so it cannot leave the interval between them. The analogue is bounded below by 0.325169 x 225.1358 = 73.2 sfu, and env_f107 by 60 because below 60 sfu has never been observed; the blend therefore floors at 60"
+reason_lower = "the answer is a weighted blend of today's F10.7 and a window mean of the analogue, so it cannot leave the interval between them. The analogue is bounded below by 0.324026 x 193.8580 = 62.8 sfu, its smallest shape on its smallest amplitude, and env_f107 by 60 because below 60 sfu has never been observed; the blend therefore floors at 60"
 reason_upper = "env_f107's upper bound is 400, above which the exospheric temperature relation is extrapolated past the largest recorded daily value. The analogue cannot exceed cycle 25's own 81-day peak of 225.1 sfu, and a blend cannot exceed its larger input, so this bound catches a broken weight or a broken table rather than an extreme sky"
 
 [[input]]
@@ -223,9 +235,10 @@ type = "Ratio"
 
 [data]
 # Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
-# cycle shape, its period, and cycle 25's peak and peak date must all be
-# re-measured if the bundle version changes — and the peak in particular will
-# move, because cycle 25 is not finished.
+# cycle shape, its period, both amplitudes and the peak date live in
+# vleo-core::physics::env and must all be re-measured if the bundle version
+# changes — cycle 25's peak in particular will move, because cycle 25 is not
+# finished.
 bundles = ["solar-weather"]
 
 [view]

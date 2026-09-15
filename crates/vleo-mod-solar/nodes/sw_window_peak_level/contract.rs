@@ -6,17 +6,16 @@
 use vleo_core::fault::Fault;
 use vleo_core::units::*;
 
-/// What this node publishes: `F107_central` (F10.7 central expectation at a lead), in `-`.
-pub const NODE_ID: &str = "sw_central_expectation";
-pub const SHEET_HASH: u64 = 0xf466d7e9c4204c31;
+/// What this node publishes: `F107_window_peak` (F10.7 peak level inside the mission window), in `-`.
+pub const NODE_ID: &str = "sw_window_peak_level";
+pub const SHEET_HASH: u64 = 0xbfee2dafc8999dae;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
-    "env_f107",
     "orbit_mission_duration",
     "sys_mission_requirements_mission_epoch",
 ];
 /// The variables this node publishes.
-pub const OUTPUT_VARS: &[&str] = &["sw_central_expectation"];
+pub const OUTPUT_VARS: &[&str] = &["sw_window_peak_level"];
 /// The SI unit every value crossing this boundary is expressed in.
 pub const OUTPUT_UNIT: Unit = Ratio::UNIT;
 
@@ -24,13 +23,12 @@ pub const OUTPUT_UNIT: Unit = Ratio::UNIT;
 /// so the bus carries no quantity types and a face cannot pass arguments
 /// in the wrong order.
 pub fn call(inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {
-    if inputs.len() < 3 || outputs.is_empty() {
+    if inputs.len() < 2 || outputs.is_empty() {
         return Err(Fault::Blocked { node: NODE_ID, missing: "an input the contract declares" });
     }
-    let today: Ratio = Ratio::new(inputs[0]);
-    let lead: Time = Time::new(inputs[1]);
-    let epoch: Time = Time::new(inputs[2]);
-    let answer = super::model::evaluate(today, lead, epoch)?;
+    let lead: Time = Time::new(inputs[0]);
+    let epoch: Time = Time::new(inputs[1]);
+    let answer = super::model::evaluate(lead, epoch)?;
     outputs[0] = answer.get();
     Ok(())
 }

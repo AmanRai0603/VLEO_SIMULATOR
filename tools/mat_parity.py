@@ -285,6 +285,18 @@ def check(port):
           "MATLAB turns (date, duration, confidence) into five driver sets. The port "
           "has no such row: sys_mission_requirements_mission_duration is still seeded, "
           "so there is no duration to drive a window with.")
+    # The window maximum, which MATLAB has no equivalent of: its own driver
+    # construction takes the window MEAN and never the peak.
+    mx = run_node(port, "sw_window_peak_level",
+                  [("sys_mission_requirements_mission_epoch", epoch_s),
+                   ("orbit_mission_duration", lead_s)])
+    if mx is not None and cen is not None:
+        entry("NO ROW", "the peak of the expectation inside the window",
+              f"sw_window_peak_level publishes {mx:.2f} sfu against the centre's "
+              f"{cen:.2f} for this window. MATLAB publishes no equivalent — its "
+              f"driver sets are all window means, so a design reading it has no "
+              f"number for the busiest sustained period it must survive.")
+
     entry("NO ROW", "the sustained band around the centre",
           f"MATLAB publishes centre +/- 1.28*sigma (sigma measured walk-forward: "
           f"{(ref['hotmean']['f107'] - ml) / 1.28:.3f} sfu for F10.7, "

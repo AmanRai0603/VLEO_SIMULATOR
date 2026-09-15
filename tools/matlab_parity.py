@@ -187,12 +187,16 @@ def comparisons(days, cyc):
     # cycle averages back to that unconditional mean. A shape table with a wrong
     # overall level, or a peak normalisation off by a fifth, breaks this and
     # nothing else here would catch it.
-    departs("sw_central_expectation", sum(f107) / len(f107), 5e-2,
+    departs("sw_central_expectation", sum(f107) / len(f107), 1.2e-1,
             f"the record's mean F10.7 over {len(f107)} days, which a 15-year "
-            f"window must average back to",
-            "at a mission lead the row now answers the cycle analogue at the "
-            "mission's dates — 90.39 sfu at the declared epoch against this "
-            "114.84 — so it departs everywhere except over a full cycle",
+            f"window must settle near",
+            "at a mission lead the row answers the cycle analogue at the "
+            "mission's dates — 86.85 sfu at the declared epoch against this "
+            "114.84. Over a full cycle it settles at 105.73, BELOW the record, "
+            "because cycles after this one are given the completed-cycle mean "
+            "amplitude of 193.86 where the record's own mean is lifted by cycle "
+            "23 at 226.81. The tolerance is wide for that reason and still "
+            "catches a broken amplitude: a peak 20% high reads 2.4e-01",
             sets=(("orbit_mission_duration", 15 * 31557600.0),))
 
     # --- prf_cycles: the boundaries are published, the fold is the sheet's.

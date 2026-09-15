@@ -1,0 +1,108 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# WHAT THESE ARE
+#
+# The same measured cycle shape sw_central_expectation reads, maximised over
+# each window by an independent Python implementation of the declared relation.
+# Shape, period, amplitudes and peak date were measured on bundles/solar-weather
+# outside this crate from observed_daily.csv and solar_cycles.csv; as with its
+# sibling, these are computed from the six-decimal values as transcribed into
+# vleo-core, because the transcribed table is the specification.
+#
+# The epoch crosses the interface in SECONDS like every other Time.
+#
+# THREE OF THESE ARE PROPERTIES, and they are what make the row worth testing:
+#
+#   the fifteen-year case returns 193.858025 sfu EXACTLY — the completed-cycle
+#   mean amplitude — because a window that long contains a whole cycle
+#   maximum, where the shape is 1.000000 by construction. Any error in that
+#   amplitude, or a shape that no longer peaks at exactly one, shows up here as
+#   a changed digit rather than as a plausible number;
+#
+#   the half-year case equals the five-year case, 110.656273. Both windows open
+#   at the same epoch and the peak falls inside the first half-year, so
+#   lengthening the mission cannot lower the maximum. A monotonicity a sampled
+#   implementation would break;
+#
+#   the 2039 case is the one that pins the handover limit. Its window sits
+#   entirely in a cycle minimum straddling the amplitude step, so the largest
+#   value in it is the supremum just inside cycle 25 — a limit the analogue
+#   approaches and never attains. An implementation checking only ends and
+#   knots returns 78.335701 there instead of 82.382143 and passes every other
+#   case in this file. That mutation was run and this is the fixture that
+#   caught it;
+#
+#   the 2018 case, 174.098642, is below cycle 25's own peak of 225.1358 even
+#   though the window contains the maximum — because the window ends in
+#   2023-01, before the maximum in 2024-09. A relation that had lost the window
+#   and was maximising over the whole cycle would return 225.1358 here.
+
+
+[[fixture]]
+label = "the declared case — the highest sustained level a 2027 five-year mission meets"
+expect = 110.65627313580244
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 157788000.0, epoch = 852076800.0 }
+
+[[fixture]]
+label = "MATLAB's own window, 2027-06-26 for a year"
+expect = 105.56045788424966
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 31536000.0, epoch = 867283200.0 }
+
+[[fixture]]
+label = "half a Julian year from the declared epoch — short enough that the peak is at its own start"
+expect = 110.65627313580244
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 15778800.0, epoch = 852076800.0 }
+
+[[fixture]]
+label = "fifteen years — long enough to contain a whole cycle, so the peak is the next maximum at the mean amplitude"
+expect = 193.85802469135803
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 473364000.0, epoch = 852076800.0 }
+
+[[fixture]]
+label = "the earliest epoch, 2018-01-01 — the window contains cycle 25's own maximum"
+expect = 174.09864172839502
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 157788000.0, epoch = 568080000.0 }
+
+[[fixture]]
+label = "the latest epoch, 2040-01-01"
+expect = 147.97900299382718
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 157788000.0, epoch = 1262304000.0 }
+
+[[fixture]]
+label = "an epoch near the next maximum, 2032-11-08"
+expect = 193.85802469135803
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 157788000.0, epoch = 1036800000.0 }
+
+[[fixture]]
+label = "a 2039 window straddling the amplitude handover — the maximum is a limit, not a value at any knot"
+expect = 82.38214311111112
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 63115200.0, epoch = 1257984000.0 }

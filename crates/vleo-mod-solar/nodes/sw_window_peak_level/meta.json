@@ -1,17 +1,17 @@
 {
-  "id": "sw_central_expectation",
+  "id": "sw_window_peak_level",
   "state": "published",
-  "sheet_hash": "204c31",
-  "impl_hash": "595672",
+  "sheet_hash": "999dae",
+  "impl_hash": "76ba19",
   "owner": "environment",
   "tier": "A",
-  "fixtures": 9,
+  "fixtures": 8,
   "criticality": "minor",
   "reviewers": 1,
   "differential_fill": false,
   "migrated_from": "",
-  "holes": 2,
-  "inputs": ["env_f107", "orbit_mission_duration", "sys_mission_requirements_mission_epoch"],
+  "holes": 1,
+  "inputs": ["orbit_mission_duration", "sys_mission_requirements_mission_epoch"],
   "contributes": [],
   "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did"]
 }
