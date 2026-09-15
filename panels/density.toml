@@ -21,13 +21,12 @@ be the defect, and it is the one this spec exists to fix in place."""
 # claim, and without a name against it the check only proves the chart has not
 # changed since a machine drew it.
 #
-# AWAITING RE-CONFIRMATION, AND THE NAME BELOW SAYS SO. The Ap axis was floored
-# at zero after that agreement and 4.6 per cent of the picture's pixels moved,
-# so the look that was given was at a different chart and does not carry to
-# this one. The line is not deleted, because the row WAS confirmed once and
-# losing that is losing history; it is qualified instead, and must be re-dated
-# by whoever looks at the new picture before this belongs on main.
-confirmed_by = "A. Rai / 2026-09-15 — against the pre-zero-floor picture, not this one"
+# RE-CONFIRMED against the zero-floored picture. The axis change moved 4.6 per
+# cent of this image's pixels, so the earlier look was at a different chart and
+# did not carry; it was put back in front of a person and agreed again. That
+# second look is the whole reason this row may go to main, and it is the step
+# no check can perform.
+confirmed_by = "A. Rai / 2026-09-15"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.
