@@ -19,6 +19,11 @@ so drawing 1 to 27 is a deliberate restriction to the issued window; the row
 publishes 26 because that is the longest lead most issues actually index. The
 two disagree on purpose and a reviewer should not reconcile them by moving
 either."""
+# A person looked at panels/reference/forecast.png and agreed the picture
+# is right. That is what makes check three mean anything: the reference is the
+# claim, and without a name against it the check only proves the chart has not
+# changed since a machine drew it.
+confirmed_by = "A. Rai / 2026-09-15"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.

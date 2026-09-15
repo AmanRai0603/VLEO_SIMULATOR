@@ -14,6 +14,11 @@ phase 1 while the others do not. The vertical axis is labelled with the
 selected variable and its unit, and changing the variable changes that label.
 Bins that neither complete cycle populates to the declared minimum are absent
 from the mean rather than drawn as zero."""
+# A person looked at panels/reference/repeatability.png and agreed the picture
+# is right. That is what makes check three mean anything: the reference is the
+# claim, and without a name against it the check only proves the chart has not
+# changed since a machine drew it.
+confirmed_by = "A. Rai / 2026-09-15"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.

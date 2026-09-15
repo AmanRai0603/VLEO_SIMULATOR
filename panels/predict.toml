@@ -17,6 +17,11 @@ years, falls to about +66 near ten to eleven, and rises again, which is the
 eleven-year cycle showing through. A smooth monotone curve at that span means
 something has been fitted. Splitting by cycle replaces the single curve with
 one per cycle."""
+# A person looked at panels/reference/predict.png and agreed the picture
+# is right. That is what makes check three mean anything: the reference is the
+# claim, and without a name against it the check only proves the chart has not
+# changed since a machine drew it.
+confirmed_by = "A. Rai / 2026-09-15"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.
