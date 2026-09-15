@@ -664,7 +664,13 @@ const PANELS = [
       return {
         spec: {
           x: { label: 'F10.7  [sfu]' },
-          y: { label: 'daily Ap  [-]' },
+          // Ap FLOORS AT ZERO and this is the one panel whose data reaches it:
+          // a quiet day really is Ap 0, so the 6 per cent padding the chart adds
+          // below an undeclared minimum ran the axis down to -16.4 — a region of
+          // an index that has no negative values. Five other panels already
+          // declare this floor; this one did not, which is why it was the only
+          // chart in the repository drawing space that cannot exist.
+          y: { label: 'daily Ap  [-]', min: 0 },
           series: [{ name: '', kind: 'dots', x: withBoth.map(d => d.f107), y: withBoth.map(d => d.ap), width: 1.1, alpha: 0.18 }],
         },
         note: 'THIS TAB HAS NO ROWS AND THIS IS NOT ONE. The study’s density tab — profile, ' +

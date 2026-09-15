@@ -8,7 +8,11 @@ precondition: the two drivers such a model takes, against each other, over
 every day carrying both."""
 correct = """A scatter of the two drivers against each other, one point per day carrying
 both, with no fitted line through it — a trend line here would be this face
-carrying a model no row owns. The axes are the two drivers with their units.
+carrying a model no row owns. The axes are the two drivers with their units,
+and the Ap axis STARTS AT ZERO. That is worth checking rather than assuming:
+Ap has no negative values and a quiet day really is zero, so this is the one
+panel whose data reaches the floor — and until the floor was declared the
+chart's own padding ran the axis to -16.4 and drew space that cannot exist.
 The note beneath states plainly that the tab has no rows and why, and gives the
 measured correlation; a panel that quietly drew a density curve instead would
 be the defect, and it is the one this spec exists to fix in place."""
@@ -16,7 +20,14 @@ be the defect, and it is the one this spec exists to fix in place."""
 # is right. That is what makes check three mean anything: the reference is the
 # claim, and without a name against it the check only proves the chart has not
 # changed since a machine drew it.
-confirmed_by = "A. Rai / 2026-09-15"
+#
+# AWAITING RE-CONFIRMATION, AND THE NAME BELOW SAYS SO. The Ap axis was floored
+# at zero after that agreement and 4.6 per cent of the picture's pixels moved,
+# so the look that was given was at a different chart and does not carry to
+# this one. The line is not deleted, because the row WAS confirmed once and
+# losing that is losing history; it is qualified instead, and must be re-dated
+# by whoever looks at the new picture before this belongs on main.
+confirmed_by = "A. Rai / 2026-09-15 — against the pre-zero-floor picture, not this one"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.
