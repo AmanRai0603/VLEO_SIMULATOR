@@ -96,6 +96,142 @@ pub fn kp_from_ap(ap: f64) -> f64 {
     pmath::interp(ap, AP, KP)
 }
 
+/// The mean solar cycle, as a shape, an amplitude and a period.
+///
+/// `SOLAR_CYCLE_SHAPE[k]` is the expected F10.7 at `k` knots past a cycle
+/// maximum, divided by that cycle's own peak: the mean over the record's
+/// COMPLETED cycles of their centred 81-day mean normalised by their own
+/// 81-day peak. Normalising each cycle by a peak measured the same way is what
+/// keeps the shape inside `0..=1`; ten of these ninety-four knots rest on one
+/// cycle rather than two, where the two cycles' differing lengths leave only
+/// one covering that phase.
+///
+/// This is MEASURED DATA, not a published relation, and it is the one thing in
+/// this kernel that is: it comes from `bundles/solar-weather@2026.09.14` and
+/// must be re-measured when that bundle moves. It is here rather than in a
+/// caller for the same reason [`kp_from_ap`] is — two nodes read it, and two
+/// hand-copied tables drift apart without anything noticing.
+pub const SOLAR_CYCLE_SHAPE: &[f64] = &[
+    1.000000, 0.903695, 0.807593, 0.773599, 0.747277, 0.750621, 0.702665, 0.699680, 0.671394,
+    0.633116, 0.593519, 0.561394, 0.560421, 0.530158, 0.554559, 0.572413, 0.522981, 0.489549,
+    0.476323, 0.450250, 0.465763, 0.491509, 0.455476, 0.469410, 0.460672, 0.437930, 0.421984,
+    0.420851, 0.437148, 0.427348, 0.415508, 0.401208, 0.404088, 0.401337, 0.395792, 0.403236,
+    0.402821, 0.384875, 0.380210, 0.383322, 0.393501, 0.400451, 0.340028, 0.324026, 0.324897,
+    0.373319, 0.369609, 0.365922, 0.375961, 0.381349, 0.370032, 0.371935, 0.378041, 0.381774,
+    0.397795, 0.405428, 0.393973, 0.389129, 0.426488, 0.453456, 0.463151, 0.470999, 0.479126,
+    0.544836, 0.578380, 0.555890, 0.584878, 0.621035, 0.702772, 0.763337, 0.739668, 0.662755,
+    0.650724, 0.730621, 0.757925, 0.724262, 0.745062, 0.767270, 0.758000, 0.773305, 0.764422,
+    0.789755, 0.772538, 0.732759, 0.736271, 0.796305, 0.842015, 0.866375, 0.862554, 0.794588,
+    0.753098, 0.812943, 0.899607, 0.963136,
+];
+
+/// One mean completed-cycle length: 11.88 years for cycle 23, 11.00 for cycle
+/// 24. The shape wraps on this, which is what lets a date beyond any observed
+/// cycle be answered at all.
+pub const SOLAR_CYCLE_PERIOD_DAYS: f64 = 4178.0;
+
+/// Cycle 25's own 81-day peak, and the day it fell on as days since 2000-01-01
+/// (2024-09-04). Cycle 25 is NOT finished, so both move when the bundle does.
+pub const SOLAR_CYCLE_PEAK_SFU: f64 = 225.135_802_469_135_8;
+/// See [`SOLAR_CYCLE_PEAK_SFU`].
+pub const SOLAR_CYCLE_PEAK_DAY: f64 = 9013.0;
+
+/// The mean of the COMPLETED cycles' own peaks — 226.81 sfu for cycle 23 and
+/// 160.90 for cycle 24.
+///
+/// This is the amplitude used for any date outside cycle 25, and the reason
+/// the two differ is the honest part of the model: the shape of a cycle
+/// repeats and its SIZE does not, so a date in a cycle that has not happened
+/// gets the average of the ones that have rather than a repeat of this one.
+/// The spread behind that average is a factor of 1.41, which is the error bar
+/// nothing here publishes.
+pub const SOLAR_CYCLE_MEAN_PEAK_SFU: f64 = 193.85802469135802;
+
+/// The expected F10.7 at a date, in solar flux units.
+///
+/// `day` is days since 2000-01-01. The date's distance from cycle 25's maximum
+/// is folded onto one cycle period, read off [`SOLAR_CYCLE_SHAPE`], and scaled
+/// by the amplitude of the cycle it lands in: cycle 25's own peak for cycle 25,
+/// and the completed-cycle mean for everything else.
+///
+/// The answer is DISCONTINUOUS at half a period either side of the maximum,
+/// where the amplitude hands over. That is deliberate and it is not smoothed:
+/// the step marks the boundary between a cycle whose size has been measured
+/// and cycles whose size has not. It falls at knot 47 — half of ninety-four —
+/// so a caller walking the knots meets it exactly rather than somewhere inside
+/// a segment, and it sits at the cycle minimum, where the analogue is at its
+/// lowest and the step is at its smallest.
+pub fn solar_cycle_analogue(day: f64) -> f64 {
+    let n = SOLAR_CYCLE_SHAPE.len();
+    let p = SOLAR_CYCLE_PERIOD_DAYS;
+    let d = day - SOLAR_CYCLE_PEAK_DAY;
+    // Which cycle: 0 is cycle 25, anything else is a cycle whose size is a guess.
+    let cycle = pmath::floor((d + 0.5 * p) / p);
+    let amp = if cycle == 0.0 {
+        SOLAR_CYCLE_PEAK_SFU
+    } else {
+        SOLAR_CYCLE_MEAN_PEAK_SFU
+    };
+    // Days past the maximum, folded onto one period. fmod keeps the dividend's
+    // sign, so a date before the maximum needs the second fold.
+    let u = pmath::fmod(pmath::fmod(d, p) + p, p);
+    let step = p / n as f64;
+    let i = u / step;
+    let lo = (i as usize) % n;
+    let hi = (lo + 1) % n;
+    amp * (SOLAR_CYCLE_SHAPE[lo]
+        + (SOLAR_CYCLE_SHAPE[hi] - SOLAR_CYCLE_SHAPE[lo]) * (i - pmath::floor(i)))
+}
+
+/// The mean of [`solar_cycle_analogue`] over `[t0, t1]`, both days since
+/// 2000-01-01.
+///
+/// This is what a design that must last the window wants as a centre, rather
+/// than the value at either end: the end of a five-year mission opening in
+/// 2027 sits near a minimum, and sizing to it would miss the first three years
+/// entirely. 512 panels holds the quadrature error below 0.005 sfu across every
+/// window the tree can ask for.
+pub fn solar_cycle_analogue_mean(t0: f64, t1: f64) -> f64 {
+    crate::math::integrate::simpson(t0, t1, 512, solar_cycle_analogue) / (t1 - t0)
+}
+
+/// The highest [`solar_cycle_analogue`] reaches anywhere in `[t0, t1]`.
+///
+/// Exact, not sampled. The analogue is linear between knots, so its largest
+/// value on an interval is at an end, at a knot, or — because the amplitude
+/// handover is a step DOWN — at the instant before a handover. All three are
+/// checked. Skipping the third looks safe and is not: over 6432 windows
+/// spanning the declared domain it sets the answer in 18 of them, by as much as
+/// 4.05 sfu.
+pub fn solar_cycle_analogue_max(t0: f64, t1: f64) -> f64 {
+    let n = SOLAR_CYCLE_SHAPE.len();
+    let p = SOLAR_CYCLE_PERIOD_DAYS;
+    let step = p / n as f64;
+    let mut m = pmath::max(solar_cycle_analogue(t0), solar_cycle_analogue(t1));
+    let k0 = pmath::ceil((t0 - SOLAR_CYCLE_PEAK_DAY) / step) as i64;
+    let k1 = pmath::floor((t1 - SOLAR_CYCLE_PEAK_DAY) / step) as i64;
+    for k in k0..=k1 {
+        m = pmath::max(
+            m,
+            solar_cycle_analogue(SOLAR_CYCLE_PEAK_DAY + k as f64 * step),
+        );
+    }
+    // The supremum just inside cycle 25 at each handover strictly within the
+    // window. The shape there is knot n/2 and the amplitude is cycle 25's.
+    let mut k = pmath::ceil((t0 - SOLAR_CYCLE_PEAK_DAY + 0.5 * p) / p);
+    loop {
+        let b = SOLAR_CYCLE_PEAK_DAY - 0.5 * p + k * p;
+        if b >= t1 {
+            break;
+        }
+        if b > t0 {
+            m = pmath::max(m, SOLAR_CYCLE_SHAPE[n / 2] * SOLAR_CYCLE_PEAK_SFU);
+        }
+        k += 1.0;
+    }
+    m
+}
+
 /// Exospheric temperature from solar and geomagnetic activity.
 ///
 /// Jacchia 1971, night-time minimum, with the geomagnetic correction:

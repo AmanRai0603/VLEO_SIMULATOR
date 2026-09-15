@@ -7,67 +7,112 @@
 #
 # WHAT THESE ARE
 #
-# 114.8437378829 is the mean F10.7 of bundles/solar-weather over its 10,316
-# observed days, computed outside this crate. Everything else here is that
-# number's consequence at a given lead, worked through by hand from the
-# declared relation rather than read off this code.
+# The cycle shape, the period, both amplitudes and the peak date were measured
+# on bundles/solar-weather outside this crate, in Python, from
+# observed_daily.csv and solar_cycles.csv. Each expectation below is that
+# construction evaluated at the fixture's inputs by the same independent script.
 #
-# The two limits are the useful cases and they are properties rather than
-# arithmetic: at a lead of years the answer must BE the climatology, because
-# persistence has decayed to nothing; the half-year case pins the one lead in
-# the declared range where today's flux is still faintly visible, and pins how
-# faintly — 0.04 sfu out of 115.
+# WHAT THEY THEREFORE DO NOT CATCH, said plainly. The shape is transcribed into
+# vleo-core to six decimal places, and these expectations are computed from
+# those same six-decimal values rather than from the full-precision
+# measurement — because the transcribed table IS the specification once it is
+# written down. So these check the transcription and the arithmetic around it,
+# and they cannot check that the measurement behind the table was right.
 #
-# The half-year expectation was wrong here once, and how is worth keeping: it
-# was derived at a lead of 183 days while the fixture's input is 15,778,800
-# seconds, which is 182.625 days — half a JULIAN year, the unit
-# orbit_mission_duration is declared in. The test caught it at a relative error
-# of 4.9e-06. Leads in this file are Julian, not calendar.
+# The epoch crosses the interface in SECONDS like every other Time, whatever
+# unit the sheet declares it in. 852076800 s is 9862 days is 2027-01-01.
+#
+# FOUR OF THESE ARE PROPERTIES RATHER THAN ARITHMETIC, and they are the ones
+# that check the relation rather than the typing:
+#
+#   the fifteen-year case says that once the window spans more than a cycle the
+#   mean settles near the record's own level — 105.7 against 114.8, below it
+#   because cycles after this one are given the completed-cycle mean amplitude
+#   rather than cycle 25's stronger one. A shape with a wrong overall level
+#   breaks this and nothing else here would;
+#
+#   the one-period-later case USED TO BE a periodicity check and is now the
+#   opposite: epoch 14040 is exactly 4178 days after 9862, so the SHAPE repeats
+#   and the answer does not — 78.2 against 86.8 — because the amplitude hands
+#   over from cycle 25's measured peak to the mean of the completed ones. A
+#   build that had lost the handover would return 86.8 here and pass every
+#   other case in this file;
+#
+#   the two epoch cases at either end of the declared range say the answer
+#   depends on WHEN, which is the point of the row: the same five-year mission
+#   is 115.0 sfu opening in 2018 and 144.9 opening in late 2032. A relation
+#   that had quietly lost its epoch would still pass every arithmetic case here
+#   and fail these two.
+
 
 [[fixture]]
-label = "five years — persistence is gone, so the answer is the record climatology exactly"
-expect = 114.8437378829
+label = "the declared case — epoch 2027-01-01, a five-year mission"
+expect = 86.84972489094359
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { today = 150.0, lead = 157788000.0 }
+inputs = { today = 150.0, lead = 157788000.0, epoch = 852076800.0 }
 
 [[fixture]]
-label = "fifteen years — still the climatology, and it must not drift with lead once persistence has died"
-expect = 114.8437378829
+label = "fifteen years — the window spans more than a cycle, so the mean settles near the record's own level"
+expect = 105.72687096778448
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { today = 150.0, lead = 473364000.0 }
+inputs = { today = 150.0, lead = 473364000.0, epoch = 852076800.0 }
 
 [[fixture]]
-label = "one year — today's flux contributes 1.3e-06 of the answer"
-expect = 114.8437847603
-tolerance = 1e-11
-provenance = "independent-derivation"
-source = "noaa_swpc"
-inputs = { today = 150.0, lead = 31557600.0 }
-
-[[fixture]]
-label = "half a Julian year, the shortest mission — today's 150 sfu is worth 0.04 sfu of the answer"
-expect = 114.8843338669462
+label = "half a Julian year, the shortest mission — the one lead where today's 150 sfu is still faintly visible"
+expect = 105.5465798678905
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { today = 150.0, lead = 15778800.0 }
+inputs = { today = 150.0, lead = 15778800.0, epoch = 852076800.0 }
 
 [[fixture]]
-label = "a quiet day today makes no difference at five years — the answer is still the climatology"
-expect = 114.8437378829
+label = "a quiet day today changes nothing at five years"
+expect = 86.84972489094359
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { today = 70.0, lead = 157788000.0 }
+inputs = { today = 70.0, lead = 157788000.0, epoch = 852076800.0 }
 
 [[fixture]]
-label = "nor does a very active day — the record's mean is what a five-year mission is owed"
-expect = 114.8437378829
+label = "nor does a very active one — at five years the answer is the window climatology alone"
+expect = 86.84972489094359
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { today = 340.0, lead = 157788000.0 }
+inputs = { today = 340.0, lead = 157788000.0, epoch = 852076800.0 }
+
+[[fixture]]
+label = "the earliest epoch the range allows, 2018-01-01 — a mission rising into cycle 25's maximum"
+expect = 115.03865410832137
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { today = 150.0, lead = 157788000.0, epoch = 568080000.0 }
+
+[[fixture]]
+label = "an epoch near the next maximum, 2032-11-08 — the same mission, a different sky, and one cycle 25's size does not vouch for"
+expect = 144.9367498101883
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { today = 150.0, lead = 157788000.0, epoch = 1036800000.0 }
+
+[[fixture]]
+label = "the latest epoch the range allows, 2040-01-01"
+expect = 88.67145559562236
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { today = 150.0, lead = 157788000.0, epoch = 1262304000.0 }
+
+[[fixture]]
+label = "one whole cycle period later — epoch 14040 is 4178 days after 9862, so the SHAPE repeats; the answer does not, because the amplitude hands over"
+expect = 78.21016904177215
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { today = 150.0, lead = 157788000.0, epoch = 1213056000.0 }

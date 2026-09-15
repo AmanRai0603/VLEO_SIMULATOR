@@ -251,22 +251,29 @@ def check(port):
               "EXPECTED and unchanged: the sheet says this row applies no "
               "correction. The correction is sw_kp_mean_bias, checked above.")
 
-    # ---- 2. the centre of the window ------------------------------------
+    # ---- 2. the centre of the window -------------------------------------
+    # Driven at MATLAB'S OWN window, which only became possible when
+    # sw_central_expectation started taking an epoch. Before that this compared
+    # the port at one date against MATLAB at another and called it a difference.
     lead_s = WIN_DAYS * 86400
-    cen = run_node(port, "sw_central_expectation", [("orbit_mission_duration", lead_s)])
+    epoch_s = (WIN_OPEN - date(2000, 1, 1)).days * 86400
+    cen = run_node(port, "sw_central_expectation",
+                   [("sys_mission_requirements_mission_epoch", epoch_s),
+                    ("orbit_mission_duration", lead_s)])
     ml = ref["nominal"]["f107"]
     ana, lag, n_an, here = cycle_analogue(rows)
     if cen is not None:
         d = cen - ml
-        detail = (f"port {cen:.4f} vs MATLAB {ml:.4f} ({d:+.2f} sfu, {100 * d / ml:+.1f}%). "
-                  f"EXPECTED: different models. MATLAB freezes the last 27-day rotation "
-                  f"forecast; the port relaxes to the record mean with a 27-day e-fold, so "
-                  f"beyond ~6 months it IS the record mean.")
+        detail = (f"port {cen:.4f} vs MATLAB {ml:.4f} ({d:+.2f} sfu, {100 * d / ml:+.1f}%), "
+                  f"both at the same window. EXPECTED and deliberate: MATLAB freezes "
+                  f"its last 27-day rotation forecast and holds it flat; the port "
+                  f"averages the amplitude-scaled cycle analogue over the window.")
         if ana:
-            detail += (f" The window sits {lag / 365.25:.2f} yr past SC{here['n']} max; over the "
-                       f"same span the {n_an} finished cycles ran at {ana:.1f} sfu scaled onto "
-                       f"this cycle's peak. Both tools are above that — MATLAB by "
-                       f"{100 * (ml - ana) / ana:+.0f}%, the port by {100 * (cen - ana) / ana:+.0f}%.")
+            detail += (f" The window sits {lag / 365.25:.2f} yr past SC{here['n']} max; over "
+                       f"the same span the {n_an} finished cycles ran at {ana:.1f} sfu scaled "
+                       f"onto this cycle's peak, which is what the port now follows. "
+                       f"MATLAB is {100 * (ml - ana) / ana:+.0f}% against that, the port "
+                       f"{100 * (cen - ana) / ana:+.0f}%.")
         entry("DIFFERS", "the centre of the design window", detail)
 
     # ---- 3. what MATLAB publishes and the port has no row for ------------
@@ -278,6 +285,18 @@ def check(port):
           "MATLAB turns (date, duration, confidence) into five driver sets. The port "
           "has no such row: sys_mission_requirements_mission_duration is still seeded, "
           "so there is no duration to drive a window with.")
+    # The window maximum, which MATLAB has no equivalent of: its own driver
+    # construction takes the window MEAN and never the peak.
+    mx = run_node(port, "sw_window_peak_level",
+                  [("sys_mission_requirements_mission_epoch", epoch_s),
+                   ("orbit_mission_duration", lead_s)])
+    if mx is not None and cen is not None:
+        entry("NO ROW", "the peak of the expectation inside the window",
+              f"sw_window_peak_level publishes {mx:.2f} sfu against the centre's "
+              f"{cen:.2f} for this window. MATLAB publishes no equivalent — its "
+              f"driver sets are all window means, so a design reading it has no "
+              f"number for the busiest sustained period it must survive.")
+
     entry("NO ROW", "the sustained band around the centre",
           f"MATLAB publishes centre +/- 1.28*sigma (sigma measured walk-forward: "
           f"{(ref['hotmean']['f107'] - ml) / 1.28:.3f} sfu for F10.7, "

@@ -21,12 +21,13 @@ state = "published"
 
 [question]
 text = "Where is F10.7 expected to be by the time the mission is there?"
-note = "The centre of the F10.7 design value; sw_uncertainty_growth supplies the spread around it and sw_f107_design adds the two together. Today's flux is worth something at a lead of days and nothing at a lead of years, so this is the one number that has to know how far ahead it is being asked about."
+note = "The centre of the F10.7 design value; sw_uncertainty_growth supplies the spread around it and sw_f107_design adds the two together. Two things decide the answer and the row needs both: how far ahead it is being asked about, and WHEN. A mission through 2027-2032 flies the declining half of cycle 25 and meets a different sky from one through 2032-2037, and no single number can be right for both."
 
 [maths]
-# Persistence decaying exponentially into the climatology, with the solar
-# rotation as the timescale. prf_design uses tau = 27 days.
-expression = "F107_central(L) = w*F107_today + (1-w)*114.8437,  w = exp(-L / 27 d)"
+# Persistence decaying into a climatology over one solar rotation, as before.
+# What changed is the climatology: it is no longer the record's unconditional
+# mean but the cycle analogue at the dates the mission actually flies.
+expression = "F107_central(T_e, L) = w*F107_today + (1-w)*mean_[T_e, T_e+L] A(t),  w = exp(-L / 27 d),  A(t) = amp(t) * R((t - T_max) mod P)"
 source = "noaa_swpc"
 
 # WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
@@ -36,27 +37,47 @@ source = "noaa_swpc"
 [theory]
 why = """
 A design needs one number for the flux it will meet, and which number is
-right depends entirely on how far ahead the question is being asked. Today's
-flux is excellent information about tomorrow, decent information about next
-week, and worthless information about next decade — because the physical
-thing that makes it informative, an active region facing the Earth, lives
-for about one solar rotation and then is gone. So the honest central value
-is not persistence and not climatology but a handover between them, and the
-whole content of the relation is the shape of that handover and the
-timescale it runs on.
+right depends on how far ahead the question is asked AND on where in the
+solar cycle the answer lands. Today's flux is excellent information about
+tomorrow and worthless about next decade, because the active region that
+makes it informative lives about one solar rotation. So the estimator has to
+hand over from persistence to a climatology.
+
+The question this row used to get wrong is WHICH climatology. Handing over
+to the record's unconditional mean says a mission flying through solar
+minimum and one flying through maximum should be designed to the same flux,
+which the record flatly denies: its F10.7 runs from 64 to 343 sfu and the
+difference between those is almost entirely which part of a cycle you are
+in. The cycle is the most predictable thing about solar activity at a lead
+of years — far more predictable than the level itself — so a climatology
+that throws the cycle away is discarding the one piece of information a
+long-lead forecast actually has.
 """
 reading = """
-At every lead a mission can ask about, this row IS the climatology. The
-weight on today's flux is exp(-L/27 d), which at the shortest lead the
-declared input range allows — half a year — is 0.00114, and by one year is
-1.3e-6. So the persistence term is arithmetically inert here and the answer
-is 114.8437 to four decimal places for any mission. It is kept because it is
-the study's relation and because removing it would make the row silently
-wrong for a short-lead use this tree does not currently make. The number it
-hands over to is the record's unconditional mean, which is the average of
-maxima and minima together; the sheet's first assumption is now a pending
-decision rather than a missing input, and it is the most consequential open
-item on this node.
+At every lead a mission can ask about this row IS the climatology, because
+the persistence weight exp(-L/27 d) is 0.00114 at the shortest lead the
+declared range allows. What the answer now carries is the epoch: the same
+five-year mission returns 86.8 sfu opening in 2027, 115.0 sfu opening in
+2018 and 144.9 sfu opening in late 2032. That spread is the content of the
+change.
+
+The answer is a MEAN over the mission window, not the flux on any day in it.
+A five-year mission opening in 2027 averages 86.8 sfu while its first ninety
+days average 104.6 and its last fall to 73.2, so this number understates the
+early years of a long mission and overstates its end. sw_window_peak_level
+publishes the maximum over the same window for a design that must survive its
+worst sustained period rather than its average one. A design sized by its worst sustained period
+wants the maximum of the analogue over the window, which this row does not
+publish.
+
+One property is worth checking because it is what keeps the change anchored:
+as the window grows past a full cycle the mean settles near the record's own
+unconditional climatology — 105.7 sfu at fifteen years against the record's
+114.8. It settles BELOW it rather than on it, and for a stated reason: cycles
+beyond this one are given the mean amplitude of the completed cycles, 193.9
+sfu, where the record's own mean is lifted by cycle 23 at 226.8. The long-run
+answer is therefore the record's level minus the assumption that the future is
+average rather than strong.
 """
 
 [[theory.step]]
@@ -65,66 +86,106 @@ Two estimators are available and they fail at opposite ends. Persistence —
 assume the flux stays where it is — is nearly exact at a lead of one day and
 absurd at a lead of one year. Climatology — assume the flux is typical — is
 useless at a lead of one day and the best available answer at a lead of one
-decade.
+decade. So the estimator is a lead-weighted blend of the two, and the
+timescale is the synodic solar rotation because that is how long an active
+region faces the Earth.
+"""
+math = "F107_central = w*F107_today + (1-w)*C,  w = exp(-L / 27 d)"
+
+[[theory.step]]
+text = """
+The climatology C is where the work is. "Typical" is not a single number
+unless the question has no date attached, and this question has one: the
+mission epoch is published at the system layer and this row can read it.
 """
 
 [[theory.step]]
 text = """
-So the estimator has to be a weighted blend whose weight depends on the
-lead, running from all persistence at zero lead to all climatology at long
-lead.
+Align the completed cycles on their MAXIMA rather than their starts. Cycle
+length varies — 11.88 years for cycle 23 against 11.00 for cycle 24 — so
+aligning on starts puts one cycle's maximum against the other's decline and
+averages a peak with a slope. The study's own explorer says the same thing
+about its start-aligned view in as many words: it smears the peaks.
 """
-math = "F107_central(L) = w(L) * F107_today + (1 - w(L)) * C, w(0) = 1, w(inf) = 0"
+math = "u = t - T_max,  measured forward from each cycle's own maximum"
 
 [[theory.step]]
 text = """
-The shape chosen is exponential decay. That is a decision and prf_design
-cites no source for it: several forms satisfy the two end conditions above,
-and this one says the information in today's flux decays at a constant
-fractional rate.
+Normalise each cycle by its own amplitude before averaging, so that the
+shape and the size are separated. What repeats between cycles is the shape;
+the size does not, and cycle 24 peaked at 160.6 sfu against cycle 23's
+226.5. Averaging unnormalised would produce a curve that is neither cycle.
 """
-math = "w(L) = exp(-L / tau)"
+math = "R(u) = mean_c [ F107A_c(T_max,c + u) / max_t F107A_c(t) ]"
 
 [[theory.step]]
 text = """
-The timescale is not fitted, and that is what makes it defensible. 27 days
-is the synodic solar rotation — the period over which an active region
-carries round to the far side and stops facing the Earth — so the relation
-says the memory in today's flux dies over about one turn of the Sun.
+Both the numerator and the denominator are the 81-day centred mean, which is
+the standard F10.7 averaging window and the one sw_f107_81day already uses.
+Normalising a lightly smoothed value by a heavily smoothed peak would let
+the ratio exceed one; measured the same way on both sides, R is bounded by
+its own construction and runs 0.325 to 1.000.
 """
-math = "tau = 27 d, one synodic solar rotation"
 
 [[theory.step]]
 text = """
-The climatology is the record's mean F10.7 over its 10316 observed days,
-measured outside this crate on the pinned bundle. It is the UNCONDITIONAL
-mean: the average over every part of every cycle, which is not the expected
-flux at any particular date.
+Put the shape back on a size, and WHICH size is the question the wrap forces.
+Inside cycle 25 the size has been measured: its 81-day peak is 225.1 sfu on
+2024-09-04. Outside it the size has not happened yet, and the honest estimate
+is not a repeat of this cycle but the mean of the cycles that have finished —
+193.9 sfu, from cycle 23's 226.8 and cycle 24's 160.9. Shape repeats between
+cycles; size is the thing that does not.
 """
-math = "C = 114.8437 sfu"
+math = "amp(t) = 225.1358 sfu inside cycle 25, 193.8580 sfu outside it"
 
 [[theory.step]]
 text = """
-At which point the arithmetic settles the row's character. Half a year is
-6.8 rotations, so the persistence weight is already at the fourth decimal
-place, and for any mission lead this row returns the climatology. Everything
-interesting about the relation happens in a region of lead that nothing in
-this tree asks about.
+The modulo is what makes the row answerable over its whole declared domain.
+The epoch may be any date from 2018 to 2040 and the mission up to fifteen
+years, so the window can end well beyond any observed cycle; wrapping at the
+mean completed-cycle length of 4178 days says a future cycle resembles the
+average of the last two. The amplitude handover above is what keeps that
+claim to the shape alone, and the price is a step in the answer at half a
+period either side of the maximum. The step is not smoothed away: it marks
+the boundary between a cycle whose size was measured and cycles whose size
+was assumed, and it falls at the cycle minimum where it is smallest.
 """
-math = "w(182.6 d) = exp(-6.76) = 0.00116"
+math = "the handover sits at knot 47 of 94, exactly half a period from the maximum"
+
+[[theory.step]]
+text = """
+Average over the window rather than evaluating at its end. The end of a
+five-year mission opening in 2027 sits near solar minimum, so an endpoint
+answer would size the design for the quietest sky it meets and miss the
+first three years entirely. The mean is also what the study's own driver
+construction takes.
+"""
+math = "C = (1/L) * integral over [T_e, T_e + L] of A(t) dt"
 
 
 [[assumption]]
-text = "The climatology is the record's UNCONDITIONAL mean, not the mean cycle at the date the mission flies"
-fails_when = "this is the honest limit of the row and it is a missing input, not a modelling choice. prf_design evaluates the mean cycle AT THE TARGET DATE, so a mission flying through solar maximum gets a different central value from one flying through minimum. Doing that needs a mission epoch, and THE OBSTACLE THAT PUT THIS ROW HERE IS GONE: sys_mission_requirements_mission_epoch is published at 9862 d, seven rows in this subsystem read it across the layer boundary, and sw_mean_cycle_level already publishes the mean cycle at a phase — 108.14 sfu at the declared epoch's 0.6194, against the 114.84 this row uses. So this is now a pending DECISION rather than a missing input, and it is a decision because this row is on the main branch: switching it changes a published output, moving sw_f107_design from 228.14 to 221.44 sfu and every drag and lifetime number downstream of it. Until somebody makes that call the row remains sized on no particular part of the cycle, and the record says that is worth a great deal — its F10.7 runs from 64 to 343 sfu, with a 5th percentile of 68 and a 95th of 201."
+text = "Two completed cycles is the whole sample, and eleven of the ninety-three grid points rest on one of them"
+fails_when = "the record spans cycles 23, 24 and the incomplete 25, so the shape R is a mean of TWO curves and its spread between them is not published by this row. Where the two cycles' differing lengths leave only one of them covering a point — eleven of ninety-three, near the wrap — the value is that one cycle's shape rather than an average. Two cycles cannot establish that a shape repeats; they can only establish what the last two did, and this row says the next one resembles them because that is the best the record supports, not because it is known."
+
+[[assumption]]
+text = "Outside cycle 25 the amplitude is the mean of TWO completed cycles, and their spread is a factor of 1.41"
+fails_when = "cycle 23 peaked at 226.8 sfu and cycle 24 at 160.9, so the 193.9 this row uses for every future cycle is the midpoint of two numbers that differ by 41%. A window reaching past about 2030 is reading a level whose size is that average, and if the next cycle runs like cycle 23 the answer is 17% low, if like cycle 24 it is 17% high. That is an honest estimate rather than a repeat of the current cycle, which is what this row used to do, but two cycles cannot support an uncertainty on it and none is published. The row does not know, and does not claim to know, which kind of cycle comes next."
+
+[[assumption]]
+text = "The answer is a window MEAN, so it understates the early years of a long mission"
+fails_when = "a five-year mission opening at the declared epoch averages 90.4 sfu, but its first ninety days average 104.6 and it falls to 73.2 by the end of the window — a spread of 39 sfu inside one number. Drag is not linear in flux and a vehicle does not average its propellant over five years, so a design whose sizing case is its worst sustained period is reading the wrong statistic here. This row publishes a centre because it is a centre; the maximum of the analogue over the window is a different number and nothing publishes it yet."
+
+[[assumption]]
+text = "The grid is 94 knots and the window integral is numerical, and both errors are measured rather than assumed"
+fails_when = "the shape is stored on 94 knots of 44.4468 days and interpolated linearly. The knot count is even and divides the period exactly, which is not cosmetic: it makes the wrap from the last knot to the first one step like any other, and it puts the amplitude handover on knot 47 rather than somewhere inside a segment. An earlier form of this row used a round 45-day step, which does not divide 4178, and carried a 1.2 sfu discontinuity at the wrap as a result. Simpson's rule with 512 panels adds at most 0.0045 sfu. Both are far inside the spread between the two cycles the shape is built from, which is the error that actually matters and which this row does not publish."
 
 [[assumption]]
 text = "Persistence is carried for completeness and is worth nothing at any mission lead"
-fails_when = "the weight is exp(-L/27) with L in days, so at the shortest mission the declared input range allows — half a year — today's flux contributes 0.114% and by one year it contributes 0.00013%. The term is right and it is inert: this row's answer is the climatology to four decimal places for every lead a mission can ask about. It is kept because the relation is the study's, and removing it would make the row silently wrong for the short-lead use nothing in this tree currently makes. Anyone wanting the 27-day outlook wants a different row."
+fails_when = "the weight is exp(-L/27) with L in days, so at the shortest mission the declared input range allows — half a year — today's flux contributes 0.114% and by one year it contributes 0.00013%. The term is right and it is inert: this row's answer is the window climatology to four decimal places for every lead a mission can ask about. It is kept because the relation is the study's, and removing it would make the row silently wrong for the short-lead use nothing in this tree currently makes."
 
 [[assumption]]
-text = "The blend shape is a choice, and 27 days is the solar rotation rather than a fitted constant"
-fails_when = "an exponential decay into a constant is one of several defensible ways to hand over from persistence to climatology, and prf_design cites no source for the form. 27 days is the synodic solar rotation, so the choice says persistence dies over about one turn of the Sun — physically reasonable and not measured here. Nothing in this row's declared range is sensitive to it, because every mission lead is far past the handover."
+text = "This moves the row AWAY from the MATLAB tool, deliberately"
+fails_when = "the MATLAB tool answers 158.33 sfu for its own 2027 window by freezing its last 27-day rotation forecast and holding it flat; this row now answers 97.0 sfu for the same window and used to answer 114.8. The port therefore agrees with MATLAB LESS than it did. That is the intended direction: over the same span past maximum the two completed cycles ran at 91 sfu scaled onto cycle 25's amplitude, so the record puts MATLAB 74% high and the old answer 26% high, and this row within a few per cent of it. tools/mat_parity.py records the disagreement and its size so that it stays a decision rather than becoming a surprise."
 
 [output]
 # The node's one answer. The variable id is the node id: one small
@@ -134,8 +195,8 @@ type = "Ratio"
 unit = "One"
 lower = 60.0
 upper = 400.0
-reason_lower = "the answer is a weighted blend of today's F10.7 and the record's mean, so it can never leave the interval between them. env_f107's own lower bound is 60 because below 60 sfu has never been observed and the fit has no support there; the same floor applies to a blend of it"
-reason_upper = "env_f107's upper bound is 400, above which the exospheric temperature relation is extrapolated past the largest recorded daily value. A blend cannot exceed its larger input, so this bound catches a broken weight rather than an extreme sky"
+reason_lower = "the answer is a weighted blend of today's F10.7 and a window mean of the analogue, so it cannot leave the interval between them. The analogue is bounded below by 0.324026 x 193.8580 = 62.8 sfu, its smallest shape on its smallest amplitude, and env_f107 by 60 because below 60 sfu has never been observed; the blend therefore floors at 60"
+reason_upper = "env_f107's upper bound is 400, above which the exospheric temperature relation is extrapolated past the largest recorded daily value. The analogue cannot exceed cycle 25's own 81-day peak of 225.1 sfu, and a blend cannot exceed its larger input, so this bound catches a broken weight or a broken table rather than an extreme sky"
 
 [[input]]
 # The consumer declares what it expects. Assembly refuses a mismatch
@@ -153,15 +214,31 @@ binding = "lead"
 var = "orbit_mission_duration"
 type = "Time"
 
+[[input]]
+# Read across the layer boundary: the date is a mission property and lives at
+# the system layer. sw_cycle_phase reads the same row the same way.
+binding = "epoch"
+var = "sys_mission_requirements_mission_epoch"
+type = "Time"
+
 [[algorithm.step]]
 number = 1
-text = "weight today's flux against the record climatology by the lead, one solar rotation as the timescale"
+text = "average the amplitude-scaled cycle analogue over the mission window"
+binds = "climo"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 2
+text = "weight today's flux against that window climatology by the lead, one solar rotation as the timescale"
 binds = "central"
 type = "Ratio"
 
 [data]
 # Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
-# climatology must be re-measured if the bundle version changes.
+# cycle shape, its period, both amplitudes and the peak date live in
+# vleo-core::physics::env and must all be re-measured if the bundle version
+# changes — cycle 25's peak in particular will move, because cycle 25 is not
+# finished.
 bundles = ["solar-weather"]
 
 [view]
