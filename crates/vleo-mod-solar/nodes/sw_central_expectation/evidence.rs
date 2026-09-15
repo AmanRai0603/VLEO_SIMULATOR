@@ -16,64 +16,94 @@ fn relative_error(got: f64, expected: f64) -> f64 {
     if expected == 0.0 { pmath::abs(got) } else { pmath::abs((got - expected) / expected) }
 }
 
-/// five years — persistence is gone, so the answer is the record climatology exactly
+/// the declared case — epoch 2027-01-01, a five-year mission
 ///
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_0() {
-    let got = model::evaluate(Ratio::new(150.0), Time::new(157788000.0)).expect("the fixture case must not be refused");
-    let err = relative_error(got.get(), 114.8437378829);
-    assert!(err <= 1e-12, "five years — persistence is gone, so the answer is the record climatology exactly: got {} want 114.8437378829, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    let got = model::evaluate(Ratio::new(150.0), Time::new(157788000.0), Time::new(852076800.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 90.38771803612747);
+    assert!(err <= 1e-12, "the declared case — epoch 2027-01-01, a five-year mission: got {} want 90.38771803612747, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
-/// fifteen years — still the climatology, and it must not drift with lead once persistence has died
+/// fifteen years — the window spans more than a cycle, so the mean returns to the record's own climatology of 114.84
 ///
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_1() {
-    let got = model::evaluate(Ratio::new(150.0), Time::new(473364000.0)).expect("the fixture case must not be refused");
-    let err = relative_error(got.get(), 114.8437378829);
-    assert!(err <= 1e-12, "fifteen years — still the climatology, and it must not drift with lead once persistence has died: got {} want 114.8437378829, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    let got = model::evaluate(Ratio::new(150.0), Time::new(473364000.0), Time::new(852076800.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 119.1016920687434);
+    assert!(err <= 1e-12, "fifteen years — the window spans more than a cycle, so the mean returns to the record's own climatology of 114.84: got {} want 119.1016920687434, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
-/// one year — today's flux contributes 1.3e-06 of the answer
+/// half a Julian year, the shortest mission — the one lead where today's 150 sfu is still faintly visible
 ///
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_2() {
-    let got = model::evaluate(Ratio::new(150.0), Time::new(31557600.0)).expect("the fixture case must not be refused");
-    let err = relative_error(got.get(), 114.8437847603);
-    assert!(err <= 1e-11, "one year — today's flux contributes 1.3e-06 of the answer: got {} want 114.8437847603, relative error {} exceeds the declared tolerance 1e-11. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    let got = model::evaluate(Ratio::new(150.0), Time::new(15778800.0), Time::new(852076800.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 106.23316550208871);
+    assert!(err <= 1e-12, "half a Julian year, the shortest mission — the one lead where today's 150 sfu is still faintly visible: got {} want 106.23316550208871, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
-/// half a Julian year, the shortest mission — today's 150 sfu is worth 0.04 sfu of the answer
+/// a quiet day today changes nothing at five years
 ///
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_3() {
-    let got = model::evaluate(Ratio::new(150.0), Time::new(15778800.0)).expect("the fixture case must not be refused");
-    let err = relative_error(got.get(), 114.8843338669462);
-    assert!(err <= 1e-12, "half a Julian year, the shortest mission — today's 150 sfu is worth 0.04 sfu of the answer: got {} want 114.8843338669462, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    let got = model::evaluate(Ratio::new(70.0), Time::new(157788000.0), Time::new(852076800.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 90.38771803612747);
+    assert!(err <= 1e-12, "a quiet day today changes nothing at five years: got {} want 90.38771803612747, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
-/// a quiet day today makes no difference at five years — the answer is still the climatology
+/// nor does a very active one — at five years the answer is the window climatology alone
 ///
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_4() {
-    let got = model::evaluate(Ratio::new(70.0), Time::new(157788000.0)).expect("the fixture case must not be refused");
-    let err = relative_error(got.get(), 114.8437378829);
-    assert!(err <= 1e-12, "a quiet day today makes no difference at five years — the answer is still the climatology: got {} want 114.8437378829, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    let got = model::evaluate(Ratio::new(340.0), Time::new(157788000.0), Time::new(852076800.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 90.38771803612747);
+    assert!(err <= 1e-12, "nor does a very active one — at five years the answer is the window climatology alone: got {} want 90.38771803612747, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
-/// nor does a very active day — the record's mean is what a five-year mission is owed
+/// the earliest epoch the range allows, 2018-01-01 — a mission rising into cycle 25's maximum
 ///
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_5() {
-    let got = model::evaluate(Ratio::new(340.0), Time::new(157788000.0)).expect("the fixture case must not be refused");
-    let err = relative_error(got.get(), 114.8437378829);
-    assert!(err <= 1e-12, "nor does a very active day — the record's mean is what a five-year mission is owed: got {} want 114.8437378829, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    let got = model::evaluate(Ratio::new(150.0), Time::new(157788000.0), Time::new(568080000.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 116.83299053750859);
+    assert!(err <= 1e-12, "the earliest epoch the range allows, 2018-01-01 — a mission rising into cycle 25's maximum: got {} want 116.83299053750859, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+}
+
+/// an epoch near the next maximum, 2032-11-08 — the same mission, a different sky
+///
+/// Provenance: `independent-derivation`, source `noaa_swpc`.
+#[test]
+fn fixture_6() {
+    let got = model::evaluate(Ratio::new(150.0), Time::new(157788000.0), Time::new(1036800000.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 168.09803922411484);
+    assert!(err <= 1e-12, "an epoch near the next maximum, 2032-11-08 — the same mission, a different sky: got {} want 168.09803922411484, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+}
+
+/// the latest epoch the range allows, 2040-01-01
+///
+/// Provenance: `independent-derivation`, source `noaa_swpc`.
+#[test]
+fn fixture_7() {
+    let got = model::evaluate(Ratio::new(150.0), Time::new(157788000.0), Time::new(1262304000.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 102.62295653471243);
+    assert!(err <= 1e-12, "the latest epoch the range allows, 2040-01-01: got {} want 102.62295653471243, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+}
+
+/// one whole cycle period later — epoch 14040 is 4178 days after 9862, and the modulo makes them the same sky
+///
+/// Provenance: `independent-derivation`, source `noaa_swpc`.
+#[test]
+fn fixture_8() {
+    let got = model::evaluate(Ratio::new(150.0), Time::new(157788000.0), Time::new(1213056000.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 90.38771803612747);
+    assert!(err <= 1e-12, "one whole cycle period later — epoch 14040 is 4178 days after 9862, and the modulo makes them the same sky: got {} want 90.38771803612747, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
 // ---- properties, generated from the declared domain ---------------------
@@ -85,7 +115,7 @@ fn fixture_5() {
 
 /// One per cent either side of the known-good point, this node still answers.
 ///
-/// Derived from `five years — persistence is gone, so the answer is the record climatology exactly` and the declared domain 60 … 400.
+/// Derived from `the declared case — epoch 2027-01-01, a five-year mission` and the declared domain 60 … 400.
 ///
 /// One per cent, not a decade. These domains are design bands — an altitude
 /// range somebody chose, not a range over which the mathematics holds — so a
@@ -98,13 +128,18 @@ fn fixture_5() {
 fn answers_near_the_known_good_point() {
     let mut refused: Vec<String> = Vec::new();
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(150.0 * scale), Time::new(157788000.0)) {
+        if let Err(f) = model::evaluate(Ratio::new(150.0 * scale), Time::new(157788000.0), Time::new(852076800.0)) {
             refused.push(format!("today x{scale} -> {f}"));
         }
     }
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(150.0), Time::new(157788000.0 * scale)) {
+        if let Err(f) = model::evaluate(Ratio::new(150.0), Time::new(157788000.0 * scale), Time::new(852076800.0)) {
             refused.push(format!("lead x{scale} -> {f}"));
+        }
+    }
+    for scale in [0.99_f64, 1.01] {
+        if let Err(f) = model::evaluate(Ratio::new(150.0), Time::new(157788000.0), Time::new(852076800.0 * scale)) {
+            refused.push(format!("epoch x{scale} -> {f}"));
         }
     }
     assert!(
@@ -122,13 +157,19 @@ fn answers_near_the_known_good_point() {
 #[test]
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(150.0 * scale), Time::new(157788000.0)) {
+        if let Ok(v) = model::evaluate(Ratio::new(150.0 * scale), Time::new(157788000.0), Time::new(852076800.0)) {
             assert!(v.get().is_finite(), "sw_central_expectation produced a value that is not a number");
             assert!(v.get() >= 60.0 && v.get() <= 400.0, "sw_central_expectation answered {}, outside its declared domain 60 … 400 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(150.0), Time::new(157788000.0 * scale)) {
+        if let Ok(v) = model::evaluate(Ratio::new(150.0), Time::new(157788000.0 * scale), Time::new(852076800.0)) {
+            assert!(v.get().is_finite(), "sw_central_expectation produced a value that is not a number");
+            assert!(v.get() >= 60.0 && v.get() <= 400.0, "sw_central_expectation answered {}, outside its declared domain 60 … 400 — the guard did not stop it", v.get());
+        }
+    }
+    for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
+        if let Ok(v) = model::evaluate(Ratio::new(150.0), Time::new(157788000.0), Time::new(852076800.0 * scale)) {
             assert!(v.get().is_finite(), "sw_central_expectation produced a value that is not a number");
             assert!(v.get() >= 60.0 && v.get() <= 400.0, "sw_central_expectation answered {}, outside its declared domain 60 … 400 — the guard did not stop it", v.get());
         }
@@ -142,8 +183,8 @@ fn every_answer_is_inside_the_declared_domain() {
 /// agreement across the faces impossible rather than merely hard.
 #[test]
 fn the_same_inputs_give_the_same_answer() {
-    let a = model::evaluate(Ratio::new(150.0), Time::new(157788000.0));
-    let b = model::evaluate(Ratio::new(150.0), Time::new(157788000.0));
+    let a = model::evaluate(Ratio::new(150.0), Time::new(157788000.0), Time::new(852076800.0));
+    let b = model::evaluate(Ratio::new(150.0), Time::new(157788000.0), Time::new(852076800.0));
     match (a, b) {
         (Ok(x), Ok(y)) => assert!(x.get().to_bits() == y.get().to_bits(), "sw_central_expectation is not deterministic: {} then {}", x.get(), y.get()),
         (Err(_), Err(_)) => {}

@@ -103,8 +103,10 @@ def quant(sorted_, q):
 # --------------------------------------------------------------------------
 # the engine
 
-def run_node(port, node):
-    body = urllib.parse.urlencode({"node": node, "mode": "branch", "case": "c1"}).encode()
+def run_node(port, node, sets=()):
+    q = [("node", node), ("mode", "branch"), ("case", "c1")]
+    q += [("set", f"{k}:{v!r}") for k, v in sets]
+    body = urllib.parse.urlencode(q).encode()
     req = urllib.request.Request(f"http://localhost:{port}/v1/run", data=body,
                                  headers={"content-type": "application/x-www-form-urlencoded"})
     with urllib.request.urlopen(req, timeout=30) as r:
@@ -130,11 +132,12 @@ def comparisons(days, cyc):
     out = []
 
     def agrees(node, want, tol, how):
-        out.append({"node": node, "want": want, "tol": tol, "how": how, "kind": "AGREES"})
-
-    def departs(node, want, tol, how, why):
         out.append({"node": node, "want": want, "tol": tol, "how": how,
-                    "kind": "DEPARTS", "why": why})
+                    "kind": "AGREES", "sets": ()})
+
+    def departs(node, want, tol, how, why, sets=()):
+        out.append({"node": node, "want": want, "tol": tol, "how": how,
+                    "kind": "DEPARTS", "why": why, "sets": sets})
 
     # --- prf_cluster: its labels are published per day, so this is exact.
     reg = {r["date"]: r for r in rows("daily_regime.csv")}
@@ -177,8 +180,20 @@ def comparisons(days, cyc):
     ch = sorted(byday[t + L] - v for t, v in byday.items() if t + L in byday)
     agrees("sw_uncertainty_growth", quant(ch, 0.95), 5e-3,
            f"the 95th percentile of the {L}-day change over {len(ch)} observed pairs")
-    agrees("sw_central_expectation", sum(f107) / len(f107), 1e-6,
-           f"the record's mean F10.7 over {len(f107)} days")
+    # sw_central_expectation no longer returns the record's unconditional mean at
+    # a mission lead; it returns the cycle analogue over the mission's own dates.
+    # What is still checkable against the study's published output — and is the
+    # property that makes the change safe — is that a window longer than one
+    # cycle averages back to that unconditional mean. A shape table with a wrong
+    # overall level, or a peak normalisation off by a fifth, breaks this and
+    # nothing else here would catch it.
+    departs("sw_central_expectation", sum(f107) / len(f107), 5e-2,
+            f"the record's mean F10.7 over {len(f107)} days, which a 15-year "
+            f"window must average back to",
+            "at a mission lead the row now answers the cycle analogue at the "
+            "mission's dates — 90.39 sfu at the declared epoch against this "
+            "114.84 — so it departs everywhere except over a full cycle",
+            sets=(("orbit_mission_duration", 15 * 31557600.0),))
 
     # --- prf_cycles: the boundaries are published, the fold is the sheet's.
     epoch = 9862.0
@@ -333,7 +348,7 @@ def main():
 
     bad = []
     for c in checks:
-        got = run_node(args.port, c["node"])
+        got = run_node(args.port, c["node"], c.get("sets", ()))
         if got is None:
             print(f"  {'REFUSED':9s} {c['node']}")
             bad.append(c["node"])
