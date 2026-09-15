@@ -131,7 +131,7 @@ the vectors are cleared and settled from the converged state.
 | 4 run | a call into WebAssembly | a call to the installed engine | nothing crosses | no button at all |
 | 5 kernel | identical — one crate, the same one the rig and the pipeline run | | | |
 | 6 return | object and typed array | object and buffer | registers | columns, then a file |
-| 7 shown | eight tabs | eight tabs | bench rate | nothing draws |
+| 7 shown | the node tabs | the node tabs | bench rate | nothing draws |
 
 Three planes are identical, and they are the three that matter: authored once,
 generated once, computed by one crate.

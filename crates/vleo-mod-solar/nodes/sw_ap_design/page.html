@@ -6,14 +6,15 @@
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
-  <button role="tab" class="tab" data-tab="1">interface</button>
-  <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">the relation, moving</button>
-  <button role="tab" class="tab" data-tab="4">generated code</button>
-  <button role="tab" class="tab" data-tab="5">evidence</button>
-  <button role="tab" class="tab" data-tab="6">flags</button>
-  <button role="tab" class="tab" data-tab="7">credibility</button>
-  <button role="tab" class="tab" data-tab="8">design space</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">What daily Ap is this design built to survive?</p>
@@ -29,6 +30,9 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
+<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+</section>
+<section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr><td>in</td><td><code>g_level</code></td><td><a class="xref" data-goto="sw_storm_design_level">sw_storm_design_level</a></td><td>Ratio</td><td>-</td></tr>
@@ -36,7 +40,7 @@
 </tbody></table>
 <p class="consumers"><b>4</b> nodes read this: <a class="xref" data-goto="sw_design_safe_duration">sw_design_safe_duration</a>, <a class="xref" data-goto="sw_exceedance_duration">sw_exceedance_duration</a>, <a class="xref" data-goto="sw_exceedance_phase">sw_exceedance_phase</a>, <a class="xref" data-goto="sw_exceedance_rate">sw_exceedance_rate</a></p>
 </section>
-<section class="panel" data-panel="2">
+<section class="panel" data-panel="3">
 <ol class="algo">
 <li><span class="step">convert the chosen G level to the daily Ap that level bounds, from the published ap table</span> <span class="binds">→ <code>out: Ratio</code></span></li>
 </ol>
@@ -61,12 +65,12 @@
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="3">
+<section class="panel" data-panel="4">
 <div class="relation-host" data-node="sw_ap_design" data-lo="40" data-hi="140" data-symbol="Ap_design">
 <p class="muted">asking the engine…</p>
 </div>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="5">
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -142,7 +146,7 @@ pub fn evaluate(g_level: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="6">
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
 <tr data-fixture="G2 moderate — Kp 6 — daily Ap bounded at 80"><td>G2 moderate — Kp 6 — daily Ap bounded at 80</td><td class="num">80</td><td class="num">0.000000000001</td><td>published-source</td><td>iaga_kp_ap</td></tr>
 <tr data-fixture="G1 minor — Kp 5 — daily Ap bounded at 48"><td>G1 minor — Kp 5 — daily Ap bounded at 48</td><td class="num">48</td><td class="num">0.000000000001</td><td>published-source</td><td>iaga_kp_ap</td></tr>
@@ -150,7 +154,7 @@ pub fn evaluate(g_level: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 40 — the lowest value this relation can return is 48, at G1. A bound at 40 sits just under it and refuses anything that would design to less than a minor storm, which is not a design case: the record has 1358 days at G1 or above, 47 a year</li>
@@ -161,11 +165,11 @@ pub fn evaluate(g_level: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="8">
 <p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_ap_design"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="8">
+<section class="panel" data-panel="9">
 <p>Valid over <code>40 &hellip; 140</code> -.</p>
 <ul class="guards"><li>lower — the lowest value this relation can return is 48, at G1. A bound at 40 sits just under it and refuses anything that would design to less than a minor storm, which is not a design case: the record has 1358 days at G1 or above, 47 a year</li><li>upper — the highest this relation can return is 132, at G3, which is the top of the declared G range. A bound at 140 sits just above it and catches a G level outside the range or a misread table. It does NOT bound the sky: the record's largest daily Ap is 273 and the five-year return level is 158.4, both above this bound, and neither passes through this row</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
@@ -173,5 +177,6 @@ pub fn evaluate(g_level: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

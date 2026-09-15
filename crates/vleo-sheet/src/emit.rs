@@ -894,6 +894,16 @@ pub fn gap_pass(sh: &Sheet, holes: &BTreeMap<u32, String>) -> Vec<String> {
     if sh.assumptions.is_empty() && !sh.is_declared() && sh.steps.len() > 1 {
         g.push("no assumption stated — a multi-step relation always has at least one".into());
     }
+    // A relation nobody explained. Reported as a gap rather than a failure: it
+    // blocks the second review, where somebody has to agree the relation is the
+    // right one, and that reviewer cannot do it from a single line of algebra.
+    if sh.theory.is_empty() && !sh.expression.trim().is_empty() {
+        g.push(
+            "no theory: the relation is stated but not derived, so a reviewer can check what it \
+             computes and not whether it is the right thing to compute"
+                .into(),
+        );
+    }
     g
 }
 

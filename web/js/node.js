@@ -13,6 +13,7 @@ import { $, $$, esc, plural } from './dom.js';
 import { S, isSeeded } from './state.js';
 import { renderRun } from './run.js';
 import { mountRelation } from './relation.js';
+import { mountTheory } from './theory.js';
 
 export async function openNode(id) {
   const r = S.byId.get(id);
@@ -52,6 +53,10 @@ export async function openNode(id) {
       // question nobody had.
       const rel = p && $('.relation-host', p);
       if (rel && !rel.dataset.mounted) { rel.dataset.mounted = '1'; mountRelation(rel); }
+      // The derivation is already complete in the fragment; this only adds the
+      // controls that walk it, so mounting late costs the reader nothing.
+      const th = p && $('.theory-walk', p);
+      if (th && !th.dataset.mounted) { th.dataset.mounted = '1'; mountTheory(th); }
     };
   });
 

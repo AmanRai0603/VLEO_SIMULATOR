@@ -140,7 +140,7 @@ three at assembly, which combine and refuse but never decide. A hand edit
 outside a `HOLE` block is discarded by the next regeneration and fails the
 regeneration diff.
 
-![One node: eight tabs, its answer, the eight credibility factors with the
+![One node: its tabs, its answer, the eight credibility factors with the
 lowest governing, and the evidence that executed](docs/img/node.png)
 
 ---

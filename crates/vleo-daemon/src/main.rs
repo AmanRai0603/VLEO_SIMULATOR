@@ -390,7 +390,7 @@ fn node_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
         ),
         ("mod.rs", "generated", "the module wiring"),
         ("evidence.rs", "generated", "the fixtures, as tests"),
-        ("page.html", "generated", "the eight tabs"),
+        ("page.html", "generated", "the tabs a reader opens"),
         (
             "meta.json",
             "generated",

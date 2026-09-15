@@ -98,7 +98,7 @@ export function renderResult(host, r, res) {
   if (!el) return;
   res = res || S.lastRun;
   if (!res) {
-    el.innerHTML = '<p class="muted">Not run. The eight tabs are what the node <i>is</i>; ' +
+    el.innerHTML = '<p class="muted">Not run. The tabs are what the node <i>is</i>; ' +
       'this is what it <i>returns</i>.</p>' + sweepControls(r);
     wireSweep(host, r);
     return;

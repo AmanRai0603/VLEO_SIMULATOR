@@ -6,14 +6,15 @@
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
-  <button role="tab" class="tab" data-tab="1">interface</button>
-  <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">the relation, moving</button>
-  <button role="tab" class="tab" data-tab="4">generated code</button>
-  <button role="tab" class="tab" data-tab="5">evidence</button>
-  <button role="tab" class="tab" data-tab="6">flags</button>
-  <button role="tab" class="tab" data-tab="7">credibility</button>
-  <button role="tab" class="tab" data-tab="8">design space</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">What daily planetary Ap recurs once per mission lifetime?</p>
@@ -30,6 +31,9 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
+<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+</section>
+<section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr><td>in</td><td><code>life</code></td><td><a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a></td><td>Time</td><td>yr</td></tr>
@@ -37,7 +41,7 @@
 </tbody></table>
 <p class="consumers"><b>4</b> nodes read this: <a class="xref" data-goto="l3_solar_ach_03">l3_solar_ach_03</a>, <a class="xref" data-goto="sw_kp_from_ap">sw_kp_from_ap</a>, <a class="xref" data-goto="sw_kp_slot_bias">sw_kp_slot_bias</a>, <a class="xref" data-goto="sw_regime">sw_regime</a></p>
 </section>
-<section class="panel" data-panel="2">
+<section class="panel" data-panel="3">
 <ol class="algo">
 <li><span class="step">take the mission length in years and read the fitted exceedance curve at that return period</span> <span class="binds">→ <code>level: Ratio</code></span></li>
 </ol>
@@ -62,12 +66,12 @@
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="3">
+<section class="panel" data-panel="4">
 <div class="relation-host" data-node="sw_storm_return_level" data-lo="20" data-hi="230" data-symbol="Ap_T">
 <p class="muted">asking the engine…</p>
 </div>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="5">
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -147,7 +151,7 @@ pub fn evaluate(life: Time) -&gt; Result&lt;Ratio, Fault&gt; {
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="6">
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
 <tr data-fixture="half a year — rank 56 of the record, the shortest mission the tree allows"><td>half a year — rank 56 of the record, the shortest mission the tree allows</td><td class="num">66</td><td class="num">0.0281</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
 <tr data-fixture="one year — rank 28, one storm season"><td>one year — rank 28, one storm season</td><td class="num">96</td><td class="num">0.0363</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
@@ -158,7 +162,7 @@ pub fn evaluate(life: Time) -&gt; Result&lt;Ratio, Fault&gt; {
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 20 — ap is an equivalent amplitude in nanotesla. Below 20 the answer is not a storm at all — the record's median day is 7 — so a return level under it means the input or the fit reached somewhere neither was meant to go</li>
@@ -169,11 +173,11 @@ pub fn evaluate(life: Time) -&gt; Result&lt;Ratio, Fault&gt; {
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="8">
 <p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_storm_return_level"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="8">
+<section class="panel" data-panel="9">
 <p>Valid over <code>20 &hellip; 230</code> -.</p>
 <ul class="guards"><li>lower — ap is an equivalent amplitude in nanotesla. Below 20 the answer is not a storm at all — the record's median day is 7 — so a return level under it means the input or the fit reached somewhere neither was meant to go</li><li>upper — THE BOUND IS THE RECORD'S LENGTH, NOT THE TABLE'S END. The fit evaluated at a return period equal to the record itself, 28.1971 years, is Ap 229.18; 230 is the first round number above it, so a return period beyond the record refuses instead of answering. The previous bound was 400 — the last point of the published ap/Kp table — which first bites at a return period of 1832 years, sixty-five times the record, and so enforced nothing: this node would answer a once-per-century question with Ap 281 while its own assumptions said a century needs a longer record. Note that 230 is BELOW the record's largest single day, Ap 273: rank 1 sits above the log-linear trend and was deliberately left out of the fitting range, so the fit does not chase it. This bound is the fit's own reach, not the record's extreme</li></ul>
 <div class="sweep" data-over="orbit_mission_duration" data-points="60" data-y="sw_storm_return_level"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a> over 60 points. Run the branch to draw it.</p></div>
@@ -181,5 +185,6 @@ pub fn evaluate(life: Time) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

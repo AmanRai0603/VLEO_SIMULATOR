@@ -6,14 +6,15 @@
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
-  <button role="tab" class="tab" data-tab="1">interface</button>
-  <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">the relation, moving</button>
-  <button role="tab" class="tab" data-tab="4">generated code</button>
-  <button role="tab" class="tab" data-tab="5">evidence</button>
-  <button role="tab" class="tab" data-tab="6">flags</button>
-  <button role="tab" class="tab" data-tab="7">credibility</button>
-  <button role="tab" class="tab" data-tab="8">design space</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">How long can the mission be before the record expects to exceed the design Ap?</p>
@@ -29,6 +30,9 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
+<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+</section>
+<section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr><td>in</td><td><code>ap_design</code></td><td><a class="xref" data-goto="sw_ap_design">sw_ap_design</a></td><td>Ratio</td><td>-</td></tr>
@@ -36,7 +40,7 @@
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
-<section class="panel" data-panel="2">
+<section class="panel" data-panel="3">
 <ol class="algo">
 <li><span class="step">invert the storm return fit: the mission length at which this Ap recurs once</span> <span class="binds">→ <code>out: Time</code></span></li>
 </ol>
@@ -61,12 +65,12 @@
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="3">
+<section class="panel" data-panel="4">
 <div class="relation-host" data-node="sw_design_safe_duration" data-lo="0.3" data-hi="3" data-symbol="T_safe">
 <p class="muted">asking the engine…</p>
 </div>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="5">
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -134,7 +138,7 @@ pub fn evaluate(ap_design: Ratio) -&gt; Result&lt;Time, Fault&gt; {
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="6">
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
 <tr data-fixture="the G2 bound, Ap 80 — exceeded beyond a 0.7365-year mission"><td>the G2 bound, Ap 80 — exceeded beyond a 0.7365-year mission</td><td class="num">23243127.613750264</td><td class="num">0.000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
 <tr data-fixture="the G1 bound, Ap 48 — exceeded beyond a 0.3370-year mission"><td>the G1 bound, Ap 48 — exceeded beyond a 0.3370-year mission</td><td class="num">10634679.615335282</td><td class="num">0.000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
@@ -142,7 +146,7 @@ pub fn evaluate(ap_design: Ratio) -&gt; Result&lt;Time, Fault&gt; {
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 0.3 — the shortest this relation can return is 0.3370 years, at the G1 bound of Ap 48. A bound at 0.3 sits just under it. A value below would mean a design level under Ap 46, which is beneath anything the G scale calls a storm</li>
@@ -153,11 +157,11 @@ pub fn evaluate(ap_design: Ratio) -&gt; Result&lt;Time, Fault&gt; {
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="8">
 <p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_design_safe_duration"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="8">
+<section class="panel" data-panel="9">
 <p>Valid over <code>0.3 &hellip; 3</code> yr.</p>
 <ul class="guards"><li>lower — the shortest this relation can return is 0.3370 years, at the G1 bound of Ap 48. A bound at 0.3 sits just under it. A value below would mean a design level under Ap 46, which is beneath anything the G scale calls a storm</li><li>upper — the longest is 2.6242 years, at the G3 bound of Ap 132, which is the top of the declared G range. A bound at 3 sits just above it. It is NOT a claim that no design survives longer: Ap 207 at G4 would reach 16.4 years, and sw_storm_design_level refuses G4 deliberately rather than this guard forbidding it</li></ul>
 <div class="sweep" data-over="sw_storm_design_level" data-points="40" data-y="sw_design_safe_duration"><p class="muted">Sweeps against <a class="xref" data-goto="sw_storm_design_level">sw_storm_design_level</a> over 40 points. Run the branch to draw it.</p></div>
@@ -165,5 +169,6 @@ pub fn evaluate(ap_design: Ratio) -&gt; Result&lt;Time, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

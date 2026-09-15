@@ -13,5 +13,5 @@
   "holes": 0,
   "inputs": [],
   "contributes": [],
-  "gaps": ["significant, and one fixture or none — a significant node is the one that gets a second independent check, which is the whole reason for the word"]
+  "gaps": ["significant, and one fixture or none — a significant node is the one that gets a second independent check, which is the whole reason for the word", "no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute"]
 }

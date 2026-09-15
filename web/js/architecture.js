@@ -52,7 +52,7 @@ function secNode() {
     card(withFixture, 'carry evidence', 'a known-good value from outside this code') +
   '</div>' +
 
-  h4('the eight files, every time') +
+  h4('the same files, every time') +
   '<table class="asm-t"><thead><tr><th>file</th><th>written</th><th>what it is</th></tr></thead><tbody>' +
   [['node.toml', 'by hand', 'the sheet — the only file in the folder written by hand'],
    ['fixtures.toml', 'by hand', 'known-good values, and where each came from'],
@@ -60,7 +60,7 @@ function secNode() {
    ['contract.rs', 'generated', 'the untyped adapter the bus calls'],
    ['mod.rs', 'generated', 'the module wiring'],
    ['evidence.rs', 'generated', 'the fixtures, as tests'],
-   ['page.html', 'generated', 'the eight tabs you read on the node'],
+   ['page.html', 'generated', 'the tabs you read on the node'],
    ['meta.json', 'generated', 'state and hashes, written by the gate']].map(([f, w, d]) =>
     '<tr><td><code>' + f + '</code></td><td><span class="by ' +
     (w === 'by hand' ? 'hand' : 'gen') + '">' + w + '</span></td><td>' + esc(d) + '</td></tr>').join('') +
