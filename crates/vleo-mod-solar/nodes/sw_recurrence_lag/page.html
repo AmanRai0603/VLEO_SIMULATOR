@@ -29,7 +29,20 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">The Sun rotates, and an active region that faces the Earth today faces it again about a month later. That is the only source of genuine medium-term predictability in solar flux, and it is the reason the published outlook is 27 days long rather than 7 or 90. Measuring it means finding the lag at which a day best predicts a later day — but the eleven-year cycle already makes every day resemble its neighbours, so the cycle has to be removed first or the answer is simply 'lag 1'. The whole of the care in this row is in the removal and in reading the resulting peak correctly.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">The quantity wanted is the autocorrelation of F10.7 against itself at a range of lags, and its first interior maximum. Applied to the raw series that fails: the eleven-year cycle dominates, correlation stays high for hundreds of days, and no rotation bump is visible against it.</span></li>
+<li><span class="dt">So the cycle is removed first by subtracting a 365-day centred mean. The window length is the choice that makes the measurement possible: at 365 days it is thirteen rotations long, so it removes the cycle and the annual terms while leaving the rotation untouched. A window near 27 days would remove the rotation itself and the row would measure nothing.</span><code class="dm">F107'(d) = F107(d) - mean_365_centred(d); sd(F107') = 19.85 sfu, mean -0.03</code></li>
+<li><span class="dt">Correlate the residual with itself at each lag and look for the first interior peak. It appears where expected, at lag 26, with a correlation of +0.376.</span><code class="dm">L_rot = argmax_lag corr(F107', shift(F107', lag))</code></li>
+<li><span class="dt">Now the part that would be an error to skip. The residual's autocorrelation decays steeply on its own — +0.936 at lag 1 down to -0.066 at lag 13 — and the rotation bump rides on the tail of that decay. A bump sitting on a falling background has its apparent maximum pulled toward zero lag, so the measured peak is expected to come in slightly SHORT of the true period.</span></li>
+<li><span class="dt">The harmonics settle it, because they sit far enough out that the decay no longer tilts them. The second peak is at lag 54 and the third at lag 81 — exactly 27.0 days per cycle in both cases.</span><code class="dm">54 / 2 = 27.0 81 / 3 = 27.0</code></li>
+<li><span class="dt">So the period is 27 days and this row's 26 is the first-peak estimate, one day short for a reason that is understood and measured. It reports the measured peak because that is what the study's own C.rot_peak_lag field holds, and the sheet says which number to use for which question.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">26 is where the measured peak sits and 27 is the period, and the difference is a bias in the estimator rather than a disagreement about the Sun. A row that needs the PERIOD should use 27 and cite the harmonics. The bump is also broad rather than sharp: correlation exceeds +0.34 at every lag from 24 to 28 and +0.30 from 23 to 29. The Sun does not rotate as a solid body — the equator turns in about 25 days and mid-latitudes in about 28 — and active regions emerge and decay within a rotation, so the recurrence is a tendency over a week-wide window and not a clock a design can phase-lock to.</p>
+<p class="maths concl">which is the relation this node states: <code>L_rot = argmax over lag of corr(F107', F107' shifted by lag) = 26 d</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -146,7 +159,4 @@ pub fn evaluate() -&gt; Result&lt;Time, Fault&gt; {
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
-<section class="gaps"><h4>Open gaps</h4><ul>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
-</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

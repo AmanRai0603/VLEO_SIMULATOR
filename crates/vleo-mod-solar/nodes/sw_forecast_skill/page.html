@@ -30,7 +30,21 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">A design that keys off a published forecast is exposed to the forecast being worthless, and 'worthless' has a precise meaning: no better than the cheapest thing you could have done instead. That makes the question comparative rather than absolute. A skill score is the standard form of the comparison — one minus the ratio of mean squared errors — and its entire content is the baseline it is measured against, which is why the baseline is declared on the sheet rather than left to whoever reads the number.</p>
+<div class="theory-walk" data-steps="7">
+<ol class="derive">
+<li><span class="dt">Define skill as the fraction of a baseline's mean squared error that the forecast removes. One is perfect, zero is no better than the baseline, negative is worse than not bothering.</span><code class="dm">S(L) = 1 - MSE_outlook(L) / MSE_baseline(L)</code></li>
+<li><span class="dt">Which makes the choice of baseline the whole measurement, not a detail of it. Persistence is the right baseline here because it is what a design would do with no forecast at all: assume today's flux continues.</span></li>
+<li><span class="dt">Persistence needs a definition of 'today', and this is where a verification leaks. The baseline is the last observation STRICTLY BEFORE the issue date. Allowing the observation ON the issue date gives the baseline a number the forecaster did not have — and for the 719 issues indexed from lead 0, that observation is itself a forecast target.</span></li>
+<li><span class="dt">The leak reverses a conclusion rather than shading one. With the leaky baseline the lead-1 skill reads -1.314 and the outlook appears to lose to persistence through lead 4; with the strict baseline it reads +0.069 and the outlook wins from lead 1.</span><code class="dm">lead 1: strict +0.0685 leaky -1.3138</code></li>
+<li><span class="dt">Measured strictly at every verifiable lead, the curve rises, peaks and then falls through zero. Skill is positive from lead 1 to lead 23, peaks at +0.438 at lead 9, and is negative at 24, 25 and 26 — against samples of 866 to 868 pairs each, so the negative tail is not a small-sample artefact.</span><code class="dm">lead 9: +0.4375 lead 23: +0.0177 lead 26: -0.0221</code></li>
+<li><span class="dt">The interior maximum is why the row is a table and not a fit: a monotone curve through these points would be a different claim about predictability than the record makes.</span></li>
+<li><span class="dt">And the answer at the declared lead is the design-relevant one. At the far end of its own published window the outlook is very slightly worse than assuming nothing changes, so a design keying off the end of the outlook is attending to a forecast that has stopped carrying information.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">Skill against persistence is not accuracy. The outlook's own RMS error grows from 10.3 sfu at lead 1 to 24.9 at lead 26; what improves through the middle leads is only its ratio to a baseline degrading faster. Peak skill of +0.438 at lead 9 sits on an RMS error of 21.2 sfu, about 18 per cent of a typical F10.7 — so the forecast is never accurate in this window, merely better than nothing for most of it. The score is also pooled over 29 years without conditioning on activity, and persistence is a strong baseline in a quiet Sun and a weak one in a rising cycle.</p>
+<p class="maths concl">which is the relation this node states: <code>S_f107(L) = 1 - MSE_outlook(L) / MSE_persistence(L)</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -178,6 +192,5 @@ pub fn evaluate(lead: Time) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

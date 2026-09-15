@@ -34,9 +34,73 @@ note = "The geomagnetic driver on the achieved side: the storm that recurs once 
 expression = "Ap_ach = sw_storm_return_level"
 source = "noaa_swpc"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+This is the achieved side of the closure that fails, and the reason it fails
+is visible in how it is built rather than in any arithmetic. The F10.7 pair
+compares a design value against a requirement and both are constructed the
+same way, so they agree. The Ap pair compares what the RECORD expects
+against what the VEHICLE is built for, and those are independent quantities
+with no reason to agree — so the closure is a real test rather than a
+consistency check, and it is the one that fails.
+"""
+reading = """
+It has no confidence attached, unlike the F10.7 pair, and the absence is a
+statement rather than an omission: geomagnetic activity has no usable
+long-term forecast, so the study designs to a return period instead of to a
+percentile. The number therefore means 'the storm expected once in a mission
+of this length', and its top end rests on two observations in 28.2 years. A
+margin computed against it carries none of that.
+"""
+
+[[theory.step]]
+text = """
+The achieved side restates the subsystem's geomagnetic conclusion, which is
+sw_storm_return_level read at the declared mission length.
+"""
+math = "Ap_ach = Ap_T(5 yr) = 158.38"
+
+[[theory.step]]
+text = """
+Set against the requirement of 150 the closure does not hold, and the gap is
+8.4 in daily Ap — about 5.6 per cent.
+"""
+math = "158.38 > 150 — the closure fails"
+
+[[theory.step]]
+text = """
+The failure is structural rather than numerical, and this is the part worth
+understanding. The two sides of this closure come from unrelated places: the
+requirement is the G3 capability of 132 plus a margin, and the achieved
+value is a tail quantile of a 28-year record. Nothing ties them, so there is
+no reason for them to agree — unlike the F10.7 pair, where the requirement
+was chosen as a round number above the capability and the closure could
+hardly fail.
+"""
+
+[[theory.step]]
+text = """
+Which means the two closures on this subsystem are not the same kind of
+check. One tests that a requirement was written consistently with the design
+value it was derived from; the other tests the design against the sky. Only
+the second can tell a programme something it did not already know.
+"""
+
+[[theory.step]]
+text = """
+And the failure is bounded rather than open-ended, which is what makes it a
+decision instead of a defect: 1.42 days outside the design environment over
+a five-year mission, in about 1.24 events of roughly one day each.
+"""
+
+
 [[assumption]]
 text = "It inherits every limitation of the row it restates, and a closure reading it sees none of them"
-fails_when = "the same cost as the interface, and worth repeating on the row a closure actually binds. The number cannot tell solar maximum from solar minimum, because no row in this tree publishes a date; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way."
+fails_when = "the same cost as the interface, and worth repeating on the row a closure actually binds. The number is sized on the record's unconditional mean rather than on the mean cycle at the mission's epoch — the epoch is published and this chain does not yet read it, which is an open decision on sw_central_expectation worth 6.7 sfu; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way."
 
 [output]
 # The node's one answer. The variable id is the node id: one small

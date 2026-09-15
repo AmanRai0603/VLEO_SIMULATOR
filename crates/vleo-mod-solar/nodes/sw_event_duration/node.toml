@@ -27,6 +27,78 @@ confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its
 expression = "D_burst = mean length of a run of consecutive days with F107/F107A >= S_thr = 3.3115 d"
 source = "noaa_swpc"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+sw_spike_threshold turns a continuous flux into a yes-or-no test, and a
+crossing on its own is not a load. A design's exposure depends on the dwell:
+a single elevated day and a week of them are different loads on a drag
+budget and on a power one, even though both count as one crossing. So this
+row measures how long the record stays above the threshold once it goes
+above it, which is the step that turns a threshold into an event.
+"""
+reading = """
+The mean is the wrong statistic for this distribution and the sheet
+publishes it because the study's field holds it. The 202 spike days fall
+into 61 runs of which 24 are a single day, and the tail runs to 10 days: the
+modal event is one day, the median is 3, and the mean is 3.31 only because a
+handful of long bursts pull it up. A design that sizes on 3.31 days is
+sizing on neither the common case nor the bad one — and the bad one is what
+matters. The row is also defined entirely by sw_spike_threshold and moves
+when it moves, so quoting one without the other makes the pair incoherent.
+"""
+
+[[theory.step]]
+text = """
+Take the days the spike test passes and group them into maximal runs of
+consecutive days. The mean length of those runs is the answer.
+"""
+math = "D_burst = mean length of maximal runs with F107/F107A >= S_thr"
+
+[[theory.step]]
+text = """
+As with the Ap exceedance rows, the rule that ends a run has no physics
+behind it and has to be declared. A run breaks on the first day that fails
+the test, so a two-week episode with one quiet day in the middle counts as
+two events rather than one, which shortens this mean. A one-day bridge would
+be equally defensible; nothing in the record says which is right.
+"""
+
+[[theory.step]]
+text = """
+At the declared threshold of 1.3049 the record gives 202 spike days in 61
+runs, so the mean is an exact rational.
+"""
+math = "D_burst = 202 / 61 = 3.3115 d"
+
+[[theory.step]]
+text = """
+The run lengths are worth writing out, because the shape of the distribution
+is the finding and the mean hides it: 24 ones, 3 twos, 10 threes, 7 fours, 4
+fives, 7 sixes, 2 sevens, 2 nines and 2 tens.
+"""
+
+[[theory.step]]
+text = """
+A distribution with its mode at 1, its median at 3 and its mean at 3.31 is
+strongly right-skewed, which is what a process of independent triggers with
+occasional persistent sources looks like. The mean is a poor summary of it
+and the longest runs are what a design is actually exposed to.
+"""
+
+[[theory.step]]
+text = """
+Two limits on the count itself. The 273 absent days can neither start nor
+end a run, so a burst inside 2017 is missing and one running into or out of
+the gap is truncated at it rather than followed — with 61 events, one or two
+truncations move the mean by about a tenth of a day, and that is not
+corrected for.
+"""
+
+
 [[assumption]]
 text = "A mean over a distribution that is not remotely symmetric"
 fails_when = "the mean is used as a typical event. The 202 spike days fall into 61 runs: 24 of them are a single day, and the tail runs to 10. The distribution is 24 ones, 3 twos, 10 threes, 7 fours, 4 fives, 7 sixes, 2 sevens, 2 nines and 2 tens — so the modal event is one day and the mean is 3.31 because a handful of long bursts pull it up. The median is 3. A design that sizes on 3.31 days is sizing on neither the common case nor the bad one, and the bad one is what matters"

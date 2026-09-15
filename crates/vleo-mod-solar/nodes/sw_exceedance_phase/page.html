@@ -30,7 +30,20 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">How often and how long still leave a programme unable to plan. The third question is WHEN — because if exceedances were uniformly distributed through a cycle there would be nothing to schedule around, and if they cluster there is. The interesting part of this row is not the median it publishes but the test it survives: a timing statistic is only about the cycle if it does not move when the threshold moves, and this one barely moves across a factor of nearly three in threshold.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">Take the days that exceed the design bound, convert each to its cycle phase on the same 0-to-1 scale sw_cycle_phase uses, and take the median of those phases.</span><code class="dm">P_exc = median{ phase(d) : Ap(d) &gt;= Ap_design }</code></li>
+<li><span class="dt">The median rather than the mean, because phase is nearly circular and a handful of days near the ends of a cycle would drag a mean toward the middle regardless of where the mass sat.</span></li>
+<li><span class="dt">Now the test that decides whether the answer means anything. If the median tracked the threshold, it would be telling us about where the line was drawn. It does not: 0.5717 at the G1 bound, 0.5763 at G2, 0.6027 at G3 — a drift of three hundredths across a threshold ratio of nearly three, on samples of 131, 35 and 8 days.</span></li>
+<li><span class="dt">So the timing is a property of the solar cycle rather than of the design bound. Disturbed days cluster after maximum, on the declining phase, which is where coronal holes dominate the solar wind — and three independent samples agreeing to within 0.03 is better evidence for that than any one of them alone.</span></li>
+<li><span class="dt">Two caveats about the phase scale itself, neither of which the median can show. Cycle 25's end in the record is the record's end rather than a real minimum, so phases inside it are computed against a length not yet known; and cycles 23 and 24 differ in length by 8 per cent, so equal phase is unequal time.</span></li>
+<li><span class="dt">And the 2017 gap sits at phase 0.74 to 0.80 of cycle 24, just past the upper edge of the G3 exceedance band. Whatever fell there is absent from this median and from the rate that goes with it.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">A median with no spread beside it, and the spread is the part a schedule needs. 0.603 is where the middle exceedance happened, not when exceedances happen. At G3 the eight days run from phase 0.294 to 0.736 — a band nearly half a cycle wide, about five years — with half of them between 0.2 and 0.6. A design reading only this row plans for a date; a design reading the spread plans for a five-year window. The declared epoch at phase 0.6194 sits inside that band, which is what makes the epoch a conservative choice rather than a convenient one.</p>
+<p class="maths concl">which is the relation this node states: <code>P_exc(Ap_design) = median cycle phase of the days with Ap &gt;= Ap_design</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -169,6 +182,5 @@ pub fn evaluate(ap_design: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

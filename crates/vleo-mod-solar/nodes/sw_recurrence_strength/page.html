@@ -29,7 +29,19 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">The previous row establishes that a rotation signal exists and where it is. Its existence is not the design question: a signal can be perfectly located and useless. What matters is how much of a future day it actually determines, and the answer decides whether a 27-day outlook is a planning tool or a curiosity. The measurement is the correlation at the peak, and the honest way to report it is squared.</p>
+<div class="theory-walk" data-steps="5">
+<ol class="derive">
+<li><span class="dt">Read the correlation of the detrended series with itself at the recurrence lag. Nothing new is computed — this is the height of the peak whose position the previous row reports.</span><code class="dm">r_rot = corr(F107', shift(F107', 26 d)) = 0.375988</code></li>
+<li><span class="dt">A correlation is not a fraction of a signal, and quoting it as one overstates the recurrence by a factor of nearly three. The share of variance a linear predictor explains is the correlation SQUARED, which is the number a design should hear.</span><code class="dm">r^2 = 0.1414 — one seventh of the detrended variance</code></li>
+<li><span class="dt">The signal does not die within one rotation, which is worth knowing because this row reports only the first peak. The second harmonic at lag 54 still carries +0.136 and the third at lag 81 carries +0.067.</span></li>
+<li><span class="dt">That decay across harmonics — 0.376, 0.136, 0.067 — is roughly geometric, which is the physical lifetime of an active region showing up in the statistics: each rotation the same region returns a little weaker, and after three it is faint but not gone.</span></li>
+<li><span class="dt">The upper bound of the declared range is set by a consistency argument rather than by an extreme. A rotation-ahead correlation above 0.7 would exceed the same series' five-day correlation of +0.531, which would mean F10.7 is more predictable 26 days out than 5 days out. That is the shape of answer this guard exists to refuse.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">0.376 squared is 0.141, so a rotation ahead the recurrence accounts for one seventh of the detrended variation and the other six sevenths is new. That is enough to make a 27-day outlook better than nothing — sw_forecast_skill still measures +0.018 at lead 23 — and nowhere near enough to size anything on. It is also pooled across cycles 23, 24 and the rise of 25, and the mechanism is not the same in each: at maximum many active regions overlap and blur the signal, while near minimum a single long-lived region can dominate it.</p>
+<p class="maths concl">which is the relation this node states: <code>r_rot = corr(F107', F107' shifted by L_rot) = 0.375988</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -146,7 +158,4 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
-<section class="gaps"><h4>Open gaps</h4><ul>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
-</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

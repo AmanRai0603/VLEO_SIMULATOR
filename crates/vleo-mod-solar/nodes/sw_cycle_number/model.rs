@@ -10,7 +10,7 @@ use vleo_core::units::*;
 
 /// Which numbered solar cycle is the mission epoch in?
 ///
-/// `cyc(T) = 23 + count(cycle_starts <= T)`
+/// `cyc(T) = 22 + count(cycle_starts <= T),  starts = 1997-01-15, 2008-12-01, 2019-12-01`
 ///
 /// Source: `noaa_swpc`
 ///
@@ -25,7 +25,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_cycle_number";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xc42c7a7ea5085c63;
+pub const SHEET_HASH: u64 = 0x5306a6af2974c2b1;
 
 pub fn evaluate(epoch: Time) -> Result<Ratio, Fault> {
     // ---- HOLE 1 : count how many of the record's cycle starts the epoch has passed, and add the first cycle's number -> Ratio

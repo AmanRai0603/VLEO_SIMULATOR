@@ -28,6 +28,72 @@ confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its
 expression = "r_rot = corr(F107', F107' shifted by L_rot) = 0.375988"
 source = "noaa_swpc"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+The previous row establishes that a rotation signal exists and where it is.
+Its existence is not the design question: a signal can be perfectly located
+and useless. What matters is how much of a future day it actually
+determines, and the answer decides whether a 27-day outlook is a planning
+tool or a curiosity. The measurement is the correlation at the peak, and the
+honest way to report it is squared.
+"""
+reading = """
+0.376 squared is 0.141, so a rotation ahead the recurrence accounts for one
+seventh of the detrended variation and the other six sevenths is new. That
+is enough to make a 27-day outlook better than nothing — sw_forecast_skill
+still measures +0.018 at lead 23 — and nowhere near enough to size anything
+on. It is also pooled across cycles 23, 24 and the rise of 25, and the
+mechanism is not the same in each: at maximum many active regions overlap
+and blur the signal, while near minimum a single long-lived region can
+dominate it.
+"""
+
+[[theory.step]]
+text = """
+Read the correlation of the detrended series with itself at the recurrence
+lag. Nothing new is computed — this is the height of the peak whose position
+the previous row reports.
+"""
+math = "r_rot = corr(F107', shift(F107', 26 d)) = 0.375988"
+
+[[theory.step]]
+text = """
+A correlation is not a fraction of a signal, and quoting it as one
+overstates the recurrence by a factor of nearly three. The share of variance
+a linear predictor explains is the correlation SQUARED, which is the number
+a design should hear.
+"""
+math = "r^2 = 0.1414 — one seventh of the detrended variance"
+
+[[theory.step]]
+text = """
+The signal does not die within one rotation, which is worth knowing because
+this row reports only the first peak. The second harmonic at lag 54 still
+carries +0.136 and the third at lag 81 carries +0.067.
+"""
+
+[[theory.step]]
+text = """
+That decay across harmonics — 0.376, 0.136, 0.067 — is roughly geometric,
+which is the physical lifetime of an active region showing up in the
+statistics: each rotation the same region returns a little weaker, and after
+three it is faint but not gone.
+"""
+
+[[theory.step]]
+text = """
+The upper bound of the declared range is set by a consistency argument
+rather than by an extreme. A rotation-ahead correlation above 0.7 would
+exceed the same series' five-day correlation of +0.531, which would mean
+F10.7 is more predictable 26 days out than 5 days out. That is the shape of
+answer this guard exists to refuse.
+"""
+
+
 [[assumption]]
 text = "A correlation of 0.376 explains 14 per cent of the variance, and that is the number a design should hear"
 fails_when = "the correlation is read as the fraction of the signal that recurs. Squared it is 0.1414, so a rotation ahead the recurrence accounts for one seventh of the detrended variation and the other six sevenths is new. It is enough to make a 27-day outlook better than nothing — sw_forecast_skill measures +0.018 still at lead 23 — and nowhere near enough to size anything on"

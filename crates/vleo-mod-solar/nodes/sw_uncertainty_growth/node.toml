@@ -31,6 +31,93 @@ note = "Half of the F10.7 design value. sw_central_expectation says where F10.7 
 expression = "dF107_p95(L) = piecewise_linear(measured_leads -> measured_p95, L)"
 source = "noaa_swpc"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+sw_central_expectation says where F10.7 is heading and is a median-like
+quantity, exceeded about half the time. This row supplies the other half of
+a design value: how wrong that centre can be by the time the mission is
+there. The quantity is a percentile of the CHANGE over a lead rather than a
+percentile of the value, because what a design is exposed to is the drift
+away from what was assumed when it was sized. And the interesting result is
+that the answer is not monotone in lead, which is a fact about the solar
+cycle and the reason this row is a table rather than a curve.
+"""
+reading = """
+The 95th percentile and no other, because a node answers one question. At a
+one-year lead the four percentiles prf_design offers are +1, +53, +68 and
++100 sfu, so a mission needing 99 per cent confidence is reading a number 32
+sfu too small here; obtaining another confidence means changing this row.
+The sample also thins with lead — from 9947 pairs at half a year to 4838 at
+fifteen years — and 28 years of record hold barely two and a half cycles, so
+the longest leads are sampled by very few independent cycle phases.
+"""
+
+[[theory.step]]
+text = """
+Define the quantity as the change in flux over a lead, not the flux: for
+every pair of observed days L apart, how far did F10.7 move? The
+distribution of that difference is what a design's exposure to being wrong
+actually looks like.
+"""
+math = "dF107(L) = F107(t + L) - F107(t)"
+
+[[theory.step]]
+text = """
+Bound it by a measured percentile rather than by a multiple of a standard
+deviation. The distribution is strongly asymmetric — the flux is bounded
+below near 64 sfu and has a long upper tail to 343 — so a symmetric interval
+would be wrong on both sides.
+"""
+math = "dF107_p95(L) = 95th percentile of dF107 over all observed pairs at lead L"
+
+[[theory.step]]
+text = """
+Only pairs where BOTH days were observed are used, and that is a deliberate
+departure from the study. prf_design builds a full daily grid and fills the
+record's 273 absent days by linear interpolation, which gives those days no
+variability at all and understates every difference spanning them.
+"""
+
+[[theory.step]]
+text = """
+The departure has a measured size and a direction. Computed both ways on
+this record, the interpolated grid gives a p95 between 1.0 and 2.3 sfu LOWER
+across leads from 7 to 1826 days — a design band narrower than the record
+supports, in the unsafe direction. This row is therefore expected to
+disagree with prf_design by about that much, which is why a parity grid
+beside it would have recorded a disagreement rather than a match.
+"""
+
+[[theory.step]]
+text = """
+Now the result that decides the relation's form. The measured p95 is NOT
+monotone in lead: it rises to +114 sfu at four years, falls to +66 at ten to
+eleven, and rises again to +115 at fifteen.
+"""
+
+[[theory.step]]
+text = """
+That shape is the eleven-year cycle showing through, and it is exactly what
+the cycle predicts. A lead of about half a cycle is the lead most likely to
+land on the opposite phase from where it started, so the change is largest
+there; a lead of about a full cycle returns to a similar phase, so the
+change comes back down.
+"""
+
+[[theory.step]]
+text = """
+Which rules out every monotone form, log-linear included. A monotone fit
+would report roughly +90 sfu at an eleven-year lead where the record says
++66, overstating the band by a third at exactly the lead a long mission
+cares about. So the seventeen measured leads are tabulated and the
+interpolation between them is this row's only choice.
+"""
+
+
 [[assumption]]
 text = "A table over measured leads, not a fitted curve, because the shape is the solar cycle and a smooth fit would erase it"
 fails_when = "the measured p95 growth is NOT monotone in lead: it rises to +114 sfu at four years, falls to +66 at ten to eleven, and rises again to +115 at fifteen. That is the eleven-year cycle showing through — a lead of half a cycle can put you furthest from where you started, while a lead of a full cycle returns you to a similar phase. Any monotone form, log-linear included, would report roughly +90 at eleven years where the record says +66, overstating the band by a third at exactly the lead a long mission cares about. The table is faithful and the interpolation between its points is this node's choice."

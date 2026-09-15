@@ -52,13 +52,87 @@ note = "One of the two numbers the subsystem exists to produce. The centre comes
 expression = "F107_design = F107_central + dF107_p95"
 source = "noaa_swpc"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+Two of the numbers this subsystem exists to publish are a flux and an Ap to
+size to. A design value is not an expectation: an expectation is exceeded
+half the time, and a structure sized to be adequate half the time is not a
+design. So the value has two parts — where the flux is expected to be, and
+how far it can move from there over the time the mission is exposed — and
+the safety is entirely in the second part. The relation is an addition, and
+everything worth reviewing about it is in the two rows it adds and in what
+'the 95th percentile' is the percentile OF.
+"""
+reading = """
+This is a value the mission should not exceed in 95 per cent of histories,
+not a value it will see. The confidence is inherited and cannot be asked for
+here: it is whatever sw_uncertainty_growth publishes, and a mission needing
+99 per cent is reading a number about 32 sfu too small at a one-year lead.
+And the row is a percentile of the CHANGE added to a centre, which is a
+larger and different thing from the percentile of the value — the record's
+own 95th percentile of daily F10.7 is 201 sfu against this row's 228. A
+reader who wants 'the 95th percentile of F10.7' wants the record, not this
+row.
+"""
+
+[[theory.step]]
+text = """
+Start from why a centre is not enough. sw_central_expectation returns 114.84
+sfu, which is a median-like quantity: the flux will be above it about half
+the time over the mission. Sizing a structure, a power budget or a
+propellant load to a figure that is exceeded half the time is not a margin,
+it is a coin toss.
+"""
+
+[[theory.step]]
+text = """
+The quantity that has to be bounded is therefore not the flux but the
+DEPARTURE of the flux from its central expectation over the exposure time.
+That departure grows with the exposure: a mission of one month can be
+surprised less than a mission of five years.
+"""
+math = "dF107(L) = F107(t + L) - F107_central(L)"
+
+[[theory.step]]
+text = """
+Bound the departure by a percentile of its measured distribution rather than
+by a multiple of a standard deviation. F10.7's distribution is not symmetric
+— it is bounded below near 64 sfu and has a long upper tail to 343 — so a
+mean-plus-k-sigma interval would be wrong on both sides.
+sw_uncertainty_growth measures the percentile directly from the record.
+"""
+math = "F107_design(L) = F107_central(L) + dF107_p95(L)"
+
+[[theory.step]]
+text = """
+At the declared five-year mission that is 114.84 plus 113.29, and the split
+is the thing to notice: more than half the design value is margin. That is
+not excess conservatism, it is what a five-year exposure to a cyclical
+driver costs.
+"""
+math = "F107_design = 114.84 + 113.29 = 228.14 sfu"
+
+[[theory.step]]
+text = """
+One consequence is worth stating before a reader misreads the number. Adding
+a percentile of the change to a central value compounds two uncertainties —
+where the centre is, and how far from it the flux can get — so the answer
+exceeds the record's own 95th percentile of daily flux, 201 sfu, without
+contradicting it. The two are answers to different questions.
+"""
+
+
 [[assumption]]
 text = "95% and no other confidence, because that is the percentile the spread row publishes"
 fails_when = "prf_design offers p50, p90, p95 and p99 and expects the caller to pick what the mission needs. This row inherits p95 from sw_uncertainty_growth and cannot be asked for another: a mission needing p99 is reading a number about 32 sfu too small at a one-year lead. Changing the confidence means changing the row underneath, which is where the percentile is chosen and declared."
 
 [[assumption]]
 text = "It cannot tell solar maximum from solar minimum, because no row in this tree publishes a date"
-fails_when = "the whole of this limitation belongs to sw_central_expectation and it is repeated here because this is the row a system reader opens. The centre is the record's unconditional mean F10.7, 114.8 sfu, not the mean cycle at the date the mission flies. The record runs from 64 to 343 sfu; a mission through solar maximum and one through minimum are owed materially different numbers and this row gives them the same one. sys_mission_requirements_mission_epoch exists at layer 2 and is seeded; nothing crosses a layer to reach it."
+fails_when = "the whole of this limitation belongs to sw_central_expectation and it is repeated here because this is the row a system reader opens. The centre is the record's unconditional mean F10.7, 114.8 sfu, not the mean cycle at the date the mission flies. The record runs from 64 to 343 sfu; a mission through solar maximum and one through minimum are owed materially different numbers and this row gives them the same one. That was once a missing input and is now an open decision: the epoch is published at 9862 d, rows in this subsystem do cross the layer to read it, and the phase-conditioned centre exists at 108.14 sfu. Adopting it would move this row from 228.14 to 221.44 sfu, which is a change to an output that is already on the main branch and therefore somebody's call rather than a correction."
 
 [[assumption]]
 text = "Adding a percentile of the CHANGE to a central value is not the same as the percentile of the VALUE"

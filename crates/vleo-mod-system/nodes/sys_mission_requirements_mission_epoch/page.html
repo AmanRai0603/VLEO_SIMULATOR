@@ -28,7 +28,20 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">There is no theory of a date. What there is, and what belongs here, is the argument for why a design needs one at all, and why this one. The environment a vehicle flies through is not stationary: solar activity runs on a cycle of about eleven years, and the same orbit flown in 2020 and in 2027 meets fluxes that differ by more than a factor of two. Until a date exists, the best any environment row can do is the unconditional statistics of the whole record — the average of every part of every cycle, which is a sky no mission flies through. Every dated question in the design then has to key off the SAME date, or the subsystems are each designing for a different mission.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">Start from what makes a date load-bearing. Solar activity is cyclical, so the environment is a function of when. The record's F10.7 runs from 64 to 343 sfu, and the phase-stacked mean of a cycle runs from 72 to 165: choosing a date chooses which half of that range the design is sized against.</span></li>
+<li><span class="dt">A date shared by several subsystems is not a subsystem's property. If the solar rows and the thermal rows each held their own epoch, the two would drift apart in the first revision and nothing would detect it. So the row sits at layer 2, the system layer, where the mission's own requirements live, and the subsystems read it.</span></li>
+<li><span class="dt">A calendar date is not arithmetic. Months have different lengths, leap years are irregular, and a row that had to know about either would carry a calendar. Counting days from a fixed origin makes every dated question a subtraction, and 2000-01-01 is the origin the engine's tables already use.</span><code class="dm">T = days since 2000-01-01; 2027-01-01 -&gt; 9862 d</code></li>
+<li><span class="dt">Now the choice itself. Cycle 25 opened on 2019-12-01 and the mean length of the two complete cycles in the record is 11.44 years, so this epoch folds to cycle phase 0.6194 — past maximum, on the declining side.</span><code class="dm">phase = (9862 - 7274) / (11.44 * 365.25) = 0.6194</code></li>
+<li><span class="dt">That is the phase band the design's own exceedance statistics point at. sw_exceedance_phase measures the median cycle phase of the days that exceed the design Ap at 0.603, with a spread of 0.29 to 0.74. The declared epoch sits inside that band, which means it is a date chosen to face the storms rather than one chosen to avoid them.</span></li>
+<li><span class="dt">It is also 366 days past the end of the record, which stops at 2025-12-31. So every row that reads it is answering about a date nothing observed. That is the correct position for a design — a mission in the future has no record — and it is why the cycle rows fold a phase with a mean length instead of measuring one, and why each of them declares that it does.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">It is an instant, not a duration, and it crosses the interface in seconds like every other Time — 852076800 s for day 9862. Nothing downstream should do calendar arithmetic on it. The number is a decision and not a measurement, so the honest use of it is to move it: the cycle-dependent half of the subsystem answers differently at a different epoch, and a launch window rather than a launch date means running the design at both ends of the window and keeping the worse answer.</p>
+<p class="maths concl">which is the relation this node states: <code>T_epoch = 9862 d  (2027-01-01)</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -144,7 +157,4 @@ pub fn evaluate() -&gt; Result&lt;Time, Fault&gt; {
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
-<section class="gaps"><h4>Open gaps</h4><ul>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
-</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

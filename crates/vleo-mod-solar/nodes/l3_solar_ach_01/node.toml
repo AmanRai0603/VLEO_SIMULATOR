@@ -34,9 +34,67 @@ note = "The headline of the three. It is the same number the interface carries t
 expression = "F107_ach_flux = sw_f107_design"
 source = "noaa_swpc"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+A closure is a comparison between what is required and what is achieved, and
+it is only checkable if both sides are rows. The requirement side is
+l3_solar_req_01, a declared commitment; this is the achieved side, and it
+computes nothing of its own — it restates the subsystem's conclusion on the
+side of the comparison the closure reads. The reason it exists rather than
+the closure reading sw_f107_design directly is that a closure should bind
+two rows of the same shape at the same layer, so that the comparison is
+visible on the tree instead of being an edge somebody has to trace.
+"""
+reading = """
+It inherits every limitation of the row it restates, and a closure reading
+it sees none of them. The number is sized on the record's unconditional mean
+rather than on the mean cycle at the mission's epoch; it is a 95th
+percentile rather than a worst case; and its Ap partner's top end rests on
+two observations in 28.2 years. A margin computed from this row against a
+capability carries none of that and looks like a clean number either way —
+which is the standing hazard of a closure, and the reason the assumption is
+repeated on the row a closure actually binds.
+"""
+
+[[theory.step]]
+text = """
+The closure to be made checkable is F10.7 achieved against F10.7 required.
+Both sides must be rows, at the same layer, in the same quantity and unit,
+or the comparison is not something the tree can verify.
+"""
+
+[[theory.step]]
+text = """
+The requirement side is a declared commitment with a person's name against
+it. The achieved side must be the subsystem's own conclusion and nothing
+else, so this row is an identity on sw_f107_design.
+"""
+math = "F107_ach_flux = F107_design = 228.14 sfu"
+
+[[theory.step]]
+text = """
+Which makes the closure arithmetic trivial and the closure itself
+informative: 228.14 achieved against 250 required, so the requirement holds
+with 9.6 per cent of room.
+"""
+math = "228.14 <= 250 — the closure holds"
+
+[[theory.step]]
+text = """
+Note what the pass does NOT establish. The requirement was chosen as a round
+number above the capability, so a passing closure here confirms that the two
+numbers are consistent with each other rather than that the design is
+adequate. The Ap closure on the same subsystem, built the same way, fails.
+"""
+
+
 [[assumption]]
 text = "It inherits every limitation of the row it restates, and a closure reading it sees none of them"
-fails_when = "the same cost as the interface, and worth repeating on the row a closure actually binds. The number cannot tell solar maximum from solar minimum, because no row in this tree publishes a date; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way."
+fails_when = "the same cost as the interface, and worth repeating on the row a closure actually binds. The number is sized on the record's unconditional mean rather than on the mean cycle at the mission's epoch — the epoch is published and this chain does not yet read it, which is an open decision on sw_central_expectation worth 6.7 sfu; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way."
 
 [output]
 # The node's one answer. The variable id is the node id: one small

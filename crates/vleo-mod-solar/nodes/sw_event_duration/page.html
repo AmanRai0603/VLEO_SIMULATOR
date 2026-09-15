@@ -30,7 +30,20 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">sw_spike_threshold turns a continuous flux into a yes-or-no test, and a crossing on its own is not a load. A design's exposure depends on the dwell: a single elevated day and a week of them are different loads on a drag budget and on a power one, even though both count as one crossing. So this row measures how long the record stays above the threshold once it goes above it, which is the step that turns a threshold into an event.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">Take the days the spike test passes and group them into maximal runs of consecutive days. The mean length of those runs is the answer.</span><code class="dm">D_burst = mean length of maximal runs with F107/F107A &gt;= S_thr</code></li>
+<li><span class="dt">As with the Ap exceedance rows, the rule that ends a run has no physics behind it and has to be declared. A run breaks on the first day that fails the test, so a two-week episode with one quiet day in the middle counts as two events rather than one, which shortens this mean. A one-day bridge would be equally defensible; nothing in the record says which is right.</span></li>
+<li><span class="dt">At the declared threshold of 1.3049 the record gives 202 spike days in 61 runs, so the mean is an exact rational.</span><code class="dm">D_burst = 202 / 61 = 3.3115 d</code></li>
+<li><span class="dt">The run lengths are worth writing out, because the shape of the distribution is the finding and the mean hides it: 24 ones, 3 twos, 10 threes, 7 fours, 4 fives, 7 sixes, 2 sevens, 2 nines and 2 tens.</span></li>
+<li><span class="dt">A distribution with its mode at 1, its median at 3 and its mean at 3.31 is strongly right-skewed, which is what a process of independent triggers with occasional persistent sources looks like. The mean is a poor summary of it and the longest runs are what a design is actually exposed to.</span></li>
+<li><span class="dt">Two limits on the count itself. The 273 absent days can neither start nor end a run, so a burst inside 2017 is missing and one running into or out of the gap is truncated at it rather than followed — with 61 events, one or two truncations move the mean by about a tenth of a day, and that is not corrected for.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">The mean is the wrong statistic for this distribution and the sheet publishes it because the study's field holds it. The 202 spike days fall into 61 runs of which 24 are a single day, and the tail runs to 10 days: the modal event is one day, the median is 3, and the mean is 3.31 only because a handful of long bursts pull it up. A design that sizes on 3.31 days is sizing on neither the common case nor the bad one — and the bad one is what matters. The row is also defined entirely by sw_spike_threshold and moves when it moves, so quoting one without the other makes the pair incoherent.</p>
+<p class="maths concl">which is the relation this node states: <code>D_burst = mean length of a run of consecutive days with F107/F107A &gt;= S_thr = 3.3115 d</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -147,7 +160,4 @@ pub fn evaluate() -&gt; Result&lt;Time, Fault&gt; {
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
-<section class="gaps"><h4>Open gaps</h4><ul>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
-</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

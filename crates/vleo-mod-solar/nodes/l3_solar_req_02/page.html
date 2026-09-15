@@ -29,7 +29,18 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">There is no theory here that req_01 does not already carry, and pretending otherwise would be the dishonest option. This row exists because the layer-2 tree holds two separate rows — sys_space_environment_solar_flux and sys_space_environment_f10_7 — and each needs a partner at layer 3. In this subsystem those two quantities are the same quantity: the solar flux this subsystem publishes IS F10.7 and nothing else. So the commitment is written twice and the duplication is declared rather than disguised by inventing a difference between them.</p>
+<div class="theory-walk" data-steps="4">
+<ol class="derive">
+<li><span class="dt">The quantity is the same as req_01's and so is the number. What differs is the partner at layer 2, which is a fact about the tree's shape rather than about the design.</span></li>
+<li><span class="dt">The stated confidence is inherited rather than chosen here, and it is worth tracing because nothing in this tree carries a confidence row. It is 95 per cent because sw_uncertainty_growth measures a 95th percentile and sw_f107_design adds it; a requirement at a different confidence means re-measuring that percentile.</span></li>
+<li><span class="dt">The claim is checked rather than asserted. sw_band_coverage measures how often the record actually falls inside a band built this way and gets 0.9509 — so '95 per cent' is a measured property of the construction and not a label attached to it.</span><code class="dm">measured coverage = 0.9509 against a nominal 0.95</code></li>
+<li><span class="dt">Resolving the duplication is a change to the layer-2 tree and not to this subsystem, which is why both rows are written and both say so. Merging them here would make this subsystem disagree with the tree above it.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">A percentile is not a worst case. By construction one day in twenty exceeds the band, and over a five-year mission that is a great many days: what 250 buys is that the design point is not exceeded by the typical excursion, not that it is never exceeded. The record's largest daily F10.7 is 343 sfu, well above this requirement, and a design that must survive that day needs a worst-case row rather than a percentile one.</p>
+<p class="maths concl">which is the relation this node states: <code>F107_req = 250 sfu at 95% confidence</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -147,6 +158,5 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>significant, and one fixture or none — a significant node is the one that gets a second independent check, which is the whole reason for the word</li>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

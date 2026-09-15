@@ -37,6 +37,81 @@ confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its
 expression = "C_band = fraction of pairs with F107(t+L) - F107(t) <= dF107_p95(L), pooled over the seventeen leads"
 source = "noaa_swpc"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+sw_f107_design sells a 95 per cent band and every margin downstream is built
+on that claim. A stated confidence that nobody ever counted is a decoration,
+and the cheapest way for it to be wrong is not a modelling error but an
+implementation one — a lead off by one, a percentile taken on the absolute
+change instead of the signed one, a table read at the wrong index. This row
+counts. Its value is not that it comes back near 0.95 but that it could have
+come back somewhere else.
+"""
+reading = """
+An in-sample check, and it cannot be anything else on this record: the
+percentiles were measured on these same pairs, so coverage near 0.95 is
+close to arithmetic rather than evidence about the future. What it confirms
+is that the percentile was computed and wired correctly. The pairs are also
+massively overlapping — consecutive pairs at a lead share all but one day —
+so the effective sample is closer to the record divided by the lead, which
+at the longest leads is five or six intervals, than to the 128135 pairs
+counted. Nothing here is a confidence interval and the third decimal place
+means nothing.
+"""
+
+[[theory.step]]
+text = """
+The claim to be tested is a conditional one: at each lead, the change in
+F10.7 should stay below the percentile that lead publishes, in 95 per cent
+of cases.
+"""
+math = "claim: P( F107(t+L) - F107(t) <= dF107_p95(L) ) = 0.95"
+
+[[theory.step]]
+text = """
+So count it directly. Over the same seventeen leads sw_uncertainty_growth is
+tabulated on, take every pair of observed days and ask whether the change
+stayed inside the band.
+"""
+math = "C_band = 0.9509267569 over 128135 pairs"
+
+[[theory.step]]
+text = """
+The test is SIGNED, not two-sided: it asks how often F10.7 rose by more than
+the stated amount, and a large fall counts as inside the band. For a drag
+design that is the right test, because the unsafe direction is flux arriving
+higher than planned. A mission exposed to flux being LOWER than planned — a
+power budget — is not checked by this row at all.
+"""
+
+[[theory.step]]
+text = """
+The pooled figure could hide a bad lead, so the per-lead coverages are the
+part that is actually evidence. They run from 0.949970 at 365 and 1826 days
+to 0.952425 at 2557 days — a spread of 0.0025 across leads from half a year
+to fifteen years.
+"""
+
+[[theory.step]]
+text = """
+Uniformity is what distinguishes a correct table from a coincidence. An
+implementation right at short leads and wrong at long ones would show as a
+drift across that list, and there is none — so the pooled 0.9509 is a fair
+summary rather than an average over disagreeing parts.
+"""
+
+[[theory.step]]
+text = """
+The small excess over 0.95 is in the safe direction: the band is very
+slightly conservative, containing the truth marginally more often than it
+claims.
+"""
+
+
 [[assumption]]
 text = "It is an in-sample check and cannot be anything else on this record"
 fails_when = "0.9509 is read as out-of-sample validation. The percentiles in sw_uncertainty_growth were measured on these same pairs, so a coverage near 0.95 is close to arithmetic rather than evidence — it confirms the percentile was computed correctly, not that it will hold. What makes the number worth publishing is that it could have come back wrong: an off-by-one in the lead, a percentile taken on the absolute change rather than the signed one, or a table read at the wrong index would all show here. It is a check on the implementation, and it is honest about being only that"

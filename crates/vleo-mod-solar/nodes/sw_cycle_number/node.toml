@@ -23,8 +23,79 @@ text = "Which numbered solar cycle is the mission epoch in?"
 note = "The coarsest dated fact about the mission: which cycle it flies in. Everything else that depends on the date depends on this first, because a phase means nothing without a cycle to be a phase of."
 
 [maths]
-expression = "cyc(T) = 23 + count(cycle_starts <= T)"
+expression = "cyc(T) = 22 + count(cycle_starts <= T),  starts = 1997-01-15, 2008-12-01, 2019-12-01"
 source = "noaa_swpc"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+This is the coarsest dated fact about the mission, and the first one,
+because a phase means nothing without a cycle to be a phase of. It is also
+not physics. The boundary between two solar cycles is a minimum of sunspot
+activity, and a minimum cannot be read off a raw monthly series — the noise
+is larger than the trend near the turn — so it is defined on a smoothed
+series and its date is a published convention rather than a number each user
+re-derives. The relation is therefore a lookup against that convention, and
+the whole of the care in it goes into what happens at the edges of the
+table.
+"""
+reading = """
+An index, not a quantity: 25 is a name. It says nothing about how active the
+cycle is — cycle 23's phase-stacked peak was 206.9 sfu and cycle 24's 149.4,
+a 28 per cent difference under the same label — and nothing about where in
+the cycle the date sits, which is the far more consequential fact and is
+sw_cycle_phase's answer. Read on its own the number is useful for one thing:
+it says which set of boundaries the dated rows downstream are using.
+"""
+
+[[theory.step]]
+text = """
+A solar cycle runs from one sunspot minimum to the next. Near a minimum the
+month-to-month scatter of the sunspot number is comparable to the change
+being looked for, so the minimum is not identified on the raw series: it is
+defined on a 13-month smoothed one, which makes its date a convention agreed
+once rather than a measurement repeated per user.
+"""
+
+[[theory.step]]
+text = """
+Those conventional boundaries arrive with the bundle rather than being
+derived here. solar_cycles.csv names three, and they are the boundaries the
+study's prf_cycles calls standard.
+"""
+math = "starts = { 23: -1081 d, 24: 3257 d, 25: 7274 d } (days since 2000-01-01)"
+
+[[theory.step]]
+text = """
+Placing a date among ordered boundaries is a count rather than a search.
+Passing the first start puts the date in cycle 23, passing the second in
+cycle 24, and so on — so the answer is the number of starts passed, offset
+by the cycle BEFORE the first one in the table.
+"""
+math = "cyc(T) = 22 + #{ s in starts : T >= s }"
+
+[[theory.step]]
+text = """
+The comparison is 'at or after', so a boundary day belongs to the cycle it
+OPENS and not to the one it closes. That is a second convention, invisible
+in the formula and consequential for exactly one day per cycle, so the
+fixtures beside this node sit on the boundary days rather than in the middle
+of the intervals.
+"""
+
+[[theory.step]]
+text = """
+The count stops at three because the table holds three starts. A date one
+year past 2019-12-01 and a date thirty years past it both return 25: the row
+will not invent a boundary for cycle 26, because nothing in the data says
+when 26 begins. The declared upper bound of 26 is what makes that limit
+refuse rather than answer quietly.
+"""
+math = "cyc(9862 d) = 22 + 3 = 25"
+
 
 [[assumption]]
 text = "The cycle boundaries are the record's three, and a fourth would need a source this bundle does not contain"

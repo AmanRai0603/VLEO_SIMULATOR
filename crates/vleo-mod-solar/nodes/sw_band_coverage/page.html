@@ -30,7 +30,20 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">sw_f107_design sells a 95 per cent band and every margin downstream is built on that claim. A stated confidence that nobody ever counted is a decoration, and the cheapest way for it to be wrong is not a modelling error but an implementation one — a lead off by one, a percentile taken on the absolute change instead of the signed one, a table read at the wrong index. This row counts. Its value is not that it comes back near 0.95 but that it could have come back somewhere else.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">The claim to be tested is a conditional one: at each lead, the change in F10.7 should stay below the percentile that lead publishes, in 95 per cent of cases.</span><code class="dm">claim: P( F107(t+L) - F107(t) &lt;= dF107_p95(L) ) = 0.95</code></li>
+<li><span class="dt">So count it directly. Over the same seventeen leads sw_uncertainty_growth is tabulated on, take every pair of observed days and ask whether the change stayed inside the band.</span><code class="dm">C_band = 0.9509267569 over 128135 pairs</code></li>
+<li><span class="dt">The test is SIGNED, not two-sided: it asks how often F10.7 rose by more than the stated amount, and a large fall counts as inside the band. For a drag design that is the right test, because the unsafe direction is flux arriving higher than planned. A mission exposed to flux being LOWER than planned — a power budget — is not checked by this row at all.</span></li>
+<li><span class="dt">The pooled figure could hide a bad lead, so the per-lead coverages are the part that is actually evidence. They run from 0.949970 at 365 and 1826 days to 0.952425 at 2557 days — a spread of 0.0025 across leads from half a year to fifteen years.</span></li>
+<li><span class="dt">Uniformity is what distinguishes a correct table from a coincidence. An implementation right at short leads and wrong at long ones would show as a drift across that list, and there is none — so the pooled 0.9509 is a fair summary rather than an average over disagreeing parts.</span></li>
+<li><span class="dt">The small excess over 0.95 is in the safe direction: the band is very slightly conservative, containing the truth marginally more often than it claims.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">An in-sample check, and it cannot be anything else on this record: the percentiles were measured on these same pairs, so coverage near 0.95 is close to arithmetic rather than evidence about the future. What it confirms is that the percentile was computed and wired correctly. The pairs are also massively overlapping — consecutive pairs at a lead share all but one day — so the effective sample is closer to the record divided by the lead, which at the longest leads is five or six intervals, than to the 128135 pairs counted. Nothing here is a confidence interval and the third decimal place means nothing.</p>
+<p class="maths concl">which is the relation this node states: <code>C_band = fraction of pairs with F107(t+L) - F107(t) &lt;= dF107_p95(L), pooled over the seventeen leads</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -149,6 +162,5 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>significant, and one fixture or none — a significant node is the one that gets a second independent check, which is the whole reason for the word</li>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

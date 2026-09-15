@@ -216,16 +216,6 @@ fn fixture_19() {
     assert!(err <= 1e-12, "phase 0.975 — 416 days from two cycles — mean F10.7 67.65 sfu: got {} want 67.6538, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
-/// the declared epoch's phase of 0.6194 falls in the 0.625 bin — 105.84 sfu, against the unconditional mean of 114.84
-///
-/// Provenance: `independent-derivation`, source `noaa_swpc`.
-#[test]
-fn fixture_20() {
-    let got = model::evaluate(Ratio::new(0.625)).expect("the fixture case must not be refused");
-    let err = relative_error(got.get(), 105.8445);
-    assert!(err <= 1e-12, "the declared epoch's phase of 0.6194 falls in the 0.625 bin — 105.84 sfu, against the unconditional mean of 114.84: got {} want 105.8445, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
-}
-
 // ---- properties, generated from the declared domain ---------------------
 //
 // The fixture above checks one point. A wrong constant moves that point and

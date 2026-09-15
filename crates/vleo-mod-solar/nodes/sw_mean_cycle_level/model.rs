@@ -16,9 +16,12 @@ use vleo_core::units::*;
 ///
 /// The climatology that knows where in the cycle it is.
 /// sw_central_expectation currently hands over to the record's unconditional
-/// mean of 114.8 sfu because no date was available; at the declared epoch's
-/// phase of 0.619 this row says 105.8 instead. That difference is what having
-/// a date buys.
+/// mean of 114.84 sfu because no date was available; at the declared epoch's
+/// phase of 0.6194 this row says 108.14 instead. That difference — 6.7 sfu
+/// — is what having a date buys. The table is INTERPOLATED between bin
+/// centres, so the answer at a phase is not the nearest bin's mean: 0.6194
+/// sits between the 0.575 bin at 126.23 and the 0.625 bin at 105.84, nine
+/// tenths of the way toward the second.
 ///
 /// # Assumptions
 ///

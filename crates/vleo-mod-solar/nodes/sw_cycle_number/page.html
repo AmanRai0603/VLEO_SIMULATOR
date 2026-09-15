@@ -1,4 +1,4 @@
-<article class="node" data-node="sw_cycle_number" data-sheet-hash="085c63" data-impl-hash="a80be6">
+<article class="node" data-node="sw_cycle_number" data-sheet-hash="74c2b1" data-impl-hash="a80be6">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Solar cycle number</h2>
@@ -18,7 +18,7 @@
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">Which numbered solar cycle is the mission epoch in?</p>
-<p class="maths"><code>cyc(T) = 23 + count(cycle_starts &lt;= T)</code></p>
+<p class="maths"><code>cyc(T) = 22 + count(cycle_starts &lt;= T),  starts = 1997-01-15, 2008-12-01, 2019-12-01</code></p>
 <p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
 <p class="note">The coarsest dated fact about the mission: which cycle it flies in. Everything else that depends on the date depends on this first, because a phase means nothing without a cycle to be a phase of.</p>
 <h4>Assumptions</h4>
@@ -28,7 +28,19 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">This is the coarsest dated fact about the mission, and the first one, because a phase means nothing without a cycle to be a phase of. It is also not physics. The boundary between two solar cycles is a minimum of sunspot activity, and a minimum cannot be read off a raw monthly series — the noise is larger than the trend near the turn — so it is defined on a smoothed series and its date is a published convention rather than a number each user re-derives. The relation is therefore a lookup against that convention, and the whole of the care in it goes into what happens at the edges of the table.</p>
+<div class="theory-walk" data-steps="5">
+<ol class="derive">
+<li><span class="dt">A solar cycle runs from one sunspot minimum to the next. Near a minimum the month-to-month scatter of the sunspot number is comparable to the change being looked for, so the minimum is not identified on the raw series: it is defined on a 13-month smoothed one, which makes its date a convention agreed once rather than a measurement repeated per user.</span></li>
+<li><span class="dt">Those conventional boundaries arrive with the bundle rather than being derived here. solar_cycles.csv names three, and they are the boundaries the study's prf_cycles calls standard.</span><code class="dm">starts = { 23: -1081 d, 24: 3257 d, 25: 7274 d } (days since 2000-01-01)</code></li>
+<li><span class="dt">Placing a date among ordered boundaries is a count rather than a search. Passing the first start puts the date in cycle 23, passing the second in cycle 24, and so on — so the answer is the number of starts passed, offset by the cycle BEFORE the first one in the table.</span><code class="dm">cyc(T) = 22 + #{ s in starts : T &gt;= s }</code></li>
+<li><span class="dt">The comparison is 'at or after', so a boundary day belongs to the cycle it OPENS and not to the one it closes. That is a second convention, invisible in the formula and consequential for exactly one day per cycle, so the fixtures beside this node sit on the boundary days rather than in the middle of the intervals.</span></li>
+<li><span class="dt">The count stops at three because the table holds three starts. A date one year past 2019-12-01 and a date thirty years past it both return 25: the row will not invent a boundary for cycle 26, because nothing in the data says when 26 begins. The declared upper bound of 26 is what makes that limit refuse rather than answer quietly.</span><code class="dm">cyc(9862 d) = 22 + 3 = 25</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">An index, not a quantity: 25 is a name. It says nothing about how active the cycle is — cycle 23's phase-stacked peak was 206.9 sfu and cycle 24's 149.4, a 28 per cent difference under the same label — and nothing about where in the cycle the date sits, which is the far more consequential fact and is sw_cycle_phase's answer. Read on its own the number is useful for one thing: it says which set of boundaries the dated rows downstream are using.</p>
+<p class="maths concl">which is the relation this node states: <code>cyc(T) = 22 + count(cycle_starts &lt;= T),  starts = 1997-01-15, 2008-12-01, 2019-12-01</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -82,7 +94,7 @@ use vleo_core::units::*;
 
 /// Which numbered solar cycle is the mission epoch in?
 ///
-/// `cyc(T) = 23 + count(cycle_starts &lt;= T)`
+/// `cyc(T) = 22 + count(cycle_starts &lt;= T),  starts = 1997-01-15, 2008-12-01, 2019-12-01`
 ///
 /// Source: `noaa_swpc`
 ///
@@ -97,7 +109,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &amp;str = &quot;sw_cycle_number&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xc42c7a7ea5085c63;
+pub const SHEET_HASH: u64 = 0x5306a6af2974c2b1;
 
 pub fn evaluate(epoch: Time) -&gt; Result&lt;Ratio, Fault&gt; {
     // ---- HOLE 1 : count how many of the record's cycle starts the epoch has passed, and add the first cycle's number -&gt; Ratio
@@ -173,6 +185,5 @@ pub fn evaluate(epoch: Time) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

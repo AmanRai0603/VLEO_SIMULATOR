@@ -29,7 +29,20 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">The previous row establishes by Jensen's inequality that reading the published table with a daily mean must under-read the day's worst three-hourly Kp. An inequality gives the sign and not the size, and a drag design needs the size: the atmosphere responds to the disturbance it actually met, which for a heating calculation is closer to the peak slot than to the daily average. So the size has to be measured, and it cannot be derived, because it depends on how unevenly a real day distributes its disturbance among its eight slots — which is a property of storms rather than of the table.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">Define the quantity to be measured as the gap between what a design reads and what the day actually contained: the day's worst three-hourly Kp minus the table's reading of the day's mean Ap.</span><code class="dm">dKp_peak(day) = max_8 Kp(day) - Kp_table(Ap(day))</code></li>
+<li><span class="dt">Its sign is known in advance. Kp(ap) is concave, so the table's reading of a mean cannot exceed the largest of the values averaged — which means this difference cannot be negative, and a negative answer would say the sign or the slot had been swapped rather than that a quiet day had occurred.</span></li>
+<li><span class="dt">It is measured as a function of Ap and not as a single number, because the unevenness grows with activity: a quiet day is uniformly quiet across its eight slots while a storm is concentrated in a few. Nine bins, the study's prf_ap2kp edges, and the median in each.</span><code class="dm">edges = 0, 5, 10, 15, 20, 30, 45, 70, 110, 400</code></li>
+<li><span class="dt">The medians rise with Ap as the concavity argument predicts — +1.000 at Ap 2.5 through +1.747 at Ap 90 — and then FALL to +1.317 in the 110-to-400 bin.</span></li>
+<li><span class="dt">That fall is not smoothed away, and it is not defended either. The top bin holds 20 days, exactly prf_ap2kp's own minimum for using a bin at all, so the drop is as likely to be a small-sample artefact as a real saturation of the table near its top. Smoothing it would be this row inventing a shape the record does not show; anyone designing above Ap 110 is reading a correction supported by twenty days.</span></li>
+<li><span class="dt">Between bin centres the answer is interpolated and at the ends it is held rather than extrapolated, which is prf_ap2kp's own rule stated explicitly: hold the end bins, never extrapolate.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">A median per bin, so it recovers the typical day at that Ap and misses any individual one; the spread within a bin is not published here, and a design needing a worst case at a given Ap needs a percentile of the offset rather than its median. It is also the PEAK-slot offset only. The 24-hour-mean slot has its own bias of the opposite sign — running from +0.042 down to -0.462 — so applying this row to the mean slot would double the error rather than remove it. Models like DTM2020 want both kinds of input; only one is published here.</p>
+<p class="maths concl">which is the relation this node states: <code>dKp_peak(Ap) = piecewise_linear(ap_bin_centres -&gt; measured_medians, Ap)</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -191,6 +204,5 @@ pub fn evaluate(ap: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

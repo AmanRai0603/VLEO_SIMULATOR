@@ -43,6 +43,67 @@ confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its
 expression = "G_design = 3   (NOAA G3, strong, Kp 7)"
 source = "noaa_swpc"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+A vehicle cannot be built for the worst storm physically possible, and a
+design that says so vaguely has made no decision. The NOAA G scale exists to
+make the decision nameable: five levels, each tied to a Kp, each with
+documented consequences for power grids, navigation and spacecraft.
+Declaring a G level is how a programme states what class of event it is
+engineered through rather than operated through, and putting that
+declaration on its own row is what makes it a switch — every number
+downstream moves when it moves.
+"""
+reading = """
+G3 is a choice and the record says a five-year mission will exceed it. The
+return level at the declared mission is Ap 158.4, and the days in the record
+nearest that value all reached Kp_max 9, which is G5 — two levels above what
+this row designs to. That is not an error in either row; it is the gap
+between what the sky does and what a vehicle can be built for, and what
+closes it is operations rather than structure. The range refuses 4 and 5
+deliberately: a design sized for G4 is a different vehicle, and the return
+level, the band and the requirement would all need revisiting together.
+"""
+
+[[theory.step]]
+text = """
+The G scale is defined on Kp and it grades the WORST three-hourly slot of a
+day: G1 at Kp 5, G2 at Kp 6, G3 at Kp 7, G4 at Kp 8, G5 at Kp 9. So a G
+level is a statement about a day's peak disturbance, not about its average.
+"""
+
+[[theory.step]]
+text = """
+Choosing a level is choosing where to stop building and start operating, and
+the frequencies are what make that a real decision. In 29 years the record
+holds 49 days at G4 and 16 at G5 — rare enough that flying through them with
+a procedure is cheaper than carrying the structure for them, and common
+enough that a mission must have such a procedure.
+"""
+
+[[theory.step]]
+text = """
+G3 is the highest level this vehicle class is sized for. That is a statement
+about this class and not about the scale, which is why the declared upper
+bound is 3: a mission that genuinely requires G4 changes the bound on
+purpose and re-runs the closure, and the change is visible in a diff rather
+than buried in a selection.
+"""
+
+[[theory.step]]
+text = """
+The row is a switch rather than a constant. sw_ap_design converts it, and
+the three exceedance rows all read that conversion, so moving this one
+number from 3 to 2 moves the design Ap from 132 to 80 and the exceedance
+from 1.42 days over the mission to 6.21. Asking what a different storm level
+costs is a one-row edit.
+"""
+
+
 [[assumption]]
 text = "G3 is a choice and the record says a five-year mission will exceed it"
 fails_when = "the choice is read as sufficient. sw_storm_return_level, fitted on the record and read at the declared five-year mission, gives a daily Ap of 158.4; the days in the record nearest that value all reached Kp_max 9, which is G5. So the storm a five-year mission should expect is two levels above what this row designs to. That is not an error in either row — it is the gap between what the sky does and what a vehicle can be built for, and putting both numbers in the tree is the point. What closes it is operations, not structure"

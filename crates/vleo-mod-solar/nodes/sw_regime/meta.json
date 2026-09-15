@@ -13,5 +13,5 @@
   "holes": 1,
   "inputs": ["sw_storm_return_level"],
   "contributes": [],
-  "gaps": ["no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute"]
+  "gaps": []
 }

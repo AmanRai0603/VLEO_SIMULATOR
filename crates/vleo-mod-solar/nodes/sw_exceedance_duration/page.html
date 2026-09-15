@@ -30,7 +30,20 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">A rate says how often the bound is crossed and nothing about what a crossing is like. Those are different design problems: 1.42 days of exceedance spread as one day at a time is a transient an attitude and drag budget can absorb, and the same 1.42 days arriving as a single continuous siege is a different vehicle. So the second of the three exceedance numbers is the dwell — how long a run above the bound lasts once it starts — and the answer is what makes the violated requirement acceptable rather than fatal.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">Define an event as a maximal run of consecutive days that all reach the bound, and measure the mean length of those runs. The definition needs one rule that has no physics behind it: what ends a run.</span><code class="dm">D_exc = mean length of maximal runs with Ap &gt;= Ap_design</code></li>
+<li><span class="dt">The rule taken is that the first day failing the test ends the run. So a disturbed week with one quieter day in the middle counts as two events rather than one, which shortens this mean and raises the event count derived from sw_exceedance_rate. Allowing a one-day bridge would be equally defensible and would give a different pair of numbers; the rule is stated rather than the answer being presented as unique. It is the same rule sw_event_duration uses for F10.7, so the two rows are at least consistent with each other.</span></li>
+<li><span class="dt">Measured at the three design levels the answer is just over a day everywhere, and it SHORTENS as the bound rises.</span><code class="dm">G1: 1.2718 d (max 5) G2: 1.2069 d (max 3) G3: 1.1429 d (max 2)</code></li>
+<li><span class="dt">The shortening is not a coincidence, it is what a threshold cutting further into a peaked distribution must do. A storm's Ap profile rises and falls; the higher the horizontal line drawn across it, the narrower the slice above the line. So the trend is a check on the measurement rather than a finding about the Sun.</span></li>
+<li><span class="dt">The design consequence is in how close the three numbers are. Switching G level changes how OFTEN the bound is crossed by a factor of sixteen and how LONG each crossing lasts by eleven per cent — so the lever a designer has is the rate, not the dwell.</span></li>
+<li><span class="dt">Which settles the question the requirement left open. At G3 the vehicle is above its design Ap for about one day at a time, at most two: long enough to matter to an attitude budget or a drag transient, not long enough to be a sustained environment.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">Read it as 'one day, occasionally two', not as 1.142857. At the G3 bound the runs are six of one day and one of two, so the mean is exactly 8 over 7 and removing the single two-day event makes it 1.000. The third decimal place is arithmetic on a sample small enough to write out in full. Note also that it is measured on DAILY means: a storm that peaks for six hours and subsides may never lift a daily mean above the bound, so the event counted here is coarser than the one a spacecraft feels.</p>
+<p class="maths concl">which is the relation this node states: <code>D_exc(Ap_design) = mean length of a run of consecutive days with Ap &gt;= Ap_design</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -173,6 +186,5 @@ pub fn evaluate(ap_design: Ratio) -&gt; Result&lt;Time, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

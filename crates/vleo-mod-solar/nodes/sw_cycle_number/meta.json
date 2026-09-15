@@ -1,7 +1,7 @@
 {
   "id": "sw_cycle_number",
   "state": "published",
-  "sheet_hash": "085c63",
+  "sheet_hash": "74c2b1",
   "impl_hash": "a80be6",
   "owner": "environment",
   "tier": "A",
@@ -13,5 +13,5 @@
   "holes": 1,
   "inputs": ["sys_mission_requirements_mission_epoch"],
   "contributes": [],
-  "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did", "no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute"]
+  "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did"]
 }

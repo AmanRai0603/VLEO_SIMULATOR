@@ -30,7 +30,21 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">The requirement built on the G3 capability is violated: the record expects Ap 158.4 over the mission and the design is built for 132. A violated requirement is useless information on its own — what a programme has to decide is whether the violation is tolerable, and that decision needs three numbers rather than one: how often, how long, and when. This row is the first of the three. It converts 'the bound is exceeded' into 'the bound is exceeded on this many days a year', which is the form a decision can actually be taken on.</p>
+<div class="theory-walk" data-steps="7">
+<ol class="derive">
+<li><span class="dt">The measurement is a count and a division with nothing fitted in it: the days whose daily Ap reaches the design bound, over the years of record actually present.</span><code class="dm">R_exc(Ap_design) = #{ d : Ap(d) &gt;= Ap_design } / 28.197 yr</code></li>
+<li><span class="dt">The denominator is the days present, not the calendar span. That matters because 273 days are absent: dividing by the span would dilute the rate by the length of the gap, as though nothing could have happened in it. Dividing by the days observed keeps the rate honest about what was measured and silent about what was not.</span></li>
+<li><span class="dt">Counted at the three levels sw_ap_design can return, the rate falls steeply: 131 days above Ap 48, 35 above Ap 80, 8 above Ap 132.</span><code class="dm">G1: 4.646 /yr G2: 1.241 /yr G3: 0.284 /yr</code></li>
+<li><span class="dt">Which answers the design question at the declared level. Multiply by the mission and the violation has a size: at G3 the vehicle spends 1.42 days of a five-year mission outside what it was built for, at G2 6.21 days, at G1 23.2.</span><code class="dm">0.284 /yr * 5 yr = 1.42 d</code></li>
+<li><span class="dt">Notice what the three numbers rule out. A design that must NEVER be exceeded cannot be built at any level the G scale offers below G4, so the decision available is not whether to have exceedances but how many days of them to accept.</span></li>
+<li><span class="dt">The relation is three anchors and a straight line, and the line is wrong. Exceedance rate against threshold falls close to exponentially — 4.65 to 1.24 to 0.284 is a factor of 3.7 then 4.4 — so linear interpolation overstates the rate badly between anchors. Nothing in the tree can reach between them, because the G scale is integer-valued and the producer's range is 1 to 3; the assumption is written so that the day something can, it is not believed.</span></li>
+<li><span class="dt">One bias in the count has a known direction. The 273 absent days sit at cycle 24's phase 0.74 to 0.80, INSIDE the band where exceedances concentrate rather than in the quiet part of the cycle. So whatever happened there is missing from the numerator, and the true rate is more likely above this figure than below it.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">It is a rate over a record, not a forecast, and the record is short exactly where it matters. Eight days above the G3 bound in 28.2 years is a sample small enough that removing the single worst storm leaves seven; counting uncertainty is roughly the square root of the count, so 0.284 a year is 0.284 give or take about 0.10 — a third of itself. Sizing on 1.42 days per mission when the honest range is roughly 0.9 to 2.0 days is the correct use of the number. Treating 1.42 as having two decimal places of meaning is not.</p>
+<p class="maths concl">which is the relation this node states: <code>R_exc(Ap_design) = days with Ap &gt;= Ap_design, per year of record</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -169,6 +183,5 @@ pub fn evaluate(ap_design: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

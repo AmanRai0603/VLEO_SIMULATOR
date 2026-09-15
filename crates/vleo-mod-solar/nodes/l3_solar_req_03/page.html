@@ -31,7 +31,20 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">This is the requirement that fails, and it fails on purpose. The design is built for G3, which sw_ap_design turns into a daily Ap of 132; the record expects 158.4 over the declared five-year mission. Any number written here either sits below what the record expects — and is violated — or sits above it and commits the vehicle to a storm level it is not built for. The row takes the first option, and the three exceedance rows exist to say what that costs, because a designer facing a failed closure needs the SIZE of the violation rather than a bigger number.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">Begin from the capability, which is the only defensible starting point for a commitment: sw_ap_design at the declared G3 gives a daily Ap of 132, the value a day would reach with all eight slots at Kp 7.</span></li>
+<li><span class="dt">Add a margin so the commitment is not exactly the capability. 150 is the next round number with usable room above 132 — about 14 per cent — and nothing in the record picks it.</span><code class="dm">Ap_req = 132 * 1.14 = 150</code></li>
+<li><span class="dt">Now compare it with what the record expects, which is where the row stops being arithmetic. sw_storm_return_level at five years gives 158.4, above this requirement, so the achieved side comes in over the commitment and the closure fails.</span><code class="dm">158.4 &gt; 150 — the closure does not hold</code></li>
+<li><span class="dt">The alternative was available and was rejected. A margin chosen so the closure passes would have to exceed 158.4, which means about 200 — and 200 sits in G4 territory, committing the vehicle on paper to a level it is not built for. A requirement that passes because its number was chosen to pass is worse than one that fails honestly.</span></li>
+<li><span class="dt">So the useful question becomes the size of the violation rather than its existence, and that is what the exceedance rows answer: how often the record goes past 132, for how long each time, and where in the cycle.</span><code class="dm">0.284 d/yr * 5 yr = 1.42 d, in ~1.24 events of ~1.14 d</code></li>
+<li><span class="dt">Thirty-four hours outside the design environment over five years is a number a programme can accept or reject. That is the whole purpose of writing the requirement below the expectation: it converts a vague inadequacy into a bounded one.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">The closure fails and the failure is bounded. 0.284 days a year above the design Ap of 132 is 1.42 days over the mission, in about 1.24 events averaging 1.14 days each, the longest run in 29 years being 2 days — roughly thirty-four hours outside the design environment across five years, on the declining side of the cycle where the declared epoch sits. If that is unacceptable the answer is to move sw_storm_design_level, not to raise this row until the arithmetic stops complaining. And note what this row does NOT do: it does not follow the G-level switch. A commitment that tracked the design would never be violated.</p>
+<p class="maths concl">which is the relation this node states: <code>Ap_req = Ap_design(G3) * 1.14 = 150</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -152,6 +165,5 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>significant, and one fixture or none — a significant node is the one that gets a second independent check, which is the whole reason for the word</li>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

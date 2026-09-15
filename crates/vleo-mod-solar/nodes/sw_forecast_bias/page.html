@@ -30,7 +30,20 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">A skill score is built on squared errors and is therefore blind to sign: a forecast that is consistently 4 sfu low and one that is consistently 4 sfu high score identically. For a drag design the sign is the whole point. A low F10.7 means a thin atmosphere, less drag and a longer predicted lifetime, so an under-forecasting outlook does not add scatter to a design — it moves the design in the unsafe direction. This row measures the signed error, which is the part of the verification a margin cannot absorb.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">Take the signed error rather than its square or its magnitude: forecast minus observed, averaged over issues at a fixed lead. Signed, so that a consistent lean shows up instead of cancelling into a variance.</span><code class="dm">B(L) = mean over issues of ( F107_forecast - F107_observed ) at lead L</code></li>
+<li><span class="dt">The first thing to check is whether the mean is distinguishable from zero at all, because a well-constructed forecast should have no systematic lean. This one does, and at every single lead: from -0.593 sfu at lead 1 to -3.968 at lead 26, never crossing zero across 26 leads and samples of 866 to 1257 pairs each.</span></li>
+<li><span class="dt">A sign that is the same 26 times out of 26 is not scatter about a correct central value. The published outlook systematically under-forecasts F10.7, and a design reading it gets a thinner atmosphere, lower drag and a longer predicted lifetime than it will fly.</span></li>
+<li><span class="dt">The magnitude is not monotone in lead, and the interior structure is real rather than noise: the bias deepens to -2.748 sfu at lead 9, recovers to -1.848 at lead 13, then deepens again to -3.968 by lead 26. With over 1200 pairs per lead, that shape is a property of how the outlook is constructed.</span></li>
+<li><span class="dt">So the row is a table over measured leads. Fitting a trend through it would erase the recovery in the middle, which is the one part of the curve that tells a reader the outlook is not simply degrading with distance.</span></li>
+<li><span class="dt">The declared range is worth noting as a piece of the argument. The upper bound is -0.5 rather than 0, because an answer of -0.1 sfu would be as wrong as +0.1 and a guard placed at zero would let it through.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">Minus 4 sfu on a mean of 115 is 3.5 per cent, which sounds negligible and is not. sw_uncertainty_growth already carries the spread a design must survive, and this bias sits underneath it as an offset that no amount of spread removes: a symmetric band around a biased centre is still centred in the wrong place. The remedy is to add the bias back, not to trust the outlook and widen a margin somewhere else. It is also a single mean pooled across 29 years of a varying Sun, and a forecaster's error on a 250 sfu day is not the error on a 70 sfu day.</p>
+<p class="maths concl">which is the relation this node states: <code>B_f107(L) = mean over issues of (F107_forecast - F107_observed) at lead L</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -178,6 +191,5 @@ pub fn evaluate(lead: Time) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

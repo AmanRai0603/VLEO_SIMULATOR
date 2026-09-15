@@ -29,7 +29,18 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">A flux in sfu means nothing to most readers of a design. 228 could be ordinary or extraordinary and there is no way to tell from the number. A band answers that in one symbol, and the bands used are not this repository's invention: they are the standard four NOAA F10.7 activity levels, which the study's prf_segment applies unchanged. So the row is a lookup against a convention — there is nothing fitted in it to be wrong about this record, and equally nothing in it that adapts to this record.</p>
+<div class="theory-walk" data-steps="4">
+<ol class="derive">
+<li><span class="dt">The four standard levels are defined by three edges, so the relation is a count of edges reached rather than a chain of comparisons. Low is below 90 sfu, moderate 90 to 129, elevated 130 to 169, and high 170 and above.</span><code class="dm">band(F107) = 1 + #{ e in (90, 130, 170) : F107 &gt;= e }</code></li>
+<li><span class="dt">The comparison is 'at or above', so a flux sitting exactly on an edge belongs to the band the edge OPENS — 90.0 sfu is moderate, not low. Every off-by-one here produces a label that looks entirely plausible, which is why the fixtures beside this row sit on the edges rather than in the middle of the bands.</span></li>
+<li><span class="dt">The top band is unbounded in flux, which is the one asymmetry in the scheme. Band 4 holds everything from 170 sfu up, including the record's largest day at 343, so the label stops discriminating exactly where the design cares most.</span></li>
+<li><span class="dt">A different scheme was available and is deliberately not this row. prf_segment also offers data-driven terciles of the same quantity, which cut the archive into equal thirds and land on different edges. Those adapt to the record and these do not; a published convention is comparable between studies and a tercile is comparable only within one.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">An ordinal label carried as a number, and arithmetic on it is meaningless: the gaps are not equal in flux, with band 1 spanning 26 sfu of observed record and band 4 spanning 173. Averaging bands or treating band 4 as twice band 2 are errors the tree cannot prevent, because one row carries one scalar. It also bands a SINGLE day's flux: F10.7 moves through every band over any mission longer than a few months — 39.8 per cent of the record's days are in band 1 and 12.8 per cent in band 4 — so banding a design value says where the design point sits, not what the mission will experience.</p>
+<p class="maths concl">which is the relation this node states: <code>band(F107) = 1 + count(edges &lt;= F107),  edges = 90, 130, 170 sfu</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -174,6 +185,5 @@ pub fn evaluate(f107: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

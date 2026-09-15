@@ -27,6 +27,94 @@ confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its
 expression = "r_cyc = corr(F107 of cycle 23 by phase, F107 of cycle 24 by phase) = 0.7701"
 source = "noaa_swpc"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+sw_mean_cycle_level hands a design the shape of the average cycle, built
+from two. This row asks whether an object like that is worth anything —
+whether a solar cycle repeats the one before it. The answer has to come in
+two parts, and the reason is a property of the statistic rather than a
+property of the Sun: a correlation is scale-free, so the obvious measure of
+'do these two look alike' is structurally blind to the one thing a drag
+design cares about. So the shape and the amplitude are measured separately,
+and the second measurement is the one that carries the warning.
+"""
+reading = """
+There is no distribution behind 0.77. The record holds exactly two complete
+cycles, so this is a single observation of a correlation and not an estimate
+of one, and two samples cannot tell a repeatable shape from a coincidence
+between two particular cycles. No further analysis of this bundle can fix
+that; it needs a longer record. Every consumer of the mean-cycle curve
+inherits the limit, and the honest summary is narrow: these two cycles rose
+and fell alike, and were not the same size.
+"""
+
+[[theory.step]]
+text = """
+Put both complete cycles on one axis. Each is stacked on phase in the same
+twenty bins used by sw_mean_cycle_level, which turns two records of unequal
+length into two curves that can be compared point for point.
+"""
+
+[[theory.step]]
+text = """
+Correlate the two curves. Pearson's r over the bins asks whether they rise
+and fall together, which is the question 'does the cycle have a repeatable
+shape' in measurable form.
+"""
+math = "r = cov(x, y) / (sd(x) * sd(y)) over the bins both cycles populate"
+
+[[theory.step]]
+text = """
+Which bins count is a decision with a number attached, so it is stated
+exactly. 273 consecutive days are absent from the record, 2017-01-01 to
+2017-09-30, and they fall at cycle 24's phase 0.735 to 0.803: bin 15 is
+emptied entirely and bin 14 is left with 141 days against the usual 201. The
+rule is that a bin needs at least 150 days from BOTH cycles, which keeps 18.
+Including the thin bin gives 0.7756 rather than 0.7701 — a small difference,
+and the reason the rule is written as a threshold instead of as 'the bins
+both cycles populate', which would be read as 19.
+"""
+math = "r over 18 bins = 0.7701; over 19 = 0.7756"
+
+[[theory.step]]
+text = """
+0.77 means the two stacked cycles share 59 per cent of their variance. The
+shape repeats, and it does not repeat exactly.
+"""
+math = "r^2 = 0.593"
+
+[[theory.step]]
+text = """
+Now the part the correlation cannot see. Multiply one of the two curves by
+any positive constant and r does not move at all — that is what scale-free
+means — and the constant is precisely the amplitude a drag design needs. So
+a correlation near one would be entirely compatible with two cycles
+differing by a factor of two in flux.
+"""
+math = "r(x, y) = r(x, a*y) for every a > 0"
+
+[[theory.step]]
+text = """
+So amplitude is measured separately, and it disagrees. The phase-stacked
+peaks are 206.9 sfu for cycle 23 and 149.4 for cycle 24, a ratio of 0.722,
+and the published smoothed peaks of 196.4 and 146.1 agree at 0.744. The rms
+difference between the two curves is 37.7 sfu against a pooled mean near
+112.
+"""
+
+[[theory.step]]
+text = """
+Two findings, then, and a design that reads only the first will be wrong in
+the direction that costs it: the cycles rise and fall alike at r = 0.77, and
+they are not the same size, at a peak ratio of 0.72 and an rms difference of
+a third of the mean.
+"""
+
+
 [[assumption]]
 text = "It is one pair of cycles, so there is no distribution behind this number"
 fails_when = "0.77 is read as an expected repeatability with an uncertainty. The record holds exactly two complete cycles, 23 and 24, and cycle 25 is still running, so this is a single observation of a correlation and not an estimate of one. Two samples cannot tell a repeatable shape from a coincidence between two particular cycles, and nothing in this bundle can fix that: it needs a longer record. Every consumer of sw_mean_cycle_level inherits this limit"

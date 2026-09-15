@@ -43,6 +43,93 @@ note = "The exceedance rate of sw_ap_design, measured over 28.197 years. Multipl
 expression = "R_exc(Ap_design) = days with Ap >= Ap_design, per year of record"
 source = "noaa_swpc"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+The requirement built on the G3 capability is violated: the record expects
+Ap 158.4 over the mission and the design is built for 132. A violated
+requirement is useless information on its own — what a programme has to
+decide is whether the violation is tolerable, and that decision needs three
+numbers rather than one: how often, how long, and when. This row is the
+first of the three. It converts 'the bound is exceeded' into 'the bound is
+exceeded on this many days a year', which is the form a decision can
+actually be taken on.
+"""
+reading = """
+It is a rate over a record, not a forecast, and the record is short exactly
+where it matters. Eight days above the G3 bound in 28.2 years is a sample
+small enough that removing the single worst storm leaves seven; counting
+uncertainty is roughly the square root of the count, so 0.284 a year is
+0.284 give or take about 0.10 — a third of itself. Sizing on 1.42 days per
+mission when the honest range is roughly 0.9 to 2.0 days is the correct use
+of the number. Treating 1.42 as having two decimal places of meaning is not.
+"""
+
+[[theory.step]]
+text = """
+The measurement is a count and a division with nothing fitted in it: the
+days whose daily Ap reaches the design bound, over the years of record
+actually present.
+"""
+math = "R_exc(Ap_design) = #{ d : Ap(d) >= Ap_design } / 28.197 yr"
+
+[[theory.step]]
+text = """
+The denominator is the days present, not the calendar span. That matters
+because 273 days are absent: dividing by the span would dilute the rate by
+the length of the gap, as though nothing could have happened in it. Dividing
+by the days observed keeps the rate honest about what was measured and
+silent about what was not.
+"""
+
+[[theory.step]]
+text = """
+Counted at the three levels sw_ap_design can return, the rate falls steeply:
+131 days above Ap 48, 35 above Ap 80, 8 above Ap 132.
+"""
+math = "G1: 4.646 /yr G2: 1.241 /yr G3: 0.284 /yr"
+
+[[theory.step]]
+text = """
+Which answers the design question at the declared level. Multiply by the
+mission and the violation has a size: at G3 the vehicle spends 1.42 days of
+a five-year mission outside what it was built for, at G2 6.21 days, at G1
+23.2.
+"""
+math = "0.284 /yr * 5 yr = 1.42 d"
+
+[[theory.step]]
+text = """
+Notice what the three numbers rule out. A design that must NEVER be exceeded
+cannot be built at any level the G scale offers below G4, so the decision
+available is not whether to have exceedances but how many days of them to
+accept.
+"""
+
+[[theory.step]]
+text = """
+The relation is three anchors and a straight line, and the line is wrong.
+Exceedance rate against threshold falls close to exponentially — 4.65 to
+1.24 to 0.284 is a factor of 3.7 then 4.4 — so linear interpolation
+overstates the rate badly between anchors. Nothing in the tree can reach
+between them, because the G scale is integer-valued and the producer's range
+is 1 to 3; the assumption is written so that the day something can, it is
+not believed.
+"""
+
+[[theory.step]]
+text = """
+One bias in the count has a known direction. The 273 absent days sit at
+cycle 24's phase 0.74 to 0.80, INSIDE the band where exceedances concentrate
+rather than in the quiet part of the cycle. So whatever happened there is
+missing from the numerator, and the true rate is more likely above this
+figure than below it.
+"""
+
+
 [[assumption]]
 text = "The design bound IS exceeded, and the rate is the whole argument for accepting it"
 fails_when = "the bound is read as a limit the sky respects. At G3, Ap 132, the record holds 8 days above it in 28.197 years — 0.284 a year, one day in 1287. Over the declared five-year mission that is 1.42 days. At G2, Ap 80, it is 35 days, 1.24 a year, 6.21 days per mission; at G1, Ap 48, it is 131 days, 4.65 a year, 23.2 days per mission. A design that must never be exceeded cannot be built at any of these levels, and the decision is about how many days of exceedance are tolerable rather than whether there are any"

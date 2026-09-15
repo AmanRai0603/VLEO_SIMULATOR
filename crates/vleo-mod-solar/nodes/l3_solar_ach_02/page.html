@@ -23,12 +23,22 @@
 <p class="note">The F10.7 driver on the achieved side. It is the same quantity as ach_01 in this subsystem because the solar flux IS F10.7 here — the layer-2 rows separate them and the subsystem does not, which is a finding rather than a design and is stated in the assumptions.</p>
 <h4>Assumptions</h4>
 <dl class="asm">
-<dt>It inherits every limitation of the row it restates, and a closure reading it sees none of them</dt><dd>fails when the same cost as the interface, and worth repeating on the row a closure actually binds. The number cannot tell solar maximum from solar minimum, because no row in this tree publishes a date; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way.</dd>
+<dt>It inherits every limitation of the row it restates, and a closure reading it sees none of them</dt><dd>fails when the same cost as the interface, and worth repeating on the row a closure actually binds. The number is sized on the record's unconditional mean rather than on the mean cycle at the mission's epoch — the epoch is published and this chain does not yet read it, which is an open decision on sw_central_expectation worth 6.7 sfu; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way.</dd>
 <dt>ach_01 and ach_02 carry the same number, because at layer 3 the solar flux IS F10.7</dt><dd>fails when sys_space_environment declares sys_space_environment_solar_flux and sys_space_environment_f10_7 as separate rows, and the seeder mirrored both into this group. In the study they are one quantity: F10.7 is the solar flux index, and nothing in prf_drivers distinguishes them. So two rows here answer with one number, which is honest but redundant, and the redundancy belongs to the layer-2 decomposition rather than to this subsystem. Whoever settles what an interface publishes should settle this at the same time — either sys_space_environment_solar_flux means something else, such as the headline with its credibility, or one of the two rows should not exist.</dd>
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">There is no derivation here that ach_01 does not carry, and inventing one would be dishonest. The row exists because layer 2 declares sys_space_environment_solar_flux and sys_space_environment_f10_7 as separate quantities and the seeder mirrored both into this group. In the study they are one quantity: F10.7 IS the solar flux index, and nothing in prf_drivers distinguishes them. So two rows here answer with one number, and the redundancy belongs to the layer-2 decomposition rather than to this subsystem.</p>
+<div class="theory-walk" data-steps="3">
+<ol class="derive">
+<li><span class="dt">The quantity is the same as ach_01's and so is the number, because at layer 3 the solar flux and F10.7 are the same measurement. Two rows are written because two partners exist above, not because two quantities exist below.</span></li>
+<li><span class="dt">Writing one row and leaving the other seeded was the alternative, and it is worse: an unseeded partner at layer 2 would read as an unanswered question rather than as a duplicated one, and the duplication is the finding.</span></li>
+<li><span class="dt">Inventing a difference between them was the other alternative, and it is worse still. Any distinction written here to justify two rows would be a claim about the quantity that the study's own data does not support.</span><code class="dm">F107_ach = F107_design = 228.14 sfu — identical to ach_01, on purpose</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">The duplication is real and is declared rather than disguised. Resolving it is a decision about what layer 2 means — either sys_space_environment_solar_flux means something other than F10.7, such as the headline with its credibility attached, or one of the two rows should not exist. Whoever settles what an interface publishes should settle this at the same time, because both questions are about the same seam.</p>
+<p class="maths concl">which is the relation this node states: <code>F107_ach = sw_f107_design</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -93,7 +103,7 @@ use vleo_core::units::*;
 ///
 /// # Assumptions
 ///
-/// * It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when the same cost as the interface, and worth repeating on the row a closure actually binds. The number cannot tell solar maximum from solar minimum, because no row in this tree publishes a date; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way.
+/// * It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when the same cost as the interface, and worth repeating on the row a closure actually binds. The number is sized on the record's unconditional mean rather than on the mean cycle at the mission's epoch — the epoch is published and this chain does not yet read it, which is an open decision on sw_central_expectation worth 6.7 sfu; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way.
 /// * ach_01 and ach_02 carry the same number, because at layer 3 the solar flux IS F10.7 — fails when sys_space_environment declares sys_space_environment_solar_flux and sys_space_environment_f10_7 as separate rows, and the seeder mirrored both into this group. In the study they are one quantity: F10.7 is the solar flux index, and nothing in prf_drivers distinguishes them. So two rows here answer with one number, which is honest but redundant, and the redundancy belongs to the layer-2 decomposition rather than to this subsystem. Whoever settles what an interface publishes should settle this at the same time — either sys_space_environment_solar_flux means something else, such as the headline with its credibility, or one of the two rows should not exist.
 pub const NODE_ID: &amp;str = &quot;l3_solar_ach_02&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
@@ -152,6 +162,5 @@ pub fn evaluate(conclusion: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

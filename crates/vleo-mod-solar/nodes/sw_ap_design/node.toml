@@ -42,6 +42,85 @@ note = "The design-side companion to sw_storm_return_level. That row says what t
 expression = "Ap_design(G) = ap at the top Kp of that G band: G1 -> 48, G2 -> 80, G3 -> 132"
 source = "iaga_kp_ap"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+The G level is a name and the design needs a number, in the quantity the
+rest of the tree carries: daily planetary Ap. Getting from one to the other
+is not a conversion so much as a choice, because a G level constrains only
+the worst of a day's eight three-hourly slots and daily Ap is the mean of
+all eight. A single G3 day could have a daily Ap almost anywhere below the
+value it would reach if every slot sat at Kp 7. This row takes that upper
+value, and the whole of its content is the argument for taking the ceiling
+rather than the middle.
+"""
+reading = """
+The answer at G3 is 132 and the record's five-year expectation is 158.4 —
+the design value is BELOW what the mission should expect, and the gap is the
+finding this pair of rows exists to surface. It is also conservative within
+its own level in the opposite direction: no G3 day in 29 years came within a
+third of 132, whose typical value is 51. So the number is a bound on its
+level and not a description of it, and the two facts do not cancel — one is
+about the level chosen, the other about the sky.
+"""
+
+[[theory.step]]
+text = """
+A G level fixes the worst slot of the day and leaves the other seven
+unconstrained. Daily Ap is the mean of all eight, so a day labelled G3 can
+have almost any daily Ap up to the value it would reach if every slot were
+as bad as its worst.
+"""
+math = "Ap_day = mean of eight three-hourly ap; G fixes only max Kp"
+
+[[theory.step]]
+text = """
+The record shows how wide that leaves it: days whose Kp_max is exactly 7 run
+from daily Ap 15 to 96, with a median of 51. There is no single Ap that 'is'
+G3.
+"""
+
+[[theory.step]]
+text = """
+A design bound has to hold for the worst day inside the level it claims, so
+the ceiling is the right end of the band, not the middle. The ceiling is the
+daily Ap a day would reach if all eight slots sat at that level's Kp — which
+is just that Kp's tabulated ap, since the mean of eight equal values is the
+value.
+"""
+math = "Ap_design(G) = ap(Kp of G) = 48, 80, 132 for G1, G2, G3"
+
+[[theory.step]]
+text = """
+That makes the row conservative by construction, and the size of the
+conservatism is measurable: the median G3 day is 51 and this row publishes
+132, so no G3 day in 29 years came within a third of the design value. That
+is the price of a bound that cannot be violated by any day the level admits.
+"""
+
+[[theory.step]]
+text = """
+It is a lookup on three integers and nothing between them is defined. The ap
+values at Kp 5, 6 and 7 are 48, 80 and 132 — ratios of 1.67 and 1.65, so the
+scale is close to geometric and a linear reading between levels would be
+wrong by tens of nanotesla. That is why the producer's range is bounded to
+integers and why this row does not interpolate.
+"""
+
+[[theory.step]]
+text = """
+One thing the quantity cannot carry: daily Ap ignores everything about a
+storm except its size. A day at Ap 132 that recovers overnight and the first
+day of a three-day storm at the same Ap are the same number here, and the
+thermosphere does not treat them alike — density lags the driver, and a
+sustained storm heats it far more than one disturbed day. A drag design
+taking this number alone gets the peak and not the integral.
+"""
+
+
 [[assumption]]
 text = "The design value is BELOW what the record expects over the mission, and that is not a defect in either row"
 fails_when = "the two are read as competing answers. At G3 this row gives 132; sw_storm_return_level at the declared five-year mission gives 158.4, and the record's days nearest that Ap all reached Kp_max 9. So the sky a five-year mission should expect is stronger than the sky the vehicle is sized for, by about 20 per cent in daily Ap. The gap is real and is closed by operations rather than by structure: 49 days in 29 years reach G4 and 16 reach G5, and a mission flies through those rather than being built for them. Both numbers belong in the tree precisely so the gap is on a row instead of in somebody's head"

@@ -20,15 +20,27 @@
 <p class="question">What does the solar-weather subsystem conclude, for a system reader who will not open it?</p>
 <p class="maths"><code>F107_crossing = F107_design</code></p>
 <p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
-<p class="note">One row, one number, no reaching in. Everything the subsystem establishes — the record, the cycle, the storms, the slot bias, the spread — arrives at sw_f107_design, and this carries that across to sys_space_environment. A reader who wants the working opens l3_solar and finds twenty-six rows; a reader who wants the answer opens this one.</p>
+<p class="note">One row, one number, no reaching in. Everything the subsystem establishes — the record, the cycle, the storms, the slot bias, the spread — arrives at sw_f107_design, and this carries that across to sys_space_environment. A reader who wants the working opens l3_solar and finds forty rows; a reader who wants the answer opens this one.</p>
 <h4>Assumptions</h4>
 <dl class="asm">
 <dt>It carries the F10.7 driver only, and the subsystem concludes more than that</dt><dd>fails when sys_space_environment holds six rows — solar flux, F10.7, Ap, atmospheric density, thermospheric wind, atomic oxygen fluence — and this crossing answers one of them. The Ap side is measured and published inside the subsystem (sw_storm_return_level, and the peak-slot correction in sw_kp_slot_bias) and does not cross yet, because one row publishes one number and the convention allows exactly one crossing per subsystem. How a subsystem with more than one conclusion crosses is the same unsettled question as the kind above, and it is unsettled for all twenty-one interfaces, not just this one.</dd>
-<dt>It inherits every limitation of the row beneath it, and a system reader sees none of them</dt><dd>fails when this is the ordinary cost of a seam and it is worth stating where the seam is. The number crossing here cannot tell solar maximum from solar minimum, because no row in this tree publishes a date; it is a 95th percentile and not a worst case; and its centre is the record's unconditional mean. A reader at layer 2 sees 228 sfu and a credibility vector, and would have to open sw_f107_design and then sw_central_expectation to learn any of that. The credibility travels; the assumptions do not.</dd>
+<dt>It inherits every limitation of the row beneath it, and a system reader sees none of them</dt><dd>fails when this is the ordinary cost of a seam and it is worth stating where the seam is. The number crossing here is a 95th percentile and not a worst case, and its centre is the record's unconditional mean rather than the mean cycle at the mission's epoch — the epoch is published and this chain does not read it yet. A reader at layer 2 sees 228 sfu and a credibility vector, and would have to open sw_f107_design and then sw_central_expectation to learn any of that. The credibility travels; the assumptions do not.</dd>
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">A four-layer tree is only worth having if each layer can be reasoned about without opening the ones below it. That requires a rule about seams, and the rule taken here is the strict one: a subsystem is reached through exactly one node, never by reaching into it. This row is that node for solar weather, and it computes nothing — it republishes the subsystem's conclusion so that the seam is a row somebody owns rather than an edge nobody looks at. It is also the first written crossing in the repository, so what it does sets a convention for twenty more.</p>
+<div class="theory-walk" data-steps="5">
+<ol class="derive">
+<li><span class="dt">The property to be preserved is that a layer is independently reasonable. If any row at layer 2 could read any row at layer 3, the layers would be a drawing rather than a structure, and a change inside a subsystem could reach anywhere.</span></li>
+<li><span class="dt">The mechanism is to allow exactly one node per subsystem to be visible from above. Then the surface a subsystem presents is one number wide, and every consumer of it is reading the same thing.</span></li>
+<li><span class="dt">Which forces the crossing to be a pass-through rather than a calculation. A crossing that computed anything would be doing subsystem work in a place no subsystem reviewer reads, and the number a system reader saw would not exist anywhere inside the subsystem.</span><code class="dm">F107_crossing = F107_design — identity, deliberately</code></li>
+<li><span class="dt">The declared range is copied from the producer for the same reason. Narrowing it would refuse answers the subsystem considers valid, and widening it would admit answers the subsystem would refuse — either way the crossing would be changing the answer while appearing to relay it.</span></li>
+<li><span class="dt">One reading of this row was NOT taken, and it is worth stating because a reviewer can overturn it cheaply now and expensively later. kind = &quot;required&quot; could mean this row states a spacecraft CAPABILITY — the worst sky the design can sustain — with the environment's answer arriving as the achieved side, which is how layers/l3_solar.toml frames the three req/ach pairs. On that reading this row would be kind = &quot;achieved&quot;. The two differ in which side of the closure the row sits on, which is not a detail.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">It carries the F10.7 driver only, and the subsystem concludes more than that. The Ap side is measured and published inside the subsystem and does not cross, because one row publishes one number and the convention allows one crossing per subsystem. How a subsystem with more than one conclusion crosses is unsettled, for all twenty-one interfaces. And a system reader sees 228 sfu with a credibility vector and none of the assumptions underneath it: the credibility travels across the seam, the assumptions do not.</p>
+<p class="maths concl">which is the relation this node states: <code>F107_crossing = F107_design</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -90,12 +102,12 @@ use vleo_core::units::*;
 /// — the record, the cycle, the storms, the slot bias, the spread —
 /// arrives at sw_f107_design, and this carries that across to
 /// sys_space_environment. A reader who wants the working opens l3_solar and
-/// finds twenty-six rows; a reader who wants the answer opens this one.
+/// finds forty rows; a reader who wants the answer opens this one.
 ///
 /// # Assumptions
 ///
 /// * It carries the F10.7 driver only, and the subsystem concludes more than that — fails when sys_space_environment holds six rows — solar flux, F10.7, Ap, atmospheric density, thermospheric wind, atomic oxygen fluence — and this crossing answers one of them. The Ap side is measured and published inside the subsystem (sw_storm_return_level, and the peak-slot correction in sw_kp_slot_bias) and does not cross yet, because one row publishes one number and the convention allows exactly one crossing per subsystem. How a subsystem with more than one conclusion crosses is the same unsettled question as the kind above, and it is unsettled for all twenty-one interfaces, not just this one.
-/// * It inherits every limitation of the row beneath it, and a system reader sees none of them — fails when this is the ordinary cost of a seam and it is worth stating where the seam is. The number crossing here cannot tell solar maximum from solar minimum, because no row in this tree publishes a date; it is a 95th percentile and not a worst case; and its centre is the record's unconditional mean. A reader at layer 2 sees 228 sfu and a credibility vector, and would have to open sw_f107_design and then sw_central_expectation to learn any of that. The credibility travels; the assumptions do not.
+/// * It inherits every limitation of the row beneath it, and a system reader sees none of them — fails when this is the ordinary cost of a seam and it is worth stating where the seam is. The number crossing here is a 95th percentile and not a worst case, and its centre is the record's unconditional mean rather than the mean cycle at the mission's epoch — the epoch is published and this chain does not read it yet. A reader at layer 2 sees 228 sfu and a credibility vector, and would have to open sw_f107_design and then sw_central_expectation to learn any of that. The credibility travels; the assumptions do not.
 pub const NODE_ID: &amp;str = &quot;l3_solar_interface&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
@@ -164,6 +176,5 @@ pub fn evaluate(conclusion: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

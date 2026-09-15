@@ -30,7 +30,21 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">sw_mean_cycle_level hands a design the shape of the average cycle, built from two. This row asks whether an object like that is worth anything — whether a solar cycle repeats the one before it. The answer has to come in two parts, and the reason is a property of the statistic rather than a property of the Sun: a correlation is scale-free, so the obvious measure of 'do these two look alike' is structurally blind to the one thing a drag design cares about. So the shape and the amplitude are measured separately, and the second measurement is the one that carries the warning.</p>
+<div class="theory-walk" data-steps="7">
+<ol class="derive">
+<li><span class="dt">Put both complete cycles on one axis. Each is stacked on phase in the same twenty bins used by sw_mean_cycle_level, which turns two records of unequal length into two curves that can be compared point for point.</span></li>
+<li><span class="dt">Correlate the two curves. Pearson's r over the bins asks whether they rise and fall together, which is the question 'does the cycle have a repeatable shape' in measurable form.</span><code class="dm">r = cov(x, y) / (sd(x) * sd(y)) over the bins both cycles populate</code></li>
+<li><span class="dt">Which bins count is a decision with a number attached, so it is stated exactly. 273 consecutive days are absent from the record, 2017-01-01 to 2017-09-30, and they fall at cycle 24's phase 0.735 to 0.803: bin 15 is emptied entirely and bin 14 is left with 141 days against the usual 201. The rule is that a bin needs at least 150 days from BOTH cycles, which keeps 18. Including the thin bin gives 0.7756 rather than 0.7701 — a small difference, and the reason the rule is written as a threshold instead of as 'the bins both cycles populate', which would be read as 19.</span><code class="dm">r over 18 bins = 0.7701; over 19 = 0.7756</code></li>
+<li><span class="dt">0.77 means the two stacked cycles share 59 per cent of their variance. The shape repeats, and it does not repeat exactly.</span><code class="dm">r^2 = 0.593</code></li>
+<li><span class="dt">Now the part the correlation cannot see. Multiply one of the two curves by any positive constant and r does not move at all — that is what scale-free means — and the constant is precisely the amplitude a drag design needs. So a correlation near one would be entirely compatible with two cycles differing by a factor of two in flux.</span><code class="dm">r(x, y) = r(x, a*y) for every a &gt; 0</code></li>
+<li><span class="dt">So amplitude is measured separately, and it disagrees. The phase-stacked peaks are 206.9 sfu for cycle 23 and 149.4 for cycle 24, a ratio of 0.722, and the published smoothed peaks of 196.4 and 146.1 agree at 0.744. The rms difference between the two curves is 37.7 sfu against a pooled mean near 112.</span></li>
+<li><span class="dt">Two findings, then, and a design that reads only the first will be wrong in the direction that costs it: the cycles rise and fall alike at r = 0.77, and they are not the same size, at a peak ratio of 0.72 and an rms difference of a third of the mean.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">There is no distribution behind 0.77. The record holds exactly two complete cycles, so this is a single observation of a correlation and not an estimate of one, and two samples cannot tell a repeatable shape from a coincidence between two particular cycles. No further analysis of this bundle can fix that; it needs a longer record. Every consumer of the mean-cycle curve inherits the limit, and the honest summary is narrow: these two cycles rose and fell alike, and were not the same size.</p>
+<p class="maths concl">which is the relation this node states: <code>r_cyc = corr(F107 of cycle 23 by phase, F107 of cycle 24 by phase) = 0.7701</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -150,7 +164,4 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
-<section class="gaps"><h4>Open gaps</h4><ul>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
-</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

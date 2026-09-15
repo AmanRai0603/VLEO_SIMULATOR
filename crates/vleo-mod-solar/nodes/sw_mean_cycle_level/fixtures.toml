@@ -171,11 +171,3 @@ tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
 inputs = { phase = 0.975 }
-
-[[fixture]]
-label = "the declared epoch's phase of 0.6194 falls in the 0.625 bin — 105.84 sfu, against the unconditional mean of 114.84"
-expect = 105.8445
-tolerance = 1e-12
-provenance = "independent-derivation"
-source = "noaa_swpc"
-inputs = { phase = 0.625 }

@@ -31,7 +31,20 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">Before asking whether a published forecast is any good, it is worth knowing how much predictability there is to be had. The cheapest possible forecast is persistence — assume today continues — and the error it accumulates as a function of lead is a measurement of the process rather than of any forecaster. In turbulence and in time series this object is called a structure function, and its shape carries the memory of the system: where it rises, the system is forgetting; where it flattens or dips, something is repeating.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">Define the error of persistence at a lead as the RMS difference between a day and the day L later, over every pair of observed days that far apart.</span><code class="dm">D(L) = RMS[ F107(t + L) - F107(t) ]</code></li>
+<li><span class="dt">For a process with no memory at all, this has a known limit. The difference of two independent draws from the same distribution has twice the variance, so the structure function saturates at the square root of two times the standard deviation — which for this record is a number that can be checked against the climatology row.</span><code class="dm">D(inf) = sqrt(2) * sigma = 1.414 * 44.39 = 62.77 sfu</code></li>
+<li><span class="dt">Measured, it does not saturate inside the record's usable range: 7.1 sfu at one day, 29.1 at fourteen, 49.63 at two years and still climbing toward, not sitting at, the 62.77 limit. F10.7 is cyclic rather than a random walk, so a longer lead keeps finding new ways to be different.</span></li>
+<li><span class="dt">And in the middle of that rise there is a dip, which is the feature the whole row exists to carry. The error falls from 29.1 sfu at fourteen days to 22.4 at twenty-seven days before rising again.</span><code class="dm">D(14 d) = 29.1 &gt; D(27 d) = 22.4</code></li>
+<li><span class="dt">Twenty-seven days is the synodic solar rotation. The same active region carries round to face the Earth again, so today's flux is a BETTER guide to the flux one rotation from now than to the flux a fortnight from now. It is the one feature of this curve a forecaster would actually use, and any monotone model of predictability erases it — which is why this is a table and not a fit.</span></li>
+<li><span class="dt">One methodological departure from the study, shared with sw_uncertainty_growth. prf_horizon builds a full daily grid and fills the record's 273 absent days by linear interpolation; interpolated days carry no variability, so every error statistic spanning them is understated. This row pairs only days that were both observed, which costs sample size and buys a number that is not partly invented — and is therefore expected to disagree slightly with the MATLAB.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">The declared input cannot reach the interesting part of this curve. orbit_mission_duration is declared 0.5 to 15 years, so in a real run the row is only ever asked about leads of 183 days and up — past the rotation dip, past the rise, in the slow tail. The short-lead structure is carried because the question is about predictability and the structure is the answer, but nothing in this tree currently asks for it. Note too that persistence has NOT saturated even at two years, so reading the tail as converged would understate how much worse a longer lead still gets.</p>
+<p class="maths concl">which is the relation this node states: <code>D(L) = RMS[F107(t+L) - F107(t)], from the record</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -194,6 +207,5 @@ pub fn evaluate(lead: Time) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

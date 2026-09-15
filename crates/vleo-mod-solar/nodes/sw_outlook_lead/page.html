@@ -29,7 +29,19 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">Two rows in this subsystem verify the published short-term outlook, and both of them answer 'at what lead'. A lead therefore has to be declared somewhere, and choosing it is not a formality: the outlook's skill rises, peaks and goes negative across its own window, so a single lead can make the product look useful or useless depending on where it is put. This row picks the pessimistic end, because what a design needs to know about a forecast is how bad its far edge is rather than how good its centre is. The whole difficulty is that the far edge of the PRODUCT and the far edge of what the RECORD CAN VERIFY are not the same lead.</p>
+<div class="theory-walk" data-steps="5">
+<ol class="derive">
+<li><span class="dt">The published outlook is a 27-day product, so the obvious choice of far-edge lead is 27. Counting the issues shows why that is not available: of 1281 issues, 900 carry 27 rows and 349 carry 14.</span></li>
+<li><span class="dt">Worse than uneven length, the column is indexed two ways in the same file. Among the 899 issues spanning 27 days, 719 index their rows from lead 0 and 175 from lead 1 — so 'lead 27' exists only for the 1-based minority.</span><code class="dm">issues reaching lead 27 = 192 of 1281</code></li>
+<li><span class="dt">That makes any statistic at lead 27 a property of the indexing rather than of the forecast, and it shows: the skill at 27 has a different sign from each of its neighbours. At lead 26 the sample is 868 issues drawn from BOTH conventions, which is a cell whose contents mean something.</span></li>
+<li><span class="dt">So the declared lead is 26 — the last lead in the published window the record can verify — and the upper bound is set there rather than at 27 so that nothing can quietly ask about the unverifiable cell.</span><code class="dm">L_short = 26 d</code></li>
+<li><span class="dt">One further choice sits behind every number quoted above and it is the baseline. Persistence here is the last observation STRICTLY BEFORE the issue date. Allowing it the observation ON the issue date hands it a lead-0 target for the 719 issues that index from zero — a value the forecaster did not have — and the lead-1 skill then reads -1.314 instead of +0.069, making the outlook appear to lose to persistence through lead 4 when it does not. This row's own first version carried the leaky figure.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">It is not the window length. 899 of 1281 issues span exactly 27 days and the synodic solar rotation is about 27.3 days, so 27 is the honest answer to 'how far ahead does the outlook reach' — and this row is not asking that. If a row is ever needed for the window length it is a second row. A single lead also cannot characterise the product: skill runs from +0.069 at lead 1 to +0.438 at lead 9 and back to -0.022 at lead 26, so a verification at 26 says nothing about the useful middle.</p>
+<p class="maths concl">which is the relation this node states: <code>L_short = 26 d</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -148,7 +160,4 @@ pub fn evaluate() -&gt; Result&lt;Time, Fault&gt; {
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
-<section class="gaps"><h4>Open gaps</h4><ul>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
-</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

@@ -28,6 +28,86 @@ confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its
 expression = "Ap(doy) = 10.4936 + A*cos(4*pi*(doy-1)/365.25 - phi),  A = 1.2781"
 source = "noaa_swpc"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+Geomagnetic activity has a seasonal pattern that is not a seasonal pattern
+on Earth: it peaks near both equinoxes and dips near both solstices, twice a
+year. The mechanism is geometric. The solar wind's magnetic field is carried
+in a frame fixed to the Sun, and how efficiently it couples into the
+magnetosphere depends on the angle between that field and the Earth's dipole
+— an angle whose annual sweep passes through its most favourable value
+twice, near the equinoxes. That is the Russell-McPherron effect. This row
+measures how big the resulting swing is, and the answer's SIZE is the point:
+it moves the mean by about a tenth and predicts almost nothing about a given
+day.
+"""
+reading = """
+A shift in the mean, visible only in aggregate. The fit accounts for 0.63
+per cent of the daily variance, and daily Ap has a standard deviation of
+11.34 against a mean of 10.50 — so storm-to-storm variation exceeds the
+season by more than an order of magnitude. It belongs in a monthly or annual
+budget and is worthless as a daily correction. The amplitude is also
+ADDITIVE in Ap, so it is a 12 per cent modulation at the record's mean and
+would be 1.3 per cent at a storm level of 100; since the mechanism modulates
+a coupling efficiency, the additive form understates the effect during
+active periods and overstates it during quiet ones.
+"""
+
+[[theory.step]]
+text = """
+The expected shape comes from the mechanism rather than from the data. A
+geometric angle that sweeps once a year and is most favourable twice per
+sweep produces a signal at TWICE the annual frequency, so the term to fit is
+a cosine of period half a year.
+"""
+math = "Ap(doy) ~ offset + A * cos(4*pi*(doy - 1)/365.25 - phi)"
+
+[[theory.step]]
+text = """
+Fit that one term to the whole daily record by least squares — 10299 values
+from 1997-01-09 to 2025-12-31 — solving for the offset, the amplitude and
+the phase together. Nothing about the equinoxes is supplied to the fit.
+"""
+math = "offset = 10.4936, A = 1.2781 Ap"
+
+[[theory.step]]
+text = """
+Now the test that distinguishes a physical effect from an arbitrary
+harmonic: where did the fitted maxima land? At days of year 96.8 and 279.4 —
+6 April and 6 October — within a week of both equinoxes, from a fit that was
+given no knowledge of them. That is the signature being measured rather than
+a curve being drawn.
+"""
+
+[[theory.step]]
+text = """
+The monthly means agree independently and without any fitting at all:
+September at 11.88 and October at 11.84 at the top, December at 8.33 and
+January at 8.61 at the bottom, a peak-to-trough ratio of 1.43.
+"""
+
+[[theory.step]]
+text = """
+And now the size, which is what a designer needs from this row. The fitted
+amplitude explains 0.6347 per cent of the total variance of daily Ap. The
+pattern is certain and it is small.
+"""
+math = "A / offset = 0.122; R^2 = 0.006347"
+
+[[theory.step]]
+text = """
+One harmonic cannot carry everything the record shows. The two fitted maxima
+are equal by construction and the observed ones are not — the autumn peak
+reaches 11.88 against a spring peak near 11.39 — so an annual asymmetry is
+being folded into the residual. Separating an annual term from the
+semiannual one would fit better and would be a different row.
+"""
+
+
 [[assumption]]
 text = "The seasonal signal is real and explains 0.63 per cent of the daily variance"
 fails_when = "the amplitude is used to predict a day. Least squares over 10299 daily Ap values from 1997-01-09 to 2025-12-31 gives an amplitude of 1.278 on an offset of 10.494 — a swing of about 12 per cent about the mean — and the fit accounts for 0.006347 of the total variance. Daily Ap has a standard deviation of 11.34 against a mean of 10.50, so storm-to-storm variation dwarfs the season by more than an order of magnitude. The signal is a shift in the MEAN, visible only in aggregate: it belongs in a monthly or annual budget and is worthless as a daily correction"

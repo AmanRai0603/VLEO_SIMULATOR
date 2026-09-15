@@ -30,7 +30,20 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">The G level is a name and the design needs a number, in the quantity the rest of the tree carries: daily planetary Ap. Getting from one to the other is not a conversion so much as a choice, because a G level constrains only the worst of a day's eight three-hourly slots and daily Ap is the mean of all eight. A single G3 day could have a daily Ap almost anywhere below the value it would reach if every slot sat at Kp 7. This row takes that upper value, and the whole of its content is the argument for taking the ceiling rather than the middle.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">A G level fixes the worst slot of the day and leaves the other seven unconstrained. Daily Ap is the mean of all eight, so a day labelled G3 can have almost any daily Ap up to the value it would reach if every slot were as bad as its worst.</span><code class="dm">Ap_day = mean of eight three-hourly ap; G fixes only max Kp</code></li>
+<li><span class="dt">The record shows how wide that leaves it: days whose Kp_max is exactly 7 run from daily Ap 15 to 96, with a median of 51. There is no single Ap that 'is' G3.</span></li>
+<li><span class="dt">A design bound has to hold for the worst day inside the level it claims, so the ceiling is the right end of the band, not the middle. The ceiling is the daily Ap a day would reach if all eight slots sat at that level's Kp — which is just that Kp's tabulated ap, since the mean of eight equal values is the value.</span><code class="dm">Ap_design(G) = ap(Kp of G) = 48, 80, 132 for G1, G2, G3</code></li>
+<li><span class="dt">That makes the row conservative by construction, and the size of the conservatism is measurable: the median G3 day is 51 and this row publishes 132, so no G3 day in 29 years came within a third of the design value. That is the price of a bound that cannot be violated by any day the level admits.</span></li>
+<li><span class="dt">It is a lookup on three integers and nothing between them is defined. The ap values at Kp 5, 6 and 7 are 48, 80 and 132 — ratios of 1.67 and 1.65, so the scale is close to geometric and a linear reading between levels would be wrong by tens of nanotesla. That is why the producer's range is bounded to integers and why this row does not interpolate.</span></li>
+<li><span class="dt">One thing the quantity cannot carry: daily Ap ignores everything about a storm except its size. A day at Ap 132 that recovers overnight and the first day of a three-day storm at the same Ap are the same number here, and the thermosphere does not treat them alike — density lags the driver, and a sustained storm heats it far more than one disturbed day. A drag design taking this number alone gets the peak and not the integral.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">The answer at G3 is 132 and the record's five-year expectation is 158.4 — the design value is BELOW what the mission should expect, and the gap is the finding this pair of rows exists to surface. It is also conservative within its own level in the opposite direction: no G3 day in 29 years came within a third of 132, whose typical value is 51. So the number is a bound on its level and not a description of it, and the two facts do not cancel — one is about the level chosen, the other about the sky.</p>
+<p class="maths concl">which is the relation this node states: <code>Ap_design(G) = ap at the top Kp of that G band: G1 -&gt; 48, G2 -&gt; 80, G3 -&gt; 132</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -177,6 +190,5 @@ pub fn evaluate(g_level: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

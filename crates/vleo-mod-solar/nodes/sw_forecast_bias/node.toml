@@ -26,6 +26,79 @@ note = "Signed, forecast minus observed, so a negative answer means the outlook 
 expression = "B_f107(L) = mean over issues of (F107_forecast - F107_observed) at lead L"
 source = "noaa_swpc"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+A skill score is built on squared errors and is therefore blind to sign: a
+forecast that is consistently 4 sfu low and one that is consistently 4 sfu
+high score identically. For a drag design the sign is the whole point. A low
+F10.7 means a thin atmosphere, less drag and a longer predicted lifetime, so
+an under-forecasting outlook does not add scatter to a design — it moves the
+design in the unsafe direction. This row measures the signed error, which is
+the part of the verification a margin cannot absorb.
+"""
+reading = """
+Minus 4 sfu on a mean of 115 is 3.5 per cent, which sounds negligible and is
+not. sw_uncertainty_growth already carries the spread a design must survive,
+and this bias sits underneath it as an offset that no amount of spread
+removes: a symmetric band around a biased centre is still centred in the
+wrong place. The remedy is to add the bias back, not to trust the outlook
+and widen a margin somewhere else. It is also a single mean pooled across 29
+years of a varying Sun, and a forecaster's error on a 250 sfu day is not the
+error on a 70 sfu day.
+"""
+
+[[theory.step]]
+text = """
+Take the signed error rather than its square or its magnitude: forecast
+minus observed, averaged over issues at a fixed lead. Signed, so that a
+consistent lean shows up instead of cancelling into a variance.
+"""
+math = "B(L) = mean over issues of ( F107_forecast - F107_observed ) at lead L"
+
+[[theory.step]]
+text = """
+The first thing to check is whether the mean is distinguishable from zero at
+all, because a well-constructed forecast should have no systematic lean.
+This one does, and at every single lead: from -0.593 sfu at lead 1 to -3.968
+at lead 26, never crossing zero across 26 leads and samples of 866 to 1257
+pairs each.
+"""
+
+[[theory.step]]
+text = """
+A sign that is the same 26 times out of 26 is not scatter about a correct
+central value. The published outlook systematically under-forecasts F10.7,
+and a design reading it gets a thinner atmosphere, lower drag and a longer
+predicted lifetime than it will fly.
+"""
+
+[[theory.step]]
+text = """
+The magnitude is not monotone in lead, and the interior structure is real
+rather than noise: the bias deepens to -2.748 sfu at lead 9, recovers to
+-1.848 at lead 13, then deepens again to -3.968 by lead 26. With over 1200
+pairs per lead, that shape is a property of how the outlook is constructed.
+"""
+
+[[theory.step]]
+text = """
+So the row is a table over measured leads. Fitting a trend through it would
+erase the recovery in the middle, which is the one part of the curve that
+tells a reader the outlook is not simply degrading with distance.
+"""
+
+[[theory.step]]
+text = """
+The declared range is worth noting as a piece of the argument. The upper
+bound is -0.5 rather than 0, because an answer of -0.1 sfu would be as wrong
+as +0.1 and a guard placed at zero would let it through.
+"""
+
+
 [[assumption]]
 text = "The outlook is low at every lead in the window, and that is the unsafe direction"
 fails_when = "the sign is read as incidental. Measured over 1997-2025 the bias is negative at all 26 verifiable leads, from -0.593 sfu at lead 1 to -3.968 sfu at lead 26, and it never crosses zero. So this is not scatter about a correct central value: the published outlook systematically under-forecasts F10.7, and a design reading it gets a thinner atmosphere, a lower drag and a longer predicted lifetime than it will fly. The remedy is to add the bias back, not to trust the outlook and widen a margin somewhere else"

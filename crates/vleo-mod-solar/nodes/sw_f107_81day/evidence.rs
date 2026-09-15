@@ -16,14 +16,14 @@ fn relative_error(got: f64, expected: f64) -> f64 {
     if expected == 0.0 { pmath::abs(got) } else { pmath::abs((got - expected) / expected) }
 }
 
-/// the declared epoch's phase 0.619 — mean-cycle level 105.84 sfu
+/// the mean cycle's phase-0.625 bin, on the declining side — 105.84 sfu
 ///
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_0() {
-    let got = model::evaluate(Ratio::new(105.8398)).expect("the fixture case must not be refused");
-    let err = relative_error(got.get(), 105.8398);
-    assert!(err <= 1e-12, "the declared epoch's phase 0.619 — mean-cycle level 105.84 sfu: got {} want 105.8398, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    let got = model::evaluate(Ratio::new(105.8445)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 105.8445);
+    assert!(err <= 1e-12, "the mean cycle's phase-0.625 bin, on the declining side — 105.84 sfu: got {} want 105.8445, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
 /// the mean cycle's peak bin, phase 0.425 — 165.28 sfu
@@ -55,7 +55,7 @@ fn fixture_2() {
 
 /// One per cent either side of the known-good point, this node still answers.
 ///
-/// Derived from `the declared epoch's phase 0.619 — mean-cycle level 105.84 sfu` and the declared domain 60 … 400.
+/// Derived from `the mean cycle's phase-0.625 bin, on the declining side — 105.84 sfu` and the declared domain 60 … 400.
 ///
 /// One per cent, not a decade. These domains are design bands — an altitude
 /// range somebody chose, not a range over which the mathematics holds — so a
@@ -68,7 +68,7 @@ fn fixture_2() {
 fn answers_near_the_known_good_point() {
     let mut refused: Vec<String> = Vec::new();
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(105.8398 * scale)) {
+        if let Err(f) = model::evaluate(Ratio::new(105.8445 * scale)) {
             refused.push(format!("level x{scale} -> {f}"));
         }
     }
@@ -87,7 +87,7 @@ fn answers_near_the_known_good_point() {
 #[test]
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(105.8398 * scale)) {
+        if let Ok(v) = model::evaluate(Ratio::new(105.8445 * scale)) {
             assert!(v.get().is_finite(), "sw_f107_81day produced a value that is not a number");
             assert!(v.get() >= 60.0 && v.get() <= 400.0, "sw_f107_81day answered {}, outside its declared domain 60 … 400 — the guard did not stop it", v.get());
         }
@@ -101,8 +101,8 @@ fn every_answer_is_inside_the_declared_domain() {
 /// agreement across the faces impossible rather than merely hard.
 #[test]
 fn the_same_inputs_give_the_same_answer() {
-    let a = model::evaluate(Ratio::new(105.8398));
-    let b = model::evaluate(Ratio::new(105.8398));
+    let a = model::evaluate(Ratio::new(105.8445));
+    let b = model::evaluate(Ratio::new(105.8445));
     match (a, b) {
         (Ok(x), Ok(y)) => assert!(x.get().to_bits() == y.get().to_bits(), "sw_f107_81day is not deterministic: {} then {}", x.get(), y.get()),
         (Err(_), Err(_)) => {}

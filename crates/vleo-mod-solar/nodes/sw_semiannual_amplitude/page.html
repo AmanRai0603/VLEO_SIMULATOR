@@ -30,7 +30,20 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">Geomagnetic activity has a seasonal pattern that is not a seasonal pattern on Earth: it peaks near both equinoxes and dips near both solstices, twice a year. The mechanism is geometric. The solar wind's magnetic field is carried in a frame fixed to the Sun, and how efficiently it couples into the magnetosphere depends on the angle between that field and the Earth's dipole — an angle whose annual sweep passes through its most favourable value twice, near the equinoxes. That is the Russell-McPherron effect. This row measures how big the resulting swing is, and the answer's SIZE is the point: it moves the mean by about a tenth and predicts almost nothing about a given day.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">The expected shape comes from the mechanism rather than from the data. A geometric angle that sweeps once a year and is most favourable twice per sweep produces a signal at TWICE the annual frequency, so the term to fit is a cosine of period half a year.</span><code class="dm">Ap(doy) ~ offset + A * cos(4*pi*(doy - 1)/365.25 - phi)</code></li>
+<li><span class="dt">Fit that one term to the whole daily record by least squares — 10299 values from 1997-01-09 to 2025-12-31 — solving for the offset, the amplitude and the phase together. Nothing about the equinoxes is supplied to the fit.</span><code class="dm">offset = 10.4936, A = 1.2781 Ap</code></li>
+<li><span class="dt">Now the test that distinguishes a physical effect from an arbitrary harmonic: where did the fitted maxima land? At days of year 96.8 and 279.4 — 6 April and 6 October — within a week of both equinoxes, from a fit that was given no knowledge of them. That is the signature being measured rather than a curve being drawn.</span></li>
+<li><span class="dt">The monthly means agree independently and without any fitting at all: September at 11.88 and October at 11.84 at the top, December at 8.33 and January at 8.61 at the bottom, a peak-to-trough ratio of 1.43.</span></li>
+<li><span class="dt">And now the size, which is what a designer needs from this row. The fitted amplitude explains 0.6347 per cent of the total variance of daily Ap. The pattern is certain and it is small.</span><code class="dm">A / offset = 0.122; R^2 = 0.006347</code></li>
+<li><span class="dt">One harmonic cannot carry everything the record shows. The two fitted maxima are equal by construction and the observed ones are not — the autumn peak reaches 11.88 against a spring peak near 11.39 — so an annual asymmetry is being folded into the residual. Separating an annual term from the semiannual one would fit better and would be a different row.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">A shift in the mean, visible only in aggregate. The fit accounts for 0.63 per cent of the daily variance, and daily Ap has a standard deviation of 11.34 against a mean of 10.50 — so storm-to-storm variation exceeds the season by more than an order of magnitude. It belongs in a monthly or annual budget and is worthless as a daily correction. The amplitude is also ADDITIVE in Ap, so it is a 12 per cent modulation at the record's mean and would be 1.3 per cent at a storm level of 100; since the mechanism modulates a coupling efficiency, the additive form understates the effect during active periods and overstates it during quiet ones.</p>
+<p class="maths concl">which is the relation this node states: <code>Ap(doy) = 10.4936 + A*cos(4*pi*(doy-1)/365.25 - phi),  A = 1.2781</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -151,7 +164,4 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
-<section class="gaps"><h4>Open gaps</h4><ul>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
-</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

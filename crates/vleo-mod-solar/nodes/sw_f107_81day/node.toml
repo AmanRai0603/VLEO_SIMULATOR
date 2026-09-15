@@ -40,6 +40,92 @@ note = "The second driver every empirical density model wants, beside the daily 
 expression = "F107A(epoch) = F107_cyc(phase(epoch))"
 source = "noaa_swpc"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+Every empirical density model — NRLMSISE-00, JB2008 and the rest — takes TWO
+solar drivers, not one: the daily F10.7 and its 81-day centred mean. They
+are asked for separately because they do different physical work. The daily
+value carries the flare-and-rotation structure the thermosphere responds to
+within a day or two; the 81-day mean stands in for the slowly varying EUV
+heating that has had time to reach equilibrium. A design that cannot hand
+over both cannot call the model at all, which is why this row exists even
+though, at an epoch past the record, it has nothing of its own to compute.
+"""
+reading = """
+It is a prediction wearing the name of a measurement. At the declared epoch
+there are no 81 days to centre on — the date is 366 days past the end of the
+record and 407 past the last day that could carry a full centred window — so
+what comes back is the mean of two cycles at the same phase. It is also
+smoother than the thing it is named for: a mean-cycle phase bin spans 201 to
+217 days, between two and three times the 81-day window, so the number
+cannot reproduce a solar rotation because it has already averaged over eight
+of them. That is conservative for a single design point and wrong for a time
+history. And it must not be used for BOTH drivers: sw_f107a_ratio measures a
+twelve per cent daily scatter about this line, and handing a density model
+the smoothed value twice loses every spike the atmosphere actually felt.
+"""
+
+[[theory.step]]
+text = """
+The thermosphere's response to solar EUV has two timescales, and the density
+models encode that by taking two drivers. The daily F10.7 proxies the part
+that changes with a flare or a rotation; the 81-day centred mean proxies the
+part that has reached equilibrium.
+"""
+
+[[theory.step]]
+text = """
+81 days is three synodic solar rotations, which is the point of the width: a
+mean over exactly three rotations removes the rotational modulation — the
+same active regions coming back round — while keeping the cycle-scale trend
+the equilibrium term needs.
+"""
+math = "81 d = 3 * 27 d"
+
+[[theory.step]]
+text = """
+Centred rather than trailing, and that is not a detail. A trailing mean sits
+below the series while the flux is rising and above it while it is falling,
+so it would bias the equilibrium driver in a direction that depends on where
+in the cycle the mission is. A centred mean is an unbiased estimate of the
+day at its centre — which is exactly why it cannot be computed in real time,
+and why an operational user substitutes something else.
+"""
+math = "F107A(d) = mean{ F107(d + k) : k = -40 .. +40 }"
+
+[[theory.step]]
+text = """
+At the declared epoch that definition has no input. The record ends at day
+9496 and the epoch is day 9862, so there is no window to centre and no
+observation to average. The question does not go away — the density model
+still needs a number — so the definition has to be replaced by the best
+available estimate of what the centred mean WILL be.
+"""
+
+[[theory.step]]
+text = """
+The best available estimate is the phase-conditioned climatology, because
+that is what the record supports: the mean of the complete cycles at the
+same point in their cycle. sw_mean_cycle_level already computes it, so this
+row is a pass-through and adds the question, the named density-model
+contract and the declared smoothing width rather than arithmetic.
+"""
+math = "F107A(epoch) = F107_cyc(phase(epoch)) = 108.14 sfu"
+
+[[theory.step]]
+text = """
+The redundancy with sw_mean_cycle_level is real and deliberate rather than
+an oversight. What separates the two rows is what a caller may assume: that
+row is a climatology and says so, this one is a named density-model input.
+If a future epoch falls inside the record this row becomes a measurement
+again and that one does not.
+"""
+
+
 [[assumption]]
 text = "It is a prediction, not a centred mean, because there is nothing to centre on"
 fails_when = "the epoch is inside the record and a caller expects the measured value. The declared epoch is day 9862 and the record ends at day 9496, so this row is 366 days beyond any observation and 407 days beyond the last day that could have a full centred window. What it returns is the mean of cycles 23 and 24 at the same phase — a climatology with two samples behind it — and the difference between that and a real 81-day mean is a whole cycle's individuality. sw_cycle_repeatability puts the shape agreement between those two cycles at 0.770 and the peak disagreement at 28 per cent"

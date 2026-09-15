@@ -36,6 +36,86 @@ confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its
 expression = "T_epoch = 9862 d  (2027-01-01)"
 source = "orbitt_case_c1"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+There is no theory of a date. What there is, and what belongs here, is the
+argument for why a design needs one at all, and why this one. The
+environment a vehicle flies through is not stationary: solar activity runs
+on a cycle of about eleven years, and the same orbit flown in 2020 and in
+2027 meets fluxes that differ by more than a factor of two. Until a date
+exists, the best any environment row can do is the unconditional statistics
+of the whole record — the average of every part of every cycle, which is a
+sky no mission flies through. Every dated question in the design then has to
+key off the SAME date, or the subsystems are each designing for a different
+mission.
+"""
+reading = """
+It is an instant, not a duration, and it crosses the interface in seconds
+like every other Time — 852076800 s for day 9862. Nothing downstream should
+do calendar arithmetic on it. The number is a decision and not a
+measurement, so the honest use of it is to move it: the cycle-dependent half
+of the subsystem answers differently at a different epoch, and a launch
+window rather than a launch date means running the design at both ends of
+the window and keeping the worse answer.
+"""
+
+[[theory.step]]
+text = """
+Start from what makes a date load-bearing. Solar activity is cyclical, so
+the environment is a function of when. The record's F10.7 runs from 64 to
+343 sfu, and the phase-stacked mean of a cycle runs from 72 to 165: choosing
+a date chooses which half of that range the design is sized against.
+"""
+
+[[theory.step]]
+text = """
+A date shared by several subsystems is not a subsystem's property. If the
+solar rows and the thermal rows each held their own epoch, the two would
+drift apart in the first revision and nothing would detect it. So the row
+sits at layer 2, the system layer, where the mission's own requirements
+live, and the subsystems read it.
+"""
+
+[[theory.step]]
+text = """
+A calendar date is not arithmetic. Months have different lengths, leap years
+are irregular, and a row that had to know about either would carry a
+calendar. Counting days from a fixed origin makes every dated question a
+subtraction, and 2000-01-01 is the origin the engine's tables already use.
+"""
+math = "T = days since 2000-01-01; 2027-01-01 -> 9862 d"
+
+[[theory.step]]
+text = """
+Now the choice itself. Cycle 25 opened on 2019-12-01 and the mean length of
+the two complete cycles in the record is 11.44 years, so this epoch folds to
+cycle phase 0.6194 — past maximum, on the declining side.
+"""
+math = "phase = (9862 - 7274) / (11.44 * 365.25) = 0.6194"
+
+[[theory.step]]
+text = """
+That is the phase band the design's own exceedance statistics point at.
+sw_exceedance_phase measures the median cycle phase of the days that exceed
+the design Ap at 0.603, with a spread of 0.29 to 0.74. The declared epoch
+sits inside that band, which means it is a date chosen to face the storms
+rather than one chosen to avoid them.
+"""
+
+[[theory.step]]
+text = """
+It is also 366 days past the end of the record, which stops at 2025-12-31.
+So every row that reads it is answering about a date nothing observed. That
+is the correct position for a design — a mission in the future has no record
+— and it is why the cycle rows fold a phase with a mean length instead of
+measuring one, and why each of them declares that it does.
+"""
+
+
 [[assumption]]
 text = "It is a single date, so the design is sized for a mission that starts then and not for one that slips"
 fails_when = "solar activity is cyclical, so slipping the start changes the sky the mission flies through rather than merely delaying it. 2027-01-01 sits past the maximum of cycle 25 on the declining side, which is the storm-rich phase; a slip to 2030 would move it toward minimum and every cycle-phase row would return a quieter sky. The record's F10.7 runs 64 to 343 sfu across a cycle, so this is not a rounding difference. A mission whose launch date is uncertain needs the design re-run at both ends of the window, and this row is the one to change."

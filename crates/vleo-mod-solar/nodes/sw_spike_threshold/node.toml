@@ -31,6 +31,82 @@ confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its
 expression = "spike when F107 / F107A >= mean + 2.5*sd = 1.3049"
 source = "noaa_swpc"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+A spike is a day the smooth solar cycle does not explain, and the difficulty
+is that 'high' has no fixed value: 150 sfu is an ordinary day at solar
+maximum and an extraordinary one at minimum. So a spike cannot be defined by
+a level. It has to be defined relative to the day's own baseline, which
+makes the quantity a ratio — and once it is a ratio, the threshold can come
+from the record's own scatter rather than from a number somebody liked the
+look of.
+"""
+reading = """
+The threshold is an instant test and says nothing about dwell. 202 days of
+the record pass it, and they arrive in 61 separate events averaging 3.31
+days, which is sw_event_duration's business — the two rows are a pair and
+neither is usable alone. It is also built on a CENTRED baseline and
+therefore cannot be computed in real time: it needs 40 days of future. This
+is a descriptive threshold for a record, not an operational trigger.
+"""
+
+[[theory.step]]
+text = """
+Define the quantity as the day's flux over its own 81-day centred mean,
+which is the same ratio sw_f107a_ratio measures the spread of. A ratio
+rather than a difference, so the test means the same thing at every point in
+a cycle.
+"""
+math = "r(d) = F107(d) / F107A(d)"
+
+[[theory.step]]
+text = """
+The baseline must be CENTRED, not trailing, and this is the choice a
+symmetric threshold depends on. A trailing mean sits below the series during
+a rise and above it during a fall, so the same multiplier would catch rises
+and miss falls. The measured mean ratio of 0.999340 is the evidence that the
+centring is right: an unbiased baseline must give a ratio centred on one.
+"""
+
+[[theory.step]]
+text = """
+With the ratio centred on one and its standard deviation measured at
+0.122210, a threshold can be stated in standard deviations — which makes it
+a property of the record rather than a round number in the wrong units.
+"""
+math = "S_thr = mean + 2.5*sd = 0.999340 + 2.5 * 0.122210 = 1.304866"
+
+[[theory.step]]
+text = """
+Why 2.5 and not 2 or 3: nothing in the physics picks it. 2.5 sd lands near
+the 98th percentile, which is where a day stops being the tail of ordinary
+variation and starts being an event, and it is a round number of standard
+deviations rather than a round number of per cent. 2.0 would catch about 6
+per cent of days and 3.0 about 1 per cent.
+"""
+
+[[theory.step]]
+text = """
+At the chosen multiplier the record yields 202 days, 1.96 per cent of it,
+6.97 a year. That count is the sanity check on the choice: a threshold
+catching a fifth of days would be describing the weather rather than events,
+and one catching thirty days in 29 years would make every downstream
+statistic a sample of three or four bursts.
+"""
+
+[[theory.step]]
+text = """
+Because the ratio's distribution is bounded below and long-tailed above,
+'2.5 standard deviations' should not be read as a Gaussian tail probability.
+The largest ratio in the record is 2.11, which is nine standard deviations
+above the mean — a Gaussian would put that beyond any sample ever taken.
+"""
+
+
 [[assumption]]
 text = "Two and a half standard deviations, and that multiplier is the whole definition"
 fails_when = "somebody wants a spike count rather than a threshold. Over 10284 days the ratio F10.7 to its 81-day centred mean has mean 0.999340 and standard deviation 0.122210, so 2.5 sd lands at 1.304866 and catches 202 days — 1.96 per cent of the record, 6.97 a year. Moving the multiplier to 2.0 would catch about 6 per cent and to 3.0 about 1 per cent. Nothing in the physics picks 2.5; it is chosen because it sits near the 98th percentile, which is where a day stops being the tail of ordinary variation and starts being an event, and because it is a round number of standard deviations rather than a round number of per cent"

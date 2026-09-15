@@ -29,7 +29,18 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">A vehicle cannot be built for the worst storm physically possible, and a design that says so vaguely has made no decision. The NOAA G scale exists to make the decision nameable: five levels, each tied to a Kp, each with documented consequences for power grids, navigation and spacecraft. Declaring a G level is how a programme states what class of event it is engineered through rather than operated through, and putting that declaration on its own row is what makes it a switch — every number downstream moves when it moves.</p>
+<div class="theory-walk" data-steps="4">
+<ol class="derive">
+<li><span class="dt">The G scale is defined on Kp and it grades the WORST three-hourly slot of a day: G1 at Kp 5, G2 at Kp 6, G3 at Kp 7, G4 at Kp 8, G5 at Kp 9. So a G level is a statement about a day's peak disturbance, not about its average.</span></li>
+<li><span class="dt">Choosing a level is choosing where to stop building and start operating, and the frequencies are what make that a real decision. In 29 years the record holds 49 days at G4 and 16 at G5 — rare enough that flying through them with a procedure is cheaper than carrying the structure for them, and common enough that a mission must have such a procedure.</span></li>
+<li><span class="dt">G3 is the highest level this vehicle class is sized for. That is a statement about this class and not about the scale, which is why the declared upper bound is 3: a mission that genuinely requires G4 changes the bound on purpose and re-runs the closure, and the change is visible in a diff rather than buried in a selection.</span></li>
+<li><span class="dt">The row is a switch rather than a constant. sw_ap_design converts it, and the three exceedance rows all read that conversion, so moving this one number from 3 to 2 moves the design Ap from 132 to 80 and the exceedance from 1.42 days over the mission to 6.21. Asking what a different storm level costs is a one-row edit.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">G3 is a choice and the record says a five-year mission will exceed it. The return level at the declared mission is Ap 158.4, and the days in the record nearest that value all reached Kp_max 9, which is G5 — two levels above what this row designs to. That is not an error in either row; it is the gap between what the sky does and what a vehicle can be built for, and what closes it is operations rather than structure. The range refuses 4 and 5 deliberately: a design sized for G4 is a different vehicle, and the return level, the band and the requirement would all need revisiting together.</p>
+<p class="maths concl">which is the relation this node states: <code>G_design = 3   (NOAA G3, strong, Kp 7)</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -147,6 +158,5 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>significant, and one fixture or none — a significant node is the one that gets a second independent check, which is the whole reason for the word</li>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

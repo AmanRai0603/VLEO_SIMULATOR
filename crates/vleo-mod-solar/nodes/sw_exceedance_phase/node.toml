@@ -36,6 +36,81 @@ note = "The median cycle phase of the days above sw_ap_design, on the 0-to-1 sca
 expression = "P_exc(Ap_design) = median cycle phase of the days with Ap >= Ap_design"
 source = "noaa_swpc"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+How often and how long still leave a programme unable to plan. The third
+question is WHEN — because if exceedances were uniformly distributed through
+a cycle there would be nothing to schedule around, and if they cluster there
+is. The interesting part of this row is not the median it publishes but the
+test it survives: a timing statistic is only about the cycle if it does not
+move when the threshold moves, and this one barely moves across a factor of
+nearly three in threshold.
+"""
+reading = """
+A median with no spread beside it, and the spread is the part a schedule
+needs. 0.603 is where the middle exceedance happened, not when exceedances
+happen. At G3 the eight days run from phase 0.294 to 0.736 — a band nearly
+half a cycle wide, about five years — with half of them between 0.2 and 0.6.
+A design reading only this row plans for a date; a design reading the spread
+plans for a five-year window. The declared epoch at phase 0.6194 sits inside
+that band, which is what makes the epoch a conservative choice rather than a
+convenient one.
+"""
+
+[[theory.step]]
+text = """
+Take the days that exceed the design bound, convert each to its cycle phase
+on the same 0-to-1 scale sw_cycle_phase uses, and take the median of those
+phases.
+"""
+math = "P_exc = median{ phase(d) : Ap(d) >= Ap_design }"
+
+[[theory.step]]
+text = """
+The median rather than the mean, because phase is nearly circular and a
+handful of days near the ends of a cycle would drag a mean toward the middle
+regardless of where the mass sat.
+"""
+
+[[theory.step]]
+text = """
+Now the test that decides whether the answer means anything. If the median
+tracked the threshold, it would be telling us about where the line was
+drawn. It does not: 0.5717 at the G1 bound, 0.5763 at G2, 0.6027 at G3 — a
+drift of three hundredths across a threshold ratio of nearly three, on
+samples of 131, 35 and 8 days.
+"""
+
+[[theory.step]]
+text = """
+So the timing is a property of the solar cycle rather than of the design
+bound. Disturbed days cluster after maximum, on the declining phase, which
+is where coronal holes dominate the solar wind — and three independent
+samples agreeing to within 0.03 is better evidence for that than any one of
+them alone.
+"""
+
+[[theory.step]]
+text = """
+Two caveats about the phase scale itself, neither of which the median can
+show. Cycle 25's end in the record is the record's end rather than a real
+minimum, so phases inside it are computed against a length not yet known;
+and cycles 23 and 24 differ in length by 8 per cent, so equal phase is
+unequal time.
+"""
+
+[[theory.step]]
+text = """
+And the 2017 gap sits at phase 0.74 to 0.80 of cycle 24, just past the upper
+edge of the G3 exceedance band. Whatever fell there is absent from this
+median and from the rate that goes with it.
+"""
+
+
 [[assumption]]
 text = "A median with no spread beside it, and the spread is the part a schedule needs"
 fails_when = "0.603 is read as when exceedances happen. It is where the middle one happened. At G3 the eight days run from phase 0.294 to 0.736 — a band nearly half a cycle wide, about five years — and they fall in phase deciles 0.2-0.3, 0.3-0.4, 0.5-0.6 twice, 0.6-0.7 three times and 0.7-0.8 once. Half of them sit between 0.2 and 0.6. A design that reads only this row plans for a date; a design that reads the assumption plans for a five-year window"

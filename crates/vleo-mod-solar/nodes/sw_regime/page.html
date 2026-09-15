@@ -30,7 +30,23 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">A design cannot respond to a continuous Ap. There is no distinct reaction to Ap 26 as against Ap 27, and a subsystem that tried to have one would be reacting to the measurement's noise. What a design can respond to is a regime: a small set of states, each with its own budget. The study did not choose the boundaries of those states by hand. It fitted a three-component mixture to the distribution of daily Ap and let the record decide where one population ends and the next begins. This node ports the classifier's DECISION, not its machinery, and the derivation below is why one line of thresholds is a faithful port of a fitted mixture.</p>
+<div class="theory-walk" data-steps="8">
+<ol class="derive">
+<li><span class="dt">Start from what a mixture model assumes: that the observed distribution of daily Ap is not one population but a sum of several, each Gaussian, each with its own share of the days, its own centre and its own width. For Ap the study used three — a quiet background, a disturbed population, and a broad storm tail.</span><code class="dm">p(Ap) = w1·N(Ap; m1, s1) + w2·N(Ap; m2, s2) + w3·N(Ap; m3, s3), w1 + w2 + w3 = 1</code></li>
+<li><span class="dt">Fitting chooses the nine numbers that make the observed record most likely. Which algorithm did that is not recorded here and does not matter to this row: prf_cluster.m is not in this repository, only its output, and what is ported is where the fit ended up, not how it got there.</span></li>
+<li><span class="dt">Once fitted, each day gets a posterior share of each component — how much of that day the component accounts for. These are the three numbers daily_regime.csv publishes beside every date.</span><code class="dm">g_i(Ap) = w_i·N(Ap; m_i, s_i) / SUM_j w_j·N(Ap; m_j, s_j)</code></li>
+<li><span class="dt">The label is whichever component claims the largest share. That is the whole classifier: everything above exists to produce this argmax, and the study published the argmax as its 'regime' column.</span><code class="dm">label(Ap) = argmax_i g_i(Ap)</code></li>
+<li><span class="dt">Now the step that turns a fitted mixture into thresholds. Two components swap the lead exactly where their weighted densities cross, and in one dimension that condition is a QUADRATIC in Ap — take logs of the ratio and the squares do not cancel unless the two widths are equal. So each pair of components crosses at up to two values of Ap, not one.</span><code class="dm">log[ w_i·N(Ap; m_i, s_i) / w_j·N(Ap; m_j, s_j) ] = 0 is quadratic in Ap</code></li>
+<li><span class="dt">Where the three components have separated widths, the useful root of each quadratic lands between the two centres, and the argmax becomes an ordered partition of the Ap axis. Read off the published labels, both boundaries sit on integers: the quiet-to-active swap falls between 6 and 7, and the active-to-storm swap between 25 and 26. Nothing of the mixture survives except those two numbers.</span><code class="dm">regime(Ap) = 1 for Ap &lt;= 6, 2 for 7 &lt;= Ap &lt;= 25, 3 for Ap &gt;= 26</code></li>
+<li><span class="dt">The other root is not harmless, and it is measurable in the published file. A broad component's density falls off more slowly than a narrow one's, so far enough down the LOW tail the storm component overtakes quiet again. In daily_regime.csv the mean storm posterior climbs as Ap falls — 0.199 at Ap 3, 0.332 at Ap 2, 0.726 at Ap 1, 0.992 at Ap 0 — crossing the quiet posterior between Ap 2 and Ap 1. That second crossing is the whole of the artefact: 140 days at Ap 1 and 31 at Ap 0, all labelled storm, 171 in total.</span><code class="dm">g_storm &gt; g_quiet for Ap &lt;= 1 as well as for Ap &gt;= 26</code></li>
+<li><span class="dt">This row keeps the first root of each pair and cuts the second. A design told 'storm' on a day with Ap 1 is being actively misled, and the departure is one rule rather than a list of dates. On the other 10128 days the three-band relation reproduces the published label exactly — the disagreement count is zero, not small.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">The answer is an index, not a severity: 3 is not three times 1, and the distance from 1 to 2 is nineteen units of Ap while the distance from 2 to 3 is one. It says which population today belongs to and nothing about how far into that population it is — a day at Ap 26 and a day at Ap 200 are both 3.</p>
+<p class="reading">It also carries no confidence, although the classifier it ports published one: the bands being exact makes the label certain GIVEN the Ap, which is a different claim from the label being right. On the record the study was 55 to 70 per cent sure of its own labels on average, and 21 per cent of its quiet days scored below 0.5.</p>
+<p class="maths concl">which is the relation this node states: <code>regime(Ap) = 1 if Ap &lt;= 6, 2 if Ap &lt;= 25, 3 otherwise</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -171,7 +187,4 @@ pub fn evaluate(ap: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
-<section class="gaps"><h4>Open gaps</h4><ul>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
-</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

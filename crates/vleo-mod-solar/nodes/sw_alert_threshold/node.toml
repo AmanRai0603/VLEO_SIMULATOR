@@ -34,6 +34,73 @@ confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its
 expression = "K_alert = the lowest threshold_value on threshold_var K in alerts.csv = 4"
 source = "noaa_swpc"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+Every other row in this subsystem measures the sky. This one measures the
+people watching it, and that is the point: a mission's own alerting should
+not sit below the level at which the public service already reacts, because
+below that level a mission would be responding to activity nobody is warning
+about. So the number is READ from the thresholds attached to the alerts as
+issued, rather than chosen here — which makes it a fact about operational
+practice over 29 years rather than an engineering judgement.
+"""
+reading = """
+Kp 4 is not a storm. It is 'active', one step below the G scale, which
+starts at Kp 5 for G1, and 3318 days of the record reach Kp_max 4 or more —
+32.2 per cent of all days, 114 a year. A mission that treated every alert as
+a storm would be reacting a third of the time. It is also what WAS alerted
+on, not what should be: the number reflects one centre's choices, including
+changes in practice nobody recorded in this bundle, so a spacecraft with
+different sensitivity needs its own threshold and this row is the reference
+point for setting one.
+"""
+
+[[theory.step]]
+text = """
+The alerts as issued carry the threshold that triggered them, so the
+question is answerable by reading a column rather than by inference. First
+the population has to be identified: of the alerts in the record, 9408 carry
+a K threshold, 119 carry an A threshold, and 8444 carry none at all — those
+are summaries, cancellations and electron-flux notices.
+"""
+
+[[theory.step]]
+text = """
+The A-threshold alerts are a different quantity and are deliberately not in
+this row. They are daily-index alerts at values 20, 30 and 50; this row is
+the three-hourly K one, because a node answers one question.
+"""
+
+[[theory.step]]
+text = """
+Among the K alerts the thresholds used are 4 through 9, and their counts
+fall steeply — which is itself a check that the column is being read
+correctly, since alerts must become rarer as the trigger rises.
+"""
+math = "K 4: 5262 5: 2953 6: 901 7: 233 8: 38 9: 3"
+
+[[theory.step]]
+text = """
+The answer wanted is the FLOOR, because the question is where watching
+begins rather than where it intensifies. So the relation is the minimum of
+the legitimate values.
+"""
+math = "K_alert = min = 4"
+
+[[theory.step]]
+text = """
+Taking the minimum also happens to make this row immune to a defect in the
+source that nothing in the bundle marks. Alongside the K values sit eleven
+parsed thresholds of 414, 413, 425, 419, 430 and 408 — a parser running two
+numbers together, not a Kp of 414. The minimum ignores them; any relation
+taking a maximum or a mean of that column would be wrong.
+"""
+
+
 [[assumption]]
 text = "Kp 4 is the floor and is not a storm"
 fails_when = "it is read as a storm level. Kp 4 is 'active', one step below the G-scale, which starts at Kp 5 for G1. The record shows 3318 days reaching Kp_max 4 or more — 32.2 per cent of all days, 114 a year — so a mission that treated every alert as a storm would be reacting a third of the time. The alerts carry six distinct K thresholds and their counts fall steeply: 5262 alerts at K 4, 2953 at 5, 901 at 6, 233 at 7, 38 at 8 and 3 at 9. This row publishes the floor because it is the floor that says when watching begins"

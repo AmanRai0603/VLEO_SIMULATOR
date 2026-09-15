@@ -30,7 +30,19 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">Every other row in this subsystem measures the sky. This one measures the people watching it, and that is the point: a mission's own alerting should not sit below the level at which the public service already reacts, because below that level a mission would be responding to activity nobody is warning about. So the number is READ from the thresholds attached to the alerts as issued, rather than chosen here — which makes it a fact about operational practice over 29 years rather than an engineering judgement.</p>
+<div class="theory-walk" data-steps="5">
+<ol class="derive">
+<li><span class="dt">The alerts as issued carry the threshold that triggered them, so the question is answerable by reading a column rather than by inference. First the population has to be identified: of the alerts in the record, 9408 carry a K threshold, 119 carry an A threshold, and 8444 carry none at all — those are summaries, cancellations and electron-flux notices.</span></li>
+<li><span class="dt">The A-threshold alerts are a different quantity and are deliberately not in this row. They are daily-index alerts at values 20, 30 and 50; this row is the three-hourly K one, because a node answers one question.</span></li>
+<li><span class="dt">Among the K alerts the thresholds used are 4 through 9, and their counts fall steeply — which is itself a check that the column is being read correctly, since alerts must become rarer as the trigger rises.</span><code class="dm">K 4: 5262 5: 2953 6: 901 7: 233 8: 38 9: 3</code></li>
+<li><span class="dt">The answer wanted is the FLOOR, because the question is where watching begins rather than where it intensifies. So the relation is the minimum of the legitimate values.</span><code class="dm">K_alert = min = 4</code></li>
+<li><span class="dt">Taking the minimum also happens to make this row immune to a defect in the source that nothing in the bundle marks. Alongside the K values sit eleven parsed thresholds of 414, 413, 425, 419, 430 and 408 — a parser running two numbers together, not a Kp of 414. The minimum ignores them; any relation taking a maximum or a mean of that column would be wrong.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">Kp 4 is not a storm. It is 'active', one step below the G scale, which starts at Kp 5 for G1, and 3318 days of the record reach Kp_max 4 or more — 32.2 per cent of all days, 114 a year. A mission that treated every alert as a storm would be reacting a third of the time. It is also what WAS alerted on, not what should be: the number reflects one centre's choices, including changes in practice nobody recorded in this bundle, so a spacecraft with different sensitivity needs its own threshold and this row is the reference point for setting one.</p>
+<p class="maths concl">which is the relation this node states: <code>K_alert = the lowest threshold_value on threshold_var K in alerts.csv = 4</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -147,7 +159,4 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
-<section class="gaps"><h4>Open gaps</h4><ul>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
-</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

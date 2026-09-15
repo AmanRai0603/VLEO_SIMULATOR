@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `cyc` (Solar cycle number), in `-`.
 pub const NODE_ID: &str = "sw_cycle_number";
-pub const SHEET_HASH: u64 = 0xc42c7a7ea5085c63;
+pub const SHEET_HASH: u64 = 0x5306a6af2974c2b1;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sys_mission_requirements_mission_epoch",

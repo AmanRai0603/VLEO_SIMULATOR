@@ -30,7 +30,20 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">A spike is a day the smooth solar cycle does not explain, and the difficulty is that 'high' has no fixed value: 150 sfu is an ordinary day at solar maximum and an extraordinary one at minimum. So a spike cannot be defined by a level. It has to be defined relative to the day's own baseline, which makes the quantity a ratio — and once it is a ratio, the threshold can come from the record's own scatter rather than from a number somebody liked the look of.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">Define the quantity as the day's flux over its own 81-day centred mean, which is the same ratio sw_f107a_ratio measures the spread of. A ratio rather than a difference, so the test means the same thing at every point in a cycle.</span><code class="dm">r(d) = F107(d) / F107A(d)</code></li>
+<li><span class="dt">The baseline must be CENTRED, not trailing, and this is the choice a symmetric threshold depends on. A trailing mean sits below the series during a rise and above it during a fall, so the same multiplier would catch rises and miss falls. The measured mean ratio of 0.999340 is the evidence that the centring is right: an unbiased baseline must give a ratio centred on one.</span></li>
+<li><span class="dt">With the ratio centred on one and its standard deviation measured at 0.122210, a threshold can be stated in standard deviations — which makes it a property of the record rather than a round number in the wrong units.</span><code class="dm">S_thr = mean + 2.5*sd = 0.999340 + 2.5 * 0.122210 = 1.304866</code></li>
+<li><span class="dt">Why 2.5 and not 2 or 3: nothing in the physics picks it. 2.5 sd lands near the 98th percentile, which is where a day stops being the tail of ordinary variation and starts being an event, and it is a round number of standard deviations rather than a round number of per cent. 2.0 would catch about 6 per cent of days and 3.0 about 1 per cent.</span></li>
+<li><span class="dt">At the chosen multiplier the record yields 202 days, 1.96 per cent of it, 6.97 a year. That count is the sanity check on the choice: a threshold catching a fifth of days would be describing the weather rather than events, and one catching thirty days in 29 years would make every downstream statistic a sample of three or four bursts.</span></li>
+<li><span class="dt">Because the ratio's distribution is bounded below and long-tailed above, '2.5 standard deviations' should not be read as a Gaussian tail probability. The largest ratio in the record is 2.11, which is nine standard deviations above the mean — a Gaussian would put that beyond any sample ever taken.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">The threshold is an instant test and says nothing about dwell. 202 days of the record pass it, and they arrive in 61 separate events averaging 3.31 days, which is sw_event_duration's business — the two rows are a pair and neither is usable alone. It is also built on a CENTRED baseline and therefore cannot be computed in real time: it needs 40 days of future. This is a descriptive threshold for a record, not an operational trigger.</p>
+<p class="maths concl">which is the relation this node states: <code>spike when F107 / F107A &gt;= mean + 2.5*sd = 1.3049</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -149,7 +162,4 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
-<section class="gaps"><h4>Open gaps</h4><ul>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
-</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

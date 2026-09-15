@@ -18,12 +18,12 @@ use vleo_core::units::*;
 /// — the record, the cycle, the storms, the slot bias, the spread —
 /// arrives at sw_f107_design, and this carries that across to
 /// sys_space_environment. A reader who wants the working opens l3_solar and
-/// finds twenty-six rows; a reader who wants the answer opens this one.
+/// finds forty rows; a reader who wants the answer opens this one.
 ///
 /// # Assumptions
 ///
 /// * It carries the F10.7 driver only, and the subsystem concludes more than that — fails when sys_space_environment holds six rows — solar flux, F10.7, Ap, atmospheric density, thermospheric wind, atomic oxygen fluence — and this crossing answers one of them. The Ap side is measured and published inside the subsystem (sw_storm_return_level, and the peak-slot correction in sw_kp_slot_bias) and does not cross yet, because one row publishes one number and the convention allows exactly one crossing per subsystem. How a subsystem with more than one conclusion crosses is the same unsettled question as the kind above, and it is unsettled for all twenty-one interfaces, not just this one.
-/// * It inherits every limitation of the row beneath it, and a system reader sees none of them — fails when this is the ordinary cost of a seam and it is worth stating where the seam is. The number crossing here cannot tell solar maximum from solar minimum, because no row in this tree publishes a date; it is a 95th percentile and not a worst case; and its centre is the record's unconditional mean. A reader at layer 2 sees 228 sfu and a credibility vector, and would have to open sw_f107_design and then sw_central_expectation to learn any of that. The credibility travels; the assumptions do not.
+/// * It inherits every limitation of the row beneath it, and a system reader sees none of them — fails when this is the ordinary cost of a seam and it is worth stating where the seam is. The number crossing here is a 95th percentile and not a worst case, and its centre is the record's unconditional mean rather than the mean cycle at the mission's epoch — the epoch is published and this chain does not read it yet. A reader at layer 2 sees 228 sfu and a credibility vector, and would have to open sw_f107_design and then sw_central_expectation to learn any of that. The credibility travels; the assumptions do not.
 pub const NODE_ID: &str = "l3_solar_interface";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
