@@ -1,0 +1,21 @@
+# The MATLAB tool's own answers, as it wrote them.
+#
+# Source: Result_Vleo_Tool.mat, saved by VLEO_Tool (MATLAB) on 2026-09-15T13:34:30,
+# supplied by the tool's author. Extracted from ans.model.mission with scipy.io.
+# This is a RECORD OF ANOTHER IMPLEMENTATION's output, not a measurement, and
+# not derived from anything in this repository — which is what makes it usable
+# as the expected side of a parity check.
+#
+# The run: window opens 2027-06-26, 365 d, 95% confidence, Kp slot 'mean', drivers from database.
+# Construction (prf_density/designWindow_): the window lies wholly beyond the
+# record, so every day holds the last 27-day rotation forecast; the mean band is
+# that centre +/- 1.28*sigma_total, and the daily band adds the measured
+# within-rotation percentile. F10.7 floors at 64, Ap at 0.
+#
+# Columns: scenario, f107, f107bar, ap, kp_mean, kp_peak
+scenario,f107,f107bar,ap,kp_mean,kp_peak
+nominal,158.3304112313161,158.3304112313161,22.092538390203554,3.5481172604129676,4.795303583085666
+hotmean,175.60641964945182,175.60641964945182,26.683328217449382,3.831056770905224,5.196844048816086
+coldmean,141.05440281317954,141.05440281317954,17.50174856295763,3.1668557705124547,4.278018690896385
+hotday,209.75456779760012,175.60641964945182,41.53518006930126,4.500936839029164,6.136692922493645
+coldday,109.7210694798465,141.05440281317954,6.872118933328018,1.8533023466650722,2.811635679998405
