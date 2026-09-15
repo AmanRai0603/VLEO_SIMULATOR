@@ -13,6 +13,16 @@ persistence from lead 1, peaks near +0.44 around lead 9, and goes negative only
 at leads 23 to 25; on the leaky baseline short-lead skill collapses, and that
 collapse is the control working rather than a defect.
 
+ON THE BY-CALENDAR-YEAR VIEW the horizontal axis is the year of ISSUE and the
+line BREAKS at every year dropped for thinness — 1997, 2000, 2009, 2010 and
+2017. A continuous line across those is the defect to look for: it would draw
+two years of evidence where the archive holds 25 pairs. The series dips below
+the red line once, at 2008, and that is the record behaving rather than the
+outlook failing — a flat minimum is the easy case for persistence. Every year
+is scored on leads 1 to 14 only, which is the band every year populates; a
+version scoring all leads together would rank 2004 and 2007 highly for holding
+no long leads at all.
+
 The lead axis runs 1 to 27, which is the outlook's nominal span and NOT the
 same number as sw_outlook_lead's 26. The bundle carries leads from -26 to 392,
 so drawing 1 to 27 is a deliberate restriction to the issued window; the row
@@ -41,8 +51,20 @@ ready = """(async () => {
   tab.click();
 })()"""
 
+# The view control has three branches and check two drives each one, because a
+# branch nobody drives is how 'by calendar year' came to be advertised for
+# months without existing. Two entries on one control is deliberate.
 [[input]]
-name = "view"
+name = "view → by calendar year"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'year'; s.dispatchEvent(new Event('change')); })()"
+why = """
+one point per year on a year axis, against one point per lead on a lead axis —
+different quantities on different axes. This is the branch that was offered and
+unbuilt, so it is the branch that most needs a check demanding the canvas move.
+"""
+
+[[input]]
+name = "view → issue age"
 drive = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'age'; s.dispatchEvent(new Event('change')); })()"
 why = """
 against-lead and issue-age are different horizontal quantities — lead is what

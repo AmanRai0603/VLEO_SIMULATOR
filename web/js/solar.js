@@ -388,15 +388,13 @@ const PANELS = [
     asks: 'Is the published forecast worth more than assuming nothing changes?',
     needs: ['forecast_issued.csv'],
     controls: [
-      // 'rolling, by year' USED TO BE OFFERED HERE AND WAS NEVER IMPLEMENTED.
-      // The string appeared in this list and nowhere else in the file, so
-      // choosing it silently redrew the against-lead picture — a control wired
-      // to nothing, which is the one defect that passes every check a person
-      // makes by eye. Declaring this panel in panels/ is what found it: check
-      // two drives every option a panel claims to read and demands the canvas
-      // change. The view is still missing (the plan's §12 lists it as one of
-      // forecast's four) and it is better missing than advertised.
-      { k: 'view', label: 'view', opts: [['lead', 'against lead'], ['age', 'issue age']] },
+      // 'by calendar year' was offered here for a while and read nowhere, so
+      // choosing it silently redrew the against-lead picture. Declaring this
+      // panel in panels/ found it — check two drives every option a panel
+      // claims to read and demands the canvas change — and it was removed
+      // rather than left advertised. It is now built, and its [[input]] in
+      // panels/forecast.toml is what keeps it built.
+      { k: 'view', label: 'view', opts: [['lead', 'against lead'], ['year', 'by calendar year'], ['age', 'issue age']] },
       { k: 'm', label: 'metric', opts: [['skill', 'skill vs persistence'], ['bias', 'bias'], ['rmse', 'RMS error']] },
       { k: 'base', label: 'persistence baseline', opts: [['strict', 'last obs BEFORE issue'], ['leaky', 'obs ON the issue date']] },
     ],
@@ -423,6 +421,53 @@ const PANELS = [
         }
         return null;
       };
+      // The year view needs the same observations and the same baseline, so it
+      // is dispatched here rather than at the top: a second copy of `persist`
+      // is a second place for the leaky/strict choice to stop agreeing.
+      if (o.view === 'year') {
+        const y = byIssueYear(fc, byDay, tOf, persist, o.m);
+        const marks = o.m === 'skill'
+          ? [{ axis: 'y', at: 0, label: 'no better than persistence', colour: '#c1440e' }] : [];
+        const worst = y.kept.length ? y.kept[y.keptYs.indexOf(Math.min(...y.keptYs))] : null;
+        const best = y.kept.length ? y.kept[y.keptYs.indexOf(Math.max(...y.keptYs))] : null;
+        return {
+          spec: {
+            x: { label: 'the calendar year the outlook was issued in' },
+            y: { label: o.m === 'skill' ? 'skill against persistence  [-]'
+              : o.m === 'bias' ? 'mean signed error, forecast − observed  [sfu]' : 'RMS error  [sfu]' },
+            series: [{ name: '', kind: 'line', x: y.years, y: y.ys }],
+            marks,
+          },
+          note: 'One point per calendar year, scored on leads ' + y.LO + ' to ' + y.HI + ' ONLY. ' +
+            'That restriction is what makes the years comparable and it is not cosmetic: the archive ' +
+            'is not uniform, and 2004 and 2007 carry no row past lead 14 at all while 2011 onward ' +
+            'carry a balanced mix. Scoring every lead together would draw the history of the archive ' +
+            'and label it the skill of the forecaster. The year is the year of ISSUE, so a December ' +
+            'outlook is counted against December even where it verifies into January.\n\n' +
+            (y.thin.length
+              ? y.thin.length + ' year(s) are dropped for holding fewer than ' + y.MIN + ' usable ' +
+                'pairs — ' + y.thin.join(', ') + '. They are not quiet years, they are thin ones, and ' +
+                'the arithmetic on them is violent: 2010 holds 25 pairs and scores -11.8. '
+              : '') +
+            (o.m === 'skill' && worst !== null
+              ? 'Skill is worst in ' + worst + ' and best in ' + best + '. A year at solar minimum ' +
+                'is the hard case for a forecaster and the easy one for persistence — when the flux ' +
+                'is flat, assuming nothing changes is very nearly right — so 2008 scoring below the ' +
+                'red line is the record behaving, not the outlook failing. Its RMS error that year ' +
+                'is about 3.5 sfu, the smallest in the series.'
+              : o.m === 'bias'
+                ? 'Bias runs strongly negative through 2022 to 2024, the rise of cycle 25: the ' +
+                  'outlook came in LOW by 7 to 9 sfu a year while activity was climbing. A design ' +
+                  'reading it there gets a thinner atmosphere than it will fly, which is the ' +
+                  'direction that costs propellant rather than the one that wastes it.'
+                : 'RMS error tracks the level rather than the difficulty — it is smallest at the ' +
+                  '2008 and 2018 minima and largest through solar maximum, because a bigger number ' +
+                  'has bigger errors. It says nothing about beating a baseline; the skill metric ' +
+                  'does.') +
+            ' ' + shape(y.kept, y.keptYs, o.m === 'skill' ? '' : 'sfu', '', 'year'),
+        };
+      }
+
       const pc = new Map();
       const xs = [], ys = [], ns = [];
       for (let L = 1; L <= 27; L++) {
@@ -791,6 +836,70 @@ function growthByCycle(rec, key, q, maxL) {
 }
 
 /** Forecast · issue age. How stale the newest outlook is on an average day. */
+/**
+ * Forecast · the score by the CALENDAR YEAR the outlook was issued in.
+ *
+ * The plan's §12 lists "rolling windows" as one of this tab's four views and it
+ * was never built — the option string sat in the control list and nothing read
+ * it, which declaring this panel in panels/ is what found.
+ *
+ * TWO CHOICES MAKE THIS COMPARABLE YEAR TO YEAR AND BOTH ARE FORCED BY THE DATA.
+ *
+ * The lead band is fixed at 1 to 14. The issues are not uniform: 2004 and 2007
+ * carry NO row past lead 14 at all, 2002 and 2003 carry a handful, and 2011
+ * onward carry a balanced 728 short against 624 long. Scoring every lead
+ * together would make the short-lead years look better for no reason but their
+ * composition, and the shape of the resulting line would be the archive's
+ * history rather than the forecaster's. 1 to 14 is the band every year
+ * populates.
+ *
+ * The year is the year the forecast was ISSUED, not the year it verified into,
+ * because the question is how good the forecasts MADE in a year were. A
+ * December issue reaches into January and is counted against December's year;
+ * at fourteen days that is about 4 per cent of a year's rows landing one year
+ * late, which moves nothing and is stated rather than corrected for.
+ */
+function byIssueYear(fc, byDay, tOf, persist, metric) {
+  const LO = 1, HI = 14;
+  //: A year with few pairs produces a skill that is arithmetic rather than
+  //: evidence — 2010 has 25 of them and scores -11.8. Dropped, and counted in
+  //: the note, on the same principle the Repeatability panel drops thin bins.
+  const MIN = 200;
+  const acc = new Map();
+  const pc = new Map();
+  for (const r of fc) {
+    const L = +r.lead_days;
+    if (!(L >= LO && L <= HI) || r.f107 === null) continue;
+    const tt = tOf.get(r.target_date);
+    const obs = tt === undefined ? undefined : byDay.get(tt);
+    if (obs === undefined) continue;
+    if (!pc.has(r.issue_date)) pc.set(r.issue_date, persist(r.issue_date));
+    const p = pc.get(r.issue_date);
+    if (p === null) continue;
+    const y = +String(r.issue_date).slice(0, 4);
+    if (!isFinite(y)) continue;
+    if (!acc.has(y)) acc.set(y, { e2: 0, p2: 0, se: 0, n: 0 });
+    const a = acc.get(y), e = +r.f107 - obs;
+    a.e2 += e * e; a.p2 += (p - obs) * (p - obs); a.se += e; a.n++;
+  }
+  const years = [...acc.keys()].sort((a, b) => a - b);
+  const thin = years.filter(y => acc.get(y).n < MIN);
+  const score = (y) => {
+    const a = acc.get(y);
+    return metric === 'skill' ? 1 - (a.e2 / a.n) / (a.p2 / a.n)
+      : metric === 'bias' ? a.se / a.n : Math.sqrt(a.e2 / a.n);
+  };
+  //: A dropped year is a HOLE, not an absence. Filtering the thin years out of
+  //: the series entirely leaves the line joining 2008 straight to 2011, and
+  //: that segment reads as two years of evidence rather than as the gap it is.
+  //: A null breaks the line here the same way it does everywhere else.
+  const span = [];
+  for (let y = years[0]; y <= years[years.length - 1]; y++) span.push(y);
+  const ys = span.map(y => (acc.has(y) && acc.get(y).n >= MIN ? score(y) : null));
+  const kept = span.filter((y, i) => ys[i] !== null);
+  return { years: span, ys, kept, keptYs: kept.map(score), thin, acc, LO, HI, MIN };
+}
+
 function issueAge(idx) {
   const ds = idx.map(r => daysSince2000(r.issue_date)).filter(x => isFinite(x)).sort((a, b) => a - b);
   const gaps = [];
