@@ -1,0 +1,62 @@
+id = "forecast"
+label = "Forecast — the issued outlook, scored"
+module = "web/js/solar.js"
+mount = "canvas.sw-panel"
+draws = """The published 27-day outlook scored against what actually arrived, by lead, by
+rolling year, or by the age of the issue a user would have had in hand. The
+persistence baseline the skill is measured against is a control, not a
+footnote."""
+correct = """A score against the selected horizontal quantity, with the zero line drawn and
+labelled where the metric is a skill — skill is against a baseline, so a skill
+plot with no zero cannot be read. On the strict baseline the outlook beats
+persistence from lead 1, peaks near +0.44 around lead 9, and goes negative only
+at leads 23 to 25; on the leaky baseline short-lead skill collapses, and that
+collapse is the control working rather than a defect.
+
+The lead axis runs 1 to 27, which is the outlook's nominal span and NOT the
+same number as sw_outlook_lead's 26. The bundle carries leads from -26 to 392,
+so drawing 1 to 27 is a deliberate restriction to the issued window; the row
+publishes 26 because that is the longest lead most issues actually index. The
+two disagree on purpose and a reviewer should not reconcile them by moving
+either."""
+# A person looked at panels/reference/forecast.png and agreed the picture
+# is right. That is what makes check three mean anything: the reference is the
+# claim, and without a name against it the check only proves the chart has not
+# changed since a machine drew it.
+confirmed_by = "A. Rai / 2026-09-15"
+tolerance = 0.02
+# The panel refetches the whole solar-weather record on every redraw, so
+# check two has to wait on the content changing rather than on a fixed pause.
+settle_ms = 8000
+
+# The solar view is not where the page opens, and each tab is a separate
+# panel sharing one canvas. This drives to the view and selects this tab;
+# panel_check re-runs it after every input to restore the starting state.
+ready = """(async () => {
+  S.view = 'solar';
+  draw();
+  await new Promise(r => setTimeout(r, 150));
+  const tab = document.querySelector('.sw-tab[data-panel=forecast]');
+  if (!tab) throw new Error('no tab for the forecast panel');
+  tab.click();
+})()"""
+
+[[input]]
+name = "view"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'age'; s.dispatchEvent(new Event('change')); })()"
+why = """
+against-lead and issue-age are different horizontal quantities — lead is what
+the forecast promises, age is what a user actually has in hand, and the median
+gap between issues is 7 days. A third option, 'rolling, by year', was offered
+here until this check demanded the canvas change and found it was read nowhere.
+"""
+
+[[input]]
+name = "m"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=m]'); if (!s) throw new Error('no m control'); s.value = 'bias'; s.dispatchEvent(new Event('change')); })()"
+why = """skill, bias and RMS error have different units and different zero lines; one picture for all three means the metric is ignored"""
+
+[[input]]
+name = "base"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=base]'); if (!s) throw new Error('no base control'); s.value = 'leaky'; s.dispatchEvent(new Event('change')); })()"
+why = """this is the panel's whole argument — switching the baseline must visibly move short-lead skill, and if it does not the baseline is not reaching the computation"""

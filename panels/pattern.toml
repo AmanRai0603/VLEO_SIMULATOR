@@ -1,0 +1,59 @@
+id = "pattern"
+label = "Pattern — recurrence at the solar rotation"
+module = "web/js/solar.js"
+mount = "canvas.sw-panel"
+draws = """The autocorrelation of the detrended record against lag in days, out to the
+selected maximum, with the rotation peak and its harmonics where they fall. The
+second view leaves the autocorrelation and draws spike size against timing
+instead."""
+correct = """In the recurrence view: one curve starting at lag 1 and decaying, oscillating
+rather than falling smoothly, with its first local maximum MARKED and weaker
+repeats near the multiples. The mark reads 26 days, not 27: the nominal synodic
+rotation is 27 and the record's own autocorrelation peaks at 26, which is what
+sw_recurrence_lag publishes and a discrepancy a reviewer should weigh rather
+than round away. A panel that marked 27 here would be agreeing with the
+textbook instead of with the record. The curve stays within -1 and 1 everywhere, because it is a
+correlation. The horizontal axis ends at the selected maximum lag and the
+curve reaches it. In the spike view the picture is a scatter rather than a
+curve, and no autocorrelation axis remains."""
+# A person looked at panels/reference/pattern.png and agreed the picture
+# is right. That is what makes check three mean anything: the reference is the
+# claim, and without a name against it the check only proves the chart has not
+# changed since a machine drew it.
+confirmed_by = "A. Rai / 2026-09-15"
+tolerance = 0.02
+# The panel refetches the whole solar-weather record on every redraw, so
+# check two has to wait on the content changing rather than on a fixed pause.
+settle_ms = 8000
+
+# The solar view is not where the page opens, and each tab is a separate
+# panel sharing one canvas. This drives to the view and selects this tab;
+# panel_check re-runs it after every input to restore the starting state.
+ready = """(async () => {
+  S.view = 'solar';
+  draw();
+  await new Promise(r => setTimeout(r, 150));
+  const tab = document.querySelector('.sw-tab[data-panel=pattern]');
+  if (!tab) throw new Error('no tab for the pattern panel');
+  tab.click();
+})()"""
+
+[[input]]
+name = "view"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'spikes'; s.dispatchEvent(new Event('change')); })()"
+why = """the two views are different quantities on different axes; one picture for both means the control is ignored"""
+
+[[input]]
+name = "v"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'ap'; s.dispatchEvent(new Event('change')); })()"
+why = """Ap and F10.7 recur differently — Ap's rotation signal is the weaker of the two, so an identical curve for both is a chart drawing one of them twice"""
+
+[[input]]
+name = "w"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=w]'); if (!s) throw new Error('no w control'); s.value = '731'; s.dispatchEvent(new Event('change')); })()"
+why = """the detrend window sets what counts as the trend and therefore what is left to correlate; a longer window leaves more low-frequency signal in"""
+
+[[input]]
+name = "lag"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=lag]'); if (!s) throw new Error('no lag control'); s.value = '200'; s.dispatchEvent(new Event('change')); })()"
+why = """the maximum lag is the horizontal extent; the curve must reach further when it is raised"""

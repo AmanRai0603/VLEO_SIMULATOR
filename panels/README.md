@@ -50,6 +50,13 @@ every time regardless of the data.
 `tolerance`. Recorded with `--record` by a person who has looked at the picture
 and agrees with it; a reference nobody looked at is a snapshot of a bug.
 
+`confirmed_by = "Name / date"` on the spec is who that person was. Nothing
+enforces it — the check cannot tell a reference somebody studied from one a
+machine drew unattended, which is the whole reason the name has to be written
+down by hand. The eight solar panels carry it. The three older specs predate
+the field and it has deliberately not been backfilled, because nobody now
+remembers who looked and a guessed attestation is worse than none.
+
 ## A canvas needs different eyes
 
 The first three panels all build DOM, so both "is it empty" and "did it change"
