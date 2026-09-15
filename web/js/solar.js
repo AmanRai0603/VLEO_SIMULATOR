@@ -426,8 +426,7 @@ const PANELS = [
       // is a second place for the leaky/strict choice to stop agreeing.
       if (o.view === 'year') {
         const y = byIssueYear(fc, byDay, tOf, persist, o.m);
-        const marks = o.m === 'skill'
-          ? [{ axis: 'y', at: 0, label: 'no better than persistence', colour: '#c1440e' }] : [];
+        const marks = scoreBaseline(o.m);
         const worst = y.kept.length ? y.kept[y.keptYs.indexOf(Math.min(...y.keptYs))] : null;
         const best = y.kept.length ? y.kept[y.keptYs.indexOf(Math.max(...y.keptYs))] : null;
         return {
@@ -487,7 +486,7 @@ const PANELS = [
         xs.push(L); ns.push(n);
         ys.push(o.m === 'skill' ? 1 - (e2 / n) / (p2 / n) : o.m === 'bias' ? se / n : Math.sqrt(e2 / n));
       }
-      const marks = o.m === 'skill' ? [{ axis: 'y', at: 0, label: 'no better than persistence', colour: '#c1440e' }] : [];
+      const marks = scoreBaseline(o.m);
       const last = xs[xs.length - 1];
       return {
         spec: {
@@ -898,6 +897,33 @@ function byIssueYear(fc, byDay, tOf, persist, metric) {
   const ys = span.map(y => (acc.has(y) && acc.get(y).n >= MIN ? score(y) : null));
   const kept = span.filter((y, i) => ys[i] !== null);
   return { years: span, ys, kept, keptYs: kept.map(score), thin, acc, LO, HI, MIN };
+}
+
+/**
+ * Forecast · the line a score is read against, for whichever metric is on.
+ *
+ * Skill and bias are both differences, and a difference is unreadable without
+ * the value that means "no difference" drawn on it. Skill had that line from
+ * the start; bias did not, so a reader met a series running mostly below zero
+ * and had to find zero on the axis to learn that it meant the outlook comes in
+ * LOW — which is the one thing that view exists to say.
+ *
+ * RMS error gets no line. It is a magnitude, it cannot be negative, and zero is
+ * perfection rather than a baseline: a line along the floor of the axis would
+ * be decoration that the other two have earned and this one has not.
+ *
+ * One function rather than one expression per view, because the by-lead and
+ * by-year views ask the same question of the same metric and two copies is two
+ * places for them to start answering it differently.
+ */
+function scoreBaseline(metric) {
+  if (metric === 'skill') {
+    return [{ axis: 'y', at: 0, label: 'no better than persistence', colour: '#c1440e' }];
+  }
+  if (metric === 'bias') {
+    return [{ axis: 'y', at: 0, label: 'unbiased — above is high, below is LOW', colour: '#c1440e' }];
+  }
+  return [];
 }
 
 function issueAge(idx) {

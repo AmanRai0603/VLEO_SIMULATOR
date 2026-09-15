@@ -7,8 +7,13 @@ rolling year, or by the age of the issue a user would have had in hand. The
 persistence baseline the skill is measured against is a control, not a
 footnote."""
 correct = """A score against the selected horizontal quantity, with the zero line drawn and
-labelled where the metric is a skill — skill is against a baseline, so a skill
-plot with no zero cannot be read. On the strict baseline the outlook beats
+labelled on BOTH difference metrics. Skill is against a baseline and bias is a
+signed error, so neither can be read without the value that means "no
+difference" on the picture; RMS error gets no line, because it is a magnitude
+that cannot go negative and zero there is perfection rather than a baseline.
+The bias line is the one to check hardest: with it drawn, the by-lead series is
+visibly below it at EVERY lead, which is the outlook under-predicting F10.7
+throughout and the finding that view exists to deliver. On the strict baseline the outlook beats
 persistence from lead 1, peaks near +0.44 around lead 9, and goes negative only
 at leads 23 to 25; on the leaky baseline short-lead skill collapses, and that
 collapse is the control working rather than a defect.
