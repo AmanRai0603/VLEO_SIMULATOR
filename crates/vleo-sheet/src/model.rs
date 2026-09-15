@@ -11,6 +11,56 @@ pub struct Assumption {
     pub fails_when: String,
 }
 
+/// One line of the derivation, and the mathematics it arrives at.
+///
+/// The `expression` on a sheet is the relation as a machine needs it: one line,
+/// no reason. That is enough to generate code from and not enough to review, and
+/// a reviewer who cannot reconstruct why the line is that line has to take it on
+/// trust — which is the failure the whole review structure exists to prevent.
+/// These are the intermediate statements between the question and the
+/// expression, in the order somebody would build them at a board.
+#[derive(Clone, Debug, Default)]
+pub struct TheoryStep {
+    /// The sentence. Prose, because the reader being served here is the one who
+    /// does not yet know the subject.
+    pub text: String,
+    /// The mathematics this sentence arrives at, if the sentence arrives at any.
+    /// Optional on purpose: the first line of most derivations states what is
+    /// being assumed about the world, and there is no formula for that.
+    pub math: String,
+}
+
+/// Why the relation is the relation.
+///
+/// Documentation, not specification — and therefore deliberately outside the
+/// sheet hash. Correcting a sentence here must not invalidate a generated
+/// artefact or a cached result, because the moment it does, nobody corrects the
+/// sentence.
+///
+/// It is separate from `note` and from the assumptions, which answer different
+/// questions. `note` says how to read the answer's encoding. An assumption says
+/// where the relation stops being true. This says where the relation came from,
+/// which is the one thing a reader cannot recover from any other field.
+#[derive(Clone, Debug, Default)]
+pub struct Theory {
+    /// The physical or statistical reason this node computes what it computes,
+    /// before any formula appears.
+    pub why: String,
+    pub steps: Vec<TheoryStep>,
+    /// What the answer means once it is in hand, and what it does not mean. The
+    /// place to say that a number is descriptive rather than predictive, or that
+    /// it is a bound rather than an expectation.
+    pub reading: String,
+}
+
+impl Theory {
+    /// Nothing written. Distinguished from "written and short" so a page can say
+    /// which of the two it is looking at.
+    pub fn is_empty(&self) -> bool {
+        self.why.trim().is_empty() && self.steps.is_empty() && self.reading.trim().is_empty()
+    }
+}
+
 /// One declared input.
 #[derive(Clone, Debug, Default)]
 pub struct Input {
@@ -107,6 +157,9 @@ pub struct Sheet {
     /// which is what H1b needs in order to be a review rather than a reading.
     pub relation_by: String,
     pub assumptions: Vec<Assumption>,
+    /// Where the relation came from, for a reader rather than for the compiler.
+    /// Outside the sheet hash: see [`Theory`].
+    pub theory: Theory,
     pub symbol: String,
     pub ty: String,
     pub unit: String,
@@ -187,7 +240,7 @@ impl Sheet {
     }
     /// Seeded, and nobody has specified it yet.
     ///
-    /// The folder exists, the row is on the tree, the eight tabs open and each
+    /// The folder exists, the row is on the tree, every tab opens and each
     /// says what goes in it. Nothing is generated from it and it cannot run.
     /// This is the normal state of most of a tree for most of a programme, so
     /// it is a reported state rather than a failing one.

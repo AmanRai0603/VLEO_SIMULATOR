@@ -8,27 +8,159 @@ subsystem = "solar"
 parent = "l3_solar"
 kind = "required"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1329
-state = "empty"
+state = "published"
+# The single node that crosses between this layer and the one above.
+# A subsystem is reached through its interface node, never by reaching
+# into it, and that is what makes a layer something you can reason
+# about on its own.
 crosses_to = "sys_space_environment"
 
+# THIS IS THE FIRST WRITTEN CROSSING IN THE REPOSITORY, AND IT SETS A
+# CONVENTION FOR TWENTY MORE. TWO REVIEWERS.
+#
+# Twenty-one rows carry crosses_to and not one of them has ever been written,
+# so what an interface row actually publishes has never been decided — only
+# seeded. What is written here is the conservative reading and the alternative
+# is stated so a reviewer can overturn it cheaply, while it is one node rather
+# than twenty-one.
+#
+# THE READING TAKEN: an interface carries the subsystem's headline conclusion
+# upward, unchanged. It is deliberately a pass-through. That is not redundancy —
+# it is the point: a system reader opens one row and sees what the subsystem
+# concluded, and never reaches into l3_solar to find it. The value is
+# sw_f107_design, which is the number the study's whole F10.7 chain exists to
+# produce.
+#
+# THE ALTERNATIVE READING: kind = "required" could mean this row states a
+# SPACECRAFT CAPABILITY — the worst sky the design can sustain — with the
+# environment's answer arriving as the achieved side. layers/l3_solar.toml
+# frames the three req/ach pairs exactly that way. On that reading this row
+# would be kind = "achieved" and the seeder's kind is wrong, or the capability
+# belongs here and the conclusion crosses some other way.
+#
+# The two differ in which side of the closure this row sits on, which is why it
+# is not a detail. The sense below is taken from the group's own stated closure
+# direction.
+sense = "<="
+
 [question]
-text = ""
+text = "What does the solar-weather subsystem conclude, for a system reader who will not open it?"
+note = "One row, one number, no reaching in. Everything the subsystem establishes — the record, the cycle, the storms, the slot bias, the spread — arrives at sw_f107_design, and this carries that across to sys_space_environment. A reader who wants the working opens l3_solar and finds forty rows; a reader who wants the answer opens this one."
 
 [maths]
-expression = ""
-source = ""
+# A crossing does not compute. It republishes the conclusion so that the seam
+# is a row somebody owns rather than an edge nobody looks at.
+expression = "F107_crossing = F107_design"
+source = "noaa_swpc"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+A four-layer tree is only worth having if each layer can be reasoned about
+without opening the ones below it. That requires a rule about seams, and the
+rule taken here is the strict one: a subsystem is reached through exactly
+one node, never by reaching into it. This row is that node for solar
+weather, and it computes nothing — it republishes the subsystem's conclusion
+so that the seam is a row somebody owns rather than an edge nobody looks at.
+It is also the first written crossing in the repository, so what it does
+sets a convention for twenty more.
+"""
+reading = """
+It carries the F10.7 driver only, and the subsystem concludes more than
+that. The Ap side is measured and published inside the subsystem and does
+not cross, because one row publishes one number and the convention allows
+one crossing per subsystem. How a subsystem with more than one conclusion
+crosses is unsettled, for all twenty-one interfaces. And a system reader
+sees 228 sfu with a credibility vector and none of the assumptions
+underneath it: the credibility travels across the seam, the assumptions do
+not.
+"""
+
+[[theory.step]]
+text = """
+The property to be preserved is that a layer is independently reasonable. If
+any row at layer 2 could read any row at layer 3, the layers would be a
+drawing rather than a structure, and a change inside a subsystem could reach
+anywhere.
+"""
+
+[[theory.step]]
+text = """
+The mechanism is to allow exactly one node per subsystem to be visible from
+above. Then the surface a subsystem presents is one number wide, and every
+consumer of it is reading the same thing.
+"""
+
+[[theory.step]]
+text = """
+Which forces the crossing to be a pass-through rather than a calculation. A
+crossing that computed anything would be doing subsystem work in a place no
+subsystem reviewer reads, and the number a system reader saw would not exist
+anywhere inside the subsystem.
+"""
+math = "F107_crossing = F107_design — identity, deliberately"
+
+[[theory.step]]
+text = """
+The declared range is copied from the producer for the same reason.
+Narrowing it would refuse answers the subsystem considers valid, and
+widening it would admit answers the subsystem would refuse — either way the
+crossing would be changing the answer while appearing to relay it.
+"""
+
+[[theory.step]]
+text = """
+One reading of this row was NOT taken, and it is worth stating because a
+reviewer can overturn it cheaply now and expensively later. kind =
+"required" could mean this row states a spacecraft CAPABILITY — the worst
+sky the design can sustain — with the environment's answer arriving as the
+achieved side, which is how layers/l3_solar.toml frames the three req/ach
+pairs. On that reading this row would be kind = "achieved". The two differ
+in which side of the closure the row sits on, which is not a detail.
+"""
+
+
+[[assumption]]
+text = "It carries the F10.7 driver only, and the subsystem concludes more than that"
+fails_when = "sys_space_environment holds six rows — solar flux, F10.7, Ap, atmospheric density, thermospheric wind, atomic oxygen fluence — and this crossing answers one of them. The Ap side is measured and published inside the subsystem (sw_storm_return_level, and the peak-slot correction in sw_kp_slot_bias) and does not cross yet, because one row publishes one number and the convention allows exactly one crossing per subsystem. How a subsystem with more than one conclusion crosses is the same unsettled question as the kind above, and it is unsettled for all twenty-one interfaces, not just this one."
+
+[[assumption]]
+text = "It inherits every limitation of the row beneath it, and a system reader sees none of them"
+fails_when = "this is the ordinary cost of a seam and it is worth stating where the seam is. The number crossing here is a 95th percentile and not a worst case, and its centre is the record's unconditional mean rather than the mean cycle at the mission's epoch — the epoch is published and this chain does not read it yet. A reader at layer 2 sees 228 sfu and a credibility vector, and would have to open sw_f107_design and then sw_central_expectation to learn any of that. The credibility travels; the assumptions do not."
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "F107_crossing"
+type = "Ratio"
+unit = "One"
+lower = 60.0
+upper = 400.0
+reason_lower = "the same floor as env_f107 and sw_f107_design: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A crossing that narrowed or widened the range it carries would be changing the answer, so it declares the producer's own bounds"
+reason_upper = "the same ceiling as env_f107 and sw_f107_design: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. Restating it here means a system reader sees the limit without opening the subsystem"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "conclusion"
+var = "sw_f107_design"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "carry the subsystem's F10.7 conclusion across the seam unchanged"
+binds = "crossing"
+type = "Ratio"
 
 [view]
-kind = "number"
+kind = "line"
+over = "orbit_mission_duration"
+points = 60

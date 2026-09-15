@@ -1,17 +1,17 @@
 {
   "id": "sw_forecast_bias",
-  "state": "empty",
-  "sheet_hash": "c6a147",
-  "impl_hash": "222325",
+  "state": "published",
+  "sheet_hash": "7e038d",
+  "impl_hash": "d8e4d4",
   "owner": "environment",
-  "tier": "",
-  "fixtures": 0,
+  "tier": "A",
+  "fixtures": 6,
   "criticality": "minor",
   "reviewers": 1,
   "differential_fill": false,
   "migrated_from": "",
-  "holes": 0,
-  "inputs": [],
+  "holes": 1,
+  "inputs": ["sw_outlook_lead"],
   "contributes": [],
-  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+  "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did"]
 }

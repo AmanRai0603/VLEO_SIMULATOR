@@ -6,28 +6,136 @@ label = "Solar cycle number"
 folder = "sw_cycle_number"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1336
-state = "empty"
+state = "published"
+
+# No migrated_from and no parity grid: the numbers are statistics of the record
+# rather than a closed form, and there is no MATLAB here to run. Same reasoning
+# as every measured row in this group.
 
 [question]
-text = ""
+text = "Which numbered solar cycle is the mission epoch in?"
+note = "The coarsest dated fact about the mission: which cycle it flies in. Everything else that depends on the date depends on this first, because a phase means nothing without a cycle to be a phase of."
 
 [maths]
-expression = ""
-source = ""
+expression = "cyc(T) = 22 + count(cycle_starts <= T),  starts = 1997-01-15, 2008-12-01, 2019-12-01"
+source = "noaa_swpc"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+This is the coarsest dated fact about the mission, and the first one,
+because a phase means nothing without a cycle to be a phase of. It is also
+not physics. The boundary between two solar cycles is a minimum of sunspot
+activity, and a minimum cannot be read off a raw monthly series — the noise
+is larger than the trend near the turn — so it is defined on a smoothed
+series and its date is a published convention rather than a number each user
+re-derives. The relation is therefore a lookup against that convention, and
+the whole of the care in it goes into what happens at the edges of the
+table.
+"""
+reading = """
+An index, not a quantity: 25 is a name. It says nothing about how active the
+cycle is — cycle 23's phase-stacked peak was 206.9 sfu and cycle 24's 149.4,
+a 28 per cent difference under the same label — and nothing about where in
+the cycle the date sits, which is the far more consequential fact and is
+sw_cycle_phase's answer. Read on its own the number is useful for one thing:
+it says which set of boundaries the dated rows downstream are using.
+"""
+
+[[theory.step]]
+text = """
+A solar cycle runs from one sunspot minimum to the next. Near a minimum the
+month-to-month scatter of the sunspot number is comparable to the change
+being looked for, so the minimum is not identified on the raw series: it is
+defined on a 13-month smoothed one, which makes its date a convention agreed
+once rather than a measurement repeated per user.
+"""
+
+[[theory.step]]
+text = """
+Those conventional boundaries arrive with the bundle rather than being
+derived here. solar_cycles.csv names three, and they are the boundaries the
+study's prf_cycles calls standard.
+"""
+math = "starts = { 23: -1081 d, 24: 3257 d, 25: 7274 d } (days since 2000-01-01)"
+
+[[theory.step]]
+text = """
+Placing a date among ordered boundaries is a count rather than a search.
+Passing the first start puts the date in cycle 23, passing the second in
+cycle 24, and so on — so the answer is the number of starts passed, offset
+by the cycle BEFORE the first one in the table.
+"""
+math = "cyc(T) = 22 + #{ s in starts : T >= s }"
+
+[[theory.step]]
+text = """
+The comparison is 'at or after', so a boundary day belongs to the cycle it
+OPENS and not to the one it closes. That is a second convention, invisible
+in the formula and consequential for exactly one day per cycle, so the
+fixtures beside this node sit on the boundary days rather than in the middle
+of the intervals.
+"""
+
+[[theory.step]]
+text = """
+The count stops at three because the table holds three starts. A date one
+year past 2019-12-01 and a date thirty years past it both return 25: the row
+will not invent a boundary for cycle 26, because nothing in the data says
+when 26 begins. The declared upper bound of 26 is what makes that limit
+refuse rather than answer quietly.
+"""
+math = "cyc(9862 d) = 22 + 3 = 25"
+
+
+[[assumption]]
+text = "The cycle boundaries are the record's three, and a fourth would need a source this bundle does not contain"
+fails_when = "solar_cycles.csv holds cycles 23, 24 and 25 with starts 1997-01-15, 2008-12-01 and 2019-12-01 — the boundaries prf_cycles calls standard. The record begins mid-cycle-23 and ends mid-cycle-25, so cycle 22 and cycle 26 are outside it entirely. An epoch after cycle 26 begins would still return 25 here, because nothing in the data says when 26 starts, and a row that guessed would be inventing a boundary. The declared upper bound is what stops that being silent"
+
+[[assumption]]
+text = "The epoch is past the record, so the phase is FOLDED with a mean cycle length rather than measured"
+fails_when = "solar_cycles.csv gives cycle 25 a start of 2019-12-01 and an end of 2025-12-15 with a length of 6.04 years. That end and that length are artefacts of where the RECORD stops, not where the cycle stops: cycles 23 and 24 ran 11.88 and 11.00 years. The epoch, day 9862, is 382 days past that recorded end, so no cycle in the table contains it. The phase is therefore computed against the mean of the two COMPLETE cycles, 11.44 years, which is what prf_design's meanCycleAt does beyond its last cycle. If cycle 25 turns out short or long the phase moves, and every row reading it moves with it"
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "cyc"
+type = "Ratio"
+unit = "One"
+lower = 23.0
+upper = 26.0
+reason_lower = "the record's first cycle is 23 and it begins mid-cycle, so no epoch this tree allows can sit in an earlier one. A lower number means the counting started in the wrong place"
+reason_upper = "the record names three cycles and ends inside the third. 26 is one beyond what the data can place, and the bound exists so that an epoch far enough out to need cycle 27 refuses rather than quietly returning 25"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "epoch"
+var = "sys_mission_requirements_mission_epoch"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "count how many of the record's cycle starts the epoch has passed, and add the first cycle's number"
+binds = "out"
+type = "Ratio"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# numbers must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
 
 [view]
-kind = "number"
+kind = "line"
+over = "sys_mission_requirements_mission_epoch"
+points = 60

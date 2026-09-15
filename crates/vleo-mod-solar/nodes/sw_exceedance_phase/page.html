@@ -1,0 +1,186 @@
+<article class="node" data-node="sw_exceedance_phase" data-sheet-hash="6dcb1d" data-impl-hash="ec67cb">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>When in the cycle exceedances fall</h2>
+  <p class="ident"><code>sw_exceedance_phase</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">Where in the solar cycle do the exceedances of the design Ap fall?</p>
+<p class="maths"><code>P_exc(Ap_design) = median cycle phase of the days with Ap &gt;= Ap_design</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The median cycle phase of the days above sw_ap_design, on the 0-to-1 scale sw_cycle_phase uses. At G3 it is 0.603 — the declining side, just past maximum — and the declared epoch sits at 0.619.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>A median with no spread beside it, and the spread is the part a schedule needs</dt><dd>fails when 0.603 is read as when exceedances happen. It is where the middle one happened. At G3 the eight days run from phase 0.294 to 0.736 — a band nearly half a cycle wide, about five years — and they fall in phase deciles 0.2-0.3, 0.3-0.4, 0.5-0.6 twice, 0.6-0.7 three times and 0.7-0.8 once. Half of them sit between 0.2 and 0.6. A design that reads only this row plans for a date; a design that reads the assumption plans for a five-year window</dd>
+<dt>It is stable across G level, which means it is the cycle rather than the threshold</dt><dd>fails when the median is expected to move with the bound. It barely does: 0.571692 at the G1 bound, 0.576302 at G2 and 0.602697 at G3, a drift of three hundredths across a factor of nearly three in threshold. So the timing is a property of the solar cycle — disturbed days cluster after maximum, on the declining phase, where coronal holes dominate — and not of where the line is drawn. That stability is the reason the row is worth having: it would be meaningless if it tracked the threshold</dd>
+<dt>Eight days at G3, and a median of eight numbers is a coarse instrument</dt><dd>fails when precision is read into 0.603. The sample is 131 days at G1, 35 at G2 and 8 at G3, so at the declared level the median sits between the fourth and fifth of eight values. Moving one storm moves the median by a few hundredths. The three levels agreeing to within 0.03 on samples of 8, 35 and 131 is better evidence for the timing than any one of them alone</dd>
+<dt>Phase is folded on three cycles, one of which is incomplete, and 273 days are missing from the risky part</dt><dd>fails when the phase scale is assumed uniform. Cycle 25's end in solar_cycles.csv is the record's end rather than a real minimum, so phases inside it are computed against a cycle whose length is not yet known; cycles 23 and 24 differ in length by 8 per cent, so equal phase is unequal time. And the 2017 gap sits at phase 0.74 to 0.80 of cycle 24, just past the upper edge of the G3 exceedance band — so whatever fell there is absent from this median and from sw_exceedance_rate's count</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">How often and how long still leave a programme unable to plan. The third question is WHEN — because if exceedances were uniformly distributed through a cycle there would be nothing to schedule around, and if they cluster there is. The interesting part of this row is not the median it publishes but the test it survives: a timing statistic is only about the cycle if it does not move when the threshold moves, and this one barely moves across a factor of nearly three in threshold.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">Take the days that exceed the design bound, convert each to its cycle phase on the same 0-to-1 scale sw_cycle_phase uses, and take the median of those phases.</span><code class="dm">P_exc = median{ phase(d) : Ap(d) &gt;= Ap_design }</code></li>
+<li><span class="dt">The median rather than the mean, because phase is nearly circular and a handful of days near the ends of a cycle would drag a mean toward the middle regardless of where the mass sat.</span></li>
+<li><span class="dt">Now the test that decides whether the answer means anything. If the median tracked the threshold, it would be telling us about where the line was drawn. It does not: 0.5717 at the G1 bound, 0.5763 at G2, 0.6027 at G3 — a drift of three hundredths across a threshold ratio of nearly three, on samples of 131, 35 and 8 days.</span></li>
+<li><span class="dt">So the timing is a property of the solar cycle rather than of the design bound. Disturbed days cluster after maximum, on the declining phase, which is where coronal holes dominate the solar wind — and three independent samples agreeing to within 0.03 is better evidence for that than any one of them alone.</span></li>
+<li><span class="dt">Two caveats about the phase scale itself, neither of which the median can show. Cycle 25's end in the record is the record's end rather than a real minimum, so phases inside it are computed against a length not yet known; and cycles 23 and 24 differ in length by 8 per cent, so equal phase is unequal time.</span></li>
+<li><span class="dt">And the 2017 gap sits at phase 0.74 to 0.80 of cycle 24, just past the upper edge of the G3 exceedance band. Whatever fell there is absent from this median and from the rate that goes with it.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">A median with no spread beside it, and the spread is the part a schedule needs. 0.603 is where the middle exceedance happened, not when exceedances happen. At G3 the eight days run from phase 0.294 to 0.736 — a band nearly half a cycle wide, about five years — with half of them between 0.2 and 0.6. A design reading only this row plans for a date; a design reading the spread plans for a five-year window. The declared epoch at phase 0.6194 sits inside that band, which is what makes the epoch a conservative choice rather than a convenient one.</p>
+<p class="maths concl">which is the relation this node states: <code>P_exc(Ap_design) = median cycle phase of the days with Ap &gt;= Ap_design</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>ap_design</code></td><td><a class="xref" data-goto="sw_ap_design">sw_ap_design</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>P_exc</code></td><td>sw_exceedance_phase</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+</section>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">read the measured median cycle phase of the days at or above this Ap</span> <span class="binds">→ <code>out: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_exceedance_phase(ap_design: Ratio) -> Ratio
+    given ap_design from sw_ap_design
+    // read the measured median cycle phase of the days at or above this Ap
+    P_exc ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require P_exc ≥ 0
+    require P_exc ≤ 1
+    require P_exc is finite
+
+    return P_exc
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>P_exc &ge; 0</code> — cycle phase runs 0 at minimum to 1 at the next minimum, so 0 is the floor by definition. A median at 0 would mean every exceedance fell on the first day of a cycle</li>
+<li><code>P_exc &le; 1</code> — 1 is the end of a cycle by the same definition. A median at 1 would mean every exceedance fell on the last day of one</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sw_exceedance_phase" data-lo="0" data-hi="1" data-symbol="P_exc">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// Where in the solar cycle do the exceedances of the design Ap fall?
+///
+/// `P_exc(Ap_design) = median cycle phase of the days with Ap &gt;= Ap_design`
+///
+/// Source: `noaa_swpc`
+///
+/// The median cycle phase of the days above sw_ap_design, on the 0-to-1 scale
+/// sw_cycle_phase uses. At G3 it is 0.603 — the declining side, just past
+/// maximum — and the declared epoch sits at 0.619.
+///
+/// # Assumptions
+///
+/// * A median with no spread beside it, and the spread is the part a schedule needs — fails when 0.603 is read as when exceedances happen. It is where the middle one happened. At G3 the eight days run from phase 0.294 to 0.736 — a band nearly half a cycle wide, about five years — and they fall in phase deciles 0.2-0.3, 0.3-0.4, 0.5-0.6 twice, 0.6-0.7 three times and 0.7-0.8 once. Half of them sit between 0.2 and 0.6. A design that reads only this row plans for a date; a design that reads the assumption plans for a five-year window
+/// * It is stable across G level, which means it is the cycle rather than the threshold — fails when the median is expected to move with the bound. It barely does: 0.571692 at the G1 bound, 0.576302 at G2 and 0.602697 at G3, a drift of three hundredths across a factor of nearly three in threshold. So the timing is a property of the solar cycle — disturbed days cluster after maximum, on the declining phase, where coronal holes dominate — and not of where the line is drawn. That stability is the reason the row is worth having: it would be meaningless if it tracked the threshold
+/// * Eight days at G3, and a median of eight numbers is a coarse instrument — fails when precision is read into 0.603. The sample is 131 days at G1, 35 at G2 and 8 at G3, so at the declared level the median sits between the fourth and fifth of eight values. Moving one storm moves the median by a few hundredths. The three levels agreeing to within 0.03 on samples of 8, 35 and 131 is better evidence for the timing than any one of them alone
+/// * Phase is folded on three cycles, one of which is incomplete, and 273 days are missing from the risky part — fails when the phase scale is assumed uniform. Cycle 25's end in solar_cycles.csv is the record's end rather than a real minimum, so phases inside it are computed against a cycle whose length is not yet known; cycles 23 and 24 differ in length by 8 per cent, so equal phase is unequal time. And the 2017 gap sits at phase 0.74 to 0.80 of cycle 24, just past the upper edge of the G3 exceedance band — so whatever fell there is absent from this median and from sw_exceedance_rate's count
+pub const NODE_ID: &amp;str = &quot;sw_exceedance_phase&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xa56c3f4fda6dcb1d;
+
+pub fn evaluate(ap_design: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : read the measured median cycle phase of the days at or above this Ap -&gt; Ratio
+    // The three design levels sw_ap_design can return, and the median cycle phase of the days at or above the bound,
+    // counted outside this crate from bundles/solar-weather.
+    //
+    // Three anchors and nothing between them: the G scale is defined on
+    // integers and the producer's range is 1 to 3, so Ap 48, 80 and 132 are the
+    // only values that reach here. Table1 interpolates because it must and
+    // clamps at both ends; the sheet declares that the interpolation is wrong
+    // for this quantity and that nothing in the tree can currently reach it.
+    use vleo_core::math::Table1;
+    const TABLE: Table1 = Table1 {
+        x: &amp;[48.0, 80.0, 132.0],
+        y: &amp;[0.5716920240, 0.5763024435, 0.6026970954],
+    };
+    let out: Ratio = Ratio::new(TABLE.at(ap_design.get()));
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = out;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;P_exc&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;P_exc&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;cycle phase runs 0 at minimum to 1 at the next minimum, so 0 is the floor by definition. A median at 0 would mean every exceedance fell on the first day of a cycle&quot; });
+    }
+    if answer.get() &gt; 1.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;P_exc&quot;, value: answer.get(), bound: 1.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;1 is the end of a cycle by the same definition. A median at 1 would mean every exceedance fell on the last day of one&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="the G2 bound, Ap 80 — median phase 0.576"><td>the G2 bound, Ap 80 — median phase 0.576</td><td class="num">0.5763024435</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the G1 bound, Ap 48 — the lowest level the G scale defines"><td>the G1 bound, Ap 48 — the lowest level the G scale defines</td><td class="num">0.571692024</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the G3 bound, Ap 132 — the declared design level"><td>the G3 bound, Ap 132 — the declared design level</td><td class="num">0.6026970954</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0 — cycle phase runs 0 at minimum to 1 at the next minimum, so 0 is the floor by definition. A median at 0 would mean every exceedance fell on the first day of a cycle</li>
+<li><code>OutOfDomain</code> above 1 — 1 is the end of a cycle by the same definition. A median at 1 would mean every exceedance fell on the last day of one</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_exceedance_phase"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>0 &hellip; 1</code> -.</p>
+<ul class="guards"><li>lower — cycle phase runs 0 at minimum to 1 at the next minimum, so 0 is the floor by definition. A median at 0 would mean every exceedance fell on the first day of a cycle</li><li>upper — 1 is the end of a cycle by the same definition. A median at 1 would mean every exceedance fell on the last day of one</li></ul>
+<div class="sweep" data-over="sw_storm_design_level" data-points="40" data-y="sw_exceedance_phase"><p class="muted">Sweeps against <a class="xref" data-goto="sw_storm_design_level">sw_storm_design_level</a> over 40 points. Run the branch to draw it.</p></div>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

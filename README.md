@@ -17,11 +17,11 @@ Measured on `main`, 11 September 2026.
 
 | | |
 |---|---|
-| rows in the tree | 1361 across four layers — 252 written, 1109 seeded |
+| rows in the tree | 1369 across four layers — 291 written, 1078 seeded |
 | layer 1 · management | 174 rows, from CD-06 verbatim |
 | layer 2 · the system | 319 rows, from CD-06 verbatim |
 | layer 3 · subsystem | 836 rows across 17 subsystems |
-| of the 250 written | 112 declared values · 126 computed · 12 KPI closures |
+| of the 291 written | 127 declared values · 148 computed · 12 KPI closures · 1 requirement · 3 achieved |
 | declared edges | 463 derivation · 298 contribution · 177 relation |
 | crates | 30 — 19 node crates, 11 engine and face crates |
 | faces | browser · daemon · command line · C ABI · Python wheel · MATLAB |
@@ -140,7 +140,7 @@ three at assembly, which combine and refuse but never decide. A hand edit
 outside a `HOLE` block is discarded by the next regeneration and fails the
 regeneration diff.
 
-![One node: eight tabs, its answer, the eight credibility factors with the
+![One node: its tabs, its answer, the eight credibility factors with the
 lowest governing, and the evidence that executed](docs/img/node.png)
 
 ---
@@ -161,12 +161,12 @@ part that is neither a decision nor a derivation.
 
 Two human decisions per node, and everything between them is a command. If a
 node takes materially longer than that, the template has a defect worth finding
-— it will be paid 1361 times.
+— it will be paid 1369 times.
 
 ### The nine generators
 
 Six run per node. Each reads that node's sheet and nothing else, which is what
-makes 1361 rows 1361 independent pieces of work rather than one large one.
+makes 1369 rows 1369 independent pieces of work rather than one large one.
 
 | generator | emits | what it is for |
 |---|---|---|
@@ -347,7 +347,7 @@ achievable and the nightly check becomes one people learn to ignore.
 ## Where it stands
 
 The tree is built and mostly empty, which is the state it is designed to be
-useful in. 252 rows of 1361 have content. `xtask ready` reports what is holding
+useful in. 291 rows of 1369 have content. `xtask ready` reports what is holding
 the rest:
 
 ```

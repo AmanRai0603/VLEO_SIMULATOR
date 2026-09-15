@@ -1,0 +1,111 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# WHAT THESE ARE
+#
+# The nine bin medians of  max_8(Kp) - table(Ap_daily)  over
+# bundles/solar-weather, on the 10,297 days carrying both an Ap and all eight
+# three-hourly Kp, binned on prf_ap2kp's own edges: 0 5 10 15 20 30 45 70 110
+# 400. Computed outside this crate, from the record, which is also what
+# prf_ap2kp's fitOffset_ returns — so these are the numbers a parity grid would
+# have carried, and the node carries none.
+#
+# Each fixture is placed AT a bin centre, where the relation returns the
+# tabulated median exactly, so the tolerance is transcription-tight rather than
+# a fit residual. Nothing between two centres is a fixture: there the answer is
+# the interpolation's and not the record's.
+#
+# The two clamp cases are included because holding the end bins rather than
+# extrapolating is the behaviour prf_ap2kp chose and this node inherits.
+
+[[fixture]]
+label = "Ap bin 0-5, centre 2.5 — 2529 days"
+expect = 1
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap = 2.5 }
+
+[[fixture]]
+label = "Ap bin 5-10, centre 7.5 — 3938 days"
+expect = 0.8333333333333333
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap = 7.5 }
+
+[[fixture]]
+label = "Ap bin 10-15, centre 12.5 — 1836 days"
+expect = 1.114406779661017
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap = 12.5 }
+
+[[fixture]]
+label = "Ap bin 15-20, centre 17.5 — 839 days"
+expect = 1
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap = 17.5 }
+
+[[fixture]]
+label = "Ap bin 20-30, centre 25 — 707 days"
+expect = 1.2
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap = 25 }
+
+[[fixture]]
+label = "Ap bin 30-45, centre 37.5 — 288 days"
+expect = 1.333333333333333
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap = 37.5 }
+
+[[fixture]]
+label = "Ap bin 45-70, centre 57.5 — 115 days"
+expect = 1.545454545454545
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap = 57.5 }
+
+[[fixture]]
+label = "Ap bin 70-110, centre 90 — 25 days"
+expect = 1.746913580246914
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap = 90 }
+
+[[fixture]]
+label = "Ap bin 110-400, centre 255 — 20 days"
+expect = 1.317460317460317
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap = 255 }
+
+[[fixture]]
+label = "below the first bin centre — Ap 0 holds the 0-to-5 bin rather than extrapolating"
+expect = 1.0
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap = 0.0 }
+
+[[fixture]]
+label = "above the last bin centre — Ap 1000 holds the 110-to-400 bin"
+expect = 1.3174603174603174
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap = 1000.0 }

@@ -123,6 +123,14 @@ jobs:
         run: |
           python3 tools/instruction_lint.py --selftest
           python3 tools/instruction_lint.py
+      # Every node is the same files in one directory, and that uniformity is
+      # what makes adding a node a copy rather than a decision. It degrades one
+      # folder at a time, and each individual departure looks harmless — which
+      # is exactly the shape of thing a person will not notice and a check will.
+      - name: no node folder has drifted from the template
+        run: |
+          python3 tools/template_check.py --selftest
+          python3 tools/template_check.py
       - name: the release notes
         run: python3 tools/release_notes.py --selftest
       # Every recipe, applied twice on a copy; the second must change nothing.
@@ -248,6 +256,20 @@ jobs:
         run: python3 tools/panel_check.py --selftest
       - name: every declared panel
         run: python3 tools/panel_check.py
+      # The study's own code is not in this repository — only its published
+      # output, seven CSVs. Every solar row that can be compared against that
+      # output is re-derived here in Python, independently of the Rust, and the
+      # engine is asked for the same number. A port whose numbers drift from the
+      # thing it was ported from is the failure this whole subsystem exists to
+      # avoid, and it is not the kind that shows up in a unit test.
+      - name: the port still agrees with what the study published
+        run: |
+          cargo run --release -p vleo-daemon &
+          for i in $(seq 1 60); do
+            curl -sf -o /dev/null http://localhost:7777/v1/index && break
+            sleep 2
+          done
+          python3 tools/matlab_parity.py
 
   # The two faces the workspace excludes, because they need targets of their
   # own. `cargo build --workspace` does not reach them, so until this job

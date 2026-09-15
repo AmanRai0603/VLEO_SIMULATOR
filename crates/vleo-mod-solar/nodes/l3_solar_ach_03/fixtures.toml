@@ -1,0 +1,37 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# AN ACHIEVED ROW'S EVIDENCE IS THAT IT CHANGES NOTHING
+#
+# Like the interface, this restates a conclusion and there is no physics in it.
+# What can go wrong is that the restatement alters what it carries and both
+# sides still look plausible, so every fixture is the identity at a value taken
+# from sw_storm_return_level's own fixture answers.
+
+[[fixture]]
+label = "the five-year conclusion, restated unchanged"
+expect = 158.3838
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { conclusion = 158.3838 }
+
+[[fixture]]
+label = "the half-year conclusion, restated unchanged"
+expect = 64.1474
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { conclusion = 64.1474 }
+
+[[fixture]]
+label = "the fifteen-year conclusion, restated unchanged"
+expect = 203.3466
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { conclusion = 203.3466 }

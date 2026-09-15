@@ -2,32 +2,130 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sw_activity_band"
-label = "Flux activity band"
+label = "F10.7 activity band"
 folder = "sw_activity_band"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1345
-state = "empty"
+order = 1346
+state = "published"
+
+# No migrated_from and no parity grid. The relation is four published band
+# edges, so there is a source to read it from and nothing about prf_segment's
+# arithmetic to compare against: it applies the same four edges. The fixtures
+# come from the published levels, not from the record and not from the MATLAB.
 
 [question]
-text = ""
+text = "Which activity band does this F10.7 fall in?"
+note = "The coarse label that puts a flux value in context — a reader who sees 228 sfu and does not work with F10.7 daily has no idea whether that is ordinary or extreme. The band says it is the top one, and that 12.8% of the record sits there."
 
 [maths]
-expression = ""
-source = ""
+# The four standard levels, as three edges. Band 1 is below the first edge.
+expression = "band(F107) = 1 + count(edges <= F107),  edges = 90, 130, 170 sfu"
+source = "noaa_swpc"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+A flux in sfu means nothing to most readers of a design. 228 could be
+ordinary or extraordinary and there is no way to tell from the number. A
+band answers that in one symbol, and the bands used are not this
+repository's invention: they are the standard four NOAA F10.7 activity
+levels, which the study's prf_segment applies unchanged. So the row is a
+lookup against a convention — there is nothing fitted in it to be wrong
+about this record, and equally nothing in it that adapts to this record.
+"""
+reading = """
+An ordinal label carried as a number, and arithmetic on it is meaningless:
+the gaps are not equal in flux, with band 1 spanning 26 sfu of observed
+record and band 4 spanning 173. Averaging bands or treating band 4 as twice
+band 2 are errors the tree cannot prevent, because one row carries one
+scalar. It also bands a SINGLE day's flux: F10.7 moves through every band
+over any mission longer than a few months — 39.8 per cent of the record's
+days are in band 1 and 12.8 per cent in band 4 — so banding a design value
+says where the design point sits, not what the mission will experience.
+"""
+
+[[theory.step]]
+text = """
+The four standard levels are defined by three edges, so the relation is a
+count of edges reached rather than a chain of comparisons. Low is below 90
+sfu, moderate 90 to 129, elevated 130 to 169, and high 170 and above.
+"""
+math = "band(F107) = 1 + #{ e in (90, 130, 170) : F107 >= e }"
+
+[[theory.step]]
+text = """
+The comparison is 'at or above', so a flux sitting exactly on an edge
+belongs to the band the edge OPENS — 90.0 sfu is moderate, not low. Every
+off-by-one here produces a label that looks entirely plausible, which is why
+the fixtures beside this row sit on the edges rather than in the middle of
+the bands.
+"""
+
+[[theory.step]]
+text = """
+The top band is unbounded in flux, which is the one asymmetry in the scheme.
+Band 4 holds everything from 170 sfu up, including the record's largest day
+at 343, so the label stops discriminating exactly where the design cares
+most.
+"""
+
+[[theory.step]]
+text = """
+A different scheme was available and is deliberately not this row.
+prf_segment also offers data-driven terciles of the same quantity, which cut
+the archive into equal thirds and land on different edges. Those adapt to
+the record and these do not; a published convention is comparable between
+studies and a tercile is comparable only within one.
+"""
+
+
+[[assumption]]
+text = "The bands are a published convention and this row is a lookup, not a measurement"
+fails_when = "the four levels — low below 90, moderate 90 to 129, elevated 130 to 169, high 170 and above — are the standard NOAA F10.7 activity levels and prf_segment applies exactly these. Nothing here is fitted, so there is nothing in it to be wrong about this record, and equally nothing in it that adapts to this record: prf_segment ALSO offers data-driven terciles of the same quantity, which cut the archive into equal thirds and land in different places. Those are a different row and this is not it."
+
+[[assumption]]
+text = "A band is an ordinal label carried as a number, and arithmetic on it is meaningless"
+fails_when = "the answer is 1, 2, 3 or 4 and the gaps between them are not equal in sfu — band 1 spans 26 sfu of observed record, band 4 spans 173. Averaging bands, interpolating between them, or treating band 4 as twice band 2 are all errors this row cannot prevent, because the tree carries one scalar per row and a label has to arrive as one. A consumer that wants a flux wants env_f107 or sw_f107_design."
+
+[[assumption]]
+text = "It bands a single day's flux, and a mission does not live on one day"
+fails_when = "F10.7 moves through every band over any mission longer than a few months — the record spends 39.8% of its days in band 1 and 12.8% in band 4 — so banding the design value says which band the DESIGN POINT sits in and not which band the mission will experience. Reading it as the latter would be reading a design percentile as a forecast."
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "band"
+type = "Ratio"
+unit = "One"
+lower = 1.0
+upper = 4.0
+reason_lower = "there are four bands and the lowest is 1. A zero or negative band means the counting started in the wrong place, which would shift every label by one and still look like a valid answer"
+reason_upper = "there are four bands and the highest is 4, unbounded above in flux — band 4 holds everything from 170 sfu upward, including the record's largest day at 343. A fifth band means an edge was added without the range being updated"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "f107"
+var = "env_f107"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "count how many of the three published edges this flux has reached, and add one"
+binds = "b"
+type = "Ratio"
 
 [view]
-kind = "number"
+kind = "line"
+over = "env_f107"
+points = 60

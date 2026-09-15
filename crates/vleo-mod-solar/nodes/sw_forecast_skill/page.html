@@ -1,68 +1,196 @@
-<article class="node" data-node="sw_forecast_skill" data-sheet-hash="abbb63" data-impl-hash="222325">
+<article class="node" data-node="sw_forecast_skill" data-sheet-hash="1febb2" data-impl-hash="996a64">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>Forecast skill</h2>
-  <p class="ident"><code>sw_forecast_skill</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <h2>Issued-outlook skill against persistence</h2>
+  <p class="ident"><code>sw_forecast_skill</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
-  <button role="tab" class="tab" data-tab="1">interface</button>
-  <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">Is the published outlook better than assuming today's F10.7 continues?</p>
+<p class="maths"><code>S_f107(L) = 1 - MSE_outlook(L) / MSE_persistence(L)</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">A skill score against persistence: 1 is perfect, 0 is no better than the naive baseline, negative is worse than doing nothing. It answers whether reading the outlook is worth anything at the lead sw_outlook_lead declares, which is the far end of the window where the answer is worst.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>Persistence is the last observation STRICTLY BEFORE the issue date, and this choice decides the answer</dt><dd>fails when the baseline is allowed the observation on the issue date itself. 719 of the 1281 issues index their rows from lead 0, so the issue date IS a forecast target for most of the record, and handing it to the baseline gives persistence a number the forecaster did not have. The whole short-lead conclusion turns on it: the same arithmetic then reports -1.314 at lead 1 instead of +0.069, and the outlook appears to lose to persistence through lead 4 when it does not. A skill score is a statement about a baseline, so the baseline is declared here rather than left to whoever reads the number</dd>
+<dt>It goes negative at the far end of the window, and that is the answer, not a defect</dt><dd>fails when the last three verifiable leads are read as noise. Skill is positive from lead 1 through lead 23, peaks at +0.438 at lead 9, and is negative at leads 24, 25 and 26 — -0.036, -0.032 and -0.022 against samples of 866 to 868 pairs each. At the far end of its own published window the outlook is very slightly worse than assuming nothing changes. A design keying off the end of the outlook is paying attention to a forecast that has stopped carrying information</dd>
+<dt>Skill against persistence is not accuracy</dt><dd>fails when a positive score is read as the forecast being good. The outlook's own RMS error grows from 10.3 sfu at lead 1 to 24.9 sfu at lead 26; what improves through the middle leads is only its ratio to a baseline that degrades faster. Peak skill of +0.438 at lead 9 sits on an RMS error of 21.2 sfu, which is 18% of a typical F10.7. The forecast is never accurate in the window; it is merely better than nothing for most of it</dd>
+<dt>One score over 29 years, pooled across cycles</dt><dd>fails when the skill is activity-dependent, which it will be: persistence is a strong baseline in a quiet Sun and a weak one in a rising cycle, so pooling cycles 23, 24 and the rise of 25 averages over regimes where the comparison means different things. The sample is 866 to 1257 pairs per lead and is not conditioned on phase. A phase-conditioned skill would be a separate row and would need the epoch, which now exists</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
+<p class="why">A design that keys off a published forecast is exposed to the forecast being worthless, and 'worthless' has a precise meaning: no better than the cheapest thing you could have done instead. That makes the question comparative rather than absolute. A skill score is the standard form of the comparison — one minus the ratio of mean squared errors — and its entire content is the baseline it is measured against, which is why the baseline is declared on the sheet rather than left to whoever reads the number.</p>
+<div class="theory-walk" data-steps="7">
+<ol class="derive">
+<li><span class="dt">Define skill as the fraction of a baseline's mean squared error that the forecast removes. One is perfect, zero is no better than the baseline, negative is worse than not bothering.</span><code class="dm">S(L) = 1 - MSE_outlook(L) / MSE_baseline(L)</code></li>
+<li><span class="dt">Which makes the choice of baseline the whole measurement, not a detail of it. Persistence is the right baseline here because it is what a design would do with no forecast at all: assume today's flux continues.</span></li>
+<li><span class="dt">Persistence needs a definition of 'today', and this is where a verification leaks. The baseline is the last observation STRICTLY BEFORE the issue date. Allowing the observation ON the issue date gives the baseline a number the forecaster did not have — and for the 719 issues indexed from lead 0, that observation is itself a forecast target.</span></li>
+<li><span class="dt">The leak reverses a conclusion rather than shading one. With the leaky baseline the lead-1 skill reads -1.314 and the outlook appears to lose to persistence through lead 4; with the strict baseline it reads +0.069 and the outlook wins from lead 1.</span><code class="dm">lead 1: strict +0.0685 leaky -1.3138</code></li>
+<li><span class="dt">Measured strictly at every verifiable lead, the curve rises, peaks and then falls through zero. Skill is positive from lead 1 to lead 23, peaks at +0.438 at lead 9, and is negative at 24, 25 and 26 — against samples of 866 to 868 pairs each, so the negative tail is not a small-sample artefact.</span><code class="dm">lead 9: +0.4375 lead 23: +0.0177 lead 26: -0.0221</code></li>
+<li><span class="dt">The interior maximum is why the row is a table and not a fit: a monotone curve through these points would be a different claim about predictability than the record makes.</span></li>
+<li><span class="dt">And the answer at the declared lead is the design-relevant one. At the far end of its own published window the outlook is very slightly worse than assuming nothing changes, so a design keying off the end of the outlook is attending to a forecast that has stopped carrying information.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">Skill against persistence is not accuracy. The outlook's own RMS error grows from 10.3 sfu at lead 1 to 24.9 at lead 26; what improves through the middle leads is only its ratio to a baseline degrading faster. Peak skill of +0.438 at lead 9 sits on an RMS error of 21.2 sfu, about 18 per cent of a typical F10.7 — so the forecast is never accurate in this window, merely better than nothing for most of it. The score is also pooled over 29 years without conditioning on activity, and persistence is a strong baseline in a quiet Sun and a weak one in a rising cycle.</p>
+<p class="maths concl">which is the relation this node states: <code>S_f107(L) = 1 - MSE_outlook(L) / MSE_persistence(L)</code></p>
+</section>
+<section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sw_forecast_skill</td><td></td><td>-</td></tr>
+<tr><td>in</td><td><code>lead</code></td><td><a class="xref" data-goto="sw_outlook_lead">sw_outlook_lead</a></td><td>Time</td><td>d</td></tr>
+<tr class="out"><td>out</td><td><code>S_f107</code></td><td>sw_forecast_skill</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
-<section class="panel" data-panel="2">
-<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>0</b> -, confirmed by <b></b>.</p>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">read the measured skill of the issued outlook against persistence at this lead</span> <span class="binds">→ <code>out: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_forecast_skill(lead: Time) -> Ratio
+    given lead from sw_outlook_lead
+    // read the measured skill of the issued outlook against persistence at this lead
+    S_f107 ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require S_f107 ≥ -0.1
+    require S_f107 ≤ 0.5
+    require S_f107 is finite
+
+    return S_f107
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>S_f107 &ge; -0.1</code> — the worst measured skill is -0.036, at lead 24. A bound at -0.1 leaves room for the three negative leads and refuses anything that would say the published outlook is substantially worse than doing nothing, which the record does not support</li>
+<li><code>S_f107 &le; 0.5</code> — the best measured skill is +0.438, at lead 9. A skill above 0.5 against persistence would mean the outlook halves the baseline's mean squared error, and nothing in this record comes close; an answer there means the table was misread or the bundle changed underneath it</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
-</section>
 <section class="panel" data-panel="4">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<div class="relation-host" data-node="sw_forecast_skill" data-lo="-0.1" data-hi="0.5" data-symbol="S_f107">
+<p class="muted">asking the engine…</p>
+</div>
 </section>
 <section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// Is the published outlook better than assuming today's F10.7 continues?
+///
+/// `S_f107(L) = 1 - MSE_outlook(L) / MSE_persistence(L)`
+///
+/// Source: `noaa_swpc`
+///
+/// A skill score against persistence: 1 is perfect, 0 is no better than the
+/// naive baseline, negative is worse than doing nothing. It answers whether
+/// reading the outlook is worth anything at the lead sw_outlook_lead
+/// declares, which is the far end of the window where the answer is worst.
+///
+/// # Assumptions
+///
+/// * Persistence is the last observation STRICTLY BEFORE the issue date, and this choice decides the answer — fails when the baseline is allowed the observation on the issue date itself. 719 of the 1281 issues index their rows from lead 0, so the issue date IS a forecast target for most of the record, and handing it to the baseline gives persistence a number the forecaster did not have. The whole short-lead conclusion turns on it: the same arithmetic then reports -1.314 at lead 1 instead of +0.069, and the outlook appears to lose to persistence through lead 4 when it does not. A skill score is a statement about a baseline, so the baseline is declared here rather than left to whoever reads the number
+/// * It goes negative at the far end of the window, and that is the answer, not a defect — fails when the last three verifiable leads are read as noise. Skill is positive from lead 1 through lead 23, peaks at +0.438 at lead 9, and is negative at leads 24, 25 and 26 — -0.036, -0.032 and -0.022 against samples of 866 to 868 pairs each. At the far end of its own published window the outlook is very slightly worse than assuming nothing changes. A design keying off the end of the outlook is paying attention to a forecast that has stopped carrying information
+/// * Skill against persistence is not accuracy — fails when a positive score is read as the forecast being good. The outlook's own RMS error grows from 10.3 sfu at lead 1 to 24.9 sfu at lead 26; what improves through the middle leads is only its ratio to a baseline that degrades faster. Peak skill of +0.438 at lead 9 sits on an RMS error of 21.2 sfu, which is 18% of a typical F10.7. The forecast is never accurate in the window; it is merely better than nothing for most of it
+/// * One score over 29 years, pooled across cycles — fails when the skill is activity-dependent, which it will be: persistence is a strong baseline in a quiet Sun and a weak one in a rising cycle, so pooling cycles 23, 24 and the rise of 25 averages over regimes where the comparison means different things. The sample is 866 to 1257 pairs per lead and is not conditioned on phase. A phase-conditioned skill would be a separate row and would need the epoch, which now exists
+pub const NODE_ID: &amp;str = &quot;sw_forecast_skill&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xc01c5a9b411febb2;
+
+pub fn evaluate(lead: Time) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : read the measured skill of the issued outlook against persistence at this lead -&gt; Ratio
+    // The measured table, lead 1 to 26 in days. Not a fit: the curve has an
+    // interior extremum and a straight line through it would be a different
+    // claim than the record makes. Table1 interpolates between the measured
+    // leads and clamps at both ends, so a lead inside the declared domain
+    // always lands between two measurements.
+    use vleo_core::math::Table1;
+    const LEAD_DAYS: [f64; 26] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0];
+    const SKILL: [f64; 26] = [
+        0.0685159110, 0.1988398832, 0.2248475213, 0.2138431310,
+        0.2768782923, 0.3179547804, 0.3625942984, 0.4020897345,
+        0.4375371731, 0.4325518344, 0.4188543510, 0.4137682014,
+        0.4016285468, 0.4186771205, 0.3918289086, 0.3698739969,
+        0.3041719673, 0.2475268244, 0.2117196579, 0.1696147673,
+        0.1404618270, 0.0784955060, 0.0176508866, -0.0355195984,
+        -0.0324460638, -0.0220863078,
+    ];
+    let table: Table1 = Table1 { x: &amp;LEAD_DAYS, y: &amp;SKILL };
+    let out: Ratio = Ratio::new(table.at(lead.days()));
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = out;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;S_f107&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; -0.1 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;S_f107&quot;, value: answer.get(), bound: -0.1, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the worst measured skill is -0.036, at lead 24. A bound at -0.1 leaves room for the three negative leads and refuses anything that would say the published outlook is substantially worse than doing nothing, which the record does not support&quot; });
+    }
+    if answer.get() &gt; 0.5 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;S_f107&quot;, value: answer.get(), bound: 0.5, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the best measured skill is +0.438, at lead 9. A skill above 0.5 against persistence would mean the outlook halves the baseline's mean squared error, and nothing in this record comes close; an answer there means the table was misread or the bundle changed underneath it&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="lead 13 — mid-window, still strongly skillful — +0.402 from 1237 pairs"><td>lead 13 — mid-window, still strongly skillful — +0.402 from 1237 pairs</td><td class="num">0.4016285468</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 1 — the outlook's weakest positive skill, where persistence is hardest to beat"><td>lead 1 — the outlook's weakest positive skill, where persistence is hardest to beat</td><td class="num">0.068515911</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 9 — peak skill over the whole window — +0.438 from 1241 pairs"><td>lead 9 — peak skill over the whole window — +0.438 from 1241 pairs</td><td class="num">0.4375371731</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 13.5 — between two measured leads, so this one tests the interpolation and not the table"><td>lead 13.5 — between two measured leads, so this one tests the interpolation and not the table</td><td class="num">0.41015283365</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 23 — the last positive lead, +0.018, and the outlook is all but worthless here"><td>lead 23 — the last positive lead, +0.018, and the outlook is all but worthless here</td><td class="num">0.0176508866</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 24 — the sign change: the outlook is now worse than assuming nothing changes"><td>lead 24 — the sign change: the outlook is now worse than assuming nothing changes</td><td class="num">-0.0355195984</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 26 — the declared lead — -0.022 from 868 pairs"><td>lead 26 — the declared lead — -0.022 from 868 pairs</td><td class="num">-0.0220863078</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below -0.1 — the worst measured skill is -0.036, at lead 24. A bound at -0.1 leaves room for the three negative leads and refuses anything that would say the published outlook is substantially worse than doing nothing, which the record does not support</li>
+<li><code>OutOfDomain</code> above 0.5 — the best measured skill is +0.438, at lead 9. A skill above 0.5 against persistence would mean the outlook halves the baseline's mean squared error, and nothing in this record comes close; an answer there means the table was misread or the bundle changed underneath it</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_forecast_skill"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
-<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<section class="panel" data-panel="9">
+<p>Valid over <code>-0.1 &hellip; 0.5</code> -.</p>
+<ul class="guards"><li>lower — the worst measured skill is -0.036, at lead 24. A bound at -0.1 leaves room for the three negative leads and refuses anything that would say the published outlook is substantially worse than doing nothing, which the record does not support</li><li>upper — the best measured skill is +0.438, at lead 9. A skill above 0.5 against persistence would mean the outlook halves the baseline's mean squared error, and nothing in this record comes close; an answer there means the table was misread or the bundle changed underneath it</li></ul>
+<div class="sweep" data-over="sw_outlook_lead" data-points="52" data-y="sw_forecast_skill"><p class="muted">Sweeps against <a class="xref" data-goto="sw_outlook_lead">sw_outlook_lead</a> over 52 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

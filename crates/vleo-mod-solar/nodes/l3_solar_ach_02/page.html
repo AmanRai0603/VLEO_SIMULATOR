@@ -1,67 +1,166 @@
-<article class="node" data-node="l3_solar_ach_02" data-sheet-hash="38351b" data-impl-hash="222325">
+<article class="node" data-node="l3_solar_ach_02" data-sheet-hash="87ce84" data-impl-hash="6f6f4a">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>F10.7</h2>
-  <p class="ident"><code>l3_solar_ach_02</code> · <span class="kind kind-achieved">achieved</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <p class="ident"><code>l3_solar_ach_02</code> · <span class="kind kind-achieved">achieved</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
-  <button role="tab" class="tab" data-tab="1">interface</button>
-  <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">What F10.7 does the record say this mission will present, at 95% confidence?</p>
+<p class="maths"><code>F107_ach = sw_f107_design</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The F10.7 driver on the achieved side. It is the same quantity as ach_01 in this subsystem because the solar flux IS F10.7 here — the layer-2 rows separate them and the subsystem does not, which is a finding rather than a design and is stated in the assumptions.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>It inherits every limitation of the row it restates, and a closure reading it sees none of them</dt><dd>fails when the same cost as the interface, and worth repeating on the row a closure actually binds. The number is sized on the record's unconditional mean rather than on the mean cycle at the mission's epoch — the epoch is published and this chain does not yet read it, which is an open decision on sw_central_expectation worth 6.7 sfu; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way.</dd>
+<dt>ach_01 and ach_02 carry the same number, because at layer 3 the solar flux IS F10.7</dt><dd>fails when sys_space_environment declares sys_space_environment_solar_flux and sys_space_environment_f10_7 as separate rows, and the seeder mirrored both into this group. In the study they are one quantity: F10.7 is the solar flux index, and nothing in prf_drivers distinguishes them. So two rows here answer with one number, which is honest but redundant, and the redundancy belongs to the layer-2 decomposition rather than to this subsystem. Whoever settles what an interface publishes should settle this at the same time — either sys_space_environment_solar_flux means something else, such as the headline with its credibility, or one of the two rows should not exist.</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
+<p class="why">There is no derivation here that ach_01 does not carry, and inventing one would be dishonest. The row exists because layer 2 declares sys_space_environment_solar_flux and sys_space_environment_f10_7 as separate quantities and the seeder mirrored both into this group. In the study they are one quantity: F10.7 IS the solar flux index, and nothing in prf_drivers distinguishes them. So two rows here answer with one number, and the redundancy belongs to the layer-2 decomposition rather than to this subsystem.</p>
+<div class="theory-walk" data-steps="3">
+<ol class="derive">
+<li><span class="dt">The quantity is the same as ach_01's and so is the number, because at layer 3 the solar flux and F10.7 are the same measurement. Two rows are written because two partners exist above, not because two quantities exist below.</span></li>
+<li><span class="dt">Writing one row and leaving the other seeded was the alternative, and it is worse: an unseeded partner at layer 2 would read as an unanswered question rather than as a duplicated one, and the duplication is the finding.</span></li>
+<li><span class="dt">Inventing a difference between them was the other alternative, and it is worse still. Any distinction written here to justify two rows would be a claim about the quantity that the study's own data does not support.</span><code class="dm">F107_ach = F107_design = 228.14 sfu — identical to ach_01, on purpose</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">The duplication is real and is declared rather than disguised. Resolving it is a decision about what layer 2 means — either sys_space_environment_solar_flux means something other than F10.7, such as the headline with its credibility attached, or one of the two rows should not exist. Whoever settles what an interface publishes should settle this at the same time, because both questions are about the same seam.</p>
+<p class="maths concl">which is the relation this node states: <code>F107_ach = sw_f107_design</code></p>
+</section>
+<section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>l3_solar_ach_02</td><td></td><td>-</td></tr>
+<tr><td>in</td><td><code>conclusion</code></td><td><a class="xref" data-goto="sw_f107_design">sw_f107_design</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>F107_ach</code></td><td>l3_solar_ach_02</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
-<section class="panel" data-panel="2">
-<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">restate the subsystem's conclusion on the achieved side of the closure</span> <span class="binds">→ <code>ach: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function l3_solar_ach_02(conclusion: Ratio) -> Ratio
+    given conclusion from sw_f107_design
+    // restate the subsystem's conclusion on the achieved side of the closure
+    ach ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require F107_ach ≥ 60
+    require F107_ach ≤ 400
+    require F107_ach is finite
+
+    return F107_ach
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>F107_ach &ge; 60</code> — the same floor as env_f107: below 60 sfu has never been observed</li>
+<li><code>F107_ach &le; 400</code> — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
-</section>
 <section class="panel" data-panel="4">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<div class="relation-host" data-node="l3_solar_ach_02" data-lo="60" data-hi="400" data-symbol="F107_ach">
+<p class="muted">asking the engine…</p>
+</div>
 </section>
 <section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What F10.7 does the record say this mission will present, at 95% confidence?
+///
+/// `F107_ach = sw_f107_design`
+///
+/// Source: `noaa_swpc`
+///
+/// The F10.7 driver on the achieved side. It is the same quantity as ach_01
+/// in this subsystem because the solar flux IS F10.7 here — the layer-2
+/// rows separate them and the subsystem does not, which is a finding rather
+/// than a design and is stated in the assumptions.
+///
+/// # Assumptions
+///
+/// * It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when the same cost as the interface, and worth repeating on the row a closure actually binds. The number is sized on the record's unconditional mean rather than on the mean cycle at the mission's epoch — the epoch is published and this chain does not yet read it, which is an open decision on sw_central_expectation worth 6.7 sfu; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way.
+/// * ach_01 and ach_02 carry the same number, because at layer 3 the solar flux IS F10.7 — fails when sys_space_environment declares sys_space_environment_solar_flux and sys_space_environment_f10_7 as separate rows, and the seeder mirrored both into this group. In the study they are one quantity: F10.7 is the solar flux index, and nothing in prf_drivers distinguishes them. So two rows here answer with one number, which is honest but redundant, and the redundancy belongs to the layer-2 decomposition rather than to this subsystem. Whoever settles what an interface publishes should settle this at the same time — either sys_space_environment_solar_flux means something else, such as the headline with its credibility, or one of the two rows should not exist.
+pub const NODE_ID: &amp;str = &quot;l3_solar_ach_02&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x7d362c230887ce84;
+
+pub fn evaluate(conclusion: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : restate the subsystem's conclusion on the achieved side of the closure -&gt; Ratio
+    let ach: Ratio = conclusion;
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = ach;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_ach&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_ach&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the same floor as env_f107: below 60 sfu has never been observed&quot; });
+    }
+    if answer.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_ach&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="the five-year conclusion, restated unchanged"><td>the five-year conclusion, restated unchanged</td><td class="num">228.1374378829</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the half-year conclusion, restated unchanged"><td>the half-year conclusion, restated unchanged</td><td class="num">171.8843338669</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the fifteen-year conclusion, restated unchanged"><td>the fifteen-year conclusion, restated unchanged</td><td class="num">229.8437378829</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 60 — the same floor as env_f107: below 60 sfu has never been observed</li>
+<li><code>OutOfDomain</code> above 400 — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="l3_solar_ach_02"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
-<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<section class="panel" data-panel="9">
+<p>Valid over <code>60 &hellip; 400</code> -.</p>
+<ul class="guards"><li>lower — the same floor as env_f107: below 60 sfu has never been observed</li><li>upper — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating</li></ul>
+<div class="sweep" data-over="orbit_mission_duration" data-points="60" data-y="l3_solar_ach_02"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a> over 60 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

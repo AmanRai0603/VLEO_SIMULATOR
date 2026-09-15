@@ -6,13 +6,15 @@
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
-  <button role="tab" class="tab" data-tab="1">interface</button>
-  <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">How long must one satellite operate?</p>
@@ -21,16 +23,31 @@
 <p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
 </section>
 <section class="panel" data-panel="1">
+<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+</section>
+<section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
 <tr class="out"><td>out</td><td><code>T_mis</code></td><td>orbit_mission_duration</td><td>Time</td><td>yr</td></tr>
 </tbody></table>
-<p class="consumers"><b>6</b> nodes read this: <a class="xref" data-goto="aero_ao_fluence">aero_ao_fluence</a>, <a class="xref" data-goto="cost_per_year">cost_per_year</a>, <a class="xref" data-goto="cost_programme">cost_programme</a>, <a class="xref" data-goto="pwr_battery_cycles">pwr_battery_cycles</a>, <a class="xref" data-goto="pwr_degradation">pwr_degradation</a>, <a class="xref" data-goto="sw_storm_return_level">sw_storm_return_level</a></p>
+<p class="consumers"><b>10</b> nodes read this: <a class="xref" data-goto="aero_ao_fluence">aero_ao_fluence</a>, <a class="xref" data-goto="cost_per_year">cost_per_year</a>, <a class="xref" data-goto="cost_programme">cost_programme</a>, <a class="xref" data-goto="pwr_battery_cycles">pwr_battery_cycles</a>, <a class="xref" data-goto="pwr_degradation">pwr_degradation</a>, <a class="xref" data-goto="sw_central_expectation">sw_central_expectation</a>, <a class="xref" data-goto="sw_horizon_climatology">sw_horizon_climatology</a>, <a class="xref" data-goto="sw_horizon_persistence">sw_horizon_persistence</a>, <a class="xref" data-goto="sw_storm_return_level">sw_storm_return_level</a>, <a class="xref" data-goto="sw_uncertainty_growth">sw_uncertainty_growth</a></p>
 </section>
-<section class="panel" data-panel="2">
+<section class="panel" data-panel="3">
 <p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
 <p>This is a declared value: <b>5</b> yr, confirmed by <b>A. Rai / 2026-09-01</b>.</p>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function orbit_mission_duration() -> Time
+    T_mis ← 5 yr          // declared, confirmed by A. Rai / 2026-09-01
+
+    // a guard whose reason is not written down gets deleted
+    require T_mis ≥ 0.5
+    require T_mis ≤ 15
+    require T_mis is finite
+
+    return T_mis
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
 <li><code>T_mis &ge; 0.5</code> — below six months the programme cannot amortise a satellite, so it is not the mission being designed</li>
@@ -38,7 +55,12 @@
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="3">
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="orbit_mission_duration" data-lo="0.5" data-hi="15" data-symbol="T_mis">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -84,10 +106,10 @@ pub fn evaluate() -&gt; Result&lt;Time, Fault&gt; {
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="6">
 <p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 0.5 — below six months the programme cannot amortise a satellite, so it is not the mission being designed</li>
@@ -96,11 +118,11 @@ pub fn evaluate() -&gt; Result&lt;Time, Fault&gt; {
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="8">
 <p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="orbit_mission_duration"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="9">
 <p>Valid over <code>0.5 &hellip; 15</code> yr.</p>
 <ul class="guards"><li>lower — below six months the programme cannot amortise a satellite, so it is not the mission being designed</li><li>upper — above 15 years the cost model, the degradation model and the battery cycle model are all extrapolated well past their fits</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
@@ -108,5 +130,6 @@ pub fn evaluate() -&gt; Result&lt;Time, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

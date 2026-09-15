@@ -1,0 +1,162 @@
+<article class="node" data-node="sw_storm_design_level" data-sheet-hash="5e918f" data-impl-hash="222325">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Storm level designed for</h2>
+  <p class="ident"><code>sw_storm_design_level</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">Which NOAA G level is this design built to survive?</p>
+<p class="maths"><code>G_design = 3   (NOAA G3, strong, Kp 7)</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">1, 2 or 3 on the G scale — minor, moderate or strong. It is the switch: sw_ap_design reads it and turns it into a daily Ap, so moving this row is how a design asks what a different storm level would cost. Default G3.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>G3 is a choice and the record says a five-year mission will exceed it</dt><dd>fails when the choice is read as sufficient. sw_storm_return_level, fitted on the record and read at the declared five-year mission, gives a daily Ap of 158.4; the days in the record nearest that value all reached Kp_max 9, which is G5. So the storm a five-year mission should expect is two levels above what this row designs to. That is not an error in either row — it is the gap between what the sky does and what a vehicle can be built for, and putting both numbers in the tree is the point. What closes it is operations, not structure</dd>
+<dt>The scale is on Kp and the design quantity is daily Ap, which are not the same measurement</dt><dd>fails when a G level is converted to a daily Ap as though the mapping were exact. Kp is three-hourly and the G level is the WORST slot in a day; daily Ap is the mean of eight slots. So a G3 day has one slot at Kp 7 and seven that may be anything below it, and the record shows exactly that spread: days whose Kp_max is 7 run from daily Ap 15 to 96, median 51. sw_ap_design takes the ceiling of that band rather than its median, and the sheet there says why</dd>
+<dt>Stopping at 3 is a statement about this vehicle class, not about the scale</dt><dd>fails when a mission that must survive G4 or G5 reads this row. The declared range refuses 4 and 5 rather than letting them be selected quietly, because a design sized for G4 is a different vehicle and the rest of this group's numbers — the return level, the band, the requirement — would all need revisiting together. A mission with that requirement should change this bound deliberately and re-run the closure, which is a visible act</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">A vehicle cannot be built for the worst storm physically possible, and a design that says so vaguely has made no decision. The NOAA G scale exists to make the decision nameable: five levels, each tied to a Kp, each with documented consequences for power grids, navigation and spacecraft. Declaring a G level is how a programme states what class of event it is engineered through rather than operated through, and putting that declaration on its own row is what makes it a switch — every number downstream moves when it moves.</p>
+<div class="theory-walk" data-steps="4">
+<ol class="derive">
+<li><span class="dt">The G scale is defined on Kp and it grades the WORST three-hourly slot of a day: G1 at Kp 5, G2 at Kp 6, G3 at Kp 7, G4 at Kp 8, G5 at Kp 9. So a G level is a statement about a day's peak disturbance, not about its average.</span></li>
+<li><span class="dt">Choosing a level is choosing where to stop building and start operating, and the frequencies are what make that a real decision. In 29 years the record holds 49 days at G4 and 16 at G5 — rare enough that flying through them with a procedure is cheaper than carrying the structure for them, and common enough that a mission must have such a procedure.</span></li>
+<li><span class="dt">G3 is the highest level this vehicle class is sized for. That is a statement about this class and not about the scale, which is why the declared upper bound is 3: a mission that genuinely requires G4 changes the bound on purpose and re-runs the closure, and the change is visible in a diff rather than buried in a selection.</span></li>
+<li><span class="dt">The row is a switch rather than a constant. sw_ap_design converts it, and the three exceedance rows all read that conversion, so moving this one number from 3 to 2 moves the design Ap from 132 to 80 and the exceedance from 1.42 days over the mission to 6.21. Asking what a different storm level costs is a one-row edit.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">G3 is a choice and the record says a five-year mission will exceed it. The return level at the declared mission is Ap 158.4, and the days in the record nearest that value all reached Kp_max 9, which is G5 — two levels above what this row designs to. That is not an error in either row; it is the gap between what the sky does and what a vehicle can be built for, and what closes it is operations rather than structure. The range refuses 4 and 5 deliberately: a design sized for G4 is a different vehicle, and the return level, the band and the requirement would all need revisiting together.</p>
+<p class="maths concl">which is the relation this node states: <code>G_design = 3   (NOAA G3, strong, Kp 7)</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
+<tr class="out"><td>out</td><td><code>G_design</code></td><td>sw_storm_design_level</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="sw_ap_design">sw_ap_design</a></p>
+</section>
+<section class="panel" data-panel="3">
+<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
+<p>This is a declared value: <b>3</b> -, confirmed by <b>A. Rai / 2026-09-14</b>.</p>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_storm_design_level() -> Ratio
+    G_design ← 3          // declared, confirmed by A. Rai / 2026-09-14
+
+    // a guard whose reason is not written down gets deleted
+    require G_design ≥ 1
+    require G_design ≤ 3
+    require G_design is finite
+
+    return G_design
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>G_design &ge; 1</code> — G1 is the bottom of the NOAA scale. Below it there is no storm to design for — Kp 4 is 'active' and is where alerts begin, which sw_alert_threshold carries, not where storms do</li>
+<li><code>G_design &le; 3</code> — G3 is the highest level this vehicle class is sized for. G4 occurs on 49 days in 29 years and G5 on 16, and both are handled by operating through the event rather than by building for it. A design that genuinely requires G4 changes this bound on purpose and re-runs the closure</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sw_storm_design_level" data-lo="1" data-hi="3" data-symbol="G_design">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// Which NOAA G level is this design built to survive?
+///
+/// `G_design = 3   (NOAA G3, strong, Kp 7)`
+///
+/// Source: `noaa_swpc`
+///
+/// 1, 2 or 3 on the G scale — minor, moderate or strong. It is the switch:
+/// sw_ap_design reads it and turns it into a daily Ap, so moving this row is
+/// how a design asks what a different storm level would cost. Default G3.
+///
+/// # Assumptions
+///
+/// * G3 is a choice and the record says a five-year mission will exceed it — fails when the choice is read as sufficient. sw_storm_return_level, fitted on the record and read at the declared five-year mission, gives a daily Ap of 158.4; the days in the record nearest that value all reached Kp_max 9, which is G5. So the storm a five-year mission should expect is two levels above what this row designs to. That is not an error in either row — it is the gap between what the sky does and what a vehicle can be built for, and putting both numbers in the tree is the point. What closes it is operations, not structure
+/// * The scale is on Kp and the design quantity is daily Ap, which are not the same measurement — fails when a G level is converted to a daily Ap as though the mapping were exact. Kp is three-hourly and the G level is the WORST slot in a day; daily Ap is the mean of eight slots. So a G3 day has one slot at Kp 7 and seven that may be anything below it, and the record shows exactly that spread: days whose Kp_max is 7 run from daily Ap 15 to 96, median 51. sw_ap_design takes the ceiling of that band rather than its median, and the sheet there says why
+/// * Stopping at 3 is a statement about this vehicle class, not about the scale — fails when a mission that must survive G4 or G5 reads this row. The declared range refuses 4 and 5 rather than letting them be selected quietly, because a design sized for G4 is a different vehicle and the rest of this group's numbers — the return level, the band, the requirement — would all need revisiting together. A mission with that requirement should change this bound deliberately and re-run the closure, which is a visible act
+pub const NODE_ID: &amp;str = &quot;sw_storm_design_level&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xdfa9bfd94d5e918f;
+
+pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
+    // generated · a declared value, converted from the unit it was written in
+    let declared: Ratio = match Ratio::from_unit(3.0, Unit::One) {
+        Some(q) =&gt; q,
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;G_design&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+    };
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = declared;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;G_design&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 1.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;G_design&quot;, value: answer.get(), bound: 1.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;G1 is the bottom of the NOAA scale. Below it there is no storm to design for — Kp 4 is 'active' and is where alerts begin, which sw_alert_threshold carries, not where storms do&quot; });
+    }
+    if answer.get() &gt; 3.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;G_design&quot;, value: answer.get(), bound: 3.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;G3 is the highest level this vehicle class is sized for. G4 occurs on 49 days in 29 years and G5 on 16, and both are handled by operating through the event rather than by building for it. A design that genuinely requires G4 changes this bound on purpose and re-runs the closure&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 1 — G1 is the bottom of the NOAA scale. Below it there is no storm to design for — Kp 4 is 'active' and is where alerts begin, which sw_alert_threshold carries, not where storms do</li>
+<li><code>OutOfDomain</code> above 3 — G3 is the highest level this vehicle class is sized for. G4 occurs on 49 days in 29 years and G5 on 16, and both are handled by operating through the event rather than by building for it. A design that genuinely requires G4 changes this bound on purpose and re-runs the closure</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_storm_design_level"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>1 &hellip; 3</code> -.</p>
+<ul class="guards"><li>lower — G1 is the bottom of the NOAA scale. Below it there is no storm to design for — Kp 4 is 'active' and is where alerts begin, which sw_alert_threshold carries, not where storms do</li><li>upper — G3 is the highest level this vehicle class is sized for. G4 occurs on 49 days in 29 years and G5 on 16, and both are handled by operating through the event rather than by building for it. A design that genuinely requires G4 changes this bound on purpose and re-runs the closure</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>significant, and one fixture or none — a significant node is the one that gets a second independent check, which is the whole reason for the word</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

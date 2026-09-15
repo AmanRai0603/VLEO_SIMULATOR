@@ -6,28 +6,209 @@ label = "Geomagnetic regime"
 folder = "sw_regime"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "significant"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1344
-state = "empty"
+order = 1345
+state = "published"
+# The prior implementation, named so the parity grid beside this node has
+# something to be the parity of. prf_cluster's output is published in full as
+# daily_regime.csv, so the grid is the study's own answer rather than a
+# re-derivation of it.
+migrated_from = "prf_cluster.m (01_kernel/sw_study, three-component Gaussian mixture on daily Ap)"
+# The bands are integers and the published labels are exact, so a disagreement
+# at any tolerance above zero would be a wrong band rather than a rounding.
+parity_tolerance = 1e-12
+
+# THE PORT, AND THE ONE PLACE IT DEPARTS FROM THE STUDY.
+#
+# daily_regime.csv is not an observation. It is a three-component Gaussian
+# mixture's output — the study's own prf_cluster — with one label and three
+# posteriors per day. Porting it means reproducing that classifier, not
+# re-deciding it.
+#
+# It reproduces exactly, and more simply than expected. The published labels are
+# a clean partition of daily Ap: quiet holds 0 to 6, active holds 7 to 25, storm
+# holds 26 and above, and the three-band rule below reproduces the published
+# label on 10128 of 10299 days with ZERO disagreements outside the artefact
+# named next. The mixture was fitted in one dimension and its decision
+# boundaries fell on integers; there is nothing left of it to carry.
+#
+# THE 171 DAYS. The published table labels 171 days 'storm' that have an Ap of
+# 0 or 1 and a Kp_max of 0 or 1 — the quietest days in the record. They cluster
+# in 2006 to 2011, the deep minimum between cycles 23 and 24, and they carry two
+# repeated confidences, 0.726 for every Ap 1 day and 0.992 for every Ap 0 day.
+# That is the signature of a broad component fitted to the storm tail winning at
+# the OTHER extreme as well: a narrow quiet component's density collapses faster
+# than a broad one's, so far enough down the low tail the storm component takes
+# the day back. Every other storm day in the record has Ap 26 or more.
+#
+# This row does not reproduce those 171. A design told 'storm' on a day with
+# Ap 1 is being actively misled, and the departure is one rule, enumerable, and
+# 1.66 per cent of the record. It is declared below rather than hidden.
 
 [question]
-text = ""
+text = "Quiet, active or storm — which regime is this daily Ap in?"
+note = "1 is quiet, 2 is active, 3 is storm, in the order the study's own mixture put them. A number rather than a name because the interface carries numbers; the bands are integers and the boundaries are exact, so the encoding loses nothing."
 
 [maths]
-expression = ""
-source = ""
+confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
+expression = "regime(Ap) = 1 if Ap <= 6, 2 if Ap <= 25, 3 otherwise"
+source = "noaa_swpc"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+A design cannot respond to a continuous Ap. There is no distinct reaction to
+Ap 26 as against Ap 27, and a subsystem that tried to have one would be
+reacting to the measurement's noise. What a design can respond to is a
+regime: a small set of states, each with its own budget. The study did not
+choose the boundaries of those states by hand. It fitted a three-component
+mixture to the distribution of daily Ap and let the record decide where one
+population ends and the next begins. This node ports the classifier's
+DECISION, not its machinery, and the derivation below is why one line of
+thresholds is a faithful port of a fitted mixture.
+"""
+reading = """
+The answer is an index, not a severity: 3 is not three times 1, and the
+distance from 1 to 2 is nineteen units of Ap while the distance from 2 to 3
+is one. It says which population today belongs to and nothing about how far
+into that population it is — a day at Ap 26 and a day at Ap 200 are both 3.
+
+It also carries no confidence, although the classifier it ports published
+one: the bands being exact makes the label certain GIVEN the Ap, which is a
+different claim from the label being right. On the record the study was 55
+to 70 per cent sure of its own labels on average, and 21 per cent of its
+quiet days scored below 0.5.
+"""
+
+[[theory.step]]
+text = """
+Start from what a mixture model assumes: that the observed distribution of
+daily Ap is not one population but a sum of several, each Gaussian, each
+with its own share of the days, its own centre and its own width. For Ap the
+study used three — a quiet background, a disturbed population, and a broad
+storm tail.
+"""
+math = "p(Ap) = w1·N(Ap; m1, s1) + w2·N(Ap; m2, s2) + w3·N(Ap; m3, s3), w1 + w2 + w3 = 1"
+
+[[theory.step]]
+text = """
+Fitting chooses the nine numbers that make the observed record most likely.
+Which algorithm did that is not recorded here and does not matter to this
+row: prf_cluster.m is not in this repository, only its output, and what is
+ported is where the fit ended up, not how it got there.
+"""
+
+[[theory.step]]
+text = """
+Once fitted, each day gets a posterior share of each component — how much of
+that day the component accounts for. These are the three numbers
+daily_regime.csv publishes beside every date.
+"""
+math = "g_i(Ap) = w_i·N(Ap; m_i, s_i) / SUM_j w_j·N(Ap; m_j, s_j)"
+
+[[theory.step]]
+text = """
+The label is whichever component claims the largest share. That is the whole
+classifier: everything above exists to produce this argmax, and the study
+published the argmax as its 'regime' column.
+"""
+math = "label(Ap) = argmax_i g_i(Ap)"
+
+[[theory.step]]
+text = """
+Now the step that turns a fitted mixture into thresholds. Two components
+swap the lead exactly where their weighted densities cross, and in one
+dimension that condition is a QUADRATIC in Ap — take logs of the ratio and
+the squares do not cancel unless the two widths are equal. So each pair of
+components crosses at up to two values of Ap, not one.
+"""
+math = "log[ w_i·N(Ap; m_i, s_i) / w_j·N(Ap; m_j, s_j) ] = 0 is quadratic in Ap"
+
+[[theory.step]]
+text = """
+Where the three components have separated widths, the useful root of each
+quadratic lands between the two centres, and the argmax becomes an ordered
+partition of the Ap axis. Read off the published labels, both boundaries sit
+on integers: the quiet-to-active swap falls between 6 and 7, and the
+active-to-storm swap between 25 and 26. Nothing of the mixture survives
+except those two numbers.
+"""
+math = "regime(Ap) = 1 for Ap <= 6, 2 for 7 <= Ap <= 25, 3 for Ap >= 26"
+
+[[theory.step]]
+text = """
+The other root is not harmless, and it is measurable in the published file.
+A broad component's density falls off more slowly than a narrow one's, so
+far enough down the LOW tail the storm component overtakes quiet again. In
+daily_regime.csv the mean storm posterior climbs as Ap falls — 0.199 at Ap
+3, 0.332 at Ap 2, 0.726 at Ap 1, 0.992 at Ap 0 — crossing the quiet
+posterior between Ap 2 and Ap 1. That second crossing is the whole of the
+artefact: 140 days at Ap 1 and 31 at Ap 0, all labelled storm, 171 in total.
+"""
+math = "g_storm > g_quiet for Ap <= 1 as well as for Ap >= 26"
+
+[[theory.step]]
+text = """
+This row keeps the first root of each pair and cuts the second. A design
+told 'storm' on a day with Ap 1 is being actively misled, and the departure
+is one rule rather than a list of dates. On the other 10128 days the
+three-band relation reproduces the published label exactly — the
+disagreement count is zero, not small.
+"""
+
+
+[[assumption]]
+text = "It departs from the published table on 171 of 10299 days, deliberately"
+fails_when = "parity with the study is what is wanted. Every one of the 171 is a day the mixture labelled 'storm' with an Ap of 0 or 1 and a Kp_max of 0 or 1, in 2006 to 2011. This row calls them quiet. On the other 10128 days it reproduces the published label exactly — the disagreement count against the corrected labels is zero, not small. Anyone reconciling against daily_regime.csv will find exactly these days and no others, and the sign of the disagreement is always the same: the table says storm where this row says quiet, never the reverse"
+
+[[assumption]]
+text = "The only Ap this tree publishes is a design storm, so the quiet band is unreachable today"
+fails_when = "somebody expects to see all three answers in a run. The input is sw_storm_return_level, whose declared range is 20 to 230, so in any run this node can only return active or storm — and at the declared five-year mission it returns 3. The relation carries all three branches because the classifier has three, and the day an ordinary Ap exists in the tree this row already handles it. That no such row exists is a fact about the tree and is worth noticing rather than working around"
+
+[[assumption]]
+text = "Three bands on one variable, which is all the study's mixture turned out to be"
+fails_when = "a regime is expected to depend on anything but today's Ap. It does not: no history, no rate of change, no F10.7. A day at Ap 26 on the way up and a day at Ap 26 on the way down are the same regime here, and a storm's recovery day is labelled by its level rather than by what it is recovering from. That is the study's model and this row is a port of it, not an improvement on it"
+
+[[assumption]]
+text = "The boundaries are exact integers and the published confidences are discarded"
+fails_when = "a caller wants to know how sure the label is. daily_regime.csv carries a posterior per day — mean 0.550 for quiet, 0.580 for active, 0.705 for storm, with 21 per cent of quiet days below 0.5 — and this row publishes one number with no confidence beside it. The bands being exact makes the LABEL certain given the Ap; it does not make the label right. A day at Ap 26 is one unit from being called active and the study was only 55 to 70 per cent sure of its labels on average"
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "regime"
+type = "Ratio"
+unit = "One"
+lower = 1.0
+upper = 3.0
+reason_lower = "1 is quiet and is the lowest regime the mixture defines. Below it there is no label"
+reason_upper = "3 is storm and is the highest. A fourth regime would be a different classifier than the one this row ports"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "ap"
+var = "sw_storm_return_level"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "place the daily Ap in the mixture's three bands: quiet to 6, active to 25, storm above"
+binds = "out"
+type = "Ratio"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# numbers must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
 
 [view]
 kind = "number"

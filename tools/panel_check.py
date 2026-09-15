@@ -122,6 +122,31 @@ def chromium_path():
     return None
 
 
+# A panel's content, whatever kind of element it draws into.
+#
+# The three panels this checker was written against all build DOM, so both
+# "is it empty" and "did it change" read innerHTML. A canvas's innerHTML is
+# empty by specification and never changes, so the one real chart in this
+# repository — the behaviour sweep — could not be checked at all: it reported
+# "still empty after the page settled" and nothing else. A canvas is compared
+# on its rendered pixels instead, which is the only thing it has.
+_SIG = """
+sel => { const e = document.querySelector(sel); if (!e) return null;
+         return e.tagName === 'CANVAS' ? e.toDataURL() : e.innerHTML; }
+"""
+
+# Non-empty, for either kind. A blank canvas is not "empty" in any DOM sense,
+# so it is compared against a fresh canvas of the same size: equal means
+# nothing has been drawn. Exact, and it needs no threshold.
+_NONBLANK = """
+sel => { const e = document.querySelector(sel); if (!e) return false;
+         if (e.tagName !== 'CANVAS') return e.innerHTML.trim().length > 0;
+         const b = document.createElement('canvas');
+         b.width = e.width; b.height = e.height;
+         return e.toDataURL() !== b.toDataURL(); }
+"""
+
+
 def check_all(ids=None, record=False):
     from playwright.sync_api import sync_playwright
 
@@ -144,14 +169,21 @@ def check_all(ids=None, record=False):
             page.on("pageerror", lambda e: errors.append(str(e)))
             page.goto(url, wait_until="networkidle")
             mount = d["mount"]
+            # Some panels do not draw until somebody asks. The sweep is the
+            # example: its canvas is created hidden and stays blank until a
+            # sweep has been run, so checking it at the state the page opens in
+            # would report a defect that is the panel working as designed.
+            # `ready` is evaluated before the checks, never during them.
+            if d.get("ready"):
+                try:
+                    page.evaluate(d["ready"])
+                except Exception as e:
+                    found.append((d["id"], "1 renders", "could not reach the ready state: %s" % e))
+                    page.close()
+                    continue
             try:
-                page.wait_for_selector(mount, timeout=15000)
-                page.wait_for_function(
-                    "sel => { const e = document.querySelector(sel);"
-                    " return e && e.innerHTML.trim().length > 0; }",
-                    arg=mount,
-                    timeout=15000,
-                )
+                page.wait_for_selector(mount, timeout=15000, state="attached")
+                page.wait_for_function(_NONBLANK, arg=mount, timeout=15000)
             except Exception:
                 found.append((d["id"], "1 renders", "%s is still empty after the page settled" % mount))
                 page.close()
@@ -165,24 +197,45 @@ def check_all(ids=None, record=False):
                 found.append((d["id"], "1 renders", "the page threw: %s" % errors[0]))
 
             # 2 · it moves
+            settle = d.get("settle_ms", 3000)
             for inp in d.get("input", []):
-                before = page.locator(mount).inner_html()
+                before = page.evaluate(_SIG, mount)
                 try:
                     page.evaluate(inp["drive"])
                 except Exception as e:
                     found.append((d["id"], "2 moves", "could not drive %r: %s" % (inp["name"], e)))
                     continue
-                page.wait_for_timeout(250)
-                after = page.locator(mount).inner_html()
-                if before == after:
+                # Wait for it to CHANGE rather than sleeping and hoping. A fixed
+                # pause has to be long enough for the slowest panel, and a panel
+                # that redraws behind a fetch — the sweep does — is slower than
+                # any pause anyone would write. Waiting on the condition is
+                # faster when it is quick and correct when it is not; a panel
+                # wired to nothing still fails, it just fails after the timeout.
+                try:
+                    page.wait_for_function(
+                        "([sel, was]) => { const e = document.querySelector(sel); if (!e) return false;"
+                        " const now = e.tagName === 'CANVAS' ? e.toDataURL() : e.innerHTML;"
+                        " return now !== was; }",
+                        arg=[mount, before],
+                        timeout=settle,
+                    )
+                except Exception:
                     found.append((
                         d["id"], "2 moves",
                         "%s did not change when %r moved — %s"
                         % (mount, inp["name"], inp.get("why", "the panel claims to read it")),
                     ))
                 page.goto(url, wait_until="networkidle")
-                page.wait_for_selector(mount)
-                page.wait_for_timeout(250)
+                if d.get("ready"):
+                    try:
+                        page.evaluate(d["ready"])
+                    except Exception:
+                        pass
+                page.wait_for_selector(mount, state="attached")
+                try:
+                    page.wait_for_function(_NONBLANK, arg=mount, timeout=settle)
+                except Exception:
+                    pass
 
             # 3 · it matches
             #
@@ -252,8 +305,11 @@ def _differ(a, b):
 def selftest():
     """A panel wired to nothing must fail check two, and a blank one check one.
 
-    Both are built by breaking a real panel, because a checker demonstrated on
-    a fixture is a checker demonstrated on a fixture.
+    Four cases: both failures on a DOM panel and both on a canvas panel. All
+    four are built by breaking a real panel, because a checker demonstrated on a
+    fixture is a checker demonstrated on a fixture — and the canvas pair exists
+    because the DOM pair passed happily while a canvas panel could not be
+    checked at all.
     """
     import shutil, tempfile
 
@@ -275,15 +331,44 @@ def selftest():
                  "  __once = document.querySelector('#tree').innerHTML;\n  return __r;\n}\n"
                  "function __drawTree(disp, rel) {")),
          "2 moves"),
+        # The same two failures on a CANVAS panel, because the first two cases
+        # only exercise the innerHTML path. A canvas reports empty innerHTML
+        # forever, so before these cases existed the checker passed a canvas
+        # panel that drew nothing and a canvas panel wired to nothing — which is
+        # how the behaviour sweep went unchecked while three panels were checked.
+        ("a canvas panel that draws nothing",
+         lambda d: (d / "web" / "js" / "run.js").write_text(
+             (d / "web" / "js" / "run.js").read_text().replace(
+                 "function plot(host, res) {",
+                 "function plot(host, res) {\n  if (res) return;")),
+         "1 renders"),
+        ("a canvas panel wired to nothing",
+         lambda d: (d / "web" / "js" / "run.js").write_text(
+             (d / "web" / "js" / "run.js").read_text()
+             .replace("const xs = res.x.map(v => v / res.x_factor);",
+                      "const xs = [0, 1, 2, 3];")
+             .replace("const ys = res.y.map(v => v / res.y_factor);",
+                      "const ys = [0, 1, 0, 1];")),
+         "2 moves"),
     ]
     for label, break_it, want in cases:
         with tempfile.TemporaryDirectory() as tmp:
             work = Path(tmp) / "tree"
             shutil.copytree(real_root, work, ignore=shutil.ignore_patterns(".git", "target"))
+            # The canvas cases need a canvas panel to break, and there is no
+            # declared one: a panel in panels/ needs a reference image, and a
+            # reference image needs a person to look at the picture. So the
+            # spec is kept outside panels/ and installed into the throwaway
+            # tree here. The selftest then exercises the canvas path without
+            # the repository carrying a panel nobody has vouched for, which
+            # would turn the panels check red for everybody.
+            if "canvas" in label:
+                shutil.copy(real_root / "tools" / "selftest_panels" / "sweep.toml",
+                            work / "panels" / "sweep.toml")
             break_it(work)
             ROOT, PANELS, REFERENCE = work, work / "panels", work / "panels" / "reference"
             try:
-                found = check_all(ids={"tree"})
+                found = check_all(ids={"sweep"} if "canvas" in label else {"tree"})
             finally:
                 ROOT, PANELS, REFERENCE = real_root, real_panels, real_ref
             if not any(stage == want for _, stage, _ in found):

@@ -1,68 +1,166 @@
-<article class="node" data-node="sw_band_coverage" data-sheet-hash="40538e" data-impl-hash="222325">
+<article class="node" data-node="sw_band_coverage" data-sheet-hash="c7ab59" data-impl-hash="222325">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Stated band coverage</h2>
-  <p class="ident"><code>sw_band_coverage</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <p class="ident"><code>sw_band_coverage</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
-  <button role="tab" class="tab" data-tab="1">interface</button>
-  <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">Does the stated 95 per cent band actually contain the truth 95 per cent of the time?</p>
+<p class="maths"><code>C_band = fraction of pairs with F107(t+L) - F107(t) &lt;= dF107_p95(L), pooled over the seventeen leads</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">Counted over 128135 day pairs at the same seventeen leads sw_uncertainty_growth is tabulated on. The answer is 0.9509 — the band is honest and very slightly conservative.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>It is an in-sample check and cannot be anything else on this record</dt><dd>fails when 0.9509 is read as out-of-sample validation. The percentiles in sw_uncertainty_growth were measured on these same pairs, so a coverage near 0.95 is close to arithmetic rather than evidence — it confirms the percentile was computed correctly, not that it will hold. What makes the number worth publishing is that it could have come back wrong: an off-by-one in the lead, a percentile taken on the absolute change rather than the signed one, or a table read at the wrong index would all show here. It is a check on the implementation, and it is honest about being only that</dd>
+<dt>The coverage is uniform across leads, which is the part that is evidence</dt><dd>fails when the pooled figure hides a bad lead. It does not: per-lead coverage runs from 0.949970 at 365 and 1826 days to 0.952425 at 2557 days, a spread of 0.0025 across seventeen leads spanning half a year to fifteen years. A table that was right at short leads and wrong at long ones would show as a drift and there is none. The pooled 0.9509 is therefore a fair summary rather than an average over disagreeing parts</dd>
+<dt>Signed, not absolute — this counts only the band being exceeded UPWARD</dt><dd>fails when a two-sided band is wanted. The growth percentile is the 95th of the SIGNED change, so this row asks how often F10.7 rose by more than the stated amount, and a large fall counts as inside the band. For a drag design that is the right test, because the unsafe direction is flux arriving higher than planned. A mission exposed to F10.7 being LOWER than planned — a power budget, for instance — is not checked by this row at all</dd>
+<dt>Pairs are massively overlapping, so the sample is far smaller than 128135</dt><dd>fails when the count is read as independent evidence. Consecutive pairs at a given lead share all but one day, and at a lead of fifteen years two pairs a day apart are nearly the same measurement. The effective sample is closer to the number of independent intervals — the record divided by the lead, which at the longest leads is five or six — than to the 4838 to 9947 pairs each lead contributes. Nothing here is a confidence interval, and the third decimal place of 0.9509 means nothing</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
+<p class="why">sw_f107_design sells a 95 per cent band and every margin downstream is built on that claim. A stated confidence that nobody ever counted is a decoration, and the cheapest way for it to be wrong is not a modelling error but an implementation one — a lead off by one, a percentile taken on the absolute change instead of the signed one, a table read at the wrong index. This row counts. Its value is not that it comes back near 0.95 but that it could have come back somewhere else.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">The claim to be tested is a conditional one: at each lead, the change in F10.7 should stay below the percentile that lead publishes, in 95 per cent of cases.</span><code class="dm">claim: P( F107(t+L) - F107(t) &lt;= dF107_p95(L) ) = 0.95</code></li>
+<li><span class="dt">So count it directly. Over the same seventeen leads sw_uncertainty_growth is tabulated on, take every pair of observed days and ask whether the change stayed inside the band.</span><code class="dm">C_band = 0.9509267569 over 128135 pairs</code></li>
+<li><span class="dt">The test is SIGNED, not two-sided: it asks how often F10.7 rose by more than the stated amount, and a large fall counts as inside the band. For a drag design that is the right test, because the unsafe direction is flux arriving higher than planned. A mission exposed to flux being LOWER than planned — a power budget — is not checked by this row at all.</span></li>
+<li><span class="dt">The pooled figure could hide a bad lead, so the per-lead coverages are the part that is actually evidence. They run from 0.949970 at 365 and 1826 days to 0.952425 at 2557 days — a spread of 0.0025 across leads from half a year to fifteen years.</span></li>
+<li><span class="dt">Uniformity is what distinguishes a correct table from a coincidence. An implementation right at short leads and wrong at long ones would show as a drift across that list, and there is none — so the pooled 0.9509 is a fair summary rather than an average over disagreeing parts.</span></li>
+<li><span class="dt">The small excess over 0.95 is in the safe direction: the band is very slightly conservative, containing the truth marginally more often than it claims.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">An in-sample check, and it cannot be anything else on this record: the percentiles were measured on these same pairs, so coverage near 0.95 is close to arithmetic rather than evidence about the future. What it confirms is that the percentile was computed and wired correctly. The pairs are also massively overlapping — consecutive pairs at a lead share all but one day — so the effective sample is closer to the record divided by the lead, which at the longest leads is five or six intervals, than to the 128135 pairs counted. Nothing here is a confidence interval and the third decimal place means nothing.</p>
+<p class="maths concl">which is the relation this node states: <code>C_band = fraction of pairs with F107(t+L) - F107(t) &lt;= dF107_p95(L), pooled over the seventeen leads</code></p>
+</section>
+<section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sw_band_coverage</td><td></td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>C_band</code></td><td>sw_band_coverage</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
-<section class="panel" data-panel="2">
+<section class="panel" data-panel="3">
 <p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>0</b> -, confirmed by <b></b>.</p>
+<p>This is a declared value: <b>0.9509267569</b> -, confirmed by <b>A. Rai / 2026-09-14</b>.</p>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_band_coverage() -> Ratio
+    C_band ← 0.9509267569          // declared, confirmed by A. Rai / 2026-09-14
+
+    // a guard whose reason is not written down gets deleted
+    require C_band ≥ 0.9
+    require C_band ≤ 1
+    require C_band is finite
+
+    return C_band
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>C_band &ge; 0.9</code> — below 0.9 a band sold as 95 per cent would be missing the truth twice as often as it claims, and every margin built on sw_f107_design would be smaller than it reads. That is a defect in the percentile table, not a property of the sky, and it should stop a run</li>
+<li><code>C_band &le; 1</code> — a coverage cannot exceed 1. A value at exactly 1 would mean the band was never exceeded in 29 years, which for a 95th percentile would mean the table is far too wide and the design is paying for margin it does not need</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
-</section>
 <section class="panel" data-panel="4">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<div class="relation-host" data-node="sw_band_coverage" data-lo="0.9" data-hi="1" data-symbol="C_band">
+<p class="muted">asking the engine…</p>
+</div>
 </section>
 <section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// Does the stated 95 per cent band actually contain the truth 95 per cent of the time?
+///
+/// `C_band = fraction of pairs with F107(t+L) - F107(t) &lt;= dF107_p95(L), pooled over the seventeen leads`
+///
+/// Source: `noaa_swpc`
+///
+/// Counted over 128135 day pairs at the same seventeen leads
+/// sw_uncertainty_growth is tabulated on. The answer is 0.9509 — the band
+/// is honest and very slightly conservative.
+///
+/// # Assumptions
+///
+/// * It is an in-sample check and cannot be anything else on this record — fails when 0.9509 is read as out-of-sample validation. The percentiles in sw_uncertainty_growth were measured on these same pairs, so a coverage near 0.95 is close to arithmetic rather than evidence — it confirms the percentile was computed correctly, not that it will hold. What makes the number worth publishing is that it could have come back wrong: an off-by-one in the lead, a percentile taken on the absolute change rather than the signed one, or a table read at the wrong index would all show here. It is a check on the implementation, and it is honest about being only that
+/// * The coverage is uniform across leads, which is the part that is evidence — fails when the pooled figure hides a bad lead. It does not: per-lead coverage runs from 0.949970 at 365 and 1826 days to 0.952425 at 2557 days, a spread of 0.0025 across seventeen leads spanning half a year to fifteen years. A table that was right at short leads and wrong at long ones would show as a drift and there is none. The pooled 0.9509 is therefore a fair summary rather than an average over disagreeing parts
+/// * Signed, not absolute — this counts only the band being exceeded UPWARD — fails when a two-sided band is wanted. The growth percentile is the 95th of the SIGNED change, so this row asks how often F10.7 rose by more than the stated amount, and a large fall counts as inside the band. For a drag design that is the right test, because the unsafe direction is flux arriving higher than planned. A mission exposed to F10.7 being LOWER than planned — a power budget, for instance — is not checked by this row at all
+/// * Pairs are massively overlapping, so the sample is far smaller than 128135 — fails when the count is read as independent evidence. Consecutive pairs at a given lead share all but one day, and at a lead of fifteen years two pairs a day apart are nearly the same measurement. The effective sample is closer to the number of independent intervals — the record divided by the lead, which at the longest leads is five or six — than to the 4838 to 9947 pairs each lead contributes. Nothing here is a confidence interval, and the third decimal place of 0.9509 means nothing
+pub const NODE_ID: &amp;str = &quot;sw_band_coverage&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xba92c8446cc7ab59;
+
+pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
+    // generated · a declared value, converted from the unit it was written in
+    let declared: Ratio = match Ratio::from_unit(0.9509267569, Unit::One) {
+        Some(q) =&gt; q,
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;C_band&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+    };
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = declared;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;C_band&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.9 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;C_band&quot;, value: answer.get(), bound: 0.9, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;below 0.9 a band sold as 95 per cent would be missing the truth twice as often as it claims, and every margin built on sw_f107_design would be smaller than it reads. That is a defect in the percentile table, not a property of the sky, and it should stop a run&quot; });
+    }
+    if answer.get() &gt; 1.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;C_band&quot;, value: answer.get(), bound: 1.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;a coverage cannot exceed 1. A value at exactly 1 would mean the band was never exceeded in 29 years, which for a 95th percentile would mean the table is far too wide and the design is paying for margin it does not need&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 0.9 — below 0.9 a band sold as 95 per cent would be missing the truth twice as often as it claims, and every margin built on sw_f107_design would be smaller than it reads. That is a defect in the percentile table, not a property of the sky, and it should stop a run</li>
+<li><code>OutOfDomain</code> above 1 — a coverage cannot exceed 1. A value at exactly 1 would mean the band was never exceeded in 29 years, which for a 95th percentile would mean the table is far too wide and the design is paying for margin it does not need</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_band_coverage"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
+<section class="panel" data-panel="9">
+<p>Valid over <code>0.9 &hellip; 1</code> -.</p>
+<ul class="guards"><li>lower — below 0.9 a band sold as 95 per cent would be missing the truth twice as often as it claims, and every margin built on sw_f107_design would be smaller than it reads. That is a defect in the percentile table, not a property of the sky, and it should stop a run</li><li>upper — a coverage cannot exceed 1. A value at exactly 1 would mean the band was never exceeded in 29 years, which for a 95th percentile would mean the table is far too wide and the design is paying for margin it does not need</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
+<li>significant, and one fixture or none — a significant node is the one that gets a second independent check, which is the whole reason for the word</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

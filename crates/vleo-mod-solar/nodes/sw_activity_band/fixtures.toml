@@ -1,0 +1,89 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# WHAT THESE ARE, AND WHY THEY ARE ALL BOUNDARIES
+#
+# The four published activity levels: low below 90, moderate 90 to 129,
+# elevated 130 to 169, high 170 and above. The expected values are what those
+# levels say, read off the convention rather than computed.
+#
+# Every fixture sits ON or ONE STEP EITHER SIDE OF an edge, because that is the
+# only place a banding can be wrong. A value in the middle of a band is banded
+# correctly by any off-by-one, any wrong comparison operator and any transposed
+# edge; 89.9 against 90.0 is not. The three interior cases are each pinned twice.
+
+[[fixture]]
+label = "the record's quietest day, 64 sfu — band 1, low"
+expect = 1.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { f107 = 64.0 }
+
+[[fixture]]
+label = "89.9 sfu — still low, the edge is not yet reached"
+expect = 1.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { f107 = 89.9 }
+
+[[fixture]]
+label = "90 sfu exactly — moderate begins AT the edge, not after it"
+expect = 2.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { f107 = 90.0 }
+
+[[fixture]]
+label = "129.9 sfu — still moderate"
+expect = 2.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { f107 = 129.9 }
+
+[[fixture]]
+label = "130 sfu exactly — elevated begins"
+expect = 3.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { f107 = 130.0 }
+
+[[fixture]]
+label = "169.9 sfu — still elevated"
+expect = 3.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { f107 = 169.9 }
+
+[[fixture]]
+label = "170 sfu exactly — high begins"
+expect = 4.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { f107 = 170.0 }
+
+[[fixture]]
+label = "the record's largest day, 343 sfu — band 4, which is unbounded above"
+expect = 4.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { f107 = 343.0 }
+
+[[fixture]]
+label = "the design value this subsystem publishes, 228 sfu — band 4, the top one"
+expect = 4.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "noaa_swpc"
+inputs = { f107 = 228.1374378829 }

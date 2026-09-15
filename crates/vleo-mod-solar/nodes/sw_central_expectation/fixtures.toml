@@ -1,0 +1,73 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# WHAT THESE ARE
+#
+# 114.8437378829 is the mean F10.7 of bundles/solar-weather over its 10,316
+# observed days, computed outside this crate. Everything else here is that
+# number's consequence at a given lead, worked through by hand from the
+# declared relation rather than read off this code.
+#
+# The two limits are the useful cases and they are properties rather than
+# arithmetic: at a lead of years the answer must BE the climatology, because
+# persistence has decayed to nothing; the half-year case pins the one lead in
+# the declared range where today's flux is still faintly visible, and pins how
+# faintly — 0.04 sfu out of 115.
+#
+# The half-year expectation was wrong here once, and how is worth keeping: it
+# was derived at a lead of 183 days while the fixture's input is 15,778,800
+# seconds, which is 182.625 days — half a JULIAN year, the unit
+# orbit_mission_duration is declared in. The test caught it at a relative error
+# of 4.9e-06. Leads in this file are Julian, not calendar.
+
+[[fixture]]
+label = "five years — persistence is gone, so the answer is the record climatology exactly"
+expect = 114.8437378829
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { today = 150.0, lead = 157788000.0 }
+
+[[fixture]]
+label = "fifteen years — still the climatology, and it must not drift with lead once persistence has died"
+expect = 114.8437378829
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { today = 150.0, lead = 473364000.0 }
+
+[[fixture]]
+label = "one year — today's flux contributes 1.3e-06 of the answer"
+expect = 114.8437847603
+tolerance = 1e-11
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { today = 150.0, lead = 31557600.0 }
+
+[[fixture]]
+label = "half a Julian year, the shortest mission — today's 150 sfu is worth 0.04 sfu of the answer"
+expect = 114.8843338669462
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { today = 150.0, lead = 15778800.0 }
+
+[[fixture]]
+label = "a quiet day today makes no difference at five years — the answer is still the climatology"
+expect = 114.8437378829
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { today = 70.0, lead = 157788000.0 }
+
+[[fixture]]
+label = "nor does a very active day — the record's mean is what a five-year mission is owed"
+expect = 114.8437378829
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { today = 340.0, lead = 157788000.0 }

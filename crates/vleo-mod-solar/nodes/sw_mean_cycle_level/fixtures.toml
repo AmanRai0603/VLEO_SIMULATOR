@@ -1,0 +1,173 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# The mean F10.7 of cycles 23 and 24, stacked on phase in twenty bins, counted
+# outside this crate from bundles/solar-weather. Each fixture sits AT a bin
+# centre where the relation returns the tabulated mean exactly, so the tolerance
+# is transcription-tight. The 0.775 bin holds 217 days rather than ~418 because
+# the two cycles have different lengths and the stacking leaves it thin — that is
+# the record's shape, and it is pinned rather than smoothed.
+
+[[fixture]]
+label = "phase 0.025 — 418 days from two cycles — mean F10.7 71.76 sfu"
+expect = 71.7632
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.025 }
+
+[[fixture]]
+label = "phase 0.075 — 418 days from two cycles — mean F10.7 83.89 sfu"
+expect = 83.8947
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.075 }
+
+[[fixture]]
+label = "phase 0.125 — 418 days from two cycles — mean F10.7 99.22 sfu"
+expect = 99.21769999999999
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.125 }
+
+[[fixture]]
+label = "phase 0.175 — 418 days from two cycles — mean F10.7 111.05 sfu"
+expect = 111.0502
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.175 }
+
+[[fixture]]
+label = "phase 0.225 — 418 days from two cycles — mean F10.7 135.66 sfu"
+expect = 135.6555
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.225 }
+
+[[fixture]]
+label = "phase 0.275 — 418 days from two cycles — mean F10.7 159.66 sfu"
+expect = 159.6603
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.275 }
+
+[[fixture]]
+label = "phase 0.325 — 416 days from two cycles — mean F10.7 145.37 sfu"
+expect = 145.3702
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.325 }
+
+[[fixture]]
+label = "phase 0.375 — 418 days from two cycles — mean F10.7 146.73 sfu"
+expect = 146.7273
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.375 }
+
+[[fixture]]
+label = "phase 0.425 — 418 days from two cycles — mean F10.7 165.28 sfu"
+expect = 165.2799
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.425 }
+
+[[fixture]]
+label = "phase 0.475 — 415 days from two cycles — mean F10.7 160.33 sfu"
+expect = 160.3301
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.475 }
+
+[[fixture]]
+label = "phase 0.525 — 418 days from two cycles — mean F10.7 135.32 sfu"
+expect = 135.3182
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.525 }
+
+[[fixture]]
+label = "phase 0.575 — 418 days from two cycles — mean F10.7 126.23 sfu"
+expect = 126.2321
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.575 }
+
+[[fixture]]
+label = "phase 0.625 — 418 days from two cycles — mean F10.7 105.84 sfu"
+expect = 105.8445
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.625 }
+
+[[fixture]]
+label = "phase 0.675 — 417 days from two cycles — mean F10.7 95.51 sfu"
+expect = 95.50839999999999
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.675 }
+
+[[fixture]]
+label = "phase 0.725 — 358 days from two cycles — mean F10.7 86.99 sfu"
+expect = 86.99160000000001
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.725 }
+
+[[fixture]]
+label = "phase 0.775 — 217 days from two cycles — mean F10.7 80.92 sfu"
+expect = 80.9171
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.775 }
+
+[[fixture]]
+label = "phase 0.825 — 406 days from two cycles — mean F10.7 76.21 sfu"
+expect = 76.2094
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.825 }
+
+[[fixture]]
+label = "phase 0.875 — 418 days from two cycles — mean F10.7 71.05 sfu"
+expect = 71.0478
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.875 }
+
+[[fixture]]
+label = "phase 0.925 — 418 days from two cycles — mean F10.7 71.54 sfu"
+expect = 71.53830000000001
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.925 }
+
+[[fixture]]
+label = "phase 0.975 — 416 days from two cycles — mean F10.7 67.65 sfu"
+expect = 67.6538
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { phase = 0.975 }

@@ -1,67 +1,169 @@
-<article class="node" data-node="l3_solar_req_03" data-sheet-hash="06541c" data-impl-hash="222325">
+<article class="node" data-node="l3_solar_req_03" data-sheet-hash="528848" data-impl-hash="222325">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Ap</h2>
-  <p class="ident"><code>l3_solar_req_03</code> · <span class="kind kind-required">required</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <p class="ident"><code>l3_solar_req_03</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
-  <button role="tab" class="tab" data-tab="1">interface</button>
-  <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">What daily planetary Ap must this design survive?</p>
+<p class="maths"><code>Ap_req = Ap_design(G3) * 1.14 = 150</code></p>
+<p class="src">Source <b>orbitt_case_c1</b> — Orbitt Space — VLEO multipayload reference case C1 <span class="where">internal, 2026-09-01</span></p>
+<p class="note">The G3 design capability of Ap 132 with a 14 per cent margin on it. The record expects 158.4 over the declared five-year mission, so this requirement is NOT met — and the three exceedance rows say what that costs: about 1.42 days outside the bound over the mission, in one or two one-day events, on the declining side of the cycle where the epoch sits.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>150 is a capability plus a margin, and the margin is a decision with no derivation behind it</dt><dd>fails when somebody looks for where 14 per cent came from. sw_ap_design at the declared G3 gives 132 and 150 is the next round number with usable room above it. Nothing in the record picks it. What it is NOT is a number chosen so the closure passes: 150 is below the 158.4 the record expects over the mission, so this requirement is violated by design rather than by accident. A margin chosen to make a closure pass would have been 200, which sits in G4 territory and would have committed the vehicle to a level it is not built for.</dd>
+<dt>The closure fails and the exceedance rows are the reason that is acceptable</dt><dd>fails when a failing closure is treated as a blocking defect. sw_storm_return_level gives 158.4 at five years against this 150, so l3_solar_ach_03 comes in above the requirement. What a designer needs next is not a bigger number here but the size of the violation, and it is small and bounded: 0.284 days a year above the design Ap of 132, which is 1.42 days over the mission in about 1.24 events averaging 1.14 days each, with the longest run in 29 years being 2 days. The vehicle is outside its design environment for roughly thirty-four hours of a five-year mission. If that is unacceptable the answer is to move sw_storm_design_level, not to raise this row until the arithmetic stops complaining.</dd>
+<dt>Switching the G level moves the design value and the exceedance statistics, and not this row</dt><dd>fails when somebody expects the requirement to follow the switch. sw_storm_design_level is the input a design turns to ask what a different storm level costs — G1 gives 48, G2 gives 80, G3 gives 132 — and sw_ap_design and all three exceedance rows move with it. At G2 the exceedance rate is 1.24 days a year, 6.21 days over the mission in 5.1 events. This row does not move: it is a commitment, and a commitment that silently tracked the design would never be violated and would therefore never be a requirement. Changing it is a separate, deliberate act.</dd>
+<dt>A daily mean, which is the wrong shape for what a storm does</dt><dd>fails when the storm is short or long. Daily Ap averages eight three-hourly slots, so a violent six-hour storm and a mild day-long disturbance can share a value, and a requirement written on the daily mean is satisfied by both. The atmosphere responds to the integral with a lag, not to the daily mean. The record's largest daily Ap is 273 — above this requirement — and it is one day in 29 years.</dd>
+<dt>It is met by the record and the record is 29 years long</dt><dd>fails when the mission meets something the record has not seen. The return level this is checked against is fitted through ranks 2 and 3 of a 28.2-year sample at the mission's five-year period, and the largest event in that sample, Ap 273, has an apparent return period of 28.2 years for no reason but that it is the largest thing in 28.2 years. Events well beyond this requirement are known from longer proxy records. A requirement that a 29-year record cannot violate is not thereby safe.</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
+<p class="why">This is the requirement that fails, and it fails on purpose. The design is built for G3, which sw_ap_design turns into a daily Ap of 132; the record expects 158.4 over the declared five-year mission. Any number written here either sits below what the record expects — and is violated — or sits above it and commits the vehicle to a storm level it is not built for. The row takes the first option, and the three exceedance rows exist to say what that costs, because a designer facing a failed closure needs the SIZE of the violation rather than a bigger number.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">Begin from the capability, which is the only defensible starting point for a commitment: sw_ap_design at the declared G3 gives a daily Ap of 132, the value a day would reach with all eight slots at Kp 7.</span></li>
+<li><span class="dt">Add a margin so the commitment is not exactly the capability. 150 is the next round number with usable room above 132 — about 14 per cent — and nothing in the record picks it.</span><code class="dm">Ap_req = 132 * 1.14 = 150</code></li>
+<li><span class="dt">Now compare it with what the record expects, which is where the row stops being arithmetic. sw_storm_return_level at five years gives 158.4, above this requirement, so the achieved side comes in over the commitment and the closure fails.</span><code class="dm">158.4 &gt; 150 — the closure does not hold</code></li>
+<li><span class="dt">The alternative was available and was rejected. A margin chosen so the closure passes would have to exceed 158.4, which means about 200 — and 200 sits in G4 territory, committing the vehicle on paper to a level it is not built for. A requirement that passes because its number was chosen to pass is worse than one that fails honestly.</span></li>
+<li><span class="dt">So the useful question becomes the size of the violation rather than its existence, and that is what the exceedance rows answer: how often the record goes past 132, for how long each time, and where in the cycle.</span><code class="dm">0.284 d/yr * 5 yr = 1.42 d, in ~1.24 events of ~1.14 d</code></li>
+<li><span class="dt">Thirty-four hours outside the design environment over five years is a number a programme can accept or reject. That is the whole purpose of writing the requirement below the expectation: it converts a vague inadequacy into a bounded one.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">The closure fails and the failure is bounded. 0.284 days a year above the design Ap of 132 is 1.42 days over the mission, in about 1.24 events averaging 1.14 days each, the longest run in 29 years being 2 days — roughly thirty-four hours outside the design environment across five years, on the declining side of the cycle where the declared epoch sits. If that is unacceptable the answer is to move sw_storm_design_level, not to raise this row until the arithmetic stops complaining. And note what this row does NOT do: it does not follow the G-level switch. A commitment that tracked the design would never be violated.</p>
+<p class="maths concl">which is the relation this node states: <code>Ap_req = Ap_design(G3) * 1.14 = 150</code></p>
+</section>
+<section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>l3_solar_req_03</td><td></td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>Ap_req</code></td><td>l3_solar_req_03</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
-<section class="panel" data-panel="2">
+<section class="panel" data-panel="3">
 <p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
+<p>This is a declared value: <b>150</b> -, confirmed by <b>A. Rai / 2026-09-14</b>.</p>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function l3_solar_req_03() -> Ratio
+    Ap_req ← 150          // declared, confirmed by A. Rai / 2026-09-14
+
+    // a guard whose reason is not written down gets deleted
+    require Ap_req ≥ 20
+    require Ap_req ≤ 400
+    require Ap_req is finite
+
+    return Ap_req
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>Ap_req &ge; 20</code> — below 20 the requirement would be under the level at which the record's storms begin — the median day is Ap 7 and sw_storm_return_level's own floor is 20 — so a requirement there could not be met by any mission and is not a requirement</li>
+<li><code>Ap_req &le; 400</code> — 400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
-</section>
 <section class="panel" data-panel="4">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<div class="relation-host" data-node="l3_solar_req_03" data-lo="20" data-hi="400" data-symbol="Ap_req">
+<p class="muted">asking the engine…</p>
+</div>
 </section>
 <section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What daily planetary Ap must this design survive?
+///
+/// `Ap_req = Ap_design(G3) * 1.14 = 150`
+///
+/// Source: `orbitt_case_c1`
+///
+/// The G3 design capability of Ap 132 with a 14 per cent margin on it. The
+/// record expects 158.4 over the declared five-year mission, so this
+/// requirement is NOT met — and the three exceedance rows say what that
+/// costs: about 1.42 days outside the bound over the mission, in one or two
+/// one-day events, on the declining side of the cycle where the epoch sits.
+///
+/// # Assumptions
+///
+/// * 150 is a capability plus a margin, and the margin is a decision with no derivation behind it — fails when somebody looks for where 14 per cent came from. sw_ap_design at the declared G3 gives 132 and 150 is the next round number with usable room above it. Nothing in the record picks it. What it is NOT is a number chosen so the closure passes: 150 is below the 158.4 the record expects over the mission, so this requirement is violated by design rather than by accident. A margin chosen to make a closure pass would have been 200, which sits in G4 territory and would have committed the vehicle to a level it is not built for.
+/// * The closure fails and the exceedance rows are the reason that is acceptable — fails when a failing closure is treated as a blocking defect. sw_storm_return_level gives 158.4 at five years against this 150, so l3_solar_ach_03 comes in above the requirement. What a designer needs next is not a bigger number here but the size of the violation, and it is small and bounded: 0.284 days a year above the design Ap of 132, which is 1.42 days over the mission in about 1.24 events averaging 1.14 days each, with the longest run in 29 years being 2 days. The vehicle is outside its design environment for roughly thirty-four hours of a five-year mission. If that is unacceptable the answer is to move sw_storm_design_level, not to raise this row until the arithmetic stops complaining.
+/// * Switching the G level moves the design value and the exceedance statistics, and not this row — fails when somebody expects the requirement to follow the switch. sw_storm_design_level is the input a design turns to ask what a different storm level costs — G1 gives 48, G2 gives 80, G3 gives 132 — and sw_ap_design and all three exceedance rows move with it. At G2 the exceedance rate is 1.24 days a year, 6.21 days over the mission in 5.1 events. This row does not move: it is a commitment, and a commitment that silently tracked the design would never be violated and would therefore never be a requirement. Changing it is a separate, deliberate act.
+/// * A daily mean, which is the wrong shape for what a storm does — fails when the storm is short or long. Daily Ap averages eight three-hourly slots, so a violent six-hour storm and a mild day-long disturbance can share a value, and a requirement written on the daily mean is satisfied by both. The atmosphere responds to the integral with a lag, not to the daily mean. The record's largest daily Ap is 273 — above this requirement — and it is one day in 29 years.
+/// * It is met by the record and the record is 29 years long — fails when the mission meets something the record has not seen. The return level this is checked against is fitted through ranks 2 and 3 of a 28.2-year sample at the mission's five-year period, and the largest event in that sample, Ap 273, has an apparent return period of 28.2 years for no reason but that it is the largest thing in 28.2 years. Events well beyond this requirement are known from longer proxy records. A requirement that a 29-year record cannot violate is not thereby safe.
+pub const NODE_ID: &amp;str = &quot;l3_solar_req_03&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xdf931c1506528848;
+
+pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
+    // generated · a declared value, converted from the unit it was written in
+    let declared: Ratio = match Ratio::from_unit(150.0, Unit::One) {
+        Some(q) =&gt; q,
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_req&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+    };
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = declared;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_req&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 20.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_req&quot;, value: answer.get(), bound: 20.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;below 20 the requirement would be under the level at which the record's storms begin — the median day is Ap 7 and sw_storm_return_level's own floor is 20 — so a requirement there could not be met by any mission and is not a requirement&quot; });
+    }
+    if answer.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_req&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 20 — below 20 the requirement would be under the level at which the record's storms begin — the median day is Ap 7 and sw_storm_return_level's own floor is 20 — so a requirement there could not be met by any mission and is not a requirement</li>
+<li><code>OutOfDomain</code> above 400 — 400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="l3_solar_req_03"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
+<section class="panel" data-panel="9">
+<p>Valid over <code>20 &hellip; 400</code> -.</p>
+<ul class="guards"><li>lower — below 20 the requirement would be under the level at which the record's storms begin — the median day is Ap 7 and sw_storm_return_level's own floor is 20 — so a requirement there could not be met by any mission and is not a requirement</li><li>upper — 400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
+<li>significant, and one fixture or none — a significant node is the one that gets a second independent check, which is the whole reason for the word</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

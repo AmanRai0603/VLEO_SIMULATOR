@@ -1,0 +1,76 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# 1 - MSE(outlook) / MSE(persistence), counted outside this crate from
+# bundles/solar-weather over 1997-2025, with persistence taken as the last
+# observed F10.7 strictly BEFORE the issue date. That baseline is the sheet's
+# third assumption and it decides the sign of the short-lead answer: allowing
+# the baseline the observation on the issue date itself turns the lead-1 skill
+# from +0.069 into -1.314. Lead is a Time in SECONDS, so each input is
+# days * 86400.
+#
+# THE ORDER MATTERS HERE AND IT IS NOT COSMETIC. The generated robustness test
+# perturbs the FIRST fixture's input by plus and minus one per cent and requires
+# the node not to refuse. Lead 26 is the declared value and the top of the
+# declared domain, so a first fixture there would be perturbed to 26.26 and the
+# node would correctly refuse. Lead 13 is interior.
+
+[[fixture]]
+label = "lead 13 — mid-window, still strongly skillful — +0.402 from 1237 pairs"
+expect = 0.4016285468
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 1123200.0 }
+
+[[fixture]]
+label = "lead 1 — the outlook's weakest positive skill, where persistence is hardest to beat"
+expect = 0.0685159110
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 86400.0 }
+
+[[fixture]]
+label = "lead 9 — peak skill over the whole window — +0.438 from 1241 pairs"
+expect = 0.4375371731
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 777600.0 }
+
+[[fixture]]
+label = "lead 13.5 — between two measured leads, so this one tests the interpolation and not the table"
+expect = 0.41015283365
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 1166400.0 }
+
+[[fixture]]
+label = "lead 23 — the last positive lead, +0.018, and the outlook is all but worthless here"
+expect = 0.0176508866
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 1987200.0 }
+
+[[fixture]]
+label = "lead 24 — the sign change: the outlook is now worse than assuming nothing changes"
+expect = -0.0355195984
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 2073600.0 }
+
+[[fixture]]
+label = "lead 26 — the declared lead — -0.022 from 868 pairs"
+expect = -0.0220863078
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 2246400.0 }

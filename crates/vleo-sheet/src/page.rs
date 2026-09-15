@@ -28,11 +28,12 @@ fn unit_symbol(name: &str) -> String {
         .to_string()
 }
 
-/// The eight tabs.
+/// The tabs, in the order a node is read.
 ///
 /// Not a template — each one answers a question that would otherwise be
-/// answered in a corridor, and it is the same eight for every node in every
-/// layer. The empty states carry as much weight as the filled ones: most of
+/// answered in a corridor, and it is the same set for every node in every
+/// layer. Counting them here in prose is how the count goes stale, so it is
+/// [`TABS`] that says how many there are. The empty states carry as much weight as the filled ones: most of
 /// these are read by somebody about to fill their first node, and "no data"
 /// teaches nothing.
 pub fn fragment(
@@ -122,8 +123,66 @@ pub fn fragment(
         }
     });
 
-    // --- 2 interface --------------------------------------------------------
+    // --- 2 theory -----------------------------------------------------------
+    //
+    // Where the relation came from, which is the one thing the tab before this
+    // cannot say. `expression` is the relation as the generators need it: one
+    // line, no reason. A reviewer who cannot reconstruct why that line is that
+    // line has to take it on trust, and taking mathematics on trust is the
+    // failure the two reviews exist to prevent.
+    //
+    // The derivation is rendered COMPLETE and visible. The face then offers to
+    // walk it one line at a time, which is an addition to a readable page rather
+    // than the only way to read it — a page.html opened straight off the disk,
+    // with no engine and no script, still carries the whole argument.
     tab(&mut o, 1, false, |o| {
+        if sh.theory.is_empty() {
+            empty(
+                o,
+                "Nobody has written the theory for this row yet. The relation is stated in the \
+                 tab before this one and generated in the tab after it; what is missing is why \
+                 it is that relation, which is the part a reader cannot recover from either.",
+            );
+            return;
+        }
+        for para in paragraphs(&sh.theory.why) {
+            o.push_str(&format!("<p class=\"why\">{}</p>\n", h(para)));
+        }
+        if !sh.theory.steps.is_empty() {
+            o.push_str(&format!(
+                "<div class=\"theory-walk\" data-steps=\"{}\">\n",
+                sh.theory.steps.len()
+            ));
+            o.push_str("<ol class=\"derive\">\n");
+            for st in &sh.theory.steps {
+                o.push_str(&format!("<li><span class=\"dt\">{}</span>", h(&st.text)));
+                if !st.math.trim().is_empty() {
+                    o.push_str(&format!("<code class=\"dm\">{}</code>", h(&st.math)));
+                }
+                o.push_str("</li>\n");
+            }
+            o.push_str("</ol>\n</div>\n");
+        }
+        let read = paragraphs(&sh.theory.reading);
+        if !read.is_empty() {
+            o.push_str("<h4>Reading the answer</h4>\n");
+            for para in read {
+                o.push_str(&format!("<p class=\"reading\">{}</p>\n", h(para)));
+            }
+        }
+        // The derivation ends at the relation, so the relation is repeated here
+        // rather than left a tab away: a derivation whose conclusion is not in
+        // front of the reader is an argument they have to hold in their head.
+        if !sh.expression.trim().is_empty() {
+            o.push_str(&format!(
+                "<p class=\"maths concl\">which is the relation this node states: <code>{}</code></p>\n",
+                h(&sh.expression)
+            ));
+        }
+    });
+
+    // --- 3 interface --------------------------------------------------------
+    tab(&mut o, 2, false, |o| {
         o.push_str("<p class=\"muted\">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>\n");
         o.push_str("<table class=\"iface\"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>\n");
         if sh.inputs.is_empty() {
@@ -173,8 +232,8 @@ pub fn fragment(
         ));
     });
 
-    // --- 3 algorithm --------------------------------------------------------
-    tab(&mut o, 2, false, |o| {
+    // --- 4 algorithm --------------------------------------------------------
+    tab(&mut o, 3, false, |o| {
         if sh.steps.is_empty() {
             empty(
                 o,
@@ -200,6 +259,9 @@ pub fn fragment(
             }
             o.push_str("</ol>\n");
         }
+        if !sh.is_seeded() {
+            o.push_str(&pseudocode(sh));
+        }
         o.push_str("<h4>Guards</h4>\n<ul class=\"guards\">\n");
         o.push_str(&format!(
             "<li><code>{s} &ge; {lo}</code> — {r}</li>\n",
@@ -216,8 +278,37 @@ pub fn fragment(
         o.push_str("</ul>\n<p class=\"muted\">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>\n");
     });
 
-    // --- 4 generated code ---------------------------------------------------
-    tab(&mut o, 3, false, |o| {
+    // --- 5 the relation, moving ---------------------------------------------
+    //
+    // The same relation the tabs either side of this one state in symbols and
+    // in code, walked. A reader who cannot yet read the expression can watch
+    // the answer move as the input crosses its declared domain, and see where
+    // the guards cut it off.
+    //
+    // The face fills this: the curve comes from the engine's own sweep, so what
+    // animates here is what the node computes and not a second drawing of the
+    // same idea. An empty host is the honest state when the node has nothing
+    // upstream to sweep over.
+    tab(&mut o, 4, false, |o| {
+        if sh.is_seeded() {
+            empty(
+                o,
+                "Nothing to walk: the sheet is seeded and the node returns NotRun.",
+            );
+            return;
+        }
+        o.push_str(&format!(
+            "<div class=\"relation-host\" data-node=\"{}\" data-lo=\"{}\" data-hi=\"{}\" data-symbol=\"{}\">\n",
+            h(&sh.id),
+            sh.lower,
+            sh.upper,
+            h(&sh.symbol)
+        ));
+        o.push_str("<p class=\"muted\">asking the engine…</p>\n</div>\n");
+    });
+
+    // --- 6 generated code ---------------------------------------------------
+    tab(&mut o, 5, false, |o| {
         if sh.steps.is_empty() && sh.value.is_none() {
             empty(o, "Nothing generated — the sheet is incomplete.");
         } else {
@@ -228,8 +319,8 @@ pub fn fragment(
         }
     });
 
-    // --- 5 evidence ---------------------------------------------------------
-    tab(&mut o, 4, false, |o| {
+    // --- 7 evidence ---------------------------------------------------------
+    tab(&mut o, 6, false, |o| {
         if sh.fixtures.is_empty() {
             empty(
                 o,
@@ -252,8 +343,8 @@ pub fn fragment(
         }
     });
 
-    // --- 6 flags ------------------------------------------------------------
-    tab(&mut o, 5, false, |o| {
+    // --- 8 flags ------------------------------------------------------------
+    tab(&mut o, 7, false, |o| {
         o.push_str("<p class=\"muted\">What this node refuses, and what it returns when it refuses.</p>\n<ul class=\"flags\">\n");
         o.push_str(&format!(
             "<li><code>OutOfDomain</code> below {lo} — {rl}</li>\n<li><code>OutOfDomain</code> above {hi} — {ru}</li>\n",
@@ -272,8 +363,8 @@ pub fn fragment(
         o.push_str("</ul>\n<p class=\"muted\">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>\n");
     });
 
-    // --- 7 credibility ------------------------------------------------------
-    tab(&mut o, 6, false, |o| {
+    // --- 9 credibility ------------------------------------------------------
+    tab(&mut o, 8, false, |o| {
         if sh.tier.is_empty() || sh.tier == "unset" {
             empty(
                 o,
@@ -296,8 +387,8 @@ pub fn fragment(
         o.push_str("\"><p class=\"muted\">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>\n");
     });
 
-    // --- 8 design space -----------------------------------------------------
-    tab(&mut o, 7, false, |o| {
+    // --- 10 design space ----------------------------------------------------
+    tab(&mut o, 9, false, |o| {
         o.push_str(&format!(
             "<p>Valid over <code>{lo} &hellip; {hi}</code> {u}.</p>\n",
             lo = sh.lower,
@@ -336,16 +427,27 @@ pub fn fragment(
     o
 }
 
-const TABS: [&str; 8] = [
+const TABS: [&str; 10] = [
     "question &amp; mathematics",
+    "theory",
     "interface",
     "algorithm",
+    "the relation, moving",
     "generated code",
     "evidence",
     "flags",
     "credibility",
     "design space",
 ];
+
+/// Prose split into its paragraphs. The loader has already reflowed each one, so
+/// a blank line is the only break left and it is the one the author meant.
+fn paragraphs(s: &str) -> Vec<&str> {
+    s.split("\n\n")
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+        .collect()
+}
 
 fn tab<F: FnOnce(&mut String)>(o: &mut String, i: usize, sel: bool, body: F) {
     o.push_str(&format!(
@@ -497,4 +599,70 @@ fn json_num(v: f64) -> String {
     } else {
         "-1e308".into()
     }
+}
+
+/// Pseudocode, derived from the sheet rather than from the generated Rust.
+///
+/// The code tab already shows exactly what runs. This says the same thing in a
+/// form somebody can read who does not read Rust, and — because it is built
+/// from the sheet — it cannot drift from what the sheet declares. What it adds
+/// over the numbered steps is the shape around them: the signature, the order,
+/// and the guards as postconditions rather than as a list underneath.
+fn pseudocode(sh: &Sheet) -> String {
+    let mut o = String::from("<h4>Pseudocode</h4>\n<pre class=\"pseudo\"><code>");
+    let args: Vec<String> = sh
+        .inputs
+        .iter()
+        .map(|i| format!("{}: {}", h(&i.binding), h(&i.ty)))
+        .collect();
+    o.push_str(&format!(
+        "function {}({}) -> {}\n",
+        h(&sh.id),
+        args.join(", "),
+        h(&sh.ty)
+    ));
+    for i in &sh.inputs {
+        o.push_str(&format!("    given {} from {}\n", h(&i.binding), h(&i.var)));
+    }
+    if sh.steps.is_empty() {
+        if sh.is_declared() {
+            // A dimensionless unit prints as "-", which beside a number reads
+            // as a minus sign rather than as an absence of unit.
+            let u = unit_symbol(&sh.unit);
+            let u = if u == "-" {
+                String::new()
+            } else {
+                format!(" {u}")
+            };
+            o.push_str(&format!(
+                "    {} \u{2190} {}{}          // declared, confirmed by {}\n",
+                h(&sh.symbol),
+                sh.value.unwrap_or(0.0),
+                h(&u),
+                h(&sh.confirmed_by)
+            ));
+        }
+    } else {
+        for (n, st) in sh.steps.iter().enumerate() {
+            o.push_str(&format!("    // {}\n", h(&st.text)));
+            // A step that binds `out` IS the answer — that is what the generated
+            // model does with it — so it is named by the symbol here rather than
+            // by the placeholder, or the pseudocode returns something it never
+            // assigned.
+            let bind = if st.binds == "out" {
+                sh.symbol.as_str()
+            } else {
+                st.binds.as_str()
+            };
+            o.push_str(&format!("    {} \u{2190} step {}\n", h(bind), n + 1));
+        }
+    }
+    o.push_str(&format!(
+        "\n    // a guard whose reason is not written down gets deleted\n    require {s} \u{2265} {lo}\n    require {s} \u{2264} {hi}\n    require {s} is finite\n\n    return {s}\n",
+        s = h(&sh.symbol),
+        lo = sh.lower,
+        hi = sh.upper
+    ));
+    o.push_str("</code></pre>\n<p class=\"muted\">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>\n");
+    o
 }

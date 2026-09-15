@@ -1,17 +1,17 @@
 {
   "id": "l3_solar_req_01",
-  "state": "empty",
-  "sheet_hash": "ee79fe",
+  "state": "published",
+  "sheet_hash": "fd300b",
   "impl_hash": "222325",
   "owner": "environment",
-  "tier": "",
+  "tier": "A",
   "fixtures": 0,
-  "criticality": "minor",
-  "reviewers": 1,
-  "differential_fill": false,
+  "criticality": "significant",
+  "reviewers": 2,
+  "differential_fill": true,
   "migrated_from": "",
   "holes": 0,
   "inputs": [],
   "contributes": [],
-  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+  "gaps": ["significant, and one fixture or none — a significant node is the one that gets a second independent check, which is the whole reason for the word"]
 }

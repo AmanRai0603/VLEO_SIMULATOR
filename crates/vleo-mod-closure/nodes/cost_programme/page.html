@@ -6,13 +6,15 @@
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
-  <button role="tab" class="tab" data-tab="1">interface</button>
-  <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">What does the whole programme cost over the mission?</p>
@@ -21,6 +23,9 @@
 <p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
 </section>
 <section class="panel" data-panel="1">
+<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+</section>
+<section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr><td>in</td><td><code>nre</code></td><td><a class="xref" data-goto="cost_non_recurring">cost_non_recurring</a></td><td>Money</td><td>MUSD</td></tr>
@@ -33,10 +38,29 @@
 </tbody></table>
 <p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="cost_per_year">cost_per_year</a></p>
 </section>
-<section class="panel" data-panel="2">
+<section class="panel" data-panel="3">
 <ol class="algo">
 <li><span class="step">add the non-recurring cost, the production run, the launch of every satellite and the operations over the mission</span> <span class="binds">→ <code>c: Money</code></span></li>
 </ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function cost_programme(nre: Money, pr: Money, lc: Money, n: Ratio, op: Money, y: Time) -> Money
+    given nre from cost_non_recurring
+    given pr from cost_production
+    given lc from cost_launch_per_satellite
+    given n from mis_satellites
+    given op from cost_annual_operations
+    given y from orbit_mission_duration
+    // add the non-recurring cost, the production run, the launch of every satellite and the operations over the mission
+    c ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require C_tot ≥ 0
+    require C_tot ≤ 1000000
+    require C_tot is finite
+
+    return C_tot
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
 <li><code>C_tot &ge; 0</code> — a cost cannot be negative</li>
@@ -44,7 +68,12 @@
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="3">
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="cost_programme" data-lo="0" data-hi="1000000" data-symbol="C_tot">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -88,10 +117,10 @@ pub fn evaluate(nre: Money, pr: Money, lc: Money, n: Ratio, op: Money, y: Time) 
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="6">
 <p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 0 — a cost cannot be negative</li>
@@ -101,11 +130,11 @@ pub fn evaluate(nre: Money, pr: Money, lc: Money, n: Ratio, op: Money, y: Time) 
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="8">
 <p>Evidence tier <b>C</b>. What this tier cannot detect: a wrong constant that still conserves the quantity.</p>
 <div class="cred" data-cred-for="cost_programme"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="9">
 <p>Valid over <code>0 &hellip; 1000000</code> MUSD.</p>
 <ul class="guards"><li>lower — a cost cannot be negative</li><li>upper — above a trillion dollars the programme is not the one being designed</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
@@ -114,5 +143,6 @@ pub fn evaluate(nre: Money, pr: Money, lc: Money, n: Ratio, op: Money, y: Time) 
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 <li>no fixture: nothing outside this code has ever agreed with what it computes</li>
+<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

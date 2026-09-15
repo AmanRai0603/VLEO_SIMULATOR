@@ -41,6 +41,14 @@ text = "What fraction of the flow entering the mouth actually reaches the thrust
 expression = "eta_c = A_out*eta_geo/(A_out + beta*A_in)"
 source = "romano2021"           # an identifier in sources/, never a free string
 
+[theory]                        # documentation, not specification — see below
+why = """Why this relation is the relation, before any formula appears."""
+reading = """What the answer means once it is in hand, and what it does not."""
+
+[[theory.step]]
+text = "One line of the derivation, in prose."
+math = "the expression that line arrives at"   # optional
+
 [[assumption]]
 text = "Free-molecular flow throughout the duct and the chamber"
 fails_when = "above a compression ratio of roughly 1e4 the chamber becomes collisional"
@@ -210,7 +218,43 @@ Fixtures execute **on the run**, not only in the test suite. A verdict shown on
 a page has to have come from a run: a badge read out of a field is a claim about
 last March.
 
-## What the eight tabs say when empty
+## Theory
+
+`expression` is the relation as the generators need it: one line, no reason.
+That is enough to generate code from and not enough to REVIEW. A reviewer who
+cannot reconstruct why the line is that line has to take it on trust, and taking
+mathematics on trust is the failure the two reviews exist to prevent. So a
+published node with a relation and no `[theory]` carries an open gap.
+
+Three fields, and each answers a question none of the others does.
+
+| field | the question it answers | what it is not |
+|---|---|---|
+| `why` | what makes this the right thing to compute, before any formula | not a restatement of the question |
+| `[[theory.step]]` | the derivation, in the order somebody would build it at a board | not a description of the code |
+| `reading` | what the answer means in hand, and what it does not | not `note`, which is about the encoding |
+
+Three rules that are worth stating because each has a failure behind it.
+
+**It is documentation, so it is outside the sheet hash.** Correcting a sentence
+here must not invalidate a generated artefact or a cached result — the moment it
+does, nobody corrects the sentence.
+
+**Every claim must trace to the sheet, the bundle or the cited source.** A
+derivation is the easiest place in this repository to write something that reads
+well and is not true, because nothing executes it. Where a step asserts a number,
+that number should be one a reader can find.
+
+**Write the steps somebody could disagree with.** A derivation that only restates
+the formula in words teaches nothing and hides nothing. The useful lines are the
+ones that name a choice — a functional form, a threshold, a convention, a
+baseline — and say what the alternative was and why it was not taken.
+
+The page renders the derivation COMPLETE and then offers to walk it one line at
+a time, so a `page.html` opened straight off the disk, with no engine and no
+script, still carries the whole argument.
+
+## What the tabs say when empty
 
 The empty state is the teaching surface. Most of these are read by somebody
 about to fill their first node, and "no data" teaches nothing.
@@ -218,8 +262,10 @@ about to fill their first node, and "no data" teaches nothing.
 | tab | empty state |
 |---|---|
 | question & mathematics | Not yet specified. Needs a question, an expression and a source. |
+| theory | Nobody has written the theory for this row yet — the relation is stated before it and generated after it, and why it is that relation is missing. |
 | interface | Inputs and outputs are declared. Units are not — a unit is a decision. |
 | algorithm | No steps yet. Each step becomes one hole in the generated code. |
+| the relation, moving | Nothing to walk: the sheet is seeded and the node returns NotRun. |
 | generated code | Nothing generated — the sheet is incomplete. |
 | evidence | No known-good numbers yet. A number from our own code does not count. |
 | flags | Not run. |

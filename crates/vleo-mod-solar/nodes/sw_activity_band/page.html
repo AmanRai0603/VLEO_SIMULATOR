@@ -1,68 +1,189 @@
-<article class="node" data-node="sw_activity_band" data-sheet-hash="de9255" data-impl-hash="222325">
+<article class="node" data-node="sw_activity_band" data-sheet-hash="0fb263" data-impl-hash="4023f6">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>Flux activity band</h2>
-  <p class="ident"><code>sw_activity_band</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <h2>F10.7 activity band</h2>
+  <p class="ident"><code>sw_activity_band</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
-  <button role="tab" class="tab" data-tab="1">interface</button>
-  <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">Which activity band does this F10.7 fall in?</p>
+<p class="maths"><code>band(F107) = 1 + count(edges &lt;= F107),  edges = 90, 130, 170 sfu</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The coarse label that puts a flux value in context — a reader who sees 228 sfu and does not work with F10.7 daily has no idea whether that is ordinary or extreme. The band says it is the top one, and that 12.8% of the record sits there.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>The bands are a published convention and this row is a lookup, not a measurement</dt><dd>fails when the four levels — low below 90, moderate 90 to 129, elevated 130 to 169, high 170 and above — are the standard NOAA F10.7 activity levels and prf_segment applies exactly these. Nothing here is fitted, so there is nothing in it to be wrong about this record, and equally nothing in it that adapts to this record: prf_segment ALSO offers data-driven terciles of the same quantity, which cut the archive into equal thirds and land in different places. Those are a different row and this is not it.</dd>
+<dt>A band is an ordinal label carried as a number, and arithmetic on it is meaningless</dt><dd>fails when the answer is 1, 2, 3 or 4 and the gaps between them are not equal in sfu — band 1 spans 26 sfu of observed record, band 4 spans 173. Averaging bands, interpolating between them, or treating band 4 as twice band 2 are all errors this row cannot prevent, because the tree carries one scalar per row and a label has to arrive as one. A consumer that wants a flux wants env_f107 or sw_f107_design.</dd>
+<dt>It bands a single day's flux, and a mission does not live on one day</dt><dd>fails when F10.7 moves through every band over any mission longer than a few months — the record spends 39.8% of its days in band 1 and 12.8% in band 4 — so banding the design value says which band the DESIGN POINT sits in and not which band the mission will experience. Reading it as the latter would be reading a design percentile as a forecast.</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
+<p class="why">A flux in sfu means nothing to most readers of a design. 228 could be ordinary or extraordinary and there is no way to tell from the number. A band answers that in one symbol, and the bands used are not this repository's invention: they are the standard four NOAA F10.7 activity levels, which the study's prf_segment applies unchanged. So the row is a lookup against a convention — there is nothing fitted in it to be wrong about this record, and equally nothing in it that adapts to this record.</p>
+<div class="theory-walk" data-steps="4">
+<ol class="derive">
+<li><span class="dt">The four standard levels are defined by three edges, so the relation is a count of edges reached rather than a chain of comparisons. Low is below 90 sfu, moderate 90 to 129, elevated 130 to 169, and high 170 and above.</span><code class="dm">band(F107) = 1 + #{ e in (90, 130, 170) : F107 &gt;= e }</code></li>
+<li><span class="dt">The comparison is 'at or above', so a flux sitting exactly on an edge belongs to the band the edge OPENS — 90.0 sfu is moderate, not low. Every off-by-one here produces a label that looks entirely plausible, which is why the fixtures beside this row sit on the edges rather than in the middle of the bands.</span></li>
+<li><span class="dt">The top band is unbounded in flux, which is the one asymmetry in the scheme. Band 4 holds everything from 170 sfu up, including the record's largest day at 343, so the label stops discriminating exactly where the design cares most.</span></li>
+<li><span class="dt">A different scheme was available and is deliberately not this row. prf_segment also offers data-driven terciles of the same quantity, which cut the archive into equal thirds and land on different edges. Those adapt to the record and these do not; a published convention is comparable between studies and a tercile is comparable only within one.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">An ordinal label carried as a number, and arithmetic on it is meaningless: the gaps are not equal in flux, with band 1 spanning 26 sfu of observed record and band 4 spanning 173. Averaging bands or treating band 4 as twice band 2 are errors the tree cannot prevent, because one row carries one scalar. It also bands a SINGLE day's flux: F10.7 moves through every band over any mission longer than a few months — 39.8 per cent of the record's days are in band 1 and 12.8 per cent in band 4 — so banding a design value says where the design point sits, not what the mission will experience.</p>
+<p class="maths concl">which is the relation this node states: <code>band(F107) = 1 + count(edges &lt;= F107),  edges = 90, 130, 170 sfu</code></p>
+</section>
+<section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sw_activity_band</td><td></td><td>-</td></tr>
+<tr><td>in</td><td><code>f107</code></td><td><a class="xref" data-goto="env_f107">env_f107</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>band</code></td><td>sw_activity_band</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
-<section class="panel" data-panel="2">
-<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>0</b> -, confirmed by <b></b>.</p>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">count how many of the three published edges this flux has reached, and add one</span> <span class="binds">→ <code>b: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_activity_band(f107: Ratio) -> Ratio
+    given f107 from env_f107
+    // count how many of the three published edges this flux has reached, and add one
+    b ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require band ≥ 1
+    require band ≤ 4
+    require band is finite
+
+    return band
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>band &ge; 1</code> — there are four bands and the lowest is 1. A zero or negative band means the counting started in the wrong place, which would shift every label by one and still look like a valid answer</li>
+<li><code>band &le; 4</code> — there are four bands and the highest is 4, unbounded above in flux — band 4 holds everything from 170 sfu upward, including the record's largest day at 343. A fifth band means an edge was added without the range being updated</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
-</section>
 <section class="panel" data-panel="4">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<div class="relation-host" data-node="sw_activity_band" data-lo="1" data-hi="4" data-symbol="band">
+<p class="muted">asking the engine…</p>
+</div>
 </section>
 <section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// Which activity band does this F10.7 fall in?
+///
+/// `band(F107) = 1 + count(edges &lt;= F107),  edges = 90, 130, 170 sfu`
+///
+/// Source: `noaa_swpc`
+///
+/// The coarse label that puts a flux value in context — a reader who sees
+/// 228 sfu and does not work with F10.7 daily has no idea whether that is
+/// ordinary or extreme. The band says it is the top one, and that 12.8% of
+/// the record sits there.
+///
+/// # Assumptions
+///
+/// * The bands are a published convention and this row is a lookup, not a measurement — fails when the four levels — low below 90, moderate 90 to 129, elevated 130 to 169, high 170 and above — are the standard NOAA F10.7 activity levels and prf_segment applies exactly these. Nothing here is fitted, so there is nothing in it to be wrong about this record, and equally nothing in it that adapts to this record: prf_segment ALSO offers data-driven terciles of the same quantity, which cut the archive into equal thirds and land in different places. Those are a different row and this is not it.
+/// * A band is an ordinal label carried as a number, and arithmetic on it is meaningless — fails when the answer is 1, 2, 3 or 4 and the gaps between them are not equal in sfu — band 1 spans 26 sfu of observed record, band 4 spans 173. Averaging bands, interpolating between them, or treating band 4 as twice band 2 are all errors this row cannot prevent, because the tree carries one scalar per row and a label has to arrive as one. A consumer that wants a flux wants env_f107 or sw_f107_design.
+/// * It bands a single day's flux, and a mission does not live on one day — fails when F10.7 moves through every band over any mission longer than a few months — the record spends 39.8% of its days in band 1 and 12.8% in band 4 — so banding the design value says which band the DESIGN POINT sits in and not which band the mission will experience. Reading it as the latter would be reading a design percentile as a forecast.
+pub const NODE_ID: &amp;str = &quot;sw_activity_band&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x13655a54560fb263;
+
+pub fn evaluate(f107: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : count how many of the three published edges this flux has reached, and add one -&gt; Ratio
+    // The three published edges. prf_segment applies the same three, and the
+    // comparison is &gt;= rather than &gt; so that a flux sitting exactly on an edge
+    // belongs to the band the edge opens — 90.0 sfu is moderate, not low. That
+    // choice is what the boundary fixtures beside this exist to pin, because every
+    // off-by-one here produces a plausible-looking label.
+    const EDGES: [f64; 3] = [90.0, 130.0, 170.0];
+    let mut n: f64 = 1.0;
+    let mut i: usize = 0;
+    while i &lt; EDGES.len() {
+        if f107.get() &gt;= EDGES[i] {
+            n += 1.0;
+        }
+        i += 1;
+    }
+    let b: Ratio = Ratio::new(n);
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = b;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;band&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 1.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;band&quot;, value: answer.get(), bound: 1.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;there are four bands and the lowest is 1. A zero or negative band means the counting started in the wrong place, which would shift every label by one and still look like a valid answer&quot; });
+    }
+    if answer.get() &gt; 4.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;band&quot;, value: answer.get(), bound: 4.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;there are four bands and the highest is 4, unbounded above in flux — band 4 holds everything from 170 sfu upward, including the record's largest day at 343. A fifth band means an edge was added without the range being updated&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="the record's quietest day, 64 sfu — band 1, low"><td>the record's quietest day, 64 sfu — band 1, low</td><td class="num">1</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+<tr data-fixture="89.9 sfu — still low, the edge is not yet reached"><td>89.9 sfu — still low, the edge is not yet reached</td><td class="num">1</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+<tr data-fixture="90 sfu exactly — moderate begins AT the edge, not after it"><td>90 sfu exactly — moderate begins AT the edge, not after it</td><td class="num">2</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+<tr data-fixture="129.9 sfu — still moderate"><td>129.9 sfu — still moderate</td><td class="num">2</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+<tr data-fixture="130 sfu exactly — elevated begins"><td>130 sfu exactly — elevated begins</td><td class="num">3</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+<tr data-fixture="169.9 sfu — still elevated"><td>169.9 sfu — still elevated</td><td class="num">3</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+<tr data-fixture="170 sfu exactly — high begins"><td>170 sfu exactly — high begins</td><td class="num">4</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the record's largest day, 343 sfu — band 4, which is unbounded above"><td>the record's largest day, 343 sfu — band 4, which is unbounded above</td><td class="num">4</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the design value this subsystem publishes, 228 sfu — band 4, the top one"><td>the design value this subsystem publishes, 228 sfu — band 4, the top one</td><td class="num">4</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 1 — there are four bands and the lowest is 1. A zero or negative band means the counting started in the wrong place, which would shift every label by one and still look like a valid answer</li>
+<li><code>OutOfDomain</code> above 4 — there are four bands and the highest is 4, unbounded above in flux — band 4 holds everything from 170 sfu upward, including the record's largest day at 343. A fifth band means an edge was added without the range being updated</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_activity_band"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
-<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<section class="panel" data-panel="9">
+<p>Valid over <code>1 &hellip; 4</code> -.</p>
+<ul class="guards"><li>lower — there are four bands and the lowest is 1. A zero or negative band means the counting started in the wrong place, which would shift every label by one and still look like a valid answer</li><li>upper — there are four bands and the highest is 4, unbounded above in flux — band 4 holds everything from 170 sfu upward, including the record's largest day at 343. A fifth band means an edge was added without the range being updated</li></ul>
+<div class="sweep" data-over="env_f107" data-points="60" data-y="sw_activity_band"><p class="muted">Sweeps against <a class="xref" data-goto="env_f107">env_f107</a> over 60 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

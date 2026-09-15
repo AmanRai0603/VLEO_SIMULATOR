@@ -140,6 +140,20 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
         sh.source = s(m.get("source"));
         sh.relation_by = s(m.get("confirmed_by"));
     }
+    // Prose, and read the same way whether it is one paragraph or twenty lines.
+    // Nothing below feeds the generators: a missing [theory] is an open gap on a
+    // published node, never a failure to build one.
+    if let Some(th) = t.get("theory").and_then(|th| th.as_table()) {
+        sh.theory.why = reflow(&s(th.get("why")));
+        sh.theory.reading = reflow(&s(th.get("reading")));
+        for st in th.get("step").and_then(|s| s.as_array()).unwrap_or(&vec![]) {
+            let st = st.as_table().unwrap();
+            sh.theory.steps.push(TheoryStep {
+                text: reflow(&s(st.get("text"))),
+                math: reflow(&s(st.get("math"))),
+            });
+        }
+    }
     for a in t
         .get("assumption")
         .and_then(|a| a.as_array())
@@ -273,6 +287,21 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
     sh.sheet_hash = fnv1a(&canon);
     sh.impl_hash = fnv1a(&read_holes_raw(dir));
     Ok(sh)
+}
+
+/// Prose, unwrapped — but not unparagraphed.
+///
+/// A sheet wraps its paragraphs at a terminal width so it is readable as a file,
+/// and those line breaks are a property of the file rather than of the sentence:
+/// carried into a page they become breaks in the middle of clauses. A blank line
+/// IS content, though, so it survives as a paragraph break and everything else
+/// collapses to one space.
+fn reflow(s: &str) -> String {
+    s.split("\n\n")
+        .map(|para| para.split_whitespace().collect::<Vec<_>>().join(" "))
+        .filter(|p| !p.is_empty())
+        .collect::<Vec<_>>()
+        .join("\n\n")
 }
 
 /// The hole bodies, as one string, for the implementation hash.

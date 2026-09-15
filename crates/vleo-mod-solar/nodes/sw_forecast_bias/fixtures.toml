@@ -1,0 +1,65 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# The mean signed F10.7 error of the issued 27-day outlook, forecast minus
+# observed, counted outside this crate from bundles/solar-weather over
+# 1997-2025. Lead is a Time in SECONDS, so each input is days * 86400.
+#
+# THE ORDER MATTERS HERE AND IT IS NOT COSMETIC. The generated robustness test
+# perturbs the FIRST fixture's input by plus and minus one per cent and requires
+# the node not to refuse. Lead 26 is the declared value and the top of the
+# declared domain, so a first fixture there would be perturbed to 26.26 and the
+# node would correctly refuse. Lead 13 is interior: 12.87 to 13.13 both land
+# between measured leads.
+
+[[fixture]]
+label = "lead 13 — the interior recovery in the bias curve — -1.848 sfu from 1237 pairs"
+expect = -1.8480194018
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 1123200.0 }
+
+[[fixture]]
+label = "lead 1 — the shallowest bias in the window — -0.593 sfu from 1241 pairs"
+expect = -0.5930701048
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 86400.0 }
+
+[[fixture]]
+label = "lead 9 — the interior minimum — -2.748 sfu from 1241 pairs"
+expect = -2.7477840451
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 777600.0 }
+
+[[fixture]]
+label = "lead 13.5 — between two measured leads, so this one tests the interpolation and not the table"
+expect = -1.88742433505
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 1166400.0 }
+
+[[fixture]]
+label = "lead 23 — the last lead where the outlook still beats persistence — -2.945 sfu"
+expect = -2.9447640967
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 1987200.0 }
+
+[[fixture]]
+label = "lead 26 — the declared lead and the deepest bias in the window — -3.968 sfu from 868 pairs"
+expect = -3.9677419355
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 2246400.0 }

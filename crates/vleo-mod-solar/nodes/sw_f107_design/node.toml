@@ -2,32 +2,176 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sw_f107_design"
-label = "F10.7 design value"
+label = "F10.7 to design to"
 folder = "sw_f107_design"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+# CRITICALITY: minor HERE, AND THE REASONING IS NOT "IT DOES NOT MATTER".
+#
+# By consequence this row is significant: it is one of the two numbers the
+# subsystem exists to publish, and it feeds density, then drag, then lifetime.
+# It was declared significant first.
+#
+# In this repository `significant` means two reviewers AND a differential fill —
+# the same hole filled independently by a second model and the two compared.
+# That coupling assumes a significant node has a hole with implementation
+# latitude. This one does not: the hole is `central + spread`, a single
+# addition, and two models would write the same line. A differential over an
+# addition is ceremony, and it would also be dishonest to obtain here: the
+# fleet's hole-filler (agents/provenance.toml, agent C) runs on sonnet, this
+# session is opus, and `xtask fill --by` records the NAMED AGENT's declared
+# model rather than the one that ran. Claiming agent C would put a false model
+# in the provenance record and would then cause a genuine sonnet fill to be
+# refused as "same model", blocking the very differential the flag exists to
+# force. The roster's own fallback for that agent is "a person writes the hole.
+# It is two or three lines."
+#
+# So: minor, because the machinery's meaning of the word is about the hole.
+# THE TWO-REVIEWER EXPECTATION STANDS ANYWAY and is stated in the pull request.
+# Set this back to significant if the differential is arranged.
+criticality = "minor"   # minor | significant — see the note above; this is a judgement, not a default
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1359
-state = "empty"
+order = 1362
+state = "published"
+
+# No migrated_from and no parity grid: this row is an addition of two rows that
+# each say why they carry none, and one of them departs from prf_design
+# deliberately. A grid here would inherit that disagreement and report it as a
+# mismatch on this row instead of on the row that owns it.
 
 [question]
-text = ""
+text = "What F10.7 should this design be sized to?"
+note = "One of the two numbers the subsystem exists to produce. The centre comes from sw_central_expectation, the spread from sw_uncertainty_growth, and the confidence is the 95th percentile that sw_uncertainty_growth publishes — so this is a value the mission should not exceed in 95% of histories, not a value it will see."
 
 [maths]
-expression = ""
-source = ""
+# The study's construction: the central expectation plus the percentile of the
+# change over the lead. The percentile does the safety.
+expression = "F107_design = F107_central + dF107_p95"
+source = "noaa_swpc"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+Two of the numbers this subsystem exists to publish are a flux and an Ap to
+size to. A design value is not an expectation: an expectation is exceeded
+half the time, and a structure sized to be adequate half the time is not a
+design. So the value has two parts — where the flux is expected to be, and
+how far it can move from there over the time the mission is exposed — and
+the safety is entirely in the second part. The relation is an addition, and
+everything worth reviewing about it is in the two rows it adds and in what
+'the 95th percentile' is the percentile OF.
+"""
+reading = """
+This is a value the mission should not exceed in 95 per cent of histories,
+not a value it will see. The confidence is inherited and cannot be asked for
+here: it is whatever sw_uncertainty_growth publishes, and a mission needing
+99 per cent is reading a number about 32 sfu too small at a one-year lead.
+And the row is a percentile of the CHANGE added to a centre, which is a
+larger and different thing from the percentile of the value — the record's
+own 95th percentile of daily F10.7 is 201 sfu against this row's 228. A
+reader who wants 'the 95th percentile of F10.7' wants the record, not this
+row.
+"""
+
+[[theory.step]]
+text = """
+Start from why a centre is not enough. sw_central_expectation returns 114.84
+sfu, which is a median-like quantity: the flux will be above it about half
+the time over the mission. Sizing a structure, a power budget or a
+propellant load to a figure that is exceeded half the time is not a margin,
+it is a coin toss.
+"""
+
+[[theory.step]]
+text = """
+The quantity that has to be bounded is therefore not the flux but the
+DEPARTURE of the flux from its central expectation over the exposure time.
+That departure grows with the exposure: a mission of one month can be
+surprised less than a mission of five years.
+"""
+math = "dF107(L) = F107(t + L) - F107_central(L)"
+
+[[theory.step]]
+text = """
+Bound the departure by a percentile of its measured distribution rather than
+by a multiple of a standard deviation. F10.7's distribution is not symmetric
+— it is bounded below near 64 sfu and has a long upper tail to 343 — so a
+mean-plus-k-sigma interval would be wrong on both sides.
+sw_uncertainty_growth measures the percentile directly from the record.
+"""
+math = "F107_design(L) = F107_central(L) + dF107_p95(L)"
+
+[[theory.step]]
+text = """
+At the declared five-year mission that is 114.84 plus 113.29, and the split
+is the thing to notice: more than half the design value is margin. That is
+not excess conservatism, it is what a five-year exposure to a cyclical
+driver costs.
+"""
+math = "F107_design = 114.84 + 113.29 = 228.14 sfu"
+
+[[theory.step]]
+text = """
+One consequence is worth stating before a reader misreads the number. Adding
+a percentile of the change to a central value compounds two uncertainties —
+where the centre is, and how far from it the flux can get — so the answer
+exceeds the record's own 95th percentile of daily flux, 201 sfu, without
+contradicting it. The two are answers to different questions.
+"""
+
+
+[[assumption]]
+text = "95% and no other confidence, because that is the percentile the spread row publishes"
+fails_when = "prf_design offers p50, p90, p95 and p99 and expects the caller to pick what the mission needs. This row inherits p95 from sw_uncertainty_growth and cannot be asked for another: a mission needing p99 is reading a number about 32 sfu too small at a one-year lead. Changing the confidence means changing the row underneath, which is where the percentile is chosen and declared."
+
+[[assumption]]
+text = "It cannot tell solar maximum from solar minimum, because no row in this tree publishes a date"
+fails_when = "the whole of this limitation belongs to sw_central_expectation and it is repeated here because this is the row a system reader opens. The centre is the record's unconditional mean F10.7, 114.8 sfu, not the mean cycle at the date the mission flies. The record runs from 64 to 343 sfu; a mission through solar maximum and one through minimum are owed materially different numbers and this row gives them the same one. That was once a missing input and is now an open decision: the epoch is published at 9862 d, rows in this subsystem do cross the layer to read it, and the phase-conditioned centre exists at 108.14 sfu. Adopting it would move this row from 228.14 to 221.44 sfu, which is a change to an output that is already on the main branch and therefore somebody's call rather than a correction."
+
+[[assumption]]
+text = "Adding a percentile of the CHANGE to a central value is not the same as the percentile of the VALUE"
+fails_when = "the record's own 95th percentile of daily F10.7 is 201 sfu, while this construction returns 228 at a five-year lead. The two answer different questions — the highest flux a day is likely to show, against how far the flux can move from its central expectation — and the second is the larger because it compounds where the centre sits with how wrong the centre can be. A reader who wants 'the 95th percentile of F10.7' wants the record, not this row."
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "F107_design"
+type = "Ratio"
+unit = "One"
+lower = 60.0
+upper = 400.0
+reason_lower = "below 60 sfu has never been observed and every relation reading F10.7 has no support there — env_f107's own floor, and a design value below it means the spread has been subtracted rather than added"
+reason_upper = "above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, which is env_f107's stated reason for the same bound. This guard is reachable: a central expectation near the top of its range plus a fifteen-year spread would exceed it, and it should refuse rather than hand a consumer a flux it cannot model"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "central"
+var = "sw_central_expectation"
+type = "Ratio"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "spread"
+var = "sw_uncertainty_growth"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "add the 95th-percentile growth over the mission to the central expectation"
+binds = "design"
+type = "Ratio"
 
 [view]
-kind = "number"
+kind = "line"
+over = "orbit_mission_duration"
+points = 60

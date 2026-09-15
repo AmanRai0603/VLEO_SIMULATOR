@@ -13,7 +13,7 @@ moves a directory: renaming a heading would otherwise show up in version
 control as hundreds of deletes and adds and would conflict with every open
 branch.
 
-Run:  python3 tools/seed_tree.py
+Run:  python3 tools/seed_tree.py   — and only ever in an empty tree; see THE REFUSAL below.
 """
 import os
 import sys
@@ -695,7 +695,69 @@ def emit_supporting():
 BY_ID = {}
 
 
+# =============================================================================
+# THE REFUSAL
+#
+# The docstring above says "run once, ever". Nothing enforced that, and on
+# 2026-09-14 this script was run a second time by a sweep that passed it a flag
+# it does not take. It ignored the flag, reseeded the tree, and in one write
+# reverted 138 hand-filled `model.rs` bodies to their seed hole bodies, dropped
+# a `sense` line from twelve KPI rows, reset a written sheet to
+# `state = "empty"`, deleted a source that a node still cites, and unregistered
+# an owner crate from `vleo-modules` — because the crate list it writes is the
+# crate list it knows, and a crate added after the seed is not in it.
+#
+# Nothing was lost, because everything was committed or recoverable. That was
+# luck, not design. A rule that only exists in a docstring is a rule that gets
+# broken by a loop, so it is checked here instead: a stated intention with no
+# mechanism behind it is not a safeguard.
+
+
+def _refuse_unless_the_tree_is_unwritten(argv):
+    """Stop, unless this really is a bootstrap of an empty tree.
+
+    Two refusals, because two different mistakes reach this line. An argument
+    this script does not take means the caller thinks it is some other tool,
+    and every argument is unknown because it takes none. A tree that already
+    holds written sheets means the seed has run, and running it again is not a
+    no-op: it overwrites by content, so it un-writes whatever a person wrote.
+    """
+    if argv:
+        raise SystemExit(
+            "seed_tree.py takes no arguments and was given %s.\n"
+            "It is not the tool you are looking for: it seeds the tree, it "
+            "does not test, lint or report on it. Every other script in "
+            "tools/ answers --selftest; this one answers nothing, because it "
+            "is a bootstrap." % " ".join(argv))
+
+    written = []
+    for crate in sorted(os.listdir(os.path.join(ROOT, "crates"))):
+        nodes = os.path.join(ROOT, "crates", crate, "nodes")
+        if not os.path.isdir(nodes):
+            continue
+        for folder in sorted(os.listdir(nodes)):
+            sheet = os.path.join(nodes, folder, "node.toml")
+            if not os.path.isfile(sheet):
+                continue
+            with open(sheet, encoding="utf-8") as f:
+                if 'state = "published"' in f.read():
+                    written.append("%s/%s" % (crate, folder))
+    if written:
+        shown = ", ".join(written[:3])
+        raise SystemExit(
+            "refusing to seed: %d sheet(s) in this tree are published "
+            "(%s%s).\n"
+            "The seed writes every sheet and every hole body from its own "
+            "tables, so running it here would overwrite work a person did by "
+            "hand. This script ran once, when the tree was empty, and the "
+            "sheets have been the source ever since.\n"
+            "If you genuinely mean to bootstrap an empty tree, do it in an "
+            "empty tree." % (len(written), shown,
+                             ", ..." if len(written) > 3 else ""))
+
+
 def main():
+    _refuse_unless_the_tree_is_unwritten(sys.argv[1:])
     # Creation order is authoring order: the document's own order for the rows
     # that came from it, and the order they were written in for the rest.
     for i, n in enumerate(NODES):

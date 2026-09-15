@@ -1,0 +1,187 @@
+<article class="node" data-node="sw_exceedance_rate" data-sheet-hash="76443c" data-impl-hash="501bad">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Days a year above the design level</h2>
+  <p class="ident"><code>sw_exceedance_rate</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How many days a year does the record go above the design Ap?</p>
+<p class="maths"><code>R_exc(Ap_design) = days with Ap &gt;= Ap_design, per year of record</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The exceedance rate of sw_ap_design, measured over 28.197 years. Multiply by the mission length for the number of days the vehicle spends outside what it was built for: at G3 and five years that is 1.42 days.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>The design bound IS exceeded, and the rate is the whole argument for accepting it</dt><dd>fails when the bound is read as a limit the sky respects. At G3, Ap 132, the record holds 8 days above it in 28.197 years — 0.284 a year, one day in 1287. Over the declared five-year mission that is 1.42 days. At G2, Ap 80, it is 35 days, 1.24 a year, 6.21 days per mission; at G1, Ap 48, it is 131 days, 4.65 a year, 23.2 days per mission. A design that must never be exceeded cannot be built at any of these levels, and the decision is about how many days of exceedance are tolerable rather than whether there are any</dd>
+<dt>Three points and a straight line between them, on a quantity that is anything but straight</dt><dd>fails when the answer is read anywhere except at 48, 80 or 132. Those are the only three values sw_ap_design can return, because the G scale is defined on integers and the producer's range is 1 to 3. The relation interpolates between them because Table1 must do something, and the interpolation is wrong: exceedance rate against threshold is close to exponential — 4.65, 1.24, 0.284 falls by a factor of 3.7 then 4.4 — so a linear reading between anchors overstates the rate badly in the middle. Nothing in the tree can reach those points, and this assumption exists so that the day something can, it is not believed</dd>
+<dt>It is a rate over a record, not a forecast, and the record is short where it matters</dt><dd>fails when the mission is the one that meets the rare event. 8 days above G3 in 28 years is a small sample: remove the single worst storm and the count is 7. The rate has a counting uncertainty of roughly its own square root, so 0.284 a year is 0.284 give or take 0.10 — a third of itself. Sizing on 1.42 days per mission when the honest range is roughly 0.9 to 2.0 is the correct use of it; treating 1.42 as a number with two decimal places of meaning is not</dd>
+<dt>273 absent days, and they are not spread evenly over the risk</dt><dd>fails when the count is read as complete. observed_daily.csv is missing 2017-01-01 to 2017-09-30. That window sits on cycle 24's decline at phase 0.74 to 0.80, which is inside the band where exceedances concentrate — sw_exceedance_phase puts their median at 0.603 and their spread at 0.29 to 0.74. So the gap is in the risky part of the cycle, not the quiet part, and the true rate is more likely above this figure than below it. The denominator used is 28.197 years, the days actually present, so the gap does not dilute the rate; what it does is remove whatever happened in it</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">The requirement built on the G3 capability is violated: the record expects Ap 158.4 over the mission and the design is built for 132. A violated requirement is useless information on its own — what a programme has to decide is whether the violation is tolerable, and that decision needs three numbers rather than one: how often, how long, and when. This row is the first of the three. It converts 'the bound is exceeded' into 'the bound is exceeded on this many days a year', which is the form a decision can actually be taken on.</p>
+<div class="theory-walk" data-steps="7">
+<ol class="derive">
+<li><span class="dt">The measurement is a count and a division with nothing fitted in it: the days whose daily Ap reaches the design bound, over the years of record actually present.</span><code class="dm">R_exc(Ap_design) = #{ d : Ap(d) &gt;= Ap_design } / 28.197 yr</code></li>
+<li><span class="dt">The denominator is the days present, not the calendar span. That matters because 273 days are absent: dividing by the span would dilute the rate by the length of the gap, as though nothing could have happened in it. Dividing by the days observed keeps the rate honest about what was measured and silent about what was not.</span></li>
+<li><span class="dt">Counted at the three levels sw_ap_design can return, the rate falls steeply: 131 days above Ap 48, 35 above Ap 80, 8 above Ap 132.</span><code class="dm">G1: 4.646 /yr G2: 1.241 /yr G3: 0.284 /yr</code></li>
+<li><span class="dt">Which answers the design question at the declared level. Multiply by the mission and the violation has a size: at G3 the vehicle spends 1.42 days of a five-year mission outside what it was built for, at G2 6.21 days, at G1 23.2.</span><code class="dm">0.284 /yr * 5 yr = 1.42 d</code></li>
+<li><span class="dt">Notice what the three numbers rule out. A design that must NEVER be exceeded cannot be built at any level the G scale offers below G4, so the decision available is not whether to have exceedances but how many days of them to accept.</span></li>
+<li><span class="dt">The relation is three anchors and a straight line, and the line is wrong. Exceedance rate against threshold falls close to exponentially — 4.65 to 1.24 to 0.284 is a factor of 3.7 then 4.4 — so linear interpolation overstates the rate badly between anchors. Nothing in the tree can reach between them, because the G scale is integer-valued and the producer's range is 1 to 3; the assumption is written so that the day something can, it is not believed.</span></li>
+<li><span class="dt">One bias in the count has a known direction. The 273 absent days sit at cycle 24's phase 0.74 to 0.80, INSIDE the band where exceedances concentrate rather than in the quiet part of the cycle. So whatever happened there is missing from the numerator, and the true rate is more likely above this figure than below it.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">It is a rate over a record, not a forecast, and the record is short exactly where it matters. Eight days above the G3 bound in 28.2 years is a sample small enough that removing the single worst storm leaves seven; counting uncertainty is roughly the square root of the count, so 0.284 a year is 0.284 give or take about 0.10 — a third of itself. Sizing on 1.42 days per mission when the honest range is roughly 0.9 to 2.0 days is the correct use of the number. Treating 1.42 as having two decimal places of meaning is not.</p>
+<p class="maths concl">which is the relation this node states: <code>R_exc(Ap_design) = days with Ap &gt;= Ap_design, per year of record</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>ap_design</code></td><td><a class="xref" data-goto="sw_ap_design">sw_ap_design</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>R_exc</code></td><td>sw_exceedance_rate</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+</section>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">read the measured count of days at or above this Ap, per year of record</span> <span class="binds">→ <code>out: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_exceedance_rate(ap_design: Ratio) -> Ratio
+    given ap_design from sw_ap_design
+    // read the measured count of days at or above this Ap, per year of record
+    R_exc ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require R_exc ≥ 0.1
+    require R_exc ≤ 6
+    require R_exc is finite
+
+    return R_exc
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>R_exc &ge; 0.1</code> — the lowest rate this relation can return is 0.284, at the G3 bound of Ap 132. A bound at 0.1 sits under it and catches a table read at the wrong end; it is NOT a claim that no design level is exceeded less often, because a higher bound than G3 is outside the declared G range</li>
+<li><code>R_exc &le; 6</code> — the highest is 4.65, at the G1 bound of Ap 48. A bound at 6 sits just above it. A rate above 6 days a year would mean the design level had fallen to around Ap 40, which is below anything the G scale defines as a storm and below what sw_ap_design can return</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sw_exceedance_rate" data-lo="0.1" data-hi="6" data-symbol="R_exc">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How many days a year does the record go above the design Ap?
+///
+/// `R_exc(Ap_design) = days with Ap &gt;= Ap_design, per year of record`
+///
+/// Source: `noaa_swpc`
+///
+/// The exceedance rate of sw_ap_design, measured over 28.197 years. Multiply
+/// by the mission length for the number of days the vehicle spends outside
+/// what it was built for: at G3 and five years that is 1.42 days.
+///
+/// # Assumptions
+///
+/// * The design bound IS exceeded, and the rate is the whole argument for accepting it — fails when the bound is read as a limit the sky respects. At G3, Ap 132, the record holds 8 days above it in 28.197 years — 0.284 a year, one day in 1287. Over the declared five-year mission that is 1.42 days. At G2, Ap 80, it is 35 days, 1.24 a year, 6.21 days per mission; at G1, Ap 48, it is 131 days, 4.65 a year, 23.2 days per mission. A design that must never be exceeded cannot be built at any of these levels, and the decision is about how many days of exceedance are tolerable rather than whether there are any
+/// * Three points and a straight line between them, on a quantity that is anything but straight — fails when the answer is read anywhere except at 48, 80 or 132. Those are the only three values sw_ap_design can return, because the G scale is defined on integers and the producer's range is 1 to 3. The relation interpolates between them because Table1 must do something, and the interpolation is wrong: exceedance rate against threshold is close to exponential — 4.65, 1.24, 0.284 falls by a factor of 3.7 then 4.4 — so a linear reading between anchors overstates the rate badly in the middle. Nothing in the tree can reach those points, and this assumption exists so that the day something can, it is not believed
+/// * It is a rate over a record, not a forecast, and the record is short where it matters — fails when the mission is the one that meets the rare event. 8 days above G3 in 28 years is a small sample: remove the single worst storm and the count is 7. The rate has a counting uncertainty of roughly its own square root, so 0.284 a year is 0.284 give or take 0.10 — a third of itself. Sizing on 1.42 days per mission when the honest range is roughly 0.9 to 2.0 is the correct use of it; treating 1.42 as a number with two decimal places of meaning is not
+/// * 273 absent days, and they are not spread evenly over the risk — fails when the count is read as complete. observed_daily.csv is missing 2017-01-01 to 2017-09-30. That window sits on cycle 24's decline at phase 0.74 to 0.80, which is inside the band where exceedances concentrate — sw_exceedance_phase puts their median at 0.603 and their spread at 0.29 to 0.74. So the gap is in the risky part of the cycle, not the quiet part, and the true rate is more likely above this figure than below it. The denominator used is 28.197 years, the days actually present, so the gap does not dilute the rate; what it does is remove whatever happened in it
+pub const NODE_ID: &amp;str = &quot;sw_exceedance_rate&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x7251b4673e76443c;
+
+pub fn evaluate(ap_design: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : read the measured count of days at or above this Ap, per year of record -&gt; Ratio
+    // The three design levels sw_ap_design can return, and the days at or above the bound, per year of the 28.197 years the record actually holds,
+    // counted outside this crate from bundles/solar-weather.
+    //
+    // Three anchors and nothing between them: the G scale is defined on
+    // integers and the producer's range is 1 to 3, so Ap 48, 80 and 132 are the
+    // only values that reach here. Table1 interpolates because it must and
+    // clamps at both ends; the sheet declares that the interpolation is wrong
+    // for this quantity and that nothing in the tree can currently reach it.
+    use vleo_core::math::Table1;
+    const TABLE: Table1 = Table1 {
+        x: &amp;[48.0, 80.0, 132.0],
+        y: &amp;[4.6458636761, 1.2412612875, 0.2837168657],
+    };
+    let out: Ratio = Ratio::new(TABLE.at(ap_design.get()));
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = out;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;R_exc&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.1 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;R_exc&quot;, value: answer.get(), bound: 0.1, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the lowest rate this relation can return is 0.284, at the G3 bound of Ap 132. A bound at 0.1 sits under it and catches a table read at the wrong end; it is NOT a claim that no design level is exceeded less often, because a higher bound than G3 is outside the declared G range&quot; });
+    }
+    if answer.get() &gt; 6.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;R_exc&quot;, value: answer.get(), bound: 6.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the highest is 4.65, at the G1 bound of Ap 48. A bound at 6 sits just above it. A rate above 6 days a year would mean the design level had fallen to around Ap 40, which is below anything the G scale defines as a storm and below what sw_ap_design can return&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="the G2 bound, Ap 80 — 35 days above in the record, 1.24 a year"><td>the G2 bound, Ap 80 — 35 days above in the record, 1.24 a year</td><td class="num">1.2412612875</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the G1 bound, Ap 48 — the lowest level the G scale defines"><td>the G1 bound, Ap 48 — the lowest level the G scale defines</td><td class="num">4.6458636761</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the G3 bound, Ap 132 — the declared design level"><td>the G3 bound, Ap 132 — the declared design level</td><td class="num">0.2837168657</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0.1 — the lowest rate this relation can return is 0.284, at the G3 bound of Ap 132. A bound at 0.1 sits under it and catches a table read at the wrong end; it is NOT a claim that no design level is exceeded less often, because a higher bound than G3 is outside the declared G range</li>
+<li><code>OutOfDomain</code> above 6 — the highest is 4.65, at the G1 bound of Ap 48. A bound at 6 sits just above it. A rate above 6 days a year would mean the design level had fallen to around Ap 40, which is below anything the G scale defines as a storm and below what sw_ap_design can return</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_exceedance_rate"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>0.1 &hellip; 6</code> -.</p>
+<ul class="guards"><li>lower — the lowest rate this relation can return is 0.284, at the G3 bound of Ap 132. A bound at 0.1 sits under it and catches a table read at the wrong end; it is NOT a claim that no design level is exceeded less often, because a higher bound than G3 is outside the declared G range</li><li>upper — the highest is 4.65, at the G1 bound of Ap 48. A bound at 6 sits just above it. A rate above 6 days a year would mean the design level had fallen to around Ap 40, which is below anything the G scale defines as a storm and below what sw_ap_design can return</li></ul>
+<div class="sweep" data-over="sw_storm_design_level" data-points="40" data-y="sw_exceedance_rate"><p class="muted">Sweeps against <a class="xref" data-goto="sw_storm_design_level">sw_storm_design_level</a> over 40 points. Run the branch to draw it.</p></div>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

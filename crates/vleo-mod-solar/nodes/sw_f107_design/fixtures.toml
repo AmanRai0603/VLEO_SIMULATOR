@@ -1,0 +1,47 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# WHAT THESE ARE
+#
+# A sum of two numbers this node does not compute. Each expectation is the
+# record's climatology, 114.8437378829 sfu, plus a measured 95th-percentile
+# growth from bundles/solar-weather — both derived outside this crate and both
+# pinned by their own node's fixtures. What is checked here is only that the
+# addition is an addition, and that the declared bound refuses when the sum
+# leaves the range every consumer of F10.7 can model.
+
+[[fixture]]
+label = "five years — climatology 114.8437 plus the 1826-day p95 growth of 113.294"
+expect = 228.1374378829
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { central = 114.8437378829, spread = 113.2937 }
+
+[[fixture]]
+label = "half a year — the shortest mission the tree allows, and the narrowest band"
+expect = 171.8843338669
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { central = 114.8843338669, spread = 57.0 }
+
+[[fixture]]
+label = "ten years — the cycle's own turn brings the band IN, so the design value falls"
+expect = 180.8437378829
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { central = 114.8437378829, spread = 66.0 }
+
+[[fixture]]
+label = "fifteen years — the widest band the record supports"
+expect = 229.8437378829
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { central = 114.8437378829, spread = 115.0 }

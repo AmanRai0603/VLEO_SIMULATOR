@@ -11,7 +11,7 @@ owner = "environment"
 tier = "A"
 criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1353
+order = 1355
 state = "published"
 
 # NO migrated_from, AND THAT IS NOT AN OVERSIGHT.
@@ -40,6 +40,114 @@ note = "Geomagnetic activity has no usable long-term forecast, so a design does 
 expression = "Ap(T) = 92.5155 + 40.9265*ln(T / 1 yr)"
 source = "noaa_swpc"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+Geomagnetic activity has no usable forecast at mission timescales, so a
+design cannot predict the storm it will meet. What it can do is size for the
+worst storm the mission is LIKELY to meet, which turns the mission length
+into the input: a five-year mission and a fifteen-year one are exposed to
+different extremes of the same distribution. That is extreme-value reasoning
+rather than forecasting, and the whole row is the empirical exceedance curve
+of the daily record with a functional form fitted through its tail.
+"""
+reading = """
+28.2 years of record support the whole curve and its top end rests on two
+observations. At a fifteen-year mission the answer is fitted through the
+second-largest daily Ap in the record; at ten years, the third. The declared
+input range of 0.5 to 15 years reaches past both ends of the fitted range,
+0.5035 to 14.0986 years, by 0.285 Ap at the bottom and 2.54 Ap at the top —
+small, and an extrapolation nonetheless. A design needing the
+once-per-century storm needs a longer record or a fitted extreme-value
+model, not this row. The upper bound of 230 is the fit evaluated at a return
+period equal to the record itself, so asking for a storm rarer than the
+record refuses rather than answering.
+"""
+
+[[theory.step]]
+text = """
+Return period is not a model, it is a definition: the average interval
+between events that exceed a level, which is the reciprocal of the
+exceedance probability per unit time. Inverting it turns 'how long is the
+mission' into 'how rare a storm must it tolerate'.
+"""
+math = "T(x) = 1 / P(Ap > x)"
+
+[[theory.step]]
+text = """
+The empirical curve comes straight from the ranked record with nothing
+assumed. Sort the daily Ap descending; the m-th largest value has been
+exceeded m times in the record, so its return period is the record's length
+divided by m.
+"""
+math = "T(rank m) = 28.1971 yr / m"
+
+[[theory.step]]
+text = """
+That gives a staircase rather than a function, and a design needs a value at
+an arbitrary mission length, so a form has to be fitted through it. Which
+form is not arbitrary — it is a statement about the shape of the tail, and
+the two candidates make different claims.
+"""
+
+[[theory.step]]
+text = """
+Log-linear in the return period is exactly the claim that the upper tail is
+EXPONENTIAL. If the probability of exceeding x falls off as exp(-x/b), then
+the return period rises as exp(x/b), and inverting that gives the level
+growing with the logarithm of the return period.
+"""
+math = "P(Ap > x) ~ exp(-x/b) => T ~ exp(x/b) => x = a + b*ln(T)"
+
+[[theory.step]]
+text = """
+Fitted over ranks 2 to 56 — return periods 0.5035 to 14.0986 years — least
+squares gives the two coefficients. The residual rms against the empirical
+staircase is 4.95 Ap, worst +8.6 and -12.9.
+"""
+math = "Ap(T) = 92.5155 + 40.9265 * ln(T / 1 yr)"
+
+[[theory.step]]
+text = """
+A power law was tried on the same points and is more than twice as bad — rms
+9.10, worst -47.7 — which is the evidence for the exponential tail rather
+than a heavier one. That is a claim about this record over this range of
+return periods and not about geomagnetic storms in general.
+"""
+
+[[theory.step]]
+text = """
+Rank 1 is deliberately excluded from the fitting range. The record's largest
+day, Ap 273, sits above the log-linear trend and has an apparent return
+period of exactly 28.2 years for no reason except that it is the largest
+thing in 28.2 years. Including it would let one day set the slope of the
+whole tail.
+"""
+
+[[theory.step]]
+text = """
+At the declared five-year mission the curve returns 158.4 Ap, and the whole
+design chain hangs off that: it is what sw_kp_from_ap converts, what
+l3_solar_ach_03 publishes as the achieved level, and what the requirement at
+150 fails against.
+"""
+math = "Ap(5 yr) = 92.5155 + 40.9265 * ln(5) = 158.38"
+
+[[theory.step]]
+text = """
+One assumption underneath all of this is worth naming because it is not
+visible in the algebra: every day is treated as an independent draw. Storms
+cluster — a coronal hole returns each solar rotation and a single event runs
+for days — so the record holds fewer independent storms than storm days.
+Clustering does not bias a quantile of the marginal distribution, but it
+does mean the effective sample behind the tail is smaller than the day count
+and the true uncertainty is wider than the residual above suggests.
+"""
+
+
 [[assumption]]
 text = "The tail is log-linear in the return period, with the two coefficients fitted on this record"
 fails_when = "the form is a choice, not the source's. Fitted over ranks 2 to 56 of the record, which is return periods 0.5035 to 14.0986 years; it carries a residual rms of 4.95 Ap against the empirical curve, worst +8.6 and -12.9. A power law on the same points is more than twice as bad (rms 9.10, worst -47.7), which is why this form and not that one. Anyone who needs the empirical step rather than a smooth curve should read the record, not this row."
@@ -50,7 +158,7 @@ fails_when = "the empirical method cannot see past its own record length. At T =
 
 [[assumption]]
 text = "Every day in the record is treated as an independent draw"
-fails_when = "storms cluster — a coronal hole returns once per solar rotation and a single event runs for more than one day — so the record holds fewer independent storms than it holds storm days. Clustering does not bias the exceedance level itself, which is a quantile of the marginal distribution, but it does mean the effective sample behind the tail is smaller than N and the uncertainty on the answer is wider than the residual above suggests. sw_event_duration and sw_recurrence_lag measure the clustering; neither is written yet."
+fails_when = "storms cluster — a coronal hole returns once per solar rotation and a single event runs for more than one day — so the record holds fewer independent storms than it holds storm days. Clustering does not bias the exceedance level itself, which is a quantile of the marginal distribution, but it does mean the effective sample behind the tail is smaller than N and the uncertainty on the answer is wider than the residual above suggests. sw_event_duration and sw_recurrence_lag both measure the clustering now — a mean disturbed run of 3.31 days and a recurrence peak at a lag of 26 days — and neither is fed back into this fit, so the widening they imply is declared here rather than applied."
 
 [[assumption]]
 text = "The record this is fitted on is missing 273 days, and the missing window contains storms"

@@ -8,7 +8,8 @@ subsystem = "sys"
 parent = "sys_mission_requirements"
 kind = "declared"
 owner = "systems"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 # Where this row sits among its siblings, as whoever wrote them ordered
 # them. Folders sort alphabetically and a tree that reads alphabetically
@@ -16,33 +17,129 @@ layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 # reverses the order the source put them in, and the order is part of
 # what the source said.
 order = 274
-state = "empty"
+state = "published"
 
-# SEEDED — the folder exists and nothing has been specified in it.
-# Every field below is required before anything can be generated. An
-# open field blocks generation, which is the mechanism: ambiguity
-# becomes a blocking item on an engineer's screen rather than
-# something an implementer resolves silently.
+# WHY THIS ROW IS AT THE SYSTEM LAYER.
+#
+# A date is not a property of any subsystem. The mission picks it, and every
+# subsystem that asks a dated question has to ask it about the same date or the
+# design is internally inconsistent. Carried as days since 2000-01-01, in
+# seconds across the interface like every other Time, so that no row downstream
+# needs a calendar.
 
 [question]
-text = ""
+text = "On what date does the mission begin?"
+note = "The date every dated question in the design keys off. It is a mission requirement and it lives here, at the system layer, because the mission owns it and several subsystems read it — the solar-weather subsystem is the first to do so. Carried as days since 2000-01-01 so that nothing downstream needs a calendar."
 
 [maths]
-expression = ""
-source = ""
+confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
+expression = "T_epoch = 9862 d  (2027-01-01)"
+source = "orbitt_case_c1"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+There is no theory of a date. What there is, and what belongs here, is the
+argument for why a design needs one at all, and why this one. The
+environment a vehicle flies through is not stationary: solar activity runs
+on a cycle of about eleven years, and the same orbit flown in 2020 and in
+2027 meets fluxes that differ by more than a factor of two. Until a date
+exists, the best any environment row can do is the unconditional statistics
+of the whole record — the average of every part of every cycle, which is a
+sky no mission flies through. Every dated question in the design then has to
+key off the SAME date, or the subsystems are each designing for a different
+mission.
+"""
+reading = """
+It is an instant, not a duration, and it crosses the interface in seconds
+like every other Time — 852076800 s for day 9862. Nothing downstream should
+do calendar arithmetic on it. The number is a decision and not a
+measurement, so the honest use of it is to move it: the cycle-dependent half
+of the subsystem answers differently at a different epoch, and a launch
+window rather than a launch date means running the design at both ends of
+the window and keeping the worse answer.
+"""
+
+[[theory.step]]
+text = """
+Start from what makes a date load-bearing. Solar activity is cyclical, so
+the environment is a function of when. The record's F10.7 runs from 64 to
+343 sfu, and the phase-stacked mean of a cycle runs from 72 to 165: choosing
+a date chooses which half of that range the design is sized against.
+"""
+
+[[theory.step]]
+text = """
+A date shared by several subsystems is not a subsystem's property. If the
+solar rows and the thermal rows each held their own epoch, the two would
+drift apart in the first revision and nothing would detect it. So the row
+sits at layer 2, the system layer, where the mission's own requirements
+live, and the subsystems read it.
+"""
+
+[[theory.step]]
+text = """
+A calendar date is not arithmetic. Months have different lengths, leap years
+are irregular, and a row that had to know about either would carry a
+calendar. Counting days from a fixed origin makes every dated question a
+subtraction, and 2000-01-01 is the origin the engine's tables already use.
+"""
+math = "T = days since 2000-01-01; 2027-01-01 -> 9862 d"
+
+[[theory.step]]
+text = """
+Now the choice itself. Cycle 25 opened on 2019-12-01 and the mean length of
+the two complete cycles in the record is 11.44 years, so this epoch folds to
+cycle phase 0.6194 — past maximum, on the declining side.
+"""
+math = "phase = (9862 - 7274) / (11.44 * 365.25) = 0.6194"
+
+[[theory.step]]
+text = """
+That is the phase band the design's own exceedance statistics point at.
+sw_exceedance_phase measures the median cycle phase of the days that exceed
+the design Ap at 0.603, with a spread of 0.29 to 0.74. The declared epoch
+sits inside that band, which means it is a date chosen to face the storms
+rather than one chosen to avoid them.
+"""
+
+[[theory.step]]
+text = """
+It is also 366 days past the end of the record, which stops at 2025-12-31.
+So every row that reads it is answering about a date nothing observed. That
+is the correct position for a design — a mission in the future has no record
+— and it is why the cycle rows fold a phase with a mean length instead of
+measuring one, and why each of them declares that it does.
+"""
+
+
+[[assumption]]
+text = "It is a single date, so the design is sized for a mission that starts then and not for one that slips"
+fails_when = "solar activity is cyclical, so slipping the start changes the sky the mission flies through rather than merely delaying it. 2027-01-01 sits past the maximum of cycle 25 on the declining side, which is the storm-rich phase; a slip to 2030 would move it toward minimum and every cycle-phase row would return a quieter sky. The record's F10.7 runs 64 to 343 sfu across a cycle, so this is not a rounding difference. A mission whose launch date is uncertain needs the design re-run at both ends of the window, and this row is the one to change."
+
+[[assumption]]
+text = "It is 366 days past the end of the solar-weather record"
+fails_when = "the record runs to 2025-12-31, day 9496, and this epoch is day 9862. So every row that reads it is answering about a date the record does not cover, by extrapolating a pattern rather than reading an observation. That is the correct thing to do for a design — a mission in the future has no record — and it means the cycle-phase rows fold the phase using a mean cycle length instead of measuring one. Which is exactly what prf_design does beyond its last cycle, and is declared on each row that does it."
 
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.
-# A unit is a decision, not data. None of these is filled yet.
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+symbol = "T_epoch"
+type = "Time"
+unit = "Day"
+lower = 6575.0
+upper = 14610.0
+reason_lower = "day 6575 is 2018-01-01. A mission epoch before it would sit inside the archive rather than ahead of the design, and every forward-looking row would be answering a question about the past while presenting it as a prediction"
+reason_upper = "day 14610 is 2040-01-01. Beyond it the cycle-phase rows would be folding the phase through more than one unobserved cycle, and the mean cycle length they fold with is measured from two complete cycles. Extrapolating a 11.4-year mean across fifteen years is not a design input, it is a guess with a date on it"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 9862.0
+confirmed_by = "A. Rai / 2026-09-14"
 
 [view]
 kind = "number"
-

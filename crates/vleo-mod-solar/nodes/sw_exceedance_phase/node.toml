@@ -1,0 +1,163 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_exceedance_phase"
+label = "When in the cycle exceedances fall"
+folder = "sw_exceedance_phase"   # frozen at seed; renaming the label never moves the directory
+subsystem = "solar"
+parent = "l3_solar"
+kind = "computed"
+owner = "environment"
+tier = "A"
+criticality = "significant"   # minor | significant — significant means two reviewers and a differential fill
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1367
+state = "published"
+
+# The third exceedance row, and the one that turns a rate into a schedule.
+#
+# sw_exceedance_rate says 1.42 days over a five-year mission. It does not say
+# WHEN, and a design whose exceedances all fall in one part of the cycle is a
+# different proposition from one where they are spread evenly — the first can be
+# planned around and the second cannot.
+#
+# THE RESULT MATTERS FOR THE DECLARED EPOCH. At G3 the exceedances sit at cycle
+# phase 0.294 to 0.736 with a median of 0.603. sw_cycle_phase puts the declared
+# epoch of 2027-01-01 at 0.619. The mission therefore BEGINS inside the band
+# where the design bound is exceeded, a few hundredths past its median. That is
+# not a coincidence to note in passing: a mission starting at phase 0.1 would
+# meet its exceedances years in, and this one meets them at once.
+
+[question]
+text = "Where in the solar cycle do the exceedances of the design Ap fall?"
+note = "The median cycle phase of the days above sw_ap_design, on the 0-to-1 scale sw_cycle_phase uses. At G3 it is 0.603 — the declining side, just past maximum — and the declared epoch sits at 0.619."
+
+[maths]
+expression = "P_exc(Ap_design) = median cycle phase of the days with Ap >= Ap_design"
+source = "noaa_swpc"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+How often and how long still leave a programme unable to plan. The third
+question is WHEN — because if exceedances were uniformly distributed through
+a cycle there would be nothing to schedule around, and if they cluster there
+is. The interesting part of this row is not the median it publishes but the
+test it survives: a timing statistic is only about the cycle if it does not
+move when the threshold moves, and this one barely moves across a factor of
+nearly three in threshold.
+"""
+reading = """
+A median with no spread beside it, and the spread is the part a schedule
+needs. 0.603 is where the middle exceedance happened, not when exceedances
+happen. At G3 the eight days run from phase 0.294 to 0.736 — a band nearly
+half a cycle wide, about five years — with half of them between 0.2 and 0.6.
+A design reading only this row plans for a date; a design reading the spread
+plans for a five-year window. The declared epoch at phase 0.6194 sits inside
+that band, which is what makes the epoch a conservative choice rather than a
+convenient one.
+"""
+
+[[theory.step]]
+text = """
+Take the days that exceed the design bound, convert each to its cycle phase
+on the same 0-to-1 scale sw_cycle_phase uses, and take the median of those
+phases.
+"""
+math = "P_exc = median{ phase(d) : Ap(d) >= Ap_design }"
+
+[[theory.step]]
+text = """
+The median rather than the mean, because phase is nearly circular and a
+handful of days near the ends of a cycle would drag a mean toward the middle
+regardless of where the mass sat.
+"""
+
+[[theory.step]]
+text = """
+Now the test that decides whether the answer means anything. If the median
+tracked the threshold, it would be telling us about where the line was
+drawn. It does not: 0.5717 at the G1 bound, 0.5763 at G2, 0.6027 at G3 — a
+drift of three hundredths across a threshold ratio of nearly three, on
+samples of 131, 35 and 8 days.
+"""
+
+[[theory.step]]
+text = """
+So the timing is a property of the solar cycle rather than of the design
+bound. Disturbed days cluster after maximum, on the declining phase, which
+is where coronal holes dominate the solar wind — and three independent
+samples agreeing to within 0.03 is better evidence for that than any one of
+them alone.
+"""
+
+[[theory.step]]
+text = """
+Two caveats about the phase scale itself, neither of which the median can
+show. Cycle 25's end in the record is the record's end rather than a real
+minimum, so phases inside it are computed against a length not yet known;
+and cycles 23 and 24 differ in length by 8 per cent, so equal phase is
+unequal time.
+"""
+
+[[theory.step]]
+text = """
+And the 2017 gap sits at phase 0.74 to 0.80 of cycle 24, just past the upper
+edge of the G3 exceedance band. Whatever fell there is absent from this
+median and from the rate that goes with it.
+"""
+
+
+[[assumption]]
+text = "A median with no spread beside it, and the spread is the part a schedule needs"
+fails_when = "0.603 is read as when exceedances happen. It is where the middle one happened. At G3 the eight days run from phase 0.294 to 0.736 — a band nearly half a cycle wide, about five years — and they fall in phase deciles 0.2-0.3, 0.3-0.4, 0.5-0.6 twice, 0.6-0.7 three times and 0.7-0.8 once. Half of them sit between 0.2 and 0.6. A design that reads only this row plans for a date; a design that reads the assumption plans for a five-year window"
+
+[[assumption]]
+text = "It is stable across G level, which means it is the cycle rather than the threshold"
+fails_when = "the median is expected to move with the bound. It barely does: 0.571692 at the G1 bound, 0.576302 at G2 and 0.602697 at G3, a drift of three hundredths across a factor of nearly three in threshold. So the timing is a property of the solar cycle — disturbed days cluster after maximum, on the declining phase, where coronal holes dominate — and not of where the line is drawn. That stability is the reason the row is worth having: it would be meaningless if it tracked the threshold"
+
+[[assumption]]
+text = "Eight days at G3, and a median of eight numbers is a coarse instrument"
+fails_when = "precision is read into 0.603. The sample is 131 days at G1, 35 at G2 and 8 at G3, so at the declared level the median sits between the fourth and fifth of eight values. Moving one storm moves the median by a few hundredths. The three levels agreeing to within 0.03 on samples of 8, 35 and 131 is better evidence for the timing than any one of them alone"
+
+[[assumption]]
+text = "Phase is folded on three cycles, one of which is incomplete, and 273 days are missing from the risky part"
+fails_when = "the phase scale is assumed uniform. Cycle 25's end in solar_cycles.csv is the record's end rather than a real minimum, so phases inside it are computed against a cycle whose length is not yet known; cycles 23 and 24 differ in length by 8 per cent, so equal phase is unequal time. And the 2017 gap sits at phase 0.74 to 0.80 of cycle 24, just past the upper edge of the G3 exceedance band — so whatever fell there is absent from this median and from sw_exceedance_rate's count"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "P_exc"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 1.0
+reason_lower = "cycle phase runs 0 at minimum to 1 at the next minimum, so 0 is the floor by definition. A median at 0 would mean every exceedance fell on the first day of a cycle"
+reason_upper = "1 is the end of a cycle by the same definition. A median at 1 would mean every exceedance fell on the last day of one"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "ap_design"
+var = "sw_ap_design"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "read the measured median cycle phase of the days at or above this Ap"
+binds = "out"
+type = "Ratio"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# numbers must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
+
+[view]
+kind = "line"
+over = "sw_storm_design_level"
+points = 40

@@ -6,28 +6,166 @@ label = "Ap design value"
 folder = "sw_ap_design"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "significant"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1360
-state = "empty"
+order = 1364
+state = "published"
+
+# WHY THIS READS A G LEVEL AND NOT A RETURN PERIOD.
+#
+# The port plan has this row as "the Ap to design to, at a return period". That
+# row already exists: sw_storm_return_level reads orbit_mission_duration and
+# gives the Ap that recurs once per mission life — 158.4 at five years. Writing
+# a second row on the same input would have been the same number twice.
+#
+# So this row answers the other half of the question, which nothing else does:
+# not what the sky will do, but what the vehicle is built for. It reads
+# sw_storm_design_level and converts the chosen G level into the daily Ap that
+# level bounds. Change the G level and this moves; the return level does not.
+#
+# THE CONVERSION. The G scale is on Kp and the ap equivalent amplitude for each
+# Kp is published — Kp 5 is ap 48, Kp 6 is ap 80, Kp 7 is ap 132. Daily Ap is
+# the mean of the day's eight three-hourly ap values, so a day whose worst slot
+# is Kp 7 cannot have a daily Ap above 132: that is the value every slot would
+# need. The conversion therefore takes the CEILING of the G band, which is the
+# right end for a design bound and is confirmed by the record — the largest
+# daily Ap on a day whose Kp_max was exactly 7 is 96, comfortably under 132.
 
 [question]
-text = ""
+text = "What daily Ap is this design built to survive?"
+note = "The design-side companion to sw_storm_return_level. That row says what the record will present over the mission; this says what the vehicle is built for, from the G level sw_storm_design_level declares. At the default G3 the answer is 132 and the record's five-year expectation is 158.4, and the gap between them is the finding."
 
 [maths]
-expression = ""
-source = ""
+expression = "Ap_design(G) = ap at the top Kp of that G band: G1 -> 48, G2 -> 80, G3 -> 132"
+source = "iaga_kp_ap"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+The G level is a name and the design needs a number, in the quantity the
+rest of the tree carries: daily planetary Ap. Getting from one to the other
+is not a conversion so much as a choice, because a G level constrains only
+the worst of a day's eight three-hourly slots and daily Ap is the mean of
+all eight. A single G3 day could have a daily Ap almost anywhere below the
+value it would reach if every slot sat at Kp 7. This row takes that upper
+value, and the whole of its content is the argument for taking the ceiling
+rather than the middle.
+"""
+reading = """
+The answer at G3 is 132 and the record's five-year expectation is 158.4 —
+the design value is BELOW what the mission should expect, and the gap is the
+finding this pair of rows exists to surface. It is also conservative within
+its own level in the opposite direction: no G3 day in 29 years came within a
+third of 132, whose typical value is 51. So the number is a bound on its
+level and not a description of it, and the two facts do not cancel — one is
+about the level chosen, the other about the sky.
+"""
+
+[[theory.step]]
+text = """
+A G level fixes the worst slot of the day and leaves the other seven
+unconstrained. Daily Ap is the mean of all eight, so a day labelled G3 can
+have almost any daily Ap up to the value it would reach if every slot were
+as bad as its worst.
+"""
+math = "Ap_day = mean of eight three-hourly ap; G fixes only max Kp"
+
+[[theory.step]]
+text = """
+The record shows how wide that leaves it: days whose Kp_max is exactly 7 run
+from daily Ap 15 to 96, with a median of 51. There is no single Ap that 'is'
+G3.
+"""
+
+[[theory.step]]
+text = """
+A design bound has to hold for the worst day inside the level it claims, so
+the ceiling is the right end of the band, not the middle. The ceiling is the
+daily Ap a day would reach if all eight slots sat at that level's Kp — which
+is just that Kp's tabulated ap, since the mean of eight equal values is the
+value.
+"""
+math = "Ap_design(G) = ap(Kp of G) = 48, 80, 132 for G1, G2, G3"
+
+[[theory.step]]
+text = """
+That makes the row conservative by construction, and the size of the
+conservatism is measurable: the median G3 day is 51 and this row publishes
+132, so no G3 day in 29 years came within a third of the design value. That
+is the price of a bound that cannot be violated by any day the level admits.
+"""
+
+[[theory.step]]
+text = """
+It is a lookup on three integers and nothing between them is defined. The ap
+values at Kp 5, 6 and 7 are 48, 80 and 132 — ratios of 1.67 and 1.65, so the
+scale is close to geometric and a linear reading between levels would be
+wrong by tens of nanotesla. That is why the producer's range is bounded to
+integers and why this row does not interpolate.
+"""
+
+[[theory.step]]
+text = """
+One thing the quantity cannot carry: daily Ap ignores everything about a
+storm except its size. A day at Ap 132 that recovers overnight and the first
+day of a three-day storm at the same Ap are the same number here, and the
+thermosphere does not treat them alike — density lags the driver, and a
+sustained storm heats it far more than one disturbed day. A drag design
+taking this number alone gets the peak and not the integral.
+"""
+
+
+[[assumption]]
+text = "The design value is BELOW what the record expects over the mission, and that is not a defect in either row"
+fails_when = "the two are read as competing answers. At G3 this row gives 132; sw_storm_return_level at the declared five-year mission gives 158.4, and the record's days nearest that Ap all reached Kp_max 9. So the sky a five-year mission should expect is stronger than the sky the vehicle is sized for, by about 20 per cent in daily Ap. The gap is real and is closed by operations rather than by structure: 49 days in 29 years reach G4 and 16 reach G5, and a mission flies through those rather than being built for them. Both numbers belong in the tree precisely so the gap is on a row instead of in somebody's head"
+
+[[assumption]]
+text = "The ceiling of the band, not its middle, and that choice is worth twice the number"
+fails_when = "a typical G3 day is wanted rather than a bound. Days in the record whose Kp_max is exactly 7 have daily Ap from 15 to 96 with a median of 51 — so the typical G3 day is 51 and this row publishes 132. The ceiling is correct for sizing, because a design bound must hold for the worst day inside the level it claims, and 132 is the value a day would reach if all eight slots sat at Kp 7. It is conservative by construction: no G3 day in 29 years came within a third of it"
+
+[[assumption]]
+text = "The published ap table is the conversion and it is not linear"
+fails_when = "a G level is interpolated. The ap values at Kp 5, 6 and 7 are 48, 80 and 132 — ratios of 1.67 and 1.65, so the scale is close to geometric and a linear reading between levels is wrong by tens of nanotesla. The relation is a lookup on three integer levels and nothing between them is defined, which is why sw_storm_design_level is bounded to integers 1 to 3 and why this row does not interpolate"
+
+[[assumption]]
+text = "Daily Ap ignores everything about the storm except its size"
+fails_when = "duration or timing matters. A day at Ap 132 that recovers overnight and the first day of a three-day storm at the same Ap are the same number here. The atmosphere does not treat them alike — density lags the driver and a sustained storm heats the thermosphere far more than a single disturbed day — so a drag design taking this number alone gets the peak and not the integral. sw_event_duration carries the dwell for F10.7; nothing in this group yet carries it for Ap"
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "Ap_design"
+type = "Ratio"
+unit = "One"
+lower = 40.0
+upper = 140.0
+reason_lower = "the lowest value this relation can return is 48, at G1. A bound at 40 sits just under it and refuses anything that would design to less than a minor storm, which is not a design case: the record has 1358 days at G1 or above, 47 a year"
+reason_upper = "the highest this relation can return is 132, at G3, which is the top of the declared G range. A bound at 140 sits just above it and catches a G level outside the range or a misread table. It does NOT bound the sky: the record's largest daily Ap is 273 and the five-year return level is 158.4, both above this bound, and neither passes through this row"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "g_level"
+var = "sw_storm_design_level"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "convert the chosen G level to the daily Ap that level bounds, from the published ap table"
+binds = "out"
+type = "Ratio"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# numbers must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
 
 [view]
 kind = "number"

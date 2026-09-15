@@ -2,32 +2,150 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sw_forecast_bias"
-label = "Forecast bias"
+label = "Issued-outlook F10.7 bias"
 folder = "sw_forecast_bias"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1350
-state = "empty"
+order = 1352
+state = "published"
+
+# No migrated_from and no parity grid: this is a statistic of the record, not a
+# closed form, and there is no MATLAB function that computes it. prf_design.m
+# reads the observed record and never verifies the issued outlook against it.
 
 [question]
-text = ""
+text = "By how much does the published outlook miss the F10.7 that arrived?"
+note = "Signed, forecast minus observed, so a negative answer means the outlook was low. It is measured at the lead sw_outlook_lead declares, which is the far end of the window where the miss is largest. A design that sizes drag on a published outlook is exposed by exactly this number, in the unsafe direction: a low F10.7 is a thin atmosphere and an optimistic lifetime."
 
 [maths]
-expression = ""
-source = ""
+expression = "B_f107(L) = mean over issues of (F107_forecast - F107_observed) at lead L"
+source = "noaa_swpc"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+A skill score is built on squared errors and is therefore blind to sign: a
+forecast that is consistently 4 sfu low and one that is consistently 4 sfu
+high score identically. For a drag design the sign is the whole point. A low
+F10.7 means a thin atmosphere, less drag and a longer predicted lifetime, so
+an under-forecasting outlook does not add scatter to a design — it moves the
+design in the unsafe direction. This row measures the signed error, which is
+the part of the verification a margin cannot absorb.
+"""
+reading = """
+Minus 4 sfu on a mean of 115 is 3.5 per cent, which sounds negligible and is
+not. sw_uncertainty_growth already carries the spread a design must survive,
+and this bias sits underneath it as an offset that no amount of spread
+removes: a symmetric band around a biased centre is still centred in the
+wrong place. The remedy is to add the bias back, not to trust the outlook
+and widen a margin somewhere else. It is also a single mean pooled across 29
+years of a varying Sun, and a forecaster's error on a 250 sfu day is not the
+error on a 70 sfu day.
+"""
+
+[[theory.step]]
+text = """
+Take the signed error rather than its square or its magnitude: forecast
+minus observed, averaged over issues at a fixed lead. Signed, so that a
+consistent lean shows up instead of cancelling into a variance.
+"""
+math = "B(L) = mean over issues of ( F107_forecast - F107_observed ) at lead L"
+
+[[theory.step]]
+text = """
+The first thing to check is whether the mean is distinguishable from zero at
+all, because a well-constructed forecast should have no systematic lean.
+This one does, and at every single lead: from -0.593 sfu at lead 1 to -3.968
+at lead 26, never crossing zero across 26 leads and samples of 866 to 1257
+pairs each.
+"""
+
+[[theory.step]]
+text = """
+A sign that is the same 26 times out of 26 is not scatter about a correct
+central value. The published outlook systematically under-forecasts F10.7,
+and a design reading it gets a thinner atmosphere, lower drag and a longer
+predicted lifetime than it will fly.
+"""
+
+[[theory.step]]
+text = """
+The magnitude is not monotone in lead, and the interior structure is real
+rather than noise: the bias deepens to -2.748 sfu at lead 9, recovers to
+-1.848 at lead 13, then deepens again to -3.968 by lead 26. With over 1200
+pairs per lead, that shape is a property of how the outlook is constructed.
+"""
+
+[[theory.step]]
+text = """
+So the row is a table over measured leads. Fitting a trend through it would
+erase the recovery in the middle, which is the one part of the curve that
+tells a reader the outlook is not simply degrading with distance.
+"""
+
+[[theory.step]]
+text = """
+The declared range is worth noting as a piece of the argument. The upper
+bound is -0.5 rather than 0, because an answer of -0.1 sfu would be as wrong
+as +0.1 and a guard placed at zero would let it through.
+"""
+
+
+[[assumption]]
+text = "The outlook is low at every lead in the window, and that is the unsafe direction"
+fails_when = "the sign is read as incidental. Measured over 1997-2025 the bias is negative at all 26 verifiable leads, from -0.593 sfu at lead 1 to -3.968 sfu at lead 26, and it never crosses zero. So this is not scatter about a correct central value: the published outlook systematically under-forecasts F10.7, and a design reading it gets a thinner atmosphere, a lower drag and a longer predicted lifetime than it will fly. The remedy is to add the bias back, not to trust the outlook and widen a margin somewhere else"
+
+[[assumption]]
+text = "One mean over 29 years of a varying Sun"
+fails_when = "the bias is cycle-dependent, which it will be, because a forecaster's error on a 250 sfu day is not the error on a 70 sfu day. The sample is 866 to 1257 issue-target pairs per lead, pooled across cycles 23, 24 and the rise of 25 without conditioning on activity. A design at a known cycle phase is owed a phase-conditioned bias and this row does not give one; it gives the average over the record, which is the honest thing to publish from a pooled sample and is not the same thing"
+
+[[assumption]]
+text = "The magnitude is small against the quantity and large against the margin"
+fails_when = "it is compared to F10.7 itself. Minus 4 sfu on a mean of 115 sfu is 3.5%, which sounds negligible, and it is not: sw_uncertainty_growth already carries the spread a design must survive, and this bias sits underneath it as an offset that no amount of spread removes. A symmetric band around a biased centre is still centred in the wrong place"
+
+[[assumption]]
+text = "Non-monotone in lead, and the middle of the curve is not noise"
+fails_when = "somebody fits a straight line through it. The bias deepens to -2.748 sfu at lead 9, recovers to -1.848 at lead 13, then deepens again to -3.968 by lead 26. That interior minimum is present in a sample of over 1200 pairs per lead, so it is a property of how the outlook is constructed and not sampling scatter. The table interpolates between the measured leads rather than fitting a trend, because there is no trend to fit"
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "B_f107"
+type = "Ratio"
+unit = "One"
+lower = -4.0
+upper = -0.5
+reason_lower = "the deepest measured bias is -3.968 sfu, at lead 26, the last verifiable lead. A value below -4 means the table was misread or the bundle changed underneath it"
+reason_upper = "the shallowest measured bias is -0.593 sfu, at lead 1. A value above -0.5 — and certainly a positive one — would say the outlook over-forecasts F10.7 somewhere in the window, which this record does not show at any lead. The guard is deliberately on the safe side of zero rather than at zero, because an answer of -0.1 sfu would be as wrong as +0.1 and a bound at zero would pass it"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "lead"
+var = "sw_outlook_lead"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "read the measured mean signed F10.7 error of the issued outlook at this lead"
+binds = "out"
+type = "Ratio"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# numbers must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
 
 [view]
-kind = "number"
+kind = "line"
+over = "sw_outlook_lead"
+points = 52

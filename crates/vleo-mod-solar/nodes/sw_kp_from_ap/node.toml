@@ -11,7 +11,7 @@ owner = "environment"
 tier = "A"
 criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1354
+order = 1356
 state = "published"
 
 # The prior implementation, named so the parity grid beside this node has
@@ -35,9 +35,103 @@ confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its
 expression = "Kp = piecewise_linear(ap_28 -> kp_28, clamp(Ap, 0, 400))"
 source = "iaga_kp_ap"
 
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+Two scales describe the same geomagnetic disturbance and neither can be
+dropped. Kp is a range index: observatories report how far the field
+wandered during a three-hour interval, graded in thirds from 0 to 9, and the
+grading is quasi-logarithmic because the field's excursions span orders of
+magnitude. ap is the LINEAR equivalent of the same grade, in nanotesla, and
+exists so that disturbances can be averaged — you cannot meaningfully
+average a logarithmic index. So designs and archives carry Ap while
+atmosphere models ask for Kp, and the correspondence between them is not a
+formula anyone derives: it is a table IAGA publishes, 28 pairs, and this row
+applies it as published.
+"""
+reading = """
+The answer is the Kp of whatever Ap was handed in, with no correction
+applied. Two things follow. First, the input here is a DAILY MEAN Ap and the
+table is defined for a three-hourly ap, so the answer sits above the mean of
+the day's eight Kp and a full Kp unit below the day's worst slot —
+sw_kp_slot_bias measures both and publishes the second, and a consumer that
+needs the peak adds it. Second, the table clamps: above ap 400 every storm
+returns exactly 9, so a scenario multiplier applied to a disturbed day can
+silently flatten the largest storms into the same number as merely severe
+ones.
+"""
+
+[[theory.step]]
+text = """
+Kp is a grade, not a measurement. Each observatory reports the range its
+field swept in a three-hour interval, converts that range to a 0-to-9 grade
+on a quasi-logarithmic scale, and the planetary index is the average of
+those grades — which is why it comes in thirds.
+"""
+
+[[theory.step]]
+text = """
+A logarithmic grade cannot be averaged or summed, and both are needed
+constantly: a daily figure, a monthly mean, an integral over a storm. So ap
+exists as the linear amplitude each Kp grade stands for, in nanotesla, and
+Ap is the daily mean of the eight ap values.
+"""
+
+[[theory.step]]
+text = """
+The correspondence between the two is defined rather than derived. IAGA
+publishes 28 pairs — one for each third of a Kp unit — and ap grows roughly
+geometrically along them, from 0 at Kp 0 to 400 at Kp 9. That table IS the
+definition, so this row's only job is to read it in the ap-to-Kp direction.
+"""
+math = "ap = 0, 2, 3, 4, 5, 6, 7, 9, 12, ... 236, 300, 400 for Kp = 0, 1/3, 2/3, ... 9"
+
+[[theory.step]]
+text = """
+Between two tabulated points the answer is this row's choice and not the
+source's, because the published scale is discrete. Straight lines in ap are
+used. Since ap grows geometrically, interpolating in ap rather than in its
+logarithm understates Kp inside a bin — and the largest departure between
+the two conventions over the whole domain is 0.017 Kp, which bounds the size
+of the arbitrariness.
+"""
+math = "worst |linear - log interpolation| = 0.017 Kp, in the 2-to-3 bin"
+
+[[theory.step]]
+text = """
+Now the consequential part, which is not about the table but about what is
+fed into it. Because ap is geometric in Kp, the inverse Kp(ap) is CONCAVE,
+and concavity has a direction by Jensen's inequality: the table applied to
+an average reads higher than the average of the table applied to each value.
+"""
+math = "Kp(mean of ap_i) >= mean of Kp(ap_i) for concave Kp"
+
+[[theory.step]]
+text = """
+So feeding a daily mean Ap into a three-hourly scale has two predictable
+errors with OPPOSITE signs, and the record confirms both. Over 10297 days
+carrying an Ap and all eight Kp, the table reads high against the 24-hour
+mean Kp by 0.083 (median) and low against the daily peak by 1.000; on the
+disturbed days that size a drag design (Ap >= 48, 131 of them) those become
+0.397 high and 1.606 low.
+"""
+
+[[theory.step]]
+text = """
+Neither is corrected here, and that is a structural choice rather than an
+omission. A correction depends on which slot the caller wants, and a node
+answers one question: this one answers what the published table says.
+sw_kp_slot_bias measures the offsets and publishes the peak-slot one for a
+consumer to add.
+"""
+
+
 [[assumption]]
 text = "The table is defined for the three-hourly ap and is being fed a daily mean Ap"
-fails_when = "Kp(ap) is concave, so by Jensen's inequality the table run on a daily mean returns a Kp above the mean of the eight three-hourly Kp and well below the daily peak. Measured on the solar-weather record over 10,297 days with both an Ap and all eight Kp: against the 24-hour mean the table reads high by 0.083 Kp (median), against the daily peak it reads low by 1.000 Kp; on disturbed days (Ap >= 48, 131 of them) those become 0.397 high and 1.606 low. Both signs are what the concavity argument predicts. A design sized on the peak slot through this node alone is sized on a sky 1.6 Kp quieter than the record's, and that is on exactly the days a drag design is sized by. sw_kp_slot_bias measures and publishes both offsets; until it is written this node's answer carries them uncorrected."
+fails_when = "Kp(ap) is concave, so by Jensen's inequality the table run on a daily mean returns a Kp above the mean of the eight three-hourly Kp and well below the daily peak. Measured on the solar-weather record over 10,297 days with both an Ap and all eight Kp: against the 24-hour mean the table reads high by 0.083 Kp (median), against the daily peak it reads low by 1.000 Kp; on disturbed days (Ap >= 48, 131 of them) those become 0.397 high and 1.606 low. Both signs are what the concavity argument predicts. A design sized on the peak slot through this node alone is sized on a sky 1.6 Kp quieter than the record's, and that is on exactly the days a drag design is sized by. sw_kp_slot_bias now measures both offsets and publishes the peak one, +1.317 Kp at the design Ap of 158; this node's own answer still carries them uncorrected, because the correction is a separate row a consumer adds rather than something applied inside the conversion."
 
 [[assumption]]
 text = "Straight lines between the 28 tabulated points"

@@ -92,7 +92,7 @@ SEEDED = []
 def S(nid, label, parent, subsystem, owner, lyr, kind="declared", crosses=""):
     """A seeded row.
 
-    The folder exists, the row is on the tree, the eight tabs open and each one
+    The folder exists, the row is on the tree, every tab opens and each one
     says what goes in it. Nothing is generated from it and it cannot run.
 
     This is the normal state of most of a tree for most of a programme. Six

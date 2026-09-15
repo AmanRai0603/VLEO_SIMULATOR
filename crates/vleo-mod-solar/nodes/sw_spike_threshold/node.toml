@@ -2,32 +2,148 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sw_spike_threshold"
-label = "Spike threshold"
+label = "F10.7 spike threshold"
 folder = "sw_spike_threshold"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
 kind = "declared"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1342
-state = "empty"
+state = "published"
+
+# A statistic of the pinned record with no input, so it is declared rather than
+# computed. Re-measure if the bundle version changes.
+#
+# THIS ROW IS ABOUT F10.7. The geomagnetic counterpart is sw_alert_threshold,
+# which is a different quantity with a different source: this one is a property
+# of the flux the study fits, that one is a level a forecaster chose to warn on.
+# They were split because a single "spike" row would have had to mean both.
 
 [question]
-text = ""
+text = "How far above its own 81-day mean must F10.7 rise to count as a spike?"
+note = "A spike is a day the smooth cycle does not explain. F10.7 is measured against its own 81-day centred mean rather than against a fixed level, because 150 sfu is an ordinary day at solar maximum and an extraordinary one at minimum. The threshold is the record's own scatter, not a number picked to look round."
 
 [maths]
-expression = ""
-source = ""
+confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
+expression = "spike when F107 / F107A >= mean + 2.5*sd = 1.3049"
+source = "noaa_swpc"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+A spike is a day the smooth solar cycle does not explain, and the difficulty
+is that 'high' has no fixed value: 150 sfu is an ordinary day at solar
+maximum and an extraordinary one at minimum. So a spike cannot be defined by
+a level. It has to be defined relative to the day's own baseline, which
+makes the quantity a ratio — and once it is a ratio, the threshold can come
+from the record's own scatter rather than from a number somebody liked the
+look of.
+"""
+reading = """
+The threshold is an instant test and says nothing about dwell. 202 days of
+the record pass it, and they arrive in 61 separate events averaging 3.31
+days, which is sw_event_duration's business — the two rows are a pair and
+neither is usable alone. It is also built on a CENTRED baseline and
+therefore cannot be computed in real time: it needs 40 days of future. This
+is a descriptive threshold for a record, not an operational trigger.
+"""
+
+[[theory.step]]
+text = """
+Define the quantity as the day's flux over its own 81-day centred mean,
+which is the same ratio sw_f107a_ratio measures the spread of. A ratio
+rather than a difference, so the test means the same thing at every point in
+a cycle.
+"""
+math = "r(d) = F107(d) / F107A(d)"
+
+[[theory.step]]
+text = """
+The baseline must be CENTRED, not trailing, and this is the choice a
+symmetric threshold depends on. A trailing mean sits below the series during
+a rise and above it during a fall, so the same multiplier would catch rises
+and miss falls. The measured mean ratio of 0.999340 is the evidence that the
+centring is right: an unbiased baseline must give a ratio centred on one.
+"""
+
+[[theory.step]]
+text = """
+With the ratio centred on one and its standard deviation measured at
+0.122210, a threshold can be stated in standard deviations — which makes it
+a property of the record rather than a round number in the wrong units.
+"""
+math = "S_thr = mean + 2.5*sd = 0.999340 + 2.5 * 0.122210 = 1.304866"
+
+[[theory.step]]
+text = """
+Why 2.5 and not 2 or 3: nothing in the physics picks it. 2.5 sd lands near
+the 98th percentile, which is where a day stops being the tail of ordinary
+variation and starts being an event, and it is a round number of standard
+deviations rather than a round number of per cent. 2.0 would catch about 6
+per cent of days and 3.0 about 1 per cent.
+"""
+
+[[theory.step]]
+text = """
+At the chosen multiplier the record yields 202 days, 1.96 per cent of it,
+6.97 a year. That count is the sanity check on the choice: a threshold
+catching a fifth of days would be describing the weather rather than events,
+and one catching thirty days in 29 years would make every downstream
+statistic a sample of three or four bursts.
+"""
+
+[[theory.step]]
+text = """
+Because the ratio's distribution is bounded below and long-tailed above,
+'2.5 standard deviations' should not be read as a Gaussian tail probability.
+The largest ratio in the record is 2.11, which is nine standard deviations
+above the mean — a Gaussian would put that beyond any sample ever taken.
+"""
+
+
+[[assumption]]
+text = "Two and a half standard deviations, and that multiplier is the whole definition"
+fails_when = "somebody wants a spike count rather than a threshold. Over 10284 days the ratio F10.7 to its 81-day centred mean has mean 0.999340 and standard deviation 0.122210, so 2.5 sd lands at 1.304866 and catches 202 days — 1.96 per cent of the record, 6.97 a year. Moving the multiplier to 2.0 would catch about 6 per cent and to 3.0 about 1 per cent. Nothing in the physics picks 2.5; it is chosen because it sits near the 98th percentile, which is where a day stops being the tail of ordinary variation and starts being an event, and because it is a round number of standard deviations rather than a round number of per cent"
+
+[[assumption]]
+text = "The ratio is very nearly centred on one, which is what makes a symmetric threshold legitimate"
+fails_when = "the 81-day window is not centred, or is too short to be a baseline. Measured, the mean ratio is 0.999340 — six parts in ten thousand below one — so the centred mean is an unbiased baseline for the day at its centre. A trailing 81-day mean would sit below the current day during a rise and the same multiplier would then catch rises and miss falls. This row's baseline is CENTRED, which means it cannot be computed in real time: it needs 40 days of future. It is a descriptive threshold for a record, not an operational trigger"
+
+[[assumption]]
+text = "It says nothing about the dwell, only the level"
+fails_when = "a design needs to know how long the sky stays there. A threshold is an instant test and 202 days of the record pass it; they arrive in 61 separate events with a mean length of 3.31 days, which is sw_event_duration's business. The two rows are a pair and neither is usable alone: a threshold with no duration sizes nothing, and a duration with no threshold is not defined"
+
+[[assumption]]
+text = "The 273 absent days cannot spike, and nine months is long enough to matter"
+fails_when = "the count is read as complete. observed_daily.csv is missing 2017-01-01 to 2017-09-30 entirely, so any spike in those nine months is absent from both the 202 and the 61. 2017 sat on cycle 24's decline where F10.7 was low and the ratio's own scatter was small, so the loss is probably small — but it is a loss, and the per-year figures are over a nominal 29 years that is really 28.25"
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "S_thr"
+type = "Ratio"
+unit = "One"
+lower = 1.1
+upper = 1.6
+reason_lower = "below 1.1 the threshold would sit inside one standard deviation of the ratio and catch roughly a fifth of all days. A fifth of the record is not a set of events, it is the weather, and every relation downstream that treats a spike as exceptional would be wrong"
+reason_upper = "above 1.6 nothing is caught: the largest ratio in 29 years is 2.109781 and only 30 days exceed 1.5. A threshold there would make the spike rows describe a handful of days and the event duration would be a statistic of three or four bursts"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 1.3048655732
+confirmed_by = "A. Rai / 2026-09-14"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# numbers must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
 
 [view]
 kind = "number"

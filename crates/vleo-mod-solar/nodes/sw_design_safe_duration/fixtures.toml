@@ -1,0 +1,45 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# The relation is sw_storm_return_level's published fit read backwards:
+# Ap(T) = 92.515531 + 40.926516 ln(T) inverts to T = exp((Ap - 92.515531) /
+# 40.926516). Each expected value below is that expression evaluated apart from
+# this engine at the three Ap values sw_ap_design can return, and each was
+# checked the other way round by putting it back through the forward fit.
+#
+# EXPECTED VALUES ARE IN SECONDS. This node's answer is a Time, and a Time
+# crosses the boundary in seconds whatever unit the sheet declares it in. A year
+# here is the Unit::Year of 31557600 seconds, not 365 days.
+#
+# THE ORDER MATTERS AND IT IS NOT COSMETIC. The generated robustness test
+# perturbs the FIRST fixture's input by plus and minus one per cent and requires
+# the node not to refuse. Ap 80 is interior to the producer's declared range of
+# 40 to 140.
+
+[[fixture]]
+label = "the G2 bound, Ap 80 — exceeded beyond a 0.7365-year mission"
+expect = 23243127.613750264
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap_design = 80.0 }
+
+[[fixture]]
+label = "the G1 bound, Ap 48 — exceeded beyond a 0.3370-year mission"
+expect = 10634679.615335282
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap_design = 48.0 }
+
+[[fixture]]
+label = "the G3 bound, Ap 132 — the declared design level — exceeded beyond 2.6242 years, against a declared mission of 5"
+expect = 82812533.269410387
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ap_design = 132.0 }

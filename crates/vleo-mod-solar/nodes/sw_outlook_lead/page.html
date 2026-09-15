@@ -1,0 +1,163 @@
+<article class="node" data-node="sw_outlook_lead" data-sheet-hash="0d48b3" data-impl-hash="222325">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Forecast verification lead</h2>
+  <p class="ident"><code>sw_outlook_lead</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">At what lead is the published short-term outlook verified?</p>
+<p class="maths"><code>L_short = 26 d</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The lead the forecast-verification rows are evaluated at. sw_forecast_skill and sw_forecast_bias both answer 'at what lead', and this is the lead worth asking about: the far end of the published window, where the outlook is weakest and a design reading it is most exposed. It is the far end the record can measure, not the nominal far end of the product — see the note above on the two lead conventions in the source column.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>The product is 27 days long and this row is 26, so it does not answer 'how far ahead does the outlook reach'</dt><dd>fails when somebody reads it as the window length. 899 of 1281 issues span exactly 27 days and the synodic solar rotation is about 27.3 days, so 27 is the honest answer to that question and this row is not asking it. It is asking where the outlook is weakest among the leads the record can verify, and the 27th lead cannot be verified because only 192 of 1281 issues place a row there. If a row is ever needed for the window length it is a second row, not this one.</dd>
+<dt>One lead, and the skill of the outlook is strongly lead-dependent</dt><dd>fails when measured on this record the outlook's skill against persistence rises from +0.0685 at lead 1 to a peak of +0.4375 at lead 9, falls back through +0.0177 at lead 23, and goes negative at 24, 25 and 26. So a single lead cannot characterise the product: 26 is the pessimistic end and a row evaluated there says nothing about the useful middle. It is chosen because a design wants to know how bad the far edge is, not how good the centre is.</dd>
+<dt>Skill is measured against persistence defined as the last observation STRICTLY BEFORE the issue date</dt><dd>fails when the baseline is allowed the observation on the issue date itself. That is the lead-0 target for the 719 issues that index from 0, so it hands persistence an answer the forecaster did not have, and it flatters the baseline enormously: the same arithmetic then reports the lead-1 skill as -1.3138 instead of +0.0685, and the outlook appears to lose to persistence at leads 1 through 4 when it does not. One choice of baseline, and the sign of the short-lead conclusion changes. This row's own first version carried the leaky figure and said the outlook loses at short leads; it does not.</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">Two rows in this subsystem verify the published short-term outlook, and both of them answer 'at what lead'. A lead therefore has to be declared somewhere, and choosing it is not a formality: the outlook's skill rises, peaks and goes negative across its own window, so a single lead can make the product look useful or useless depending on where it is put. This row picks the pessimistic end, because what a design needs to know about a forecast is how bad its far edge is rather than how good its centre is. The whole difficulty is that the far edge of the PRODUCT and the far edge of what the RECORD CAN VERIFY are not the same lead.</p>
+<div class="theory-walk" data-steps="5">
+<ol class="derive">
+<li><span class="dt">The published outlook is a 27-day product, so the obvious choice of far-edge lead is 27. Counting the issues shows why that is not available: of 1281 issues, 900 carry 27 rows and 349 carry 14.</span></li>
+<li><span class="dt">Worse than uneven length, the column is indexed two ways in the same file. Among the 899 issues spanning 27 days, 719 index their rows from lead 0 and 175 from lead 1 — so 'lead 27' exists only for the 1-based minority.</span><code class="dm">issues reaching lead 27 = 192 of 1281</code></li>
+<li><span class="dt">That makes any statistic at lead 27 a property of the indexing rather than of the forecast, and it shows: the skill at 27 has a different sign from each of its neighbours. At lead 26 the sample is 868 issues drawn from BOTH conventions, which is a cell whose contents mean something.</span></li>
+<li><span class="dt">So the declared lead is 26 — the last lead in the published window the record can verify — and the upper bound is set there rather than at 27 so that nothing can quietly ask about the unverifiable cell.</span><code class="dm">L_short = 26 d</code></li>
+<li><span class="dt">One further choice sits behind every number quoted above and it is the baseline. Persistence here is the last observation STRICTLY BEFORE the issue date. Allowing it the observation ON the issue date hands it a lead-0 target for the 719 issues that index from zero — a value the forecaster did not have — and the lead-1 skill then reads -1.314 instead of +0.069, making the outlook appear to lose to persistence through lead 4 when it does not. This row's own first version carried the leaky figure.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">It is not the window length. 899 of 1281 issues span exactly 27 days and the synodic solar rotation is about 27.3 days, so 27 is the honest answer to 'how far ahead does the outlook reach' — and this row is not asking that. If a row is ever needed for the window length it is a second row. A single lead also cannot characterise the product: skill runs from +0.069 at lead 1 to +0.438 at lead 9 and back to -0.022 at lead 26, so a verification at 26 says nothing about the useful middle.</p>
+<p class="maths concl">which is the relation this node states: <code>L_short = 26 d</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
+<tr class="out"><td>out</td><td><code>L_short</code></td><td>sw_outlook_lead</td><td>Time</td><td>d</td></tr>
+</tbody></table>
+<p class="consumers"><b>2</b> nodes read this: <a class="xref" data-goto="sw_forecast_bias">sw_forecast_bias</a>, <a class="xref" data-goto="sw_forecast_skill">sw_forecast_skill</a></p>
+</section>
+<section class="panel" data-panel="3">
+<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
+<p>This is a declared value: <b>26</b> d, confirmed by <b>A. Rai / 2026-09-14</b>.</p>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_outlook_lead() -> Time
+    L_short ← 26 d          // declared, confirmed by A. Rai / 2026-09-14
+
+    // a guard whose reason is not written down gets deleted
+    require L_short ≥ 1
+    require L_short ≤ 26
+    require L_short is finite
+
+    return L_short
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>L_short &ge; 1</code> — a lead of less than a day is not a forecast the published outlook makes; its first verifiable row is lead 1, present for all 1281 issues</li>
+<li><code>L_short &le; 26</code> — 26 is the last lead in the published window that the record can verify, because lead_days is indexed two ways in the same column and only the 1-based minority reaches 27. At 26 the sample is 868 issues drawn from both conventions; at 27 it is 192 drawn from one, and the answer there has a different sign from each of its neighbours. A larger value would be asking the verification rows about a cell whose contents are a property of the indexing rather than of the forecast</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sw_outlook_lead" data-lo="1" data-hi="26" data-symbol="L_short">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// At what lead is the published short-term outlook verified?
+///
+/// `L_short = 26 d`
+///
+/// Source: `noaa_swpc`
+///
+/// The lead the forecast-verification rows are evaluated at.
+/// sw_forecast_skill and sw_forecast_bias both answer 'at what lead', and
+/// this is the lead worth asking about: the far end of the published window,
+/// where the outlook is weakest and a design reading it is most exposed. It
+/// is the far end the record can measure, not the nominal far end of the
+/// product — see the note above on the two lead conventions in the source
+/// column.
+///
+/// # Assumptions
+///
+/// * The product is 27 days long and this row is 26, so it does not answer 'how far ahead does the outlook reach' — fails when somebody reads it as the window length. 899 of 1281 issues span exactly 27 days and the synodic solar rotation is about 27.3 days, so 27 is the honest answer to that question and this row is not asking it. It is asking where the outlook is weakest among the leads the record can verify, and the 27th lead cannot be verified because only 192 of 1281 issues place a row there. If a row is ever needed for the window length it is a second row, not this one.
+/// * One lead, and the skill of the outlook is strongly lead-dependent — fails when measured on this record the outlook's skill against persistence rises from +0.0685 at lead 1 to a peak of +0.4375 at lead 9, falls back through +0.0177 at lead 23, and goes negative at 24, 25 and 26. So a single lead cannot characterise the product: 26 is the pessimistic end and a row evaluated there says nothing about the useful middle. It is chosen because a design wants to know how bad the far edge is, not how good the centre is.
+/// * Skill is measured against persistence defined as the last observation STRICTLY BEFORE the issue date — fails when the baseline is allowed the observation on the issue date itself. That is the lead-0 target for the 719 issues that index from 0, so it hands persistence an answer the forecaster did not have, and it flatters the baseline enormously: the same arithmetic then reports the lead-1 skill as -1.3138 instead of +0.0685, and the outlook appears to lose to persistence at leads 1 through 4 when it does not. One choice of baseline, and the sign of the short-lead conclusion changes. This row's own first version carried the leaky figure and said the outlook loses at short leads; it does not.
+pub const NODE_ID: &amp;str = &quot;sw_outlook_lead&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x0543d6ab410d48b3;
+
+pub fn evaluate() -&gt; Result&lt;Time, Fault&gt; {
+    // generated · a declared value, converted from the unit it was written in
+    let declared: Time = match Time::from_unit(26.0, Unit::Day) {
+        Some(q) =&gt; q,
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;L_short&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+    };
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Time = declared;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;L_short&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 86400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;L_short&quot;, value: answer.get(), bound: 86400.0, edge: Edge::Lower, unit: Time::UNIT, reason: &quot;a lead of less than a day is not a forecast the published outlook makes; its first verifiable row is lead 1, present for all 1281 issues&quot; });
+    }
+    if answer.get() &gt; 2246400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;L_short&quot;, value: answer.get(), bound: 2246400.0, edge: Edge::Upper, unit: Time::UNIT, reason: &quot;26 is the last lead in the published window that the record can verify, because lead_days is indexed two ways in the same column and only the 1-based minority reaches 27. At 26 the sample is 868 issues drawn from both conventions; at 27 it is 192 drawn from one, and the answer there has a different sign from each of its neighbours. A larger value would be asking the verification rows about a cell whose contents are a property of the indexing rather than of the forecast&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 1 — a lead of less than a day is not a forecast the published outlook makes; its first verifiable row is lead 1, present for all 1281 issues</li>
+<li><code>OutOfDomain</code> above 26 — 26 is the last lead in the published window that the record can verify, because lead_days is indexed two ways in the same column and only the 1-based minority reaches 27. At 26 the sample is 868 issues drawn from both conventions; at 27 it is 192 drawn from one, and the answer there has a different sign from each of its neighbours. A larger value would be asking the verification rows about a cell whose contents are a property of the indexing rather than of the forecast</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_outlook_lead"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>1 &hellip; 26</code> d.</p>
+<ul class="guards"><li>lower — a lead of less than a day is not a forecast the published outlook makes; its first verifiable row is lead 1, present for all 1281 issues</li><li>upper — 26 is the last lead in the published window that the record can verify, because lead_days is indexed two ways in the same column and only the 1-based minority reaches 27. At 26 the sample is 868 issues drawn from both conventions; at 27 it is 192 drawn from one, and the answer there has a different sign from each of its neighbours. A larger value would be asking the verification rows about a cell whose contents are a property of the indexing rather than of the forecast</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+</article>

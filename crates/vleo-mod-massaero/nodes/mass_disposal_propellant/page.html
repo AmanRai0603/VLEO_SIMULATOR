@@ -6,13 +6,15 @@
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
-  <button role="tab" class="tab" data-tab="1">interface</button>
-  <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">How much stored propellant must be carried for the disposal manoeuvre?</p>
@@ -22,6 +24,9 @@
 <p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
 </section>
 <section class="panel" data-panel="1">
+<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+</section>
+<section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr><td>in</td><td><code>m</code></td><td><a class="xref" data-goto="mass_dry">mass_dry</a></td><td>Mass</td><td>kg</td></tr>
@@ -30,10 +35,25 @@
 </tbody></table>
 <p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="mass_wet">mass_wet</a></p>
 </section>
-<section class="panel" data-panel="2">
+<section class="panel" data-panel="3">
 <ol class="algo">
 <li><span class="step">apply the rocket equation at a 220 s stored-propellant specific impulse</span> <span class="binds">→ <code>mp: Mass</code></span></li>
 </ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function mass_disposal_propellant(m: Mass, dv: Velocity) -> Mass
+    given m from mass_dry
+    given dv from orbit_deorbit_delta_v
+    // apply the rocket equation at a 220 s stored-propellant specific impulse
+    mp ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require m_dis ≥ 0
+    require m_dis ≤ 1000
+    require m_dis is finite
+
+    return m_dis
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
 <li><code>m_dis &ge; 0</code> — a propellant mass cannot be negative</li>
@@ -41,7 +61,12 @@
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="3">
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="mass_disposal_propellant" data-lo="0" data-hi="1000" data-symbol="m_dis">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -88,10 +113,10 @@ pub fn evaluate(m: Mass, dv: Velocity) -&gt; Result&lt;Mass, Fault&gt; {
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="6">
 <p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 0 — a propellant mass cannot be negative</li>
@@ -101,11 +126,11 @@ pub fn evaluate(m: Mass, dv: Velocity) -&gt; Result&lt;Mass, Fault&gt; {
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="8">
 <p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="mass_disposal_propellant"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="9">
 <p>Valid over <code>0 &hellip; 1000</code> kg.</p>
 <ul class="guards"><li>lower — a propellant mass cannot be negative</li><li>upper — above a tonne the disposal budget is larger than the spacecraft</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
@@ -114,5 +139,6 @@ pub fn evaluate(m: Mass, dv: Velocity) -&gt; Result&lt;Mass, Fault&gt; {
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 <li>no fixture: nothing outside this code has ever agreed with what it computes</li>
+<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

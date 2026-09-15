@@ -98,7 +98,7 @@ export function renderResult(host, r, res) {
   if (!el) return;
   res = res || S.lastRun;
   if (!res) {
-    el.innerHTML = '<p class="muted">Not run. The eight tabs are what the node <i>is</i>; ' +
+    el.innerHTML = '<p class="muted">Not run. The tabs are what the node <i>is</i>; ' +
       'this is what it <i>returns</i>.</p>' + sweepControls(r);
     wireSweep(host, r);
     return;
@@ -181,11 +181,52 @@ function sweepControls(r) {
     ' from <input class="sw-from" value="' + def.lo + '"> to <input class="sw-to" value="' + def.hi + '">' +
     ' <span class="muted">SI, and the declared range is ' + fmt(def.lo) + ' … ' + fmt(def.hi) + '</span>' +
     ' <button class="ctl sw-go">sweep</button></div>' +
+    markControl(r) +
     '<canvas class="plot sw-plot" width="900" height="300" hidden></canvas>' +
     '<div class="sw-note muted"></div>';
 }
 
+// The design window: a swept curve is only half a picture. What a design reads
+// off it is where the curve crosses a level somebody committed to — the mission
+// length at which a bound stops being met — and that crossing is a number, not
+// an impression.
+//
+// The level is obtained by RUNNING the row that holds it, not by reading a
+// table. The index carries every row's declared domain but not its answer, and
+// a declared value lives only inside the generated model. Running is also the
+// only way a COMPUTED level can be drawn at all, which matters here: the design
+// bound is sw_ap_design, computed from a G level, and it is the line a design
+// most wants to see.
+//
+// WHICH ROWS ARE OFFERED, AND WHY THE TEST IS WEAK. A level is only meaningful
+// on this axis if it is the same quantity. The index cannot say so: every Ratio
+// carries the unit "-", so an F10.7 of 250 and an Ap of 250 are indistinguishable
+// to this code. What is used instead is the same subsystem and an overlapping
+// declared domain, which is a proxy and is wrong in both directions — it will
+// offer a row of a different quantity whose range happens to overlap, and it
+// will hide a comparable one whose range does not. The picture names the row it
+// drew, so a wrong pairing is visible rather than silent, and that is the whole
+// defence.
+function markLevels(r) {
+  return S.rows
+    .filter(x => x.id !== r.id && !isSeeded(x) && x.sub === r.sub &&
+                 x.hi > x.lo && x.lo <= r.hi && x.hi >= r.lo)
+    .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+function markControl(r) {
+  const m = markLevels(r);
+  if (!m.length) return '';
+  return '<div class="sweepctl">against <select class="sw-mark">' +
+    '<option value="">nothing — the curve alone</option>' +
+    m.map(x => '<option value="' + esc(x.id) + '">' + esc(x.id) + '</option>').join('') +
+    '</select><span class="muted">a level to read the crossing against. It is run, not looked up, ' +
+    'and it is matched by subsystem and overlapping range — not by quantity, which the index cannot ' +
+    'tell. Check the row it names.</span></div>';
+}
+
 function wireSweep(host, r) {
+  let lastRes = null;
   const go2 = $('.sw-go', host);
   if (!go2) return;
   const from = $('.sw-from', host), to = $('.sw-to', host), over = $('.sw-over', host);
@@ -211,9 +252,38 @@ function wireSweep(host, r) {
       points: '80', case: S.engineCase, mode: 'branch',
     });
     $('.sw-note', host).textContent = 'sweeping…';
-    plot(host, await (await fetch('/v1/sweep?' + p.toString())).json());
+    lastRes = await (await fetch('/v1/sweep?' + p.toString())).json();
+    plot(host, lastRes);
+  };
+  // Changing the level redraws from the sweep already in hand. Re-running the
+  // engine to move a horizontal line would be asking the kernel a question
+  // whose answer cannot have changed.
+  const mk = $('.sw-mark', host);
+  if (mk) mk.onchange = async () => {
+    markValue = null;
+    if (mk.value) {
+      const body = new URLSearchParams({ node: mk.value, mode: 'branch', case: S.engineCase });
+      try {
+        const rr = await (await fetch('/v1/run', {
+          method: 'POST',
+          headers: { 'content-type': 'application/x-www-form-urlencoded' },
+          body: body.toString(),
+        })).json();
+        // The row's own answer, in SI, the same as everything else crossing the
+        // boundary. A refusal leaves the level undrawn rather than drawn wrong.
+        // `si` and not `value`: everything crossing the boundary is SI, and the
+        // run reports the SI number beside the string it chose to show. A face
+        // that read the shown string would be drawing a rounded level.
+        const own = rr.ok && (rr.values || []).find(v => v.id === mk.value);
+        markValue = own && isFinite(own.si) ? own.si : null;
+        markWhy = own ? null : (rr.message || 'the level could not be run');
+      } catch (e) { markWhy = 'the engine did not answer: ' + e; }
+    }
+    if (lastRes) plot(host, lastRes);
   };
 }
+
+let markValue = null, markWhy = null;
 
 function plot(host, res) {
   const c = $('.sw-plot', host);
@@ -228,6 +298,17 @@ function plot(host, res) {
   if (!xs.length) { $('.sw-note', host).textContent = 'every point was refused.'; return; }
   const x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
   let y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+
+  // The level to draw against, if one is chosen. Taken from the index rather
+  // than from a second engine call: a declared value is a number somebody
+  // wrote, and it cannot have changed since the sweep ran.
+  const markSel = $('.sw-mark', host);
+  const markRow = markSel && markSel.value ? S.byId.get(markSel.value) : null;
+  const markY = markRow && markValue !== null ? markValue / res.y_factor : null;
+  // Widen to include it, so a level the curve never reaches is still visible as
+  // a level the curve never reaches. Clipping it off the top would draw a
+  // picture in which the design always passes.
+  if (markY !== null) { y0 = Math.min(y0, markY); y1 = Math.max(y1, markY); }
   if (y0 === y1) { y0 -= 1; y1 += 1; }
   const px = v => L + (v - x0) / (x1 - x0 || 1) * (W - L - R);
   const py = v => H - B - (v - y0) / (y1 - y0 || 1) * (H - B - T);
@@ -248,6 +329,33 @@ function plot(host, res) {
   ctx.beginPath();
   xs.forEach((x, i) => i ? ctx.lineTo(px(x), py(ys[i])) : ctx.moveTo(px(x), py(ys[i])));
   ctx.stroke();
+  // The level, and where the curve crosses it. The crossing is the number a
+  // design actually reads off this picture — the mission length at which the
+  // committed level stops being met — so it is printed rather than left to be
+  // eyeballed against a gridline.
+  let crossing = null;
+  if (markY !== null) {
+    const y = py(markY);
+    ctx.save();
+    ctx.strokeStyle = '#8a3ffc'; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(W - R, y); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = '#8a3ffc'; ctx.font = '10px ui-monospace, monospace';
+    ctx.fillText(markRow.id + ' = ' + fmt(markY), L + 4, y - 4);
+    for (let i = 1; i < ys.length; i++) {
+      const a = ys[i - 1], b = ys[i];
+      if ((a - markY) * (b - markY) <= 0 && a !== b) {
+        const t = (markY - a) / (b - a);
+        crossing = xs[i - 1] + t * (xs[i] - xs[i - 1]);
+        const cx = px(crossing);
+        ctx.save();
+        ctx.strokeStyle = '#8a3ffc'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
+        ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(cx, H - B); ctx.stroke();
+        ctx.restore();
+        break;
+      }
+    }
+  }
   ctx.fillStyle = '#1a1a1a'; ctx.font = '11px ui-monospace, monospace';
   ctx.fillText(res.y_id + '  [' + res.y_unit + ']', L, 11);
   ctx.fillText(res.x_id + '  [' + res.x_unit + ']', W - R - 220, H - 6);
@@ -258,4 +366,18 @@ function plot(host, res) {
         '. Refusals are recorded, never dropped: a sweep in which some rows quietly used a substituted ' +
         'value is a sweep whose conclusion is unknown.'
       : ', none refused.');
+  if (markRow && markY === null) {
+    $('.sw-note', host).innerHTML +=
+      ' <b>' + esc(markRow.id) + ' was not drawn</b> — ' + esc(markWhy || 'it returned no value') +
+      '. A level that could not be run is left off rather than guessed at.';
+  }
+  if (markY !== null) {
+    const el = $('.sw-note', host);
+    el.innerHTML += crossing === null
+      ? ' The curve does not cross <b>' + esc(markRow.id) + '</b> anywhere in this range' +
+        (ys[ys.length - 1] > markY ? ' — it is above it throughout.' :
+         ys[0] < markY ? ' — it is below it throughout.' : '.')
+      : ' It crosses <b>' + esc(markRow.id) + '</b> at ' + fmt(crossing) + ' ' + esc(res.x_unit) +
+        ', and is above it beyond that.';
+  }
 }

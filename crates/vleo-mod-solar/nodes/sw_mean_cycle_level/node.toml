@@ -2,32 +2,157 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sw_mean_cycle_level"
-label = "Mean-cycle F10.7 level"
+label = "Mean-cycle F10.7 at a phase"
 folder = "sw_mean_cycle_level"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1338
-state = "empty"
+state = "published"
+
+# No migrated_from and no parity grid: the numbers are statistics of the record
+# rather than a closed form, and there is no MATLAB here to run. Same reasoning
+# as every measured row in this group.
 
 [question]
-text = ""
+text = "What F10.7 does the average solar cycle show at this phase?"
+note = "The climatology that knows where in the cycle it is. sw_central_expectation currently hands over to the record's unconditional mean of 114.84 sfu because no date was available; at the declared epoch's phase of 0.6194 this row says 108.14 instead. That difference — 6.7 sfu — is what having a date buys. The table is INTERPOLATED between bin centres, so the answer at a phase is not the nearest bin's mean: 0.6194 sits between the 0.575 bin at 126.23 and the 0.625 bin at 105.84, nine tenths of the way toward the second."
 
 [maths]
-expression = ""
-source = ""
+expression = "F107_cyc(phase) = mean over complete cycles of F10.7 at that phase"
+source = "noaa_swpc"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+With a phase in hand a design can ask for a level instead of a distribution.
+The obstacle is that the record holds 28 years and not 28 cycles, so there
+is no way to average 'days like this one' unless something is chosen that
+makes two days alike. Phase is that thing, and the construction below is
+superposed-epoch analysis: express every day as a phase, stack the cycles on
+top of one another, and average what lands in each bin. What comes out is
+the shape of the average cycle, which is a different and far more useful
+object than the average of the record.
+"""
+reading = """
+It is a mean, so half the days at any phase are above it. That makes it a
+centre for a design value and not a design value: sw_uncertainty_growth
+supplies the spread that turns one into the other, and sizing anything on
+this row alone is sizing for the average day of the average cycle, which is
+the one sky a mission is guaranteed not to get. With two cycles in the
+record the curve also matches neither of them — cycle 23 peaked near 196 sfu
+and cycle 24 near 146 — and sw_cycle_repeatability is the row that says how
+much that costs.
+"""
+
+[[theory.step]]
+text = """
+The question is the expected F10.7 at a given point in a cycle. Averaging
+the record answers a different question — the expected F10.7 of an unknown
+day — and gives 114.84 sfu, which is the average of maxima and minima
+together and describes no part of a cycle.
+"""
+
+[[theory.step]]
+text = """
+Superposed-epoch analysis: convert every day of every COMPLETE cycle into a
+phase, bin the phases, and take the mean F10.7 in each bin. Stacking on
+phase rather than on days-since-minimum is the step that lets cycles of
+different lengths be compared at all — cycle 23 ran 4338 days and cycle 24
+ran 4017, so the same day-number is a different part of the cycle in each.
+"""
+math = "F107_cyc(p) = mean{ F107(d) : d in cycles 23, 24 and phase(d) in bin(p) }"
+
+[[theory.step]]
+text = """
+Twenty equal-width bins, which is a resolution-against-sample-size choice
+rather than a convention. Twenty bins over two cycles of about 11.4 years
+each puts roughly 418 days in every bin — enough for a mean to be steady —
+while a bin still spans only about 209 days of a single cycle, which is
+short against the years over which a cycle changes.
+"""
+math = "bin width = 0.05 in phase ~ 209 days per cycle, ~418 days pooled"
+
+[[theory.step]]
+text = """
+The counts are not all 418, and they are published rather than smoothed. The
+0.775 bin holds 217 days because the two cycles have different lengths and
+one contributes fewer days there, and 273 consecutive days are missing from
+the record in 2017. Every fixture beside this node carries its bin's day
+count, so a thin bin is visible to a reader instead of being hidden inside a
+mean.
+"""
+
+[[theory.step]]
+text = """
+Between bin centres the answer is interpolated linearly, and this changes
+how the row must be read. At the declared epoch's phase of 0.6194 the answer
+is NOT the nearest bin's mean of 105.84: it is nine tenths of the way from
+the 0.575 bin toward the 0.625 one.
+"""
+math = "F107_cyc(0.6194) = 126.23 + 0.889 * (105.84 - 126.23) = 108.14 sfu"
+
+[[theory.step]]
+text = """
+The curve that results is asymmetric — 71.8 sfu at phase 0.025, 165.3 at
+0.425, 67.7 at 0.975 — a fast rise and a slow decline. That is the known
+shape of a solar cycle appearing in the record rather than an artefact of
+the binning, and it is the reason a phase cannot be read as a proxy for
+activity: phase 0.2 and phase 0.8 are both 'mid-cycle' and are owed 111 and
+76 sfu.
+"""
+
+
+[[assumption]]
+text = "Two cycles, stacked on phase, in twenty bins"
+fails_when = "cycles 23 and 24 are the only complete ones in the record, so every bin is the mean of two cycles and nothing more. Two samples cannot separate a cycle's shape from a cycle's individuality: cycle 23 peaked at 196 sfu and cycle 24 at 146, a 34% difference, and this row averages them into one curve that matches neither. The bins hold 358 to 418 days each except the 0.775 bin, which holds 217 because the two cycles' lengths differ and the stacking leaves it thin"
+
+[[assumption]]
+text = "It is a mean and not a band"
+fails_when = "half the days at any phase sit above this line. It is the CENTRE for a design value, and sw_uncertainty_growth supplies the spread that makes it safe. Sizing anything on this row alone would be sizing on the average day of the average cycle, which is the one thing a mission is guaranteed not to get"
+
+[[assumption]]
+text = "The curve is not symmetric and the asymmetry is real"
+fails_when = "the mean rises from 71.8 sfu at phase 0.025 to 165.3 at 0.425 and falls to 67.7 by 0.975 — a fast rise and a slow decline, which is the known shape of a solar cycle and not a binning artefact. A design at phase 0.2 and one at phase 0.8 are both 'mid-cycle' and are owed 111 and 76 sfu respectively"
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "F107_cyc"
+type = "Ratio"
+unit = "One"
+lower = 60.0
+upper = 400.0
+reason_lower = "the same floor as env_f107: below 60 sfu has never been observed and no relation reading F10.7 has support there"
+reason_upper = "the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating. The largest binned mean is 165.3, so this bound is unreachable by the relation and catches a broken table"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "phase"
+var = "sw_cycle_phase"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "read the phase-binned mean F10.7 of the complete cycles at this phase"
+binds = "out"
+type = "Ratio"
+
+[data]
+# Pinned to solar-weather@2026.09.14; this list can only pin the NAME. The
+# numbers must be re-measured if the bundle version changes.
+bundles = ["solar-weather"]
 
 [view]
-kind = "number"
+kind = "line"
+over = "sys_mission_requirements_mission_epoch"
+points = 60

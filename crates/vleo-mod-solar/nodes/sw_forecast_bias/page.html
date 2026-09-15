@@ -1,68 +1,195 @@
-<article class="node" data-node="sw_forecast_bias" data-sheet-hash="c6a147" data-impl-hash="222325">
+<article class="node" data-node="sw_forecast_bias" data-sheet-hash="7e038d" data-impl-hash="d8e4d4">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>Forecast bias</h2>
-  <p class="ident"><code>sw_forecast_bias</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <h2>Issued-outlook F10.7 bias</h2>
+  <p class="ident"><code>sw_forecast_bias</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
-  <button role="tab" class="tab" data-tab="1">interface</button>
-  <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">By how much does the published outlook miss the F10.7 that arrived?</p>
+<p class="maths"><code>B_f107(L) = mean over issues of (F107_forecast - F107_observed) at lead L</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">Signed, forecast minus observed, so a negative answer means the outlook was low. It is measured at the lead sw_outlook_lead declares, which is the far end of the window where the miss is largest. A design that sizes drag on a published outlook is exposed by exactly this number, in the unsafe direction: a low F10.7 is a thin atmosphere and an optimistic lifetime.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>The outlook is low at every lead in the window, and that is the unsafe direction</dt><dd>fails when the sign is read as incidental. Measured over 1997-2025 the bias is negative at all 26 verifiable leads, from -0.593 sfu at lead 1 to -3.968 sfu at lead 26, and it never crosses zero. So this is not scatter about a correct central value: the published outlook systematically under-forecasts F10.7, and a design reading it gets a thinner atmosphere, a lower drag and a longer predicted lifetime than it will fly. The remedy is to add the bias back, not to trust the outlook and widen a margin somewhere else</dd>
+<dt>One mean over 29 years of a varying Sun</dt><dd>fails when the bias is cycle-dependent, which it will be, because a forecaster's error on a 250 sfu day is not the error on a 70 sfu day. The sample is 866 to 1257 issue-target pairs per lead, pooled across cycles 23, 24 and the rise of 25 without conditioning on activity. A design at a known cycle phase is owed a phase-conditioned bias and this row does not give one; it gives the average over the record, which is the honest thing to publish from a pooled sample and is not the same thing</dd>
+<dt>The magnitude is small against the quantity and large against the margin</dt><dd>fails when it is compared to F10.7 itself. Minus 4 sfu on a mean of 115 sfu is 3.5%, which sounds negligible, and it is not: sw_uncertainty_growth already carries the spread a design must survive, and this bias sits underneath it as an offset that no amount of spread removes. A symmetric band around a biased centre is still centred in the wrong place</dd>
+<dt>Non-monotone in lead, and the middle of the curve is not noise</dt><dd>fails when somebody fits a straight line through it. The bias deepens to -2.748 sfu at lead 9, recovers to -1.848 at lead 13, then deepens again to -3.968 by lead 26. That interior minimum is present in a sample of over 1200 pairs per lead, so it is a property of how the outlook is constructed and not sampling scatter. The table interpolates between the measured leads rather than fitting a trend, because there is no trend to fit</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
+<p class="why">A skill score is built on squared errors and is therefore blind to sign: a forecast that is consistently 4 sfu low and one that is consistently 4 sfu high score identically. For a drag design the sign is the whole point. A low F10.7 means a thin atmosphere, less drag and a longer predicted lifetime, so an under-forecasting outlook does not add scatter to a design — it moves the design in the unsafe direction. This row measures the signed error, which is the part of the verification a margin cannot absorb.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">Take the signed error rather than its square or its magnitude: forecast minus observed, averaged over issues at a fixed lead. Signed, so that a consistent lean shows up instead of cancelling into a variance.</span><code class="dm">B(L) = mean over issues of ( F107_forecast - F107_observed ) at lead L</code></li>
+<li><span class="dt">The first thing to check is whether the mean is distinguishable from zero at all, because a well-constructed forecast should have no systematic lean. This one does, and at every single lead: from -0.593 sfu at lead 1 to -3.968 at lead 26, never crossing zero across 26 leads and samples of 866 to 1257 pairs each.</span></li>
+<li><span class="dt">A sign that is the same 26 times out of 26 is not scatter about a correct central value. The published outlook systematically under-forecasts F10.7, and a design reading it gets a thinner atmosphere, lower drag and a longer predicted lifetime than it will fly.</span></li>
+<li><span class="dt">The magnitude is not monotone in lead, and the interior structure is real rather than noise: the bias deepens to -2.748 sfu at lead 9, recovers to -1.848 at lead 13, then deepens again to -3.968 by lead 26. With over 1200 pairs per lead, that shape is a property of how the outlook is constructed.</span></li>
+<li><span class="dt">So the row is a table over measured leads. Fitting a trend through it would erase the recovery in the middle, which is the one part of the curve that tells a reader the outlook is not simply degrading with distance.</span></li>
+<li><span class="dt">The declared range is worth noting as a piece of the argument. The upper bound is -0.5 rather than 0, because an answer of -0.1 sfu would be as wrong as +0.1 and a guard placed at zero would let it through.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">Minus 4 sfu on a mean of 115 is 3.5 per cent, which sounds negligible and is not. sw_uncertainty_growth already carries the spread a design must survive, and this bias sits underneath it as an offset that no amount of spread removes: a symmetric band around a biased centre is still centred in the wrong place. The remedy is to add the bias back, not to trust the outlook and widen a margin somewhere else. It is also a single mean pooled across 29 years of a varying Sun, and a forecaster's error on a 250 sfu day is not the error on a 70 sfu day.</p>
+<p class="maths concl">which is the relation this node states: <code>B_f107(L) = mean over issues of (F107_forecast - F107_observed) at lead L</code></p>
+</section>
+<section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sw_forecast_bias</td><td></td><td>-</td></tr>
+<tr><td>in</td><td><code>lead</code></td><td><a class="xref" data-goto="sw_outlook_lead">sw_outlook_lead</a></td><td>Time</td><td>d</td></tr>
+<tr class="out"><td>out</td><td><code>B_f107</code></td><td>sw_forecast_bias</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
-<section class="panel" data-panel="2">
-<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>0</b> -, confirmed by <b></b>.</p>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">read the measured mean signed F10.7 error of the issued outlook at this lead</span> <span class="binds">→ <code>out: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_forecast_bias(lead: Time) -> Ratio
+    given lead from sw_outlook_lead
+    // read the measured mean signed F10.7 error of the issued outlook at this lead
+    B_f107 ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require B_f107 ≥ -4
+    require B_f107 ≤ -0.5
+    require B_f107 is finite
+
+    return B_f107
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>B_f107 &ge; -4</code> — the deepest measured bias is -3.968 sfu, at lead 26, the last verifiable lead. A value below -4 means the table was misread or the bundle changed underneath it</li>
+<li><code>B_f107 &le; -0.5</code> — the shallowest measured bias is -0.593 sfu, at lead 1. A value above -0.5 — and certainly a positive one — would say the outlook over-forecasts F10.7 somewhere in the window, which this record does not show at any lead. The guard is deliberately on the safe side of zero rather than at zero, because an answer of -0.1 sfu would be as wrong as +0.1 and a bound at zero would pass it</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
-</section>
 <section class="panel" data-panel="4">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<div class="relation-host" data-node="sw_forecast_bias" data-lo="-4" data-hi="-0.5" data-symbol="B_f107">
+<p class="muted">asking the engine…</p>
+</div>
 </section>
 <section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// By how much does the published outlook miss the F10.7 that arrived?
+///
+/// `B_f107(L) = mean over issues of (F107_forecast - F107_observed) at lead L`
+///
+/// Source: `noaa_swpc`
+///
+/// Signed, forecast minus observed, so a negative answer means the outlook
+/// was low. It is measured at the lead sw_outlook_lead declares, which is the
+/// far end of the window where the miss is largest. A design that sizes drag
+/// on a published outlook is exposed by exactly this number, in the unsafe
+/// direction: a low F10.7 is a thin atmosphere and an optimistic lifetime.
+///
+/// # Assumptions
+///
+/// * The outlook is low at every lead in the window, and that is the unsafe direction — fails when the sign is read as incidental. Measured over 1997-2025 the bias is negative at all 26 verifiable leads, from -0.593 sfu at lead 1 to -3.968 sfu at lead 26, and it never crosses zero. So this is not scatter about a correct central value: the published outlook systematically under-forecasts F10.7, and a design reading it gets a thinner atmosphere, a lower drag and a longer predicted lifetime than it will fly. The remedy is to add the bias back, not to trust the outlook and widen a margin somewhere else
+/// * One mean over 29 years of a varying Sun — fails when the bias is cycle-dependent, which it will be, because a forecaster's error on a 250 sfu day is not the error on a 70 sfu day. The sample is 866 to 1257 issue-target pairs per lead, pooled across cycles 23, 24 and the rise of 25 without conditioning on activity. A design at a known cycle phase is owed a phase-conditioned bias and this row does not give one; it gives the average over the record, which is the honest thing to publish from a pooled sample and is not the same thing
+/// * The magnitude is small against the quantity and large against the margin — fails when it is compared to F10.7 itself. Minus 4 sfu on a mean of 115 sfu is 3.5%, which sounds negligible, and it is not: sw_uncertainty_growth already carries the spread a design must survive, and this bias sits underneath it as an offset that no amount of spread removes. A symmetric band around a biased centre is still centred in the wrong place
+/// * Non-monotone in lead, and the middle of the curve is not noise — fails when somebody fits a straight line through it. The bias deepens to -2.748 sfu at lead 9, recovers to -1.848 at lead 13, then deepens again to -3.968 by lead 26. That interior minimum is present in a sample of over 1200 pairs per lead, so it is a property of how the outlook is constructed and not sampling scatter. The table interpolates between the measured leads rather than fitting a trend, because there is no trend to fit
+pub const NODE_ID: &amp;str = &quot;sw_forecast_bias&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xfdb3c6344d7e038d;
+
+pub fn evaluate(lead: Time) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : read the measured mean signed F10.7 error of the issued outlook at this lead -&gt; Ratio
+    // The measured table, lead 1 to 26 in days. Not a fit: the curve has an
+    // interior extremum and a straight line through it would be a different
+    // claim than the record makes. Table1 interpolates between the measured
+    // leads and clamps at both ends, so a lead inside the declared domain
+    // always lands between two measurements.
+    use vleo_core::math::Table1;
+    const LEAD_DAYS: [f64; 26] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0];
+    const BIAS_SFU: [f64; 26] = [
+        -0.5930701048, -0.7977346278, -1.2774613507, -1.7390243902,
+        -1.9780309194, -2.4073190135, -2.6042173560, -2.5690072639,
+        -2.7477840451, -2.4782258065, -2.1673403395, -1.9443099274,
+        -1.8480194018, -1.9268292683, -2.3772522523, -2.3595890411,
+        -2.2710706150, -2.2514285714, -2.0547320410, -2.1760000000,
+        -2.2803203661, -2.5414746544, -2.9447640967, -3.3091118800,
+        -3.7575057737, -3.9677419355,
+    ];
+    let table: Table1 = Table1 { x: &amp;LEAD_DAYS, y: &amp;BIAS_SFU };
+    let out: Ratio = Ratio::new(table.at(lead.days()));
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = out;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;B_f107&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; -4.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;B_f107&quot;, value: answer.get(), bound: -4.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the deepest measured bias is -3.968 sfu, at lead 26, the last verifiable lead. A value below -4 means the table was misread or the bundle changed underneath it&quot; });
+    }
+    if answer.get() &gt; -0.5 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;B_f107&quot;, value: answer.get(), bound: -0.5, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the shallowest measured bias is -0.593 sfu, at lead 1. A value above -0.5 — and certainly a positive one — would say the outlook over-forecasts F10.7 somewhere in the window, which this record does not show at any lead. The guard is deliberately on the safe side of zero rather than at zero, because an answer of -0.1 sfu would be as wrong as +0.1 and a bound at zero would pass it&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="lead 13 — the interior recovery in the bias curve — -1.848 sfu from 1237 pairs"><td>lead 13 — the interior recovery in the bias curve — -1.848 sfu from 1237 pairs</td><td class="num">-1.8480194018</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 1 — the shallowest bias in the window — -0.593 sfu from 1241 pairs"><td>lead 1 — the shallowest bias in the window — -0.593 sfu from 1241 pairs</td><td class="num">-0.5930701048</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 9 — the interior minimum — -2.748 sfu from 1241 pairs"><td>lead 9 — the interior minimum — -2.748 sfu from 1241 pairs</td><td class="num">-2.7477840451</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 13.5 — between two measured leads, so this one tests the interpolation and not the table"><td>lead 13.5 — between two measured leads, so this one tests the interpolation and not the table</td><td class="num">-1.88742433505</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 23 — the last lead where the outlook still beats persistence — -2.945 sfu"><td>lead 23 — the last lead where the outlook still beats persistence — -2.945 sfu</td><td class="num">-2.9447640967</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="lead 26 — the declared lead and the deepest bias in the window — -3.968 sfu from 868 pairs"><td>lead 26 — the declared lead and the deepest bias in the window — -3.968 sfu from 868 pairs</td><td class="num">-3.9677419355</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below -4 — the deepest measured bias is -3.968 sfu, at lead 26, the last verifiable lead. A value below -4 means the table was misread or the bundle changed underneath it</li>
+<li><code>OutOfDomain</code> above -0.5 — the shallowest measured bias is -0.593 sfu, at lead 1. A value above -0.5 — and certainly a positive one — would say the outlook over-forecasts F10.7 somewhere in the window, which this record does not show at any lead. The guard is deliberately on the safe side of zero rather than at zero, because an answer of -0.1 sfu would be as wrong as +0.1 and a bound at zero would pass it</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_forecast_bias"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
-<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<section class="panel" data-panel="9">
+<p>Valid over <code>-4 &hellip; -0.5</code> -.</p>
+<ul class="guards"><li>lower — the deepest measured bias is -3.968 sfu, at lead 26, the last verifiable lead. A value below -4 means the table was misread or the bundle changed underneath it</li><li>upper — the shallowest measured bias is -0.593 sfu, at lead 1. A value above -0.5 — and certainly a positive one — would say the outlook over-forecasts F10.7 somewhere in the window, which this record does not show at any lead. The guard is deliberately on the safe side of zero rather than at zero, because an answer of -0.1 sfu would be as wrong as +0.1 and a bound at zero would pass it</li></ul>
+<div class="sweep" data-over="sw_outlook_lead" data-points="52" data-y="sw_forecast_bias"><p class="muted">Sweeps against <a class="xref" data-goto="sw_outlook_lead">sw_outlook_lead</a> over 52 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

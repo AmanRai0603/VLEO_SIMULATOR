@@ -1,0 +1,169 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# WHAT THESE ARE
+#
+# The RMS of F107(t+L) - F107(t) — the error you carry if all you know is today's flux, measured over bundles/solar-weather on pairs where BOTH days were
+# observed and are exactly L days apart. Computed outside this crate, from the
+# record. This is prf_horizon's structure function D(L), its method [1].
+#
+# Each fixture sits AT a measured lead, where the relation returns the tabulated
+# value exactly, so the tolerance is transcription-tight. Nothing between two
+# leads is a fixture: there the answer is the interpolation's. Lead is a Time in
+# SECONDS at the boundary, so each is L * 86400.
+
+[[fixture]]
+label = "lead 1 day — 10312 observed pairs"
+expect = 7.0784
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 86400.0 }
+
+[[fixture]]
+label = "lead 2 days — 10309 observed pairs"
+expect = 10.3796
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 172800.0 }
+
+[[fixture]]
+label = "lead 3 days — 10307 observed pairs"
+expect = 13.6671
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 259200.0 }
+
+[[fixture]]
+label = "lead 5 days — 10303 observed pairs"
+expect = 19.3021
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 432000.0 }
+
+[[fixture]]
+label = "lead 7 days — 10299 observed pairs"
+expect = 23.6294
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 604800.0 }
+
+[[fixture]]
+label = "lead 10 days — 10293 observed pairs"
+expect = 27.6511
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 864000.0 }
+
+[[fixture]]
+label = "lead 14 days — 10285 observed pairs"
+expect = 29.1328
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 1209600.0 }
+
+[[fixture]]
+label = "lead 20 days — 10273 observed pairs"
+expect = 25.4695
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 1728000.0 }
+
+[[fixture]]
+label = "lead 27 days — 10259 observed pairs"
+expect = 22.4321
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 2332800.0 }
+
+[[fixture]]
+label = "lead 40 days — 10233 observed pairs"
+expect = 29.602
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 3456000.0 }
+
+[[fixture]]
+label = "lead 60 days — 10193 observed pairs"
+expect = 27.9575
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 5184000.0 }
+
+[[fixture]]
+label = "lead 90 days — 10133 observed pairs"
+expect = 30.1549
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 7776000.0 }
+
+[[fixture]]
+label = "lead 135 days — 10043 observed pairs"
+expect = 31.0394
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 11664000.0 }
+
+[[fixture]]
+label = "lead 180 days — 9953 observed pairs"
+expect = 32.9634
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 15552000.0 }
+
+[[fixture]]
+label = "lead 270 days — 9773 observed pairs"
+expect = 35.7538
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 23328000.0 }
+
+[[fixture]]
+label = "lead 365 days — 9675 observed pairs"
+expect = 38.8277
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 31536000.0 }
+
+[[fixture]]
+label = "lead 547 days — 9493 observed pairs"
+expect = 43.7693
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 47260800.0 }
+
+[[fixture]]
+label = "lead 730 days — 9310 observed pairs"
+expect = 49.6285
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 63072000.0 }
+
+[[fixture]]
+label = "beyond the last measured lead — five years holds the two-year value rather than extrapolating"
+expect = 49.6285
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { lead = 157788000.0 }

@@ -6,13 +6,15 @@
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
-  <button role="tab" class="tab" data-tab="1">interface</button>
-  <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">How much air is there at the flight altitude, in kilograms per cubic metre?</p>
@@ -25,6 +27,9 @@
 </dl>
 </section>
 <section class="panel" data-panel="1">
+<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+</section>
+<section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr><td>in</td><td><code>h</code></td><td><a class="xref" data-goto="orbit_altitude">orbit_altitude</a></td><td>Length</td><td>km</td></tr>
@@ -33,10 +38,25 @@
 </tbody></table>
 <p class="consumers"><b>5</b> nodes read this: <a class="xref" data-goto="aero_dynamic_pressure">aero_dynamic_pressure</a>, <a class="xref" data-goto="orbit_decay_rate">orbit_decay_rate</a>, <a class="xref" data-goto="prop_collected_flow">prop_collected_flow</a>, <a class="xref" data-goto="prop_incident_flux">prop_incident_flux</a>, <a class="xref" data-goto="thm_aero_heating">thm_aero_heating</a></p>
 </section>
-<section class="panel" data-panel="2">
+<section class="panel" data-panel="3">
 <ol class="algo">
 <li><span class="step">integrate diffusive equilibrium from the 120 km base for every species and sum the masses</span> <span class="binds">→ <code>rho: MassDensity</code></span></li>
 </ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function env_mass_density(h: Length, t_inf: Temperature) -> MassDensity
+    given h from orbit_altitude
+    given t_inf from env_exospheric_temperature
+    // integrate diffusive equilibrium from the 120 km base for every species and sum the masses
+    rho ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require rho ≥ 0.000000000000001
+    require rho ≤ 0.000001
+    require rho is finite
+
+    return rho
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
 <li><code>rho &ge; 0.000000000000001</code> — below 1e-15 kg/m3 the free-molecular relations downstream stop producing a meaningful drag</li>
@@ -44,7 +64,12 @@
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="3">
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="env_mass_density" data-lo="0.000000000000001" data-hi="0.000001" data-symbol="rho">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -93,7 +118,7 @@ pub fn evaluate(h: Length, t_inf: Temperature) -&gt; Result&lt;MassDensity, Faul
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="6">
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
 <tr data-fixture="250 km, moderate activity"><td>250 km, moderate activity</td><td class="num">0.00000000006631</td><td class="num">0.005</td><td>independent-tool</td><td>matlab_legacy</td></tr>
 <tr data-fixture="400 km, moderate activity"><td>400 km, moderate activity</td><td class="num">0.000000000002907</td><td class="num">0.005</td><td>independent-tool</td><td>matlab_legacy</td></tr>
@@ -101,7 +126,7 @@ pub fn evaluate(h: Length, t_inf: Temperature) -&gt; Result&lt;MassDensity, Faul
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 0.000000000000001 — below 1e-15 kg/m3 the free-molecular relations downstream stop producing a meaningful drag</li>
@@ -112,11 +137,11 @@ pub fn evaluate(h: Length, t_inf: Temperature) -&gt; Result&lt;MassDensity, Faul
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="8">
 <p>Evidence tier <b>B</b>. What this tier cannot detect: an error the independent tool shares with this one.</p>
 <div class="cred" data-cred-for="env_mass_density"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="9">
 <p>Valid over <code>0.000000000000001 &hellip; 0.000001</code> kg/m^3.</p>
 <ul class="guards"><li>lower — below 1e-15 kg/m3 the free-molecular relations downstream stop producing a meaningful drag</li><li>upper — above 1e-6 kg/m3 the flow is no longer free-molecular and every aerodynamic node in this tree is outside its envelope</li></ul>
 <div class="sweep" data-over="orbit_altitude" data-points="80" data-y="env_mass_density"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_altitude">orbit_altitude</a> over 80 points. Run the branch to draw it.</p></div>
@@ -124,5 +149,6 @@ pub fn evaluate(h: Length, t_inf: Temperature) -&gt; Result&lt;MassDensity, Faul
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

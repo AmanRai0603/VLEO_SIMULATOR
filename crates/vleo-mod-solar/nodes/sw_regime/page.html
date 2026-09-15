@@ -1,68 +1,190 @@
-<article class="node" data-node="sw_regime" data-sheet-hash="e3addf" data-impl-hash="222325">
+<article class="node" data-node="sw_regime" data-sheet-hash="f0c2af" data-impl-hash="c34c86">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Geomagnetic regime</h2>
-  <p class="ident"><code>sw_regime</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <p class="ident"><code>sw_regime</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
-  <button role="tab" class="tab" data-tab="1">interface</button>
-  <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">Quiet, active or storm — which regime is this daily Ap in?</p>
+<p class="maths"><code>regime(Ap) = 1 if Ap &lt;= 6, 2 if Ap &lt;= 25, 3 otherwise</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">1 is quiet, 2 is active, 3 is storm, in the order the study's own mixture put them. A number rather than a name because the interface carries numbers; the bands are integers and the boundaries are exact, so the encoding loses nothing.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>It departs from the published table on 171 of 10299 days, deliberately</dt><dd>fails when parity with the study is what is wanted. Every one of the 171 is a day the mixture labelled 'storm' with an Ap of 0 or 1 and a Kp_max of 0 or 1, in 2006 to 2011. This row calls them quiet. On the other 10128 days it reproduces the published label exactly — the disagreement count against the corrected labels is zero, not small. Anyone reconciling against daily_regime.csv will find exactly these days and no others, and the sign of the disagreement is always the same: the table says storm where this row says quiet, never the reverse</dd>
+<dt>The only Ap this tree publishes is a design storm, so the quiet band is unreachable today</dt><dd>fails when somebody expects to see all three answers in a run. The input is sw_storm_return_level, whose declared range is 20 to 230, so in any run this node can only return active or storm — and at the declared five-year mission it returns 3. The relation carries all three branches because the classifier has three, and the day an ordinary Ap exists in the tree this row already handles it. That no such row exists is a fact about the tree and is worth noticing rather than working around</dd>
+<dt>Three bands on one variable, which is all the study's mixture turned out to be</dt><dd>fails when a regime is expected to depend on anything but today's Ap. It does not: no history, no rate of change, no F10.7. A day at Ap 26 on the way up and a day at Ap 26 on the way down are the same regime here, and a storm's recovery day is labelled by its level rather than by what it is recovering from. That is the study's model and this row is a port of it, not an improvement on it</dd>
+<dt>The boundaries are exact integers and the published confidences are discarded</dt><dd>fails when a caller wants to know how sure the label is. daily_regime.csv carries a posterior per day — mean 0.550 for quiet, 0.580 for active, 0.705 for storm, with 21 per cent of quiet days below 0.5 — and this row publishes one number with no confidence beside it. The bands being exact makes the LABEL certain given the Ap; it does not make the label right. A day at Ap 26 is one unit from being called active and the study was only 55 to 70 per cent sure of its labels on average</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
+<p class="why">A design cannot respond to a continuous Ap. There is no distinct reaction to Ap 26 as against Ap 27, and a subsystem that tried to have one would be reacting to the measurement's noise. What a design can respond to is a regime: a small set of states, each with its own budget. The study did not choose the boundaries of those states by hand. It fitted a three-component mixture to the distribution of daily Ap and let the record decide where one population ends and the next begins. This node ports the classifier's DECISION, not its machinery, and the derivation below is why one line of thresholds is a faithful port of a fitted mixture.</p>
+<div class="theory-walk" data-steps="8">
+<ol class="derive">
+<li><span class="dt">Start from what a mixture model assumes: that the observed distribution of daily Ap is not one population but a sum of several, each Gaussian, each with its own share of the days, its own centre and its own width. For Ap the study used three — a quiet background, a disturbed population, and a broad storm tail.</span><code class="dm">p(Ap) = w1·N(Ap; m1, s1) + w2·N(Ap; m2, s2) + w3·N(Ap; m3, s3), w1 + w2 + w3 = 1</code></li>
+<li><span class="dt">Fitting chooses the nine numbers that make the observed record most likely. Which algorithm did that is not recorded here and does not matter to this row: prf_cluster.m is not in this repository, only its output, and what is ported is where the fit ended up, not how it got there.</span></li>
+<li><span class="dt">Once fitted, each day gets a posterior share of each component — how much of that day the component accounts for. These are the three numbers daily_regime.csv publishes beside every date.</span><code class="dm">g_i(Ap) = w_i·N(Ap; m_i, s_i) / SUM_j w_j·N(Ap; m_j, s_j)</code></li>
+<li><span class="dt">The label is whichever component claims the largest share. That is the whole classifier: everything above exists to produce this argmax, and the study published the argmax as its 'regime' column.</span><code class="dm">label(Ap) = argmax_i g_i(Ap)</code></li>
+<li><span class="dt">Now the step that turns a fitted mixture into thresholds. Two components swap the lead exactly where their weighted densities cross, and in one dimension that condition is a QUADRATIC in Ap — take logs of the ratio and the squares do not cancel unless the two widths are equal. So each pair of components crosses at up to two values of Ap, not one.</span><code class="dm">log[ w_i·N(Ap; m_i, s_i) / w_j·N(Ap; m_j, s_j) ] = 0 is quadratic in Ap</code></li>
+<li><span class="dt">Where the three components have separated widths, the useful root of each quadratic lands between the two centres, and the argmax becomes an ordered partition of the Ap axis. Read off the published labels, both boundaries sit on integers: the quiet-to-active swap falls between 6 and 7, and the active-to-storm swap between 25 and 26. Nothing of the mixture survives except those two numbers.</span><code class="dm">regime(Ap) = 1 for Ap &lt;= 6, 2 for 7 &lt;= Ap &lt;= 25, 3 for Ap &gt;= 26</code></li>
+<li><span class="dt">The other root is not harmless, and it is measurable in the published file. A broad component's density falls off more slowly than a narrow one's, so far enough down the LOW tail the storm component overtakes quiet again. In daily_regime.csv the mean storm posterior climbs as Ap falls — 0.199 at Ap 3, 0.332 at Ap 2, 0.726 at Ap 1, 0.992 at Ap 0 — crossing the quiet posterior between Ap 2 and Ap 1. That second crossing is the whole of the artefact: 140 days at Ap 1 and 31 at Ap 0, all labelled storm, 171 in total.</span><code class="dm">g_storm &gt; g_quiet for Ap &lt;= 1 as well as for Ap &gt;= 26</code></li>
+<li><span class="dt">This row keeps the first root of each pair and cuts the second. A design told 'storm' on a day with Ap 1 is being actively misled, and the departure is one rule rather than a list of dates. On the other 10128 days the three-band relation reproduces the published label exactly — the disagreement count is zero, not small.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">The answer is an index, not a severity: 3 is not three times 1, and the distance from 1 to 2 is nineteen units of Ap while the distance from 2 to 3 is one. It says which population today belongs to and nothing about how far into that population it is — a day at Ap 26 and a day at Ap 200 are both 3.</p>
+<p class="reading">It also carries no confidence, although the classifier it ports published one: the bands being exact makes the label certain GIVEN the Ap, which is a different claim from the label being right. On the record the study was 55 to 70 per cent sure of its own labels on average, and 21 per cent of its quiet days scored below 0.5.</p>
+<p class="maths concl">which is the relation this node states: <code>regime(Ap) = 1 if Ap &lt;= 6, 2 if Ap &lt;= 25, 3 otherwise</code></p>
+</section>
+<section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sw_regime</td><td></td><td>-</td></tr>
+<tr><td>in</td><td><code>ap</code></td><td><a class="xref" data-goto="sw_storm_return_level">sw_storm_return_level</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>regime</code></td><td>sw_regime</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
-<section class="panel" data-panel="2">
-<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>0</b> -, confirmed by <b></b>.</p>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">place the daily Ap in the mixture's three bands: quiet to 6, active to 25, storm above</span> <span class="binds">→ <code>out: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_regime(ap: Ratio) -> Ratio
+    given ap from sw_storm_return_level
+    // place the daily Ap in the mixture's three bands: quiet to 6, active to 25, storm above
+    regime ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require regime ≥ 1
+    require regime ≤ 3
+    require regime is finite
+
+    return regime
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>regime &ge; 1</code> — 1 is quiet and is the lowest regime the mixture defines. Below it there is no label</li>
+<li><code>regime &le; 3</code> — 3 is storm and is the highest. A fourth regime would be a different classifier than the one this row ports</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
-</section>
 <section class="panel" data-panel="4">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<div class="relation-host" data-node="sw_regime" data-lo="1" data-hi="3" data-symbol="regime">
+<p class="muted">asking the engine…</p>
+</div>
 </section>
 <section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// Quiet, active or storm — which regime is this daily Ap in?
+///
+/// `regime(Ap) = 1 if Ap &lt;= 6, 2 if Ap &lt;= 25, 3 otherwise`
+///
+/// Source: `noaa_swpc`
+///
+/// 1 is quiet, 2 is active, 3 is storm, in the order the study's own mixture
+/// put them. A number rather than a name because the interface carries
+/// numbers; the bands are integers and the boundaries are exact, so the
+/// encoding loses nothing.
+///
+/// # Assumptions
+///
+/// * It departs from the published table on 171 of 10299 days, deliberately — fails when parity with the study is what is wanted. Every one of the 171 is a day the mixture labelled 'storm' with an Ap of 0 or 1 and a Kp_max of 0 or 1, in 2006 to 2011. This row calls them quiet. On the other 10128 days it reproduces the published label exactly — the disagreement count against the corrected labels is zero, not small. Anyone reconciling against daily_regime.csv will find exactly these days and no others, and the sign of the disagreement is always the same: the table says storm where this row says quiet, never the reverse
+/// * The only Ap this tree publishes is a design storm, so the quiet band is unreachable today — fails when somebody expects to see all three answers in a run. The input is sw_storm_return_level, whose declared range is 20 to 230, so in any run this node can only return active or storm — and at the declared five-year mission it returns 3. The relation carries all three branches because the classifier has three, and the day an ordinary Ap exists in the tree this row already handles it. That no such row exists is a fact about the tree and is worth noticing rather than working around
+/// * Three bands on one variable, which is all the study's mixture turned out to be — fails when a regime is expected to depend on anything but today's Ap. It does not: no history, no rate of change, no F10.7. A day at Ap 26 on the way up and a day at Ap 26 on the way down are the same regime here, and a storm's recovery day is labelled by its level rather than by what it is recovering from. That is the study's model and this row is a port of it, not an improvement on it
+/// * The boundaries are exact integers and the published confidences are discarded — fails when a caller wants to know how sure the label is. daily_regime.csv carries a posterior per day — mean 0.550 for quiet, 0.580 for active, 0.705 for storm, with 21 per cent of quiet days below 0.5 — and this row publishes one number with no confidence beside it. The bands being exact makes the LABEL certain given the Ap; it does not make the label right. A day at Ap 26 is one unit from being called active and the study was only 55 to 70 per cent sure of its labels on average
+pub const NODE_ID: &amp;str = &quot;sw_regime&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x40f82069e2f0c2af;
+
+pub fn evaluate(ap: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : place the daily Ap in the mixture's three bands: quiet to 6, active to 25, storm above -&gt; Ratio
+    // The mixture's own decision boundaries, read off its published labels:
+    // quiet holds Ap 0 to 6, active 7 to 25, storm 26 and above. Those three
+    // bands reproduce daily_regime.csv with ZERO disagreements on 10128 of its
+    // 10299 days; the 171 that differ are the low-tail artefact the sheet
+    // declares, where the broad storm component took back the record's quietest
+    // days. Integers, because the published boundaries fell on integers.
+    let a: f64 = ap.get();
+    let out: Ratio = Ratio::new(if a &lt;= 6.0 {
+        1.0
+    } else if a &lt;= 25.0 {
+        2.0
+    } else {
+        3.0
+    });
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = out;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;regime&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 1.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;regime&quot;, value: answer.get(), bound: 1.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;1 is quiet and is the lowest regime the mixture defines. Below it there is no label&quot; });
+    }
+    if answer.get() &gt; 3.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;regime&quot;, value: answer.get(), bound: 3.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;3 is storm and is the highest. A fourth regime would be a different classifier than the one this row ports&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="Ap 158.38 — the five-year return level — storm, as the table labels every day near it"><td>Ap 158.38 — the five-year return level — storm, as the table labels every day near it</td><td class="num">3</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Ap 20 — the bottom of the producer's range — active; the table labels all 20s active"><td>Ap 20 — the bottom of the producer's range — active; the table labels all 20s active</td><td class="num">2</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Ap 25 — the last active value in the published table; 26 is the first storm"><td>Ap 25 — the last active value in the published table; 26 is the first storm</td><td class="num">2</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Ap 26 — the first storm value in the published table, and the boundary that matters"><td>Ap 26 — the first storm value in the published table, and the boundary that matters</td><td class="num">3</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Ap 132 — the G3 design value — storm"><td>Ap 132 — the G3 design value — storm</td><td class="num">3</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Ap 230 — the top of the producer's range — storm"><td>Ap 230 — the top of the producer's range — storm</td><td class="num">3</td><td class="num">0.000000000001</td><td>published-source</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 1 — 1 is quiet and is the lowest regime the mixture defines. Below it there is no label</li>
+<li><code>OutOfDomain</code> above 3 — 3 is storm and is the highest. A fourth regime would be a different classifier than the one this row ports</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_regime"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
+<section class="panel" data-panel="9">
+<p>Valid over <code>1 &hellip; 3</code> -.</p>
+<ul class="guards"><li>lower — 1 is quiet and is the lowest regime the mixture defines. Below it there is no label</li><li>upper — 3 is storm and is the highest. A fourth regime would be a different classifier than the one this row ports</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
-<section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
-</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

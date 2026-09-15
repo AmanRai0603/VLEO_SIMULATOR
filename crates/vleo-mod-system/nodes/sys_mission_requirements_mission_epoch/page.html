@@ -1,68 +1,160 @@
-<article class="node" data-node="sys_mission_requirements_mission_epoch" data-sheet-hash="e0235b" data-impl-hash="222325">
+<article class="node" data-node="sys_mission_requirements_mission_epoch" data-sheet-hash="b0871e" data-impl-hash="222325">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="sys_vleo_multipayload">VLEO multipayload</a> <span class="sep">/</span> <a class="xref" data-group="sys_mission_performance">Mission performance</a> <span class="sep">/</span> <a class="xref" data-group="sys_mission_requirements">Mission requirements</a></nav>
   <h2>Mission epoch</h2>
-  <p class="ident"><code>sys_mission_requirements_mission_epoch</code> · <span class="kind kind-declared">declared</span> · owner <b>systems</b> · tier <b></b> · state <b>empty</b></p>
+  <p class="ident"><code>sys_mission_requirements_mission_epoch</code> · <span class="kind kind-declared">declared</span> · owner <b>systems</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
-  <button role="tab" class="tab" data-tab="1">interface</button>
-  <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">On what date does the mission begin?</p>
+<p class="maths"><code>T_epoch = 9862 d  (2027-01-01)</code></p>
+<p class="src">Source <b>orbitt_case_c1</b> — Orbitt Space — VLEO multipayload reference case C1 <span class="where">internal, 2026-09-01</span></p>
+<p class="note">The date every dated question in the design keys off. It is a mission requirement and it lives here, at the system layer, because the mission owns it and several subsystems read it — the solar-weather subsystem is the first to do so. Carried as days since 2000-01-01 so that nothing downstream needs a calendar.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>It is a single date, so the design is sized for a mission that starts then and not for one that slips</dt><dd>fails when solar activity is cyclical, so slipping the start changes the sky the mission flies through rather than merely delaying it. 2027-01-01 sits past the maximum of cycle 25 on the declining side, which is the storm-rich phase; a slip to 2030 would move it toward minimum and every cycle-phase row would return a quieter sky. The record's F10.7 runs 64 to 343 sfu across a cycle, so this is not a rounding difference. A mission whose launch date is uncertain needs the design re-run at both ends of the window, and this row is the one to change.</dd>
+<dt>It is 366 days past the end of the solar-weather record</dt><dd>fails when the record runs to 2025-12-31, day 9496, and this epoch is day 9862. So every row that reads it is answering about a date the record does not cover, by extrapolating a pattern rather than reading an observation. That is the correct thing to do for a design — a mission in the future has no record — and it means the cycle-phase rows fold the phase using a mean cycle length instead of measuring one. Which is exactly what prf_design does beyond its last cycle, and is declared on each row that does it.</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
+<p class="why">There is no theory of a date. What there is, and what belongs here, is the argument for why a design needs one at all, and why this one. The environment a vehicle flies through is not stationary: solar activity runs on a cycle of about eleven years, and the same orbit flown in 2020 and in 2027 meets fluxes that differ by more than a factor of two. Until a date exists, the best any environment row can do is the unconditional statistics of the whole record — the average of every part of every cycle, which is a sky no mission flies through. Every dated question in the design then has to key off the SAME date, or the subsystems are each designing for a different mission.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">Start from what makes a date load-bearing. Solar activity is cyclical, so the environment is a function of when. The record's F10.7 runs from 64 to 343 sfu, and the phase-stacked mean of a cycle runs from 72 to 165: choosing a date chooses which half of that range the design is sized against.</span></li>
+<li><span class="dt">A date shared by several subsystems is not a subsystem's property. If the solar rows and the thermal rows each held their own epoch, the two would drift apart in the first revision and nothing would detect it. So the row sits at layer 2, the system layer, where the mission's own requirements live, and the subsystems read it.</span></li>
+<li><span class="dt">A calendar date is not arithmetic. Months have different lengths, leap years are irregular, and a row that had to know about either would carry a calendar. Counting days from a fixed origin makes every dated question a subtraction, and 2000-01-01 is the origin the engine's tables already use.</span><code class="dm">T = days since 2000-01-01; 2027-01-01 -&gt; 9862 d</code></li>
+<li><span class="dt">Now the choice itself. Cycle 25 opened on 2019-12-01 and the mean length of the two complete cycles in the record is 11.44 years, so this epoch folds to cycle phase 0.6194 — past maximum, on the declining side.</span><code class="dm">phase = (9862 - 7274) / (11.44 * 365.25) = 0.6194</code></li>
+<li><span class="dt">That is the phase band the design's own exceedance statistics point at. sw_exceedance_phase measures the median cycle phase of the days that exceed the design Ap at 0.603, with a spread of 0.29 to 0.74. The declared epoch sits inside that band, which means it is a date chosen to face the storms rather than one chosen to avoid them.</span></li>
+<li><span class="dt">It is also 366 days past the end of the record, which stops at 2025-12-31. So every row that reads it is answering about a date nothing observed. That is the correct position for a design — a mission in the future has no record — and it is why the cycle rows fold a phase with a mean length instead of measuring one, and why each of them declares that it does.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">It is an instant, not a duration, and it crosses the interface in seconds like every other Time — 852076800 s for day 9862. Nothing downstream should do calendar arithmetic on it. The number is a decision and not a measurement, so the honest use of it is to move it: the cycle-dependent half of the subsystem answers differently at a different epoch, and a launch window rather than a launch date means running the design at both ends of the window and keeping the worse answer.</p>
+<p class="maths concl">which is the relation this node states: <code>T_epoch = 9862 d  (2027-01-01)</code></p>
+</section>
+<section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sys_mission_requirements_mission_epoch</td><td></td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>T_epoch</code></td><td>sys_mission_requirements_mission_epoch</td><td>Time</td><td>d</td></tr>
 </tbody></table>
-<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+<p class="consumers"><b>2</b> nodes read this: <a class="xref" data-goto="sw_cycle_number">sw_cycle_number</a>, <a class="xref" data-goto="sw_cycle_phase">sw_cycle_phase</a></p>
 </section>
-<section class="panel" data-panel="2">
+<section class="panel" data-panel="3">
 <p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>0</b> -, confirmed by <b></b>.</p>
+<p>This is a declared value: <b>9862</b> d, confirmed by <b>A. Rai / 2026-09-14</b>.</p>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sys_mission_requirements_mission_epoch() -> Time
+    T_epoch ← 9862 d          // declared, confirmed by A. Rai / 2026-09-14
+
+    // a guard whose reason is not written down gets deleted
+    require T_epoch ≥ 6575
+    require T_epoch ≤ 14610
+    require T_epoch is finite
+
+    return T_epoch
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>T_epoch &ge; 6575</code> — day 6575 is 2018-01-01. A mission epoch before it would sit inside the archive rather than ahead of the design, and every forward-looking row would be answering a question about the past while presenting it as a prediction</li>
+<li><code>T_epoch &le; 14610</code> — day 14610 is 2040-01-01. Beyond it the cycle-phase rows would be folding the phase through more than one unobserved cycle, and the mean cycle length they fold with is measured from two complete cycles. Extrapolating a 11.4-year mean across fifteen years is not a design input, it is a guess with a date on it</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
-</section>
 <section class="panel" data-panel="4">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<div class="relation-host" data-node="sys_mission_requirements_mission_epoch" data-lo="6575" data-hi="14610" data-symbol="T_epoch">
+<p class="muted">asking the engine…</p>
+</div>
 </section>
 <section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// On what date does the mission begin?
+///
+/// `T_epoch = 9862 d  (2027-01-01)`
+///
+/// Source: `orbitt_case_c1`
+///
+/// The date every dated question in the design keys off. It is a mission
+/// requirement and it lives here, at the system layer, because the mission
+/// owns it and several subsystems read it — the solar-weather subsystem is
+/// the first to do so. Carried as days since 2000-01-01 so that nothing
+/// downstream needs a calendar.
+///
+/// # Assumptions
+///
+/// * It is a single date, so the design is sized for a mission that starts then and not for one that slips — fails when solar activity is cyclical, so slipping the start changes the sky the mission flies through rather than merely delaying it. 2027-01-01 sits past the maximum of cycle 25 on the declining side, which is the storm-rich phase; a slip to 2030 would move it toward minimum and every cycle-phase row would return a quieter sky. The record's F10.7 runs 64 to 343 sfu across a cycle, so this is not a rounding difference. A mission whose launch date is uncertain needs the design re-run at both ends of the window, and this row is the one to change.
+/// * It is 366 days past the end of the solar-weather record — fails when the record runs to 2025-12-31, day 9496, and this epoch is day 9862. So every row that reads it is answering about a date the record does not cover, by extrapolating a pattern rather than reading an observation. That is the correct thing to do for a design — a mission in the future has no record — and it means the cycle-phase rows fold the phase using a mean cycle length instead of measuring one. Which is exactly what prf_design does beyond its last cycle, and is declared on each row that does it.
+pub const NODE_ID: &amp;str = &quot;sys_mission_requirements_mission_epoch&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xca31587a5eb0871e;
+
+pub fn evaluate() -&gt; Result&lt;Time, Fault&gt; {
+    // generated · a declared value, converted from the unit it was written in
+    let declared: Time = match Time::from_unit(9862.0, Unit::Day) {
+        Some(q) =&gt; q,
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;T_epoch&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+    };
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Time = declared;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;T_epoch&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 568080000.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;T_epoch&quot;, value: answer.get(), bound: 568080000.0, edge: Edge::Lower, unit: Time::UNIT, reason: &quot;day 6575 is 2018-01-01. A mission epoch before it would sit inside the archive rather than ahead of the design, and every forward-looking row would be answering a question about the past while presenting it as a prediction&quot; });
+    }
+    if answer.get() &gt; 1262304000.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;T_epoch&quot;, value: answer.get(), bound: 1262304000.0, edge: Edge::Upper, unit: Time::UNIT, reason: &quot;day 14610 is 2040-01-01. Beyond it the cycle-phase rows would be folding the phase through more than one unobserved cycle, and the mean cycle length they fold with is measured from two complete cycles. Extrapolating a 11.4-year mean across fifteen years is not a design input, it is a guess with a date on it&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 6575 — day 6575 is 2018-01-01. A mission epoch before it would sit inside the archive rather than ahead of the design, and every forward-looking row would be answering a question about the past while presenting it as a prediction</li>
+<li><code>OutOfDomain</code> above 14610 — day 14610 is 2040-01-01. Beyond it the cycle-phase rows would be folding the phase through more than one unobserved cycle, and the mean cycle length they fold with is measured from two complete cycles. Extrapolating a 11.4-year mean across fifteen years is not a design input, it is a guess with a date on it</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sys_mission_requirements_mission_epoch"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
+<section class="panel" data-panel="9">
+<p>Valid over <code>6575 &hellip; 14610</code> d.</p>
+<ul class="guards"><li>lower — day 6575 is 2018-01-01. A mission epoch before it would sit inside the archive rather than ahead of the design, and every forward-looking row would be answering a question about the past while presenting it as a prediction</li><li>upper — day 14610 is 2040-01-01. Beyond it the cycle-phase rows would be folding the phase through more than one unobserved cycle, and the mean cycle length they fold with is measured from two complete cycles. Extrapolating a 11.4-year mean across fifteen years is not a design input, it is a guess with a date on it</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
-<section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
-</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

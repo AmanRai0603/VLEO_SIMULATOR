@@ -6,28 +6,112 @@ label = "F10.7"
 folder = "l3_solar_req_02"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
-kind = "required"
+kind = "declared"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "significant"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1332
-state = "empty"
+state = "published"
+# A ceiling, not a floor. The environment is something the vehicle must
+# survive, so the requirement is satisfied by the sky being no worse than
+# this, and the achieved row beside it must come in at or under.
+sense = "<="
 
 [question]
-text = ""
+text = "What F10.7 must this design survive, at 95 per cent confidence?"
+note = "The same quantity as req_01 and the same number, because in this subsystem the solar flux IS F10.7. The layer-2 rows separate them and the subsystem does not. That is a finding about the tree rather than a design decision, and it is stated here rather than resolved by inventing a difference."
 
 [maths]
-expression = ""
-source = ""
+confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
+expression = "F107_req = 250 sfu at 95% confidence"
+source = "orbitt_case_c1"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+There is no theory here that req_01 does not already carry, and pretending
+otherwise would be the dishonest option. This row exists because the layer-2
+tree holds two separate rows — sys_space_environment_solar_flux and
+sys_space_environment_f10_7 — and each needs a partner at layer 3. In this
+subsystem those two quantities are the same quantity: the solar flux this
+subsystem publishes IS F10.7 and nothing else. So the commitment is written
+twice and the duplication is declared rather than disguised by inventing a
+difference between them.
+"""
+reading = """
+A percentile is not a worst case. By construction one day in twenty exceeds
+the band, and over a five-year mission that is a great many days: what 250
+buys is that the design point is not exceeded by the typical excursion, not
+that it is never exceeded. The record's largest daily F10.7 is 343 sfu, well
+above this requirement, and a design that must survive that day needs a
+worst-case row rather than a percentile one.
+"""
+
+[[theory.step]]
+text = """
+The quantity is the same as req_01's and so is the number. What differs is
+the partner at layer 2, which is a fact about the tree's shape rather than
+about the design.
+"""
+
+[[theory.step]]
+text = """
+The stated confidence is inherited rather than chosen here, and it is worth
+tracing because nothing in this tree carries a confidence row. It is 95 per
+cent because sw_uncertainty_growth measures a 95th percentile and
+sw_f107_design adds it; a requirement at a different confidence means
+re-measuring that percentile.
+"""
+
+[[theory.step]]
+text = """
+The claim is checked rather than asserted. sw_band_coverage measures how
+often the record actually falls inside a band built this way and gets 0.9509
+— so '95 per cent' is a measured property of the construction and not a
+label attached to it.
+"""
+math = "measured coverage = 0.9509 against a nominal 0.95"
+
+[[theory.step]]
+text = """
+Resolving the duplication is a change to the layer-2 tree and not to this
+subsystem, which is why both rows are written and both say so. Merging them
+here would make this subsystem disagree with the tree above it.
+"""
+
+
+[[assumption]]
+text = "It is the same number as req_01 and the duplication is real"
+fails_when = "the two are treated as independent requirements. l3_solar_ach_01 and l3_solar_ach_02 already say this about the achieved side — the solar flux this subsystem publishes is F10.7 and nothing else — so the two requirement rows are one commitment written twice. They are both written because the layer-2 rows sys_space_environment_solar_flux and sys_space_environment_f10_7 are separate and each needs a partner. Merging them is a change to the layer-2 tree, not to this subsystem."
+
+[[assumption]]
+text = "The 95 per cent is inherited from the achieved side, not chosen here"
+fails_when = "a different confidence is wanted. There is no confidence row anywhere in this tree; the figure is 95 because sw_uncertainty_growth publishes a 95th percentile and sw_f107_design adds it. sw_band_coverage checks that the band is worth its label and measures the coverage at 0.9509, so the stated confidence is honest. A requirement at a different confidence would need that percentile re-measured, which is a change to sw_uncertainty_growth."
+
+[[assumption]]
+text = "A percentile is not a worst case, and a requirement written on one is not a survival guarantee"
+fails_when = "the mission meets a day in the upper five per cent. By construction one day in twenty exceeds the band, and over a five-year mission that is a great many days. What 250 buys is that the design point is not exceeded by the typical excursion — not that it is never exceeded. The record's largest daily F10.7 is 343 sfu, well above this requirement, and a design that must survive that day needs a worst-case row rather than a percentile one."
 
 [output]
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "F107_req_95"
+type = "Ratio"
+unit = "One"
+lower = 60.0
+upper = 400.0
+reason_lower = "the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement"
+reason_upper = "the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 250.0
+confirmed_by = "A. Rai / 2026-09-14"
 
 [view]
 kind = "number"

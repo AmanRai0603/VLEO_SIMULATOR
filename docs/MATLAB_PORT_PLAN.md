@@ -638,6 +638,122 @@ figure is not a row, and this repository already has the better home for one.
 Steps 1 and 2 are the only ones that must happen in that order. From step 3 the
 nodes are independent enough to reorder if something proves harder than it looks.
 
+### daily_regime.csv cannot be trusted, and the mechanism is understood
+
+The derived regime column in `bundles/solar-weather` labels every day quiet,
+active or storm. **171 of the 827 days it calls "storm" — 20.7% of the positive
+class — have a daily Ap of 6 or less**, which is inside the range its own
+"quiet" label covers exclusively. 2005-12-07 is labelled storm with confidence
+0.992 at Ap 0, kp_max 0 and no flares. The mean confidence of those 171 is
+0.774, *higher* than the 0.705 mean of storm labels overall: the quietest days in
+the record are being called storms, confidently.
+
+The `.mat` records the classifier and it explains itself. A three-component
+Gaussian mixture on one feature, `ap`, transformed `log10(x+1)`. Component means
+0.767, 1.024, 1.039 — Ap 4.85, 9.56, 9.95 — so components 2 and 3 sit at
+essentially the same place and differ only in width, standard deviations 0.235
+and 0.385. **Component 3 is not the high-activity component; it is the broad
+one**, and a mixture assigns by posterior, so it wins at both extremes. Ap 0 and
+Ap 1 map to 0.000 and 0.301 in `log10(x+1)` space, further from component 1's
+mean than most real storms are, and are swept into the broad component — the one
+named "storm". The name describes a width, not a level. It means "unusual", and
+the quietest possible day is unusual.
+
+This is the source study's defect and not a transcription error: 0 of 10,299 CSV
+rows differ from the `.mat`'s own regime index to `regime_name` mapping.
+
+`sw_regime` is therefore **deliberately left seeded**, with all of the above
+written into its sheet so a node author meets it before starting. Making it
+writeable needs either a classifier ordered by level rather than by fit order,
+or an honest threshold on Ap — `prf_segment` already publishes standard ones
+(quiet below 8, unsettled 8 to 15, active 16 to 29, G1 30 to 49, G2+ 50 and
+above) which separate cleanly and need no clustering at all. The second is
+probably the right row, and it is a modelling decision rather than a port.
+
+The bundle's own `INDEX.md` cannot carry the warning without publishing a new
+version: the manifest hashes every payload file, so editing the index changes
+the content hash and a synced copy of 2026.09.14 stops verifying. Sixteen files
+reference that version and the payload is 3.8 MB. Whether to spend a version on
+a prose caveat is the data owner's decision.
+
+### Two rows the tree cannot carry yet, and nine nodes waiting on them
+
+Building the group turned up the same wall four times, so it is written here
+once rather than discovered a fifth time. **Nine of the sixteen unwritten rows
+are blocked on two declared values that do not exist**, and each is a single
+number a person has to confirm.
+
+**A mission epoch — a date.** `sys_mission_requirements_mission_epoch` exists at
+layer 2 and is seeded, and no derivation edge in this repository crosses a layer,
+so a layer-3 row cannot read it even once it is written. Without a date the
+subsystem cannot compute a cycle number, a cycle phase, a mean-cycle level, an
+81-day centred mean, a semiannual amplitude, or `prf_apdesign`'s dated model —
+and `sw_central_expectation` already carries the consequence as a declared
+limitation: it uses the record's unconditional mean, so it cannot tell solar
+maximum from solar minimum on a record running 64 to 343 sfu.
+
+**A forecast lead — days.** ~~There is no row for a lead and inventing one needs
+a confirmed value.~~ RESOLVED. `sw_outlook_lead` now declares it, at layer 3
+rather than layer 2 because it is a property of the published product and the
+record that verifies it, not something the mission negotiated. `sw_forecast_skill`
+and `sw_forecast_bias` are written and read it. `sw_band_coverage` still needs a
+confidence and remains blocked on that, not on the lead.
+
+What is NOT blocked, and was written instead: every row whose input is an
+existing declared value or another written row. That turned out to be ten of the
+twenty-six plus the interface.
+
+### The issued 27-day outlook, measured — and two figures below were wrong
+
+`forecast_issued.csv` was verified against the observed record. The first pass
+recorded two findings that a second pass, taken while writing `sw_forecast_skill`
+and `sw_forecast_bias`, contradicted. Both corrections are kept visible rather
+than overwritten, because the wrong versions are the more tempting answers and
+somebody will reach them again.
+
+**The outlook is biased LOW at every lead.** This one stands. Measured over
+1997-2025 the mean signed error, forecast minus observed, is negative at all 26
+verifiable leads: -0.593 sfu at lead 1, deepening to an interior minimum of
+-2.748 at lead 9, recovering to -1.848 at lead 13, then deepening again to
+-3.968 at lead 26. For a drag design that is the unsafe direction —
+under-predicted flux gives under-predicted density and under-sized drag — and no
+symmetric uncertainty band removes an offset.
+
+**It does NOT lose to persistence at short leads.** The first pass reported a
+skill of -0.52 at lead 1 and concluded the outlook was worse than doing nothing
+through lead 4. That was an artefact of the baseline. Persistence had been taken
+as the observed F10.7 on the issue date, and 719 of the 1281 issues index their
+rows from lead 0, so the issue date is itself a forecast target for most of the
+record: the baseline was being handed an observation the forecaster did not have.
+With persistence taken as the last observation strictly BEFORE the issue date,
+the outlook beats it from lead 1 onward — +0.069 at lead 1, peaking at +0.438 at
+lead 9, still +0.018 at lead 23 — and goes negative only at leads 24, 25 and 26
+(-0.036, -0.032, -0.022). The outlook's own RMS error is unchanged by the choice,
+10.33 sfu at lead 1; what changed is persistence's, from 6.79 to 10.70. One
+choice of baseline, and the sign of the short-lead conclusion flips. The written
+rows declare the baseline for exactly this reason.
+
+**`lead_days` is indexed two ways in the same column.** The first pass said every
+issue carries exactly 27 rows. It does not: of 1281 issues, 900 carry 27 rows and
+349 carry 14 — the older short-format bulletin — with a dozen other shapes making
+up the rest. More importantly, among the 899 issues that span exactly 27 days,
+719 index their rows as leads 0 to 26 and only 175 as leads 1 to 27. So
+`lead_days == 27` does not select the far edge of the window; it selects the
+minority that used the 1-based convention, 192 rows against the 868 that lead 26
+draws from both. It shows in the answer: lead 27 reports a skill of +0.043, a
+different sign from each of its three neighbours, and a bias of -5.958 sfu, half
+again as large as lead 26's. Neither figure is a property of the forecast at 27
+days.
+
+That is why `sw_outlook_lead` declares 26 and not 27. 27 is the length of the
+product and is recorded in that row's assumptions; 26 is the last lead this
+record can verify.
+
+The column also runs from -26 to 392. 740 issues contain a lead of zero or
+negative — the bulletin published after its own window had begun — and 96 rows
+across 10 issues sit above lead 27, one of them reaching 392. Any use of this
+table must filter to leads 1 to 26; the measurements above do.
+
 ### What step 3 corrected about this table: steps 3 and 4 are the wrong way round
 
 The claim above that the nodes are independent from step 3 is wrong. A computed

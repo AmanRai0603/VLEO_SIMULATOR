@@ -1,68 +1,208 @@
-<article class="node" data-node="sw_kp_slot_bias" data-sheet-hash="e9c384" data-impl-hash="222325">
+<article class="node" data-node="sw_kp_slot_bias" data-sheet-hash="9f7833" data-impl-hash="f89a20">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>Kp slot bias</h2>
-  <p class="ident"><code>sw_kp_slot_bias</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <h2>Kp slot bias, daily peak</h2>
+  <p class="ident"><code>sw_kp_slot_bias</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
-  <button role="tab" class="tab" data-tab="1">interface</button>
-  <button role="tab" class="tab" data-tab="2">algorithm</button>
-  <button role="tab" class="tab" data-tab="3">generated code</button>
-  <button role="tab" class="tab" data-tab="4">evidence</button>
-  <button role="tab" class="tab" data-tab="5">flags</button>
-  <button role="tab" class="tab" data-tab="6">credibility</button>
-  <button role="tab" class="tab" data-tab="7">design space</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">By how much does the published table under-read the daily PEAK Kp at this Ap?</p>
+<p class="maths"><code>dKp_peak(Ap) = piecewise_linear(ap_bin_centres -&gt; measured_medians, Ap)</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">sw_kp_from_ap applies the published scale as published, and the scale is defined for the three-hourly ap while the design product carries a daily mean. This row measures the resulting bias for the slot that sizes a drag design — the daily peak — and publishes it as a correction to be added. The 24-hour-mean slot has its own, smaller and oppositely-signed bias, recorded in the assumptions rather than published, because a node answers one question.</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>The correction is a median per bin, so it describes the typical day at that Ap and not the day in hand</dt><dd>fails when the offset is a distribution, not a number. Adding the median recovers the typical peak and still misses any individual day, and the spread within a bin is not published by this row. A design that needs the worst case at a given Ap needs a percentile of the offset, not its median.</dd>
+<dt>The nine bin medians are not monotone, and the top bin sits exactly at the record's support limit</dt><dd>fails when the offset rises with Ap as the concavity argument predicts — +1.000 at Ap 2.5 through +1.747 at Ap 90 — and then FALLS to +1.317 in the 110-to-400 bin. That bin holds 20 days, which is exactly prf_ap2kp's own minimum for using a bin at all, so the fall is as likely to be a small-sample artefact as a real saturation of the table near its top. It is carried through rather than smoothed away, because smoothing it would be this node inventing a shape the record does not show. Anyone designing at Ap above 110 is reading a correction supported by twenty days.</dd>
+<dt>The 24-hour-mean slot is NOT what this publishes</dt><dd>fails when the two slots have opposite signs, and using this row for the mean slot would double the error rather than remove it. Measured on the same 10,297 days, the mean-slot offset runs from +0.042 at Ap 2.5 down to -0.462 in the top bin — the table reads HIGH against the 24-hour mean and LOW against the peak. DTM2020_Oper wants both: akp(1) is a single three-hourly value, akp(3) the mean of the eight. Only the peak is published here.</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
+<p class="why">The previous row establishes by Jensen's inequality that reading the published table with a daily mean must under-read the day's worst three-hourly Kp. An inequality gives the sign and not the size, and a drag design needs the size: the atmosphere responds to the disturbance it actually met, which for a heating calculation is closer to the peak slot than to the daily average. So the size has to be measured, and it cannot be derived, because it depends on how unevenly a real day distributes its disturbance among its eight slots — which is a property of storms rather than of the table.</p>
+<div class="theory-walk" data-steps="6">
+<ol class="derive">
+<li><span class="dt">Define the quantity to be measured as the gap between what a design reads and what the day actually contained: the day's worst three-hourly Kp minus the table's reading of the day's mean Ap.</span><code class="dm">dKp_peak(day) = max_8 Kp(day) - Kp_table(Ap(day))</code></li>
+<li><span class="dt">Its sign is known in advance. Kp(ap) is concave, so the table's reading of a mean cannot exceed the largest of the values averaged — which means this difference cannot be negative, and a negative answer would say the sign or the slot had been swapped rather than that a quiet day had occurred.</span></li>
+<li><span class="dt">It is measured as a function of Ap and not as a single number, because the unevenness grows with activity: a quiet day is uniformly quiet across its eight slots while a storm is concentrated in a few. Nine bins, the study's prf_ap2kp edges, and the median in each.</span><code class="dm">edges = 0, 5, 10, 15, 20, 30, 45, 70, 110, 400</code></li>
+<li><span class="dt">The medians rise with Ap as the concavity argument predicts — +1.000 at Ap 2.5 through +1.747 at Ap 90 — and then FALL to +1.317 in the 110-to-400 bin.</span></li>
+<li><span class="dt">That fall is not smoothed away, and it is not defended either. The top bin holds 20 days, exactly prf_ap2kp's own minimum for using a bin at all, so the drop is as likely to be a small-sample artefact as a real saturation of the table near its top. Smoothing it would be this row inventing a shape the record does not show; anyone designing above Ap 110 is reading a correction supported by twenty days.</span></li>
+<li><span class="dt">Between bin centres the answer is interpolated and at the ends it is held rather than extrapolated, which is prf_ap2kp's own rule stated explicitly: hold the end bins, never extrapolate.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">A median per bin, so it recovers the typical day at that Ap and misses any individual one; the spread within a bin is not published here, and a design needing a worst case at a given Ap needs a percentile of the offset rather than its median. It is also the PEAK-slot offset only. The 24-hour-mean slot has its own bias of the opposite sign — running from +0.042 down to -0.462 — so applying this row to the mean slot would double the error rather than remove it. Models like DTM2020 want both kinds of input; only one is published here.</p>
+<p class="maths concl">which is the relation this node states: <code>dKp_peak(Ap) = piecewise_linear(ap_bin_centres -&gt; measured_medians, Ap)</code></p>
+</section>
+<section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sw_kp_slot_bias</td><td></td><td>-</td></tr>
+<tr><td>in</td><td><code>ap</code></td><td><a class="xref" data-goto="sw_storm_return_level">sw_storm_return_level</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>dKp_peak</code></td><td>sw_kp_slot_bias</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
-<section class="panel" data-panel="2">
-<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>0</b> -, confirmed by <b></b>.</p>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">read the measured peak-slot offset off the nine binned medians at this Ap</span> <span class="binds">→ <code>off: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_kp_slot_bias(ap: Ratio) -> Ratio
+    given ap from sw_storm_return_level
+    // read the measured peak-slot offset off the nine binned medians at this Ap
+    off ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require dKp_peak ≥ 0
+    require dKp_peak ≤ 2
+    require dKp_peak is finite
+
+    return dKp_peak
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>dKp_peak &ge; 0</code> — Kp(ap) is concave, so by Jensen's inequality the daily peak three-hourly Kp cannot sit below the table's reading of the daily mean. A negative correction contradicts the inequality the whole row rests on, and means the sign or the slot has been swapped. The smallest measured bin median is +0.833</li>
+<li><code>dKp_peak &le; 2</code> — the largest measured bin median is +1.747 and the relation is a table that clamps at its ends, so no input can produce more than that. 2.0 is therefore unreachable by this relation and exists to catch a broken table rather than an extreme sky</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="3">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
-</section>
 <section class="panel" data-panel="4">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<div class="relation-host" data-node="sw_kp_slot_bias" data-lo="0" data-hi="2" data-symbol="dKp_peak">
+<p class="muted">asking the engine…</p>
+</div>
 </section>
 <section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// By how much does the published table under-read the daily PEAK Kp at this Ap?
+///
+/// `dKp_peak(Ap) = piecewise_linear(ap_bin_centres -&gt; measured_medians, Ap)`
+///
+/// Source: `noaa_swpc`
+///
+/// sw_kp_from_ap applies the published scale as published, and the scale is
+/// defined for the three-hourly ap while the design product carries a daily
+/// mean. This row measures the resulting bias for the slot that sizes a drag
+/// design — the daily peak — and publishes it as a correction to be
+/// added. The 24-hour-mean slot has its own, smaller and oppositely-signed
+/// bias, recorded in the assumptions rather than published, because a node
+/// answers one question.
+///
+/// # Assumptions
+///
+/// * The correction is a median per bin, so it describes the typical day at that Ap and not the day in hand — fails when the offset is a distribution, not a number. Adding the median recovers the typical peak and still misses any individual day, and the spread within a bin is not published by this row. A design that needs the worst case at a given Ap needs a percentile of the offset, not its median.
+/// * The nine bin medians are not monotone, and the top bin sits exactly at the record's support limit — fails when the offset rises with Ap as the concavity argument predicts — +1.000 at Ap 2.5 through +1.747 at Ap 90 — and then FALLS to +1.317 in the 110-to-400 bin. That bin holds 20 days, which is exactly prf_ap2kp's own minimum for using a bin at all, so the fall is as likely to be a small-sample artefact as a real saturation of the table near its top. It is carried through rather than smoothed away, because smoothing it would be this node inventing a shape the record does not show. Anyone designing at Ap above 110 is reading a correction supported by twenty days.
+/// * The 24-hour-mean slot is NOT what this publishes — fails when the two slots have opposite signs, and using this row for the mean slot would double the error rather than remove it. Measured on the same 10,297 days, the mean-slot offset runs from +0.042 at Ap 2.5 down to -0.462 in the top bin — the table reads HIGH against the 24-hour mean and LOW against the peak. DTM2020_Oper wants both: akp(1) is a single three-hourly value, akp(3) the mean of the eight. Only the peak is published here.
+pub const NODE_ID: &amp;str = &quot;sw_kp_slot_bias&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xde65f5eeb49f7833;
+
+pub fn evaluate(ap: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : read the measured peak-slot offset off the nine binned medians at this Ap -&gt; Ratio
+    // The nine bin medians, measured on solar-weather@2026.09.14. The x values are
+    // prf_ap2kp's own bin CENTRES — the midpoints of its edges 0 5 10 15 20 30 45
+    // 70 110 400 — and the y values are the median of max_8(Kp) - table(Ap) in each
+    // bin. They belong to the record, not to this code, and the sheet names the
+    // bundle version they came from.
+    //
+    // Table1::at holds the end values instead of extrapolating, which is the same
+    // choice prf_ap2kp makes explicitly (&quot;hold the end bins, never extrapolate&quot;).
+    // The eighth and ninth entries are NOT monotone; that is the record's shape and
+    // the sheet declares it rather than this code smoothing it.
+    use vleo_core::math::Table1;
+    const OFFSET: Table1 = Table1 {
+        x: &amp;[2.5, 7.5, 12.5, 17.5, 25.0, 37.5, 57.5, 90.0, 255.0],
+        y: &amp;[
+            1.0,
+            0.8333333333333333,
+            1.1144067796610169,
+            1.0,
+            1.2,
+            1.3333333333333333,
+            1.5454545454545454,
+            1.7469135802469136,
+            1.3174603174603174,
+        ],
+    };
+    let off: Ratio = Ratio::new(OFFSET.at(ap.get()));
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = off;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;dKp_peak&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;dKp_peak&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp(ap) is concave, so by Jensen's inequality the daily peak three-hourly Kp cannot sit below the table's reading of the daily mean. A negative correction contradicts the inequality the whole row rests on, and means the sign or the slot has been swapped. The smallest measured bin median is +0.833&quot; });
+    }
+    if answer.get() &gt; 2.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;dKp_peak&quot;, value: answer.get(), bound: 2.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the largest measured bin median is +1.747 and the relation is a table that clamps at its ends, so no input can produce more than that. 2.0 is therefore unreachable by this relation and exists to catch a broken table rather than an extreme sky&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="Ap bin 0-5, centre 2.5 — 2529 days"><td>Ap bin 0-5, centre 2.5 — 2529 days</td><td class="num">1</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Ap bin 5-10, centre 7.5 — 3938 days"><td>Ap bin 5-10, centre 7.5 — 3938 days</td><td class="num">0.8333333333333333</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Ap bin 10-15, centre 12.5 — 1836 days"><td>Ap bin 10-15, centre 12.5 — 1836 days</td><td class="num">1.114406779661017</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Ap bin 15-20, centre 17.5 — 839 days"><td>Ap bin 15-20, centre 17.5 — 839 days</td><td class="num">1</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Ap bin 20-30, centre 25 — 707 days"><td>Ap bin 20-30, centre 25 — 707 days</td><td class="num">1.2</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Ap bin 30-45, centre 37.5 — 288 days"><td>Ap bin 30-45, centre 37.5 — 288 days</td><td class="num">1.333333333333333</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Ap bin 45-70, centre 57.5 — 115 days"><td>Ap bin 45-70, centre 57.5 — 115 days</td><td class="num">1.545454545454545</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Ap bin 70-110, centre 90 — 25 days"><td>Ap bin 70-110, centre 90 — 25 days</td><td class="num">1.746913580246914</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="Ap bin 110-400, centre 255 — 20 days"><td>Ap bin 110-400, centre 255 — 20 days</td><td class="num">1.317460317460317</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="below the first bin centre — Ap 0 holds the 0-to-5 bin rather than extrapolating"><td>below the first bin centre — Ap 0 holds the 0-to-5 bin rather than extrapolating</td><td class="num">1</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="above the last bin centre — Ap 1000 holds the 110-to-400 bin"><td>above the last bin centre — Ap 1000 holds the 110-to-400 bin</td><td class="num">1.3174603174603174</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 0 — Kp(ap) is concave, so by Jensen's inequality the daily peak three-hourly Kp cannot sit below the table's reading of the daily mean. A negative correction contradicts the inequality the whole row rests on, and means the sign or the slot has been swapped. The smallest measured bin median is +0.833</li>
+<li><code>OutOfDomain</code> above 2 — the largest measured bin median is +1.747 and the relation is a table that clamps at its ends, so no input can produce more than that. 2.0 is therefore unreachable by this relation and exists to catch a broken table rather than an extreme sky</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+<li><code>DataMissing</code> / <code>DataUnverified</code> for bundle <b>solar-weather</b></li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="6">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_kp_slot_bias"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="7">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
-<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<section class="panel" data-panel="9">
+<p>Valid over <code>0 &hellip; 2</code> -.</p>
+<ul class="guards"><li>lower — Kp(ap) is concave, so by Jensen's inequality the daily peak three-hourly Kp cannot sit below the table's reading of the daily mean. A negative correction contradicts the inequality the whole row rests on, and means the sign or the slot has been swapped. The smallest measured bin median is +0.833</li><li>upper — the largest measured bin median is +1.747 and the relation is a table that clamps at its ends, so no input can produce more than that. 2.0 is therefore unreachable by this relation and exists to catch a broken table rather than an extreme sky</li></ul>
+<div class="sweep" data-over="orbit_mission_duration" data-points="60" data-y="sw_kp_slot_bias"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a> over 60 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

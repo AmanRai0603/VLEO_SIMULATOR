@@ -1,10 +1,10 @@
 {
   "id": "sw_event_duration",
-  "state": "empty",
-  "sheet_hash": "e58fc5",
+  "state": "published",
+  "sheet_hash": "24ed52",
   "impl_hash": "222325",
   "owner": "environment",
-  "tier": "",
+  "tier": "A",
   "fixtures": 0,
   "criticality": "minor",
   "reviewers": 1,
@@ -13,5 +13,5 @@
   "holes": 0,
   "inputs": [],
   "contributes": [],
-  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+  "gaps": []
 }
