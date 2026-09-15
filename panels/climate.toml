@@ -1,0 +1,40 @@
+id = "climate"
+label = "Climate — the long run a mission sits inside"
+module = "web/js/solar.js"
+mount = "canvas.sw-panel"
+draws = """The record aggregated over the long run: by year, by day of year, by month, by
+the 13-month smoother, or Kp against ap. The context a single mission window is
+a slice of."""
+correct = """The selected aggregate over the whole record, with the horizontal axis labelled
+for the aggregate chosen — years for by-year, 1 to 366 for day of year. On the
+Kp-against-ap setting the published conversion table is drawn as points and
+they are ALL present: Kp is reported in thirds, so a whole-Kp lookup silently
+drops two values in three, and a line with gaps in it is that defect. That
+setting is the one where the table sits above the median day at every Kp, which
+is the panel's claim and must be visible."""
+tolerance = 0.02
+# The panel refetches the whole solar-weather record on every redraw, so
+# check two has to wait on the content changing rather than on a fixed pause.
+settle_ms = 8000
+
+# The solar view is not where the page opens, and each tab is a separate
+# panel sharing one canvas. This drives to the view and selects this tab;
+# panel_check re-runs it after every input to restore the starting state.
+ready = """(async () => {
+  S.view = 'solar';
+  draw();
+  await new Promise(r => setTimeout(r, 150));
+  const tab = document.querySelector('.sw-tab[data-panel=climate]');
+  if (!tab) throw new Error('no tab for the climate panel');
+  tab.click();
+})()"""
+
+[[input]]
+name = "v"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'ap'; s.dispatchEvent(new Event('change')); })()"
+why = """the three variables have different scales and different axis labels"""
+
+[[input]]
+name = "by"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=by]'); if (!s) throw new Error('no by control'); s.value = 'kpap'; s.dispatchEvent(new Event('change')); })()"
+why = """the five aggregates are five different horizontal axes; the Kp-against-ap setting in particular changes the picture completely"""

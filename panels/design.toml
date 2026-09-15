@@ -1,0 +1,45 @@
+id = "design"
+label = "Design — the window against what the vehicle is built for"
+module = "web/js/solar.js"
+mount = "canvas.sw-panel"
+draws = """What the record expects against what the design is built for: a return curve
+for the Ap driver, or lead and confidence for F10.7, with the capability and
+the requirement drawn on as the lines a reader compares against."""
+correct = """The record's expectation as a curve, with the selected capability and the
+selected requirement drawn as marks that sit at their stated values on the same
+axis — at G3 the capability is Ap 132, and the requirement mark moves when the
+requirement control does. Where the expectation crosses the capability is the
+number sw_design_safe_duration publishes, so the crossing must be visible on
+the picture rather than only in the note. Both marks carry labels naming what
+they are; two unlabelled horizontal lines are the defect this catches."""
+tolerance = 0.02
+# The panel refetches the whole solar-weather record on every redraw, so
+# check two has to wait on the content changing rather than on a fixed pause.
+settle_ms = 8000
+
+# The solar view is not where the page opens, and each tab is a separate
+# panel sharing one canvas. This drives to the view and selects this tab;
+# panel_check re-runs it after every input to restore the starting state.
+ready = """(async () => {
+  S.view = 'solar';
+  draw();
+  await new Promise(r => setTimeout(r, 150));
+  const tab = document.querySelector('.sw-tab[data-panel=design]');
+  if (!tab) throw new Error('no tab for the design panel');
+  tab.click();
+})()"""
+
+[[input]]
+name = "v"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'f107'; s.dispatchEvent(new Event('change')); })()"
+why = """the Ap return curve and the F10.7 lead-and-confidence view are different quantities on different axes"""
+
+[[input]]
+name = "g"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=g]'); if (!s) throw new Error('no g control'); s.value = '1'; s.dispatchEvent(new Event('change')); })()"
+why = """the G band sets the capability line; moving G3 to G1 must move that line from 132 to 48"""
+
+[[input]]
+name = "req"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=req]'); if (!s) throw new Error('no req control'); s.value = '200'; s.dispatchEvent(new Event('change')); })()"
+why = """the requirement is a separate mark from the capability and must move on its own"""

@@ -1,0 +1,55 @@
+id = "predict"
+label = "Predict — how far the flux moves over a lead"
+module = "web/js/solar.js"
+mount = "canvas.sw-panel"
+draws = """The selected percentile of the change in the driver over a lead, against that
+lead, out to the selected span. This is the measured quantity
+sw_uncertainty_growth reads, drawn over its whole range rather than at the one
+lead a mission asks about."""
+correct = """One curve of the percentile change against lead. The horizontal axis ends at
+the last lead in the ladder and NOT at the selected span — the ladder is
+geometric, so a five-year span draws out to 4.08 years, and an axis that
+stopped exactly on the span would mean the ladder had been resampled to be
+tidy. The curve is measured, not fitted: at short leads it wobbles rather than
+rising smoothly, and at the fifteen-year span it stops being monotone
+altogether — the record's 95th percentile rises to about +114 sfu near four
+years, falls to about +66 near ten to eleven, and rises again, which is the
+eleven-year cycle showing through. A smooth monotone curve at that span means
+something has been fitted. Splitting by cycle replaces the single curve with
+one per cycle."""
+tolerance = 0.02
+# The panel refetches the whole solar-weather record on every redraw, so
+# check two has to wait on the content changing rather than on a fixed pause.
+settle_ms = 8000
+
+# The solar view is not where the page opens, and each tab is a separate
+# panel sharing one canvas. This drives to the view and selects this tab;
+# panel_check re-runs it after every input to restore the starting state.
+ready = """(async () => {
+  S.view = 'solar';
+  draw();
+  await new Promise(r => setTimeout(r, 150));
+  const tab = document.querySelector('.sw-tab[data-panel=predict]');
+  if (!tab) throw new Error('no tab for the predict panel');
+  tab.click();
+})()"""
+
+[[input]]
+name = "v"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'ap'; s.dispatchEvent(new Event('change')); })()"
+why = """the two drivers have different units and different spreads; one curve for both is a chart ignoring the variable"""
+
+[[input]]
+name = "q"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=q]'); if (!s) throw new Error('no q control'); s.value = '0.5'; s.dispatchEvent(new Event('change')); })()"
+why = """the median change and the 95th percentile are far apart — a curve that does not drop when the percentile does is not reading it"""
+
+[[input]]
+name = "span"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=span]'); if (!s) throw new Error('no span control'); s.value = '5478'; s.dispatchEvent(new Event('change')); })()"
+why = """the span is the horizontal extent and the curve must reach it"""
+
+[[input]]
+name = "by"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=by]'); if (!s) throw new Error('no by control'); s.value = 'cycle'; s.dispatchEvent(new Event('change')); })()"
+why = """splitting by cycle must replace one curve with several; a single curve under both settings means the split is not wired"""

@@ -1,0 +1,36 @@
+id = "density"
+label = "Density — the precondition, and why there is no curve"
+module = "web/js/solar.js"
+mount = "canvas.sw-panel"
+draws = """Not a density profile. The study's density tab needs an atmosphere model owned
+by a subsystem with nothing written in it, so what is drawn is the honest
+precondition: the two drivers such a model takes, against each other, over
+every day carrying both."""
+correct = """A scatter of the two drivers against each other, one point per day carrying
+both, with no fitted line through it — a trend line here would be this face
+carrying a model no row owns. The axes are the two drivers with their units.
+The note beneath states plainly that the tab has no rows and why, and gives the
+measured correlation; a panel that quietly drew a density curve instead would
+be the defect, and it is the one this spec exists to fix in place."""
+tolerance = 0.02
+# The panel refetches the whole solar-weather record on every redraw, so
+# check two has to wait on the content changing rather than on a fixed pause.
+settle_ms = 8000
+
+# The solar view is not where the page opens, and each tab is a separate
+# panel sharing one canvas. This drives to the view and selects this tab;
+# panel_check re-runs it after every input to restore the starting state.
+ready = """(async () => {
+  S.view = 'solar';
+  draw();
+  await new Promise(r => setTimeout(r, 150));
+  const tab = document.querySelector('.sw-tab[data-panel=density]');
+  if (!tab) throw new Error('no tab for the density panel');
+  tab.click();
+})()"""
+
+# NO INPUTS, AND THAT IS A REAL GAP RATHER THAN AN OVERSIGHT. This panel
+# declares no controls because it draws one fixed precondition, so check
+# two — "it moves" — has nothing to drive and passes vacuously. Checks one
+# and three still bite. If this tab ever gains a control, it gains an
+# [[input]] here on the same day.

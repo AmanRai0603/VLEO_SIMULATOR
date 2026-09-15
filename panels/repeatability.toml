@@ -1,0 +1,47 @@
+id = "repeatability"
+label = "Repeatability — the mean cycle against every cycle"
+module = "web/js/solar.js"
+mount = "canvas.sw-panel"
+draws = """Every cycle the record holds, stacked on cycle phase, with the mean of the
+COMPLETE cycles drawn heavier over them. Cycle 25 is dashed and stops part way,
+because it is still running and the record simply has no days past its end."""
+correct = """One line per cycle in the record plus one heavier line for the mean of the
+complete ones, all spanning phase 0 to 1. The mean line lies between cycles 23 and
+24 everywhere, because those are the complete cycles it averages — a mean that
+escapes them is an averaging error. Cycle 25 may sit outside it, and does,
+since it is excluded from the average. Cycle 25's line is dashed and ends before
+phase 1 while the others do not. The vertical axis is labelled with the
+selected variable and its unit, and changing the variable changes that label.
+Bins that neither complete cycle populates to the declared minimum are absent
+from the mean rather than drawn as zero."""
+tolerance = 0.02
+# The panel refetches the whole solar-weather record on every redraw, so
+# check two has to wait on the content changing rather than on a fixed pause.
+settle_ms = 8000
+
+# The solar view is not where the page opens, and each tab is a separate
+# panel sharing one canvas. This drives to the view and selects this tab;
+# panel_check re-runs it after every input to restore the starting state.
+ready = """(async () => {
+  S.view = 'solar';
+  draw();
+  await new Promise(r => setTimeout(r, 150));
+  const tab = document.querySelector('.sw-tab[data-panel=repeatability]');
+  if (!tab) throw new Error('no tab for the repeatability panel');
+  tab.click();
+})()"""
+
+[[input]]
+name = "view"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'storm'; s.dispatchEvent(new Event('change')); })()"
+why = """the two views draw different quantities entirely; a panel that shows the same picture for both is not reading the control"""
+
+[[input]]
+name = "v"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'ap'; s.dispatchEvent(new Event('change')); })()"
+why = """each variable has its own axis label and its own scale — a chart that does not change is drawing one variable and labelling it three ways"""
+
+[[input]]
+name = "bins"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=bins]'); if (!s) throw new Error('no bins control'); s.value = '40'; s.dispatchEvent(new Event('change')); })()"
+why = """the bin count sets the resolution of every line; doubling it must visibly change the curves"""

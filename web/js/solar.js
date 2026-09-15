@@ -388,7 +388,15 @@ const PANELS = [
     asks: 'Is the published forecast worth more than assuming nothing changes?',
     needs: ['forecast_issued.csv'],
     controls: [
-      { k: 'view', label: 'view', opts: [['lead', 'against lead'], ['rolling', 'rolling, by year'], ['age', 'issue age']] },
+      // 'rolling, by year' USED TO BE OFFERED HERE AND WAS NEVER IMPLEMENTED.
+      // The string appeared in this list and nowhere else in the file, so
+      // choosing it silently redrew the against-lead picture — a control wired
+      // to nothing, which is the one defect that passes every check a person
+      // makes by eye. Declaring this panel in panels/ is what found it: check
+      // two drives every option a panel claims to read and demands the canvas
+      // change. The view is still missing (the plan's §12 lists it as one of
+      // forecast's four) and it is better missing than advertised.
+      { k: 'view', label: 'view', opts: [['lead', 'against lead'], ['age', 'issue age']] },
       { k: 'm', label: 'metric', opts: [['skill', 'skill vs persistence'], ['bias', 'bias'], ['rmse', 'RMS error']] },
       { k: 'base', label: 'persistence baseline', opts: [['strict', 'last obs BEFORE issue'], ['leaky', 'obs ON the issue date']] },
     ],

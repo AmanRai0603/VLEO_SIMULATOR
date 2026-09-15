@@ -1,0 +1,46 @@
+id = "segmentation"
+label = "Segmentation — where the record sits against the cuts"
+module = "web/js/solar.js"
+mount = "canvas.sw-panel"
+draws = """The distribution of the selected driver over the whole record, with the
+boundaries the study cut it at drawn on. The second view abandons the
+distribution and shows how the regimes are distributed across cycle phase
+instead."""
+correct = """A distribution with every boundary drawn as a mark ON the axis it belongs to,
+at the value sw_regime and sw_activity_band actually use — quiet/active/storm
+at Ap 7 and 26, the activity bands at F10.7 90, 130 and 170. A boundary drawn
+between the wrong pair of bars is the defect this panel exists to catch, so the
+marks and the bars must be read against each other and not just present. The
+count axis honours the log/linear control, and on the log setting no bar is
+drawn at zero height for an empty bin."""
+tolerance = 0.02
+# The panel refetches the whole solar-weather record on every redraw, so
+# check two has to wait on the content changing rather than on a fixed pause.
+settle_ms = 8000
+
+# The solar view is not where the page opens, and each tab is a separate
+# panel sharing one canvas. This drives to the view and selects this tab;
+# panel_check re-runs it after every input to restore the starting state.
+ready = """(async () => {
+  S.view = 'solar';
+  draw();
+  await new Promise(r => setTimeout(r, 150));
+  const tab = document.querySelector('.sw-tab[data-panel=segmentation]');
+  if (!tab) throw new Error('no tab for the segmentation panel');
+  tab.click();
+})()"""
+
+[[input]]
+name = "view"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'phase'; s.dispatchEvent(new Event('change')); })()"
+why = """the distribution and the phase breakdown are different pictures; one for both means the view control does nothing"""
+
+[[input]]
+name = "v"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'f107'; s.dispatchEvent(new Event('change')); })()"
+why = """Ap and F10.7 have different boundaries and different ranges — the marks must move with the variable, not stay where the other one put them"""
+
+[[input]]
+name = "scale"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=scale]'); if (!s) throw new Error('no scale control'); s.value = 'lin'; s.dispatchEvent(new Event('change')); })()"
+why = """a log count axis and a linear one place every bar differently; identical pictures mean the scale is decorative"""
