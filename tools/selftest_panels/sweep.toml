@@ -39,11 +39,21 @@ settle_ms = 8000
 # This drives the run view to a node whose view is a line, picks the axis worth
 # looking at, and runs it.
 #
-# orbit_mission_duration rather than the default: the control defaults to the
+# The mission duration rather than the default: the control defaults to the
 # first declared row alphabetically, which for this node is env_f107, and
 # sw_f107_design is almost flat in env_f107 by construction — persistence has
 # decayed to nothing at any mission lead. A flat line is a reference that would
 # still match if the panel broke.
+#
+# IT USED TO NAME orbit_mission_duration AND THAT ROW IS NO LONGER DECLARED.
+# §20 step 2 made sys_mission_requirements_mission_duration the one declared
+# mission length and had orbit_mission_duration read it, because two rows
+# declaring a duration are two rows that can disagree about how long the mission
+# is. A sweep can only be run over a DECLARED row, so this fixture asked for one
+# the engine refuses, the sweep never ran, the canvas stayed blank, and the
+# selftest case that needs a working canvas panel to break reported "1 renders"
+# instead of the "2 moves" it exists to prove. The checker was right and its own
+# fixture was stale.
 ready = """
 (async () => {
   S.runTarget = 'sw_f107_design';
@@ -52,7 +62,7 @@ ready = """
   await new Promise(r => setTimeout(r, 120));
   const o = document.querySelector('.sw-over');
   if (!o) throw new Error('the run view has no sweep control');
-  o.value = 'orbit_mission_duration';
+  o.value = 'sys_mission_requirements_mission_duration';
   o.dispatchEvent(new Event('change'));
   document.querySelector('.sw-go').click();
 })()
