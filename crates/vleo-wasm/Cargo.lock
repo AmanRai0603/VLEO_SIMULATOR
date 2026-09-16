@@ -383,7 +383,6 @@ dependencies = [
  "vleo-bus",
  "vleo-core",
  "vleo-modules",
- "vleo-units",
  "wasm-bindgen",
 ]
 

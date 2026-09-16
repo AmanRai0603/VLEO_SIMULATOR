@@ -160,7 +160,6 @@ dependencies = [
  "vleo-core",
  "vleo-data",
  "vleo-modules",
- "vleo-units",
 ]
 
 [[package]]
@@ -194,9 +193,7 @@ name = "vleo-ffi"
 version = "0.1.0"
 dependencies = [
  "vleo-bus",
- "vleo-core",
  "vleo-modules",
- "vleo-units",
 ]
 
 [[package]]

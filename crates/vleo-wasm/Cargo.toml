@@ -19,7 +19,6 @@ crate-type = ["cdylib", "rlib"]
 vleo-modules = { path = "../vleo-modules" }
 vleo-bus = { path = "../vleo-bus" }
 vleo-core = { path = "../vleo-core" }
-vleo-units = { path = "../vleo-units" }
 wasm-bindgen = "0.2"
 console_error_panic_hook = "0.1"
 

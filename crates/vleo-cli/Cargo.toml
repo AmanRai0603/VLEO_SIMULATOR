@@ -16,7 +16,6 @@ path = "src/main.rs"
 vleo-modules = { workspace = true, features = ["std"] }
 vleo-bus = { workspace = true, features = ["std"] }
 vleo-core = { workspace = true, features = ["std"] }
-vleo-units = { workspace = true, features = ["std"] }
 vleo-data = { workspace = true }
 
 [lints.rust]
