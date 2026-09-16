@@ -1,0 +1,139 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_ap_cold_long"
+label = "Sustained cold Ap to design to"
+folder = "sw_ap_cold_long"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "computed"
+owner = "environment"
+tier = "A"
+# SIGNIFICANT, for the same reason as its hot twin and not by default. It is one
+# of the driver set's five scenarios, it reaches density through the Jacchia
+# temperature correction, and it carries the same 1.28 this subsystem had to
+# argue about rather than inherit.
+criticality = "significant"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1375
+state = "published"
+
+# The prior implementation, named so the parity grid beside this node has
+# something to be the parity of. designWindow_ forms both edges of the mean band
+# in one statement and publishes them as the hotmean and coldmean scenarios; the
+# grid holds the lower one.
+migrated_from = "prf_density.m:217 (01_kernel/sw_study/06_density, local function designWindow_)"
+# Pure arithmetic on two supplied numbers, so the two implementations should
+# agree to the last bits. A grid loose enough to hide a wrong multiplier — or a
+# wrong SIGN, which is the whole difference between this row and its twin —
+# would defeat the only thing this grid is here to catch.
+parity_tolerance = 1e-9
+
+[question]
+text = "What Ap must the design still work at as a sustained level over the mission window, on the low side?"
+note = """
+The lower edge of the Ap mean band, and the Ap column of the scenario the study
+calls coldmean. Its hot twin, sw_ap_design_long, is the disturbed sky the design
+must survive; this is the quiet sky it must still work in.
+
+A quiet geomagnetic field is the case where the thermosphere is coolest and
+thinnest, and on the Ap side it also sets the floor of what a magnetometer sees
+and what a magnetorquer has to push against. Quiet is not the absence of a
+design case.
+"""
+
+[maths]
+# A person has NOT read this relation against its source yet.
+confirmed_by = ""
+expression = "Ap_cold_long = Ap_central - 1.28 * sigma_ap"
+source = "noaa_swpc"
+
+[[input]]
+binding = "central"
+var = "sw_ap_central_expectation"
+type = "Ratio"
+
+[[input]]
+binding = "spread"
+var = "sw_ap_mean_band_spread"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "subtract 1.28 standard deviations of the rotation-forecast residual from the central Ap expectation"
+binds = "sustained"
+type = "Ratio"
+
+[theory]
+why = """
+sw_ap_design_long with the sign of one term reversed, and a separate row for the
+same reason its F10.7 counterpart is: the two edges are read in different places
+by different consumers, and a single row with a sign flag would be a row whose
+meaning depends on a value somebody has to go and look up.
+
+The mean band is symmetric because sigma is a standard deviation and a standard
+deviation has no sides. On Ap that symmetry is in tension with the quantity
+itself, which is bounded below at zero and unbounded above, and the tension is
+visible in the numbers: the DAILY Ap band reaches 15.00 up and only 10.59 down,
+forty-two per cent apart, while this mean band is exactly as far down as up. One
+of the two is describing the sky's shape and the other is describing a spread,
+and only the first can be asymmetric.
+
+That is not a defect to be fixed here. A standard deviation of a residual is
+what sw_ap_mean_band_spread measures and 1.28 of it is what the study subtracts;
+reproducing the port means reproducing both. It IS a reason to read this row's
+assumptions rather than only its number, because at a low enough centre the
+symmetric subtraction reaches below zero and the guard, not the arithmetic, is
+what stops it.
+"""
+reading = """
+At the study's own window the arithmetic is exact: its nominal 22.0925383902
+minus 1.28 * 3.5865545525 is 17.5017485630, which is the coldmean Ap it
+published to the last digit. This repository's own chain gives 17.4955, 0.04
+per cent away, because its centre and its sigma are its own measurements.
+
+Ap 17.5 is an ordinary quiet-to-unsettled field. The guard at zero has three and
+a half units of room at this centre — a centre below about 4.6 with this sigma
+would reach it — so for the declared window it is a check rather than a
+constraint. A window at deep solar minimum is where it earns its place.
+"""
+
+[[theory.step]]
+text = "Take the centre the cycle analogue gives for Ap over the window."
+math = "Ap_central = sw_ap_central_expectation"
+
+[[theory.step]]
+text = "Take the spread the pattern has historically missed a rotation's Ap by. The same number the hot edge uses, because it is one spread and not two."
+math = "sigma_ap = sw_ap_mean_band_spread = 3.5937"
+
+[[theory.step]]
+text = "Subtract 1.28 of them. Symmetric with the hot edge, unlike the daily band two rows down, where the two tails are forty-two per cent apart because Ap floors at zero."
+math = "Ap_cold_long = Ap_central - 1.28 * sigma_ap"
+
+[[assumption]]
+text = "1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent"
+fails_when = "a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997, so this edge is the 10th percentile and not the 5th. A one-sided 95 per cent bound is 1.645 sigma, a further 1.3 down at this sigma. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it"
+
+[[assumption]]
+text = "A symmetric band on a quantity truncated at zero"
+fails_when = "the centre is small. Ap cannot be negative, so the true low edge of any band is bounded by the centre itself, and a symmetric subtraction of 1.28 sigma ignores that. With this sigma the crossing is at a centre near 4.6, which is a deep-minimum window rather than an impossible one. The guard catches it; the arithmetic does not know about it"
+
+[[assumption]]
+text = "One sigma covers the whole window"
+fails_when = "sigma is not flat across the cycle, and Ap's is least flat of all — geomagnetic activity peaks in the DECLINING phase rather than at maximum, when coronal holes are largest and high-speed streams recur. A window spanning that transition is given one width where it needs two"
+
+[[assumption]]
+text = "The quiet edge is a design case and not a nuisance"
+fails_when = "it is read as the harmless side. A quiet field is the coolest, thinnest thermosphere, the weakest signal a magnetometer has to work with and the least torque a magnetorquer can generate. The last of those sizes an actuator"
+
+[output]
+symbol = "Ap_cold_long"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 300.0
+reason_lower = "Ap floors at zero — a perfectly quiet day is Ap 0 and there is nothing below it. On this row the guard is load-bearing rather than decorative: a symmetric band subtracted from a small centre reaches below zero, and what comes out then is arithmetic rather than sky"
+reason_upper = "above 300 the level exceeds the largest daily Ap in the record, 273. A COLD level there means the spread has been added rather than subtracted, which is the one failure this row has that its twin does not"
+
+[view]
+kind = "number"

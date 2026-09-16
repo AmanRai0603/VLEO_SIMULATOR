@@ -1,0 +1,165 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_f107_cold_short"
+label = "Single-day cold F10.7 to design to"
+folder = "sw_f107_cold_short"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "computed"
+owner = "environment"
+tier = "A"
+# SIGNIFICANT, for the same reason as its hot twin and not by default. It is one
+# of the driver set's five scenarios, it feeds density then drag then lifetime,
+# and it is the most extreme of the five, so a sign or a dropped term shows up
+# here first. Two reviewers and a differential fill is the right cost for that.
+criticality = "significant"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1377
+state = "published"
+
+# The prior implementation, named so the parity grid beside this node has
+# something to be the parity of. designWindow_ forms this as the lower rotation
+# band minus the within-rotation drop and publishes it as the `coldday` scenario.
+migrated_from = "prf_density.m:227 (01_kernel/sw_study/06_density, local function designWindow_)"
+# Arithmetic on two supplied numbers, so the two implementations should agree to
+# the last bits. A grid loose enough to hide a dropped term would defeat the
+# only thing this grid is here to catch.
+parity_tolerance = 1e-9
+
+[question]
+text = "How cold can a single day of F10.7 be inside the mission window?"
+note = """
+The coldest of the five scenarios, and the one a drag-based capability is
+weakest at. Its hot twin, sw_f107_design_short, is the worst single day upward;
+this is the worst single day downward, and the two are NOT mirror images even
+though the rows look identical bar a sign.
+
+They are not mirrors because the two terms behave differently. The rotation band
+is symmetric — both edges are 1.28 standard deviations from the centre. The
+daily term is not: 34.23 sfu up against 31.27 down. So the hot day sits further
+above nominal than the cold day sits below it, by about three sfu, and that
+asymmetry is the record's shape rather than a rounding artefact.
+"""
+
+[maths]
+# A person has NOT read this relation against its source yet.
+confirmed_by = ""
+expression = "F107_cold_short = F107_cold_long - dF107_day_low"
+source = "noaa_swpc"
+
+[[input]]
+binding = "sustained"
+var = "sw_f107_cold_long"
+type = "Ratio"
+
+[[input]]
+binding = "daily"
+var = "sw_daily_band_drop"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "subtract the within-rotation daily drop from the sustained cold level"
+binds = "single_day"
+type = "Ratio"
+
+[theory]
+why = """
+The two spreads are of different things and they stack rather than combine.
+sw_mean_band_spread is how wrong the pattern is about the LEVEL a rotation sits
+at — a forecast error. sw_daily_band_drop is how far a day falls below the
+rotation it belongs to — the sun's own variability, measured on days that
+already happened. A day is low because its rotation is low AND because it is a
+low day within that rotation, so the design level for a cold day is the
+sustained cold level with the daily drop taken off.
+
+That is a deliberately conservative construction and the sheet says so. Stacking
+two one-sided percentiles gives a bound further out than either — roughly the
+99th rather than the 95th if the two were independent and normal — so the
+published day is rarer than the confidence attached to it suggests. The study
+does the same thing and the port follows it.
+
+The one term that differs from the hot twin is which tail of the daily sample is
+used, and it is a different NUMBER rather than the same number negated:
+sw_daily_band_drop is 31.27 where sw_daily_band_spread is 34.23. Reading the hot
+row and flipping a sign would make this scenario three sfu colder than the record
+supports, which is the specific error this row exists to make impossible.
+"""
+reading = """
+Fed the study's own two numbers the arithmetic is exact: its coldmean
+141.0544028132 minus its own daily drop of 31.3333333333 is 109.7210694798,
+which is the coldday scenario it published to the last digit. With this
+repository's own two terms it is 109.8366, 0.11 per cent away. That is what the
+parity grid beside this sheet checks, and it is a check on the RELATION.
+
+THIS ROW REFUSES ON THE NOMINAL CASE, AND THAT IS THE FINDING. Its own chain
+does not reach 109. sw_central_expectation reads the cycle analogue over the
+mission's own dates rather than holding the last rotation forecast forward, and
+at the declared epoch it gives 86.8497 sfu — a deliberate and recorded departure
+from the study's 158.33. Carry 86.8497 down this chain and the sustained cold
+level is 69.6281 and the cold DAY is 38.3559, which is below the guard at 60, so
+the row returns OutOfDomain rather than a number. `vleo run sw_f107_cold_short`
+prints exactly that, and names this row as the one blocked.
+
+That is the right behaviour and it should not be traded away. 38 sfu has never
+been observed; the quiet sun's 10.7 cm floor is near 64, and the record's own
+minimum is above 60. The guard is not too tight — the construction is wrong at
+this centre. Stacking a symmetric 1.28-sigma band on a 5th-percentile daily drop
+takes 48.5 sfu off an 86.8 sfu sun, more than half of it, and a sun cannot lose
+more than half of itself. The crossing is at a centre of 108.5: any case whose
+centre is below that refuses here.
+
+The three things that could resolve it are all upstream of this row and none is
+a change to it. A sigma measured for the window's own phase rather than pooled
+across the cycle would be narrower near minimum. Percentiles of the residuals
+in place of a normal multiplier would not assume a symmetry the sample does not
+have. And the daily drop applies to a day inside a rotation, not to a rotation
+already at the low edge of its own band — stacking the two is the conservative
+choice the study made, and at a low centre conservative stops meaning safe and
+starts meaning impossible.
+"""
+
+[[theory.step]]
+text = "Take the sustained cold level: the centre less 1.28 standard deviations of the rotation-forecast residual."
+math = "F107_cold_long = sw_f107_cold_long"
+
+[[theory.step]]
+text = "Take how far a day falls below its own rotation, at the declared confidence. The LOW tail, which is not the high tail negated: 31.27 against 34.23."
+math = "dF107_day_low = sw_daily_band_drop = 31.2722 sfu"
+
+[[theory.step]]
+text = "Subtract it. The two are stacked rather than combined in quadrature, which is what the study does and is conservative — a stacked pair of one-sided percentiles is a rarer day than either confidence describes."
+math = "F107_cold_short = F107_cold_long - dF107_day_low"
+
+[[assumption]]
+text = "The two spreads stack rather than combine"
+fails_when = "a reader takes the result as a 95 per cent day. It is not: stacking a 10th-percentile rotation level with a 5th-percentile day inside it is nearer a 1-in-100 day than a 1-in-20 one, assuming the two are independent — and they are not independent either, because a quiet rotation is made of quiet days. The study does this and the port reproduces it; the number is conservative and its label is wrong"
+
+[[assumption]]
+text = "The cold day is not the hot day mirrored"
+fails_when = "somebody builds it by negating sw_f107_design_short's daily term. The daily tails differ by nine per cent — 31.27 down against 34.23 up — so mirroring makes this scenario about three sfu colder than the record supports, and a drag-authority case sized on it is being asked to work in air that has never been observed"
+
+[[assumption]]
+text = "The daily drop measured before the window applies inside it"
+fails_when = "the window spans a different part of the cycle from the 2001 days the percentile was measured on. Within-rotation variability widens near maximum, so a drop measured on an active stretch is too deep for a quiet window and too shallow for an active one"
+
+[[assumption]]
+text = "A day at this level is a day the rest of the tool can model"
+fails_when = "the value approaches the guard. Below 60 sfu every relation reading F10.7 in this repository is extrapolating past its own support, so this row refuses rather than handing a number downstream that looks like flux and is not"
+
+[[assumption]]
+text = "The construction is valid at the centre this repository actually gives, and AT THE DECLARED WINDOW IT IS NOT"
+fails_when = "the centre is below 108.5 sfu, which sw_central_expectation's own 86.8497 at the declared epoch is. Stacked on that centre this relation yields 38.3559 sfu and the guard refuses it, because 38 sfu has never been observed and the quiet sun's floor is near 64. The refusal is correct and the arithmetic is what is wrong: a pooled sigma, a normal multiplier on skewed residuals, and a daily drop applied to a rotation already at the low edge of its own band each take too much off, and together they take more than half the sun away. Every one of the three is upstream of this row"
+
+[output]
+symbol = "F107_cold_short"
+type = "Ratio"
+unit = "One"
+lower = 60.0
+upper = 400.0
+reason_lower = "below 60 sfu has never been observed and every relation reading F10.7 has no support there. This is the row most likely to reach it — a symmetric rotation band and a daily drop stacked on a low centre — which is exactly why the guard is here rather than downstream"
+reason_upper = "above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. On the COLDEST of the five scenarios a value there means a sign is wrong somewhere in the chain above it"
+
+[view]
+kind = "number"

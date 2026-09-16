@@ -1,0 +1,21 @@
+# The prior implementation, at the one window it was exported for.
+#
+# NOT A FIXTURE. An expected value may never come from the implementation under
+# test, and this file is the OTHER implementation's answer — a second opinion.
+#
+# designWindow_ forms both edges of the mean band in one statement and publishes
+# the lower one as the `coldmean` scenario, in matlab/reference/mission_drivers.csv:
+#
+#   nominal.f107 - 1.28 * sigma_total
+#     = 158.3304112313161 - 1.28 * 13.496881576668528
+#     = 141.05440281317954 = coldmean.f107      exactly, to the last digit
+#
+# The inputs below are the STUDY'S own centre and sigma, not this repository's.
+# That is deliberate: the grid checks the RELATION, and feeding it the study's
+# terms is the only way to ask whether the two implementations do the same
+# arithmetic. What this row publishes for the declared window is a different
+# number — about 79.8 — because sw_central_expectation reads the cycle analogue
+# instead of holding the last rotation forecast forward. That disagreement is
+# recorded on sw_central_expectation, where it belongs, and is not this grid's.
+central,spread,matlab_F107_cold_long
+158.3304112313161,13.496881576668528,141.05440281317954

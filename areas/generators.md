@@ -7,16 +7,16 @@ Agent I works here. Agents A, B, C, E never do.
 
 ## Why a change here needs two reviewers
 
-There are 1382 rows. A defect in a generator is in all of them at once, and it
+There are 1386 rows. A defect in a generator is in all of them at once, and it
 arrives everywhere on the same commit. One heavily reviewed component beats
-1382 lightly reviewed ones, but only if it is actually treated as one — so
+1386 lightly reviewed ones, but only if it is actually treated as one — so
 `H7` is two reviewers, and the advisory review job says so unprompted when it
 sees a diff here.
 
 ## The nine
 
 Six run per node and read nothing but that node's sheet, which is what makes
-1382 rows 1382 independent acts:
+1386 rows 1386 independent acts:
 
 | generator | emits |
 |---|---|

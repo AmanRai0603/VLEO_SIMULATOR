@@ -1,0 +1,198 @@
+<article class="node" data-node="sw_f107_cold_short" data-sheet-hash="a86e32" data-impl-hash="0e924c">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Single-day cold F10.7 to design to</h2>
+  <p class="ident"><code>sw_f107_cold_short</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How cold can a single day of F10.7 be inside the mission window?</p>
+<p class="maths"><code>F107_cold_short = F107_cold_long - dF107_day_low</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The coldest of the five scenarios, and the one a drag-based capability is
+weakest at. Its hot twin, sw_f107_design_short, is the worst single day upward;
+this is the worst single day downward, and the two are NOT mirror images even
+though the rows look identical bar a sign.
+
+They are not mirrors because the two terms behave differently. The rotation band
+is symmetric — both edges are 1.28 standard deviations from the centre. The
+daily term is not: 34.23 sfu up against 31.27 down. So the hot day sits further
+above nominal than the cold day sits below it, by about three sfu, and that
+asymmetry is the record's shape rather than a rounding artefact.
+</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>The two spreads stack rather than combine</dt><dd>fails when a reader takes the result as a 95 per cent day. It is not: stacking a 10th-percentile rotation level with a 5th-percentile day inside it is nearer a 1-in-100 day than a 1-in-20 one, assuming the two are independent — and they are not independent either, because a quiet rotation is made of quiet days. The study does this and the port reproduces it; the number is conservative and its label is wrong</dd>
+<dt>The cold day is not the hot day mirrored</dt><dd>fails when somebody builds it by negating sw_f107_design_short's daily term. The daily tails differ by nine per cent — 31.27 down against 34.23 up — so mirroring makes this scenario about three sfu colder than the record supports, and a drag-authority case sized on it is being asked to work in air that has never been observed</dd>
+<dt>The daily drop measured before the window applies inside it</dt><dd>fails when the window spans a different part of the cycle from the 2001 days the percentile was measured on. Within-rotation variability widens near maximum, so a drop measured on an active stretch is too deep for a quiet window and too shallow for an active one</dd>
+<dt>A day at this level is a day the rest of the tool can model</dt><dd>fails when the value approaches the guard. Below 60 sfu every relation reading F10.7 in this repository is extrapolating past its own support, so this row refuses rather than handing a number downstream that looks like flux and is not</dd>
+<dt>The construction is valid at the centre this repository actually gives, and AT THE DECLARED WINDOW IT IS NOT</dt><dd>fails when the centre is below 108.5 sfu, which sw_central_expectation's own 86.8497 at the declared epoch is. Stacked on that centre this relation yields 38.3559 sfu and the guard refuses it, because 38 sfu has never been observed and the quiet sun's floor is near 64. The refusal is correct and the arithmetic is what is wrong: a pooled sigma, a normal multiplier on skewed residuals, and a daily drop applied to a rotation already at the low edge of its own band each take too much off, and together they take more than half the sun away. Every one of the three is upstream of this row</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">The two spreads are of different things and they stack rather than combine. sw_mean_band_spread is how wrong the pattern is about the LEVEL a rotation sits at — a forecast error. sw_daily_band_drop is how far a day falls below the rotation it belongs to — the sun's own variability, measured on days that already happened. A day is low because its rotation is low AND because it is a low day within that rotation, so the design level for a cold day is the sustained cold level with the daily drop taken off.</p>
+<p class="why">That is a deliberately conservative construction and the sheet says so. Stacking two one-sided percentiles gives a bound further out than either — roughly the 99th rather than the 95th if the two were independent and normal — so the published day is rarer than the confidence attached to it suggests. The study does the same thing and the port follows it.</p>
+<p class="why">The one term that differs from the hot twin is which tail of the daily sample is used, and it is a different NUMBER rather than the same number negated: sw_daily_band_drop is 31.27 where sw_daily_band_spread is 34.23. Reading the hot row and flipping a sign would make this scenario three sfu colder than the record supports, which is the specific error this row exists to make impossible.</p>
+<div class="theory-walk" data-steps="3">
+<ol class="derive">
+<li><span class="dt">Take the sustained cold level: the centre less 1.28 standard deviations of the rotation-forecast residual.</span><code class="dm">F107_cold_long = sw_f107_cold_long</code></li>
+<li><span class="dt">Take how far a day falls below its own rotation, at the declared confidence. The LOW tail, which is not the high tail negated: 31.27 against 34.23.</span><code class="dm">dF107_day_low = sw_daily_band_drop = 31.2722 sfu</code></li>
+<li><span class="dt">Subtract it. The two are stacked rather than combined in quadrature, which is what the study does and is conservative — a stacked pair of one-sided percentiles is a rarer day than either confidence describes.</span><code class="dm">F107_cold_short = F107_cold_long - dF107_day_low</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">Fed the study's own two numbers the arithmetic is exact: its coldmean 141.0544028132 minus its own daily drop of 31.3333333333 is 109.7210694798, which is the coldday scenario it published to the last digit. With this repository's own two terms it is 109.8366, 0.11 per cent away. That is what the parity grid beside this sheet checks, and it is a check on the RELATION.</p>
+<p class="reading">THIS ROW REFUSES ON THE NOMINAL CASE, AND THAT IS THE FINDING. Its own chain does not reach 109. sw_central_expectation reads the cycle analogue over the mission's own dates rather than holding the last rotation forecast forward, and at the declared epoch it gives 86.8497 sfu — a deliberate and recorded departure from the study's 158.33. Carry 86.8497 down this chain and the sustained cold level is 69.6281 and the cold DAY is 38.3559, which is below the guard at 60, so the row returns OutOfDomain rather than a number. `vleo run sw_f107_cold_short` prints exactly that, and names this row as the one blocked.</p>
+<p class="reading">That is the right behaviour and it should not be traded away. 38 sfu has never been observed; the quiet sun's 10.7 cm floor is near 64, and the record's own minimum is above 60. The guard is not too tight — the construction is wrong at this centre. Stacking a symmetric 1.28-sigma band on a 5th-percentile daily drop takes 48.5 sfu off an 86.8 sfu sun, more than half of it, and a sun cannot lose more than half of itself. The crossing is at a centre of 108.5: any case whose centre is below that refuses here.</p>
+<p class="reading">The three things that could resolve it are all upstream of this row and none is a change to it. A sigma measured for the window's own phase rather than pooled across the cycle would be narrower near minimum. Percentiles of the residuals in place of a normal multiplier would not assume a symmetry the sample does not have. And the daily drop applies to a day inside a rotation, not to a rotation already at the low edge of its own band — stacking the two is the conservative choice the study made, and at a low centre conservative stops meaning safe and starts meaning impossible.</p>
+<p class="maths concl">which is the relation this node states: <code>F107_cold_short = F107_cold_long - dF107_day_low</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>sustained</code></td><td><a class="xref" data-goto="sw_f107_cold_long">sw_f107_cold_long</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>daily</code></td><td><a class="xref" data-goto="sw_daily_band_drop">sw_daily_band_drop</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>F107_cold_short</code></td><td>sw_f107_cold_short</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+</section>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">subtract the within-rotation daily drop from the sustained cold level</span> <span class="binds">→ <code>single_day: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_f107_cold_short(sustained: Ratio, daily: Ratio) -> Ratio
+    given sustained from sw_f107_cold_long
+    given daily from sw_daily_band_drop
+    // subtract the within-rotation daily drop from the sustained cold level
+    single_day ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require F107_cold_short ≥ 60
+    require F107_cold_short ≤ 400
+    require F107_cold_short is finite
+
+    return F107_cold_short
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>F107_cold_short &ge; 60</code> — below 60 sfu has never been observed and every relation reading F10.7 has no support there. This is the row most likely to reach it — a symmetric rotation band and a daily drop stacked on a low centre — which is exactly why the guard is here rather than downstream</li>
+<li><code>F107_cold_short &le; 400</code> — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. On the COLDEST of the five scenarios a value there means a sign is wrong somewhere in the chain above it</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sw_f107_cold_short" data-lo="60" data-hi="400" data-symbol="F107_cold_short">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How cold can a single day of F10.7 be inside the mission window?
+///
+/// `F107_cold_short = F107_cold_long - dF107_day_low`
+///
+/// Source: `noaa_swpc`
+///
+/// The coldest of the five scenarios, and the one a drag-based capability is
+/// weakest at. Its hot twin, sw_f107_design_short, is the worst single day
+/// upward; this is the worst single day downward, and the two are NOT mirror
+/// images even though the rows look identical bar a sign. They are not
+/// mirrors because the two terms behave differently. The rotation band is
+/// symmetric — both edges are 1.28 standard deviations from the centre. The
+/// daily term is not: 34.23 sfu up against 31.27 down. So the hot day sits
+/// further above nominal than the cold day sits below it, by about three sfu,
+/// and that asymmetry is the record's shape rather than a rounding artefact.
+///
+/// # Assumptions
+///
+/// * The two spreads stack rather than combine — fails when a reader takes the result as a 95 per cent day. It is not: stacking a 10th-percentile rotation level with a 5th-percentile day inside it is nearer a 1-in-100 day than a 1-in-20 one, assuming the two are independent — and they are not independent either, because a quiet rotation is made of quiet days. The study does this and the port reproduces it; the number is conservative and its label is wrong
+/// * The cold day is not the hot day mirrored — fails when somebody builds it by negating sw_f107_design_short's daily term. The daily tails differ by nine per cent — 31.27 down against 34.23 up — so mirroring makes this scenario about three sfu colder than the record supports, and a drag-authority case sized on it is being asked to work in air that has never been observed
+/// * The daily drop measured before the window applies inside it — fails when the window spans a different part of the cycle from the 2001 days the percentile was measured on. Within-rotation variability widens near maximum, so a drop measured on an active stretch is too deep for a quiet window and too shallow for an active one
+/// * A day at this level is a day the rest of the tool can model — fails when the value approaches the guard. Below 60 sfu every relation reading F10.7 in this repository is extrapolating past its own support, so this row refuses rather than handing a number downstream that looks like flux and is not
+/// * The construction is valid at the centre this repository actually gives, and AT THE DECLARED WINDOW IT IS NOT — fails when the centre is below 108.5 sfu, which sw_central_expectation's own 86.8497 at the declared epoch is. Stacked on that centre this relation yields 38.3559 sfu and the guard refuses it, because 38 sfu has never been observed and the quiet sun's floor is near 64. The refusal is correct and the arithmetic is what is wrong: a pooled sigma, a normal multiplier on skewed residuals, and a daily drop applied to a rotation already at the low edge of its own band each take too much off, and together they take more than half the sun away. Every one of the three is upstream of this row
+pub const NODE_ID: &amp;str = &quot;sw_f107_cold_short&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x0158aca5b8a86e32;
+
+pub fn evaluate(sustained: Ratio, daily: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : subtract the within-rotation daily drop from the sustained cold level -&gt; Ratio
+    // The daily term is a MAGNITUDE, so the sign lives here in the relation
+    // rather than in sw_daily_band_drop's value. And it is the low tail's own
+    // number, 31.27, not the high tail's 34.23 negated: the two differ by nine
+    // per cent because the departures are skewed.
+    let single_day: Ratio = sustained - daily;
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = single_day;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_cold_short&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_cold_short&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;below 60 sfu has never been observed and every relation reading F10.7 has no support there. This is the row most likely to reach it — a symmetric rotation band and a daily drop stacked on a low centre — which is exactly why the guard is here rather than downstream&quot; });
+    }
+    if answer.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_cold_short&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. On the COLDEST of the five scenarios a value there means a sign is wrong somewhere in the chain above it&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="this repository's own terms at the study's centre — 141.1088 - 31.2722"><td>this repository's own terms at the study's centre — 141.1088 - 31.2722</td><td class="num">109.8365800491</td><td class="num">0.0000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="round numbers, so the arithmetic is checkable without a calculator — 200 - 30"><td>round numbers, so the arithmetic is checkable without a calculator — 200 - 30</td><td class="num">170</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="a sustained level of 120, the lowest that still clears the guard once the drop is taken off — below it this row refuses, which is what it does for the declared window's own centre"><td>a sustained level of 120, the lowest that still clears the guard once the drop is taken off — below it this row refuses, which is what it does for the declared window's own centre</td><td class="num">88.7277777778</td><td class="num">0.0000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 60 — below 60 sfu has never been observed and every relation reading F10.7 has no support there. This is the row most likely to reach it — a symmetric rotation band and a daily drop stacked on a low centre — which is exactly why the guard is here rather than downstream</li>
+<li><code>OutOfDomain</code> above 400 — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. On the COLDEST of the five scenarios a value there means a sign is wrong somewhere in the chain above it</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_f107_cold_short"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>60 &hellip; 400</code> -.</p>
+<ul class="guards"><li>lower — below 60 sfu has never been observed and every relation reading F10.7 has no support there. This is the row most likely to reach it — a symmetric rotation band and a daily drop stacked on a low centre — which is exactly why the guard is here rather than downstream</li><li>upper — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. On the COLDEST of the five scenarios a value there means a sign is wrong somewhere in the chain above it</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

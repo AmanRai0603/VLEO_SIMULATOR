@@ -1,0 +1,196 @@
+<article class="node" data-node="sw_f107_cold_long" data-sheet-hash="5cc2f5" data-impl-hash="7067e4">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Sustained cold F10.7 to design to</h2>
+  <p class="ident"><code>sw_f107_cold_long</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">What F10.7 must the design still work at as a sustained level over the mission window, on the low side?</p>
+<p class="maths"><code>F107_cold_long = F107_central - 1.28 * sigma_total</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The lower edge of the mean band, and the scenario the study calls coldmean. Its
+hot twin, sw_f107_design_long, is the level the mission must SURVIVE; this is
+the level it must still WORK at, and they bound different failures.
+
+A cold sky is thin air. Thin air is less drag, which sounds like good news and
+is not: it is the case where an aerodynamically controlled vehicle has the least
+authority, where a differential-drag constellation phases slowest, where a
+de-orbit at end of life takes longest, and where a power budget gets the least
+flux into the array. A tool that publishes only the hot edge has told the reader
+about half of their problem.
+</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent</dt><dd>fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997, so this edge is the 10th percentile and not the 5th. A one-sided 95 per cent bound is 1.645 sigma, which at this sigma is a further 4.9 sfu DOWN. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it</dd>
+<dt>The band is symmetric because sigma is a standard deviation</dt><dd>fails when the residuals are skewed, which they are. A forecast that misses hardest when activity is highest has a long high tail and a short low one, so the true 10th percentile of the residuals is nearer the centre than 1.28 sigma and this edge is a little too cold. It errs toward the conservative on THIS side — a colder cold case is a harder case for drag authority — but it is the wrong number, not a safe one</dd>
+<dt>One sigma covers the whole window</dt><dd>fails when sigma is not flat across the cycle — the source says so about its own number — so a window spanning a rise or a fall is given one width where it needs two</dd>
+<dt>The cold edge is a design case and not a nuisance</dt><dd>fails when it is read as the harmless side. Thin air is the case with the least aerodynamic control authority, the slowest differential-drag phasing, the longest end-of-life de-orbit and the least array flux. Two of those are mission-ending in their own way</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">This is sw_f107_design_long with the sign of one term reversed, and it is a separate row rather than a parameter on that one for a reason that is about reading rather than about arithmetic. A design reads the hot level in one place and the cold level in another, and the two are consumed by different subsystems for different purposes. A single row with a sign flag would be a row whose meaning depends on a value somebody has to go and look up.</p>
+<p class="why">The band is symmetric HERE and asymmetric one row down, which is worth holding in mind. Both edges of the mean band are one sigma away from the centre because sigma is a standard deviation and a standard deviation has no sides. The DAILY band is not symmetric — sw_daily_band_spread reaches 34.23 above and sw_daily_band_drop only 31.27 below — because those are percentiles of a skewed sample rather than multiples of a spread. So the cold-day scenario is not the mirror of the hot-day one, while the cold-mean scenario is the mirror of the hot-mean one, and the two facts sit in adjacent rows.</p>
+<p class="why">The multiplier is 1.28, inherited from the same decision its twin records: the study forms the mean band as centre +/- 1.28*sigma while labelling the run 95 per cent, and in the same function forms the daily band at the true 0.95. That is reproduced rather than repaired, and reproducing it means using the same 1.28 on this side. Changing it would have to change both edges at once or the band would stop being a band.</p>
+<div class="theory-walk" data-steps="3">
+<ol class="derive">
+<li><span class="dt">Take the centre the cycle analogue gives for the window.</span><code class="dm">F107_central = sw_central_expectation</code></li>
+<li><span class="dt">Take the spread the pattern has historically missed a rotation level by. The same number the hot edge uses, because it is one spread and not two.</span><code class="dm">sigma_total = sw_mean_band_spread = 13.4544 sfu</code></li>
+<li><span class="dt">Subtract 1.28 of them. Symmetric with the hot edge, because a standard deviation has no sides; the DAILY band one row down is not symmetric, because percentiles of a skewed sample do.</span><code class="dm">F107_cold_long = F107_central - 1.28 * sigma_total</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">Fed the study's own two numbers the arithmetic is exact: 158.3304112313 minus 1.28 * 13.4968815767 is 141.0544028132, which is the coldmean scenario it published to the last digit. With this repository's sigma in place of the study's it is 141.1088, 0.04 per cent away. That is what the parity grid beside this sheet checks, and it is a check on the RELATION.</p>
+<p class="reading">The answer this row actually publishes is not 141. On the nominal case it is 69.6281 sfu, because sw_central_expectation does not hold the last rotation forecast forward the way the study does — it reads the cycle analogue over the mission's own dates and gives 86.8497 at the declared epoch, a deliberate and recorded departure. So this row's own number and the scenario it is the parity of are 71 sfu apart, and the whole of that gap is upstream of this relation.</p>
+<p class="reading">69.6 sfu clears the guard at 60 by nine and a half. Its short sibling does not: take the daily drop off and the result is 38.36, which the guard refuses. That refusal is the correct outcome and it is documented in sw_f107_cold_short rather than hidden, because it says something true — a symmetric band with a stacked daily percentile is not a valid construction at a centre this low.</p>
+<p class="maths concl">which is the relation this node states: <code>F107_cold_long = F107_central - 1.28 * sigma_total</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>central</code></td><td><a class="xref" data-goto="sw_central_expectation">sw_central_expectation</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>spread</code></td><td><a class="xref" data-goto="sw_mean_band_spread">sw_mean_band_spread</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>F107_cold_long</code></td><td>sw_f107_cold_long</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="sw_f107_cold_short">sw_f107_cold_short</a></p>
+</section>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">subtract 1.28 standard deviations of the rotation-forecast residual from the central expectation</span> <span class="binds">→ <code>sustained: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_f107_cold_long(central: Ratio, spread: Ratio) -> Ratio
+    given central from sw_central_expectation
+    given spread from sw_mean_band_spread
+    // subtract 1.28 standard deviations of the rotation-forecast residual from the central expectation
+    sustained ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require F107_cold_long ≥ 60
+    require F107_cold_long ≤ 400
+    require F107_cold_long is finite
+
+    return F107_cold_long
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>F107_cold_long &ge; 60</code> — below 60 sfu has never been observed and every relation reading F10.7 has no support there. On this row the guard means something specific: a sustained level below the record's own floor says the band is wider than the sky, which happens when a window near solar minimum is given a sigma measured across a whole cycle</li>
+<li><code>F107_cold_long &le; 400</code> — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. A COLD level there is arithmetic rather than sky — it means the spread has been added rather than subtracted, which is the one failure this row has that its twin does not</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sw_f107_cold_long" data-lo="60" data-hi="400" data-symbol="F107_cold_long">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What F10.7 must the design still work at as a sustained level over the mission window, on the low side?
+///
+/// `F107_cold_long = F107_central - 1.28 * sigma_total`
+///
+/// Source: `noaa_swpc`
+///
+/// The lower edge of the mean band, and the scenario the study calls
+/// coldmean. Its hot twin, sw_f107_design_long, is the level the mission must
+/// SURVIVE; this is the level it must still WORK at, and they bound different
+/// failures. A cold sky is thin air. Thin air is less drag, which sounds like
+/// good news and is not: it is the case where an aerodynamically controlled
+/// vehicle has the least authority, where a differential-drag constellation
+/// phases slowest, where a de-orbit at end of life takes longest, and where a
+/// power budget gets the least flux into the array. A tool that publishes
+/// only the hot edge has told the reader about half of their problem.
+///
+/// # Assumptions
+///
+/// * 1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent — fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997, so this edge is the 10th percentile and not the 5th. A one-sided 95 per cent bound is 1.645 sigma, which at this sigma is a further 4.9 sfu DOWN. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it
+/// * The band is symmetric because sigma is a standard deviation — fails when the residuals are skewed, which they are. A forecast that misses hardest when activity is highest has a long high tail and a short low one, so the true 10th percentile of the residuals is nearer the centre than 1.28 sigma and this edge is a little too cold. It errs toward the conservative on THIS side — a colder cold case is a harder case for drag authority — but it is the wrong number, not a safe one
+/// * One sigma covers the whole window — fails when sigma is not flat across the cycle — the source says so about its own number — so a window spanning a rise or a fall is given one width where it needs two
+/// * The cold edge is a design case and not a nuisance — fails when it is read as the harmless side. Thin air is the case with the least aerodynamic control authority, the slowest differential-drag phasing, the longest end-of-life de-orbit and the least array flux. Two of those are mission-ending in their own way
+pub const NODE_ID: &amp;str = &quot;sw_f107_cold_long&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xc6685d30fb5cc2f5;
+
+pub fn evaluate(central: Ratio, spread: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : subtract 1.28 standard deviations of the rotation-forecast residual from the central expectation -&gt; Ratio
+    // 1.28 is declared in the sheet, not chosen here, and it is the SAME 1.28 the
+    // hot edge adds: one band with two edges, not two bands. A coefficient that
+    // appears only in a hole body is exactly what the gate's portable-maths
+    // check exists to refuse, and a band whose two edges could drift apart is
+    // what having it in one place prevents.
+    let sustained: Ratio = central - spread * 1.28;
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = sustained;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_cold_long&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_cold_long&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;below 60 sfu has never been observed and every relation reading F10.7 has no support there. On this row the guard means something specific: a sustained level below the record's own floor says the band is wider than the sky, which happens when a window near solar minimum is given a sigma measured across a whole cycle&quot; });
+    }
+    if answer.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_cold_long&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. A COLD level there is arithmetic rather than sky — it means the spread has been added rather than subtracted, which is the one failure this row has that its twin does not&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="a mid-cycle centre of 160 with this repository's own measured spread — 160 - 1.28 × 13.454382"><td>a mid-cycle centre of 160 with this repository's own measured spread — 160 - 1.28 × 13.454382</td><td class="num">142.77839104</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="round numbers, so the arithmetic is checkable without a calculator — 100 - 1.28 × 20"><td>round numbers, so the arithmetic is checkable without a calculator — 100 - 1.28 × 20</td><td class="num">74.4</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the centre sw_central_expectation actually gives at the declared epoch, 86.8497 — the case that matters, nine and a half sfu above the guard"><td>the centre sw_central_expectation actually gives at the declared epoch, 86.8497 — the case that matters, nine and a half sfu above the guard</td><td class="num">69.62809104</td><td class="num">0.0000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 60 — below 60 sfu has never been observed and every relation reading F10.7 has no support there. On this row the guard means something specific: a sustained level below the record's own floor says the band is wider than the sky, which happens when a window near solar minimum is given a sigma measured across a whole cycle</li>
+<li><code>OutOfDomain</code> above 400 — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. A COLD level there is arithmetic rather than sky — it means the spread has been added rather than subtracted, which is the one failure this row has that its twin does not</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_f107_cold_long"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>60 &hellip; 400</code> -.</p>
+<ul class="guards"><li>lower — below 60 sfu has never been observed and every relation reading F10.7 has no support there. On this row the guard means something specific: a sustained level below the record's own floor says the band is wider than the sky, which happens when a window near solar minimum is given a sigma measured across a whole cycle</li><li>upper — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. A COLD level there is arithmetic rather than sky — it means the spread has been added rather than subtracted, which is the one failure this row has that its twin does not</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

@@ -1,0 +1,38 @@
+# Known-good values, and where each came from. An expected value may
+# never be produced by the code under test.
+#
+# WHAT THESE ARE. A difference of two numbers this node does not compute, one of
+# them times a constant this node declares. The centre comes from
+# sw_central_expectation and the spread from sw_mean_band_spread, both pinned by
+# their own evidence; what is checked here is that the subtraction is that
+# subtraction — and in particular that it is a subtraction, since the only
+# difference between this row and sw_f107_design_long is the sign.
+#
+# The inputs are chosen here rather than taken from the study. The study's own
+# trio — 158.3304112313161, 13.496881576668528, 141.05440281317954 — would make
+# the expected value the prior implementation's answer, and that may not be a
+# fixture. It is in parity.csv beside this sheet, where it belongs.
+
+[[fixture]]
+label = "a mid-cycle centre of 160 with this repository's own measured spread — 160 - 1.28 × 13.454382"
+expect = 142.77839104
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { central = 160.0, spread = 13.454382 }
+
+[[fixture]]
+label = "round numbers, so the arithmetic is checkable without a calculator — 100 - 1.28 × 20"
+expect = 74.4
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { central = 100.0, spread = 20.0 }
+
+[[fixture]]
+label = "the centre sw_central_expectation actually gives at the declared epoch, 86.8497 — the case that matters, nine and a half sfu above the guard"
+expect = 69.62809104
+tolerance = 1e-10
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { central = 86.8497, spread = 13.454382 }
