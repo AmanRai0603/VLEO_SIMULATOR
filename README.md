@@ -18,17 +18,17 @@ command in this repository, named beside it where it is not obvious.
 
 | | |
 |---|---|
-| rows in the tree | 1390 across four layers — 313 written, 1077 seeded |
+| rows in the tree | 1390 across four layers — 316 written, 1074 seeded |
 | layer 1 · management | 174 rows, from CD-06 verbatim |
 | layer 2 · the system | 319 rows, from CD-06 verbatim |
 | layer 3 · subsystem | 878 rows across 17 subsystems |
-| of the 313 written | 132 declared values · 163 computed · 12 KPI closures · 1 requirement · 5 achieved |
+| of the 316 written | 132 declared values · 166 computed · 12 KPI closures · 1 requirement · 5 achieved |
 | declared edges | 495 derivation · 298 contribution · 179 relation |
 | crates | 31 — 20 node crates, 11 engine and face crates |
 | faces | browser · daemon · command line · C ABI · Python wheel · MATLAB |
 | deepest declared chain | 25 nodes, solar flux to cost per year |
 | 80-point sweep of the whole graph | 59–61 ms, three runs, release build, through the daemon |
-| nodes past every machine check | 12 of 313, waiting on a person — see [Where it stands](#where-it-stands) |
+| nodes past every machine check | 12 of 316, waiting on a person — see [Where it stands](#where-it-stands) |
 | declared panels | 11, each with a reference a person vouched for |
 
 ---
@@ -435,8 +435,8 @@ achievable and the nightly check becomes one people learn to ignore.
 ## Where it stands
 
 The tree is built and mostly empty, which is the state it is designed to be
-useful in. 313 rows of 1390 have content, and `xtask ready` reports 12 of those
-313 past every machine stage and waiting on a person. It names what holds the
+useful in. 316 rows of 1390 have content, and `xtask ready` reports 12 of those
+316 past every machine stage and waiting on a person. It names what holds the
 other 281:
 
 ```

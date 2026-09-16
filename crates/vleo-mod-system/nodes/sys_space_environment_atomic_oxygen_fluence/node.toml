@@ -23,6 +23,23 @@ state = "empty"
 # open field blocks generation, which is the mechanism: ambiguity
 # becomes a blocking item on an engineer's screen rather than
 # something an implementer resolves silently.
+#
+# STILL SEEDED AFTER §20 STEP 6, ON PURPOSE.
+#
+# No subsystem computes atomic oxygen fluence. It follows from density, which is
+# also still seeded and for the same reason, so this row is waiting on a row that
+# is waiting on a subsystem that does not exist.
+#
+# sys_mass_and_aero_erosion_depth reads this row and is waiting on it. Fluence is
+# the number that sizes a material choice at VLEO: atomic oxygen erodes polymers
+# and unprotected silver at rates measured in cubic centimetres per incident
+# atom, and the depth over a mission is the integral of number density times
+# relative velocity times exposure time.
+#
+# What writing it would need, in order: a density row that publishes the atomic
+# oxygen NUMBER density rather than total mass density, the relative velocity
+# sys_mass_and_aero_relative_velocity is itself waiting for, and the mission
+# duration, which is the one of the three that already exists.
 
 [question]
 text = ""

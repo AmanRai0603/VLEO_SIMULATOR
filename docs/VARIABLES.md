@@ -19121,7 +19121,7 @@ tree instead of an edge somebody has to trace.
 - **lower bound** — the same floor as env_f107 and every design row beneath this one: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A crossing that narrowed or widened the range it carries would be changing the answer, so it declares the producer's own bounds
 - **upper bound** — the same ceiling as env_f107 and every design row beneath this one: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. Restating it here means a system reader sees the limit without opening the subsystem
 - **reads** — `sw_central_expectation`, `sw_f107_design_long`, `sw_f107_cold_long`, `sw_f107_design_short`, `sw_f107_cold_short`, `sw_ap_central_expectation`, `sw_ap_design_long`, `sw_ap_cold_long`, `sw_ap_design_short`, `sw_ap_cold_short`
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **read by** — `sys_space_environment_solar_flux`
 - **assumes** The Kp columns do not cross, and the study's driver set has two of them — fails when a consumer needs Kp. The study publishes kp_mean and kp_peak per scenario, formed from that scenario's Ap by the published ap-to-Kp scale plus a measured slot bias. This tree has all three relations — sw_kp_from_ap, sw_kp_mean_bias, sw_kp_slot_bias — and cannot use them here, because the bus passes a node's VALUE and not its RELATION: each of those rows answers at one Ap, and a driver set needs them at five. Three ways out, none of them free: those three rows each publish a set of five, keyed to the scenarios; or the ap-to-Kp scale and both bias tables move into vleo-core as named functions this hole can call, at the cost of putting measured data in the kernel; or ten more rows exist, one per scenario per slot. Until one is chosen the Ap column crosses and the Kp columns do not, and a consumer that needs Kp must convert it itself — which is the duplication this row exists to prevent
 - **assumes** It relays and does not compute, and the f107bar column is the edge of that claim — fails when somebody calls the f107bar mapping a calculation. No value is combined with another and no constant appears; what happens is that one input is published under two names, because the study's hotday scenario carries hotmean's 81-day mean beneath it. If that is computation then a crossing cannot carry a set at all, and §20.3's decision needs revisiting rather than this hole
 - **assumes** Every member inherits every limitation of the row beneath it, and a system reader sees none of them — fails when this is the ordinary cost of a seam and it is worth stating where the seam is. The two *mean scenarios are 1.28-sigma bands, which is the 90th percentile and not the 95 per cent the run is labelled; the two *day scenarios stack a second one-sided percentile on top, which is nearer a 1-in-100 day than a 1-in-20; and the centre beneath all five is a cycle analogue that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles, whose peaks differ by 41 per cent. A reader at layer 2 sees fifteen numbers and a credibility vector, and would have to open five rows to learn any of that. The credibility travels; the assumptions do not
@@ -28119,26 +28119,38 @@ The date every dated question in the design keys off. It is a mission requiremen
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **contributes to** — sys_kpi_achieved_comms_time_transfer, sys_kpi_achieved_pnt_time_transfer, sys_kpi_achieved_eo_isr_cep90, sys_kpi_achieved_pnt_cep90, sys_kpi_achieved_pnt_position_accuracy, sys_kpi_achieved_pnt_integrity_risk
 
-### `sys_space_environment_ap` — Ap
+### `sys_space_environment_ap` — Ap, single day
 
-> 
+> What geomagnetic index does the system design a single day to?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `Ap_day_sys` |
+| type | `Ratio` |
+| unit | - |
 | kind | computed |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `Ap_day_sys = l3_solar_interface.ap_hotday` |
+| source | `noaa_swpc` |
+| valid over | 0 … 400 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — the crossing's own floor, restated. A row that narrowed the range it received would be changing the answer while appearing to relay it
+- **upper bound** — the crossing's own ceiling, restated. This is a single-day value, so it is the one most likely of the pair to approach it
+- **reads** — `l3_solar_interface.ap_hotday`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+- **assumes** It receives and does not compute, and a reader here sees none of the subsystem's limitations — fails when a margin is taken against this number. It stacks a 1.28-sigma band edge on the rotation level with a within-rotation percentile on top, which is nearer a one-in-a-hundred day than a one-in-twenty one, and the two terms are not independent because a disturbed rotation is made of disturbed days. None of that crosses the seam
+- **assumes** It names one member of a fifteen-variable set, and five of them look alike — fails when the wrong member is named. The crossing's f107 column alone holds five values in the same range with the same unit and the same declared domain, and the ap column another five. Assembly checks that the variable EXISTS and that its type matches; nothing checks that it is the one this row meant
+- **assumes** It is the single day and not the sustained level — fails when somebody integrates it over a mission. The sustained level is what sys_space_environment_solar_flux carries, and a drag budget or an array sizing built on a single-day value is designing for a sky the mission does not sit in
+- **evidence** the single-day Ap this tree's own chain gives for the declared window, which exceeds its own requirement — expect 90.54720964 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the G2 threshold l3_solar_req_05 declares as the single-day commitment — expect 80 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the one storm expected in the mission, from sw_storm_return_level — well above this row and a different question — expect 158.384 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+A day at this level may cost a safe mode, a slewed array and some propellant;
+what it may not cost is the vehicle. That is a different design case from the
+sustained level its sibling carries, and the two are separate rows here because
+they are separate rows in the subsystem below.
+
 
 ### `sys_space_environment_atmospheric_density` — Atmospheric density
 
@@ -28182,47 +28194,76 @@ The date every dated question in the design keys off. It is a mission requiremen
 - **read by** — `sys_mass_and_aero_erosion_depth`
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `sys_space_environment_f10_7` — F10.7
+### `sys_space_environment_f10_7` — F10.7, single day
 
-> 
-
-| | |
-|---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | computed |
-| owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
-
-- **lower bound** — 
-- **upper bound** — 
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
-
-### `sys_space_environment_solar_flux` — Solar flux
-
-> 
+> What flux does the system design a single day to?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `F107_day_sys` |
+| type | `Ratio` |
+| unit | - |
 | kind | computed |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `F107_day_sys = l3_solar_interface.f107_hotday` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — the crossing's own floor, restated. A row that narrowed the range it received would be changing the answer while appearing to relay it
+- **upper bound** — the crossing's own ceiling, restated. This is a single-day value, so it is the one most likely of the pair to approach it
+- **reads** — `l3_solar_interface.f107_hotday`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+- **assumes** It receives and does not compute, and a reader here sees none of the subsystem's limitations — fails when a margin is taken against this number. It stacks a 1.28-sigma band edge on the rotation level with a within-rotation percentile on top, which is nearer a one-in-a-hundred day than a one-in-twenty one, and the two terms are not independent because a disturbed rotation is made of disturbed days. None of that crosses the seam
+- **assumes** It names one member of a fifteen-variable set, and five of them look alike — fails when the wrong member is named. The crossing's f107 column alone holds five values in the same range with the same unit and the same declared domain, and the ap column another five. Assembly checks that the variable EXISTS and that its type matches; nothing checks that it is the one this row meant
+- **assumes** It is the single day and not the sustained level — fails when somebody integrates it over a mission. The sustained level is what sys_space_environment_solar_flux carries, and a drag budget or an array sizing built on a single-day value is designing for a sky the mission does not sit in
+- **evidence** the single-day level this tree's own chain gives for the declared window — expect 124.1432752988 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the requirement ceiling l3_solar_req_02 declares, which is the record's largest observed day rounded up — expect 350 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the hotday value the study publishes for its own window, for a reader comparing the two ports — expect 209.7545677976 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+A day at this level may cost a safe mode, a slewed array and some propellant;
+what it may not cost is the vehicle. That is a different design case from the
+sustained level its sibling carries, and the two are separate rows here because
+they are separate rows in the subsystem below.
+
+
+### `sys_space_environment_solar_flux` — Solar flux, sustained
+
+> What solar flux does the system design to, as a level sustained for months at a time?
+
+| | |
+|---|---|
+| symbol | `F107_sys` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `F107_sys = l3_solar_interface` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the crossing's own floor, restated: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A row that narrowed the range it received would be changing the answer
+- **upper bound** — the crossing's own ceiling, restated: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value
+- **reads** — `l3_solar_interface`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** It receives and does not compute, and a system reader sees none of the subsystem's limitations — fails when a margin is taken against this number. It is a 1.28-sigma band edge — the 90th percentile, while the run is labelled 95 per cent — on a centre that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles whose peaks differ by 41 per cent. The credibility vector crosses the seam; the assumptions do not, and that is the ordinary cost of having a seam at all
+- **assumes** The 81-day mean does not arrive at layer 2, and a density model needs it — fails when somebody writes sys_space_environment_atmospheric_density from the two flux rows that exist. Every thermospheric density model in use takes the daily value AND the 81-day mean, because the first drives the day's EUV heating and the second the background state. The crossing publishes f107bar for all five scenarios and no layer-2 row receives it. Adding one is a row, not a redesign, and it is recorded where the density author will meet it
+- **assumes** It is the sustained level and not the single day — fails when somebody sizes a thermal transient on it. The single day is sys_space_environment_f10_7 at 124.14, twenty sfu higher. Reading the wrong one of the two under-sizes a transient case or over-sizes a steady one
+- **evidence** the sustained level this tree's own chain gives for the declared window — expect 104.07110896 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the level the study publishes for its own window, which this row does not use but a reader will compare against — expect 175.5520201913 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the requirement ceiling l3_solar_req_01 declares — the value at which the design's own sustained limit would be met exactly — expect 260 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The headline of the space-environment heading, and the number an array is sized
+on and a drag budget integrates. Its siblings carry what one DAY inside it
+reaches: sys_space_environment_f10_7 for the flux and sys_space_environment_ap
+for the geomagnetic index.
+
+Sustained and single-day are two rows here for the same reason they are two rows
+in the subsystem below: a design reads one or the other depending on what it is
+sizing, and a tool that published only one would have decided for the reader
+which of the two their problem is.
+
 
 ### `sys_space_environment_thermospheric_wind` — Thermospheric wind
 

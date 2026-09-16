@@ -23,6 +23,43 @@ state = "empty"
 # open field blocks generation, which is the mechanism: ambiguity
 # becomes a blocking item on an engineer's screen rather than
 # something an implementer resolves silently.
+#
+# STILL SEEDED AFTER §20 STEP 6, ON PURPOSE, AND THIS IS THE ROW THAT SAYS WHY.
+#
+# Its three siblings were filled in step 6: solar flux, F10.7 and Ap now receive
+# the solar-weather subsystem's conclusions across l3_solar_interface. This one
+# was not, because NO SUBSYSTEM COMPUTES IT. There is no l3 density group; the
+# solar subsystem publishes drivers and stops there, and filling a row from
+# nothing is exactly the defect the density panel exists to point at.
+#
+# Three rows already read this one and every one of them is waiting on it:
+# sys_mass_and_aero_drag_acceleration, sys_propulsion_decay_rate and
+# sys_thermal_free_molecular_heat_flux. So this is not a decorative gap — it is
+# the single row between the solar record and the drag budget.
+#
+# WHAT WHOEVER WRITES IT WILL NEED, AND WHAT IS AND IS NOT THERE.
+#
+# A thermospheric density model takes, at minimum, (altitude, F10.7 daily,
+# F10.7 81-day mean, Kp). vleo_core::physics::env::exospheric_temperature has
+# exactly that signature less the altitude. Of the three drivers:
+#
+#   F10.7 daily     ARRIVES, as sys_space_environment_f10_7
+#   F10.7 81-day    DOES NOT ARRIVE. l3_solar_interface publishes f107bar for
+#                   all five scenarios and no layer-2 row receives it. Adding
+#                   one is a row, not a redesign.
+#   Kp              DOES NOT CROSS AT ALL. The subsystem has the conversion
+#                   (sw_kp_from_ap) and both slot corrections (sw_kp_mean_bias,
+#                   sw_kp_slot_bias) and cannot use them in the crossing,
+#                   because the bus passes a node's VALUE and not its RELATION:
+#                   each answers at one Ap and a driver set needs them at five.
+#                   §20.8 names the three ways out. Until one is chosen, a
+#                   density row would have to convert Ap to Kp itself, which is
+#                   the duplication the crossing exists to prevent.
+#
+# AND IT WILL HAVE TO CHOOSE A SCENARIO. The crossing carries five and this
+# heading's rows each receive one member. A density row reading the single-day
+# values gets the hot day; a lifetime integral wants the sustained ones. That is
+# a decision about what this row MEANS, not a lookup.
 
 [question]
 text = ""

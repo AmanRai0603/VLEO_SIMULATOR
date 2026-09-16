@@ -481,7 +481,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         if i.binding != "req" {
             continue;
         }
-        let Some(req) = tree.sheets.get(&i.var) else {
+        let Some(req) = tree.sheets.get(producer_of(&i.var)) else {
             continue;
         };
         let want = match req.sense.trim() {
@@ -584,7 +584,7 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
     let mut dangling = Vec::new();
     for sh in tree.ordered() {
         for i in &sh.inputs {
-            if !tree.sheets.contains_key(&i.var) {
+            if !var_resolves(tree, &i.var) {
                 dangling.push(format!("{} -> {}", sh.id, i.var));
             }
         }
@@ -993,7 +993,13 @@ fn find_cycles(tree: &Tree, declared: &BTreeSet<String>) -> Vec<String> {
         stack.push(node);
         if let Some(sh) = tree.sheets.get(node) {
             for i in &sh.inputs {
-                let p = match tree.sheets.get(&i.var) {
+                // An edge may name a node or one member of a set a node
+                // publishes, and the PRODUCER is the node either way. Resolving
+                // only the first form made an edge through a member invisible
+                // here, so a cycle that ran through one would not be detected —
+                // and a cycle the resolver cannot see is a run that does not
+                // terminate rather than a gate failure.
+                let p = match tree.sheets.get(producer_of(&i.var)) {
                     Some(p) => p.id.as_str(),
                     None => continue,
                 };
@@ -1032,4 +1038,35 @@ fn find_cycles(tree: &Tree, declared: &BTreeSet<String>) -> Vec<String> {
         }
     }
     Vec::new()
+}
+
+/// Whether an input's variable id names something the tree publishes.
+///
+/// A node id, the ordinary case — or `<node id>.<publish id>`, one member of a
+/// set a node publishes. A node id never contains a dot, so the two cannot be
+/// confused. This lives beside the assembly checks because the node-level
+/// contract check resolves the same two forms and the two must agree: a variable
+/// that one accepts and the other calls dangling would fail the gate on a graph
+/// that assembles perfectly well.
+fn var_resolves(tree: &Tree, var: &str) -> bool {
+    match var.split_once('.') {
+        Some((node, member)) => tree
+            .sheets
+            .get(node)
+            .is_some_and(|p| p.publishes.iter().any(|pb| pb.id == member)),
+        None => tree.sheets.contains_key(var),
+    }
+}
+
+/// The node that produces a variable, whichever form the id takes.
+///
+/// `"sw_f107_design_long"` produces itself; `"l3_solar_interface.ap_hotday"` is
+/// produced by `l3_solar_interface`. Anything walking the graph by EDGES rather
+/// than by variables wants this — the cycle detector above all, because an edge
+/// it cannot follow is a loop it cannot find.
+fn producer_of(var: &str) -> &str {
+    match var.split_once('.') {
+        Some((node, _)) => node,
+        None => var,
+    }
 }

@@ -981,8 +981,8 @@ against it, and one of the three has to be settled first.
    interface alone. The Kp columns are outstanding.
 5. ~~The four required/achieved pairs, replacing the three.~~ Done as FIVE pairs,
    for the reason in 20.10 below.
-6. Layer 2: three rows written, three left seeded and saying why. **Unblocked**
-   by 20.11 below — the crossing publishes.
+6. ~~Layer 2: three rows written, three left seeded and saying why.~~ Done; see
+   20.13.
 
 ### 20.10 · What step 5 did, and where it departed
 
@@ -1128,3 +1128,58 @@ but the commitment is a claim about a spacecraft.
 
 All four of this group's F10.7 and Ap ceilings now have derivations. None of them
 has a name against it.
+
+### 20.13 · What step 6 did
+
+Three layer-2 rows written, three left seeded. `sys_space_environment` had six
+empty rows and no layer-3 group to answer them — which is the gap
+`layers/l3_solar.toml` opens by describing, and which the solar-weather subsystem
+was added to fill. These are the far side of the crossing, and the first layer-2
+rows in the repository to receive anything.
+
+| row | receives | at the declared window |
+|---|---|---|
+| `_solar_flux` | `l3_solar_interface` (primary) | 104.07 sustained |
+| `_f10_7` | `l3_solar_interface.f107_hotday` | 124.14 single day |
+| `_ap` | `l3_solar_interface.ap_hotday` | 90.55 single day |
+
+`vleo run sys_space_environment_ap` walks 22 nodes with none blocked, from the
+pinned record through the subsystem, across the seam, to layer 2.
+
+**The convention these set, since sixteen more subsystems will copy it.** A
+layer-2 row reads its subsystem's interface node and NOTHING else inside that
+subsystem. It computes nothing — it is an identity, and its declared range is the
+crossing's own restated, because a row that narrowed the range it received would
+be changing the answer while appearing to relay it. Where the crossing publishes
+a set, the layer-2 row names the member it is about; five of the fifteen members
+are fluxes in the same range with the same unit and the same declared domain, so
+naming the wrong one changes the number and nothing in the tree notices.
+
+**Two gate holes this found.** Teaching the node-level contract check about
+`<node>.<member>` inputs in step 4 was not enough — two other places resolved a
+variable by node id alone. The assembly edge check called every member input
+dangling, which is a loud failure. The CYCLE DETECTOR silently skipped them,
+which is not: an edge it cannot follow is a loop it cannot find, and a cycle the
+resolver cannot see is a run that does not terminate rather than a gate failure.
+Both now resolve through a shared helper.
+
+**The three left seeded, and what each is waiting on.** No subsystem computes
+them, and filling a row from nothing is the defect this heading's empty rows
+exist to point at. Each now carries a comment block naming what writing it would
+need, because five layer-2 rows are waiting on these three:
+
+- `_atmospheric_density` is the single row between the solar record and the drag
+  budget; `sys_mass_and_aero_drag_acceleration`, `sys_propulsion_decay_rate` and
+  `sys_thermal_free_molecular_heat_flux` all read it. A density model needs
+  (altitude, F10.7 daily, F10.7 81-day, Kp). The daily flux now arrives; **the
+  81-day mean does not** — the crossing publishes `f107bar` for all five
+  scenarios and no layer-2 row receives it, which is a row rather than a
+  redesign — and **Kp does not cross at all**, which is §20.8's open finding.
+- `_thermospheric_wind` needs a horizontal wind model. The drivers it would take
+  are now here; the model is a subsystem's worth of work.
+- `_atomic_oxygen_fluence` follows from density, so it is waiting on a row that
+  is waiting on a subsystem that does not exist.
+
+**§20 is now complete as a plan.** What remains from it is not a step but three
+named findings: the Kp columns, the 81-day mean, and the two closures that do not
+hold.
