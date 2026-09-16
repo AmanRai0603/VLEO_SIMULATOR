@@ -354,6 +354,9 @@ pub fn evidence_rs(sh: &Sheet) -> String {
     if !sh.fixtures.is_empty() {
         o.push_str("#![allow(clippy::approx_constant, clippy::excessive_precision)]\n\n");
     }
+    // Only when something below uses them. A declared row with neither fixtures
+    // nor a parity grid emits no test, and the imports it did not need failed
+    // `clippy -D warnings` — the generator produced code the pipeline rejected.
     o.push_str("use super::model;\nuse vleo_core::units::*;\n\n");
     o.push_str("fn relative_error(got: f64, expected: f64) -> f64 {\n");
     o.push_str("    if expected == 0.0 { pmath::abs(got) } else { pmath::abs((got - expected) / expected) }\n}\n\n");
@@ -414,7 +417,50 @@ pub fn has_parity_grid(sh: &Sheet) -> bool {
 /// Read at compile time from the file beside the node, so a grid that is edited
 /// and a test that is not cannot drift apart: there is no second copy.
 fn parity(sh: &Sheet, o: &mut String) {
-    if sh.is_declared() || sh.inputs.is_empty() || !has_parity_grid(sh) {
+    if !has_parity_grid(sh) {
+        return;
+    }
+    // A DECLARED ROW HAS NO INPUTS TO SWEEP, and until this branch existed it
+    // got no parity test at all — `gate` reported "parity ok" for it, which
+    // only ever meant the FILE IS PRESENT (gate.rs:305), and nothing compared
+    // the two numbers. A grid nobody reads is a second opinion nobody asked
+    // for, and `parity_tolerance` beside it was decoration. The convention for
+    // a row with nothing to sweep: the LAST COLUMN of the FIRST data row is the
+    // prior implementation's answer.
+    if sh.is_declared() || sh.inputs.is_empty() {
+        o.push_str(&format!(
+            "/// The prior implementation's one number, against this row's one number.\n\
+             ///\n\
+             /// Migrated from `{from}`. A second opinion and never an expected\n\
+             /// value: an implementation cannot supply its own. A disagreement is\n\
+             /// a finding about one of the two.\n\
+             #[test]\n\
+             fn parity_grid() {{\n\
+             \x20   const GRID: &str = include_str!(\"parity.csv\");\n\
+             \x20   const TOL: f64 = {tol:?};\n\
+             \x20   let row = GRID\n\
+             \x20       .lines()\n\
+             \x20       .filter(|l| !l.trim_start().starts_with('#') && !l.trim().is_empty())\n\
+             \x20       .nth(1)\n\
+             \x20       .expect(\"parity.csv has a header and at least one data row\");\n\
+             \x20   let expected: f64 = row\n\
+             \x20       .rsplit(',')\n\
+             \x20       .next()\n\
+             \x20       .expect(\"a last column\")\n\
+             \x20       .trim()\n\
+             \x20       .parse()\n\
+             \x20       .expect(\"the last column of the first data row is a number\");\n\
+             \x20   let got = model::evaluate().expect(\"the declared value\").get();\n\
+             \x20   let err = relative_error(got, expected);\n\
+             \x20   assert!(\n\
+             \x20       err <= TOL,\n\
+             \x20       \"{id}: this row says {{got}} and the prior implementation `{from}` says {{expected}} — {{err}} apart, beyond {{TOL}}.\\nThis is a finding about one of the two implementations, not a build failure and not proof this one is wrong. Take it to the node owner. Do not widen parity_tolerance and do not edit parity.csv to agree.\"\n\
+             \x20   );\n\
+             }}\n\n",
+            from = esc(&sh.migrated_from),
+            id = esc(&sh.id),
+            tol = sh.parity_tolerance,
+        ));
         return;
     }
     let bindings: Vec<String> = sh

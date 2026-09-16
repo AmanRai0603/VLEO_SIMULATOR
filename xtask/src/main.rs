@@ -1837,6 +1837,12 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
             || l.starts_with("reason_lower = ")
             || l.starts_with("reason_upper = ")
             || l.starts_with("confirmed_by = ")
+            // `migrated_from` is a source citation, and this loop exists
+            // because "a literal copy drags a stale source citation through
+            // thirty nodes". It was not in the list, so a clone pointed at the
+            // sibling's MATLAB function and at a parity grid that was not its
+            // own.
+            || l.starts_with("migrated_from = ")
         {
             let key = l.split(" = ").next().unwrap();
             out.push_str(&format!(
@@ -1844,7 +1850,7 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
             ));
             // Opened a \"\"\" block and did not close it on the same line: the
             // rest belongs to the value that was just blanked.
-            let after = l.splitn(2, " = ").nth(1).unwrap_or("");
+            let after = l.split_once(" = ").map(|x| x.1).unwrap_or("");
             if after.starts_with("\"\"\"") && !after[3..].contains("\"\"\"") {
                 in_blanked_block = true;
             }
@@ -1896,7 +1902,11 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
         shifted += 1;
     }
     if shifted > 0 {
-        println!("made room at {}: {} row(s) moved up one", src_order + 1, shifted);
+        println!(
+            "made room at {}: {} row(s) moved up one",
+            src_order + 1,
+            shifted
+        );
     }
     fs::write(
         dir.join("fixtures.toml"),

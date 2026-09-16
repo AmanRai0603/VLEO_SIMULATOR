@@ -1,0 +1,131 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_mean_band_spread"
+label = "Rotation-forecast residual spread"
+folder = "sw_mean_band_spread"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "declared"
+owner = "environment"
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1341
+state = "published"
+
+# The prior implementation, named so the parity grid beside this node has
+# something to be the parity of. prf_rebuild publishes this one directly, as
+# R.sigma.total, so the grid holds the number rather than a number implied by
+# other numbers.
+migrated_from = "prf_rebuild.m:404 (01_kernel/sw_study/03_analysis, R.sigma.total)"
+# Two implementations of one documented method, in different languages, over a
+# record with a 273-day hole that each fills by interpolation. 2 per cent is
+# loose enough to survive that and a least-squares solver's last bits, and tight
+# enough that a wrong warm-up, a wrong shrinkage or a non-causal fit would fail.
+parity_tolerance = 0.02
+
+# A statistic of the pinned record with no input, so it is declared rather than
+# computed. There is nothing to compute it FROM inside the tree, and the number
+# must be re-measured if the bundle version changes.
+
+[question]
+text = "How much of the next rotation's level does the pattern fail to explain?"
+note = """
+sw_mean_cycle_level and sw_cycle_phase say where in the cycle the mission sits
+and what that phase usually brings. This says how wrong that has been, measured
+on the record, one rotation at a time, never using a rotation to predict itself.
+It is the number a design carries as margin: the central expectation without it
+is a line with no width.
+"""
+
+[maths]
+# A person has NOT read this relation against its source yet.
+confirmed_by = ""
+expression = "sigma_total = std(pred - truth) over 361 walk-forward next-rotation forecasts = 13.5550 sfu"
+source = "noaa_swpc"
+
+[theory]
+why = """
+A central expectation is only usable in a design if the part it CANNOT explain
+travels with it. The way to measure that part is to make the forecast the tool
+would have made, at every rotation of the record, using only what was known
+before that rotation, and look at how far it landed from the truth.
+
+The forecast is a pattern and not a model of the sun. In each step the training
+slice is everything before the rotation being predicted. A phase-conditioned
+baseline is fitted in twenty bins of cycle phase, each bin pulled toward the
+global mean in proportion to how thin it is — a bin with four rotations in it is
+a noisy estimate and shrinkage is the standard remedy. That baseline is scaled
+to the level of the last thirteen rotations, so a cycle larger than average is
+not predicted down to the average. What is left after the baseline is an
+anomaly, and an AR(2) fitted on the training anomalies carries the rotation-to-
+rotation memory. The mean of the residuals ALREADY OBSERVED is subtracted as a
+causal debias.
+
+The spread of what remains is this row. It is the honest width of the central
+expectation, and it is deliberately NOT a forecast error in the usual sense:
+there is no forecast in it, only the cycle and the memory of the last two
+rotations.
+"""
+reading = """
+13.5550 sfu, against rotation means that run from about 70 to 240 over the
+record. The pattern explains most of where a rotation sits and misses by about
+fourteen units of flux, and a design band of centre +/- 1.28*sigma is roughly
++/- 17 sfu.
+
+The same method on Ap gives 3.5816. It is measured and recorded here but not
+published, for the same reason as the daily row: sw_ap_design_long does not
+exist yet, and a published number nothing reads is a number nobody checks.
+"""
+
+[[theory.step]]
+text = "Cut the record into 27-day rotations and take the mean of each. The question is about the level a rotation sits at, not about the days inside it — those are sw_daily_band_spread's question."
+math = "rm(b) = mean(F107 over days 27b .. 27b+26)"
+
+[[theory.step]]
+text = "For each rotation in turn, fit only on the rotations before it. A baseline in twenty phase bins, each shrunk toward the global mean by n/(n+5), then scaled by the level of the last thirteen rotations and clamped so a thin stretch cannot swing the scale."
+math = "base(p) = w*mean_bin + (1-w)*mean_all,  w = n/(n+5);  sc = mean(rm[-13:]) / mean(base[-13:]), clamped to [0.4, 2.5]"
+
+[[theory.step]]
+text = "Fit an AR(2) on the training anomalies and predict the next one, then subtract the mean of the residuals already seen. Both halves are causal: nothing after the predicted rotation is used."
+math = "pred = base(p_next)*sc + a1*an[-1] + a2*an[-2] - mean(residuals so far)"
+
+[[theory.step]]
+text = "The spread of what is left, over every rotation the walk-forward scored."
+math = "sigma_total = std(pred - truth) = 13.5550 sfu over 361 rotations"
+
+[[assumption]]
+text = "One sigma holds across the whole cycle"
+fails_when = "it does not, and the source this was rebuilt from says so about its own number: 'sigma is NOT flat across the cycle; a design that uses one number is too tight somewhere and too loose somewhere else.' prf_rebuild reports sigma split into five phase bins for that reason. This row publishes the pooled number, so a design near solar maximum is given a band that is too narrow and one near minimum a band too wide"
+
+[[assumption]]
+text = "The 273-day hole in 2017 is filled by straight-line interpolation before the rotations are cut"
+fails_when = "those interpolated days are counted as observations. Nine months of invented flux sit inside about ten rotations, and they are smoother than the sun, so every one of those rotations is easier to predict than a real one and the pooled spread is a little narrower than the record can support"
+
+[[assumption]]
+text = "It is the residual of a pattern, not of a forecast"
+fails_when = "this is read as what a forecaster would get wrong. There is no forecast in it: no flare watch, no active-region count, no observation later than the rotation before. A real 27-day outlook does better, which is what sw_forecast_skill measures"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "sigma_total"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 60.0
+reason_lower = "a spread of zero would mean the pattern predicts every rotation exactly, which the record contradicts at every rotation it scores; below zero is not a spread"
+reason_upper = "above 60 sfu the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean and the band would be arithmetic rather than physics"
+
+[value]
+number = 13.554959
+# NOT A CONFIRMATION. Derived on 2026-09-16 from bundles/solar-weather@2026.09.14
+# by the method above, and cross-checked against prf_rebuild's own 13.496882 for
+# the same record — 0.43 per cent between two implementations of one documented
+# method sharing no code, recorded in parity.csv beside this sheet. Nobody has
+# yet read the number and agreed it, which is what this field is for.
+confirmed_by = ""
+
+[view]
+kind = "number"

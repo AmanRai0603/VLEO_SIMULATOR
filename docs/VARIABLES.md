@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1371 rows** — 658 a person picked, 713 worked out. Two thirds of any design tree is
+**1373 rows** — 660 a person picked, 713 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -19384,6 +19384,38 @@ Zero at the cycle's start and one at its end. This is the row the whole cycle-de
 
 The correlation between cycles 23 and 24 after stacking both on phase. It is the credibility of sw_mean_cycle_level: that row hands a design a mean-cycle curve, and this row says how much a single cycle can be expected to look like it. The answer is that the SHAPE repeats and the AMPLITUDE does not, and a design that reads only the correlation will miss the second half.
 
+### `sw_daily_band_spread` — Within-rotation daily spread
+
+> How far above its own rotation does a single day of F10.7 reach, at the declared confidence?
+
+| | |
+|---|---|
+| symbol | `dF107_day` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `dF107_day = pctl(F107 - movmean(F107, 27 d), 0.95) over the 2001 days ending at the window = 34.2315 sfu` |
+| source | `noaa_swpc` |
+| declared value | **34.2314814815** - |
+| confirmed by |  |
+| valid over | 0 … 120 - |
+
+- **lower bound** — a spread of zero would mean every day equals its rotation mean, which the record contradicts on every day it holds; below zero is not a spread
+- **upper bound** — above 120 sfu the departure exceeds the largest single-day excursion in the record, so a value there is an arithmetic error rather than an active sun
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** One number holds for the whole window, and the window is a year — fails when the spread is not constant across a cycle — it widens near maximum as active regions grow — so a single percentile measured on the 2001 days before the window is too wide for a quiet stretch inside it and too narrow for an active one. The MATLAB source says the same thing about its own sigma in as many words: 'sigma is NOT flat across the cycle; a design that uses one number is too tight somewhere and too loose somewhere else'
+- **assumes** The 27-day moving mean is the rotation — fails when the solar rotation is 27.27 days at the equator and slower at the poles, and the active longitudes that drive F10.7 are not at one latitude. A 27-day window is the conventional round number rather than a measured period, and the departures it leaves carry whatever the mismatch contributes
+- **assumes** It is the record's own daily scatter, not a forecast error — fails when this is read as an uncertainty. It is not: it says how variable the sun is within a rotation, measured on days that already happened. What a forecast of a future day would get wrong is sw_uncertainty_growth's question and a larger number
+
+The mean band says what the mission SUSTAINS. This says what one day inside it
+does. They are different numbers and a design uses them for different things:
+an array is sized on the sustained level, a thermal case and a drag transient
+on the day. A tool that publishes only the sustained number has decided for the
+reader which of the two their problem is.
+
+
 ### `sw_design_safe_duration` — How long the design Ap lasts
 
 > How long can the mission be before the record expects to exceed the design Ap?
@@ -19891,6 +19923,38 @@ The pair to sw_kp_slot_bias, and the half of the pair a thermospheric model actu
 - **evidence** above the last bin centre — Ap 1000 holds the 110-to-400 bin — expect 1.3174603174603174 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 
 sw_kp_from_ap applies the published scale as published, and the scale is defined for the three-hourly ap while the design product carries a daily mean. This row measures the resulting bias for the slot that sizes a drag design — the daily peak — and publishes it as a correction to be added. The 24-hour-mean slot has its own, smaller and oppositely-signed bias, recorded in the assumptions rather than published, because a node answers one question.
+
+### `sw_mean_band_spread` — Rotation-forecast residual spread
+
+> How much of the next rotation's level does the pattern fail to explain?
+
+| | |
+|---|---|
+| symbol | `sigma_total` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `sigma_total = std(pred - truth) over 361 walk-forward next-rotation forecasts = 13.5550 sfu` |
+| source | `noaa_swpc` |
+| declared value | **13.554959** - |
+| confirmed by |  |
+| valid over | 0 … 60 - |
+
+- **lower bound** — a spread of zero would mean the pattern predicts every rotation exactly, which the record contradicts at every rotation it scores; below zero is not a spread
+- **upper bound** — above 60 sfu the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean and the band would be arithmetic rather than physics
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** One sigma holds across the whole cycle — fails when it does not, and the source this was rebuilt from says so about its own number: 'sigma is NOT flat across the cycle; a design that uses one number is too tight somewhere and too loose somewhere else.' prf_rebuild reports sigma split into five phase bins for that reason. This row publishes the pooled number, so a design near solar maximum is given a band that is too narrow and one near minimum a band too wide
+- **assumes** The 273-day hole in 2017 is filled by straight-line interpolation before the rotations are cut — fails when those interpolated days are counted as observations. Nine months of invented flux sit inside about ten rotations, and they are smoother than the sun, so every one of those rotations is easier to predict than a real one and the pooled spread is a little narrower than the record can support
+- **assumes** It is the residual of a pattern, not of a forecast — fails when this is read as what a forecaster would get wrong. There is no forecast in it: no flare watch, no active-region count, no observation later than the rotation before. A real 27-day outlook does better, which is what sw_forecast_skill measures
+
+sw_mean_cycle_level and sw_cycle_phase say where in the cycle the mission sits
+and what that phase usually brings. This says how wrong that has been, measured
+on the record, one rotation at a time, never using a rotation to predict itself.
+It is the number a design carries as margin: the central expectation without it
+is a line with no width.
+
 
 ### `sw_mean_cycle_level` — Mean-cycle F10.7 at a phase
 
