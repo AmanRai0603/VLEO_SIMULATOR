@@ -520,6 +520,10 @@ showing an optimum near 300 km](docs/img/sweep.png)
 | [`docs/AGENT_EVIDENCE.md`](docs/AGENT_EVIDENCE.md) | what each agent produced when it was first used here |
 | [`docs/VARIABLES.md`](docs/VARIABLES.md) | every variable, unit, bound and the reason for it — generated |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | what to do when the tool is down |
+| [`docs/RELEASE_SETUP.md`](docs/RELEASE_SETUP.md) | tagging, proving and shipping a release |
+| [`docs/MATLAB_PORT_PLAN.md`](docs/MATLAB_PORT_PLAN.md) | how the study was ported, row by row — the record of a finished job |
+| [`docs/DELIVERY_PLAN.md`](docs/DELIVERY_PLAN.md) | what was to be built, in what order |
+| [`docs/GITLAB_TRANSFER.md`](docs/GITLAB_TRANSFER.md) | what moving off GitHub would cost, measured rather than guessed |
 | [`ADOPTION.lock`](ADOPTION.lock) | every external dependency, its licence, its fallback and when it was last checked |
 
 ## Provenance
