@@ -328,8 +328,8 @@ human approval. A model is the wrong tool for work with no judgement in it.
 | a session opens | tree state, what is blocking, whether reference data is present |
 | a sheet or fixture is saved | the gate on that node |
 | a commit message is written | its form, by the same script the pipeline runs |
-| every push | build, regenerate, gate, test, both profiles, no-std, panels |
-| every push | an advisory review that cannot fail the build |
+| every pull request, and every push to `main` | build, regenerate, gate, test, both profiles, no-std, panels |
+| every pull request, and every push to `main` | an advisory review that cannot fail the build |
 | every night | six passes over the whole tree, the ledger and yesterday's state |
 | weekly | a dependency bot on its own branch, fourteen-day minimum age, no majors |
 | on a tag | prove, build, then one human approval |
@@ -410,7 +410,7 @@ mechanically, not by convention.
 | A guard carries the reason it exists | the reason is a required field; a guard without one is generated with it or not at all |
 | An expected value may never come from the code under test | the gate refuses a fixture whose provenance is `self-snapshot` or `agent-generated` |
 | A refusal is never a substitution | a blocked row is named; a sweep records refused points |
-| The same sheet gives the same bytes | the regeneration diff and a byte-stability check on every push |
+| The same sheet gives the same bytes | the regeneration diff and a byte-stability check on every pull request |
 
 Two consequences worth stating because they are unusual:
 

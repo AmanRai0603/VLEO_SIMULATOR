@@ -598,8 +598,8 @@ code.
 | you save a sheet or a fixture file | the gate on that node, refusing the edit if it fails | `.claude/hooks/post-edit.sh` |
 | you save any `.rs` file | formatting | same file |
 | you write a commit message | the message form | `tools/githooks/commit-msg` |
-| every push | build, regenerate, gate, test, both profiles, no-std | `.github/workflows/gate.yml` |
-| every push | an advisory review that cannot fail the build | same file, `review` job |
+| every pull request, and every push to `main` | build, regenerate, gate, test, both profiles, no-std | `.github/workflows/gate.yml` |
+| every pull request, and every push to `main` | an advisory review that cannot fail the build | same file, `review` job |
 | every night | six passes over the whole tree, the ledger, and yesterday's state | `.github/workflows/nightly.yml` |
 | weekly | a dependency bot, on its own branch, majors excluded | `.github/dependabot.yml` |
 | on a tag | prove, build, and one human approval | `.github/workflows/release.yml` |
@@ -607,6 +607,17 @@ code.
 A hook is not a control — it only fires inside the tool that installed it. Every
 rule above also runs in the pipeline, from the same file, which is why the two
 can never drift apart.
+
+One gap in that is deliberate. A push to a branch with **no pull request open**
+runs nothing in the pipeline — the local gate is the only check until a pull
+request exists, and from then on every push to it runs the whole thing. The
+pipeline used to run on every push to every branch, which meant each commit was
+tested twice, once for the push and once for the pull request carrying the same
+sha, at roughly seventeen billed minutes a time. That doubling ran the
+repository out of its monthly Actions allowance on 15 September 2026, and jobs
+stopped being given a runner at all. The rule to take from it: nothing merges
+without a pull request, so testing what cannot yet be merged bought nothing and
+cost half the budget.
 
 ---
 
