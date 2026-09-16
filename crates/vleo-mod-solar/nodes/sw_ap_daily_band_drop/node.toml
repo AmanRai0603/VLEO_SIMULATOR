@@ -6,36 +6,30 @@ label = "Within-rotation daily Ap drop"
 folder = "sw_ap_daily_band_drop"   # frozen at seed
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
 tier = "A"
-criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
+criticality = "significant"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1347
+order = 1379
 state = "published"
 
-# The prior implementation, named so the parity grid beside this node has
-# something to be the parity of. designWindow_ reads both percentiles from one
-# sample and publishes neither, so what the grid holds is the drop implied by the
-# driver sets it did publish, coldmean minus coldday.
-migrated_from = "prf_density.m:221 (01_kernel/sw_study/06_density, local function designWindow_)"
-# 2 per cent, matching sw_ap_daily_band_spread rather than the 1 per cent its
-# F10.7 twin carries, and for the same reason: the two implementations differ by
-# one step of a percentile convention neither states, which is a fixed number of
-# sample positions and therefore a larger fraction of Ap than of flux.
-parity_tolerance = 0.02
-
-# A statistic of the pinned record with no input, so it is declared rather than
-# computed. There is nothing to compute it FROM inside the tree, and the number
-# must be re-measured if the bundle version changes.
+# NO migrated_from. The same reason as the other three daily rows: this no
+# longer answers the question prf_density.m:221 answers.
+#
+# Of the four this is the one the correction moves least — 10.59 to 12.56 — and
+# the one it matters most on, because sw_ap_cold_short is the row in the whole
+# subsystem closest to a declared bound. The cold Ap day goes from 6.91 to 4.93,
+# five units above a floor of zero.
 
 [question]
-text = "How far below its own rotation does a single day of Ap fall, at the declared confidence?"
+text = "How far below its own rotation does a single day of Ap fall, at the declared confidence, at the level that rotation sits at?"
 note = """
 The cold tail of sw_ap_daily_band_spread's sample, and a separate row because
-Ap's two tails are nothing like each other: 15.00 up against 10.59 down. The
-geomagnetic index is the most skewed quantity in this subsystem, because it
-floors hard at zero and has no ceiling at all.
+Ap's two tails are nothing like each other at any level. At a rotation of Ap 11
+they are 14.67 up and 7.56 down; at Ap 26, 63.85 and 21.02 — the high tail is
+three times the low one. The geomagnetic index is the most skewed quantity in
+this subsystem, because it floors hard at zero and has no ceiling at all.
 
 The cold day is the low-drag case, and on the Ap side it is also the quiet-sky
 case a magnetometer, a magnetorquer sizing and an aerodynamic control authority
@@ -43,76 +37,97 @@ are bounded by from below.
 """
 
 [maths]
-# A person has NOT read this relation against its source yet. The relation is
-# the one prf_density/designWindow_ uses, read from the MATLAB source rather
-# than inferred, but reading a relation and agreeing it are different acts.
+# A person has NOT read this relation against its source yet. The table is
+# measured from the record by the method the theory sets out; nobody has agreed
+# that the method or the knots are the right ones.
 confirmed_by = ""
-expression = "dAp_day_low = -pctl(Ap - movmean(Ap, 27 d), 0.05) over the 2001 days ending at the window = 10.5889"
+expression = "dAp_day_low(L) = -pctl(Ap - movmean(Ap, 27 d), 0.05) over days whose rotation sits within 15% of L"
 source = "noaa_swpc"
+
+[[input]]
+# The level this drop applies AT. The quiet day rides on the quiet sustained
+# level and on nothing else.
+binding = "level"
+var = "sw_ap_cold_long"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "read the 5th-percentile within-rotation Ap departure off the measured table at this rotation level, as a magnitude"
+binds = "band"
+type = "Ratio"
 
 [theory]
 why = """
-The measurement is sw_ap_daily_band_spread's, read from the other end. Take the
-daily Ap record up to the day the window opens, subtract its own centred 27-day
-moving mean, sort what is left and read the 5th percentile instead of the 95th.
-One sample, one moving mean, two tails.
+sw_ap_daily_band_spread's measurement, read from the other end: the same daily
+record, the same centred 27-day moving mean, the same bins of rotation level,
+the 5th percentile instead of the 95th, published as a magnitude.
 
-The asymmetry is the reason this is a row. On F10.7 the two tails differ by nine
-per cent; on Ap they differ by forty-two. 15.00 up, 10.59 down. Ap is bounded
+The asymmetry is the reason this is a row and it is larger on Ap than anywhere
+else in the subsystem. At Ap 4 the tails are 6.02 up and 2.97 down; at Ap 11,
+14.67 and 7.56; at Ap 26, 63.85 and 21.02. The high tail is roughly twice the
+low one at the bottom of the ladder and three times at the top. Ap is bounded
 below at 0 and a quiet day really does sit there, so a rotation whose mean is 20
 cannot fall more than 20 and can rise without limit — the distribution is not
-merely skewed, it is truncated. Mirroring the hot tail onto the cold side would
-put the cold day at Ap 4.5 where the record supports 6.9, which is a quieter sky
-than has been observed for that rotation level and a thinner atmosphere than the
-cold case actually has.
+merely skewed, it is truncated, and the truncation bites harder the lower the
+rotation.
 
-It is published as a magnitude for the same reason as its F10.7 twin: the row is
-then a distance with a declared floor of zero, and the sign belongs to the
-relation that consumes it rather than to the number.
+The low tail is also much better behaved than the high one. It rises smoothly by
+a factor of seven across the ladder where the high tail rises by eleven with most
+of it in the last third, because a quiet day is a quiet day whatever the rotation
+and a storm day is not.
 """
 reading = """
-10.59 below the rotation the day sits in, against 15.00 above it. At the
-declared window's coldmean Ap of 17.50 that puts the cold day at 6.87, which is
-a quiet but entirely ordinary sky; the record holds long stretches below it.
+12.56 at the declared window, where sw_ap_cold_long puts the sustained quiet
+level at 17.50 — between the Ap 15 and Ap 20 knots, so this is a genuine
+interpolation rather than a clamp, unlike its high-tail twin. The old
+single-number version gave 10.59.
 
-The floor matters here in a way it does not for flux. At a rotation mean below
-about 11 this drop would carry Ap negative, which is not a sky — it is the
-truncation showing through a statistic that does not know about it. The declared
-window is well clear of that, and sw_ap_cold_short guards its own output at zero
-rather than trusting the arithmetic.
+sw_ap_cold_short therefore falls from 6.91 to 4.93. That is the narrowest
+margin to a declared bound anywhere in this subsystem: five units above a floor
+of zero, where before it was seven. With this table a sustained Ap below about
+15.6 would put the cold day through the floor and the row would refuse.
 """
 
 [[theory.step]]
-text = "Take the daily Ap record up to the day the window opens, and no further, and subtract the centred 27-day moving mean. The sample is identical to sw_ap_daily_band_spread's — the same days, the same moving mean, one measurement."
+text = "Take the daily Ap record and subtract the centred 27-day moving mean. The sample is identical to sw_ap_daily_band_spread's — the same days, the same moving mean, one measurement."
 math = "dev(t) = Ap(t) - movmean(Ap, 27)(t)"
 
 [[theory.step]]
-text = "Read the 5th percentile instead of the 95th."
-math = "pctl(dev, 0.05) = -10.5889"
+text = "Bin every day by the level of its own rotation, within 15 per cent of each knot, exactly as the high tail does."
+math = "bin(L) = { dev(t) : |movmean(Ap,27)(t) - L| <= 0.15 L }"
 
 [[theory.step]]
-text = "Publish its magnitude, so the row is a distance with a floor of zero and the sign travels with the relation that uses it."
-math = "dAp_day_low = -pctl(dev, 0.05) = +10.5889"
+text = "Read the 5th percentile instead of the 95th. Eight knots, Ap 4 to 26: 2.97, 4.17, 5.59, 7.56, 10.84, 14.30, 17.69, 21.02."
+math = "lo(L) = pctl(bin(L), 0.05)"
+
+[[theory.step]]
+text = "Publish its magnitude, interpolated between knots and clamped beyond the ends. The declared window sits between two knots, so this is an interpolation."
+math = "dAp_day_low(L) = -interp(L; knots) = 12.56 at L = 17.50"
 
 [[assumption]]
-text = "Ap's departures are strongly asymmetric, and this row exists because of it"
-fails_when = "it is treated as the negation of sw_ap_daily_band_spread. It is forty-two per cent smaller, against nine per cent on the F10.7 side. Anything that mirrors one tail onto the other puts the cold Ap day two and a half units below what the record supports"
+text = "The result stays above zero, and nothing in the arithmetic ensures it"
+fails_when = "the sustained quiet level is small. With this table the crossing is at a sustained Ap near 15.6, and the declared window's 17.50 clears it by under two units of level — where before, with a single 10.59, the crossing was at 15.2. Conditioning on level did not move that crossing much because the drop falls with the level too, but the margin on the ANSWER narrowed from seven to five. sw_ap_cold_short's guard refuses rather than publishing a negative index, and it is the row most likely in this subsystem to fire"
+
+[[assumption]]
+text = "Ap's departures are strongly asymmetric at every level, and this row exists because of it"
+fails_when = "it is treated as the negation of sw_ap_daily_band_spread. The high tail is twice the low one at Ap 4 and three times at Ap 26. Anything that mirrors one onto the other is wrong by a factor of two to three, and in the direction that puts the cold day below zero"
 
 [[assumption]]
 text = "A percentile of departures does not know that Ap floors at zero"
-fails_when = "the rotation mean it is subtracted from is smaller than the drop. Below a mean of about 11 this row carries Ap negative, which is arithmetic rather than sky. The declared window's 17.50 is clear of it, and the consumer guards its own output, but the statistic itself has no such knowledge"
+fails_when = "the rotation mean it is subtracted from is smaller than the drop. The table is measured from a sample that is itself truncated, so the low tail already reflects the floor implicitly — but the interpolation between knots does not, and neither does the subtraction in sw_ap_cold_short. The guard there is what stops it, not the statistic here"
 
 [[assumption]]
-text = "One number holds for the whole window, and the window is a year"
-fails_when = "the spread is not constant across a cycle — it widens near maximum — so a single percentile measured on the 2001 days before the window is too wide for a quiet stretch inside it and too narrow for an active one"
+text = "A 15 per cent bin half-width, which trades resolution against sample size"
+fails_when = "either matters more than the other. The declared window sits between the Ap 15 knot, holding 1558 days, and the Ap 20 knot, holding 803. Both are well populated, so this row's own answer is on firmer ground than its high-tail twin's, which is reading the table's top knot at 300 days"
 
 [[assumption]]
 text = "The 27-day moving mean is the rotation"
-fails_when = "Ap's recurrence is driven by coronal holes and high-speed streams whose period is nearer 27.0 days than the 27.27 of the equatorial photosphere, and they persist for many rotations. A 27-day window is the conventional round number rather than a measured period, and the departures it leaves carry whatever the mismatch contributes"
+fails_when = "Ap's recurrence is driven by coronal holes and high-speed streams whose period is nearer 27.0 days than the 27.27 of the equatorial photosphere. A 27-day window is the conventional round number rather than a measured period"
 
 [[assumption]]
 text = "It is the record's own daily scatter, not a forecast error"
-fails_when = "this is read as an uncertainty. It is not: it says how far below its rotation the geomagnetic field has gone, measured on days that already happened"
+fails_when = "this is read as an uncertainty. It says how far below its rotation the geomagnetic field has gone, measured on days that already happened"
 
 [output]
 # The node's one answer. The variable id is the node id: one small
@@ -125,14 +140,7 @@ upper = 150.0
 reason_lower = "a drop of zero would mean no day ever falls below its rotation mean, which the record contradicts on about half the days it holds; below zero is not a distance, and a negative value here means the tail has been read from the wrong end"
 reason_upper = "above 150 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than a quiet sky"
 
-[value]
-number = 10.5888888889
-# NOT A CONFIRMATION. Derived on 2026-09-16 from
-# bundles/solar-weather@2026.09.14 by the method above and cross-checked against
-# the 10.6296 the prior implementation's own driver sets imply for the same
-# window — a 0.38 per cent difference, recorded in parity.csv beside this sheet.
-# Nobody has yet read the number and agreed it, which is what this field is for.
-confirmed_by = ""
-
 [view]
-kind = "number"
+kind = "line"
+over = "sw_ap_cold_long"
+points = 60

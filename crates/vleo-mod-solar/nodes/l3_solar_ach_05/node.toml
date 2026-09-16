@@ -46,17 +46,32 @@ row, because the subsystem has three that a reader could mistake for each other:
 the sustained level, the worst day of the design band, and the one storm the
 mission is expected to meet. This one is the single-day level. Its siblings are
 sw_ap_design_long and sw_storm_return_level, and at the declared window the
-three are 26.70, 41.70 and 158.38 — far enough apart that restating the wrong
+three are 26.70, 90.55 and 158.38 — far enough apart that restating the wrong
 one would move a closure from passing to failing or back.
 """
 reading = """
-41.6972 at the declared window, against a ceiling of 80. It inherits
-every limitation of the row it restates and a closure reading it sees none of
-them: the centre beneath it is a cycle analogue at the mission's own epoch, the
-band around that centre is 1.28 sigma — the 90th percentile, while the run is
-labelled 95 per cent — and the within-rotation term is a percentile of a sample
-that is truncated at zero. A margin computed from this row carries none of that
-and looks like a clean number either way.
+90.5472 at the declared window, against a ceiling of 80. THIS CLOSURE DOES NOT
+HOLD, and it is the second in this group that does not — l3_solar_req_03 has been
+failing at 158.38 against 150 since it was written.
+
+It held at 41.70 until sw_ap_daily_band_spread was conditioned on the rotation
+level. The old daily term, 15.00, was one percentile measured over days whose
+rotations averaged Ap 11.64 and applied at a sustained Ap of 26.70; at that level
+the record says a one-in-twenty day departs by 63.85. So the closure was passing
+on a number that was less than half what the record supports, and the
+requirement was never the thing that was wrong.
+
+What to do about it is a decision and the requirement has NOT been moved to make
+the closure pass. l3_solar_req_05 commits the design to one day at the G2
+threshold; Ap 91 is a G3-G4 day. Either the commitment belongs at G3 — 132 on
+the published scale, which would also sit below the storm ceiling of 150 and keep
+the ladder ordered — or this window is outside what the design was built for.
+
+It inherits every limitation of the row it restates and a closure reading it sees
+none of them: the centre beneath it is a cycle analogue at the mission's own
+epoch, the band around that centre is 1.28 sigma — the 90th percentile, while the
+run is labelled 95 per cent — and the within-rotation term is read at the top
+knot of a table whose top knot rests on 300 days.
 """
 
 [[theory.step]]
@@ -72,15 +87,15 @@ The requirement side is a declared commitment with a person's name against it.
 The achieved side must be the subsystem's own conclusion and nothing else, so
 this row is an identity on sw_ap_design_short.
 """
-math = "Ap_ach_short = sw_ap_design_short = 41.6972"
+math = "Ap_ach_short = sw_ap_design_short = 90.5472"
 
 [[theory.step]]
 text = """
-Note what a passing closure does NOT establish. Both numbers are ceilings on an
-INDEX, and what a spacecraft feels is the heating, the density and the torque
-that index produces, through models this subsystem does not own.
+Which makes the closure arithmetic trivial and its verdict a failure: 90.55
+achieved against 80 required. The ceiling is the G2 threshold and the record says
+this window's own hot scenario reaches a G3-G4 day.
 """
-math = "41.6972 <= 80 — the closure holds"
+math = "90.55 > 80 — THE CLOSURE DOES NOT HOLD"
 
 [[assumption]]
 text = "It inherits every limitation of the row it restates, and a closure reading it sees none of them"
@@ -88,11 +103,11 @@ fails_when = "a margin is computed from this row against a capability. The centr
 
 [[assumption]]
 text = "It restates the single-day level and not one of its two siblings"
-fails_when = "somebody reads it as the other. The subsystem publishes three Ap conclusions — 26.70 sustained, 41.70 for the worst day of the design band, 158.38 for the one storm expected in the mission — and they answer three different questions. Restating the wrong one would move this closure from passing to failing or back without anything in the tree noticing"
+fails_when = "somebody reads it as the other. The subsystem publishes three Ap conclusions — 26.70 sustained, 90.55 for the worst day of the design band, 158.38 for the one storm expected in the mission — and they answer three different questions. Restating the wrong one would move this closure from passing to failing or back without anything in the tree noticing"
 
 [[assumption]]
 text = "Nothing compares this row with its requirement automatically"
-fails_when = "a reader assumes the tree checks the closure. The pairing is a convention the matrix draws; `sense` is declared on the requirement row and the gate checks only that it is present. The Ap storm closure beside this one, l3_solar_req_03 against l3_solar_ach_03, currently FAILS at 158.38 against 150 and nothing in the tree says so"
+fails_when = "a reader assumes the tree checks the closure. The pairing is a convention the matrix draws; `sense` is declared on the requirement row and the gate checks only that it is present. TWO closures in this group now fail — this one at 90.55 against 80, and the Ap storm at 158.38 against 150 — and nothing in the tree says so about either. A failing closure is invisible to every machine check in this repository"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

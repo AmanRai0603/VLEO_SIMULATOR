@@ -22,7 +22,7 @@ command in this repository, named beside it where it is not obvious.
 | layer 1 · management | 174 rows, from CD-06 verbatim |
 | layer 2 · the system | 319 rows, from CD-06 verbatim |
 | layer 3 · subsystem | 878 rows across 17 subsystems |
-| of the 313 written | 136 declared values · 159 computed · 12 KPI closures · 1 requirement · 5 achieved |
+| of the 313 written | 132 declared values · 163 computed · 12 KPI closures · 1 requirement · 5 achieved |
 | declared edges | 495 derivation · 298 contribution · 179 relation |
 | crates | 31 — 20 node crates, 11 engine and face crates |
 | faces | browser · daemon · command line · C ABI · Python wheel · MATLAB |

@@ -12,7 +12,7 @@
 # be a fixture; it is in parity.csv beside this sheet.
 
 [[fixture]]
-label = "this repository's own chain: the sustained level from sw_f107_design_long's first fixture plus its measured daily departure"
+label = "the sustained level from sw_f107_design_long's first fixture plus the daily departure this row USED to be handed, before sw_daily_band_spread was conditioned on level. Kept as an arithmetic case: the pair no longer occurs in this tree, and what it still checks is that the relation is that addition"
 expect = 211.4530904415
 tolerance = 1e-12
 provenance = "independent-derivation"

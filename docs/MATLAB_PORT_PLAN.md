@@ -981,9 +981,8 @@ against it, and one of the three has to be settled first.
    interface alone. The Kp columns are outstanding.
 5. ~~The four required/achieved pairs, replacing the three.~~ Done as FIVE pairs,
    for the reason in 20.10 below.
-6. Layer 2: three rows written, three left seeded and saying why. **Blocked on
-   the refusal in 20.8 above**: a layer-2 row written against a crossing that
-   does not publish would be a row that cannot run.
+6. Layer 2: three rows written, three left seeded and saying why. **Unblocked**
+   by 20.11 below — the crossing publishes.
 
 ### 20.10 · What step 5 did, and where it departed
 
@@ -1041,3 +1040,91 @@ convention the matrix draws. So `req_03` failing at 158.38 against 150 is visibl
 to a reader of the matrix and to nothing else, and has been since it was written.
 That is the largest finding of this step and it is not a solar-weather problem —
 it is true of every closure in the tree.
+
+### 20.11 · The daily band is a curve, not a number
+
+The refusal 20.8 recorded is settled, and settling it changed four published
+design levels. This is the largest correction the port has made and it is a
+departure from the source rather than a reproduction of it.
+
+**What was wrong.** `designWindow_` reads one percentile of the within-rotation
+departure over the 2001 days before the window and applies it wherever it is
+needed. The departure is not one number. Measured over the whole record and
+conditioned on the level of the rotation each day sits in, the 95th percentile
+runs from 4.63 sfu at a rotation of 70 to 46.93 at 210 — a factor of ten — and on
+Ap from 6.02 at Ap 4 to 63.85 at Ap 26, a factor of eleven. A fixed-window
+percentile is that statistic MIXED over whatever levels fell in the window, so it
+is right near the mean level of its own sample and wrong everywhere else.
+
+The study never met the failure because its centre was high: it holds its last
+rotation forecast forward and gets 158.33 sfu, close to the 136.63 its sample
+averaged. This port reads the cycle analogue and gets 86.85, so the old drop of
+31.27 was being applied at a rotation of 69.63 and gave 38.36 sfu — below the
+floor of 60 and below anything ever observed. `sw_f107_cold_short` refused and
+the seam refused with it.
+
+**What replaced it.** The four daily rows are `computed` instead of `declared`.
+Each reads the sustained level it applies at — the hot day rides on the hot mean
+and the cold day on the cold mean, so each row is evaluated at exactly the one
+point its consumer needs, which is why a level-conditioned table can live on a
+row at all given the bus passes values and not relations. The table in each hole
+is measured by one stated rule: a geometric ladder of knots, each bin every day
+whose rotation sits within 15 per cent of the knot, a knot kept while its bin
+holds at least 200 days and both tails stay monotone, the ladder stopping at the
+last knot that passes. Seven knots for F10.7 from 70 to 210, eight for Ap from 4
+to 26.
+
+**What moved.**
+
+| | was | is |
+|---|---|---|
+| `sw_f107_design_short` | 138.30 | 124.14 |
+| `sw_f107_cold_short` | refused | 65.24 |
+| `sw_ap_design_short` | 41.70 | **90.55** |
+| `sw_ap_cold_short` | 6.91 | 4.93 |
+
+The Ap correction is the one to read. The declared window's sustained Ap is
+26.70 against a sample mean of 11.64, so the old single number understated the
+band by more than four times: the previous Ap single-day design level was less
+than half what the record supports for the subsystem's own hot scenario. **A
+design sized on 41.70 was under-designed by a factor of two.**
+
+**What it broke.** `l3_solar_req_05` commits the design to one day at the G2
+threshold, Ap 80, and the achieved side is now 90.55. That closure fails, and the
+requirement has NOT been moved to make it pass. Two of the five closures in this
+group now fail and neither is visible to any machine check in this repository.
+
+**What the four rows lost.** `migrated_from` and their parity grids. They no
+longer answer the question `prf_density.m:221` answers, so a grid against it
+would compare two answers to two different questions. For the record, at the mean
+rotation level of the study's own 2001-day sample the F10.7 table gives 32.10
+against the study's 34.15 — the level-mixed statistic is about six per cent
+wider, which is what mixing distributions of different widths does to a tail.
+
+**What is still open.** Two of the three resolutions 20.8 named are untouched and
+neither would have been enough on its own: the daily drop alone took 86.85 below
+60, so no change to sigma could have saved it. A sigma measured for the window's
+own phase rather than pooled across the cycle, and empirical percentiles of the
+residuals in place of a normal multiplier on a skewed sample, both remain worth
+doing. And the table conditions on LEVEL but not on cycle PHASE: a rotation at
+100 sfu on a rising cycle and one at 100 sfu on a declining cycle get the same
+band, and the record does not say they should.
+
+### 20.12 · req_01, re-derived
+
+`l3_solar_req_01` committed the design to 250 sfu because 250 was the next round
+number above what the chain achieved when the row was written. That number
+tracked the design rather than the sky: two later changes moved the achieved side
+to 104.07 and the same 250 became 140 per cent of headroom — a ceiling the
+environment cannot approach, which is a closure that cannot fail.
+
+It is now 260 sfu, anchored the way `req_02`, `req_04` and `req_05` are anchored:
+in something a reader can check. The largest 27-day mean F10.7 in 28.2 years is
+252.67, centred 2024-08-13, and the 27-day mean is the right timescale because
+the achieved side is a band on rotation-mean forecasts. Rounded up to the next
+ten, the commitment is that the design operates through any rotation the record
+has ever shown. `confirmed_by` is empty: the anchor is a fact about the record,
+but the commitment is a claim about a spacecraft.
+
+All four of this group's F10.7 and Ap ceilings now have derivations. None of them
+has a name against it.

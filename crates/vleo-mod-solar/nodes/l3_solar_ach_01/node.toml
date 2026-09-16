@@ -66,11 +66,12 @@ which is now the achieved side of no closure at all). Restating the wrong one
 would move this closure without anything in the tree noticing.
 """
 reading = """
-104.07 sfu at the declared window, against a ceiling of 250 — 140 per cent of
-room. That is not a comfortable margin, it is a closure that cannot fail, and
-l3_solar_req_01 says so on its own sheet: its 250 was the next round number
-above the 228.14 the chain achieved when it was written, and the achieved side
-has since more than halved. The requirement has not been re-derived.
+104.07 sfu at the declared window, against a ceiling of 260 — 150 per cent of
+room, and the room is now explained rather than accidental. l3_solar_req_01's
+260 is the record's largest 27-day mean, 252.67 sfu centred 2024-08-13, rounded
+up; it says the design operates through any rotation the record has shown. Its
+predecessor, 250, was the next round number above whatever the chain happened to
+give and therefore moved with the design instead of with the sky.
 
 It inherits every limitation of the row it restates and a closure reading it
 sees none of them. The centre beneath it is a cycle analogue at the mission's
@@ -100,20 +101,23 @@ math = "F107_ach_flux = F107_long = 104.07 sfu"
 [[theory.step]]
 text = """
 Which makes the closure arithmetic trivial and the closure itself informative —
-though what it is informative ABOUT has changed. 104.07 achieved against 250
-required is 140 per cent of room, where it was 9.6 per cent when the pair was
-written.
+though what it is informative ABOUT has changed. 104.07 achieved against 260
+required is 150 per cent of room, where it was 9.6 per cent when the pair was
+written — but the ceiling is now the record's hottest rotation rather than a
+number picked above the chain, so the room is a statement about this window
+being quiet rather than about the requirement being slack.
 """
-math = "104.07 <= 250 — the closure holds, by too much to mean anything"
+math = "104.07 <= 260 — the closure holds"
 
 [[theory.step]]
 text = """
-Note what the pass does NOT establish. The requirement was chosen as a round
-number above the capability, so a passing closure here confirms that the two
-numbers are consistent with each other rather than that the design is adequate.
-The Ap STORM closure on the same subsystem, l3_solar_req_03 against
-l3_solar_ach_03, still fails at 158.38 against 150 — and nothing in the tree
-says so, because the pairing is a convention the matrix draws rather than
+Note what the pass does NOT establish. The requirement is a ceiling on an INDEX, so a passing closure confirms the sky
+is one the design says it can operate in, not that the design is adequate: what
+a spacecraft feels is the density that index produces at its altitude, through
+a model this subsystem does not own.
+TWO closures in this group do not hold — the Ap single day at 90.55 against 80
+and the Ap storm at 158.38 against 150 — and nothing in the tree says so about
+either, because the pairing is a convention the matrix draws rather than
 something the kernel evaluates.
 """
 

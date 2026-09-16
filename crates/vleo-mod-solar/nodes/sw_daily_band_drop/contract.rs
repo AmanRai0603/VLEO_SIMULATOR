@@ -8,9 +8,10 @@ use vleo_core::units::*;
 
 /// What this node publishes: `dF107_day_low` (Within-rotation daily drop), in `-`.
 pub const NODE_ID: &str = "sw_daily_band_drop";
-pub const SHEET_HASH: u64 = 0x0e3f444a44da597e;
+pub const SHEET_HASH: u64 = 0x63c3c88e7870aebe;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
+    "sw_f107_cold_long",
 ];
 /// The variables this node publishes.
 pub const OUTPUT_VARS: &[&str] = &["sw_daily_band_drop"];
@@ -23,10 +24,11 @@ pub const OUTPUT_UNITS: &[Unit] = &[Ratio::UNIT];
 /// so the bus carries no quantity types and a face cannot pass arguments
 /// in the wrong order.
 pub fn call(inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {
-    if outputs.is_empty() {
+    if inputs.is_empty() || outputs.is_empty() {
         return Err(Fault::Blocked { node: NODE_ID, missing: "an input the contract declares" });
     }
-    let answer = super::model::evaluate()?;
+    let level: Ratio = Ratio::new(inputs[0]);
+    let answer = super::model::evaluate(level)?;
     outputs[0] = answer.get();
     Ok(())
 }

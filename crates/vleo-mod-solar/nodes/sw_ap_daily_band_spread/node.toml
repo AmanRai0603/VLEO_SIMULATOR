@@ -6,82 +6,151 @@ label = "Within-rotation daily Ap spread"
 folder = "sw_ap_daily_band_spread"   # frozen at seed
 subsystem = "solar"
 parent = "l3_solar"
-kind = "declared"
+kind = "computed"
 owner = "environment"
 tier = "A"
-criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
+# SIGNIFICANT, and this is the row whose correction is largest: conditioning on
+# level more than doubles the Ap single-day design level, from 41.70 to 90.55.
+criticality = "significant"
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1346
+order = 1378
 state = "published"
 
-# The prior implementation, named so the parity grid beside this node has
-# something to be the parity of.
-migrated_from = "prf_density.m:225 (01_kernel/sw_study/06_density, local function designWindow_, qHi for ap)"
-parity_tolerance = 0.02
+# NO migrated_from. The same reason as the F10.7 pair: this no longer answers
+# the question prf_density.m:221 answers, so a parity grid against it would be
+# comparing two answers to two different questions.
+#
+# AND ON Ap THE CORRECTION GOES THE OTHER WAY, WHICH IS THE FINDING.
+#
+# On F10.7 conditioning on level made the hot day SMALLER, because the declared
+# window's sustained level (104) is below the mean level of the study's sample
+# (137). On Ap it makes the hot day much LARGER: the declared window's sustained
+# Ap is 26.70 against a sample mean of 11.64, and the departure at Ap 27 is more
+# than four times the departure at Ap 11.
+#
+#   old, one number for every level      dAp_day = 15.00   ->  Ap_short = 41.70
+#   new, at the level it applies at       dAp_day = 63.85   ->  Ap_short = 90.55
+#
+# So the previous Ap single-day design level was less than half what the record
+# supports for its own hot scenario. A design sized on 41.70 would be under-
+# designed by a factor of two for the sky its own hot band describes. That is
+# the largest single correction this subsystem has made.
 
 [question]
-text = "How far above its own rotation does a single day of Ap reach, at the declared confidence?"
+text = "How far above its own rotation does a single day of Ap reach, at the declared confidence, at the level that rotation sits at?"
 note = """
-The Ap twin of sw_daily_band_spread. A storm is a day, not a rotation, and this
-is the row that says how much of one a single day can be.
+The geomagnetic index is the most level-dependent quantity in this subsystem.
+At a rotation level of Ap 4 a one-in-twenty day is 6.0 above it; at Ap 26 it is
+63.9 — a factor of eleven, and most of it in the top third of the range, because
+high-Ap rotations are driven by recurrent streams and storms and their
+individual days swing enormously.
+
+A single number for that is not a band, it is an average of bands, and it is
+correct only near the mean level of whatever sample produced it.
 """
 
 [maths]
-# A person has NOT read this relation against its source yet.
+# A person has NOT read this relation against its source yet. The table is
+# measured from the record by the method the theory sets out; nobody has agreed
+# that the method or the knots are the right ones.
 confirmed_by = ""
-expression = "dAp_day = pctl(Ap - movmean(Ap, 27 d), 0.95) over the 2001 days ending at the window = 15.0019"
+expression = "dAp_day(L) = pctl(Ap - movmean(Ap, 27 d), 0.95) over days whose rotation sits within 15% of L"
 source = "noaa_swpc"
+
+[[input]]
+# The level this band applies AT. The disturbed day rides on the disturbed
+# sustained level and on nothing else.
+binding = "level"
+var = "sw_ap_design_long"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "read the 95th-percentile within-rotation Ap departure off the measured table at this rotation level"
+binds = "band"
+type = "Ratio"
 
 [theory]
 why = """
-The same construction as the F10.7 daily spread: subtract the record's own
-centred 27-day moving mean from each day and read the 95th percentile of what is
-left, over the 2001 days ending at the window.
+The method is sw_daily_band_spread's, applied to Ap: subtract the centred 27-day
+moving mean from the daily record, bin every day by the level of the rotation it
+sits in, take the 95th percentile inside each bin. Geometric ladder of knots,
+each bin every day within 15 per cent of its knot, a knot kept only while its
+bin holds at least 200 days and both tails stay monotone, the ladder stopping at
+the last knot that passes. That gives eight knots from Ap 4 to Ap 26.
 
-For Ap the number is larger than its own centre — 15.00 against a centre of
-22.10 — and that is the physics rather than an error. F10.7 varies smoothly as
-active regions rotate into view; Ap is quiet for weeks and then a coronal mass
-ejection arrives and it is 100 for a day. A within-rotation spread comparable to
-the level itself is what a burst process looks like when you measure it this
-way.
+What is different about Ap is the SHAPE of the dependence. On F10.7 the table
+rises smoothly by a factor of ten across its range. On Ap it rises by eleven and
+most of that is in the last third: 14.67 at Ap 11, 23.79 at 15, 28.68 at 20,
+40.61 at 24, 63.85 at 26. A disturbed rotation is not a quiet rotation scaled
+up — it is a rotation containing storms, and a storm day departs from its
+rotation by an amount that has nothing to do with the rotation's own level.
+
+That steepness is why the table stops at 26. Beyond it the record has 170 days
+at Ap 28 and 105 at Ap 30, across 27 rotation-sized blocks in 28.2 years, and a
+95th percentile of 170 days is the ninth-largest of them. The ladder stops where
+the rule stops it and the answer is clamped above, which the assumptions below
+say plainly costs something at exactly the level the declared window sits at.
 """
 reading = """
-15.0019, against the study's 14.8519 — an absolute difference of 0.15, the same
-ORDER as the 0.083 the F10.7 row differs by. Ap is simply a smaller number, so
-the same convention difference reads as 1.01 per cent where F10.7's reads as
-0.24, which is why the grid beside this row is declared at 2 per cent and its
-F10.7 twin at 1.
+63.85 at the declared window, where sw_ap_design_long puts the sustained
+disturbed level at 26.70 — just above the table's top knot, so the answer is the
+clamp. The old single-number version gave 15.00, measured over days whose
+rotations averaged Ap 11.64 and applied unchanged at 26.70.
 
-The cold tail is sw_ap_daily_band_drop at 10.59, forty-two per cent shallower
-than this. That gap is the largest asymmetry in the subsystem and it is physical:
-Ap floors at zero, so a rotation cannot fall further than its own mean.
+sw_ap_design_short therefore moves from 41.70 to 90.55, and THAT BREAKS A
+CLOSURE: l3_solar_req_05 commits the design to surviving a single day at the G2
+threshold, Ap 80, and the record says this window's own hot scenario reaches 91.
+Ap 91 is a G3-G4 day. It is consistent with the rest of the subsystem —
+sw_storm_return_level says the one storm expected in the whole mission is Ap 158
+— and it means either the single-day commitment belongs at G3 or this window is
+outside what the design was built for. That is a decision, not an arithmetic
+consequence, and the requirement has NOT been moved to make the closure pass.
 """
 
 [[theory.step]]
-text = "Take the daily Ap record up to the day the window opens, and no further."
-math = "hist = Ap over the 2001 days ending at the window"
-
-[[theory.step]]
-text = "Subtract the centred 27-day moving mean from each day."
+text = "Take the daily Ap record and subtract the centred 27-day moving mean from each day."
 math = "dev(t) = Ap(t) - movmean(Ap, 27)(t)"
 
 [[theory.step]]
-text = "Read the 95th percentile of the departures. The 5th is sw_ap_daily_band_drop's own row: at 10.59 against this 15.00 the two tails are forty-two per cent apart, because Ap is truncated at zero."
-math = "pctl(dev, 0.95) = +15.0019   ·   pctl(dev, 0.05) = -10.5889"
+text = "Bin every day by the level of its own rotation, within 15 per cent of each knot, on a geometric ladder."
+math = "bin(L) = { dev(t) : |movmean(Ap,27)(t) - L| <= 0.15 L }"
+
+[[theory.step]]
+text = "Read the 95th percentile inside each bin. Keep a knot only while its bin holds at least 200 days and both tails stay monotone; stop at the last knot that passes. Eight knots, Ap 4 to 26, the thinnest holding 300 days."
+math = "hi(L) = pctl(bin(L), 0.95) — 6.02 at Ap 4, 14.67 at 11, 28.68 at 20, 63.85 at 26"
+
+[[theory.step]]
+text = "Interpolate between knots and clamp beyond the ends. The declared window sits above the top knot, so its answer is the clamp."
+math = "dAp_day(L) = interp(L; knots) = 63.85 at L = 26.70, which is the clamp"
 
 [[assumption]]
-text = "One number holds for the whole window"
-fails_when = "the spread is not constant across a cycle and is widest in the declining phase when high-speed streams recur. A single percentile is too wide for a quiet stretch and too narrow for an active one"
+text = "THE DECLARED WINDOW IS ABOVE THE TOP KNOT, so its answer is the clamp and not an interpolation"
+fails_when = "the sustained Ap exceeds 26, as it does here at 26.70. The table holds its top value rather than extrapolating, and the segment below that top knot is the steepest in the table — 40.61 at Ap 24 to 63.85 at 26. Extrapolating that slope to 26.70 would give about 72 rather than 63.85, so the clamp is the CONSERVATIVE-DOWNWARD choice here and the published single-day Ap may be low. The record cannot settle it: Ap 28 holds 170 days and Ap 30 holds 105"
 
 [[assumption]]
-text = "A percentile of a burst process is a useful design number"
-fails_when = "it is read as a worst case. The 95th percentile of the daily departure is exceeded one day in twenty — about eighteen times in a 365-day window — and the storms a design actually fears sit far out in a tail this row says nothing about"
+text = "Conditioning on level more than doubled this row's consumer, and the previous value was not a margin but an error"
+fails_when = "this is read as a refinement. sw_ap_design_short was 41.70 and is 90.55. A design sized on 41.70 for its own hot scenario was under-designed by a factor of two, because the band it used was measured over a sample whose rotations averaged Ap 11.64 and applied at 26.70"
+
+[[assumption]]
+text = "The top of the table rests on very little record"
+fails_when = "a design sits near it. The Ap 26 knot holds 300 days, and the whole record has only 27 rotation-sized blocks above Ap 22 in 28.2 years. A 95th percentile of 300 days is the fifteenth-largest of them, so the top of this table moves if one storm period is added to or removed from the record. The bottom knots hold thousands of days and are not like this, and the table does not say which regime a caller is in at the point of use"
+
+[[assumption]]
+text = "A disturbed rotation is not a quiet rotation scaled up"
+fails_when = "somebody fits a smooth law through these knots. The rise is a factor of eleven and most of it is in the last third, because high-Ap rotations contain storms and a storm day's departure has little to do with its rotation's own level. A power law or a constant ratio through this table would be wrong at both ends"
 
 [[assumption]]
 text = "The 27-day moving mean is the rotation"
-fails_when = "recurrent high-speed streams have their own 27-day periodicity, so part of what this calls a daily departure is itself rotation-locked and is being removed by the very mean it is measured against"
+fails_when = "Ap's recurrence is driven by coronal holes and high-speed streams whose period is nearer 27.0 days than the 27.27 of the equatorial photosphere, and they persist for many rotations. A 27-day window is the conventional round number rather than a measured period"
+
+[[assumption]]
+text = "It is the record's own daily scatter, not a forecast error"
+fails_when = "this is read as an uncertainty. It says how variable the geomagnetic field is within a rotation, measured on days that already happened"
 
 [output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
 symbol = "dAp_day"
 type = "Ratio"
 unit = "One"
@@ -90,13 +159,7 @@ upper = 150.0
 reason_lower = "a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0"
 reason_upper = "above 150 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun"
 
-[value]
-number = 15.0018518519
-# NOT A CONFIRMATION. Derived on 2026-09-16 from
-# bundles/solar-weather@2026.09.14 by the method above and cross-checked
-# against the prior implementation in parity.csv beside this sheet. Nobody
-# has yet read the number and agreed it, which is what this field is for.
-confirmed_by = ""
-
 [view]
-kind = "number"
+kind = "line"
+over = "sw_ap_design_long"
+points = 60

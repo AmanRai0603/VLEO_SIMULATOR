@@ -16,14 +16,14 @@ fn relative_error(got: f64, expected: f64) -> f64 {
     if expected == 0.0 { pmath::abs(got) } else { pmath::abs((got - expected) / expected) }
 }
 
-/// this repository's own chain: the sustained level from sw_f107_design_long's first fixture plus its measured daily departure
+/// the sustained level from sw_f107_design_long's first fixture plus the daily departure this row USED to be handed, before sw_daily_band_spread was conditioned on level. Kept as an arithmetic case: the pair no longer occurs in this tree, and what it still checks is that the relation is that addition
 ///
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_0() {
     let got = model::evaluate(Ratio::new(177.22160896), Ratio::new(34.2314814815)).expect("the fixture case must not be refused");
     let err = relative_error(got.get(), 211.4530904415);
-    assert!(err <= 1e-12, "this repository's own chain: the sustained level from sw_f107_design_long's first fixture plus its measured daily departure: got {} want 211.4530904415, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    assert!(err <= 1e-12, "the sustained level from sw_f107_design_long's first fixture plus the daily departure this row USED to be handed, before sw_daily_band_spread was conditioned on level. Kept as an arithmetic case: the pair no longer occurs in this tree, and what it still checks is that the relation is that addition: got {} want 211.4530904415, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
 /// round numbers, so the arithmetic is checkable without a calculator
@@ -55,7 +55,7 @@ fn fixture_2() {
 
 /// One per cent either side of the known-good point, this node still answers.
 ///
-/// Derived from `this repository's own chain: the sustained level from sw_f107_design_long's first fixture plus its measured daily departure` and the declared domain 60 … 400.
+/// Derived from `the sustained level from sw_f107_design_long's first fixture plus the daily departure this row USED to be handed, before sw_daily_band_spread was conditioned on level. Kept as an arithmetic case: the pair no longer occurs in this tree, and what it still checks is that the relation is that addition` and the declared domain 60 … 400.
 ///
 /// One per cent, not a decade. These domains are design bands — an altitude
 /// range somebody chose, not a range over which the mathematics holds — so a

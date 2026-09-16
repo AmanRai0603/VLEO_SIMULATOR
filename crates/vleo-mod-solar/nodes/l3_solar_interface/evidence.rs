@@ -21,7 +21,7 @@ fn relative_error(got: f64, expected: f64) -> f64 {
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_0() {
-    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)).expect("the fixture case must not be refused");
+    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)).expect("the fixture case must not be refused");
     let err = relative_error(got.F107_hotmean.get(), 175.5520201913);
     assert!(err <= 1e-12, "the sustained hot F10.7 crosses unchanged, from sw_f107_design_long: got {} want 175.5520201913, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.F107_hotmean.get(), err);
 }
@@ -31,7 +31,7 @@ fn fixture_0() {
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_1() {
-    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)).expect("the fixture case must not be refused");
+    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)).expect("the fixture case must not be refused");
     let err = relative_error(got.F107_nominal.get(), 158.3304112313);
     assert!(err <= 1e-12, "the nominal F10.7 crosses unchanged, from sw_central_expectation: got {} want 158.3304112313, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.F107_nominal.get(), err);
 }
@@ -41,7 +41,7 @@ fn fixture_1() {
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_2() {
-    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)).expect("the fixture case must not be refused");
+    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)).expect("the fixture case must not be refused");
     let err = relative_error(got.F107_coldmean.get(), 141.1088022713);
     assert!(err <= 1e-12, "the sustained cold F10.7 crosses unchanged, from sw_f107_cold_long: got {} want 141.1088022713, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.F107_coldmean.get(), err);
 }
@@ -51,9 +51,9 @@ fn fixture_2() {
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_3() {
-    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)).expect("the fixture case must not be refused");
-    let err = relative_error(got.F107_hotday.get(), 209.7835016728);
-    assert!(err <= 1e-12, "the hot single day crosses unchanged, from sw_f107_design_short: got {} want 209.7835016728, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.F107_hotday.get(), err);
+    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)).expect("the fixture case must not be refused");
+    let err = relative_error(got.F107_hotday.get(), 124.1432752988);
+    assert!(err <= 1e-12, "the hot single day crosses unchanged, from sw_f107_design_short: got {} want 124.1432752988, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.F107_hotday.get(), err);
 }
 
 /// the cold single day crosses unchanged, from sw_f107_cold_short
@@ -61,9 +61,9 @@ fn fixture_3() {
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_4() {
-    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)).expect("the fixture case must not be refused");
-    let err = relative_error(got.F107_coldday.get(), 109.8365800491);
-    assert!(err <= 1e-12, "the cold single day crosses unchanged, from sw_f107_cold_short: got {} want 109.8365800491, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.F107_coldday.get(), err);
+    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)).expect("the fixture case must not be refused");
+    let err = relative_error(got.F107_coldday.get(), 65.24109104);
+    assert!(err <= 1e-12, "the cold single day crosses unchanged, from sw_f107_cold_short: got {} want 65.24109104, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.F107_coldday.get(), err);
 }
 
 /// the nominal scenario's 81-day mean is its own value — a *mean scenario IS its mean
@@ -71,7 +71,7 @@ fn fixture_4() {
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_5() {
-    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)).expect("the fixture case must not be refused");
+    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)).expect("the fixture case must not be refused");
     let err = relative_error(got.F107bar_nominal.get(), 158.3304112313);
     assert!(err <= 1e-12, "the nominal scenario's 81-day mean is its own value — a *mean scenario IS its mean: got {} want 158.3304112313, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.F107bar_nominal.get(), err);
 }
@@ -81,7 +81,7 @@ fn fixture_5() {
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_6() {
-    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)).expect("the fixture case must not be refused");
+    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)).expect("the fixture case must not be refused");
     let err = relative_error(got.F107bar_hotmean.get(), 175.5520201913);
     assert!(err <= 1e-12, "the hot sustained scenario's 81-day mean is its own value: got {} want 175.5520201913, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.F107bar_hotmean.get(), err);
 }
@@ -91,7 +91,7 @@ fn fixture_6() {
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_7() {
-    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)).expect("the fixture case must not be refused");
+    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)).expect("the fixture case must not be refused");
     let err = relative_error(got.F107bar_coldmean.get(), 141.1088022713);
     assert!(err <= 1e-12, "the cold sustained scenario's 81-day mean is its own value: got {} want 141.1088022713, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.F107bar_coldmean.get(), err);
 }
@@ -101,7 +101,7 @@ fn fixture_7() {
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_8() {
-    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)).expect("the fixture case must not be refused");
+    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)).expect("the fixture case must not be refused");
     let err = relative_error(got.F107bar_hotday.get(), 175.5520201913);
     assert!(err <= 1e-12, "THE HOT DAY RIDES ON THE HOT MEAN — its 81-day mean is 175.55, not its own 209.78. The one member that is not a copy of its namesake input: got {} want 175.5520201913, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.F107bar_hotday.get(), err);
 }
@@ -111,7 +111,7 @@ fn fixture_8() {
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_9() {
-    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)).expect("the fixture case must not be refused");
+    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)).expect("the fixture case must not be refused");
     let err = relative_error(got.F107bar_coldday.get(), 141.1088022713);
     assert!(err <= 1e-12, "THE COLD DAY RIDES ON THE COLD MEAN — its 81-day mean is 141.11, not its own 109.84: got {} want 141.1088022713, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.F107bar_coldday.get(), err);
 }
@@ -121,7 +121,7 @@ fn fixture_9() {
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_10() {
-    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)).expect("the fixture case must not be refused");
+    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)).expect("the fixture case must not be refused");
     let err = relative_error(got.Ap_nominal.get(), 22.095389);
     assert!(err <= 1e-12, "the nominal Ap crosses unchanged, from sw_ap_central_expectation: got {} want 22.095389, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.Ap_nominal.get(), err);
 }
@@ -131,7 +131,7 @@ fn fixture_10() {
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_11() {
-    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)).expect("the fixture case must not be refused");
+    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)).expect("the fixture case must not be refused");
     let err = relative_error(got.Ap_hotmean.get(), 26.69530964);
     assert!(err <= 1e-12, "the sustained disturbed Ap crosses unchanged, from sw_ap_design_long: got {} want 26.69530964, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.Ap_hotmean.get(), err);
 }
@@ -141,7 +141,7 @@ fn fixture_11() {
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_12() {
-    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)).expect("the fixture case must not be refused");
+    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)).expect("the fixture case must not be refused");
     let err = relative_error(got.Ap_coldmean.get(), 17.49546836);
     assert!(err <= 1e-12, "the sustained quiet Ap crosses unchanged, from sw_ap_cold_long: got {} want 17.49546836, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.Ap_coldmean.get(), err);
 }
@@ -151,9 +151,9 @@ fn fixture_12() {
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_13() {
-    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)).expect("the fixture case must not be refused");
-    let err = relative_error(got.Ap_hotday.get(), 41.6971614919);
-    assert!(err <= 1e-12, "the most disturbed single day crosses unchanged, from sw_ap_design_short: got {} want 41.6971614919, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.Ap_hotday.get(), err);
+    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)).expect("the fixture case must not be refused");
+    let err = relative_error(got.Ap_hotday.get(), 90.54720964);
+    assert!(err <= 1e-12, "the most disturbed single day crosses unchanged, from sw_ap_design_short: got {} want 90.54720964, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.Ap_hotday.get(), err);
 }
 
 /// the quietest single day crosses unchanged, from sw_ap_cold_short — the member closest to a declared bound, seven units clear of zero
@@ -161,9 +161,9 @@ fn fixture_13() {
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_14() {
-    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)).expect("the fixture case must not be refused");
-    let err = relative_error(got.Ap_coldday.get(), 6.9065794711);
-    assert!(err <= 1e-12, "the quietest single day crosses unchanged, from sw_ap_cold_short — the member closest to a declared bound, seven units clear of zero: got {} want 6.9065794711, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.Ap_coldday.get(), err);
+    let got = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)).expect("the fixture case must not be refused");
+    let err = relative_error(got.Ap_coldday.get(), 4.9319536205);
+    assert!(err <= 1e-12, "the quietest single day crosses unchanged, from sw_ap_cold_short — the member closest to a declared bound, seven units clear of zero: got {} want 4.9319536205, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.Ap_coldday.get(), err);
 }
 
 // ---- properties, generated from the declared domain ---------------------
@@ -188,52 +188,52 @@ fn fixture_14() {
 fn answers_near_the_known_good_point() {
     let mut refused: Vec<String> = Vec::new();
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(158.3304112313 * scale), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)) {
+        if let Err(f) = model::evaluate(Ratio::new(158.3304112313 * scale), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)) {
             refused.push(format!("f107_centre x{scale} -> {f}"));
         }
     }
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913 * scale), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)) {
+        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913 * scale), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)) {
             refused.push(format!("f107_hot_long x{scale} -> {f}"));
         }
     }
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713 * scale), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)) {
+        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713 * scale), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)) {
             refused.push(format!("f107_cold_long x{scale} -> {f}"));
         }
     }
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728 * scale), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)) {
+        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988 * scale), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)) {
             refused.push(format!("f107_hot_day x{scale} -> {f}"));
         }
     }
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491 * scale), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)) {
+        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104 * scale), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)) {
             refused.push(format!("f107_cold_day x{scale} -> {f}"));
         }
     }
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389 * scale), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)) {
+        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389 * scale), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)) {
             refused.push(format!("ap_centre x{scale} -> {f}"));
         }
     }
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964 * scale), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)) {
+        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964 * scale), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)) {
             refused.push(format!("ap_hot_long x{scale} -> {f}"));
         }
     }
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836 * scale), Ratio::new(41.6971614919), Ratio::new(6.9065794711)) {
+        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836 * scale), Ratio::new(90.54720964), Ratio::new(4.9319536205)) {
             refused.push(format!("ap_cold_long x{scale} -> {f}"));
         }
     }
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919 * scale), Ratio::new(6.9065794711)) {
+        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964 * scale), Ratio::new(4.9319536205)) {
             refused.push(format!("ap_hot_day x{scale} -> {f}"));
         }
     }
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711 * scale)) {
+        if let Err(f) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205 * scale)) {
             refused.push(format!("ap_cold_day x{scale} -> {f}"));
         }
     }
@@ -252,7 +252,7 @@ fn answers_near_the_known_good_point() {
 #[test]
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313 * scale), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)) {
+        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313 * scale), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)) {
             assert!(v.F107_hotmean.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_hotmean");
             assert!(v.F107_hotmean.get() >= 60.0 && v.F107_hotmean.get() <= 400.0, "l3_solar_interface answered {} for F107_hotmean, outside its declared domain 60 … 400 — the guard did not stop it", v.F107_hotmean.get());
             assert!(v.F107_nominal.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_nominal");
@@ -286,7 +286,7 @@ fn every_answer_is_inside_the_declared_domain() {
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913 * scale), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)) {
+        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913 * scale), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)) {
             assert!(v.F107_hotmean.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_hotmean");
             assert!(v.F107_hotmean.get() >= 60.0 && v.F107_hotmean.get() <= 400.0, "l3_solar_interface answered {} for F107_hotmean, outside its declared domain 60 … 400 — the guard did not stop it", v.F107_hotmean.get());
             assert!(v.F107_nominal.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_nominal");
@@ -320,7 +320,7 @@ fn every_answer_is_inside_the_declared_domain() {
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713 * scale), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)) {
+        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713 * scale), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)) {
             assert!(v.F107_hotmean.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_hotmean");
             assert!(v.F107_hotmean.get() >= 60.0 && v.F107_hotmean.get() <= 400.0, "l3_solar_interface answered {} for F107_hotmean, outside its declared domain 60 … 400 — the guard did not stop it", v.F107_hotmean.get());
             assert!(v.F107_nominal.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_nominal");
@@ -354,7 +354,7 @@ fn every_answer_is_inside_the_declared_domain() {
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728 * scale), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)) {
+        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988 * scale), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)) {
             assert!(v.F107_hotmean.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_hotmean");
             assert!(v.F107_hotmean.get() >= 60.0 && v.F107_hotmean.get() <= 400.0, "l3_solar_interface answered {} for F107_hotmean, outside its declared domain 60 … 400 — the guard did not stop it", v.F107_hotmean.get());
             assert!(v.F107_nominal.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_nominal");
@@ -388,7 +388,7 @@ fn every_answer_is_inside_the_declared_domain() {
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491 * scale), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)) {
+        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104 * scale), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)) {
             assert!(v.F107_hotmean.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_hotmean");
             assert!(v.F107_hotmean.get() >= 60.0 && v.F107_hotmean.get() <= 400.0, "l3_solar_interface answered {} for F107_hotmean, outside its declared domain 60 … 400 — the guard did not stop it", v.F107_hotmean.get());
             assert!(v.F107_nominal.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_nominal");
@@ -422,7 +422,7 @@ fn every_answer_is_inside_the_declared_domain() {
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389 * scale), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)) {
+        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389 * scale), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)) {
             assert!(v.F107_hotmean.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_hotmean");
             assert!(v.F107_hotmean.get() >= 60.0 && v.F107_hotmean.get() <= 400.0, "l3_solar_interface answered {} for F107_hotmean, outside its declared domain 60 … 400 — the guard did not stop it", v.F107_hotmean.get());
             assert!(v.F107_nominal.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_nominal");
@@ -456,7 +456,7 @@ fn every_answer_is_inside_the_declared_domain() {
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964 * scale), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711)) {
+        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964 * scale), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205)) {
             assert!(v.F107_hotmean.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_hotmean");
             assert!(v.F107_hotmean.get() >= 60.0 && v.F107_hotmean.get() <= 400.0, "l3_solar_interface answered {} for F107_hotmean, outside its declared domain 60 … 400 — the guard did not stop it", v.F107_hotmean.get());
             assert!(v.F107_nominal.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_nominal");
@@ -490,7 +490,7 @@ fn every_answer_is_inside_the_declared_domain() {
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836 * scale), Ratio::new(41.6971614919), Ratio::new(6.9065794711)) {
+        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836 * scale), Ratio::new(90.54720964), Ratio::new(4.9319536205)) {
             assert!(v.F107_hotmean.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_hotmean");
             assert!(v.F107_hotmean.get() >= 60.0 && v.F107_hotmean.get() <= 400.0, "l3_solar_interface answered {} for F107_hotmean, outside its declared domain 60 … 400 — the guard did not stop it", v.F107_hotmean.get());
             assert!(v.F107_nominal.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_nominal");
@@ -524,7 +524,7 @@ fn every_answer_is_inside_the_declared_domain() {
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919 * scale), Ratio::new(6.9065794711)) {
+        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964 * scale), Ratio::new(4.9319536205)) {
             assert!(v.F107_hotmean.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_hotmean");
             assert!(v.F107_hotmean.get() >= 60.0 && v.F107_hotmean.get() <= 400.0, "l3_solar_interface answered {} for F107_hotmean, outside its declared domain 60 … 400 — the guard did not stop it", v.F107_hotmean.get());
             assert!(v.F107_nominal.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_nominal");
@@ -558,7 +558,7 @@ fn every_answer_is_inside_the_declared_domain() {
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711 * scale)) {
+        if let Ok(v) = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205 * scale)) {
             assert!(v.F107_hotmean.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_hotmean");
             assert!(v.F107_hotmean.get() >= 60.0 && v.F107_hotmean.get() <= 400.0, "l3_solar_interface answered {} for F107_hotmean, outside its declared domain 60 … 400 — the guard did not stop it", v.F107_hotmean.get());
             assert!(v.F107_nominal.get().is_finite(), "l3_solar_interface produced a value that is not a number for F107_nominal");
@@ -600,8 +600,8 @@ fn every_answer_is_inside_the_declared_domain() {
 /// agreement across the faces impossible rather than merely hard.
 #[test]
 fn the_same_inputs_give_the_same_answer() {
-    let a = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711));
-    let b = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(209.7835016728), Ratio::new(109.8365800491), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(41.6971614919), Ratio::new(6.9065794711));
+    let a = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205));
+    let b = model::evaluate(Ratio::new(158.3304112313), Ratio::new(175.5520201913), Ratio::new(141.1088022713), Ratio::new(124.1432752988), Ratio::new(65.24109104), Ratio::new(22.095389), Ratio::new(26.69530964), Ratio::new(17.49546836), Ratio::new(90.54720964), Ratio::new(4.9319536205));
     match (a, b) {
         (Ok(x), Ok(y)) => {
             assert!(x.F107_hotmean.get().to_bits() == y.F107_hotmean.get().to_bits(), "l3_solar_interface is not deterministic for F107_hotmean: {} then {}", x.F107_hotmean.get(), y.F107_hotmean.get());

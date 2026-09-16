@@ -16,14 +16,14 @@ fn relative_error(got: f64, expected: f64) -> f64 {
     if expected == 0.0 { pmath::abs(got) } else { pmath::abs((got - expected) / expected) }
 }
 
-/// this repository's own terms at the study's centre — 141.1088 - 31.2722
+/// 141.1088 minus 31.2722 — the pair this row was handed before sw_daily_band_drop was conditioned on level. Kept as an arithmetic case; the pair no longer occurs in this tree
 ///
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_0() {
     let got = model::evaluate(Ratio::new(141.1088022713), Ratio::new(31.2722222222)).expect("the fixture case must not be refused");
     let err = relative_error(got.get(), 109.8365800491);
-    assert!(err <= 1e-10, "this repository's own terms at the study's centre — 141.1088 - 31.2722: got {} want 109.8365800491, relative error {} exceeds the declared tolerance 1e-10. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    assert!(err <= 1e-10, "141.1088 minus 31.2722 — the pair this row was handed before sw_daily_band_drop was conditioned on level. Kept as an arithmetic case; the pair no longer occurs in this tree: got {} want 109.8365800491, relative error {} exceeds the declared tolerance 1e-10. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
 /// round numbers, so the arithmetic is checkable without a calculator — 200 - 30
@@ -36,14 +36,14 @@ fn fixture_1() {
     assert!(err <= 1e-12, "round numbers, so the arithmetic is checkable without a calculator — 200 - 30: got {} want 170.0, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
-/// a sustained level of 120, the lowest that still clears the guard once the drop is taken off — below it this row refuses, which is what it does for the declared window's own centre
+/// a sustained level of 120 with the old un-conditioned drop of 31.27, which used to be the lowest level that cleared the guard. The conditioned drop at 120 sfu is 23.26, so the crossing has moved and this row no longer refuses at the declared window
 ///
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_2() {
     let got = model::evaluate(Ratio::new(120.0), Ratio::new(31.2722222222)).expect("the fixture case must not be refused");
     let err = relative_error(got.get(), 88.7277777778);
-    assert!(err <= 1e-10, "a sustained level of 120, the lowest that still clears the guard once the drop is taken off — below it this row refuses, which is what it does for the declared window's own centre: got {} want 88.7277777778, relative error {} exceeds the declared tolerance 1e-10. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    assert!(err <= 1e-10, "a sustained level of 120 with the old un-conditioned drop of 31.27, which used to be the lowest level that cleared the guard. The conditioned drop at 120 sfu is 23.26, so the crossing has moved and this row no longer refuses at the declared window: got {} want 88.7277777778, relative error {} exceeds the declared tolerance 1e-10. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
 // ---- properties, generated from the declared domain ---------------------
@@ -55,7 +55,7 @@ fn fixture_2() {
 
 /// One per cent either side of the known-good point, this node still answers.
 ///
-/// Derived from `this repository's own terms at the study's centre — 141.1088 - 31.2722` and the declared domain 60 … 400.
+/// Derived from `141.1088 minus 31.2722 — the pair this row was handed before sw_daily_band_drop was conditioned on level. Kept as an arithmetic case; the pair no longer occurs in this tree` and the declared domain 60 … 400.
 ///
 /// One per cent, not a decade. These domains are design bands — an altitude
 /// range somebody chose, not a range over which the mathematics holds — so a

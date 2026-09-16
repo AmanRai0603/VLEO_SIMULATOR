@@ -16,14 +16,14 @@ fn relative_error(got: f64, expected: f64) -> f64 {
     if expected == 0.0 { pmath::abs(got) } else { pmath::abs((got - expected) / expected) }
 }
 
-/// this repository's own chain at the declared window — 17.4955 - 10.5889
+/// 17.4955 minus 10.5889 — the pair this row was handed before sw_ap_daily_band_drop was conditioned on level. The conditioned drop at Ap 17.50 is 12.56, so the published answer is 4.93 rather than 6.91
 ///
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_0() {
     let got = model::evaluate(Ratio::new(17.49546836), Ratio::new(10.5888888889)).expect("the fixture case must not be refused");
     let err = relative_error(got.get(), 6.9065794711);
-    assert!(err <= 1e-10, "this repository's own chain at the declared window — 17.4955 - 10.5889: got {} want 6.9065794711, relative error {} exceeds the declared tolerance 1e-10. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    assert!(err <= 1e-10, "17.4955 minus 10.5889 — the pair this row was handed before sw_ap_daily_band_drop was conditioned on level. The conditioned drop at Ap 17.50 is 12.56, so the published answer is 4.93 rather than 6.91: got {} want 6.9065794711, relative error {} exceeds the declared tolerance 1e-10. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
 /// round numbers, checkable without a calculator — 50 - 10
@@ -55,7 +55,7 @@ fn fixture_2() {
 
 /// One per cent either side of the known-good point, this node still answers.
 ///
-/// Derived from `this repository's own chain at the declared window — 17.4955 - 10.5889` and the declared domain 0 … 400.
+/// Derived from `17.4955 minus 10.5889 — the pair this row was handed before sw_ap_daily_band_drop was conditioned on level. The conditioned drop at Ap 17.50 is 12.56, so the published answer is 4.93 rather than 6.91` and the declared domain 0 … 400.
 ///
 /// One per cent, not a decade. These domains are design bands — an altitude
 /// range somebody chose, not a range over which the mathematics holds — so a

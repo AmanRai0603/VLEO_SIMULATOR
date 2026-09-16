@@ -8,7 +8,7 @@
 # published coldday Ap, and that may not be a fixture. It is in parity.csv.
 
 [[fixture]]
-label = "this repository's own chain at the declared window — 17.4955 - 10.5889"
+label = "17.4955 minus 10.5889 — the pair this row was handed before sw_ap_daily_band_drop was conditioned on level. The conditioned drop at Ap 17.50 is 12.56, so the published answer is 4.93 rather than 6.91"
 expect = 6.9065794711
 tolerance = 1e-10
 provenance = "independent-derivation"

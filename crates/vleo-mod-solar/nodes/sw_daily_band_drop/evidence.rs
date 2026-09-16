@@ -7,9 +7,7 @@
 //! produced by the thing being tested proves nothing, so the schema
 //! refuses a fixture whose provenance is the implementation.
 
-// No fixtures yet. The gap pass reports this node as unevidenced and
-// its validation credibility factor is zero, which governs the whole
-// vector — an unvalidated node cannot be quietly relied on.
+#![allow(clippy::approx_constant, clippy::excessive_precision)]
 
 use super::model;
 use vleo_core::units::*;
@@ -18,32 +16,119 @@ fn relative_error(got: f64, expected: f64) -> f64 {
     if expected == 0.0 { pmath::abs(got) } else { pmath::abs((got - expected) / expected) }
 }
 
-/// The prior implementation's one number, against this row's one number.
+/// at the declared window's own sustained cold level, 69.63 — just under the bottom knot, so this is the clamp and it is the case that unblocked the chain
 ///
-/// Migrated from `prf_density.m:221 (01_kernel/sw_study/06_density, local function designWindow_)`. A second opinion and never an expected
-/// value: an implementation cannot supply its own. A disagreement is
-/// a finding about one of the two.
+/// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
-fn parity_grid() {
-    const GRID: &str = include_str!("parity.csv");
-    const TOL: f64 = 0.01;
-    let row = GRID
-        .lines()
-        .filter(|l| !l.trim_start().starts_with('#') && !l.trim().is_empty())
-        .nth(1)
-        .expect("parity.csv has a header and at least one data row");
-    let expected: f64 = row
-        .rsplit(',')
-        .next()
-        .expect("a last column")
-        .trim()
-        .parse()
-        .expect("the last column of the first data row is a number");
-    let got = model::evaluate().expect("the declared value").get();
-    let err = relative_error(got, expected);
+fn fixture_0() {
+    let got = model::evaluate(Ratio::new(69.62809104)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 4.387);
+    assert!(err <= 1e-12, "at the declared window's own sustained cold level, 69.63 — just under the bottom knot, so this is the clamp and it is the case that unblocked the chain: got {} want 4.387, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+}
+
+/// the 70 sfu knot, exactly — a transcription check, and the value the clamp holds
+///
+/// Provenance: `independent-derivation`, source `noaa_swpc`.
+#[test]
+fn fixture_1() {
+    let got = model::evaluate(Ratio::new(70.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 4.387);
+    assert!(err <= 1e-12, "the 70 sfu knot, exactly — a transcription check, and the value the clamp holds: got {} want 4.387, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+}
+
+/// the 120 sfu knot, exactly — a transcription check on a middle pair
+///
+/// Provenance: `independent-derivation`, source `noaa_swpc`.
+#[test]
+fn fixture_2() {
+    let got = model::evaluate(Ratio::new(120.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 23.2593);
+    assert!(err <= 1e-12, "the 120 sfu knot, exactly — a transcription check on a middle pair: got {} want 23.2593, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+}
+
+/// halfway between the 120 and 145 knots — the interpolation, on round numbers
+///
+/// Provenance: `independent-derivation`, source `noaa_swpc`.
+#[test]
+fn fixture_3() {
+    let got = model::evaluate(Ratio::new(132.5)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 27.82225);
+    assert!(err <= 1e-9, "halfway between the 120 and 145 knots — the interpolation, on round numbers: got {} want 27.82225, relative error {} exceeds the declared tolerance 1e-9. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+}
+
+/// far above the top of the table — the clamp
+///
+/// Provenance: `independent-derivation`, source `noaa_swpc`.
+#[test]
+fn fixture_4() {
+    let got = model::evaluate(Ratio::new(250.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 40.7778);
+    assert!(err <= 1e-12, "far above the top of the table — the clamp: got {} want 40.7778, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+}
+
+// ---- properties, generated from the declared domain ---------------------
+//
+// The fixture above checks one point. A wrong constant moves that point and
+// is caught there; a wrong shape can pass one point and be wrong everywhere
+// else. These ask the part of that question that is the same for every
+// node, so it is derived rather than written.
+
+/// One per cent either side of the known-good point, this node still answers.
+///
+/// Derived from `at the declared window's own sustained cold level, 69.63 — just under the bottom knot, so this is the clamp and it is the case that unblocked the chain` and the declared domain 0 … 120.
+///
+/// One per cent, not a decade. These domains are design bands — an altitude
+/// range somebody chose, not a range over which the mathematics holds — so a
+/// decade leaves most of them legitimately, and a check that cries wolf is a
+/// check people turn off. What is left is still worth asking: a relation that
+/// refuses at the immediate neighbours of the one point somebody verified is
+/// either discontinuous there, or has a domain declared tighter than the
+/// physics. Both are sheet questions, and both are invisible from the fixture.
+#[test]
+fn answers_near_the_known_good_point() {
+    let mut refused: Vec<String> = Vec::new();
+    for scale in [0.99_f64, 1.01] {
+        if let Err(f) = model::evaluate(Ratio::new(69.62809104 * scale)) {
+            refused.push(format!("level x{scale} -> {f}"));
+        }
+    }
     assert!(
-        err <= TOL,
-        "sw_daily_band_drop: this row says {got} and the prior implementation `prf_density.m:221 (01_kernel/sw_study/06_density, local function designWindow_)` says {expected} — {err} apart, beyond {TOL}.\nThis is a finding about one of the two implementations, not a build failure and not proof this one is wrong. Take it to the node owner. Do not widen parity_tolerance and do not edit parity.csv to agree."
+        refused.is_empty(),
+        "sw_daily_band_drop refuses near its own known-good point: {:?}. Either the relation is wrong in shape, or the declared domain 0 … 120 is narrower than the physics. Both are sheet questions for the node owner, not tolerances to widen.",
+        refused
     );
+}
+
+/// Every answer sits inside the declared domain, and no call panics.
+///
+/// Not a restatement of the generated guard: it proves the guard is reachable,
+/// that nothing routes around it, and that a hole cannot return a value that
+/// is not a number. A division by zero inside a hole is caught by no guard.
+#[test]
+fn every_answer_is_inside_the_declared_domain() {
+    for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
+        if let Ok(v) = model::evaluate(Ratio::new(69.62809104 * scale)) {
+            assert!(v.get().is_finite(), "sw_daily_band_drop produced a value that is not a number for dF107_day_low");
+            assert!(v.get() >= 0.0 && v.get() <= 120.0, "sw_daily_band_drop answered {} for dF107_day_low, outside its declared domain 0 … 120 — the guard did not stop it", v.get());
+        }
+    }
+}
+
+/// The same inputs give a bit-identical answer.
+///
+/// A relation that reaches a clock, a hash order or any hidden state fails
+/// here and nowhere else, and it is the one defect that makes bit-for-bit
+/// agreement across the faces impossible rather than merely hard.
+#[test]
+fn the_same_inputs_give_the_same_answer() {
+    let a = model::evaluate(Ratio::new(69.62809104));
+    let b = model::evaluate(Ratio::new(69.62809104));
+    match (a, b) {
+        (Ok(x), Ok(y)) => {
+            assert!(x.get().to_bits() == y.get().to_bits(), "sw_daily_band_drop is not deterministic for dF107_day_low: {} then {}", x.get(), y.get());
+        }
+        (Err(_), Err(_)) => {}
+        _ => panic!("sw_daily_band_drop refused on one call and answered on the other"),
+    }
 }
 

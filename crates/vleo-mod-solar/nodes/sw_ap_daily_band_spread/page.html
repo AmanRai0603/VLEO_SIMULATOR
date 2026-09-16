@@ -1,8 +1,8 @@
-<article class="node" data-node="sw_ap_daily_band_spread" data-sheet-hash="8672fc" data-impl-hash="222325">
+<article class="node" data-node="sw_ap_daily_band_spread" data-sheet-hash="df35d4" data-impl-hash="6a72ac">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Within-rotation daily Ap spread</h2>
-  <p class="ident"><code>sw_ap_daily_band_spread</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+  <p class="ident"><code>sw_ap_daily_band_spread</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
@@ -17,48 +17,62 @@
   <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="question">How far above its own rotation does a single day of Ap reach, at the declared confidence?</p>
-<p class="maths"><code>dAp_day = pctl(Ap - movmean(Ap, 27 d), 0.95) over the 2001 days ending at the window = 15.0019</code></p>
+<p class="question">How far above its own rotation does a single day of Ap reach, at the declared confidence, at the level that rotation sits at?</p>
+<p class="maths"><code>dAp_day(L) = pctl(Ap - movmean(Ap, 27 d), 0.95) over days whose rotation sits within 15% of L</code></p>
 <p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
-<p class="note">The Ap twin of sw_daily_band_spread. A storm is a day, not a rotation, and this
-is the row that says how much of one a single day can be.
+<p class="note">The geomagnetic index is the most level-dependent quantity in this subsystem.
+At a rotation level of Ap 4 a one-in-twenty day is 6.0 above it; at Ap 26 it is
+63.9 — a factor of eleven, and most of it in the top third of the range, because
+high-Ap rotations are driven by recurrent streams and storms and their
+individual days swing enormously.
+
+A single number for that is not a band, it is an average of bands, and it is
+correct only near the mean level of whatever sample produced it.
 </p>
 <h4>Assumptions</h4>
 <dl class="asm">
-<dt>One number holds for the whole window</dt><dd>fails when the spread is not constant across a cycle and is widest in the declining phase when high-speed streams recur. A single percentile is too wide for a quiet stretch and too narrow for an active one</dd>
-<dt>A percentile of a burst process is a useful design number</dt><dd>fails when it is read as a worst case. The 95th percentile of the daily departure is exceeded one day in twenty — about eighteen times in a 365-day window — and the storms a design actually fears sit far out in a tail this row says nothing about</dd>
-<dt>The 27-day moving mean is the rotation</dt><dd>fails when recurrent high-speed streams have their own 27-day periodicity, so part of what this calls a daily departure is itself rotation-locked and is being removed by the very mean it is measured against</dd>
+<dt>THE DECLARED WINDOW IS ABOVE THE TOP KNOT, so its answer is the clamp and not an interpolation</dt><dd>fails when the sustained Ap exceeds 26, as it does here at 26.70. The table holds its top value rather than extrapolating, and the segment below that top knot is the steepest in the table — 40.61 at Ap 24 to 63.85 at 26. Extrapolating that slope to 26.70 would give about 72 rather than 63.85, so the clamp is the CONSERVATIVE-DOWNWARD choice here and the published single-day Ap may be low. The record cannot settle it: Ap 28 holds 170 days and Ap 30 holds 105</dd>
+<dt>Conditioning on level more than doubled this row's consumer, and the previous value was not a margin but an error</dt><dd>fails when this is read as a refinement. sw_ap_design_short was 41.70 and is 90.55. A design sized on 41.70 for its own hot scenario was under-designed by a factor of two, because the band it used was measured over a sample whose rotations averaged Ap 11.64 and applied at 26.70</dd>
+<dt>The top of the table rests on very little record</dt><dd>fails when a design sits near it. The Ap 26 knot holds 300 days, and the whole record has only 27 rotation-sized blocks above Ap 22 in 28.2 years. A 95th percentile of 300 days is the fifteenth-largest of them, so the top of this table moves if one storm period is added to or removed from the record. The bottom knots hold thousands of days and are not like this, and the table does not say which regime a caller is in at the point of use</dd>
+<dt>A disturbed rotation is not a quiet rotation scaled up</dt><dd>fails when somebody fits a smooth law through these knots. The rise is a factor of eleven and most of it is in the last third, because high-Ap rotations contain storms and a storm day's departure has little to do with its rotation's own level. A power law or a constant ratio through this table would be wrong at both ends</dd>
+<dt>The 27-day moving mean is the rotation</dt><dd>fails when Ap's recurrence is driven by coronal holes and high-speed streams whose period is nearer 27.0 days than the 27.27 of the equatorial photosphere, and they persist for many rotations. A 27-day window is the conventional round number rather than a measured period</dd>
+<dt>It is the record's own daily scatter, not a forecast error</dt><dd>fails when this is read as an uncertainty. It says how variable the geomagnetic field is within a rotation, measured on days that already happened</dd>
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="why">The same construction as the F10.7 daily spread: subtract the record's own centred 27-day moving mean from each day and read the 95th percentile of what is left, over the 2001 days ending at the window.</p>
-<p class="why">For Ap the number is larger than its own centre — 15.00 against a centre of 22.10 — and that is the physics rather than an error. F10.7 varies smoothly as active regions rotate into view; Ap is quiet for weeks and then a coronal mass ejection arrives and it is 100 for a day. A within-rotation spread comparable to the level itself is what a burst process looks like when you measure it this way.</p>
-<div class="theory-walk" data-steps="3">
+<p class="why">The method is sw_daily_band_spread's, applied to Ap: subtract the centred 27-day moving mean from the daily record, bin every day by the level of the rotation it sits in, take the 95th percentile inside each bin. Geometric ladder of knots, each bin every day within 15 per cent of its knot, a knot kept only while its bin holds at least 200 days and both tails stay monotone, the ladder stopping at the last knot that passes. That gives eight knots from Ap 4 to Ap 26.</p>
+<p class="why">What is different about Ap is the SHAPE of the dependence. On F10.7 the table rises smoothly by a factor of ten across its range. On Ap it rises by eleven and most of that is in the last third: 14.67 at Ap 11, 23.79 at 15, 28.68 at 20, 40.61 at 24, 63.85 at 26. A disturbed rotation is not a quiet rotation scaled up — it is a rotation containing storms, and a storm day departs from its rotation by an amount that has nothing to do with the rotation's own level.</p>
+<p class="why">That steepness is why the table stops at 26. Beyond it the record has 170 days at Ap 28 and 105 at Ap 30, across 27 rotation-sized blocks in 28.2 years, and a 95th percentile of 170 days is the ninth-largest of them. The ladder stops where the rule stops it and the answer is clamped above, which the assumptions below say plainly costs something at exactly the level the declared window sits at.</p>
+<div class="theory-walk" data-steps="4">
 <ol class="derive">
-<li><span class="dt">Take the daily Ap record up to the day the window opens, and no further.</span><code class="dm">hist = Ap over the 2001 days ending at the window</code></li>
-<li><span class="dt">Subtract the centred 27-day moving mean from each day.</span><code class="dm">dev(t) = Ap(t) - movmean(Ap, 27)(t)</code></li>
-<li><span class="dt">Read the 95th percentile of the departures. The 5th is sw_ap_daily_band_drop's own row: at 10.59 against this 15.00 the two tails are forty-two per cent apart, because Ap is truncated at zero.</span><code class="dm">pctl(dev, 0.95) = +15.0019 · pctl(dev, 0.05) = -10.5889</code></li>
+<li><span class="dt">Take the daily Ap record and subtract the centred 27-day moving mean from each day.</span><code class="dm">dev(t) = Ap(t) - movmean(Ap, 27)(t)</code></li>
+<li><span class="dt">Bin every day by the level of its own rotation, within 15 per cent of each knot, on a geometric ladder.</span><code class="dm">bin(L) = { dev(t) : |movmean(Ap,27)(t) - L| &lt;= 0.15 L }</code></li>
+<li><span class="dt">Read the 95th percentile inside each bin. Keep a knot only while its bin holds at least 200 days and both tails stay monotone; stop at the last knot that passes. Eight knots, Ap 4 to 26, the thinnest holding 300 days.</span><code class="dm">hi(L) = pctl(bin(L), 0.95) — 6.02 at Ap 4, 14.67 at 11, 28.68 at 20, 63.85 at 26</code></li>
+<li><span class="dt">Interpolate between knots and clamp beyond the ends. The declared window sits above the top knot, so its answer is the clamp.</span><code class="dm">dAp_day(L) = interp(L; knots) = 63.85 at L = 26.70, which is the clamp</code></li>
 </ol>
 </div>
 <h4>Reading the answer</h4>
-<p class="reading">15.0019, against the study's 14.8519 — an absolute difference of 0.15, the same ORDER as the 0.083 the F10.7 row differs by. Ap is simply a smaller number, so the same convention difference reads as 1.01 per cent where F10.7's reads as 0.24, which is why the grid beside this row is declared at 2 per cent and its F10.7 twin at 1.</p>
-<p class="reading">The cold tail is sw_ap_daily_band_drop at 10.59, forty-two per cent shallower than this. That gap is the largest asymmetry in the subsystem and it is physical: Ap floors at zero, so a rotation cannot fall further than its own mean.</p>
-<p class="maths concl">which is the relation this node states: <code>dAp_day = pctl(Ap - movmean(Ap, 27 d), 0.95) over the 2001 days ending at the window = 15.0019</code></p>
+<p class="reading">63.85 at the declared window, where sw_ap_design_long puts the sustained disturbed level at 26.70 — just above the table's top knot, so the answer is the clamp. The old single-number version gave 15.00, measured over days whose rotations averaged Ap 11.64 and applied unchanged at 26.70.</p>
+<p class="reading">sw_ap_design_short therefore moves from 41.70 to 90.55, and THAT BREAKS A CLOSURE: l3_solar_req_05 commits the design to surviving a single day at the G2 threshold, Ap 80, and the record says this window's own hot scenario reaches 91. Ap 91 is a G3-G4 day. It is consistent with the rest of the subsystem — sw_storm_return_level says the one storm expected in the whole mission is Ap 158 — and it means either the single-day commitment belongs at G3 or this window is outside what the design was built for. That is a decision, not an arithmetic consequence, and the requirement has NOT been moved to make the closure pass.</p>
+<p class="maths concl">which is the relation this node states: <code>dAp_day(L) = pctl(Ap - movmean(Ap, 27 d), 0.95) over days whose rotation sits within 15% of L</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
+<tr><td>in</td><td><code>level</code></td><td><a class="xref" data-goto="sw_ap_design_long">sw_ap_design_long</a></td><td>Ratio</td><td>-</td></tr>
 <tr class="out"><td>out</td><td><code>dAp_day</code></td><td>sw_ap_daily_band_spread</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="sw_ap_design_short">sw_ap_design_short</a></p>
 </section>
 <section class="panel" data-panel="3">
-<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>15.0018518519</b> -, confirmed by <b></b>.</p>
+<ol class="algo">
+<li><span class="step">read the 95th-percentile within-rotation Ap departure off the measured table at this rotation level</span> <span class="binds">→ <code>band: Ratio</code></span></li>
+</ol>
 <h4>Pseudocode</h4>
-<pre class="pseudo"><code>function sw_ap_daily_band_spread() -> Ratio
-    dAp_day ← 15.0018518519          // declared, confirmed by 
+<pre class="pseudo"><code>function sw_ap_daily_band_spread(level: Ratio) -> Ratio
+    given level from sw_ap_design_long
+    // read the 95th-percentile within-rotation Ap departure off the measured table at this rotation level
+    band ← step 1
 
     // a guard whose reason is not written down gets deleted
     require dAp_day ≥ 0
@@ -92,36 +106,62 @@ use vleo_core::physics::*;
 use vleo_core::units::pmath;
 use vleo_core::units::*;
 
-/// How far above its own rotation does a single day of Ap reach, at the declared confidence?
+/// How far above its own rotation does a single day of Ap reach, at the declared confidence, at the level that rotation sits at?
 ///
-/// `dAp_day = pctl(Ap - movmean(Ap, 27 d), 0.95) over the 2001 days ending at the window = 15.0019`
+/// `dAp_day(L) = pctl(Ap - movmean(Ap, 27 d), 0.95) over days whose rotation sits within 15% of L`
 ///
 /// Source: `noaa_swpc`
 ///
-/// The Ap twin of sw_daily_band_spread. A storm is a day, not a rotation, and
-/// this is the row that says how much of one a single day can be.
+/// The geomagnetic index is the most level-dependent quantity in this
+/// subsystem. At a rotation level of Ap 4 a one-in-twenty day is 6.0 above
+/// it; at Ap 26 it is 63.9 — a factor of eleven, and most of it in the top
+/// third of the range, because high-Ap rotations are driven by recurrent
+/// streams and storms and their individual days swing enormously. A single
+/// number for that is not a band, it is an average of bands, and it is
+/// correct only near the mean level of whatever sample produced it.
 ///
 /// # Assumptions
 ///
-/// * One number holds for the whole window — fails when the spread is not constant across a cycle and is widest in the declining phase when high-speed streams recur. A single percentile is too wide for a quiet stretch and too narrow for an active one
-/// * A percentile of a burst process is a useful design number — fails when it is read as a worst case. The 95th percentile of the daily departure is exceeded one day in twenty — about eighteen times in a 365-day window — and the storms a design actually fears sit far out in a tail this row says nothing about
-/// * The 27-day moving mean is the rotation — fails when recurrent high-speed streams have their own 27-day periodicity, so part of what this calls a daily departure is itself rotation-locked and is being removed by the very mean it is measured against
+/// * THE DECLARED WINDOW IS ABOVE THE TOP KNOT, so its answer is the clamp and not an interpolation — fails when the sustained Ap exceeds 26, as it does here at 26.70. The table holds its top value rather than extrapolating, and the segment below that top knot is the steepest in the table — 40.61 at Ap 24 to 63.85 at 26. Extrapolating that slope to 26.70 would give about 72 rather than 63.85, so the clamp is the CONSERVATIVE-DOWNWARD choice here and the published single-day Ap may be low. The record cannot settle it: Ap 28 holds 170 days and Ap 30 holds 105
+/// * Conditioning on level more than doubled this row's consumer, and the previous value was not a margin but an error — fails when this is read as a refinement. sw_ap_design_short was 41.70 and is 90.55. A design sized on 41.70 for its own hot scenario was under-designed by a factor of two, because the band it used was measured over a sample whose rotations averaged Ap 11.64 and applied at 26.70
+/// * The top of the table rests on very little record — fails when a design sits near it. The Ap 26 knot holds 300 days, and the whole record has only 27 rotation-sized blocks above Ap 22 in 28.2 years. A 95th percentile of 300 days is the fifteenth-largest of them, so the top of this table moves if one storm period is added to or removed from the record. The bottom knots hold thousands of days and are not like this, and the table does not say which regime a caller is in at the point of use
+/// * A disturbed rotation is not a quiet rotation scaled up — fails when somebody fits a smooth law through these knots. The rise is a factor of eleven and most of it is in the last third, because high-Ap rotations contain storms and a storm day's departure has little to do with its rotation's own level. A power law or a constant ratio through this table would be wrong at both ends
+/// * The 27-day moving mean is the rotation — fails when Ap's recurrence is driven by coronal holes and high-speed streams whose period is nearer 27.0 days than the 27.27 of the equatorial photosphere, and they persist for many rotations. A 27-day window is the conventional round number rather than a measured period
+/// * It is the record's own daily scatter, not a forecast error — fails when this is read as an uncertainty. It says how variable the geomagnetic field is within a rotation, measured on days that already happened
 pub const NODE_ID: &amp;str = &quot;sw_ap_daily_band_spread&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x646173cad08672fc;
+pub const SHEET_HASH: u64 = 0x8a5d9ce151df35d4;
 
-pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
-    // generated · a declared value, converted from the unit it was written in
-    let declared: Ratio = match Ratio::from_unit(15.0018518519, Unit::One) {
-        Some(q) =&gt; q,
-        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;dAp_day&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+pub fn evaluate(level: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : read the 95th-percentile within-rotation Ap departure off the measured table at this rotation level -&gt; Ratio
+    // The table is MEASURED DATA, not a published relation, and it is declared
+    // here rather than in the sheet because a sheet holds one number and this is
+    // a curve. Every knot is a percentile of the record conditioned on rotation
+    // level, derived by the method the theory tab sets out — bins of 15 per
+    // cent, at least 200 days each, monotone in both tails, the ladder stopping
+    // at the last knot that passes both rules.
+    //
+    // Table1::at CLAMPS at both ends rather than extrapolating, which is the
+    // clamp the sheet declares rather than a convenience: past the ends the
+    // record does not continue, and a straight line drawn onward would be this
+    // node inventing sky the record never showed.
+    use vleo_core::math::Table1;
+    const HI: Table1 = Table1 {
+        // rotation level, Ap
+        x: &amp;[4.0, 6.0, 8.0, 11.0, 15.0, 20.0, 24.0, 26.0],
+        // 95th-percentile departure above that rotation. The last segment is the
+        // steepest in either table — 40.61 at Ap 24 to 63.85 at 26 — and the
+        // declared window reads the clamp just past its end.
+        y: &amp;[6.0167, 8.1481, 11.2222, 14.6667, 23.7852, 28.6759, 40.6148, 63.8519],
     };
+    let band: Ratio = Ratio::new(HI.at(level.get()));
+    // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = declared;
+    let answer: Ratio = band;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: &quot;dAp_day&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
     }
@@ -136,7 +176,14 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 </code></pre>
 </section>
 <section class="panel" data-panel="6">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="at the declared window's own sustained level, Ap 26.70 — just above the top knot, so this is the clamp and the sheet argues about what it costs"><td>at the declared window's own sustained level, Ap 26.70 — just above the top knot, so this is the clamp and the sheet argues about what it costs</td><td class="num">63.8519</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the Ap 11 knot, exactly — a transcription check, and near where the study's own sample sat at Ap 11.64"><td>the Ap 11 knot, exactly — a transcription check, and near where the study's own sample sat at Ap 11.64</td><td class="num">14.6667</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the Ap 20 knot, exactly — a transcription check below the steep last segment"><td>the Ap 20 knot, exactly — a transcription check below the steep last segment</td><td class="num">28.6759</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="halfway between the Ap 15 and Ap 20 knots — the interpolation"><td>halfway between the Ap 15 and Ap 20 knots — the interpolation</td><td class="num">26.23055</td><td class="num">0.000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="below the bottom of the table — the clamp, not an extrapolation toward zero"><td>below the bottom of the table — the clamp, not an extrapolation toward zero</td><td class="num">6.0167</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
 <section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
@@ -144,6 +191,7 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 <li><code>OutOfDomain</code> below 0 — a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0</li>
 <li><code>OutOfDomain</code> above 150 — above 150 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
@@ -154,11 +202,10 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 <section class="panel" data-panel="9">
 <p>Valid over <code>0 &hellip; 150</code> -.</p>
 <ul class="guards"><li>lower — a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0</li><li>upper — above 150 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun</li></ul>
-<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<div class="sweep" data-over="sw_ap_design_long" data-points="60" data-y="sw_ap_daily_band_spread"><p class="muted">Sweeps against <a class="xref" data-goto="sw_ap_design_long">sw_ap_design_long</a> over 60 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
-<li>a declared value with nobody's confirmation against it</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

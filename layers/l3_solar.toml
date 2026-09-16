@@ -50,11 +50,28 @@
 #
 # FIVE PAIRS, NOT THREE, AND WHY EACH IS A SEPARATE QUESTION.
 #
-#   req_01 / ach_01   F10.7, sustained     250 sfu   vs  104.07
-#   req_02 / ach_02   F10.7, single day    350 sfu   vs  138.30
+#   req_01 / ach_01   F10.7, sustained     260 sfu   vs  104.07
+#   req_02 / ach_02   F10.7, single day    350 sfu   vs  124.14
 #   req_04 / ach_04   Ap, sustained         48       vs   26.70
-#   req_05 / ach_05   Ap, single day        80       vs   41.70
+#   req_05 / ach_05   Ap, single day        80       vs   90.55   ← DOES NOT CLOSE
 #   req_03 / ach_03   Ap, the one storm    150       vs  158.38   ← DOES NOT CLOSE
+#
+# TWO OF THE FIVE DO NOT CLOSE, and both are on Ap. The storm one has failed
+# since it was written. The single-day one started failing when the within-
+# rotation bands were conditioned on the rotation level: at a sustained Ap of
+# 26.70 the record says a one-in-twenty day departs by 63.85, not by the 15.00 a
+# level-mixed percentile gave, so the achieved side more than doubled from 41.70
+# to 90.55. The requirement was not moved to make it pass. Ap 91 is a G3-G4 day,
+# so either the single-day commitment belongs at G3 — 132, which would keep the
+# ladder ordered under the storm ceiling of 150 — or this window is outside what
+# the design was built for.
+#
+# Both F10.7 ceilings are now anchored in the record rather than above the chain:
+# 260 is the largest 27-day mean (252.67, centred 2024-08-13) rounded up, and 350
+# is the largest single day (343, on 2023-02-17) rounded up. A ceiling set above
+# whatever the chain currently gives moves with the design instead of the sky,
+# and req_01 spent two revisions drifting from 9.6 per cent of headroom to 140
+# before it was re-anchored.
 #
 # req_01 and req_02 used to be one commitment written twice, at one number,
 # because layer 2 held sys_space_environment_solar_flux and

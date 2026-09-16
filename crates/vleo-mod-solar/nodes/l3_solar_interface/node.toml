@@ -108,21 +108,29 @@ and it is written out member by member in the hole body rather than inferred, so
 a reader can check the mapping against the study's own table.
 """
 reading = """
-THIS ROW REFUSES ON THE NOMINAL CASE, and the reason is one member. Its coldday
-f107 comes from sw_f107_cold_short, which is blocked: a symmetric 1.28-sigma band
-and a 5th-percentile daily drop stacked on sw_central_expectation's 86.8497 sfu
-reach 38.36, below the floor of 60 that every relation reading F10.7 declares.
-That sheet argues about why the refusal is correct and why all three candidate
-resolutions are upstream of it.
+THIS ROW REFUSED UNTIL THE DAILY BANDS WERE CONDITIONED ON LEVEL, and how it
+came back is the best argument for the seam existing. One member, coldday f107,
+came from sw_f107_cold_short, which was blocked: a daily drop of 31.27 measured
+over rotations averaging 136.63 sfu, subtracted from a rotation at 69.63, gave
+38.36 — below the floor of 60 and below anything ever observed. A crossing is the
+AND of its members by construction, so the whole set refused for one impossible
+scenario. That is the seam doing its job: the alternative is four honest members
+and one arithmetic one crossing into layer 2 where nothing knows which was
+which.
 
-A seam that refuses because one of the five scenarios is impossible is the seam
-working. The alternative is a set with four honest members and one arithmetic
-one, crossing into layer 2 where nothing knows which was which. Nothing reads
-this row yet, so the refusal is contained to the row itself: `vleo run
-l3_solar_interface` names sw_f107_cold_short as the blocked node.
+What it publishes at the declared window:
 
-The Ap side publishes. At the declared window it crosses nominal 22.10, hotmean
-26.70, coldmean 17.50, hotday 41.70 and coldday 6.91.
+    f107     nominal 158.33   hotmean 175.55   coldmean 141.11
+             hotday  124.14   coldday  65.24
+    f107bar  nominal 158.33   hotmean 175.55   coldmean 141.11
+             hotday  175.55   coldday 141.11
+    ap       nominal  22.10   hotmean  26.70   coldmean  17.50
+             hotday   90.55   coldday   4.93
+
+The two *day rows are the ones the level conditioning moved, and it moved them
+in opposite directions: the F10.7 hot day fell from 138.30 because the window's
+sustained level is below the old band's sample mean, and the Ap hot day more
+than doubled from 41.70 because it is far above it.
 """
 
 [[theory.step]]

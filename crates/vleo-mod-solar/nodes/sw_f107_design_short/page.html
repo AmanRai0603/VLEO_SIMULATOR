@@ -39,13 +39,14 @@ decides for the reader which problem they have.
 <div class="theory-walk" data-steps="3">
 <ol class="derive">
 <li><span class="dt">Take the sustained level the window is designed to.</span><code class="dm">F107_long = sw_f107_design_long</code></li>
-<li><span class="dt">Take how far above its rotation a day reaches, one day in twenty.</span><code class="dm">dF107_day = sw_daily_band_spread = 34.2315 sfu</code></li>
+<li><span class="dt">Take how far above its rotation a day reaches, one day in twenty, AT THE LEVEL THAT ROTATION SITS AT. sw_daily_band_spread is a table rather than a number: the same question answered at 104 sfu and at 210 gives 20.07 and 46.93, a factor of two and a bit.</span><code class="dm">dF107_day = sw_daily_band_spread(F107_long) = 20.0723 sfu at a sustained 104.07</code></li>
 <li><span class="dt">Add them. A high day on a high rotation is both, and the design must survive the pair.</span><code class="dm">F107_short = F107_long + dF107_day</code></li>
 </ol>
 </div>
 <h4>Reading the answer</h4>
-<p class="reading">At the study's own window: 175.6064196495 sustained plus 34.1481481481 daily is 209.7545677976, which is the hotday scenario it published, to the last digit.</p>
-<p class="reading">The cold side is not this row. coldday is the same construction with the lower percentile, and it is the case a design checks for a cold, thin atmosphere rather than a hot one; it needs its own row and does not have one yet.</p>
+<p class="reading">Fed the study's own two numbers the arithmetic is exact: 175.6064196495 plus 34.1481481481 is 209.7545677976, which is the hotday scenario it published, to the last digit. That is what the parity grid beside this sheet checks, and it is a check on the RELATION.</p>
+<p class="reading">What this row publishes is 124.14, not 209.75, and both terms moved to get there. The sustained level is 104.07 rather than 175.61 because sw_central_expectation reads the cycle analogue instead of holding the last rotation forecast forward. And the daily term is 20.07 rather than 34.23 because sw_daily_band_spread is now conditioned on the rotation level: the old single number was measured over days whose rotations averaged 136.63 sfu and applied unchanged at 104.07, which over-stated it by 71 per cent.</p>
+<p class="reading">The cold side is not this row — sw_f107_cold_short is, and it is the case a design checks for a cold, thin atmosphere. It is NOT this row mirrored: the two daily tails differ at every level.</p>
 <p class="maths concl">which is the relation this node states: <code>F107_short = F107_long + dF107_day</code></p>
 </section>
 <section class="panel" data-panel="2">
@@ -150,7 +151,7 @@ pub fn evaluate(sustained: Ratio, daily: Ratio) -&gt; Result&lt;Ratio, Fault&gt;
 </section>
 <section class="panel" data-panel="6">
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
-<tr data-fixture="this repository's own chain: the sustained level from sw_f107_design_long's first fixture plus its measured daily departure"><td>this repository's own chain: the sustained level from sw_f107_design_long's first fixture plus its measured daily departure</td><td class="num">211.4530904415</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the sustained level from sw_f107_design_long's first fixture plus the daily departure this row USED to be handed, before sw_daily_band_spread was conditioned on level. Kept as an arithmetic case: the pair no longer occurs in this tree, and what it still checks is that the relation is that addition"><td>the sustained level from sw_f107_design_long's first fixture plus the daily departure this row USED to be handed, before sw_daily_band_spread was conditioned on level. Kept as an arithmetic case: the pair no longer occurs in this tree, and what it still checks is that the relation is that addition</td><td class="num">211.4530904415</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
 <tr data-fixture="round numbers, so the arithmetic is checkable without a calculator"><td>round numbers, so the arithmetic is checkable without a calculator</td><td class="num">230</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
 <tr data-fixture="a quieter sustained level with a wider daily departure — the two terms are independent and the row must not assume otherwise"><td>a quieter sustained level with a wider daily departure — the two terms are independent and the row must not assume otherwise</td><td class="num">190</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
 </tbody></table>

@@ -6,7 +6,7 @@
 # parity.csv beside this sheet.
 
 [[fixture]]
-label = "this repository's own chain — the sustained Ap level with its measured daily departure"
+label = "the sustained Ap level with the daily departure this row USED to be handed, before sw_ap_daily_band_spread was conditioned on level. Kept as an arithmetic case: the conditioned departure at Ap 26.70 is 63.85, not 15.00"
 expect = 41.6971614919
 tolerance = 1e-12
 provenance = "independent-derivation"

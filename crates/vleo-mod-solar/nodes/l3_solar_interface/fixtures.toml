@@ -34,8 +34,8 @@
 #   f107_centre     158.3304112313    ap_centre       22.095389
 #   f107_hot_long   175.5520201913    ap_hot_long     26.69530964
 #   f107_cold_long  141.1088022713    ap_cold_long    17.49546836
-#   f107_hot_day    209.7835016728    ap_hot_day      41.6971614919
-#   f107_cold_day   109.8365800491    ap_cold_day     6.9065794711
+#   f107_hot_day    124.1432752988    ap_hot_day       90.54720964
+#   f107_cold_day    65.24109104    ap_cold_day     4.9319536205
 
 [[fixture]]
 label = "the sustained hot F10.7 crosses unchanged, from sw_f107_design_long"
@@ -44,7 +44,7 @@ expect = 175.5520201913
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 124.1432752988, f107_cold_day =  65.24109104, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day =  90.54720964, ap_cold_day = 4.9319536205 }
 
 [[fixture]]
 label = "the nominal F10.7 crosses unchanged, from sw_central_expectation"
@@ -53,7 +53,7 @@ expect = 158.3304112313
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 124.1432752988, f107_cold_day =  65.24109104, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day =  90.54720964, ap_cold_day = 4.9319536205 }
 
 [[fixture]]
 label = "the sustained cold F10.7 crosses unchanged, from sw_f107_cold_long"
@@ -62,25 +62,25 @@ expect = 141.1088022713
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 124.1432752988, f107_cold_day =  65.24109104, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day =  90.54720964, ap_cold_day = 4.9319536205 }
 
 [[fixture]]
 label = "the hot single day crosses unchanged, from sw_f107_design_short"
 variable = "f107_hotday"
-expect = 209.7835016728
+expect = 124.1432752988
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 124.1432752988, f107_cold_day =  65.24109104, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day =  90.54720964, ap_cold_day = 4.9319536205 }
 
 [[fixture]]
 label = "the cold single day crosses unchanged, from sw_f107_cold_short"
 variable = "f107_coldday"
-expect = 109.8365800491
+expect =  65.24109104
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 124.1432752988, f107_cold_day =  65.24109104, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day =  90.54720964, ap_cold_day = 4.9319536205 }
 
 [[fixture]]
 label = "the nominal scenario's 81-day mean is its own value — a *mean scenario IS its mean"
@@ -89,7 +89,7 @@ expect = 158.3304112313
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 124.1432752988, f107_cold_day =  65.24109104, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day =  90.54720964, ap_cold_day = 4.9319536205 }
 
 [[fixture]]
 label = "the hot sustained scenario's 81-day mean is its own value"
@@ -98,7 +98,7 @@ expect = 175.5520201913
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 124.1432752988, f107_cold_day =  65.24109104, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day =  90.54720964, ap_cold_day = 4.9319536205 }
 
 [[fixture]]
 label = "the cold sustained scenario's 81-day mean is its own value"
@@ -107,7 +107,7 @@ expect = 141.1088022713
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 124.1432752988, f107_cold_day =  65.24109104, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day =  90.54720964, ap_cold_day = 4.9319536205 }
 
 [[fixture]]
 label = "THE HOT DAY RIDES ON THE HOT MEAN — its 81-day mean is 175.55, not its own 209.78. The one member that is not a copy of its namesake input"
@@ -116,7 +116,7 @@ expect = 175.5520201913
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 124.1432752988, f107_cold_day =  65.24109104, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day =  90.54720964, ap_cold_day = 4.9319536205 }
 
 [[fixture]]
 label = "THE COLD DAY RIDES ON THE COLD MEAN — its 81-day mean is 141.11, not its own 109.84"
@@ -125,7 +125,7 @@ expect = 141.1088022713
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 124.1432752988, f107_cold_day =  65.24109104, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day =  90.54720964, ap_cold_day = 4.9319536205 }
 
 [[fixture]]
 label = "the nominal Ap crosses unchanged, from sw_ap_central_expectation"
@@ -134,7 +134,7 @@ expect = 22.095389
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 124.1432752988, f107_cold_day =  65.24109104, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day =  90.54720964, ap_cold_day = 4.9319536205 }
 
 [[fixture]]
 label = "the sustained disturbed Ap crosses unchanged, from sw_ap_design_long"
@@ -143,7 +143,7 @@ expect = 26.69530964
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 124.1432752988, f107_cold_day =  65.24109104, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day =  90.54720964, ap_cold_day = 4.9319536205 }
 
 [[fixture]]
 label = "the sustained quiet Ap crosses unchanged, from sw_ap_cold_long"
@@ -152,22 +152,22 @@ expect = 17.49546836
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 124.1432752988, f107_cold_day =  65.24109104, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day =  90.54720964, ap_cold_day = 4.9319536205 }
 
 [[fixture]]
 label = "the most disturbed single day crosses unchanged, from sw_ap_design_short"
 variable = "ap_hotday"
-expect = 41.6971614919
+expect =  90.54720964
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 124.1432752988, f107_cold_day =  65.24109104, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day =  90.54720964, ap_cold_day = 4.9319536205 }
 
 [[fixture]]
 label = "the quietest single day crosses unchanged, from sw_ap_cold_short — the member closest to a declared bound, seven units clear of zero"
 variable = "ap_coldday"
-expect = 6.9065794711
+expect = 4.9319536205
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 124.1432752988, f107_cold_day =  65.24109104, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day =  90.54720964, ap_cold_day = 4.9319536205 }

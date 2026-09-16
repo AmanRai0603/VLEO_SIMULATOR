@@ -28,8 +28,9 @@ state = "published"
 # so the layer-2 duplication that forced this row into existence is gone too.
 #
 # ach_01 restates sw_f107_design_long at 104.07; this restates
-# sw_f107_design_short at 138.30, the same sustained level with the
-# within-rotation daily excursion of 34.23 on top.
+# sw_f107_design_short at 124.14, the same sustained level with the
+# within-rotation daily excursion of 20.07 on top — that excursion read at the
+# level the rotation sits at, which is what moved this row from 138.30.
 
 [question]
 text = "What F10.7 does the record say a single day inside this mission window will reach?"
@@ -59,14 +60,14 @@ side, and it is an identity on sw_f107_design_short.
 WHICH conclusion it restates is the content of the row, because the subsystem
 has three F10.7 conclusions a reader could mistake for each other:
 sw_f107_design_long at 104.07 (the level the mission sustains for months),
-sw_f107_design_short at 138.30 (a day inside that level) and sw_f107_design at
+sw_f107_design_short at 124.14 (a day inside that level) and sw_f107_design at
 200.14 (a one-sided persistence drift from today's value, which since §20 step 5
 is the achieved side of no closure at all). Restating the wrong one would move
 this closure without anything in the tree noticing, because all three are fluxes
 in the same range with the same unit and the same declared domain.
 """
 reading = """
-138.30 sfu at the declared window, against a ceiling of 350. The gap is large
+124.14 sfu at the declared window, against a ceiling of 350. The gap is large
 and, unlike ach_01's, it means something: the achieved side is where the
 window's ORDINARY band reaches and the requirement is where the record's worst
 observed day sits, 343 sfu on 2023-02-17. A design is entitled to have both, and
@@ -74,9 +75,13 @@ the distance between them is the distance between a design band and an extreme.
 
 The two terms behind the number are worth separating. 104.07 of it is the
 sustained level — a centre of 86.85 with 1.28 standard deviations of the
-rotation-forecast residual — and 34.23 is the within-rotation daily excursion.
-So the daily term is under a fifth of the answer here, where on the Ap side it
-is well over a third: a design that treats the daily excursion as a detail is
+rotation-forecast residual — and 20.07 is the within-rotation daily excursion AT
+THAT LEVEL. This row read 138.30 until sw_daily_band_spread was conditioned on
+the rotation level; the old single number, 34.23, was measured over rotations
+averaging 136.63 sfu and applied at 104.07.
+
+So the daily term is under a sixth of the answer here, where on the Ap side it
+is seventy per cent: a design that treats the daily excursion as a detail is
 making a different mistake on flux than on the geomagnetic index.
 """
 
@@ -93,15 +98,15 @@ The requirement side is a declared commitment with a person's name against it.
 The achieved side must be the subsystem's own conclusion and nothing else, so
 this row is an identity on sw_f107_design_short.
 """
-math = "F107_ach = F107_short = 138.30 sfu"
+math = "F107_ach = F107_short = 124.14 sfu"
 
 [[theory.step]]
 text = """
 Which makes the closure arithmetic trivial and the closure itself informative:
-138.30 achieved against 350 required, and the room between them is the room
+124.14 achieved against 350 required, and the room between them is the room
 between what the window presents and what the record's worst day has shown.
 """
-math = "138.30 <= 350 — the closure holds"
+math = "124.14 <= 350 — the closure holds"
 
 [[theory.step]]
 text = """
@@ -117,7 +122,7 @@ fails_when = "a margin is computed from this row against a capability. The centr
 
 [[assumption]]
 text = "It restates the single-day level and not one of its two siblings"
-fails_when = "somebody reads it as the sustained level or as the persistence drift. The three are 138.30, 104.07 and 200.14 — all fluxes, same unit, same declared domain — so nothing in the tree would catch the substitution, and each would report a different margin against the same requirement"
+fails_when = "somebody reads it as the sustained level or as the persistence drift. The three are 124.14, 104.07 and 200.14 — all fluxes, same unit, same declared domain — so nothing in the tree would catch the substitution, and each would report a different margin against the same requirement"
 
 [[assumption]]
 text = "Nothing compares this row with its requirement automatically"

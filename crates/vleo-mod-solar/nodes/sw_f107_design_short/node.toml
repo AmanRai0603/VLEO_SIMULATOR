@@ -76,12 +76,22 @@ published day is rarer than the confidence attached to it suggests. The study
 does the same thing and the port follows it.
 """
 reading = """
-At the study's own window: 175.6064196495 sustained plus 34.1481481481 daily is
-209.7545677976, which is the hotday scenario it published, to the last digit.
+Fed the study's own two numbers the arithmetic is exact: 175.6064196495 plus
+34.1481481481 is 209.7545677976, which is the hotday scenario it published, to
+the last digit. That is what the parity grid beside this sheet checks, and it is
+a check on the RELATION.
 
-The cold side is not this row. coldday is the same construction with the lower
-percentile, and it is the case a design checks for a cold, thin atmosphere
-rather than a hot one; it needs its own row and does not have one yet.
+What this row publishes is 124.14, not 209.75, and both terms moved to get
+there. The sustained level is 104.07 rather than 175.61 because
+sw_central_expectation reads the cycle analogue instead of holding the last
+rotation forecast forward. And the daily term is 20.07 rather than 34.23 because
+sw_daily_band_spread is now conditioned on the rotation level: the old single
+number was measured over days whose rotations averaged 136.63 sfu and applied
+unchanged at 104.07, which over-stated it by 71 per cent.
+
+The cold side is not this row — sw_f107_cold_short is, and it is the case a
+design checks for a cold, thin atmosphere. It is NOT this row mirrored: the two
+daily tails differ at every level.
 """
 
 [[theory.step]]
@@ -89,8 +99,8 @@ text = "Take the sustained level the window is designed to."
 math = "F107_long = sw_f107_design_long"
 
 [[theory.step]]
-text = "Take how far above its rotation a day reaches, one day in twenty."
-math = "dF107_day = sw_daily_band_spread = 34.2315 sfu"
+text = "Take how far above its rotation a day reaches, one day in twenty, AT THE LEVEL THAT ROTATION SITS AT. sw_daily_band_spread is a table rather than a number: the same question answered at 104 sfu and at 210 gives 20.07 and 46.93, a factor of two and a bit."
+math = "dF107_day = sw_daily_band_spread(F107_long) = 20.0723 sfu at a sustained 104.07"
 
 [[theory.step]]
 text = "Add them. A high day on a high rotation is both, and the design must survive the pair."

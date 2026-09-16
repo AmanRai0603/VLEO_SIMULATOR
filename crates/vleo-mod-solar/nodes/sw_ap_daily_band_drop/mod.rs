@@ -3,7 +3,7 @@
 // regeneration and fails the regeneration diff in the gate.
 //! `sw_ap_daily_band_drop` — Within-rotation daily Ap drop
 //!
-//! How far below its own rotation does a single day of Ap fall, at the declared confidence?
+//! How far below its own rotation does a single day of Ap fall, at the declared confidence, at the level that rotation sits at?
 
 #[path = "model.rs"]
 pub mod model;

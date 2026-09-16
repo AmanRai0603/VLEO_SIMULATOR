@@ -3,7 +3,7 @@
 // regeneration and fails the regeneration diff in the gate.
 //! `sw_daily_band_spread` — Within-rotation daily spread
 //!
-//! How far above its own rotation does a single day of F10.7 reach, at the declared confidence?
+//! How far above its own rotation does a single day of F10.7 reach, at the declared confidence, at the level that rotation sits at?
 
 #[path = "model.rs"]
 pub mod model;

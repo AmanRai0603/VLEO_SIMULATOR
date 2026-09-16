@@ -10,7 +10,7 @@
 # published coldday, and that may not be a fixture. It is in parity.csv.
 
 [[fixture]]
-label = "this repository's own terms at the study's centre — 141.1088 - 31.2722"
+label = "141.1088 minus 31.2722 — the pair this row was handed before sw_daily_band_drop was conditioned on level. Kept as an arithmetic case; the pair no longer occurs in this tree"
 expect = 109.8365800491
 tolerance = 1e-10
 provenance = "independent-derivation"
@@ -26,7 +26,7 @@ source = "noaa_swpc"
 inputs = { sustained = 200.0, daily = 30.0 }
 
 [[fixture]]
-label = "a sustained level of 120, the lowest that still clears the guard once the drop is taken off — below it this row refuses, which is what it does for the declared window's own centre"
+label = "a sustained level of 120 with the old un-conditioned drop of 31.27, which used to be the lowest level that cleared the guard. The conditioned drop at 120 sfu is 23.26, so the crossing has moved and this row no longer refuses at the declared window"
 expect = 88.7277777778
 tolerance = 1e-10
 provenance = "independent-derivation"
