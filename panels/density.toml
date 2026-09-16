@@ -26,7 +26,7 @@ be the defect, and it is the one this spec exists to fix in place."""
 # did not carry; it was put back in front of a person and agreed again. That
 # second look is the whole reason this row may go to main, and it is the step
 # no check can perform.
-confirmed_by = "A. Rai / 2026-09-15"
+confirmed_by = "A. Rai / 2026-09-15 (against the pre-move picture; content unchanged, canvas resized 2026-09-16, not yet re-looked)"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.
