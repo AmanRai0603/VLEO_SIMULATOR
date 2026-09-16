@@ -4,8 +4,22 @@
 name: gate
 
 on:
+  # MAIN ONLY, not every branch. A branch push and the pull request that
+  # follows it are two events carrying the SAME commit, and they land in
+  # different concurrency groups -- refs/heads/<branch> against
+  # refs/pull/<n>/merge -- so cancel-in-progress below never sees them as the
+  # same work and neither cancels the other. The whole gate therefore ran
+  # twice per commit. Measured on the last green run: eight jobs, about
+  # seventeen billed minutes, and runs 145 and 146 are the same sha 721397ab
+  # nineteen seconds apart. That doubling is what exhausted the month.
+  #
+  # Nothing reaches main except through a pull request, and `pull_request`
+  # fires on every push to an open one, so no mergeable commit goes untested.
+  # What is given up is CI on a branch with no pull request open yet -- where
+  # the local gate is the check that is actually load-bearing, because a person
+  # is still writing.
   push:
-    branches: ["**"]
+    branches: ["main"]
   pull_request:
   workflow_dispatch:
 
@@ -27,6 +41,10 @@ jobs:
       # The toolchain is pinned in rust-toolchain.toml. A compiler change can
       # move a floating-point result, so a bump is a decision rather than a
       # surprise.
+      # restore-keys is not decoration. `key` alone is exact-match only, so
+      # every Cargo.lock or toolchain edit was a TOTAL miss and each cached job
+      # rebuilt the whole dependency graph from source. The prefix falls back
+      # to the newest near-miss and cargo recompiles only what actually moved.
       - name: cache
         uses: actions/cache@v4
         with:
@@ -35,6 +53,7 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-
 
       - name: formatting
         run: cargo fmt --all -- --check
@@ -197,6 +216,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      # Costs nothing and saves a rebuild: this restores the debug cache the
+      # gate job writes, finds the exact key already present, and so never
+      # saves one of its own. Free when no node changed, and the difference
+      # between seconds and minutes when one did.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-
       - name: which nodes changed
         id: which
         run: |
@@ -253,6 +284,7 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-
       - name: the browser
         run: |
           pip install --quiet playwright Pillow
@@ -294,6 +326,7 @@ jobs:
             crates/vleo-wasm/target
             crates/vleo-py/target
           key: ${{ runner.os }}-excluded-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-excluded-
       - run: rustup target add wasm32-unknown-unknown
       # --locked, because these two do not share the workspace lockfile and
       # ADOPTION.lock's rule is the same for them: an exact version plus a
@@ -314,6 +347,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # This job had NO cache and is the most expensive in the file: four
+      # minutes on the last green run, of which three were `cargo test
+      # --release` compiling the test binaries from nothing, every time. Its
+      # own key namespace, because release and debug artefacts are different
+      # objects and one key holding both means whichever job saved first
+      # decides what the other one restores.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-release-
       - run: cargo build --release --workspace
       - name: golden vectors against the shipping build
         run: cargo test --release --workspace
