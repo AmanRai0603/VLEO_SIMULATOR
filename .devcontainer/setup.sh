@@ -28,8 +28,20 @@ git diff --quiet || echo "note: the committed artefacts differ from the sheets â
 # Built here, once, so that attaching to the Codespace starts the tool in a
 # second instead of blocking you behind a release build. start.sh runs on every
 # attach and only launches what this step produced.
+# NOT under `set -e`. This file aborts on any failure, which is right for the
+# toolchain and the generators -- a Codespace that silently came up without
+# them is worse than one that failed loudly. It is wrong for this: a release
+# build is the longest step here and the only one that can fail for reasons
+# that have nothing to do with the repository, and a failed postCreateCommand
+# marks the whole Codespace as failed to create. start.sh already handles a
+# missing binary by telling you the one command to run, so a build that did
+# not finish costs you that command and nothing else.
 echo "building the tool so it is ready to serve"
-cargo build --release -p vleo-daemon
+cargo build --release -p vleo-daemon || {
+  echo "the release build did not finish. The Codespace is fine and everything"
+  echo "else is set up; start the tool yourself with:"
+  echo "    cargo run --release -p vleo-daemon"
+}
 
 echo
 echo "the tool starts itself on 7777 when you attach â€” the preview tab is it."
