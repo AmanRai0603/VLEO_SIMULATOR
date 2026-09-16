@@ -10,15 +10,11 @@ node_modules
 *.pyc
 __pycache__
 
-# The local data store. `VLEO_DATA` normally puts it under $HOME, outside any
-# checkout -- but the devcontainer deliberately points it at
-# ${containerWorkspaceFolder}/.vleo/data so a Codespace keeps its store beside
-# the workspace. That put a generated directory inside the working tree, and
-# nothing ignored it, so the first run of the daemon in a Codespace reported
-# ten untracked "changes" that are not changes: `vleo.lock` plus a byte copy of
-# bundles/solar-weather/2026.09.14, which the store syncs from `bundles/` when
-# it opens empty. The shipped bundle is the tracked copy and the one with
-# provenance; committing the store would make a second copy of the same
-# reference data with none, which is the thing bundles/README.md exists to
-# prevent.
+# The local data store, if anyone points VLEO_DATA inside a checkout. The
+# devcontainer used to, and every Codespace therefore opened with ten untracked
+# files that were a byte copy of bundles/ and looked like forgotten work. That
+# override is gone and the store lives under $HOME again; this line is what
+# stops it coming back. The store is generated -- it syncs from bundles/ when
+# it opens empty -- and bundles/ is the tracked copy, the one with a manifest
+# and a provenance line.
 /.vleo/
