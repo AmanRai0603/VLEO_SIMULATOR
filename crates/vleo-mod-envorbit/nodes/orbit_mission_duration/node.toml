@@ -6,7 +6,7 @@ label = "Mission duration"
 folder = "orbit_mission_duration"   # frozen at seed; renaming the label never moves the directory
 subsystem = "orbit"
 parent = "l3_x_envorbit"
-kind = "declared"
+kind = "computed"
 owner = "systems"
 tier = "A"
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
@@ -22,8 +22,27 @@ state = "published"
 text = "How long must one satellite operate?"
 
 [maths]
-expression = "T_mis = 5"
+# IT RESTATES THE REQUIREMENT, it does not set it. Two rows declaring a mission
+# length is two rows that can disagree about how long the mission is, and the
+# twelve rows reading this one would then be sized against whichever of the two
+# their author happened to open. The number lives at layer 2 where the
+# requirement is, and this row carries it into the subsystems that read it.
+expression = "T_mis = T_mis_req"
 source = "orbitt_case_c1"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "required"
+var = "sys_mission_requirements_mission_duration"
+type = "Time"
+
+[[algorithm.step]]
+number = 1
+text = "carry the declared mission duration through unchanged"
+binds = "duration"
+type = "Time"
 
 [output]
 # The node's one answer. The variable id is the node id: one small
@@ -35,12 +54,6 @@ lower = 0.5
 upper = 15.0
 reason_lower = "below six months the programme cannot amortise a satellite, so it is not the mission being designed"
 reason_upper = "above 15 years the cost model, the degradation model and the battery cycle model are all extrapolated well past their fits"
-
-[value]
-# A number a person picked. It carries the same discipline as a
-# fixture, because every margin in the design is built out of these.
-number = 5.0
-confirmed_by = "A. Rai / 2026-09-01"
 
 [contributes]
 kpis = ["kpi_cost_per_year"]

@@ -6,15 +6,14 @@
 use vleo_core::fault::Fault;
 use vleo_core::units::*;
 
-/// What this node publishes: `T_mis` (Mission duration), in `yr`.
-pub const NODE_ID: &str = "orbit_mission_duration";
-pub const SHEET_HASH: u64 = 0xa4de90cb1b5e53e8;
+/// What this node publishes: `T_mis_req` (Mission duration), in `yr`.
+pub const NODE_ID: &str = "sys_mission_requirements_mission_duration";
+pub const SHEET_HASH: u64 = 0xa3694836d5b8ac1d;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
-    "sys_mission_requirements_mission_duration",
 ];
 /// The variables this node publishes.
-pub const OUTPUT_VARS: &[&str] = &["orbit_mission_duration"];
+pub const OUTPUT_VARS: &[&str] = &["sys_mission_requirements_mission_duration"];
 /// The SI unit every value crossing this boundary is expressed in.
 pub const OUTPUT_UNIT: Unit = Time::UNIT;
 
@@ -22,11 +21,10 @@ pub const OUTPUT_UNIT: Unit = Time::UNIT;
 /// so the bus carries no quantity types and a face cannot pass arguments
 /// in the wrong order.
 pub fn call(inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {
-    if inputs.is_empty() || outputs.is_empty() {
+    if outputs.is_empty() {
         return Err(Fault::Blocked { node: NODE_ID, missing: "an input the contract declares" });
     }
-    let required: Time = Time::new(inputs[0]);
-    let answer = super::model::evaluate(required)?;
+    let answer = super::model::evaluate()?;
     outputs[0] = answer.get();
     Ok(())
 }

@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1371 rows** — 659 a person picked, 712 worked out. Two thirds of any design tree is
+**1371 rows** — 658 a person picked, 713 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -12305,19 +12305,19 @@ This is the number an air-breathing system exists to make free. A stored-propell
 | symbol | `T_mis` |
 | type | `Time` |
 | unit | yr |
-| kind | declared |
+| kind | computed |
 | owner | systems |
 | evidence tier | A |
-| relation | `T_mis = 5` |
+| relation | `T_mis = T_mis_req` |
 | source | `orbitt_case_c1` |
-| declared value | **5** yr |
-| confirmed by | A. Rai / 2026-09-01 |
 | valid over | 0.5 … 15 yr |
 
 - **lower bound** — below six months the programme cannot amortise a satellite, so it is not the mission being designed
 - **upper bound** — above 15 years the cost model, the degradation model and the battery cycle model are all extrapolated well past their fits
+- **reads** — `sys_mission_requirements_mission_duration`
 - **read by** — `aero_ao_fluence`, `cost_per_year`, `cost_programme`, `pwr_battery_cycles`, `pwr_degradation`, `sw_central_expectation`, `sw_horizon_climatology`, `sw_horizon_persistence`, `sw_storm_return_level`, `sw_uncertainty_growth`, `sw_window_peak_level`
 - **contributes to** — kpi_cost_per_year
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
 ### `orbit_nodal_regression` — Nodal regression rate
 
@@ -25125,23 +25125,26 @@ The companion to sw_central_expectation, and the number a design that must SURVI
 
 ### `sys_mission_requirements_mission_duration` — Mission duration
 
-> 
+> How long must the mission operate?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `T_mis_req` |
+| type | `Time` |
+| unit | yr |
 | kind | declared |
 | owner | systems |
 | evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| relation | `T_mis_req = 5` |
+| source | `orbitt_case_c1` |
+| declared value | **5** yr |
+| confirmed by | A. Rai / 2026-09-01, carried unchanged from orbit_mission_duration |
+| valid over | 0.5 … 15 yr |
 
-- **lower bound** — 
-- **upper bound** — 
-- **read by** — `sys_orbit_maintenance_station_keeping_delta_v`
+- **lower bound** — below six months the programme cannot amortise a satellite, so it is not the mission being designed
+- **upper bound** — above 15 years the cost model, the degradation model and the battery cycle model are all extrapolated well past their fits
+- **read by** — `orbit_mission_duration`, `sys_orbit_maintenance_station_keeping_delta_v`
+- **assumes** One duration governs the whole programme — every subsystem sizes against the same mission length — fails when a constellation replenishes on a schedule shorter than a satellite's life, so the satellite duration and the service duration are different numbers and this row is the second of them
 
 ### `sys_mission_requirements_mission_epoch` — Mission epoch
 
