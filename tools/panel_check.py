@@ -386,6 +386,16 @@ def main():
     a = ap.parse_args()
     if a.selftest:
         return selftest()
+    # A --panel nobody declared matched nothing and reported a clean run. Same
+    # shape of defect as the one above: a check that examined zero things said
+    # so in the language of success.
+    if a.panel:
+        known = {spec(x)["id"] for x in specs()}
+        unknown = sorted(set(a.panel) - known)
+        if unknown:
+            print("no panel declared as: %s" % ", ".join(unknown))
+            print("declared: %s" % ", ".join(sorted(known)))
+            return 1
     found = check_all(set(a.panel) if a.panel else None, a.record)
     for pid, stage, why in found:
         print("  %-10s %-12s %s" % (pid, stage, why))
@@ -395,4 +405,28 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # A CRASH MUST LOOK LIKE A FAILURE ON THE LAST LINE, not like silence.
+    #
+    # This script's verdict is its last line, and that is how it gets read —
+    # `panel_check.py | tail -1`, in a pipeline and by hand. When it died inside
+    # Playwright instead of reaching that line, the traceback went to stderr and
+    # the last line of stdout was nothing at all. A blank line was then read as
+    # a clean run, and a broken matrix and three wrong pictures shipped behind
+    # it. The exit code was 1 throughout and was the thing not looked at.
+    #
+    # So an unhandled failure now prints a verdict of its own, in the same shape
+    # as the others, and a reader who only ever sees the last line still sees a
+    # failure.
+    try:
+        sys.exit(main())
+    except SystemExit:
+        raise
+    except BaseException as exc:  # noqa: BLE001 - a verdict for anything at all
+        import traceback
+
+        traceback.print_exc()
+        print(
+            "panel_check CRASHED before reaching a verdict: %s: %s"
+            % (type(exc).__name__, exc)
+        )
+        sys.exit(1)

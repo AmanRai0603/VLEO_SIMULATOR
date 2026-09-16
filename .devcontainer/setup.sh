@@ -48,5 +48,6 @@ echo "the tool starts itself on 7777 when you attach — the preview tab is it."
 echo "to run it by hand instead:"
 echo "    cargo run --release -p vleo-daemon"
 echo
+echo "the visual layer is NOT in the gate: python3 tools/panel_check.py"
 echo "one command that must be green:"
 echo "    cargo run -p xtask -- gate && cargo test"
