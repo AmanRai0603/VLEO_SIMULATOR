@@ -81,7 +81,7 @@ row.
 
 [[theory.step]]
 text = """
-Start from why a centre is not enough. sw_central_expectation returns 114.84
+Start from why a centre is not enough. sw_central_expectation returns 86.85
 sfu, which is a median-like quantity: the flux will be above it about half
 the time over the mission. Sizing a structure, a power budget or a
 propellant load to a figure that is exceeded half the time is not a margin,
@@ -109,12 +109,12 @@ math = "F107_design(L) = F107_central(L) + dF107_p95(L)"
 
 [[theory.step]]
 text = """
-At the declared five-year mission that is 114.84 plus 113.29, and the split
+At the declared five-year mission that is 86.85 plus 113.29, and the split
 is the thing to notice: more than half the design value is margin. That is
 not excess conservatism, it is what a five-year exposure to a cyclical
 driver costs.
 """
-math = "F107_design = 114.84 + 113.29 = 228.14 sfu"
+math = "F107_design = 86.85 + 113.29 = 200.14 sfu"
 
 [[theory.step]]
 text = """
@@ -132,7 +132,7 @@ fails_when = "prf_design offers p50, p90, p95 and p99 and expects the caller to 
 
 [[assumption]]
 text = "It cannot tell solar maximum from solar minimum, because no row in this tree publishes a date"
-fails_when = "the whole of this limitation belongs to sw_central_expectation and it is repeated here because this is the row a system reader opens. The centre is the record's unconditional mean F10.7, 114.8 sfu, not the mean cycle at the date the mission flies. The record runs from 64 to 343 sfu; a mission through solar maximum and one through minimum are owed materially different numbers and this row gives them the same one. That was once a missing input and is now an open decision: the epoch is published at 9862 d, rows in this subsystem do cross the layer to read it, and the phase-conditioned centre exists at 108.14 sfu. Adopting it would move this row from 228.14 to 221.44 sfu, which is a change to an output that is already on the main branch and therefore somebody's call rather than a correction."
+fails_when = "the whole of this limitation belongs to sw_central_expectation and it is repeated here because this is the row a system reader opens. THIS IS NOW FIXED AND THE FIX MOVED THIS ROW. The centre used to be the record's unconditional mean, 114.84 sfu, which gave a mission through solar maximum and one through minimum the same number; it is now the cycle analogue averaged over the mission's own dates, 86.85 sfu at the declared epoch, and this row fell from 228.14 to 200.14 with it. What remains is the weaker half of the same limitation: beyond one cycle past cycle 25's maximum the analogue is scaled by the mean amplitude of two completed cycles, whose peaks differ by 41 per cent, so a long mission is reading a level with a wide and unpublished uncertainty on it."
 
 [[assumption]]
 text = "Adding a percentile of the CHANGE to a central value is not the same as the percentile of the VALUE"

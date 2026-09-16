@@ -16,14 +16,14 @@ fn relative_error(got: f64, expected: f64) -> f64 {
     if expected == 0.0 { pmath::abs(got) } else { pmath::abs((got - expected) / expected) }
 }
 
-/// five years — climatology 114.8437 plus the 1826-day p95 growth of 113.294
+/// five years — a central of 114.8437 plus the 1826-day p95 growth of 113.294. The central is supplied here, not taken from the chain: this fixture checks the addition, and sw_central_expectation returns 86.85 at this lead now that it follows the cycle
 ///
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_0() {
     let got = model::evaluate(Ratio::new(114.8437378829), Ratio::new(113.2937)).expect("the fixture case must not be refused");
     let err = relative_error(got.get(), 228.1374378829);
-    assert!(err <= 1e-12, "five years — climatology 114.8437 plus the 1826-day p95 growth of 113.294: got {} want 228.1374378829, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    assert!(err <= 1e-12, "five years — a central of 114.8437 plus the 1826-day p95 growth of 113.294. The central is supplied here, not taken from the chain: this fixture checks the addition, and sw_central_expectation returns 86.85 at this lead now that it follows the cycle: got {} want 228.1374378829, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
 /// half a year — the shortest mission the tree allows, and the narrowest band
@@ -65,7 +65,7 @@ fn fixture_3() {
 
 /// One per cent either side of the known-good point, this node still answers.
 ///
-/// Derived from `five years — climatology 114.8437 plus the 1826-day p95 growth of 113.294` and the declared domain 60 … 400.
+/// Derived from `five years — a central of 114.8437 plus the 1826-day p95 growth of 113.294. The central is supplied here, not taken from the chain: this fixture checks the addition, and sw_central_expectation returns 86.85 at this lead now that it follows the cycle` and the declared domain 60 … 400.
 ///
 /// One per cent, not a decade. These domains are design bands — an altitude
 /// range somebody chose, not a range over which the mathematics holds — so a

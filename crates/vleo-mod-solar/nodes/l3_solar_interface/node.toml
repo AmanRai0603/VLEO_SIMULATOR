@@ -133,7 +133,7 @@ fails_when = "sys_space_environment holds six rows — solar flux, F10.7, Ap, at
 
 [[assumption]]
 text = "It inherits every limitation of the row beneath it, and a system reader sees none of them"
-fails_when = "this is the ordinary cost of a seam and it is worth stating where the seam is. The number crossing here is a 95th percentile and not a worst case, and its centre is the record's unconditional mean rather than the mean cycle at the mission's epoch — the epoch is published and this chain does not read it yet. A reader at layer 2 sees 228 sfu and a credibility vector, and would have to open sw_f107_design and then sw_central_expectation to learn any of that. The credibility travels; the assumptions do not."
+fails_when = "this is the ordinary cost of a seam and it is worth stating where the seam is. The number crossing here is a 95th percentile and not a worst case. Its centre is now the cycle analogue at the mission's own epoch rather than the record's unconditional mean, so this chain does read the epoch; what the centre cannot tell you is which kind of cycle comes next, because beyond this one it is scaled by the mean of two. A reader at layer 2 sees 228 sfu and a credibility vector, and would have to open sw_f107_design and then sw_central_expectation to learn any of that. The credibility travels; the assumptions do not."
 
 [output]
 # The node's one answer. The variable id is the node id: one small

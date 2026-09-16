@@ -8,14 +8,14 @@
 # WHAT THESE ARE
 #
 # A sum of two numbers this node does not compute. Each expectation is the
-# record's climatology, 114.8437378829 sfu, plus a measured 95th-percentile
+# record's unconditional mean, 114.8437378829 sfu, plus a measured 95th-percentile
 # growth from bundles/solar-weather — both derived outside this crate and both
 # pinned by their own node's fixtures. What is checked here is only that the
 # addition is an addition, and that the declared bound refuses when the sum
 # leaves the range every consumer of F10.7 can model.
 
 [[fixture]]
-label = "five years — climatology 114.8437 plus the 1826-day p95 growth of 113.294"
+label = "five years — a central of 114.8437 plus the 1826-day p95 growth of 113.294. The central is supplied here, not taken from the chain: this fixture checks the addition, and sw_central_expectation returns 86.85 at this lead now that it follows the cycle"
 expect = 228.1374378829
 tolerance = 1e-12
 provenance = "independent-derivation"

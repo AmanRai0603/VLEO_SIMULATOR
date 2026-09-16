@@ -13,21 +13,23 @@ selected row for every node it feeds](docs/img/tool.png)
 
 ## Status
 
-Measured on `main`, 11 September 2026.
+Measured on `main`, 15 September 2026. Every figure here is produced by a
+command in this repository, named beside it where it is not obvious.
 
 | | |
 |---|---|
 | rows in the tree | 1371 across four layers — 293 written, 1078 seeded |
 | layer 1 · management | 174 rows, from CD-06 verbatim |
 | layer 2 · the system | 319 rows, from CD-06 verbatim |
-| layer 3 · subsystem | 836 rows across 17 subsystems |
+| layer 3 · subsystem | 878 rows across 17 subsystems |
 | of the 293 written | 127 declared values · 150 computed · 12 KPI closures · 1 requirement · 3 achieved |
-| declared edges | 463 derivation · 298 contribution · 177 relation |
-| crates | 30 — 19 node crates, 11 engine and face crates |
+| declared edges | 495 derivation · 298 contribution · 179 relation |
+| crates | 31 — 20 node crates, 11 engine and face crates |
 | faces | browser · daemon · command line · C ABI · Python wheel · MATLAB |
 | deepest declared chain | 25 nodes, solar flux to cost per year |
-| 80-point sweep of the whole graph | 77–123 ms, three runs, release build |
-| nodes past every machine check | 0 of 250 — see [Where it stands](#where-it-stands) |
+| 80-point sweep of the whole graph | 59–61 ms, three runs, release build, through the daemon |
+| nodes past every machine check | 12 of 293, waiting on a person — see [Where it stands](#where-it-stands) |
+| declared panels | 11, each with a reference a person vouched for |
 
 ---
 
@@ -48,6 +50,29 @@ mixed-content policy and private-network preflight; the last is tightening and
 can break on a browser update with no change on this side. Serving both from one
 process removes that boundary rather than negotiating it, and the tool works
 with networking disabled.
+
+It binds `127.0.0.1` and takes the first free port from 7777 upward, printing
+the one it got. Set `VLEO_PORT` to pin it.
+
+To change an input and watch the answer move —
+[`docs/USING_IT.md` §2b](docs/USING_IT.md) drives it end to end on the solar
+rows: only declared numbers can be set, the tool refuses a computed one by
+name, and moving the launch date from 2027 to late 2032 takes the design flux
+from 200.14 to 258.23 sfu and stops the closure passing.
+
+### In a Codespace, or any devcontainer
+
+`.devcontainer/` pins the toolchain, fills the reference-data store and
+regenerates the per-node artefacts on create, so a fresh Codespace needs no
+setup:
+
+```
+cargo run --release -p vleo-daemon
+```
+
+Port 7777 is forwarded and opens a preview by itself. Nothing about the tool is
+different there — it is the same single process serving the same one origin,
+which is the point of it having no database and no service to install.
 
 ### From the command line
 
@@ -142,6 +167,16 @@ regeneration diff.
 
 ![One node: its tabs, its answer, the eight credibility factors with the
 lowest governing, and the evidence that executed](docs/img/node.png)
+
+Ten tabs, and two of them are derived rather than written. **Pseudocode** is
+built from the sheet and not from the Rust, so it states what was specified
+rather than what one compiler made of it. **The relation, moving** animates the
+node's own relation across its declared domain, drawing the engine's sweep so a
+picture that disagrees with the node is impossible; the guards appear as the
+walls they are, labelled with what they refuse, and where the engine refuses a
+point the line breaks and the refusal is counted. A **theory** tab sits beside
+them for prose a person writes: why this relation is the relation, derived a
+line at a time, and what the answer does not mean.
 
 ---
 
@@ -312,7 +347,54 @@ python3 tools/panel_check.py
 
 It renders · it moves when each declared input moves · it matches a stored
 reference. The second is the one that matters: a panel wired to nothing renders
-perfectly and matches yesterday's reference every time.
+perfectly and matches yesterday's reference every time. It has caught exactly
+that here — a forecast view offered in a control list and read nowhere in the
+code, which drew the neighbouring view's picture when chosen.
+
+Eleven panels are declared: three structural diagrams and the eight
+solar-weather tabs. The third check is the one no machine can complete, so each
+spec carries `confirmed_by` — the name of the person who looked at the stored
+picture and agreed with it. Nothing enforces that field, which is exactly why it
+is written by hand; a reference nobody looked at is a snapshot of a bug.
+
+### The solar-weather view
+
+One subsystem is written through rather than sampled: solar weather, 42 rows of
+42. Beside the tree sits an eight-tab view of the record those rows argue about
+— repeatability, pattern, segmentation, predict, forecast, design, climate and
+density — recomputed from the bundle on every change.
+
+It reads the bundle the engine reads, byte for byte, through
+`GET /v1/bundle/<name>/<file>`, which serves a verified bundle's own files and
+refuses a file its manifest does not declare. A face reading the same bytes as
+the engine cannot drift from it.
+
+The density tab draws no density, and says why: the study's density figures need
+an atmosphere model owned by a subsystem with nothing written in it, so the tab
+draws the precondition instead. A tool that drew the curve anyway would be
+carrying a model no row owns and no reviewer signed.
+
+### Checked against the thing it was ported from
+
+Two checkers, both in the pipeline:
+
+```
+python3 tools/matlab_parity.py   # against the study's published CSV output
+python3 tools/mat_parity.py      # against the MATLAB tool's own saved run
+```
+
+The first re-derives fifteen rows from the study's published output in Python,
+independently of the Rust. The second compares against `Result_Vleo_Tool.mat`,
+the whole state of the MATLAB tool at one design point: reimplementing its
+`prf_ap2kp` from source and fitting it on **this** repository's bundle
+reproduces all five of that run's scenarios in both Kp slots to 8.9e-16, which
+checks the data as much as the arithmetic.
+
+Where the two tools disagree, the disagreement is recorded with its size and its
+reason rather than tuned away. The largest is the centre of the design window:
+the MATLAB freezes its last rotation forecast and holds it flat, this port
+averages a cycle analogue over the mission's own dates, and the record's two
+completed cycles put the first 74 per cent high and the second within a few.
 
 ---
 
@@ -347,17 +429,22 @@ achievable and the nightly check becomes one people learn to ignore.
 ## Where it stands
 
 The tree is built and mostly empty, which is the state it is designed to be
-useful in. 293 rows of 1371 have content. `xtask ready` reports what is holding
-the rest:
+useful in. 293 rows of 1371 have content, and `xtask ready` reports 12 of those
+293 past every machine stage and waiting on a person. It names what holds the
+other 281:
 
 ```
-250  the relation has nobody's name against it
+276  the relation has nobody's name against it
+250  other
 120  no fixture — nothing outside this code has agreed with it
+  5  significant, with fewer than two checks behind it
 ```
 
-Every relation currently in the tree came from transcribing CD-06 or from
-building the scaffolding. None has been through a physics review, and the tool
-says so rather than reporting rows as ready.
+Almost every relation in the tree came from transcribing CD-06 or from building
+the scaffolding. None has been through a physics review, and the tool says so
+rather than reporting rows as ready. A machine cannot supply the missing thing
+and does not pretend to: what it can do is refuse to call a row finished while
+the thing is missing, and count how many rows that is.
 
 Three rows refuse at the reference case, and each refusal is a declared limit
 working:
