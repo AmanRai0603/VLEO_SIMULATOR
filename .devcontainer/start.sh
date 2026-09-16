@@ -29,7 +29,16 @@ if [ ! -x "$BIN" ]; then
   exit 0
 fi
 
-nohup "$BIN" >"$LOG" 2>&1 &
+# setsid, not just nohup. postAttachCommand's shell is a task VS Code owns and
+# may tear down with its process group when the task ends; a new session makes
+# the daemon outlive it. nohup alone survives the hangup but not the group
+# kill, and `setsid` is not in every image, so it is used when present.
+if command -v setsid >/dev/null 2>&1; then
+  setsid "$BIN" >"$LOG" 2>&1 < /dev/null &
+else
+  nohup "$BIN" >"$LOG" 2>&1 < /dev/null &
+fi
+disown 2>/dev/null || true
 for _ in $(seq 1 30); do
   if curl -sf -o /dev/null --max-time 2 "http://127.0.0.1:${PORT}/v1/index"; then
     echo "vleo-daemon: serving on http://127.0.0.1:${PORT} — the preview tab is the tool"
