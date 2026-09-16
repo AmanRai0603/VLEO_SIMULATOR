@@ -1,0 +1,180 @@
+<article class="node" data-node="sw_ap_daily_band_drop" data-sheet-hash="0a0d01" data-impl-hash="222325">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Within-rotation daily Ap drop</h2>
+  <p class="ident"><code>sw_ap_daily_band_drop</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How far below its own rotation does a single day of Ap fall, at the declared confidence?</p>
+<p class="maths"><code>dAp_day_low = -pctl(Ap - movmean(Ap, 27 d), 0.05) over the 2001 days ending at the window = 10.5889</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The cold tail of sw_ap_daily_band_spread's sample, and a separate row because
+Ap's two tails are nothing like each other: 15.00 up against 10.59 down. The
+geomagnetic index is the most skewed quantity in this subsystem, because it
+floors hard at zero and has no ceiling at all.
+
+The cold day is the low-drag case, and on the Ap side it is also the quiet-sky
+case a magnetometer, a magnetorquer sizing and an aerodynamic control authority
+are bounded by from below.
+</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>Ap's departures are strongly asymmetric, and this row exists because of it</dt><dd>fails when it is treated as the negation of sw_ap_daily_band_spread. It is forty-two per cent smaller, against nine per cent on the F10.7 side. Anything that mirrors one tail onto the other puts the cold Ap day two and a half units below what the record supports</dd>
+<dt>A percentile of departures does not know that Ap floors at zero</dt><dd>fails when the rotation mean it is subtracted from is smaller than the drop. Below a mean of about 11 this row carries Ap negative, which is arithmetic rather than sky. The declared window's 17.50 is clear of it, and the consumer guards its own output, but the statistic itself has no such knowledge</dd>
+<dt>One number holds for the whole window, and the window is a year</dt><dd>fails when the spread is not constant across a cycle — it widens near maximum — so a single percentile measured on the 2001 days before the window is too wide for a quiet stretch inside it and too narrow for an active one</dd>
+<dt>The 27-day moving mean is the rotation</dt><dd>fails when Ap's recurrence is driven by coronal holes and high-speed streams whose period is nearer 27.0 days than the 27.27 of the equatorial photosphere, and they persist for many rotations. A 27-day window is the conventional round number rather than a measured period, and the departures it leaves carry whatever the mismatch contributes</dd>
+<dt>It is the record's own daily scatter, not a forecast error</dt><dd>fails when this is read as an uncertainty. It is not: it says how far below its rotation the geomagnetic field has gone, measured on days that already happened</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">The measurement is sw_ap_daily_band_spread's, read from the other end. Take the daily Ap record up to the day the window opens, subtract its own centred 27-day moving mean, sort what is left and read the 5th percentile instead of the 95th. One sample, one moving mean, two tails.</p>
+<p class="why">The asymmetry is the reason this is a row. On F10.7 the two tails differ by nine per cent; on Ap they differ by forty-two. 15.00 up, 10.59 down. Ap is bounded below at 0 and a quiet day really does sit there, so a rotation whose mean is 20 cannot fall more than 20 and can rise without limit — the distribution is not merely skewed, it is truncated. Mirroring the hot tail onto the cold side would put the cold day at Ap 4.5 where the record supports 6.9, which is a quieter sky than has been observed for that rotation level and a thinner atmosphere than the cold case actually has.</p>
+<p class="why">It is published as a magnitude for the same reason as its F10.7 twin: the row is then a distance with a declared floor of zero, and the sign belongs to the relation that consumes it rather than to the number.</p>
+<div class="theory-walk" data-steps="3">
+<ol class="derive">
+<li><span class="dt">Take the daily Ap record up to the day the window opens, and no further, and subtract the centred 27-day moving mean. The sample is identical to sw_ap_daily_band_spread's — the same days, the same moving mean, one measurement.</span><code class="dm">dev(t) = Ap(t) - movmean(Ap, 27)(t)</code></li>
+<li><span class="dt">Read the 5th percentile instead of the 95th.</span><code class="dm">pctl(dev, 0.05) = -10.5889</code></li>
+<li><span class="dt">Publish its magnitude, so the row is a distance with a floor of zero and the sign travels with the relation that uses it.</span><code class="dm">dAp_day_low = -pctl(dev, 0.05) = +10.5889</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">10.59 below the rotation the day sits in, against 15.00 above it. At the declared window's coldmean Ap of 17.50 that puts the cold day at 6.87, which is a quiet but entirely ordinary sky; the record holds long stretches below it.</p>
+<p class="reading">The floor matters here in a way it does not for flux. At a rotation mean below about 11 this drop would carry Ap negative, which is not a sky — it is the truncation showing through a statistic that does not know about it. The declared window is well clear of that, and sw_ap_cold_short guards its own output at zero rather than trusting the arithmetic.</p>
+<p class="maths concl">which is the relation this node states: <code>dAp_day_low = -pctl(Ap - movmean(Ap, 27 d), 0.05) over the 2001 days ending at the window = 10.5889</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
+<tr class="out"><td>out</td><td><code>dAp_day_low</code></td><td>sw_ap_daily_band_drop</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
+<p>This is a declared value: <b>10.5888888889</b> -, confirmed by <b></b>.</p>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_ap_daily_band_drop() -> Ratio
+    dAp_day_low ← 10.5888888889          // declared, confirmed by 
+
+    // a guard whose reason is not written down gets deleted
+    require dAp_day_low ≥ 0
+    require dAp_day_low ≤ 150
+    require dAp_day_low is finite
+
+    return dAp_day_low
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>dAp_day_low &ge; 0</code> — a drop of zero would mean no day ever falls below its rotation mean, which the record contradicts on about half the days it holds; below zero is not a distance, and a negative value here means the tail has been read from the wrong end</li>
+<li><code>dAp_day_low &le; 150</code> — above 150 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than a quiet sky</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sw_ap_daily_band_drop" data-lo="0" data-hi="150" data-symbol="dAp_day_low">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How far below its own rotation does a single day of Ap fall, at the declared confidence?
+///
+/// `dAp_day_low = -pctl(Ap - movmean(Ap, 27 d), 0.05) over the 2001 days ending at the window = 10.5889`
+///
+/// Source: `noaa_swpc`
+///
+/// The cold tail of sw_ap_daily_band_spread's sample, and a separate row
+/// because Ap's two tails are nothing like each other: 15.00 up against 10.59
+/// down. The geomagnetic index is the most skewed quantity in this subsystem,
+/// because it floors hard at zero and has no ceiling at all. The cold day is
+/// the low-drag case, and on the Ap side it is also the quiet-sky case a
+/// magnetometer, a magnetorquer sizing and an aerodynamic control authority
+/// are bounded by from below.
+///
+/// # Assumptions
+///
+/// * Ap's departures are strongly asymmetric, and this row exists because of it — fails when it is treated as the negation of sw_ap_daily_band_spread. It is forty-two per cent smaller, against nine per cent on the F10.7 side. Anything that mirrors one tail onto the other puts the cold Ap day two and a half units below what the record supports
+/// * A percentile of departures does not know that Ap floors at zero — fails when the rotation mean it is subtracted from is smaller than the drop. Below a mean of about 11 this row carries Ap negative, which is arithmetic rather than sky. The declared window's 17.50 is clear of it, and the consumer guards its own output, but the statistic itself has no such knowledge
+/// * One number holds for the whole window, and the window is a year — fails when the spread is not constant across a cycle — it widens near maximum — so a single percentile measured on the 2001 days before the window is too wide for a quiet stretch inside it and too narrow for an active one
+/// * The 27-day moving mean is the rotation — fails when Ap's recurrence is driven by coronal holes and high-speed streams whose period is nearer 27.0 days than the 27.27 of the equatorial photosphere, and they persist for many rotations. A 27-day window is the conventional round number rather than a measured period, and the departures it leaves carry whatever the mismatch contributes
+/// * It is the record's own daily scatter, not a forecast error — fails when this is read as an uncertainty. It is not: it says how far below its rotation the geomagnetic field has gone, measured on days that already happened
+pub const NODE_ID: &amp;str = &quot;sw_ap_daily_band_drop&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xe69a98e7820a0d01;
+
+pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
+    // generated · a declared value, converted from the unit it was written in
+    let declared: Ratio = match Ratio::from_unit(10.5888888889, Unit::One) {
+        Some(q) =&gt; q,
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;dAp_day_low&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+    };
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = declared;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;dAp_day_low&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;dAp_day_low&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;a drop of zero would mean no day ever falls below its rotation mean, which the record contradicts on about half the days it holds; below zero is not a distance, and a negative value here means the tail has been read from the wrong end&quot; });
+    }
+    if answer.get() &gt; 150.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;dAp_day_low&quot;, value: answer.get(), bound: 150.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;above 150 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than a quiet sky&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0 — a drop of zero would mean no day ever falls below its rotation mean, which the record contradicts on about half the days it holds; below zero is not a distance, and a negative value here means the tail has been read from the wrong end</li>
+<li><code>OutOfDomain</code> above 150 — above 150 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than a quiet sky</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_ap_daily_band_drop"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>0 &hellip; 150</code> -.</p>
+<ul class="guards"><li>lower — a drop of zero would mean no day ever falls below its rotation mean, which the record contradicts on about half the days it holds; below zero is not a distance, and a negative value here means the tail has been read from the wrong end</li><li>upper — above 150 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than a quiet sky</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+<li>a declared value with nobody's confirmation against it</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

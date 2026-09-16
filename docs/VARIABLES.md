@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1380 rows** — 663 a person picked, 717 worked out. Two thirds of any design tree is
+**1382 rows** — 665 a person picked, 717 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -19232,6 +19232,43 @@ them says what the window sits at on an ordinary day, and a band needs a centre
 before it can have edges.
 
 
+### `sw_ap_daily_band_drop` — Within-rotation daily Ap drop
+
+> How far below its own rotation does a single day of Ap fall, at the declared confidence?
+
+| | |
+|---|---|
+| symbol | `dAp_day_low` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `dAp_day_low = -pctl(Ap - movmean(Ap, 27 d), 0.05) over the 2001 days ending at the window = 10.5889` |
+| source | `noaa_swpc` |
+| declared value | **10.5888888889** - |
+| confirmed by |  |
+| valid over | 0 … 150 - |
+
+- **lower bound** — a drop of zero would mean no day ever falls below its rotation mean, which the record contradicts on about half the days it holds; below zero is not a distance, and a negative value here means the tail has been read from the wrong end
+- **upper bound** — above 150 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than a quiet sky
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** Ap's departures are strongly asymmetric, and this row exists because of it — fails when it is treated as the negation of sw_ap_daily_band_spread. It is forty-two per cent smaller, against nine per cent on the F10.7 side. Anything that mirrors one tail onto the other puts the cold Ap day two and a half units below what the record supports
+- **assumes** A percentile of departures does not know that Ap floors at zero — fails when the rotation mean it is subtracted from is smaller than the drop. Below a mean of about 11 this row carries Ap negative, which is arithmetic rather than sky. The declared window's 17.50 is clear of it, and the consumer guards its own output, but the statistic itself has no such knowledge
+- **assumes** One number holds for the whole window, and the window is a year — fails when the spread is not constant across a cycle — it widens near maximum — so a single percentile measured on the 2001 days before the window is too wide for a quiet stretch inside it and too narrow for an active one
+- **assumes** The 27-day moving mean is the rotation — fails when Ap's recurrence is driven by coronal holes and high-speed streams whose period is nearer 27.0 days than the 27.27 of the equatorial photosphere, and they persist for many rotations. A 27-day window is the conventional round number rather than a measured period, and the departures it leaves carry whatever the mismatch contributes
+- **assumes** It is the record's own daily scatter, not a forecast error — fails when this is read as an uncertainty. It is not: it says how far below its rotation the geomagnetic field has gone, measured on days that already happened
+
+The cold tail of sw_ap_daily_band_spread's sample, and a separate row because
+Ap's two tails are nothing like each other: 15.00 up against 10.59 down. The
+geomagnetic index is the most skewed quantity in this subsystem, because it
+floors hard at zero and has no ceiling at all.
+
+The cold day is the low-drag case, and on the Ap side it is also the quiet-sky
+case a magnetometer, a magnetorquer sizing and an aerodynamic control authority
+are bounded by from below.
+
+
 ### `sw_ap_daily_band_spread` — Within-rotation daily Ap spread
 
 > How far above its own rotation does a single day of Ap reach, at the declared confidence?
@@ -19531,6 +19568,44 @@ Zero at the cycle's start and one at its end. This is the row the whole cycle-de
 - **assumes** Twenty equal-width phase bins, and cycle length is taken from the published boundaries — fails when the boundaries move. Cycle 23 spans 4338 days and cycle 24 spans 4017, an 8 per cent difference, so an equal-PHASE bin is a different number of DAYS in each cycle — 217 against 201. Stacking on phase rather than on days since minimum is the choice that lets two unequal cycles be compared at all, and it means this row says nothing about whether the two cycles took the same TIME to do the same thing. They did not
 
 The correlation between cycles 23 and 24 after stacking both on phase. It is the credibility of sw_mean_cycle_level: that row hands a design a mean-cycle curve, and this row says how much a single cycle can be expected to look like it. The answer is that the SHAPE repeats and the AMPLITUDE does not, and a design that reads only the correlation will miss the second half.
+
+### `sw_daily_band_drop` — Within-rotation daily drop
+
+> How far below its own rotation does a single day of F10.7 fall, at the declared confidence?
+
+| | |
+|---|---|
+| symbol | `dF107_day_low` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `dF107_day_low = -pctl(F107 - movmean(F107, 27 d), 0.05) over the 2001 days ending at the window = 31.2722 sfu` |
+| source | `noaa_swpc` |
+| declared value | **31.2722222222** - |
+| confirmed by |  |
+| valid over | 0 … 120 - |
+
+- **lower bound** — a drop of zero would mean no day ever falls below its rotation mean, which the record contradicts on about half the days it holds; below zero is not a distance, and a negative value here means the tail has been read from the wrong end
+- **upper bound** — above 120 sfu the departure exceeds the largest single-day excursion in the record in either direction, so a value there is an arithmetic error rather than a quiet sun
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** The departures are asymmetric, and this row exists because of it — fails when it is treated as the negation of sw_daily_band_spread. It is nine per cent smaller. Anything that mirrors one tail onto the other is asserting a symmetry the record refuses, and on Ap the same mirroring would be wrong by forty per cent
+- **assumes** One number holds for the whole window, and the window is a year — fails when the spread is not constant across a cycle — it widens near maximum as active regions grow — so a single percentile measured on the 2001 days before the window is too wide for a quiet stretch inside it and too narrow for an active one. The MATLAB source says the same thing about its own sigma in as many words: 'sigma is NOT flat across the cycle; a design that uses one number is too tight somewhere and too loose somewhere else'
+- **assumes** The 27-day moving mean is the rotation — fails when the solar rotation is 27.27 days at the equator and slower at the poles, and the active longitudes that drive F10.7 are not at one latitude. A 27-day window is the conventional round number rather than a measured period, and the departures it leaves carry whatever the mismatch contributes
+- **assumes** It is the record's own daily scatter, not a forecast error — fails when this is read as an uncertainty. It is not: it says how far below its rotation the sun has gone, measured on days that already happened. What a forecast of a future day would get wrong is sw_uncertainty_growth's question and a larger number
+
+The other tail of sw_daily_band_spread's sample, and a separate row because it
+is a separate number: the departures are not symmetric. The sun has a floor and
+no ceiling, so a day can rise further above its rotation than it can fall below
+it, and a design that mirrors one tail onto the other is assuming a shape the
+record does not have.
+
+It is the cold side, which sounds like the side nobody sizes against. It is not:
+a cold day is the low-drag case, and the low-drag case is what a propellant
+budget's LOWER bound and an aerodynamic control authority's worst case are made
+of. The hot day and the cold day both bound something.
+
 
 ### `sw_daily_band_spread` — Within-rotation daily spread
 

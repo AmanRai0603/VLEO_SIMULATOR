@@ -37,11 +37,12 @@ is the row that says how much of one a single day can be.
 <ol class="derive">
 <li><span class="dt">Take the daily Ap record up to the day the window opens, and no further.</span><code class="dm">hist = Ap over the 2001 days ending at the window</code></li>
 <li><span class="dt">Subtract the centred 27-day moving mean from each day.</span><code class="dm">dev(t) = Ap(t) - movmean(Ap, 27)(t)</code></li>
-<li><span class="dt">Read the 95th percentile of the departures.</span><code class="dm">pctl(dev, 0.95) = +15.0019 · pctl(dev, 0.05) = -10.5889</code></li>
+<li><span class="dt">Read the 95th percentile of the departures. The 5th is sw_ap_daily_band_drop's own row: at 10.59 against this 15.00 the two tails are forty-two per cent apart, because Ap is truncated at zero.</span><code class="dm">pctl(dev, 0.95) = +15.0019 · pctl(dev, 0.05) = -10.5889</code></li>
 </ol>
 </div>
 <h4>Reading the answer</h4>
 <p class="reading">15.0019, against the study's 14.8519 — an absolute difference of 0.15, the same ORDER as the 0.083 the F10.7 row differs by. Ap is simply a smaller number, so the same convention difference reads as 1.01 per cent where F10.7's reads as 0.24, which is why the grid beside this row is declared at 2 per cent and its F10.7 twin at 1.</p>
+<p class="reading">The cold tail is sw_ap_daily_band_drop at 10.59, forty-two per cent shallower than this. That gap is the largest asymmetry in the subsystem and it is physical: Ap floors at zero, so a rotation cannot fall further than its own mean.</p>
 <p class="maths concl">which is the relation this node states: <code>dAp_day = pctl(Ap - movmean(Ap, 27 d), 0.95) over the 2001 days ending at the window = 15.0019</code></p>
 </section>
 <section class="panel" data-panel="2">

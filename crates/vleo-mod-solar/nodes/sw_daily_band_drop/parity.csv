@@ -1,0 +1,27 @@
+# The prior implementation, at the one window it was exported for.
+#
+# NOT A FIXTURE. An expected value may never come from the implementation under
+# test, and this file is the OTHER implementation's answer — a second opinion.
+# A disagreement here is a finding about one of the two, and the answer is never
+# to widen parity_tolerance or to edit this file until it agrees.
+#
+# WHERE THIS NUMBER COMES FROM. designWindow_ does not publish either tail; it
+# adds them to the rotation band and publishes the results. So the drop is read
+# back out of the driver sets the MATLAB run did publish, in
+# matlab/reference/mission_drivers.csv:
+#
+#   coldmean.f107 - coldday.f107 = 141.05440281317954 - 109.7210694798465
+#                                = 31.333333333333314
+#
+# which is the -Conf percentile designWindow_ subtracted at line 227. The window
+# is the one that run used: opens 2027-06-26, 365 days, 95 per cent.
+#
+# THE TWO DISAGREE BY 0.20 PER CENT, in the same direction and by the same kind
+# of step as the high tail's 0.24 — one position of a percentile convention
+# neither implementation states. That both tails of one sample disagree by about
+# the same fraction is itself evidence for the convention being the cause rather
+# than the window or the moving mean, either of which would move the tails by
+# different amounts. It remains an open question rather than an explanation,
+# because pctl_ has not been read.
+window_open,matlab_dF107_day_low
+2027-06-26,31.333333333333314

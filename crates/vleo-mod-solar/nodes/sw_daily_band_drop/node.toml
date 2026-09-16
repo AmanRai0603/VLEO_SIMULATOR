@@ -1,0 +1,138 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_daily_band_drop"
+label = "Within-rotation daily drop"
+folder = "sw_daily_band_drop"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "declared"
+owner = "environment"
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1341
+state = "published"
+
+# The prior implementation, named so the parity grid beside this node has
+# something to be the parity of. Same function and same line as the high tail:
+# designWindow_ reads both percentiles from one sample and publishes neither, so
+# what the grid holds is the drop implied by the driver sets it did publish,
+# coldmean minus coldday.
+migrated_from = "prf_density.m:221 (01_kernel/sw_study/06_density, local function designWindow_)"
+# The same 1 per cent as the high tail, and for the same reasons: a percentile
+# convention neither implementation states, a record with a 273-day gap, and a
+# grid that must still fail a wrong window or a wrong tail. The two tails are
+# read from one sorted sample by one call, so a tolerance that fits one fits the
+# other.
+parity_tolerance = 0.01
+
+# A statistic of the pinned record with no input, so it is declared rather than
+# computed. There is nothing to compute it FROM inside the tree, and the number
+# must be re-measured if the bundle version changes.
+
+[question]
+text = "How far below its own rotation does a single day of F10.7 fall, at the declared confidence?"
+note = """
+The other tail of sw_daily_band_spread's sample, and a separate row because it
+is a separate number: the departures are not symmetric. The sun has a floor and
+no ceiling, so a day can rise further above its rotation than it can fall below
+it, and a design that mirrors one tail onto the other is assuming a shape the
+record does not have.
+
+It is the cold side, which sounds like the side nobody sizes against. It is not:
+a cold day is the low-drag case, and the low-drag case is what a propellant
+budget's LOWER bound and an aerodynamic control authority's worst case are made
+of. The hot day and the cold day both bound something.
+"""
+
+[maths]
+# A person has NOT read this relation against its source yet. The relation is
+# the one prf_density/designWindow_ uses, read from the MATLAB source rather
+# than inferred, but reading a relation and agreeing it are different acts.
+confirmed_by = ""
+expression = "dF107_day_low = -pctl(F107 - movmean(F107, 27 d), 0.05) over the 2001 days ending at the window = 31.2722 sfu"
+source = "noaa_swpc"
+
+[theory]
+why = """
+sw_daily_band_spread takes the daily record, subtracts its own centred 27-day
+moving mean, and reads the 95th percentile of what is left. This reads the 5th
+percentile of the same sample, and publishes its magnitude.
+
+That it is a second row rather than the same row negated is the whole point.
+The departures are skewed. Over the 2001 days before the declared window the
+upper tail reaches +34.23 and the lower only -31.27, a difference of about nine
+per cent, and the reason is physical rather than statistical: F10.7 has a floor
+near 65 sfu that the quiet sun sits on, so a rotation mean already near the
+floor has little room to fall and plenty to rise. Mirroring the upper tail would
+make the cold day about three sfu colder than the record supports, which is a
+denser atmosphere than the cold case actually is and a propellant budget bounded
+in the wrong place.
+
+The magnitude is published rather than the signed percentile so that the row
+reads as a distance, its declared floor is zero, and the sign lives in the
+relation that consumes it rather than in the number. A row whose value is
+negative and whose consumers must remember to add rather than subtract is a row
+waiting to be used the wrong way round once.
+"""
+reading = """
+31.27 sfu below the rotation the day sits in, against 34.23 above it. One day in
+twenty is at least that far down, on the same sample and by the same call.
+
+The same method on Ap gives 10.59, published by sw_ap_daily_band_drop beside
+this one, and there the asymmetry is much larger: 15.00 up against 10.59 down,
+forty per cent wider on the hot side. Ap sits closer to its own floor than F10.7
+does to its, so it has even less room to fall.
+"""
+
+[[theory.step]]
+text = "Take the daily record up to the day the window opens, and no further, and subtract the centred 27-day moving mean. The sample is identical to sw_daily_band_spread's — the same days, the same moving mean, one measurement."
+math = "dev(t) = F107(t) - movmean(F107, 27)(t)"
+
+[[theory.step]]
+text = "Read the 5th percentile instead of the 95th. One call on one sorted sample gives both tails; this row is the lower one."
+math = "pctl(dev, 0.05) = -31.2722 sfu"
+
+[[theory.step]]
+text = "Publish its magnitude, so the row is a distance with a floor of zero and the sign travels with the relation that uses it."
+math = "dF107_day_low = -pctl(dev, 0.05) = +31.2722 sfu"
+
+[[assumption]]
+text = "The departures are asymmetric, and this row exists because of it"
+fails_when = "it is treated as the negation of sw_daily_band_spread. It is nine per cent smaller. Anything that mirrors one tail onto the other is asserting a symmetry the record refuses, and on Ap the same mirroring would be wrong by forty per cent"
+
+[[assumption]]
+text = "One number holds for the whole window, and the window is a year"
+fails_when = "the spread is not constant across a cycle — it widens near maximum as active regions grow — so a single percentile measured on the 2001 days before the window is too wide for a quiet stretch inside it and too narrow for an active one. The MATLAB source says the same thing about its own sigma in as many words: 'sigma is NOT flat across the cycle; a design that uses one number is too tight somewhere and too loose somewhere else'"
+
+[[assumption]]
+text = "The 27-day moving mean is the rotation"
+fails_when = "the solar rotation is 27.27 days at the equator and slower at the poles, and the active longitudes that drive F10.7 are not at one latitude. A 27-day window is the conventional round number rather than a measured period, and the departures it leaves carry whatever the mismatch contributes"
+
+[[assumption]]
+text = "It is the record's own daily scatter, not a forecast error"
+fails_when = "this is read as an uncertainty. It is not: it says how far below its rotation the sun has gone, measured on days that already happened. What a forecast of a future day would get wrong is sw_uncertainty_growth's question and a larger number"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "dF107_day_low"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 120.0
+reason_lower = "a drop of zero would mean no day ever falls below its rotation mean, which the record contradicts on about half the days it holds; below zero is not a distance, and a negative value here means the tail has been read from the wrong end"
+reason_upper = "above 120 sfu the departure exceeds the largest single-day excursion in the record in either direction, so a value there is an arithmetic error rather than a quiet sun"
+
+[value]
+number = 31.2722222222
+# NOT A CONFIRMATION. Derived on 2026-09-16 from bundles/solar-weather@2026.09.14
+# by the method above, and cross-checked against the 31.3333 the MATLAB tool's
+# own driver sets imply for the same window — a 0.20 per cent difference between
+# two implementations sharing no code, recorded in parity.csv beside this sheet.
+# Nobody has yet read the number and agreed it, which is what this field is for.
+confirmed_by = ""
+
+[view]
+kind = "number"

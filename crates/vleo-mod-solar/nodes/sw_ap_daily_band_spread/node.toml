@@ -11,7 +11,7 @@ owner = "environment"
 tier = "A"
 criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1341
+order = 1342
 state = "published"
 
 # The prior implementation, named so the parity grid beside this node has
@@ -51,6 +51,10 @@ ORDER as the 0.083 the F10.7 row differs by. Ap is simply a smaller number, so
 the same convention difference reads as 1.01 per cent where F10.7's reads as
 0.24, which is why the grid beside this row is declared at 2 per cent and its
 F10.7 twin at 1.
+
+The cold tail is sw_ap_daily_band_drop at 10.59, forty-two per cent shallower
+than this. That gap is the largest asymmetry in the subsystem and it is physical:
+Ap floors at zero, so a rotation cannot fall further than its own mean.
 """
 
 [[theory.step]]
@@ -62,7 +66,7 @@ text = "Subtract the centred 27-day moving mean from each day."
 math = "dev(t) = Ap(t) - movmean(Ap, 27)(t)"
 
 [[theory.step]]
-text = "Read the 95th percentile of the departures."
+text = "Read the 95th percentile of the departures. The 5th is sw_ap_daily_band_drop's own row: at 10.59 against this 15.00 the two tails are forty-two per cent apart, because Ap is truncated at zero."
 math = "pctl(dev, 0.95) = +15.0019   ·   pctl(dev, 0.05) = -10.5889"
 
 [[assumption]]

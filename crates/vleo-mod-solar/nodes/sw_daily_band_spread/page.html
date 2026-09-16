@@ -41,12 +41,12 @@ reader which of the two their problem is.
 <ol class="derive">
 <li><span class="dt">Take the daily record up to the day the window opens, and no further. A percentile that includes days after the window would be using what it is trying to predict.</span></li>
 <li><span class="dt">Subtract the centred 27-day moving mean from each day. What remains is the departure from the rotation that day sits in, with the rotation removed by construction rather than by a fitted period.</span><code class="dm">dev(t) = F107(t) - movmean(F107, 27)(t)</code></li>
-<li><span class="dt">Read the 95th percentile of the departures. This is the upper edge; the 5th is the lower and is measured but not published.</span><code class="dm">pctl(dev, 0.95) = +34.2315 sfu · pctl(dev, 0.05) = -31.2722 sfu</code></li>
+<li><span class="dt">Read the 95th percentile of the departures. This is the upper edge; the 5th is the lower and is sw_daily_band_drop's own row, because the two tails are not each other's negation.</span><code class="dm">pctl(dev, 0.95) = +34.2315 sfu · pctl(dev, 0.05) = -31.2722 sfu</code></li>
 </ol>
 </div>
 <h4>Reading the answer</h4>
-<p class="reading">34.23 sfu, against a central expectation near 160 for the declared window. A day one in twenty reaches about a fifth above the level the mission sustains, and the cold side is nearly as deep at -31.27.</p>
-<p class="reading">The same method on Ap gives +15.00 and -10.59. Those are measured and recorded here but not published: the rows that would read them, sw_ap_design_short and its cold sibling, do not exist yet, and a published number nothing reads is a number nobody checks.</p>
+<p class="reading">34.23 sfu, against a central expectation near 160 for the declared window. A day one in twenty reaches about a fifth above the level the mission sustains.</p>
+<p class="reading">The cold side is NOT the same number and is not this row: sw_daily_band_drop beside this one publishes it at 31.27, nine per cent shallower, because F10.7 has a floor and no ceiling. The same pair on Ap is sw_ap_daily_band_spread at 15.00 and sw_ap_daily_band_drop at 10.59, where the asymmetry reaches forty-two per cent.</p>
 <p class="maths concl">which is the relation this node states: <code>dF107_day = pctl(F107 - movmean(F107, 27 d), 0.95) over the 2001 days ending at the window = 34.2315 sfu</code></p>
 </section>
 <section class="panel" data-panel="2">

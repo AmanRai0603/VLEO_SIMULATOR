@@ -1,0 +1,17 @@
+{
+  "id": "sw_ap_daily_band_drop",
+  "state": "published",
+  "sheet_hash": "0a0d01",
+  "impl_hash": "222325",
+  "owner": "environment",
+  "tier": "A",
+  "fixtures": 0,
+  "criticality": "minor",
+  "reviewers": 1,
+  "differential_fill": false,
+  "migrated_from": "prf_density.m:221 (01_kernel/sw_study/06_density, local function designWindow_)",
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did", "a declared value with nobody's confirmation against it"]
+}
