@@ -10,6 +10,7 @@
     }
   },
   "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postAttachCommand": "bash .devcontainer/start.sh",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -20,9 +21,6 @@
         "rust-analyzer.check.command": "clippy"
       }
     }
-  },
-  "remoteEnv": {
-    "VLEO_DATA": "${containerWorkspaceFolder}/.vleo/data"
   },
   "forwardPorts": [
     7777

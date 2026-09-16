@@ -62,17 +62,23 @@ from 200.14 to 258.23 sfu and stops the closure passing.
 
 ### In a Codespace, or any devcontainer
 
-`.devcontainer/` pins the toolchain, fills the reference-data store and
-regenerates the per-node artefacts on create, so a fresh Codespace needs no
-setup:
+**There is nothing to type.** `.devcontainer/` pins the toolchain, fills the
+reference-data store, regenerates the per-node artefacts and builds the daemon
+when the container is created; attaching to it starts the daemon if nothing is
+already serving. Port 7777 is forwarded and opens a preview, so the first tab a
+new Codespace shows you is the tool.
+
+To run it yourself instead — after stopping the one that started, or on a
+machine with no devcontainer:
 
 ```
 cargo run --release -p vleo-daemon
 ```
 
-Port 7777 is forwarded and opens a preview by itself. Nothing about the tool is
-different there — it is the same single process serving the same one origin,
-which is the point of it having no database and no service to install.
+Nothing about the tool is different there. It is the same single process
+serving the same one origin, which is the point of it having no database and no
+service to install. The reference-data store is kept under `$HOME`, outside the
+checkout, so running the tool never makes the working tree look dirty.
 
 ### From the command line
 
