@@ -22,6 +22,7 @@ cargo run -q -p vleo-cli --bin vleo -- data sync || true
 
 echo "generating the per-node artefacts and checking they match what is committed"
 cargo run -q -p xtask -- docs
+cargo run -q -p xtask -- variables
 git diff --quiet || echo "note: the committed artefacts differ from the sheets — run 'cargo run -p xtask -- docs' and commit"
 
 # Built here, once, so that attaching to the Codespace starts the tool in a
