@@ -1,0 +1,125 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_daily_band_spread"
+label = "Within-rotation daily spread"
+folder = "sw_daily_band_spread"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "declared"
+owner = "environment"
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1340
+state = "published"
+
+# The prior implementation, named so the parity grid beside this node has
+# something to be the parity of. designWindow_ computes this spread inline
+# rather than publishing it, so what the grid holds is the spread implied by
+# the driver sets it did publish: hotday minus hotmean.
+migrated_from = "prf_density.m:221 (01_kernel/sw_study/06_density, local function designWindow_)"
+# Two implementations sharing no code, over a record with a 273-day gap and a
+# percentile convention neither states. 1 per cent is loose enough that the
+# convention does not fail the grid and tight enough that a wrong window, a
+# wrong moving-mean width or the wrong tail would.
+parity_tolerance = 0.01
+
+# A statistic of the pinned record with no input, so it is declared rather than
+# computed. There is nothing to compute it FROM inside the tree, and the number
+# must be re-measured if the bundle version changes.
+
+[question]
+text = "How far above its own rotation does a single day of F10.7 reach, at the declared confidence?"
+note = """
+The mean band says what the mission SUSTAINS. This says what one day inside it
+does. They are different numbers and a design uses them for different things:
+an array is sized on the sustained level, a thermal case and a drag transient
+on the day. A tool that publishes only the sustained number has decided for the
+reader which of the two their problem is.
+"""
+
+[maths]
+# A person has NOT read this relation against its source yet. The relation is
+# the one prf_density/designWindow_ uses, read from the MATLAB source rather
+# than inferred, but reading a relation and agreeing it are different acts.
+confirmed_by = ""
+expression = "dF107_day = pctl(F107 - movmean(F107, 27 d), 0.95) over the 2001 days ending at the window = 34.2315 sfu"
+source = "noaa_swpc"
+
+[theory]
+why = """
+A rotation mean is an average over 27 days, and averages hide the days they are
+made of. The sun turns, an active region faces us for a week and is gone, and
+F10.7 swings tens of sfu around a rotation mean that never moves. A design told
+only the mean is told the quiet part.
+
+The measurement is deliberately not a model. Take the daily record, subtract
+its own centred 27-day moving mean, and what is left is each day's departure
+from the rotation it belongs to — the sun's rotation removed by construction
+rather than by a fitted period. The 95th percentile of that sample is how far
+above its rotation a day reaches, one day in twenty.
+
+It is measured on the 2001 days ENDING AT THE WINDOW rather than on the whole
+record, which is a choice with a cost. Recent years are the ones whose activity
+most resembles the window's, and the spread is not constant across a cycle — it
+is widest near maximum, when active regions are largest. A window opening in a
+different part of a cycle should be measured against a different stretch, and
+this row holds one number for one window.
+"""
+reading = """
+34.23 sfu, against a central expectation near 160 for the declared window. A
+day one in twenty reaches about a fifth above the level the mission sustains,
+and the cold side is nearly as deep at -31.27.
+
+The same method on Ap gives +15.00 and -10.59. Those are measured and recorded
+here but not published: the rows that would read them, sw_ap_design_short and
+its cold sibling, do not exist yet, and a published number nothing reads is a
+number nobody checks.
+"""
+
+[[theory.step]]
+text = "Take the daily record up to the day the window opens, and no further. A percentile that includes days after the window would be using what it is trying to predict."
+
+[[theory.step]]
+text = "Subtract the centred 27-day moving mean from each day. What remains is the departure from the rotation that day sits in, with the rotation removed by construction rather than by a fitted period."
+math = "dev(t) = F107(t) - movmean(F107, 27)(t)"
+
+[[theory.step]]
+text = "Read the 95th percentile of the departures. This is the upper edge; the 5th is the lower and is measured but not published."
+math = "pctl(dev, 0.95) = +34.2315 sfu   ·   pctl(dev, 0.05) = -31.2722 sfu"
+
+[[assumption]]
+text = "One number holds for the whole window, and the window is a year"
+fails_when = "the spread is not constant across a cycle — it widens near maximum as active regions grow — so a single percentile measured on the 2001 days before the window is too wide for a quiet stretch inside it and too narrow for an active one. The MATLAB source says the same thing about its own sigma in as many words: 'sigma is NOT flat across the cycle; a design that uses one number is too tight somewhere and too loose somewhere else'"
+
+[[assumption]]
+text = "The 27-day moving mean is the rotation"
+fails_when = "the solar rotation is 27.27 days at the equator and slower at the poles, and the active longitudes that drive F10.7 are not at one latitude. A 27-day window is the conventional round number rather than a measured period, and the departures it leaves carry whatever the mismatch contributes"
+
+[[assumption]]
+text = "It is the record's own daily scatter, not a forecast error"
+fails_when = "this is read as an uncertainty. It is not: it says how variable the sun is within a rotation, measured on days that already happened. What a forecast of a future day would get wrong is sw_uncertainty_growth's question and a larger number"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "dF107_day"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 120.0
+reason_lower = "a spread of zero would mean every day equals its rotation mean, which the record contradicts on every day it holds; below zero is not a spread"
+reason_upper = "above 120 sfu the departure exceeds the largest single-day excursion in the record, so a value there is an arithmetic error rather than an active sun"
+
+[value]
+number = 34.2314814815
+# NOT A CONFIRMATION. Derived on 2026-09-16 from bundles/solar-weather@2026.09.14
+# by the method above, and cross-checked against the MATLAB tool's own +34.1481
+# for the same window — a 0.24 per cent difference between two implementations
+# sharing no code, recorded in parity.csv beside this sheet. Nobody has yet read
+# the number and agreed it, which is what this field is for.
+confirmed_by = ""
+
+[view]
+kind = "number"

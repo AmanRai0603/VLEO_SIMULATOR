@@ -1,0 +1,25 @@
+# The prior implementation, at the one window it was exported for.
+#
+# NOT A FIXTURE. An expected value may never come from the implementation under
+# test, and this file is the OTHER implementation's answer — a second opinion.
+# A disagreement here is a finding about one of the two, and the answer is never
+# to widen parity_tolerance or to edit this file until it agrees.
+#
+# WHERE THIS NUMBER COMES FROM. designWindow_ does not publish the spread; it
+# adds it to the rotation band and publishes the result. So the spread is read
+# back out of the driver sets the MATLAB run did publish, in
+# matlab/reference/mission_drivers.csv:
+#
+#   hotday.f107 - hotmean.f107 = 209.75456779760012 - 175.60641964945182
+#                              = 34.14814814814815
+#
+# which is the +Conf percentile designWindow_ added at line 227. The window is
+# the one that run used: opens 2027-06-26, 365 days, 95 per cent.
+#
+# THE TWO DISAGREE BY 0.24 PER CENT and the reason is not established. The
+# likeliest candidate is the percentile convention — MATLAB's pctl_ and the
+# derivation here interpolate a sorted sample slightly differently — but that
+# was not confirmed by reading pctl_, so it is written here as an open question
+# rather than as an explanation.
+window_open,matlab_dF107_day
+2027-06-26,34.14814814814815

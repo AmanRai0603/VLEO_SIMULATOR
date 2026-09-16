@@ -1,0 +1,171 @@
+<article class="node" data-node="sw_daily_band_spread" data-sheet-hash="29cc7b" data-impl-hash="222325">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Within-rotation daily spread</h2>
+  <p class="ident"><code>sw_daily_band_spread</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How far above its own rotation does a single day of F10.7 reach, at the declared confidence?</p>
+<p class="maths"><code>dF107_day = pctl(F107 - movmean(F107, 27 d), 0.95) over the 2001 days ending at the window = 34.2315 sfu</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The mean band says what the mission SUSTAINS. This says what one day inside it
+does. They are different numbers and a design uses them for different things:
+an array is sized on the sustained level, a thermal case and a drag transient
+on the day. A tool that publishes only the sustained number has decided for the
+reader which of the two their problem is.
+</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>One number holds for the whole window, and the window is a year</dt><dd>fails when the spread is not constant across a cycle — it widens near maximum as active regions grow — so a single percentile measured on the 2001 days before the window is too wide for a quiet stretch inside it and too narrow for an active one. The MATLAB source says the same thing about its own sigma in as many words: 'sigma is NOT flat across the cycle; a design that uses one number is too tight somewhere and too loose somewhere else'</dd>
+<dt>The 27-day moving mean is the rotation</dt><dd>fails when the solar rotation is 27.27 days at the equator and slower at the poles, and the active longitudes that drive F10.7 are not at one latitude. A 27-day window is the conventional round number rather than a measured period, and the departures it leaves carry whatever the mismatch contributes</dd>
+<dt>It is the record's own daily scatter, not a forecast error</dt><dd>fails when this is read as an uncertainty. It is not: it says how variable the sun is within a rotation, measured on days that already happened. What a forecast of a future day would get wrong is sw_uncertainty_growth's question and a larger number</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">A rotation mean is an average over 27 days, and averages hide the days they are made of. The sun turns, an active region faces us for a week and is gone, and F10.7 swings tens of sfu around a rotation mean that never moves. A design told only the mean is told the quiet part.</p>
+<p class="why">The measurement is deliberately not a model. Take the daily record, subtract its own centred 27-day moving mean, and what is left is each day's departure from the rotation it belongs to — the sun's rotation removed by construction rather than by a fitted period. The 95th percentile of that sample is how far above its rotation a day reaches, one day in twenty.</p>
+<p class="why">It is measured on the 2001 days ENDING AT THE WINDOW rather than on the whole record, which is a choice with a cost. Recent years are the ones whose activity most resembles the window's, and the spread is not constant across a cycle — it is widest near maximum, when active regions are largest. A window opening in a different part of a cycle should be measured against a different stretch, and this row holds one number for one window.</p>
+<div class="theory-walk" data-steps="3">
+<ol class="derive">
+<li><span class="dt">Take the daily record up to the day the window opens, and no further. A percentile that includes days after the window would be using what it is trying to predict.</span></li>
+<li><span class="dt">Subtract the centred 27-day moving mean from each day. What remains is the departure from the rotation that day sits in, with the rotation removed by construction rather than by a fitted period.</span><code class="dm">dev(t) = F107(t) - movmean(F107, 27)(t)</code></li>
+<li><span class="dt">Read the 95th percentile of the departures. This is the upper edge; the 5th is the lower and is measured but not published.</span><code class="dm">pctl(dev, 0.95) = +34.2315 sfu · pctl(dev, 0.05) = -31.2722 sfu</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">34.23 sfu, against a central expectation near 160 for the declared window. A day one in twenty reaches about a fifth above the level the mission sustains, and the cold side is nearly as deep at -31.27.</p>
+<p class="reading">The same method on Ap gives +15.00 and -10.59. Those are measured and recorded here but not published: the rows that would read them, sw_ap_design_short and its cold sibling, do not exist yet, and a published number nothing reads is a number nobody checks.</p>
+<p class="maths concl">which is the relation this node states: <code>dF107_day = pctl(F107 - movmean(F107, 27 d), 0.95) over the 2001 days ending at the window = 34.2315 sfu</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
+<tr class="out"><td>out</td><td><code>dF107_day</code></td><td>sw_daily_band_spread</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
+<p>This is a declared value: <b>34.2314814815</b> -, confirmed by <b></b>.</p>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_daily_band_spread() -> Ratio
+    dF107_day ← 34.2314814815          // declared, confirmed by 
+
+    // a guard whose reason is not written down gets deleted
+    require dF107_day ≥ 0
+    require dF107_day ≤ 120
+    require dF107_day is finite
+
+    return dF107_day
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>dF107_day &ge; 0</code> — a spread of zero would mean every day equals its rotation mean, which the record contradicts on every day it holds; below zero is not a spread</li>
+<li><code>dF107_day &le; 120</code> — above 120 sfu the departure exceeds the largest single-day excursion in the record, so a value there is an arithmetic error rather than an active sun</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sw_daily_band_spread" data-lo="0" data-hi="120" data-symbol="dF107_day">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How far above its own rotation does a single day of F10.7 reach, at the declared confidence?
+///
+/// `dF107_day = pctl(F107 - movmean(F107, 27 d), 0.95) over the 2001 days ending at the window = 34.2315 sfu`
+///
+/// Source: `noaa_swpc`
+///
+/// The mean band says what the mission SUSTAINS. This says what one day
+/// inside it does. They are different numbers and a design uses them for
+/// different things: an array is sized on the sustained level, a thermal case
+/// and a drag transient on the day. A tool that publishes only the sustained
+/// number has decided for the reader which of the two their problem is.
+///
+/// # Assumptions
+///
+/// * One number holds for the whole window, and the window is a year — fails when the spread is not constant across a cycle — it widens near maximum as active regions grow — so a single percentile measured on the 2001 days before the window is too wide for a quiet stretch inside it and too narrow for an active one. The MATLAB source says the same thing about its own sigma in as many words: 'sigma is NOT flat across the cycle; a design that uses one number is too tight somewhere and too loose somewhere else'
+/// * The 27-day moving mean is the rotation — fails when the solar rotation is 27.27 days at the equator and slower at the poles, and the active longitudes that drive F10.7 are not at one latitude. A 27-day window is the conventional round number rather than a measured period, and the departures it leaves carry whatever the mismatch contributes
+/// * It is the record's own daily scatter, not a forecast error — fails when this is read as an uncertainty. It is not: it says how variable the sun is within a rotation, measured on days that already happened. What a forecast of a future day would get wrong is sw_uncertainty_growth's question and a larger number
+pub const NODE_ID: &amp;str = &quot;sw_daily_band_spread&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x934b723e5d29cc7b;
+
+pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
+    // generated · a declared value, converted from the unit it was written in
+    let declared: Ratio = match Ratio::from_unit(34.2314814815, Unit::One) {
+        Some(q) =&gt; q,
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;dF107_day&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+    };
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = declared;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;dF107_day&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;dF107_day&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;a spread of zero would mean every day equals its rotation mean, which the record contradicts on every day it holds; below zero is not a spread&quot; });
+    }
+    if answer.get() &gt; 120.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;dF107_day&quot;, value: answer.get(), bound: 120.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;above 120 sfu the departure exceeds the largest single-day excursion in the record, so a value there is an arithmetic error rather than an active sun&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0 — a spread of zero would mean every day equals its rotation mean, which the record contradicts on every day it holds; below zero is not a spread</li>
+<li><code>OutOfDomain</code> above 120 — above 120 sfu the departure exceeds the largest single-day excursion in the record, so a value there is an arithmetic error rather than an active sun</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_daily_band_spread"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>0 &hellip; 120</code> -.</p>
+<ul class="guards"><li>lower — a spread of zero would mean every day equals its rotation mean, which the record contradicts on every day it holds; below zero is not a spread</li><li>upper — above 120 sfu the departure exceeds the largest single-day excursion in the record, so a value there is an arithmetic error rather than an active sun</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+<li>a declared value with nobody's confirmation against it</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>
