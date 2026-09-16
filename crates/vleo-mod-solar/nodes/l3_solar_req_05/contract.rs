@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Ap_req_short` (Ap, single day), in `-`.
 pub const NODE_ID: &str = "l3_solar_req_05";
-pub const SHEET_HASH: u64 = 0x9250776791235b4d;
+pub const SHEET_HASH: u64 = 0x5362e9efd37d6504;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
 ];

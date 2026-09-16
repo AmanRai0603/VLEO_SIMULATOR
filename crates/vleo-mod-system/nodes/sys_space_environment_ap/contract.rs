@@ -6,12 +6,12 @@
 use vleo_core::fault::Fault;
 use vleo_core::units::*;
 
-/// What this node publishes: `Ap_day_sys` (Ap, single day), in `-`.
+/// What this node publishes: `Ap_sys` (Ap, sustained), in `-`.
 pub const NODE_ID: &str = "sys_space_environment_ap";
-pub const SHEET_HASH: u64 = 0x3d734192e20a2f20;
+pub const SHEET_HASH: u64 = 0x643016096e92c010;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
-    "l3_solar_interface.ap_hotday",
+    "l3_solar_interface.ap_hotmean",
 ];
 /// The variables this node publishes.
 pub const OUTPUT_VARS: &[&str] = &["sys_space_environment_ap"];

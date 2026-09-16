@@ -6,12 +6,12 @@
 use vleo_core::fault::Fault;
 use vleo_core::units::*;
 
-/// What this node publishes: `Kp_sys` (Kp, worst slot of the design day), in `-`.
+/// What this node publishes: `Kp_sys` (Kp, worst slot of the sustained day), in `-`.
 pub const NODE_ID: &str = "sys_space_environment_kp";
-pub const SHEET_HASH: u64 = 0x7ffd40041fc46581;
+pub const SHEET_HASH: u64 = 0xdad48006ee870c21;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
-    "l3_solar_interface.kp_peak_hotday",
+    "l3_solar_interface.kp_peak_hotmean",
 ];
 /// The variables this node publishes.
 pub const OUTPUT_VARS: &[&str] = &["sys_space_environment_kp"];

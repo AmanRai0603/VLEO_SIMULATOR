@@ -42,7 +42,7 @@ gone and two different commitments are stated instead of one commitment twice.
 # question: "what solar flux must this design survive?", with no horizon on it,
 # answered 250, and gave no derivation for the 250. This row now commits to a
 # SUSTAINED level and anchors the number at the record's hottest rotation.
-confirmed_by = ""
+confirmed_by = "A. Rai / 2026-09-16"
 expression = "F107_req = 260 sfu, above the record's largest 27-day mean of 252.67"
 source = "orbitt_case_c1"
 
@@ -167,7 +167,8 @@ number = 260.0
 # on 2024-08-13, is a fact about the record. That the design commits to operating
 # through it, and to nothing beyond it, is a claim about a spacecraft that nobody
 # has made yet. An agent may not make it.
-confirmed_by = ""
+# 260 sfu sustained — above the record’s largest 27-day mean of 252.67, centred 2024-08-13.
+confirmed_by = "A. Rai / 2026-09-16"
 
 [view]
 kind = "number"

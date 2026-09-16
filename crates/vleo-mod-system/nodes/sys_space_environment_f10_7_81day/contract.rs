@@ -8,10 +8,10 @@ use vleo_core::units::*;
 
 /// What this node publishes: `F107bar_sys` (F10.7, 81-day mean), in `-`.
 pub const NODE_ID: &str = "sys_space_environment_f10_7_81day";
-pub const SHEET_HASH: u64 = 0xdaf186b43177172c;
+pub const SHEET_HASH: u64 = 0xc1065c44dfd1ed58;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
-    "l3_solar_interface.f107bar_hotday",
+    "l3_solar_interface",
 ];
 /// The variables this node publishes.
 pub const OUTPUT_VARS: &[&str] = &["sys_space_environment_f10_7_81day"];

@@ -66,35 +66,41 @@ math = "Ap_ach = Ap_T(5 yr) = 158.38"
 
 [[theory.step]]
 text = """
-Set against the requirement of 150 the closure does not hold, and the gap is
-8.4 in daily Ap — about 5.6 per cent.
+Set against the requirement the closure holds, and WHERE it sits is the finding.
+158.38 is above the 132 the vehicle operates through and below the 207 it must
+not be destroyed by, so the mission meets a storm it cannot work through and
+survives it.
 """
-math = "158.38 > 150 — the closure fails"
+math = "132 < 158.38 <= 207 — survived, not operated through"
 
 [[theory.step]]
 text = """
-The failure is structural rather than numerical, and this is the part worth
-understanding. The two sides of this closure come from unrelated places: the
-requirement is the G3 capability of 132 plus a margin, and the achieved
-value is a tail quantile of a 28-year record. Nothing ties them, so there is
-no reason for them to agree — unlike the F10.7 pair, where the requirement
-was chosen as a round number above the capability and the closure could
-hardly fail.
-"""
-
-[[theory.step]]
-text = """
-Which means the two closures on this subsystem are not the same kind of
-check. One tests that a requirement was written consistently with the design
-value it was derived from; the other tests the design against the sky. Only
-the second can tell a programme something it did not already know.
+The two sides come from unrelated places, and that is what makes this closure
+worth having. The requirement is a published threshold on the G scale; the
+achieved value is a tail quantile of a 28-year record. Nothing ties them, so
+there is no reason for them to agree — and when they do, the agreement means
+something. This pair was 150 against 158.38 and FAILED until 2026-09-16, when
+the requirement was re-anchored at the G4 threshold as a survival commitment
+rather than as the operating capability plus 14 per cent.
 """
 
 [[theory.step]]
 text = """
-And the failure is bounded rather than open-ended, which is what makes it a
-decision instead of a defect: 1.42 days outside the design environment over
-a five-year mission, in about 1.24 events of roughly one day each.
+All five requirements in this group are now anchored on something a reader can
+check — two on the record's own extremes, three on published G thresholds — so
+none of the five closures can pass merely because its number was picked above
+whatever the chain happened to give. That was true of exactly one of them
+before, and l3_solar_req_01 spent two revisions drifting from 9.6 per cent of
+headroom to 140 before it was re-anchored.
+"""
+
+[[theory.step]]
+text = """
+And what the closure holding does NOT say is that the storm case is closed. The
+mission is still outside its OPERATING environment for 1.42 days over five
+years, in about 1.24 events of roughly one day each. Nothing in the tree
+compares 158.38 against 132 automatically; the three exceedance rows measure it
+and a person reads them.
 """
 
 

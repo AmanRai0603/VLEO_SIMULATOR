@@ -10,7 +10,7 @@ use vleo_core::units::*;
 
 /// What Ap must this design survive on a single day inside the mission window?
 ///
-/// `Ap_req_short = ap(G2) = 80`
+/// `Ap_req_short = ap(G3) = 132`
 ///
 /// Source: `orbitt_case_c1`
 ///
@@ -26,15 +26,15 @@ use vleo_core::units::*;
 ///
 /// * It is a ceiling on the driver and says nothing about what the driver does to the vehicle — fails when a reader takes a passing closure as evidence the design is adequate. Ap is an index; what a spacecraft feels is the heating, the density and the torque it produces, through models this subsystem does not own
 /// * The worst day of a design band and the one storm of a mission are different questions — fails when somebody collapses this row into l3_solar_req_03. At the declared window the two achieved sides differ by a factor of nearly four, 41.70 against 158.38, because one is a percentile of ordinary variation and the other an extreme-value return level. A single ceiling covering both would have to be the storm one, and the design would then be claiming to operate through a G3 storm
-/// * The G2 threshold is a reasonable place for a one-day survival commitment, and nothing here establishes that — fails when the vehicle's real limit is elsewhere. 80 is a published threshold rather than an arbitrary round number, which makes it checkable, but checkable is not the same as correct: the level at which a particular design must stop is a thermal, torque and propellant question this subsystem does not see
+/// * The G3 threshold is a reasonable place for a one-day survival commitment, and nothing here establishes that — fails when the vehicle's real limit is elsewhere. 132 is a published threshold rather than an arbitrary round number, which makes it checkable, but checkable is not the same as correct: the level at which a particular design must stop is a thermal, torque and propellant question this subsystem does not see
 pub const NODE_ID: &str = "l3_solar_req_05";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x9250776791235b4d;
+pub const SHEET_HASH: u64 = 0x5362e9efd37d6504;
 
 pub fn evaluate() -> Result<Ratio, Fault> {
     // generated · a declared value, converted from the unit it was written in
-    let declared: Ratio = match Ratio::from_unit(80.0, Unit::One) {
+    let declared: Ratio = match Ratio::from_unit(132.0, Unit::One) {
         Some(q) => q,
         None => return Err(Fault::Degenerate { node: NODE_ID, field: "Ap_req_short", reason: "the declared unit does not match the declared type" }),
     };

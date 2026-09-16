@@ -88,8 +88,8 @@ fn answers_near_the_known_good_point() {
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Ratio::new(90.54720964 * scale)) {
-            assert!(v.get().is_finite(), "sys_space_environment_ap produced a value that is not a number for Ap_day_sys");
-            assert!(v.get() >= 0.0 && v.get() <= 400.0, "sys_space_environment_ap answered {} for Ap_day_sys, outside its declared domain 0 … 400 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "sys_space_environment_ap produced a value that is not a number for Ap_sys");
+            assert!(v.get() >= 0.0 && v.get() <= 400.0, "sys_space_environment_ap answered {} for Ap_sys, outside its declared domain 0 … 400 — the guard did not stop it", v.get());
         }
     }
 }
@@ -105,7 +105,7 @@ fn the_same_inputs_give_the_same_answer() {
     let b = model::evaluate(Ratio::new(90.54720964));
     match (a, b) {
         (Ok(x), Ok(y)) => {
-            assert!(x.get().to_bits() == y.get().to_bits(), "sys_space_environment_ap is not deterministic for Ap_day_sys: {} then {}", x.get(), y.get());
+            assert!(x.get().to_bits() == y.get().to_bits(), "sys_space_environment_ap is not deterministic for Ap_sys: {} then {}", x.get(), y.get());
         }
         (Err(_), Err(_)) => {}
         _ => panic!("sys_space_environment_ap refused on one call and answered on the other"),

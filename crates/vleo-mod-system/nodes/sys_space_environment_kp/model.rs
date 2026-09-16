@@ -10,7 +10,7 @@ use vleo_core::units::*;
 
 /// What Kp does the system design to, in the worst three-hour slot of its design day?
 ///
-/// `Kp_sys = l3_solar_interface.kp_peak_hotday`
+/// `Kp_sys = l3_solar_interface.kp_peak_hotmean`
 ///
 /// Source: `iaga_kp_ap`
 ///
@@ -29,7 +29,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sys_space_environment_kp";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x7ffd40041fc46581;
+pub const SHEET_HASH: u64 = 0xdad48006ee870c21;
 
 pub fn evaluate(crossing: Ratio) -> Result<Ratio, Fault> {
     // ---- HOLE 1 : receive the peak-slot Kp of the disturbed design day across the seam -> Ratio

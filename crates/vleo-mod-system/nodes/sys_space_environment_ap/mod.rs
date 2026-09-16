@@ -1,9 +1,9 @@
 // GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
 // regeneration and fails the regeneration diff in the gate.
-//! `sys_space_environment_ap` — Ap, single day
+//! `sys_space_environment_ap` — Ap, sustained
 //!
-//! What geomagnetic index does the system design a single day to?
+//! What geomagnetic index does the system design to, as a level sustained over the mission?
 
 #[path = "model.rs"]
 pub mod model;

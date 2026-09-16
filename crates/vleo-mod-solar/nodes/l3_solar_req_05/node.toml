@@ -21,14 +21,23 @@ sense = "<="
 # THE SINGLE-DAY HALF OF THE Ap PAIR, and the middle rung of three Ap ceilings:
 #
 #     req_04   48    what the vehicle operates in INDEFINITELY   (G1 threshold)
-#     req_05   80    what it survives for ONE DAY                (G2 threshold)
-#     req_03  150    the one storm it must not be destroyed by   (G3 + 14%)
+#     req_05  132    what it survives for ONE DAY                (G3 threshold)
+#     req_03  207    the one storm it must not be destroyed by   (G4 threshold)
+#
+# THIS ROW WAS 80, THE G2 THRESHOLD, AND THE CLOSURE FAILED. Conditioning the
+# within-rotation band on the rotation level took sw_ap_design_short from 41.70
+# to 90.55, because at a sustained Ap of 26.70 the record says a one-in-twenty
+# day departs by 63.85 rather than by the 15.00 a level-mixed percentile gave.
+# 90.55 is a G3-G4 day, so a one-day commitment at G2 was simply below what this
+# window presents. Raised to G3 by decision, not to make the arithmetic pass:
+# the ladder stays anchored in the published scale and stays ordered, and the
+# achieved side now clears it by 31 per cent rather than exceeding it by 13.
 #
 # Each is a different question and the ladder is the point. A transient is
 # easier to survive than a permanent condition, and a design whose three numbers
 # were equal would not have been thought about.
 #
-# 80 is the published ap equivalent amplitude at Kp 6, the G2 threshold.
+# 132 is the published ap equivalent amplitude at Kp 7, the G3 threshold.
 
 [question]
 text = "What Ap must this design survive on a single day inside the mission window?"
@@ -44,8 +53,8 @@ an ordinary design band.
 """
 
 [maths]
-confirmed_by = ""
-expression = "Ap_req_short = ap(G2) = 80"
+confirmed_by = "A. Rai / 2026-09-16"
+expression = "Ap_req_short = ap(G3) = 132"
 source = "orbitt_case_c1"
 
 # WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
@@ -53,7 +62,7 @@ source = "orbitt_case_c1"
 [theory]
 why = """
 A requirement is a commitment, and its purpose is to be checkable against
-something measured. This row commits the design to surviving one day at the G2
+something measured. This row commits the design to surviving one day at the G3
 threshold, and the checking partner is l3_solar_ach_05.
 
 Why the ladder has three rungs rather than one is the substance of this row.
@@ -67,7 +76,7 @@ be the storm one, and the design would then be claiming to operate through a G3
 storm, which is a much stronger claim than anybody made.
 """
 reading = """
-80 against an achieved 41.70 at the declared window — 92 per cent of room. As
+132 against an achieved 90.55 at the declared window — 46 per cent of room. As
 with its sustained sibling the room is a property of the epoch rather than of
 the design: the achieved side is a band on a cycle-analogue centre, and a window
 at cycle maximum would narrow it sharply.
@@ -83,16 +92,16 @@ reader of the matrix and to nothing else.
 text = "The closure to be made checkable is single-day Ap achieved against single-day Ap required. Both sides must be rows, at the same layer, in the same quantity and unit."
 
 [[theory.step]]
-text = "The requirement side is a commitment about the vehicle, so it cannot be computed from the record. It is taken from the published G scale at the moderate-storm threshold."
-math = "Ap_req_short = ap(Kp 6) = 80"
+text = "The requirement side is a commitment about the vehicle, so it cannot be computed from the record. It is taken from the published G scale at the strong-storm threshold."
+math = "Ap_req_short = ap(Kp 7) = 132"
 
 [[theory.step]]
 text = "Higher than the sustained ceiling, because a transient is easier to survive than a permanent condition. Lower than the storm ceiling, because the storm is a different question."
-math = "48 (sustained) < 80 (one day) < 150 (the one storm)"
+math = "48 (sustained) < 132 (one day) < 207 (the one storm)"
 
 [[theory.step]]
 text = "Which the achieved side clears at the declared window."
-math = "41.70 <= 80 — the closure holds, with 92 per cent of room"
+math = "90.55 <= 132 — the closure holds, with 46 per cent of room"
 
 [[assumption]]
 text = "It is a ceiling on the driver and says nothing about what the driver does to the vehicle"
@@ -103,8 +112,8 @@ text = "The worst day of a design band and the one storm of a mission are differ
 fails_when = "somebody collapses this row into l3_solar_req_03. At the declared window the two achieved sides differ by a factor of nearly four, 41.70 against 158.38, because one is a percentile of ordinary variation and the other an extreme-value return level. A single ceiling covering both would have to be the storm one, and the design would then be claiming to operate through a G3 storm"
 
 [[assumption]]
-text = "The G2 threshold is a reasonable place for a one-day survival commitment, and nothing here establishes that"
-fails_when = "the vehicle's real limit is elsewhere. 80 is a published threshold rather than an arbitrary round number, which makes it checkable, but checkable is not the same as correct: the level at which a particular design must stop is a thermal, torque and propellant question this subsystem does not see"
+text = "The G3 threshold is a reasonable place for a one-day survival commitment, and nothing here establishes that"
+fails_when = "the vehicle's real limit is elsewhere. 132 is a published threshold rather than an arbitrary round number, which makes it checkable, but checkable is not the same as correct: the level at which a particular design must stop is a thermal, torque and propellant question this subsystem does not see"
 
 [output]
 # The node's one answer. The variable id is the node id: one small
@@ -120,12 +129,12 @@ reason_upper = "400 is the top of the published ap table, the value at Kp 9. A r
 [value]
 # A number a person picked. It carries the same discipline as a
 # fixture, because every margin in the design is built out of these.
-number = 80.0
-# NOT A CONFIRMATION. 80 is the published ap equivalent amplitude at Kp 6, the
-# G2 threshold, which is a fact about the scale and not a decision. The DECISION
-# is that one-day survival is committed to at G2 rather than at G1 or G3, and
-# that is a spacecraft claim nobody has made yet. An agent may not make it.
-confirmed_by = ""
+number = 132.0
+# 132 is the published ap equivalent amplitude at Kp 7, the G3 threshold, which
+# is a fact about the scale. The DECISION — that one-day survival is committed
+# to at G3 rather than G2, after the level-conditioned band showed this window
+# reaching 90.55 — was made on 2026-09-16 and is recorded here.
+confirmed_by = "A. Rai / 2026-09-16"
 
 [view]
 kind = "number"

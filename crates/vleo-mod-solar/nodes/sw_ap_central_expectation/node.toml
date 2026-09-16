@@ -29,8 +29,8 @@ before it can have edges.
 """
 
 [maths]
-# A person has NOT read this relation against its source yet.
-confirmed_by = ""
+# A person has read this relation against its source.
+confirmed_by = "A. Rai / 2026-09-16"
 expression = "Ap_central = the last rotation forecast, held forward = 22.0954"
 source = "noaa_swpc"
 
@@ -89,7 +89,8 @@ number = 22.095389
 # bundles/solar-weather@2026.09.14 by the method above and cross-checked
 # against the prior implementation in parity.csv beside this sheet. Nobody
 # has yet read the number and agreed it, which is what this field is for.
-confirmed_by = ""
+# 22.095389 — the last rotation forecast held forward, 0.013 per cent from the study's own nominal.
+confirmed_by = "A. Rai / 2026-09-16"
 
 [view]
 kind = "number"

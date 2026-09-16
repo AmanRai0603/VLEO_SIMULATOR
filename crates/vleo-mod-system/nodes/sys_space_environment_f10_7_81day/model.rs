@@ -10,7 +10,7 @@ use vleo_core::units::*;
 
 /// What 81-day mean F10.7 does the single-day design value ride on?
 ///
-/// `F107bar_sys = l3_solar_interface.f107bar_hotday`
+/// `F107bar_sys = l3_solar_interface`
 ///
 /// Source: `noaa_swpc`
 ///
@@ -30,7 +30,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sys_space_environment_f10_7_81day";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xdaf186b43177172c;
+pub const SHEET_HASH: u64 = 0xc1065c44dfd1ed58;
 
 pub fn evaluate(crossing: Ratio) -> Result<Ratio, Fault> {
     // ---- HOLE 1 : receive the 81-day mean the design day rides on across the seam -> Ratio

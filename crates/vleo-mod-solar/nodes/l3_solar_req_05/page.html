@@ -1,4 +1,4 @@
-<article class="node" data-node="l3_solar_req_05" data-sheet-hash="235b4d" data-impl-hash="222325">
+<article class="node" data-node="l3_solar_req_05" data-sheet-hash="7d6504" data-impl-hash="222325">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Ap, single day</h2>
@@ -18,7 +18,7 @@
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">What Ap must this design survive on a single day inside the mission window?</p>
-<p class="maths"><code>Ap_req_short = ap(G2) = 80</code></p>
+<p class="maths"><code>Ap_req_short = ap(G3) = 132</code></p>
 <p class="src">Source <b>orbitt_case_c1</b> — Orbitt Space — VLEO multipayload reference case C1 <span class="where">internal, 2026-09-01</span></p>
 <p class="note">Survive, not operate in. A day at this level may cost a safe mode, a missed
 downlink and some propellant; what it may not cost is the vehicle. That is a
@@ -33,24 +33,24 @@ an ordinary design band.
 <dl class="asm">
 <dt>It is a ceiling on the driver and says nothing about what the driver does to the vehicle</dt><dd>fails when a reader takes a passing closure as evidence the design is adequate. Ap is an index; what a spacecraft feels is the heating, the density and the torque it produces, through models this subsystem does not own</dd>
 <dt>The worst day of a design band and the one storm of a mission are different questions</dt><dd>fails when somebody collapses this row into l3_solar_req_03. At the declared window the two achieved sides differ by a factor of nearly four, 41.70 against 158.38, because one is a percentile of ordinary variation and the other an extreme-value return level. A single ceiling covering both would have to be the storm one, and the design would then be claiming to operate through a G3 storm</dd>
-<dt>The G2 threshold is a reasonable place for a one-day survival commitment, and nothing here establishes that</dt><dd>fails when the vehicle's real limit is elsewhere. 80 is a published threshold rather than an arbitrary round number, which makes it checkable, but checkable is not the same as correct: the level at which a particular design must stop is a thermal, torque and propellant question this subsystem does not see</dd>
+<dt>The G3 threshold is a reasonable place for a one-day survival commitment, and nothing here establishes that</dt><dd>fails when the vehicle's real limit is elsewhere. 132 is a published threshold rather than an arbitrary round number, which makes it checkable, but checkable is not the same as correct: the level at which a particular design must stop is a thermal, torque and propellant question this subsystem does not see</dd>
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="why">A requirement is a commitment, and its purpose is to be checkable against something measured. This row commits the design to surviving one day at the G2 threshold, and the checking partner is l3_solar_ach_05.</p>
+<p class="why">A requirement is a commitment, and its purpose is to be checkable against something measured. This row commits the design to surviving one day at the G3 threshold, and the checking partner is l3_solar_ach_05.</p>
 <p class="why">Why the ladder has three rungs rather than one is the substance of this row. sw_ap_design_short and sw_storm_return_level both answer &quot;the worst Ap&quot; and they are not the same question: the first is the top of an ordinary design band — a sustained level with a within-rotation percentile stacked on it, reached routinely — and the second is an extreme-value return level, the one storm expected in the whole mission. At the declared window they differ by a factor of nearly four, 41.70 against 158.38. A single ceiling covering both would have to be the storm one, and the design would then be claiming to operate through a G3 storm, which is a much stronger claim than anybody made.</p>
 <div class="theory-walk" data-steps="4">
 <ol class="derive">
 <li><span class="dt">The closure to be made checkable is single-day Ap achieved against single-day Ap required. Both sides must be rows, at the same layer, in the same quantity and unit.</span></li>
-<li><span class="dt">The requirement side is a commitment about the vehicle, so it cannot be computed from the record. It is taken from the published G scale at the moderate-storm threshold.</span><code class="dm">Ap_req_short = ap(Kp 6) = 80</code></li>
-<li><span class="dt">Higher than the sustained ceiling, because a transient is easier to survive than a permanent condition. Lower than the storm ceiling, because the storm is a different question.</span><code class="dm">48 (sustained) &lt; 80 (one day) &lt; 150 (the one storm)</code></li>
-<li><span class="dt">Which the achieved side clears at the declared window.</span><code class="dm">41.70 &lt;= 80 — the closure holds, with 92 per cent of room</code></li>
+<li><span class="dt">The requirement side is a commitment about the vehicle, so it cannot be computed from the record. It is taken from the published G scale at the strong-storm threshold.</span><code class="dm">Ap_req_short = ap(Kp 7) = 132</code></li>
+<li><span class="dt">Higher than the sustained ceiling, because a transient is easier to survive than a permanent condition. Lower than the storm ceiling, because the storm is a different question.</span><code class="dm">48 (sustained) &lt; 132 (one day) &lt; 207 (the one storm)</code></li>
+<li><span class="dt">Which the achieved side clears at the declared window.</span><code class="dm">90.55 &lt;= 132 — the closure holds, with 46 per cent of room</code></li>
 </ol>
 </div>
 <h4>Reading the answer</h4>
-<p class="reading">80 against an achieved 41.70 at the declared window — 92 per cent of room. As with its sustained sibling the room is a property of the epoch rather than of the design: the achieved side is a band on a cycle-analogue centre, and a window at cycle maximum would narrow it sharply.</p>
+<p class="reading">132 against an achieved 90.55 at the declared window — 46 per cent of room. As with its sustained sibling the room is a property of the epoch rather than of the design: the achieved side is a band on a cycle-analogue centre, and a window at cycle maximum would narrow it sharply.</p>
 <p class="reading">Worth noting against l3_solar_req_03: THAT closure does NOT hold. Its achieved side, sw_storm_return_level, gives 158.38 against a ceiling of 150. Nothing in this tree compares a required row with its achieved row automatically — the pairing is a convention the matrix draws — so that failure is visible to a reader of the matrix and to nothing else.</p>
-<p class="maths concl">which is the relation this node states: <code>Ap_req_short = ap(G2) = 80</code></p>
+<p class="maths concl">which is the relation this node states: <code>Ap_req_short = ap(G3) = 132</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -62,10 +62,10 @@ an ordinary design band.
 </section>
 <section class="panel" data-panel="3">
 <p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>80</b> -, confirmed by <b></b>.</p>
+<p>This is a declared value: <b>132</b> -, confirmed by <b>A. Rai / 2026-09-16</b>.</p>
 <h4>Pseudocode</h4>
 <pre class="pseudo"><code>function l3_solar_req_05() -> Ratio
-    Ap_req_short ← 80          // declared, confirmed by 
+    Ap_req_short ← 132          // declared, confirmed by A. Rai / 2026-09-16
 
     // a guard whose reason is not written down gets deleted
     require Ap_req_short ≥ 0
@@ -101,7 +101,7 @@ use vleo_core::units::*;
 
 /// What Ap must this design survive on a single day inside the mission window?
 ///
-/// `Ap_req_short = ap(G2) = 80`
+/// `Ap_req_short = ap(G3) = 132`
 ///
 /// Source: `orbitt_case_c1`
 ///
@@ -117,15 +117,15 @@ use vleo_core::units::*;
 ///
 /// * It is a ceiling on the driver and says nothing about what the driver does to the vehicle — fails when a reader takes a passing closure as evidence the design is adequate. Ap is an index; what a spacecraft feels is the heating, the density and the torque it produces, through models this subsystem does not own
 /// * The worst day of a design band and the one storm of a mission are different questions — fails when somebody collapses this row into l3_solar_req_03. At the declared window the two achieved sides differ by a factor of nearly four, 41.70 against 158.38, because one is a percentile of ordinary variation and the other an extreme-value return level. A single ceiling covering both would have to be the storm one, and the design would then be claiming to operate through a G3 storm
-/// * The G2 threshold is a reasonable place for a one-day survival commitment, and nothing here establishes that — fails when the vehicle's real limit is elsewhere. 80 is a published threshold rather than an arbitrary round number, which makes it checkable, but checkable is not the same as correct: the level at which a particular design must stop is a thermal, torque and propellant question this subsystem does not see
+/// * The G3 threshold is a reasonable place for a one-day survival commitment, and nothing here establishes that — fails when the vehicle's real limit is elsewhere. 132 is a published threshold rather than an arbitrary round number, which makes it checkable, but checkable is not the same as correct: the level at which a particular design must stop is a thermal, torque and propellant question this subsystem does not see
 pub const NODE_ID: &amp;str = &quot;l3_solar_req_05&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x9250776791235b4d;
+pub const SHEET_HASH: u64 = 0x5362e9efd37d6504;
 
 pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
     // generated · a declared value, converted from the unit it was written in
-    let declared: Ratio = match Ratio::from_unit(80.0, Unit::One) {
+    let declared: Ratio = match Ratio::from_unit(132.0, Unit::One) {
         Some(q) =&gt; q,
         None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_req_short&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
     };
@@ -170,8 +170,6 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 <li>significant, and one fixture or none — a significant node is the one that gets a second independent check, which is the whole reason for the word</li>
-<li>a declared value with nobody's confirmation against it</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

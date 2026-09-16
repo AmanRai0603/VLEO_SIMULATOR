@@ -88,8 +88,8 @@ fn answers_near_the_known_good_point() {
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Ratio::new(124.1432752988 * scale)) {
-            assert!(v.get().is_finite(), "sys_space_environment_f10_7 produced a value that is not a number for F107_day_sys");
-            assert!(v.get() >= 60.0 && v.get() <= 400.0, "sys_space_environment_f10_7 answered {} for F107_day_sys, outside its declared domain 60 … 400 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "sys_space_environment_f10_7 produced a value that is not a number for F107_sys_daily");
+            assert!(v.get() >= 60.0 && v.get() <= 400.0, "sys_space_environment_f10_7 answered {} for F107_sys_daily, outside its declared domain 60 … 400 — the guard did not stop it", v.get());
         }
     }
 }
@@ -105,7 +105,7 @@ fn the_same_inputs_give_the_same_answer() {
     let b = model::evaluate(Ratio::new(124.1432752988));
     match (a, b) {
         (Ok(x), Ok(y)) => {
-            assert!(x.get().to_bits() == y.get().to_bits(), "sys_space_environment_f10_7 is not deterministic for F107_day_sys: {} then {}", x.get(), y.get());
+            assert!(x.get().to_bits() == y.get().to_bits(), "sys_space_environment_f10_7 is not deterministic for F107_sys_daily: {} then {}", x.get(), y.get());
         }
         (Err(_), Err(_)) => {}
         _ => panic!("sys_space_environment_f10_7 refused on one call and answered on the other"),

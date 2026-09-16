@@ -2,7 +2,7 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sys_space_environment_kp"
-label = "Kp, worst slot of the design day"
+label = "Kp, worst slot of the sustained day"
 folder = "sys_space_environment_kp"   # frozen at seed
 subsystem = "sys"
 parent = "sys_space_environment"
@@ -33,6 +33,26 @@ state = "published"
 # sized against geomagnetic activity reads. The other nine are one input away for
 # a row that wants a different case.
 
+
+# THE DEFAULT AT LAYER 2 IS THE SUSTAINED SCENARIO, decided 2026-09-16.
+#
+# The crossing carries five scenarios. Every row under this heading takes the
+# SUSTAINED one — the level the mission sits in for months — because that is
+# what the system designs to by default. The two *day scenarios are SPIKES: real
+# cases, carried by the crossing, and not what a default reads.
+#
+# A consequence worth seeing rather than hiding: on a sustained scenario the
+# daily value and its 81-day mean ARE THE SAME NUMBER, by construction — a
+# *mean scenario is its own 81-day mean, which is why the study's own driver set
+# has f107 == f107bar on exactly those three rows. So sys_space_environment
+# _solar_flux, _f10_7 and _f10_7_81day all read 104.07 at the declared window.
+# Three rows, one number, and that is the physics rather than a duplication:
+# they diverge the moment a spike scenario is read, where the day is 124.14 and
+# the mean beneath it is still 104.07.
+#
+# A row that wants a spike names the member: f107_hotday, ap_hotday,
+# kp_peak_hotday. None exists yet, because nothing at layer 2 has asked for one.
+
 [question]
 text = "What Kp does the system design to, in the worst three-hour slot of its design day?"
 note = """
@@ -47,7 +67,7 @@ days a drag design is sized by.
 [maths]
 # A person has NOT read this relation against its source yet.
 confirmed_by = ""
-expression = "Kp_sys = l3_solar_interface.kp_peak_hotday"
+expression = "Kp_sys = l3_solar_interface.kp_peak_hotmean"
 source = "iaga_kp_ap"
 
 [[input]]
@@ -55,7 +75,7 @@ source = "iaga_kp_ap"
 # against what the producer publishes — which is the only place the
 # whole graph is visible and therefore the only place to ask.
 binding = "crossing"
-var = "l3_solar_interface.kp_peak_hotday"
+var = "l3_solar_interface.kp_peak_hotmean"
 type = "Ratio"
 
 [[algorithm.step]]
@@ -95,7 +115,7 @@ text = "The system layer states what it works with and does not compute the envi
 
 [[theory.step]]
 text = "It receives the member a design sized against geomagnetic activity reads: the peak slot of the disturbed single day."
-math = "Kp_sys = l3_solar_interface.kp_peak_hotday — identity, deliberately"
+math = "Kp_sys = l3_solar_interface.kp_peak_hotmean — identity, deliberately"
 
 [[assumption]]
 text = "It names one of ten Kp members and they span a quiet day to a severe storm"

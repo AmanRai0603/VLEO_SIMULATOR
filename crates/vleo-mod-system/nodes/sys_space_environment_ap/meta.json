@@ -1,7 +1,7 @@
 {
   "id": "sys_space_environment_ap",
   "state": "published",
-  "sheet_hash": "0a2f20",
+  "sheet_hash": "92c010",
   "impl_hash": "964c6a",
   "owner": "environment",
   "tier": "A",
@@ -11,7 +11,7 @@
   "differential_fill": false,
   "migrated_from": "",
   "holes": 1,
-  "inputs": ["l3_solar_interface.ap_hotday"],
+  "inputs": ["l3_solar_interface.ap_hotmean"],
   "contributes": [],
   "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did"]
 }

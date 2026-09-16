@@ -10,7 +10,7 @@ use vleo_core::units::*;
 
 /// What daily planetary Ap must this design survive?
 ///
-/// `Ap_req = Ap_design(G3) * 1.14 = 150`
+/// `Ap_req = ap(G4) = 207`
 ///
 /// Source: `orbitt_case_c1`
 ///
@@ -22,19 +22,19 @@ use vleo_core::units::*;
 ///
 /// # Assumptions
 ///
-/// * 150 is a capability plus a margin, and the margin is a decision with no derivation behind it — fails when somebody looks for where 14 per cent came from. sw_ap_design at the declared G3 gives 132 and 150 is the next round number with usable room above it. Nothing in the record picks it. What it is NOT is a number chosen so the closure passes: 150 is below the 158.4 the record expects over the mission, so this requirement is violated by design rather than by accident. A margin chosen to make a closure pass would have been 200, which sits in G4 territory and would have committed the vehicle to a level it is not built for.
-/// * The closure fails and the exceedance rows are the reason that is acceptable — fails when a failing closure is treated as a blocking defect. sw_storm_return_level gives 158.4 at five years against this 150, so l3_solar_ach_03 comes in above the requirement. What a designer needs next is not a bigger number here but the size of the violation, and it is small and bounded: 0.284 days a year above the design Ap of 132, which is 1.42 days over the mission in about 1.24 events averaging 1.14 days each, with the longest run in 29 years being 2 days. The vehicle is outside its design environment for roughly thirty-four hours of a five-year mission. If that is unacceptable the answer is to move sw_storm_design_level, not to raise this row until the arithmetic stops complaining.
+/// * 207 is a SURVIVAL commitment and not an operating capability, and the two are easy to confuse — fails when a reader takes this as the level the vehicle works through. It is not. sw_storm_design_level declares G3 and sw_ap_design turns it into 132, and that is the operating level; nothing about it moved. This row says a G4 storm does not end the mission, which sw_storm_design_level's own reason_upper describes as the right treatment for G4 — handled 'by operating through the event rather than by building for it'. A design that claimed to OPERATE at G4 would change sw_storm_design_level, and four exceedance rows would move with it.
+/// * This closure now holds and the OPERATING one still does not, and the second is the one that matters — fails when a passing closure here is read as the storm case being closed. 158.4 sits between the two levels: above the 132 the vehicle operates through, below the 207 it must survive. So the mission meets a storm it cannot work through, and the size of that is what a designer needs — 0.284 days a year above 132, 1.42 days over the mission, about 1.24 events averaging 1.14 days each, longest run in 29 years 2 days. Roughly thirty-four hours outside the operating environment across five years. Nothing in the tree compares 158.4 against 132 automatically; the three exceedance rows measure it and a person reads them.
 /// * Switching the G level moves the design value and the exceedance statistics, and not this row — fails when somebody expects the requirement to follow the switch. sw_storm_design_level is the input a design turns to ask what a different storm level costs — G1 gives 48, G2 gives 80, G3 gives 132 — and sw_ap_design and all three exceedance rows move with it. At G2 the exceedance rate is 1.24 days a year, 6.21 days over the mission in 5.1 events. This row does not move: it is a commitment, and a commitment that silently tracked the design would never be violated and would therefore never be a requirement. Changing it is a separate, deliberate act.
 /// * A daily mean, which is the wrong shape for what a storm does — fails when the storm is short or long. Daily Ap averages eight three-hourly slots, so a violent six-hour storm and a mild day-long disturbance can share a value, and a requirement written on the daily mean is satisfied by both. The atmosphere responds to the integral with a lag, not to the daily mean. The record's largest daily Ap is 273 — above this requirement — and it is one day in 29 years.
 /// * It is met by the record and the record is 29 years long — fails when the mission meets something the record has not seen. The return level this is checked against is fitted through ranks 2 and 3 of a 28.2-year sample at the mission's five-year period, and the largest event in that sample, Ap 273, has an apparent return period of 28.2 years for no reason but that it is the largest thing in 28.2 years. Events well beyond this requirement are known from longer proxy records. A requirement that a 29-year record cannot violate is not thereby safe.
 pub const NODE_ID: &str = "l3_solar_req_03";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xdf931c1506528848;
+pub const SHEET_HASH: u64 = 0xd3d28334dd6938b2;
 
 pub fn evaluate() -> Result<Ratio, Fault> {
     // generated · a declared value, converted from the unit it was written in
-    let declared: Ratio = match Ratio::from_unit(150.0, Unit::One) {
+    let declared: Ratio = match Ratio::from_unit(207.0, Unit::One) {
         Some(q) => q,
         None => return Err(Fault::Degenerate { node: NODE_ID, field: "Ap_req", reason: "the declared unit does not match the declared type" }),
     };

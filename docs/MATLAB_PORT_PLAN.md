@@ -1275,3 +1275,63 @@ printing a verdict. The gate was green throughout — nothing in the KERNEL was
 wrong — and the whole failure lived in the one place the gate does not look. It
 is the argument for `panel_check` being in CI, which it is, and against reading
 a tail of its output as a result.
+
+### 20.16 · The gate is green, and four decisions that made it so
+
+`xtask gate` reports **1393 nodes, 0 node check failures, 0 assembly failures**
+for the first time on this branch. Everything that closed it was a person's
+decision on 2026-09-16, because everything that was open needed one.
+
+**Seven rows confirmed.** Three measured — `sw_mean_band_spread` 13.454382,
+`sw_ap_mean_band_spread` 3.593688, `sw_ap_central_expectation` 22.095389 — and
+four design commitments. Each sheet records what was agreed to alongside the
+name, so a later reader sees the claim and not only the signature.
+
+**Two closures raised, and neither to make the arithmetic pass.**
+
+`l3_solar_req_05` went from the G2 threshold, 80, to G3, 132. The level-
+conditioned band took `sw_ap_design_short` from 41.70 to 90.55, and a one-day
+commitment at G2 is simply below what this window presents — 90.55 is a G3-G4
+day. It now closes with 46 per cent of room.
+
+`l3_solar_req_03` went from 150 to 207, the G4 threshold, and the framing
+changed with it. The old sheet REJECTED exactly this number: "a margin chosen so
+the closure passes would have to exceed 158.4, which means about 200 — and 200
+sits in G4 territory, committing the vehicle on paper to a level it is not built
+for." That objection holds for an OPERATING commitment, and it is why
+`sw_storm_design_level` is untouched at G3 and the four exceedance rows do not
+move. It does not hold for a SURVIVAL one, which is what this row asks: what
+must not DESTROY the mission. Its own `reason_upper` already said G4 is
+"handled by operating through the event rather than by building for it".
+
+So 158.38 now sits BETWEEN the two levels — above the 132 the vehicle operates
+through, below the 207 it must survive — and that is more informative than
+either verdict alone: the mission will meet a storm it cannot work through and
+will not be destroyed by it. The three exceedance rows still measure the
+operating violation: 1.42 days over five years, about 1.24 events, longest run
+2 days in 29 years.
+
+All five requirements in this group are now anchored on something a reader can
+check — two on the record's own extremes, three on published G thresholds. None
+can pass merely because its number was picked above whatever the chain gave,
+which was true of exactly one of them before.
+
+**Layer 2 defaults to the sustained scenario.** The crossing carries five; every
+row under `sys_space_environment` now takes the sustained one, because that is
+what the system designs to by default and the two `*day` scenarios are spikes.
+`_ap` moved from 90.55 to 26.70 and `_kp` from 8.00 to 5.20.
+
+A consequence worth seeing rather than hiding: on a sustained scenario the daily
+value and its 81-day mean ARE the same number — a `*mean` scenario is its own
+81-day mean, which is why the study's driver set has `f107 == f107bar` on
+exactly those three rows. So `_solar_flux`, `_f10_7` and `_f10_7_81day` all read
+104.07. Three rows, one number, and it is the physics rather than a duplication:
+they diverge the moment a spike scenario is read, where the day is 124.14 and
+the mean beneath it is still 104.07. A row wanting a spike names the member; none
+exists because nothing at layer 2 has asked for one.
+
+**`sw_f107_design` is deprecated.** All three of its readers moved to the band-
+width rows across steps 4 and 5. The gate stops treating it as live and the
+contract check refuses it as a NEW dependency, so nothing picks it up by
+accident. What it answers — a one-sided persistence drift from today's value —
+is still a real question, and reviving it is now a deliberate act.

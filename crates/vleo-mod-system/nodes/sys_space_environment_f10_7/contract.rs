@@ -6,12 +6,12 @@
 use vleo_core::fault::Fault;
 use vleo_core::units::*;
 
-/// What this node publishes: `F107_day_sys` (F10.7, single day), in `-`.
+/// What this node publishes: `F107_sys_daily` (F10.7, sustained daily value), in `-`.
 pub const NODE_ID: &str = "sys_space_environment_f10_7";
-pub const SHEET_HASH: u64 = 0xb7270ddb3fc127df;
+pub const SHEET_HASH: u64 = 0x934c9c264be5784e;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
-    "l3_solar_interface.f107_hotday",
+    "l3_solar_interface",
 ];
 /// The variables this node publishes.
 pub const OUTPUT_VARS: &[&str] = &["sys_space_environment_f10_7"];

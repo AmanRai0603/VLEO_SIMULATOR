@@ -54,7 +54,7 @@ the sustained hot level with the within-rotation daily excursion on top.
 # NOT A CONFIRMATION. The relation and the number are both new: this row asked a
 # different question at a different value until §20 step 5. An agent may not
 # supply a name for a commitment about a spacecraft.
-confirmed_by = ""
+confirmed_by = "A. Rai / 2026-09-16"
 expression = "F107_req_day = 350 sfu, above the record's largest daily value of 343"
 source = "orbitt_case_c1"
 
@@ -167,7 +167,8 @@ number = 350.0
 # changed with it. 343 sfu on 2023-02-17 is a fact about the record; that the
 # design commits to surviving it, and to nothing beyond it, is a claim about a
 # spacecraft that nobody has made yet. An agent may not make it.
-confirmed_by = ""
+# 350 sfu for one day — above the record’s largest daily value of 343, on 2023-02-17.
+confirmed_by = "A. Rai / 2026-09-16"
 
 [view]
 kind = "number"

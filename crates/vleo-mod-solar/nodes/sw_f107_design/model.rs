@@ -29,12 +29,14 @@ use vleo_core::units::*;
 /// the mission. sw_f107_design_long is a band width: how wrong has the
 /// pattern historically been about the level a rotation sits at. Both are
 /// defensible and they are not the same question, which sw_f107_design_long's
-/// own question note says in as many words. But a published number nothing
-/// reads is a number nobody checks, which is the standard this subsystem
-/// holds itself to elsewhere. The three options are to give it a consumer, to
-/// mark it `state = "deprecated"`, or to leave it published with this
-/// paragraph against it. The third is what is here, because retiring a row is
-/// a decision about the tree and an agent may not make one.
+/// own question note says in as many words. A published number nothing reads
+/// is a number nobody checks, which is the standard this subsystem holds
+/// itself to elsewhere. THE ROW IS THEREFORE DEPRECATED, decided 2026-09-16.
+/// It stays readable with its whole history, the gate stops treating it as
+/// live, and the contract check refuses it as a NEW dependency — so nothing
+/// can pick it up again without that being a deliberate act. What it answers
+/// is still a real question, and if a design wants the persistence reading
+/// back it should be revived on purpose rather than found by accident.
 ///
 /// # Assumptions
 ///

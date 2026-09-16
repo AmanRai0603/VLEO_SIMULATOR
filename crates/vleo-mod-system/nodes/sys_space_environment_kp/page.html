@@ -1,7 +1,7 @@
-<article class="node" data-node="sys_space_environment_kp" data-sheet-hash="c46581" data-impl-hash="7eb482">
+<article class="node" data-node="sys_space_environment_kp" data-sheet-hash="870c21" data-impl-hash="7eb482">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="sys_vleo_multipayload">VLEO multipayload</a> <span class="sep">/</span> <a class="xref" data-group="sys_orbit_and_environment">Orbit and environment</a> <span class="sep">/</span> <a class="xref" data-group="sys_space_environment">Space environment</a></nav>
-  <h2>Kp, worst slot of the design day</h2>
+  <h2>Kp, worst slot of the sustained day</h2>
   <p class="ident"><code>sys_space_environment_kp</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
@@ -18,7 +18,7 @@
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">What Kp does the system design to, in the worst three-hour slot of its design day?</p>
-<p class="maths"><code>Kp_sys = l3_solar_interface.kp_peak_hotday</code></p>
+<p class="maths"><code>Kp_sys = l3_solar_interface.kp_peak_hotmean</code></p>
 <p class="src">Source <b>iaga_kp_ap</b> — Bartels, J. — The standardized index Ks and the planetary index Kp, with the ap equivalent-amplitude table <span class="where">IATME Bulletin 12b, IUGG Publication Office, 1949; the 28-point table as published by IAGA and distributed by GFZ Potsdam</span></p>
 <p class="note">The peak slot and not the daily mean, and the distinction is the whole reason
 the subsystem measures a slot offset at all. Ap is a daily mean, Kp is reported
@@ -40,19 +40,19 @@ days a drag design is sized by.
 <div class="theory-walk" data-steps="2">
 <ol class="derive">
 <li><span class="dt">The system layer states what it works with and does not compute the environment. So the row receives.</span></li>
-<li><span class="dt">It receives the member a design sized against geomagnetic activity reads: the peak slot of the disturbed single day.</span><code class="dm">Kp_sys = l3_solar_interface.kp_peak_hotday — identity, deliberately</code></li>
+<li><span class="dt">It receives the member a design sized against geomagnetic activity reads: the peak slot of the disturbed single day.</span><code class="dm">Kp_sys = l3_solar_interface.kp_peak_hotmean — identity, deliberately</code></li>
 </ol>
 </div>
 <h4>Reading the answer</h4>
 <p class="reading">7.9966 at the declared window: the worst three hours of the disturbed design day, which is a G4 severe storm.</p>
 <p class="reading">That number is high and it follows from a correction rather than from a judgement. The subsystem's hot Ap day is 90.55, where the study this was ported from publishes 41.54, because the within-rotation band is conditioned on the rotation level; the peak-slot offset at that Ap is 1.75 Kp on top of a converted 6.24. The study's own equivalent is Kp 6.14.</p>
 <p class="reading">For a reader who wants the ordinary day rather than the worst slot of the worst one, the crossing carries nine other Kp members and each is one input away.</p>
-<p class="maths concl">which is the relation this node states: <code>Kp_sys = l3_solar_interface.kp_peak_hotday</code></p>
+<p class="maths concl">which is the relation this node states: <code>Kp_sys = l3_solar_interface.kp_peak_hotmean</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr><td>in</td><td><code>crossing</code></td><td><a class="xref" data-goto="l3_solar_interface.kp_peak_hotday">l3_solar_interface.kp_peak_hotday</a></td><td>Ratio</td><td>?</td></tr>
+<tr><td>in</td><td><code>crossing</code></td><td><a class="xref" data-goto="l3_solar_interface.kp_peak_hotmean">l3_solar_interface.kp_peak_hotmean</a></td><td>Ratio</td><td>?</td></tr>
 <tr class="out"><td>out</td><td><code>Kp_sys</code></td><td>sys_space_environment_kp</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
@@ -63,7 +63,7 @@ days a drag design is sized by.
 </ol>
 <h4>Pseudocode</h4>
 <pre class="pseudo"><code>function sys_space_environment_kp(crossing: Ratio) -> Ratio
-    given crossing from l3_solar_interface.kp_peak_hotday
+    given crossing from l3_solar_interface.kp_peak_hotmean
     // receive the peak-slot Kp of the disturbed design day across the seam
     received ← step 1
 
@@ -101,7 +101,7 @@ use vleo_core::units::*;
 
 /// What Kp does the system design to, in the worst three-hour slot of its design day?
 ///
-/// `Kp_sys = l3_solar_interface.kp_peak_hotday`
+/// `Kp_sys = l3_solar_interface.kp_peak_hotmean`
 ///
 /// Source: `iaga_kp_ap`
 ///
@@ -120,7 +120,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &amp;str = &quot;sys_space_environment_kp&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x7ffd40041fc46581;
+pub const SHEET_HASH: u64 = 0xdad48006ee870c21;
 
 pub fn evaluate(crossing: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
     // ---- HOLE 1 : receive the peak-slot Kp of the disturbed design day across the seam -&gt; Ratio

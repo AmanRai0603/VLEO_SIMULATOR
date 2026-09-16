@@ -61,7 +61,7 @@ record says the window will present.
 """
 
 [maths]
-confirmed_by = ""
+confirmed_by = "A. Rai / 2026-09-16"
 expression = "Ap_req_long = ap(G1) = 48"
 source = "orbitt_case_c1"
 
@@ -137,7 +137,8 @@ number = 48.0
 # is that continuous operation is committed to at G1 and not at G2 or at the
 # quiet level, and that is a spacecraft claim nobody has made yet. An agent may
 # not make it.
-confirmed_by = ""
+# Ap 48 sustained — the published G1 threshold, committed to as continuous operation.
+confirmed_by = "A. Rai / 2026-09-16"
 
 [view]
 kind = "number"

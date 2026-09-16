@@ -1,7 +1,7 @@
-<article class="node" data-node="sys_space_environment_f10_7" data-sheet-hash="c127df" data-impl-hash="964c6a">
+<article class="node" data-node="sys_space_environment_f10_7" data-sheet-hash="e5784e" data-impl-hash="964c6a">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="sys_vleo_multipayload">VLEO multipayload</a> <span class="sep">/</span> <a class="xref" data-group="sys_orbit_and_environment">Orbit and environment</a> <span class="sep">/</span> <a class="xref" data-group="sys_space_environment">Space environment</a></nav>
-  <h2>F10.7, single day</h2>
+  <h2>F10.7, sustained daily value</h2>
   <p class="ident"><code>sys_space_environment_f10_7</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
@@ -17,8 +17,8 @@
   <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="question">What flux does the system design a single day to?</p>
-<p class="maths"><code>F107_day_sys = l3_solar_interface.f107_hotday</code></p>
+<p class="question">What daily F10.7 does the system design to, on the scenario it sits in?</p>
+<p class="maths"><code>F107_sys_daily = l3_solar_interface</code></p>
 <p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
 <p class="note">A day at this level may cost a safe mode, a slewed array and some propellant;
 what it may not cost is the vehicle. That is a different design case from the
@@ -38,19 +38,19 @@ they are separate rows in the subsystem below.
 <div class="theory-walk" data-steps="2">
 <ol class="derive">
 <li><span class="dt">The system layer states what it works with and does not compute the environment. So the row receives.</span></li>
-<li><span class="dt">It receives from the subsystem's one visible node, naming the member of the set it is about.</span><code class="dm">F107_day_sys = l3_solar_interface.f107_hotday — identity, deliberately</code></li>
+<li><span class="dt">It receives from the subsystem's one visible node, naming the member of the set it is about.</span><code class="dm">F107_sys_daily = l3_solar_interface — identity, deliberately</code></li>
 </ol>
 </div>
 <h4>Reading the answer</h4>
 <p class="reading">124.14 at the declared window.</p>
 <p class="reading">It inherits every limitation of the chain beneath it and a reader here sees none of them. It stacks two one-sided percentiles — a band edge on the rotation level and a within-rotation percentile on top — so the day it describes is rarer than the confidence attached to it, nearer one in a hundred than one in twenty. And the band it stacks is 1.28 sigma, the 90th percentile, while the run is labelled 95 per cent. The credibility vector crosses the seam; that does not.</p>
-<p class="maths concl">which is the relation this node states: <code>F107_day_sys = l3_solar_interface.f107_hotday</code></p>
+<p class="maths concl">which is the relation this node states: <code>F107_sys_daily = l3_solar_interface</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr><td>in</td><td><code>crossing</code></td><td><a class="xref" data-goto="l3_solar_interface.f107_hotday">l3_solar_interface.f107_hotday</a></td><td>Ratio</td><td>?</td></tr>
-<tr class="out"><td>out</td><td><code>F107_day_sys</code></td><td>sys_space_environment_f10_7</td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>crossing</code></td><td><a class="xref" data-goto="l3_solar_interface">l3_solar_interface</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>F107_sys_daily</code></td><td>sys_space_environment_f10_7</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
@@ -60,27 +60,27 @@ they are separate rows in the subsystem below.
 </ol>
 <h4>Pseudocode</h4>
 <pre class="pseudo"><code>function sys_space_environment_f10_7(crossing: Ratio) -> Ratio
-    given crossing from l3_solar_interface.f107_hotday
+    given crossing from l3_solar_interface
     // receive the subsystem's single-day conclusion across the seam
     received ← step 1
 
     // a guard whose reason is not written down gets deleted
-    require F107_day_sys ≥ 60
-    require F107_day_sys ≤ 400
-    require F107_day_sys is finite
+    require F107_sys_daily ≥ 60
+    require F107_sys_daily ≤ 400
+    require F107_sys_daily is finite
 
-    return F107_day_sys
+    return F107_sys_daily
 </code></pre>
 <p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code>F107_day_sys &ge; 60</code> — the crossing's own floor, restated. A row that narrowed the range it received would be changing the answer while appearing to relay it</li>
-<li><code>F107_day_sys &le; 400</code> — the crossing's own ceiling, restated. This is a single-day value, so it is the one most likely of the pair to approach it</li>
+<li><code>F107_sys_daily &ge; 60</code> — the crossing's own floor, restated. A row that narrowed the range it received would be changing the answer while appearing to relay it</li>
+<li><code>F107_sys_daily &le; 400</code> — the crossing's own ceiling, restated. This is a single-day value, so it is the one most likely of the pair to approach it</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="4">
-<div class="relation-host" data-node="sys_space_environment_f10_7" data-lo="60" data-hi="400" data-symbol="F107_day_sys">
+<div class="relation-host" data-node="sys_space_environment_f10_7" data-lo="60" data-hi="400" data-symbol="F107_sys_daily">
 <p class="muted">asking the engine…</p>
 </div>
 </section>
@@ -96,9 +96,9 @@ use vleo_core::physics::*;
 use vleo_core::units::pmath;
 use vleo_core::units::*;
 
-/// What flux does the system design a single day to?
+/// What daily F10.7 does the system design to, on the scenario it sits in?
 ///
-/// `F107_day_sys = l3_solar_interface.f107_hotday`
+/// `F107_sys_daily = l3_solar_interface`
 ///
 /// Source: `noaa_swpc`
 ///
@@ -115,7 +115,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &amp;str = &quot;sys_space_environment_f10_7&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xb7270ddb3fc127df;
+pub const SHEET_HASH: u64 = 0x934c9c264be5784e;
 
 pub fn evaluate(crossing: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
     // ---- HOLE 1 : receive the subsystem's single-day conclusion across the seam -&gt; Ratio
@@ -136,13 +136,13 @@ pub fn evaluate(crossing: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
     // written down gets deleted by the next person who finds it awkward.
     let answer: Ratio = received;
     if !answer.is_finite() {
-        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_day_sys&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_sys_daily&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
     }
     if answer.get() &lt; 60.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_day_sys&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the crossing's own floor, restated. A row that narrowed the range it received would be changing the answer while appearing to relay it&quot; });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_sys_daily&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the crossing's own floor, restated. A row that narrowed the range it received would be changing the answer while appearing to relay it&quot; });
     }
     if answer.get() &gt; 400.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_day_sys&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the crossing's own ceiling, restated. This is a single-day value, so it is the one most likely of the pair to approach it&quot; });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_sys_daily&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the crossing's own ceiling, restated. This is a single-day value, so it is the one most likely of the pair to approach it&quot; });
     }
     Ok(answer)
 }
