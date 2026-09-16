@@ -1806,11 +1806,25 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
         return Err(format!("{} already exists", dir.display()));
     }
     let sheet = fs::read_to_string(src.dir.join("node.toml")).map_err(|e| e.to_string())?;
+    let src_order = src.order;
     // Blank what must be re-decided. A literal copy drags a stale source
     // citation and someone else's domain limits through thirty nodes.
     let mut out = String::new();
+    // A blanked field whose value is a multi-line string leaves its BODY behind,
+    // and the body is not TOML on its own. `text = "\"\"\"` became
+    // `text = ""` and the twenty prose lines under it were still there,
+    // starting with a bare word where a key was expected, so the sheet the tool
+    // had just written could not be parsed by the tool's own next command. It
+    // happened twice before this skipped the body.
+    let mut in_blanked_block = false;
     for line in sheet.lines() {
         let l = line.trim_start();
+        if in_blanked_block {
+            if l == "\"\"\"" || l.ends_with("\"\"\"") {
+                in_blanked_block = false;
+            }
+            continue;
+        }
         if l.starts_with("id = ") {
             out.push_str(&format!("id = \"{id}\"\n"));
         } else if l.starts_with("folder = ") {
@@ -1828,6 +1842,20 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
             out.push_str(&format!(
                 "{key} = \"\"   # REQUIRED — re-decide, do not inherit\n"
             ));
+            // Opened a \"\"\" block and did not close it on the same line: the
+            // rest belongs to the value that was just blanked.
+            let after = l.splitn(2, " = ").nth(1).unwrap_or("");
+            if after.starts_with("\"\"\"") && !after[3..].contains("\"\"\"") {
+                in_blanked_block = true;
+            }
+        } else if l.starts_with("order = ") {
+            // THE SIBLING'S PLACE IS TAKEN. `order` is globally contiguous and
+            // one row per place is an assembly check, so copying the sibling's
+            // number guarantees a collision — the tool wrote a tree its own
+            // gate refused, every time, and the person then renumbered 32 rows
+            // by hand. The new row goes immediately after the sibling and
+            // everything at or beyond that place moves up one, below.
+            out.push_str(&format!("order = {}\n", src_order + 1));
         } else {
             out.push_str(line);
             out.push('\n');
@@ -1845,6 +1873,31 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
     }
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     fs::write(dir.join("node.toml"), out).map_err(|e| e.to_string())?;
+    // Make room. Every sheet already at or beyond the new row's place moves up
+    // one, so the tree stays contiguous and the assembly check stays quiet.
+    // `order` is outside the sheet hash, so this rewrites no generated artefact.
+    let mut shifted = 0usize;
+    for sh in tree.ordered() {
+        if sh.id.as_str() == *id || sh.order <= src_order {
+            continue;
+        }
+        let f = sh.dir.join("node.toml");
+        let t = fs::read_to_string(&f).map_err(|e| e.to_string())?;
+        let mut w = String::new();
+        for line in t.lines() {
+            if line.trim_start().starts_with("order = ") {
+                w.push_str(&format!("order = {}\n", sh.order + 1));
+            } else {
+                w.push_str(line);
+                w.push('\n');
+            }
+        }
+        fs::write(&f, w).map_err(|e| e.to_string())?;
+        shifted += 1;
+    }
+    if shifted > 0 {
+        println!("made room at {}: {} row(s) moved up one", src_order + 1, shifted);
+    }
     fs::write(
         dir.join("fixtures.toml"),
         "# Known-good values, and where each came from. An expected value may\n# never be produced by the code under test.\n",
