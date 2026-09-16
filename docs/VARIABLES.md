@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1375 rows** — 660 a person picked, 715 worked out. Two thirds of any design tree is
+**1380 rows** — 663 a person picked, 717 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -19201,6 +19201,66 @@ The coarse label that puts a flux value in context — a reader who sees 228 sfu
 
 Not a property of the sky but of the people watching it, and it is the operational floor a mission's own alerting should not sit below. Read from the thresholds attached to the alerts as issued rather than chosen here.
 
+### `sw_ap_central_expectation` — Expected Ap over the mission window
+
+> What daily planetary Ap should the mission window be expected to sit at?
+
+| | |
+|---|---|
+| symbol | `Ap_central` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `Ap_central = the last rotation forecast, held forward = 22.0954` |
+| source | `noaa_swpc` |
+| declared value | **22.095389** - |
+| confirmed by |  |
+| valid over | 0 … 80 - |
+
+- **lower bound** — a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0
+- **upper bound** — above 80 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun
+- **read by** — `sw_ap_design_long`
+- **assumes** The level the sun was last at is the level it will be at — fails when the window is long or far out. This carries no cycle trend at all: the same number is published for a window opening next month and one opening in 2032, and over a 365-day window the sun demonstrably moves
+- **assumes** A rotation-mean level stands in for a daily level — fails when a design reads it as a day. It is the mean of 27 days; half the days in the window are above it by construction, which is what sw_ap_daily_band_spread exists to say
+- **assumes** The phase past the cycle table is an extrapolation — fails when it is read as measured. The last rotations sit past cycle 25's tabulated end and their phase wraps on the mean length of three cycles, one of which is incomplete
+
+Every other Ap row in this subsystem answers an EXTREME — what recurs once
+per mission, what G level to survive, how often a threshold is crossed. None of
+them says what the window sits at on an ordinary day, and a band needs a centre
+before it can have edges.
+
+
+### `sw_ap_daily_band_spread` — Within-rotation daily Ap spread
+
+> How far above its own rotation does a single day of Ap reach, at the declared confidence?
+
+| | |
+|---|---|
+| symbol | `dAp_day` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `dAp_day = pctl(Ap - movmean(Ap, 27 d), 0.95) over the 2001 days ending at the window = 15.0019` |
+| source | `noaa_swpc` |
+| declared value | **15.0018518519** - |
+| confirmed by |  |
+| valid over | 0 … 150 - |
+
+- **lower bound** — a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0
+- **upper bound** — above 150 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun
+- **read by** — `sw_ap_design_short`
+- **assumes** One number holds for the whole window — fails when the spread is not constant across a cycle and is widest in the declining phase when high-speed streams recur. A single percentile is too wide for a quiet stretch and too narrow for an active one
+- **assumes** A percentile of a burst process is a useful design number — fails when it is read as a worst case. The 95th percentile of the daily departure is exceeded one day in twenty — about eighteen times in a 365-day window — and the storms a design actually fears sit far out in a tail this row says nothing about
+- **assumes** The 27-day moving mean is the rotation — fails when recurrent high-speed streams have their own 27-day periodicity, so part of what this calls a daily departure is itself rotation-locked and is being removed by the very mean it is measured against
+
+The Ap twin of sw_daily_band_spread. A storm is a day, not a rotation, and this
+is the row that says how much of one a single day can be.
+
+
 ### `sw_ap_design` — Ap design value
 
 > What daily Ap is this design built to survive?
@@ -19230,6 +19290,94 @@ Not a property of the sky but of the people watching it, and it is the operation
 - **evidence** G3 strong — Kp 7 — daily Ap bounded at 132, the declared default — expect 132 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
 
 The design-side companion to sw_storm_return_level. That row says what the record will present over the mission; this says what the vehicle is built for, from the G level sw_storm_design_level declares. At the default G3 the answer is 132 and the record's five-year expectation is 158.4, and the gap between them is the finding.
+
+### `sw_ap_design_long` — Sustained Ap to design to
+
+> What daily planetary Ap must the design survive as a sustained level over the mission window?
+
+| | |
+|---|---|
+| symbol | `Ap_long` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `Ap_long = Ap_central + 1.28 * sigma_ap` |
+| source | `noaa_swpc` |
+| valid over | 0 … 300 - |
+
+- **lower bound** — Ap floors at zero — a perfectly quiet day is Ap 0 — so a design level below it means a spread has been subtracted rather than added
+- **upper bound** — above 300 the level exceeds the largest daily Ap in the record, 273, so a SUSTAINED level there is not a window this tool can model
+- **reads** — `sw_ap_central_expectation`, `sw_ap_mean_band_spread`
+- **read by** — `sw_ap_design_short`
+- **evidence** this repository's own chain — the Ap centre with its measured spread — expect 26.69530964 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** round numbers, checkable without a calculator — expect 25.12 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** a quiet centre with a narrow spread, where the lower guard starts to matter — expect 32.56 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The Ap twin of sw_f107_design_long, and NOT the same question as sw_ap_design.
+That row asks what extreme recurs once per mission; this asks what level the
+window sits at. A design needs both and they are different numbers by a factor
+of several.
+
+
+### `sw_ap_design_short` — Single-day Ap to design to
+
+> What daily planetary Ap must the design survive on a single day inside the mission window?
+
+| | |
+|---|---|
+| symbol | `Ap_short` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `Ap_short = Ap_long + dAp_day` |
+| source | `noaa_swpc` |
+| valid over | 0 … 400 - |
+
+- **lower bound** — Ap floors at zero, so a single-day design level below it means a spread has been subtracted rather than added
+- **upper bound** — 400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all, and this row — a sustained level plus a daily excursion — is the one in the subsystem most likely to reach for it
+- **reads** — `sw_ap_design_long`, `sw_ap_daily_band_spread`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **evidence** this repository's own chain — the sustained Ap level with its measured daily departure — expect 41.6971614919 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** round numbers, checkable without a calculator — expect 40 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** a higher sustained level with a narrower daily departure — the terms are independent and the row must not assume otherwise — expect 42 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The one a drag transient and a single-orbit attitude case are sized on. Its
+sustained sibling is what a propellant budget integrates.
+
+
+### `sw_ap_mean_band_spread` — Ap rotation-forecast residual spread
+
+> How much of the next rotation's Ap does the pattern fail to explain?
+
+| | |
+|---|---|
+| symbol | `sigma_ap` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `sigma_ap = std(pred - truth) over 361 walk-forward next-rotation forecasts = 3.5937` |
+| source | `noaa_swpc` |
+| declared value | **3.593688** - |
+| confirmed by |  |
+| valid over | 0 … 20 - |
+
+- **lower bound** — a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0
+- **upper bound** — above 20 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun
+- **read by** — `sw_ap_design_long`
+- **assumes** One sigma holds across the whole cycle — fails when it does not, and the source says so about its own number. Geomagnetic activity is burstier near the declining phase than at minimum, so a window there is given a band too narrow
+- **assumes** The residual spread is a usable margin for a non-negative index — fails when Ap floors at zero and its residuals are strongly skewed — a quiet rotation cannot undershoot far but an active one can overshoot a long way. A symmetric sigma understates the high tail, which is the tail a design is sized against
+- **assumes** The 273-day hole in 2017 is interpolated before the rotations are cut — fails when those days are counted as observations. Interpolated Ap is far smoother than real Ap, so the rotations covering them are easier to predict than any real rotation and the pooled spread is narrower than the record supports
+
+The Ap twin of sw_mean_band_spread, by the same method on the same rotations.
+It is a separate row because it is a separate measurement of a separate
+quantity, and because a row publishes one number.
+
 
 ### `sw_band_coverage` — Stated band coverage
 

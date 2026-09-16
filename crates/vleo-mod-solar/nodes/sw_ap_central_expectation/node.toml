@@ -1,0 +1,95 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_ap_central_expectation"
+label = "Expected Ap over the mission window"
+folder = "sw_ap_central_expectation"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "declared"
+owner = "environment"
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1344
+state = "published"
+
+# The prior implementation, named so the parity grid beside this node has
+# something to be the parity of.
+migrated_from = "prf_density.m:215 (01_kernel/sw_study/06_density, local function designWindow_, B.fc27.pred(end))"
+parity_tolerance = 0.01
+
+[question]
+text = "What daily planetary Ap should the mission window be expected to sit at?"
+note = """
+Every other Ap row in this subsystem answers an EXTREME — what recurs once
+per mission, what G level to survive, how often a threshold is crossed. None of
+them says what the window sits at on an ordinary day, and a band needs a centre
+before it can have edges.
+"""
+
+[maths]
+# A person has NOT read this relation against its source yet.
+confirmed_by = ""
+expression = "Ap_central = the last rotation forecast, held forward = 22.0954"
+source = "noaa_swpc"
+
+[theory]
+why = """
+The window this tool designs for opens after the record ends, so there is no
+observation of it and no forecast reaching it. What the study does, and what is
+done here, is to hold the LAST rotation forecast forward: the pattern's estimate
+of the level the sun is at when the record stops, carried across the window
+unchanged.
+
+That is a weak statement and it is meant to be. It says the mission will sit
+where the sun was last seen sitting, and its whole uncertainty is
+sw_ap_mean_band_spread. It does not decline with the cycle, it does not rise
+into the next maximum, and a window opening five years out gets the same centre
+as one opening next month.
+"""
+reading = """
+22.0954, against a record whose daily Ap runs from 0 to over 200. The study's own
+nominal scenario for its window is 22.0925 — 0.013 per cent away, from a
+derivation that shares no code with it.
+"""
+
+[[theory.step]]
+text = "Cut the record into 27-day rotations and predict each from the ones before it, by the method sw_ap_mean_band_spread describes."
+math = "pred(b) from rotations 1..b-1"
+
+[[theory.step]]
+text = "Take the last such prediction and hold it forward across the window."
+math = "Ap_central = pred(last) = 22.0954"
+
+[[assumption]]
+text = "The level the sun was last at is the level it will be at"
+fails_when = "the window is long or far out. This carries no cycle trend at all: the same number is published for a window opening next month and one opening in 2032, and over a 365-day window the sun demonstrably moves"
+
+[[assumption]]
+text = "A rotation-mean level stands in for a daily level"
+fails_when = "a design reads it as a day. It is the mean of 27 days; half the days in the window are above it by construction, which is what sw_ap_daily_band_spread exists to say"
+
+[[assumption]]
+text = "The phase past the cycle table is an extrapolation"
+fails_when = "it is read as measured. The last rotations sit past cycle 25's tabulated end and their phase wraps on the mean length of three cycles, one of which is incomplete"
+
+[output]
+symbol = "Ap_central"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 80.0
+reason_lower = "a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0"
+reason_upper = "above 80 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun"
+
+[value]
+number = 22.095389
+# NOT A CONFIRMATION. Derived on 2026-09-16 from
+# bundles/solar-weather@2026.09.14 by the method above and cross-checked
+# against the prior implementation in parity.csv beside this sheet. Nobody
+# has yet read the number and agreed it, which is what this field is for.
+confirmed_by = ""
+
+[view]
+kind = "number"

@@ -1,0 +1,84 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_ap_design_short"
+label = "Single-day Ap to design to"
+folder = "sw_ap_design_short"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "computed"
+owner = "environment"
+tier = "A"
+# SIGNIFICANT, and not by default. This is one of the four numbers §20 has the
+# subsystem publish, it feeds density then drag then lifetime, and its
+# multiplier is a constant this sheet had to argue about rather than inherit.
+# Two reviewers and a differential fill is the right cost for that.
+criticality = "significant"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1373
+state = "published"
+
+# The prior implementation, named so the parity grid beside this node has
+# something to be the parity of.
+migrated_from = "prf_density.m:227 (01_kernel/sw_study/06_density, designWindow_, hotday for ap)"
+# Arithmetic on two supplied numbers: the two should agree to the last bits.
+parity_tolerance = 1e-9
+
+[question]
+text = "What daily planetary Ap must the design survive on a single day inside the mission window?"
+note = """
+The one a drag transient and a single-orbit attitude case are sized on. Its
+sustained sibling is what a propellant budget integrates.
+"""
+
+[maths]
+# A person has NOT read this relation against its source yet.
+confirmed_by = ""
+expression = "Ap_short = Ap_long + dAp_day"
+source = "noaa_swpc"
+
+[[input]]
+binding = "sustained"
+var = "sw_ap_design_long"
+type = "Ratio"
+
+[[input]]
+binding = "daily"
+var = "sw_ap_daily_band_spread"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "add the within-rotation daily departure to the sustained Ap level"
+binds = "single_day"
+type = "Ratio"
+
+[theory]
+why = """
+The two spreads stack for the same reason they do for F10.7: one is how wrong
+the pattern is about the rotation's level, the other is how far a day departs
+from the rotation it sits in, and a bad day is both.
+
+For Ap the daily term DOMINATES. 15.00 added to a sustained 26.70 is more than
+half the answer, where F10.7's 34.23 on 175.61 is under a fifth. Geomagnetic
+activity is a burst process: the level is quiet and the day is not, so a design
+that reads only the sustained number is not slightly wrong about a storm day, it
+is wrong by the size of the storm.
+"""
+reading = """
+41.6972 at the declared window, against the study's hotday of 41.5352 — 0.39 per
+cent, the largest gap anywhere in this chain and inherited almost entirely from
+the daily spread's percentile convention.
+"""
+
+[output]
+symbol = "Ap_short"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 400.0
+reason_lower = "Ap floors at zero, so a single-day design level below it means a spread has been subtracted rather than added"
+reason_upper = "400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all, and this row — a sustained level plus a daily excursion — is the one in the subsystem most likely to reach for it"
+
+[view]
+kind = "number"

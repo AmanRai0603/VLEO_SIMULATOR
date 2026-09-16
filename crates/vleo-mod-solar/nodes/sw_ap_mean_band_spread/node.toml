@@ -1,0 +1,96 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_ap_mean_band_spread"
+label = "Ap rotation-forecast residual spread"
+folder = "sw_ap_mean_band_spread"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "declared"
+owner = "environment"
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1343
+state = "published"
+
+# The prior implementation, named so the parity grid beside this node has
+# something to be the parity of.
+migrated_from = "prf_rebuild.m:404 (01_kernel/sw_study/03_analysis, R.sigma.total for ap)"
+parity_tolerance = 0.02
+
+[question]
+text = "How much of the next rotation's Ap does the pattern fail to explain?"
+note = """
+The Ap twin of sw_mean_band_spread, by the same method on the same rotations.
+It is a separate row because it is a separate measurement of a separate
+quantity, and because a row publishes one number.
+"""
+
+[maths]
+# A person has NOT read this relation against its source yet.
+confirmed_by = ""
+expression = "sigma_ap = std(pred - truth) over 361 walk-forward next-rotation forecasts = 3.5937"
+source = "noaa_swpc"
+
+[theory]
+why = """
+Identical in method to sw_mean_band_spread and different in what it measures: a
+phase-conditioned baseline shrunk toward the global mean, scaled to the last
+thirteen rotations, plus an AR(2) on the anomalies, causally debiased, fitted
+only on rotations before the one predicted. The spread of what is left is this
+row.
+
+Ap is the harder of the two to predict from a pattern and the number says so.
+3.59 against a mean daily Ap near 12 is a relative spread far worse than F10.7's
+13.45 against 130 — geomagnetic activity is driven by what the solar wind
+happens to do at Earth, and a cycle-phase baseline knows nothing about that.
+"""
+reading = """
+3.5937. prf_rebuild's own figure for the same quantity is 3.5866 — 0.20 per cent
+apart, between two implementations of one method sharing no code.
+"""
+
+[[theory.step]]
+text = "Cut the record into 27-day rotations and take the mean Ap of each."
+math = "rm(b) = mean(Ap over days 27b .. 27b+26)"
+
+[[theory.step]]
+text = "Predict each from the rotations before it, never from itself."
+math = "pred(b) = base(phase)*scale + AR(2) on anomalies - causal debias"
+
+[[theory.step]]
+text = "The spread of what is left, over every rotation scored."
+math = "sigma_ap = std(pred - truth) = 3.5937 over 361 rotations"
+
+[[assumption]]
+text = "One sigma holds across the whole cycle"
+fails_when = "it does not, and the source says so about its own number. Geomagnetic activity is burstier near the declining phase than at minimum, so a window there is given a band too narrow"
+
+[[assumption]]
+text = "The residual spread is a usable margin for a non-negative index"
+fails_when = "Ap floors at zero and its residuals are strongly skewed — a quiet rotation cannot undershoot far but an active one can overshoot a long way. A symmetric sigma understates the high tail, which is the tail a design is sized against"
+
+[[assumption]]
+text = "The 273-day hole in 2017 is interpolated before the rotations are cut"
+fails_when = "those days are counted as observations. Interpolated Ap is far smoother than real Ap, so the rotations covering them are easier to predict than any real rotation and the pooled spread is narrower than the record supports"
+
+[output]
+symbol = "sigma_ap"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 20.0
+reason_lower = "a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0"
+reason_upper = "above 20 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun"
+
+[value]
+number = 3.593688
+# NOT A CONFIRMATION. Derived on 2026-09-16 from
+# bundles/solar-weather@2026.09.14 by the method above and cross-checked
+# against the prior implementation in parity.csv beside this sheet. Nobody
+# has yet read the number and agreed it, which is what this field is for.
+confirmed_by = ""
+
+[view]
+kind = "number"

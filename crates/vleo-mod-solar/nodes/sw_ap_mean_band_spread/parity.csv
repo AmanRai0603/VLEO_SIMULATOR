@@ -1,0 +1,19 @@
+# The prior implementation, for the record and window it was exported on.
+#
+# NOT A FIXTURE. An expected value may never come from the implementation under
+# test, and this file is the OTHER implementation's answer — a second opinion.
+# A disagreement here is a finding about one of the two, and the answer is never
+# to widen parity_tolerance or to edit this file until it agrees.
+#
+# prf_rebuild publishes this directly as R.sigma.total when called with
+# 'Var','ap'. There is no MATLAB in this environment, so the value below is
+# back-solved from the driver sets the run did publish, where designWindow_
+# formed the mean band as centre +/- 1.28*sigma:
+#
+#   (hotmean.ap - nominal.ap) / 1.28
+#     = (26.683328217449382 - 22.092538390203554) / 1.28
+#     = 3.5865545525358034
+#
+# THE TWO AGREE TO 0.20 PER CENT.
+variable,matlab_sigma_ap
+ap,3.5865545525358034

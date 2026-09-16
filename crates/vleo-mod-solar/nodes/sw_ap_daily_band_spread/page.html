@@ -1,0 +1,163 @@
+<article class="node" data-node="sw_ap_daily_band_spread" data-sheet-hash="8672fc" data-impl-hash="222325">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Within-rotation daily Ap spread</h2>
+  <p class="ident"><code>sw_ap_daily_band_spread</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How far above its own rotation does a single day of Ap reach, at the declared confidence?</p>
+<p class="maths"><code>dAp_day = pctl(Ap - movmean(Ap, 27 d), 0.95) over the 2001 days ending at the window = 15.0019</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The Ap twin of sw_daily_band_spread. A storm is a day, not a rotation, and this
+is the row that says how much of one a single day can be.
+</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>One number holds for the whole window</dt><dd>fails when the spread is not constant across a cycle and is widest in the declining phase when high-speed streams recur. A single percentile is too wide for a quiet stretch and too narrow for an active one</dd>
+<dt>A percentile of a burst process is a useful design number</dt><dd>fails when it is read as a worst case. The 95th percentile of the daily departure is exceeded one day in twenty — about eighteen times in a 365-day window — and the storms a design actually fears sit far out in a tail this row says nothing about</dd>
+<dt>The 27-day moving mean is the rotation</dt><dd>fails when recurrent high-speed streams have their own 27-day periodicity, so part of what this calls a daily departure is itself rotation-locked and is being removed by the very mean it is measured against</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">The same construction as the F10.7 daily spread: subtract the record's own centred 27-day moving mean from each day and read the 95th percentile of what is left, over the 2001 days ending at the window.</p>
+<p class="why">For Ap the number is larger than its own centre — 15.00 against a centre of 22.10 — and that is the physics rather than an error. F10.7 varies smoothly as active regions rotate into view; Ap is quiet for weeks and then a coronal mass ejection arrives and it is 100 for a day. A within-rotation spread comparable to the level itself is what a burst process looks like when you measure it this way.</p>
+<div class="theory-walk" data-steps="3">
+<ol class="derive">
+<li><span class="dt">Take the daily Ap record up to the day the window opens, and no further.</span><code class="dm">hist = Ap over the 2001 days ending at the window</code></li>
+<li><span class="dt">Subtract the centred 27-day moving mean from each day.</span><code class="dm">dev(t) = Ap(t) - movmean(Ap, 27)(t)</code></li>
+<li><span class="dt">Read the 95th percentile of the departures.</span><code class="dm">pctl(dev, 0.95) = +15.0019 · pctl(dev, 0.05) = -10.5889</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">15.0019, against the study's 14.8519 — an absolute difference of 0.15, the same ORDER as the 0.083 the F10.7 row differs by. Ap is simply a smaller number, so the same convention difference reads as 1.01 per cent where F10.7's reads as 0.24, which is why the grid beside this row is declared at 2 per cent and its F10.7 twin at 1.</p>
+<p class="maths concl">which is the relation this node states: <code>dAp_day = pctl(Ap - movmean(Ap, 27 d), 0.95) over the 2001 days ending at the window = 15.0019</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
+<tr class="out"><td>out</td><td><code>dAp_day</code></td><td>sw_ap_daily_band_spread</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="sw_ap_design_short">sw_ap_design_short</a></p>
+</section>
+<section class="panel" data-panel="3">
+<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
+<p>This is a declared value: <b>15.0018518519</b> -, confirmed by <b></b>.</p>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_ap_daily_band_spread() -> Ratio
+    dAp_day ← 15.0018518519          // declared, confirmed by 
+
+    // a guard whose reason is not written down gets deleted
+    require dAp_day ≥ 0
+    require dAp_day ≤ 150
+    require dAp_day is finite
+
+    return dAp_day
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>dAp_day &ge; 0</code> — a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0</li>
+<li><code>dAp_day &le; 150</code> — above 150 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sw_ap_daily_band_spread" data-lo="0" data-hi="150" data-symbol="dAp_day">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How far above its own rotation does a single day of Ap reach, at the declared confidence?
+///
+/// `dAp_day = pctl(Ap - movmean(Ap, 27 d), 0.95) over the 2001 days ending at the window = 15.0019`
+///
+/// Source: `noaa_swpc`
+///
+/// The Ap twin of sw_daily_band_spread. A storm is a day, not a rotation, and
+/// this is the row that says how much of one a single day can be.
+///
+/// # Assumptions
+///
+/// * One number holds for the whole window — fails when the spread is not constant across a cycle and is widest in the declining phase when high-speed streams recur. A single percentile is too wide for a quiet stretch and too narrow for an active one
+/// * A percentile of a burst process is a useful design number — fails when it is read as a worst case. The 95th percentile of the daily departure is exceeded one day in twenty — about eighteen times in a 365-day window — and the storms a design actually fears sit far out in a tail this row says nothing about
+/// * The 27-day moving mean is the rotation — fails when recurrent high-speed streams have their own 27-day periodicity, so part of what this calls a daily departure is itself rotation-locked and is being removed by the very mean it is measured against
+pub const NODE_ID: &amp;str = &quot;sw_ap_daily_band_spread&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x646173cad08672fc;
+
+pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
+    // generated · a declared value, converted from the unit it was written in
+    let declared: Ratio = match Ratio::from_unit(15.0018518519, Unit::One) {
+        Some(q) =&gt; q,
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;dAp_day&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+    };
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = declared;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;dAp_day&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;dAp_day&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0&quot; });
+    }
+    if answer.get() &gt; 150.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;dAp_day&quot;, value: answer.get(), bound: 150.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;above 150 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0 — a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0</li>
+<li><code>OutOfDomain</code> above 150 — above 150 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_ap_daily_band_spread"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>0 &hellip; 150</code> -.</p>
+<ul class="guards"><li>lower — a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0</li><li>upper — above 150 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+<li>a declared value with nobody's confirmation against it</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

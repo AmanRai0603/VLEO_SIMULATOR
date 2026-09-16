@@ -1,0 +1,98 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_ap_daily_band_spread"
+label = "Within-rotation daily Ap spread"
+folder = "sw_ap_daily_band_spread"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "declared"
+owner = "environment"
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1341
+state = "published"
+
+# The prior implementation, named so the parity grid beside this node has
+# something to be the parity of.
+migrated_from = "prf_density.m:225 (01_kernel/sw_study/06_density, local function designWindow_, qHi for ap)"
+parity_tolerance = 0.02
+
+[question]
+text = "How far above its own rotation does a single day of Ap reach, at the declared confidence?"
+note = """
+The Ap twin of sw_daily_band_spread. A storm is a day, not a rotation, and this
+is the row that says how much of one a single day can be.
+"""
+
+[maths]
+# A person has NOT read this relation against its source yet.
+confirmed_by = ""
+expression = "dAp_day = pctl(Ap - movmean(Ap, 27 d), 0.95) over the 2001 days ending at the window = 15.0019"
+source = "noaa_swpc"
+
+[theory]
+why = """
+The same construction as the F10.7 daily spread: subtract the record's own
+centred 27-day moving mean from each day and read the 95th percentile of what is
+left, over the 2001 days ending at the window.
+
+For Ap the number is larger than its own centre — 15.00 against a centre of
+22.10 — and that is the physics rather than an error. F10.7 varies smoothly as
+active regions rotate into view; Ap is quiet for weeks and then a coronal mass
+ejection arrives and it is 100 for a day. A within-rotation spread comparable to
+the level itself is what a burst process looks like when you measure it this
+way.
+"""
+reading = """
+15.0019, against the study's 14.8519 — an absolute difference of 0.15, the same
+ORDER as the 0.083 the F10.7 row differs by. Ap is simply a smaller number, so
+the same convention difference reads as 1.01 per cent where F10.7's reads as
+0.24, which is why the grid beside this row is declared at 2 per cent and its
+F10.7 twin at 1.
+"""
+
+[[theory.step]]
+text = "Take the daily Ap record up to the day the window opens, and no further."
+math = "hist = Ap over the 2001 days ending at the window"
+
+[[theory.step]]
+text = "Subtract the centred 27-day moving mean from each day."
+math = "dev(t) = Ap(t) - movmean(Ap, 27)(t)"
+
+[[theory.step]]
+text = "Read the 95th percentile of the departures."
+math = "pctl(dev, 0.95) = +15.0019   ·   pctl(dev, 0.05) = -10.5889"
+
+[[assumption]]
+text = "One number holds for the whole window"
+fails_when = "the spread is not constant across a cycle and is widest in the declining phase when high-speed streams recur. A single percentile is too wide for a quiet stretch and too narrow for an active one"
+
+[[assumption]]
+text = "A percentile of a burst process is a useful design number"
+fails_when = "it is read as a worst case. The 95th percentile of the daily departure is exceeded one day in twenty — about eighteen times in a 365-day window — and the storms a design actually fears sit far out in a tail this row says nothing about"
+
+[[assumption]]
+text = "The 27-day moving mean is the rotation"
+fails_when = "recurrent high-speed streams have their own 27-day periodicity, so part of what this calls a daily departure is itself rotation-locked and is being removed by the very mean it is measured against"
+
+[output]
+symbol = "dAp_day"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 150.0
+reason_lower = "a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0"
+reason_upper = "above 150 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun"
+
+[value]
+number = 15.0018518519
+# NOT A CONFIRMATION. Derived on 2026-09-16 from
+# bundles/solar-weather@2026.09.14 by the method above and cross-checked
+# against the prior implementation in parity.csv beside this sheet. Nobody
+# has yet read the number and agreed it, which is what this field is for.
+confirmed_by = ""
+
+[view]
+kind = "number"

@@ -1,0 +1,30 @@
+# Known-good values, and where each came from. An expected value may
+# never be produced by the code under test.
+#
+# The study's own pair is NOT used here: its sum is the prior
+# implementation's published answer, and that may not be a fixture. It is in
+# parity.csv beside this sheet.
+
+[[fixture]]
+label = "this repository's own chain — the Ap centre with its measured spread"
+expect = 26.69530964
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { central = 22.095389, spread = 3.593688 }
+
+[[fixture]]
+label = "round numbers, checkable without a calculator"
+expect = 25.12
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { central = 20.0, spread = 4.0 }
+
+[[fixture]]
+label = "a quiet centre with a narrow spread, where the lower guard starts to matter"
+expect = 32.56
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { central = 30.0, spread = 2.0 }
