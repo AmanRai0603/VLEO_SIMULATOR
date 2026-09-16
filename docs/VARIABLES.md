@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1390 rows** — 663 a person picked, 727 worked out. Two thirds of any design tree is
+**1391 rows** — 663 a person picked, 728 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -20539,6 +20539,7 @@ prf_horizon's structure function D(L) = RMS[F107(t+L) - F107(t)], its first meth
 - **reads** — `sw_storm_return_level`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **assumes** The table is defined for the three-hourly ap and is being fed a daily mean Ap — fails when Kp(ap) is concave, so by Jensen's inequality the table run on a daily mean returns a Kp above the mean of the eight three-hourly Kp and well below the daily peak. Measured on the solar-weather record over 10,297 days with both an Ap and all eight Kp: against the 24-hour mean the table reads high by 0.083 Kp (median), against the daily peak it reads low by 1.000 Kp; on disturbed days (Ap >= 48, 131 of them) those become 0.397 high and 1.606 low. Both signs are what the concavity argument predicts. A design sized on the peak slot through this node alone is sized on a sky 1.6 Kp quieter than the record's, and that is on exactly the days a drag design is sized by. sw_kp_slot_bias now measures both offsets and publishes the peak one, +1.317 Kp at the design Ap of 158; this node's own answer still carries them uncorrected, because the correction is a separate row a consumer adds rather than something applied inside the conversion.
+- **assumes** The 28 pairs are written once, in vleo-core, and THEY USED TO BE WRITTEN TWICE — fails when a published table is hand-copied. `vleo_core::physics::env::kp_from_ap` held the same scale with Kp tabulated as decimals — 0.33, 0.67 — where this node's hole held it in exact thirds, which is how IAGA defines the index. The two disagreed by up to 0.0033 Kp everywhere between the anchors, and nothing caught it for as long as both existed, because the fixtures on this row are the published table's ANCHOR points and the anchors are precisely where two transcriptions of one table agree. The kernel's copy is now in thirds and this hole calls it, so there is one table; but the lesson is about the evidence rather than the table — a fixture set drawn only from a source's own tabulated points cannot see a transcription error in what lies between them
 - **assumes** Straight lines between the 28 tabulated points — fails when the published scale is a discrete table, so every value strictly between two anchors is this node's choice and not the source's. ap grows roughly geometrically with Kp, so interpolating linearly in ap rather than in its logarithm understates Kp inside a bin; the worst departure between the two over the whole domain is 0.017 Kp, in the 2-to-3 bin. That is the size of the arbitrariness, and it is smaller than the slot bias above by two orders of magnitude.
 - **assumes** Clipped to the table's ends: below ap 0 and above ap 400 the answer is 0 and 9, and the guard against the first of those lives in the producer, not here — fails when above ap 400 every storm returns exactly 9, so the largest storm on record and a merely severe one become the same number and any relation reading Kp stops responding. The largest daily Ap in the solar-weather record is 273, so nothing in this record reaches the clip — but a scenario multiplier applied to a disturbed day can, and it will do so silently. At the other end the clamp is worse than silent, it is plausible: ap -1, ap -1e9 and negative infinity all read back as Kp 0, the quietest possible sky, which no guard on this node can catch because 0 is a legitimate Kp. What protects a run is the PRODUCER's declared range — sw_storm_return_level publishes 20 to 230 and refuses before this node is reached — because in this repository a range travels with the variable and an [[input]] declares no range of its own. So a direct call to evaluate() with a negative ap, which is what a test does and what a future consumer with a looser range would do, returns Kp 0 rather than refusing. This was going to be fixed here with an explicit fault; generation refused the body, correctly — a hole may not construct a fault, because guards belong to declared domains where their reason is attached. The honest fix is a range on the producer, and that is where it now is.
 - **evidence** Kp 0 — ap 0, the table's first point — expect 0 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
@@ -28227,6 +28228,42 @@ sustained level its sibling carries, and the two are separate rows here because
 they are separate rows in the subsystem below.
 
 
+### `sys_space_environment_f10_7_81day` — F10.7, 81-day mean
+
+> What 81-day mean F10.7 does the single-day design value ride on?
+
+| | |
+|---|---|
+| symbol | `F107bar_sys` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `F107bar_sys = l3_solar_interface.f107bar_hotday` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the crossing's own floor, restated: an 81-day mean cannot sit below a floor every day of it respects
+- **upper bound** — the crossing's own ceiling, restated: above 400 sfu every consumer of F10.7 is extrapolating
+- **reads** — `l3_solar_interface.f107bar_hotday`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** f107bar_hotday is the hot MEAN, not the 81-day mean of the hot day, and the two are different numbers — fails when a reader assumes the name means the latter. It is 104.07 where the hot day is 124.14. A *day scenario is a single day riding on the sustained level beneath it, so its 81-day companion is that sustained level; only the three *mean scenarios have the daily value and the 81-day mean equal. Taking the wrong one puts the atmosphere's background state twenty sfu out
+- **assumes** It pairs with the SINGLE-DAY flux row and not the sustained one — fails when somebody pairs it with sys_space_environment_solar_flux and thinks they have two numbers. That row carries 104.07 and so does this one, because the hot day's 81-day companion IS the hot sustained level — the two rows are the same value seen from two roles. The pair a density model wants is (124.14 daily, 104.07 background); the pair (104.07, 104.07) is the sustained scenario, which is a different case and not wrong, only different
+- **assumes** It receives and does not compute, and a reader here sees none of the subsystem's limitations — fails when a margin is taken against this number. It is a 1.28-sigma band edge — the 90th percentile, while the run is labelled 95 per cent — on a centre that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles whose peaks differ by 41 per cent
+- **evidence** the 81-day mean this tree's own chain gives for the declared window's hot day — the sustained hot level, 104.07, not the day's own 124.14 — expect 104.07110896 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the value the STUDY publishes as f107bar for its own hotday scenario, 175.61, which is its own hotmean — carried here so the two ports' numbers are visible together — expect 175.60641964945182 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the record's own climatology, as a round case well inside the declared range — expect 114.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The companion to sys_space_environment_f10_7, and NOT the same number. A hot day
+rides on the sustained hot level beneath it, so the pair for the design case is
+124.14 daily on 104.07 background, not 124.14 on 124.14.
+
+That distinction is the study's own and it is why its driver set has separate
+f107 and f107bar columns: the three *mean scenarios have the two equal, because
+they ARE the window mean, and the two *day scenarios do not.
+
+
 ### `sys_space_environment_solar_flux` — Solar flux, sustained
 
 > What solar flux does the system design to, as a level sustained for months at a time?
@@ -28248,7 +28285,7 @@ they are separate rows in the subsystem below.
 - **reads** — `l3_solar_interface`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **assumes** It receives and does not compute, and a system reader sees none of the subsystem's limitations — fails when a margin is taken against this number. It is a 1.28-sigma band edge — the 90th percentile, while the run is labelled 95 per cent — on a centre that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles whose peaks differ by 41 per cent. The credibility vector crosses the seam; the assumptions do not, and that is the ordinary cost of having a seam at all
-- **assumes** The 81-day mean does not arrive at layer 2, and a density model needs it — fails when somebody writes sys_space_environment_atmospheric_density from the two flux rows that exist. Every thermospheric density model in use takes the daily value AND the 81-day mean, because the first drives the day's EUV heating and the second the background state. The crossing publishes f107bar for all five scenarios and no layer-2 row receives it. Adding one is a row, not a redesign, and it is recorded where the density author will meet it
+- **assumes** Kp does not reach layer 2 at all, and a density model needs it — fails when somebody writes sys_space_environment_atmospheric_density from the flux rows alone. The daily flux and the 81-day mean both arrive now; Kp does not cross, because the subsystem's three Kp relations each answer at one Ap and a driver set needs them at five. §20.8 names the three ways out. Until one is chosen a density row would have to convert Ap to Kp itself, which is the duplication the crossing exists to prevent
 - **assumes** It is the sustained level and not the single day — fails when somebody sizes a thermal transient on it. The single day is sys_space_environment_f10_7 at 124.14, twenty sfu higher. Reading the wrong one of the two under-sizes a transient case or over-sizes a steady one
 - **evidence** the sustained level this tree's own chain gives for the declared window — expect 104.07110896 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** the level the study publishes for its own window, which this row does not use but a reader will compare against — expect 175.5520201913 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)

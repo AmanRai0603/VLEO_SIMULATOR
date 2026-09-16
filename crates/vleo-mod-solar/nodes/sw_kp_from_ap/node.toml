@@ -11,7 +11,7 @@ owner = "environment"
 tier = "A"
 criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1363
+order = 1364
 state = "published"
 
 # The prior implementation, named so the parity grid beside this node has
@@ -132,6 +132,10 @@ consumer to add.
 [[assumption]]
 text = "The table is defined for the three-hourly ap and is being fed a daily mean Ap"
 fails_when = "Kp(ap) is concave, so by Jensen's inequality the table run on a daily mean returns a Kp above the mean of the eight three-hourly Kp and well below the daily peak. Measured on the solar-weather record over 10,297 days with both an Ap and all eight Kp: against the 24-hour mean the table reads high by 0.083 Kp (median), against the daily peak it reads low by 1.000 Kp; on disturbed days (Ap >= 48, 131 of them) those become 0.397 high and 1.606 low. Both signs are what the concavity argument predicts. A design sized on the peak slot through this node alone is sized on a sky 1.6 Kp quieter than the record's, and that is on exactly the days a drag design is sized by. sw_kp_slot_bias now measures both offsets and publishes the peak one, +1.317 Kp at the design Ap of 158; this node's own answer still carries them uncorrected, because the correction is a separate row a consumer adds rather than something applied inside the conversion."
+
+[[assumption]]
+text = "The 28 pairs are written once, in vleo-core, and THEY USED TO BE WRITTEN TWICE"
+fails_when = "a published table is hand-copied. `vleo_core::physics::env::kp_from_ap` held the same scale with Kp tabulated as decimals — 0.33, 0.67 — where this node's hole held it in exact thirds, which is how IAGA defines the index. The two disagreed by up to 0.0033 Kp everywhere between the anchors, and nothing caught it for as long as both existed, because the fixtures on this row are the published table's ANCHOR points and the anchors are precisely where two transcriptions of one table agree. The kernel's copy is now in thirds and this hole calls it, so there is one table; but the lesson is about the evidence rather than the table — a fixture set drawn only from a source's own tabulated points cannot see a transcription error in what lies between them"
 
 [[assumption]]
 text = "Straight lines between the 28 tabulated points"

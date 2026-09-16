@@ -11,7 +11,7 @@ owner = "environment"
 tier = "A"
 criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 308
+order = 309
 state = "published"
 
 # THE SINGLE-DAY HALF. sys_space_environment_solar_flux receives the level the

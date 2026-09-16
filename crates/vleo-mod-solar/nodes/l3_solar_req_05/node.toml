@@ -11,7 +11,7 @@ owner = "environment"
 tier = "A"
 criticality = "significant"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1338
+order = 1339
 state = "published"
 # A ceiling, not a floor. The environment is something the vehicle must
 # survive, so the requirement is satisfied by the sky being no worse than

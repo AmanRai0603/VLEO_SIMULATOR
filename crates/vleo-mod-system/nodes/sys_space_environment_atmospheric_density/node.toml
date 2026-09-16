@@ -15,7 +15,7 @@ layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 # is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
 # reverses the order the source put them in, and the order is part of
 # what the source said.
-order = 309
+order = 310
 state = "empty"
 
 # SEEDED — the folder exists and nothing has been specified in it.
@@ -44,9 +44,11 @@ state = "empty"
 # exactly that signature less the altitude. Of the three drivers:
 #
 #   F10.7 daily     ARRIVES, as sys_space_environment_f10_7
-#   F10.7 81-day    DOES NOT ARRIVE. l3_solar_interface publishes f107bar for
-#                   all five scenarios and no layer-2 row receives it. Adding
-#                   one is a row, not a redesign.
+#   F10.7 81-day    ARRIVES, as sys_space_environment_f10_7_81day. It carries
+#                   f107bar_hotday, which is the hot MEAN and not the 81-day
+#                   mean of the hot day — a *day scenario rides on the sustained
+#                   level beneath it, so the pair is (124.14 daily, 104.07
+#                   background).
 #   Kp              DOES NOT CROSS AT ALL. The subsystem has the conversion
 #                   (sw_kp_from_ap) and both slot corrections (sw_kp_mean_bias,
 #                   sw_kp_slot_bias) and cannot use them in the crossing,

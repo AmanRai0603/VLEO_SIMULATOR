@@ -1182,4 +1182,43 @@ need, because five layer-2 rows are waiting on these three:
 
 **§20 is now complete as a plan.** What remains from it is not a step but three
 named findings: the Kp columns, the 81-day mean, and the two closures that do not
-hold.
+hold. Two of those are dealt with in 20.14; the closures are decisions.
+
+### 20.14 · Two of the three findings, closed
+
+**The 81-day mean now reaches layer 2.** `sys_space_environment_f10_7_81day`
+receives `l3_solar_interface.f107bar_hotday`. It was one row, as 20.13 said it
+would be. A density model takes the daily value and the 81-day mean together
+because the two carry different physics — the day's EUV heating and the
+background state the atmosphere has settled into — and it now has both.
+
+The member's name is the trap and the sheet says so: `f107bar_hotday` is the hot
+MEAN, 104.07, not the 81-day mean of the hot day. A `*day` scenario is a single
+day riding on the sustained level beneath it, so its 81-day companion is that
+sustained level, and only the three `*mean` scenarios have the two equal. The
+design pair is (124.14 daily, 104.07 background).
+
+**The ap-to-Kp table was written twice and the two copies disagreed.**
+`vleo_core::physics::env::kp_from_ap` held the 28 published pairs with Kp
+tabulated as decimals — 0.33, 0.67 — while `sw_kp_from_ap`'s hole held the same
+pairs in exact thirds, which is how IAGA defines the index. They differed by up
+to 0.0033 Kp everywhere between the anchors.
+
+Nothing caught it for as long as both existed, and WHY is the part worth keeping.
+That node's eleven fixtures are `published-source`, drawn from the table's own
+anchor points, and the anchors are precisely where two transcriptions of one
+table agree. A fixture set drawn only from a source's tabulated points cannot see
+a transcription error in what lies between them. The kernel's own comment on
+`SOLAR_CYCLE_SHAPE` had already stated the principle — "a hand-copied table
+drifts from its original without anything noticing" — and cited `kp_from_ap` as
+the example of doing it right, while `kp_from_ap` was the thing that had drifted.
+
+The kernel's copy is now in thirds and is the only one; the node calls it. No
+published value moved, because the node was already using the correct
+transcription. This also makes the relation callable from any hole, which is the
+second of §20.8's three ways out for the Kp columns.
+
+**What is left of §20 is three decisions, none of them mine.** The Kp columns
+still do not cross. `l3_solar_req_05` fails at 90.55 against 80 and
+`l3_solar_req_03` at 158.38 against 150. And seven rows carry a measured number
+or a design commitment with no name against them.
