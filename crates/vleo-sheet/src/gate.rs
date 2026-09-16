@@ -199,9 +199,120 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         },
     );
 
+    // 3b — a row that publishes a set declares each member as fully as it
+    // declares its own answer.
+    //
+    // The exception to one row, one answer exists for one shape of thing and it
+    // is not a licence to publish a bag of numbers. A member with no bounds is a
+    // member with no guard, and a member with no reason for its bounds is a
+    // guard the next person deletes; a member with no symbol has no field to
+    // assign in a hole body and no name on a page.
+    let mut pub_bad = Vec::new();
+    if sh.is_declared() && !sh.publishes.is_empty() {
+        pub_bad.push(
+            "a declared row states one measured number; a set is computed from the rows that \
+             measured its members"
+                .to_string(),
+        );
+    }
+    let mut seen: BTreeSet<&str> = BTreeSet::new();
+    for pb in &sh.publishes {
+        if pb.id.trim().is_empty() {
+            pub_bad.push("a publishes block with no id".into());
+            continue;
+        }
+        if pb.id.contains('.') {
+            pub_bad.push(format!(
+                "'{}' contains a dot, and a dot is what separates a node from its member",
+                pb.id
+            ));
+        }
+        if !seen.insert(pb.id.as_str()) {
+            pub_bad.push(format!("'{}' is published twice", pb.id));
+        }
+        for (what, v) in [
+            ("symbol", &pb.symbol),
+            ("label", &pb.label),
+            ("type", &pb.ty),
+            ("unit", &pb.unit),
+            ("reason_lower", &pb.reason_lower),
+            ("reason_upper", &pb.reason_upper),
+        ] {
+            if v.trim().is_empty() {
+                pub_bad.push(format!("'{}' has no {}", pb.id, what));
+            }
+        }
+        if pb.lower >= pb.upper {
+            pub_bad.push(format!(
+                "'{}' declares a lower bound of {} at or above its upper bound of {}",
+                pb.id, pb.lower, pb.upper
+            ));
+        }
+    }
+    // A fixture on a set row has to say which member it is about, and the name
+    // has to be one of them. Defaulting silently to the primary would make a
+    // typo into a test that passes against the wrong variable.
+    for f in &sh.fixtures {
+        if f.variable.is_empty() {
+            if !sh.publishes.is_empty() {
+                pub_bad.push(format!(
+                    "the fixture '{}' names no variable, and this row publishes {} of them",
+                    f.label,
+                    sh.publishes.len() + 1
+                ));
+            }
+        } else if f.variable != sh.symbol && !sh.publishes.iter().any(|pb| pb.id == f.variable) {
+            pub_bad.push(format!(
+                "the fixture '{}' names '{}', which this row does not publish",
+                f.label, f.variable
+            ));
+        }
+    }
+    out.push(if pub_bad.is_empty() {
+        Check::pass("publishes")
+    } else {
+        Check::fail("publishes", pub_bad.join("; "))
+    });
+
     // 4 — every input resolves, and the declared type agrees with the producer.
+    //
+    // An input may name a node — the ordinary case — or one member of a set a
+    // node publishes, as `<node id>.<publish id>`. A node id never contains a
+    // dot, so the two cannot be confused, and the member is type-checked against
+    // the publish block rather than against the producing row's own answer.
     let mut bad = Vec::new();
     for i in &sh.inputs {
+        if let Some((node, member)) = i.var.split_once('.') {
+            match tree.sheets.get(node) {
+                None => bad.push(format!("'{}' names no node", node)),
+                Some(p) => match p.publishes.iter().find(|pb| pb.id == member) {
+                    None => bad.push(format!(
+                        "'{}' names no variable {} publishes — it publishes {}",
+                        i.var,
+                        p.id,
+                        if p.publishes.is_empty() {
+                            "only its own answer".to_string()
+                        } else {
+                            p.publishes
+                                .iter()
+                                .map(|pb| pb.id.as_str())
+                                .collect::<Vec<_>>()
+                                .join(", ")
+                        }
+                    )),
+                    Some(pb) if pb.ty != i.ty => bad.push(format!(
+                        "'{}' expects {} but {}.{} publishes {}",
+                        i.binding, i.ty, p.id, pb.id, pb.ty
+                    )),
+                    Some(_) if p.state == "deprecated" => bad.push(format!(
+                        "'{}' is deprecated and may not be a new dependency",
+                        p.id
+                    )),
+                    Some(_) => {}
+                },
+            }
+            continue;
+        }
         match tree.sheets.get(&i.var) {
             None => bad.push(format!("'{}' names no node", i.var)),
             Some(p) if p.ty != i.ty => bad.push(format!(

@@ -278,6 +278,7 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
                 provenance: s(r.get("provenance")),
                 source: s(r.get("source")),
                 inputs,
+                variable: s(r.get("variable")),
             });
         }
     }
@@ -304,6 +305,19 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
         canon.push_str(&st.text);
         canon.push_str(&st.binds);
         canon.push_str(&st.ty);
+    }
+    // The extra variables a set row publishes are part of its meaning, and the
+    // ORDER of them is part of its interface: `OUTPUT_VARS` and the slots the
+    // bus writes are positional. A row that added, removed or reordered one
+    // while keeping its hash would hand a face a page that names one variable
+    // and a run that filled another. Every row with one answer publishes none
+    // of these, so no existing hash moves.
+    for pb in &sh.publishes {
+        canon.push_str(&pb.id);
+        canon.push_str(&pb.symbol);
+        canon.push_str(&pb.ty);
+        canon.push_str(&pb.unit);
+        canon.push_str(&format!("{:?}{:?}", pb.lower, pb.upper));
     }
     sh.sheet_hash = fnv1a(&canon);
     sh.impl_hash = fnv1a(&read_holes_raw(dir));

@@ -73,14 +73,14 @@ fn answers_near_the_known_good_point() {
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Voltage::new(300.0 * scale), MolarMass::new(0.01872)) {
-            assert!(v.get().is_finite(), "prop_exhaust_velocity produced a value that is not a number");
-            assert!(v.get() >= 1000.0 && v.get() <= 500000.0, "prop_exhaust_velocity answered {}, outside its declared domain 1000 … 500000 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "prop_exhaust_velocity produced a value that is not a number for v_e");
+            assert!(v.get() >= 1000.0 && v.get() <= 500000.0, "prop_exhaust_velocity answered {} for v_e, outside its declared domain 1000 … 500000 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Voltage::new(300.0), MolarMass::new(0.01872 * scale)) {
-            assert!(v.get().is_finite(), "prop_exhaust_velocity produced a value that is not a number");
-            assert!(v.get() >= 1000.0 && v.get() <= 500000.0, "prop_exhaust_velocity answered {}, outside its declared domain 1000 … 500000 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "prop_exhaust_velocity produced a value that is not a number for v_e");
+            assert!(v.get() >= 1000.0 && v.get() <= 500000.0, "prop_exhaust_velocity answered {} for v_e, outside its declared domain 1000 … 500000 — the guard did not stop it", v.get());
         }
     }
 }
@@ -95,7 +95,9 @@ fn the_same_inputs_give_the_same_answer() {
     let a = model::evaluate(Voltage::new(300.0), MolarMass::new(0.01872));
     let b = model::evaluate(Voltage::new(300.0), MolarMass::new(0.01872));
     match (a, b) {
-        (Ok(x), Ok(y)) => assert!(x.get().to_bits() == y.get().to_bits(), "prop_exhaust_velocity is not deterministic: {} then {}", x.get(), y.get()),
+        (Ok(x), Ok(y)) => {
+            assert!(x.get().to_bits() == y.get().to_bits(), "prop_exhaust_velocity is not deterministic for v_e: {} then {}", x.get(), y.get());
+        }
         (Err(_), Err(_)) => {}
         _ => panic!("prop_exhaust_velocity refused on one call and answered on the other"),
     }

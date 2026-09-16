@@ -93,6 +93,15 @@ pub struct Fixture {
     /// suite. A verdict shown on a page has to have come from a run: a badge
     /// read out of a field is a claim about last March.
     pub inputs: &'static [f64],
+    /// Which of the node's published variables this expected value is for,
+    /// indexed into `OUTPUT_VARS`. 0 is the node's own answer, and is what
+    /// every row with one answer uses.
+    ///
+    /// A row whose conclusion is a SET publishes several variables, and an
+    /// expected value for such a row has to say which one it is about or it is
+    /// checking whichever happened to be first. The sheet names the variable;
+    /// this is the index the name resolved to.
+    pub slot: usize,
 }
 
 /// The result of checking one fixture.

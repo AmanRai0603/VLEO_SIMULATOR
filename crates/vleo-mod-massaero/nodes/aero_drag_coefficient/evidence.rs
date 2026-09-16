@@ -103,50 +103,50 @@ fn answers_near_the_known_good_point() {
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Ratio::new(8.6435 * scale), Length::new(2.0), Length::new(0.6), Ratio::new(0.9918), Temperature::new(300.0), Velocity::new(7754.6), MolarMass::new(0.01872), Ratio::new(10000.0)) {
-            assert!(v.get().is_finite(), "aero_drag_coefficient produced a value that is not a number");
-            assert!(v.get() >= 1.5 && v.get() <= 5.0, "aero_drag_coefficient answered {}, outside its declared domain 1.5 … 5 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "aero_drag_coefficient produced a value that is not a number for Cd");
+            assert!(v.get() >= 1.5 && v.get() <= 5.0, "aero_drag_coefficient answered {} for Cd, outside its declared domain 1.5 … 5 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Ratio::new(8.6435), Length::new(2.0 * scale), Length::new(0.6), Ratio::new(0.9918), Temperature::new(300.0), Velocity::new(7754.6), MolarMass::new(0.01872), Ratio::new(10000.0)) {
-            assert!(v.get().is_finite(), "aero_drag_coefficient produced a value that is not a number");
-            assert!(v.get() >= 1.5 && v.get() <= 5.0, "aero_drag_coefficient answered {}, outside its declared domain 1.5 … 5 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "aero_drag_coefficient produced a value that is not a number for Cd");
+            assert!(v.get() >= 1.5 && v.get() <= 5.0, "aero_drag_coefficient answered {} for Cd, outside its declared domain 1.5 … 5 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Ratio::new(8.6435), Length::new(2.0), Length::new(0.6 * scale), Ratio::new(0.9918), Temperature::new(300.0), Velocity::new(7754.6), MolarMass::new(0.01872), Ratio::new(10000.0)) {
-            assert!(v.get().is_finite(), "aero_drag_coefficient produced a value that is not a number");
-            assert!(v.get() >= 1.5 && v.get() <= 5.0, "aero_drag_coefficient answered {}, outside its declared domain 1.5 … 5 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "aero_drag_coefficient produced a value that is not a number for Cd");
+            assert!(v.get() >= 1.5 && v.get() <= 5.0, "aero_drag_coefficient answered {} for Cd, outside its declared domain 1.5 … 5 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Ratio::new(8.6435), Length::new(2.0), Length::new(0.6), Ratio::new(0.9918 * scale), Temperature::new(300.0), Velocity::new(7754.6), MolarMass::new(0.01872), Ratio::new(10000.0)) {
-            assert!(v.get().is_finite(), "aero_drag_coefficient produced a value that is not a number");
-            assert!(v.get() >= 1.5 && v.get() <= 5.0, "aero_drag_coefficient answered {}, outside its declared domain 1.5 … 5 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "aero_drag_coefficient produced a value that is not a number for Cd");
+            assert!(v.get() >= 1.5 && v.get() <= 5.0, "aero_drag_coefficient answered {} for Cd, outside its declared domain 1.5 … 5 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Ratio::new(8.6435), Length::new(2.0), Length::new(0.6), Ratio::new(0.9918), Temperature::new(300.0 * scale), Velocity::new(7754.6), MolarMass::new(0.01872), Ratio::new(10000.0)) {
-            assert!(v.get().is_finite(), "aero_drag_coefficient produced a value that is not a number");
-            assert!(v.get() >= 1.5 && v.get() <= 5.0, "aero_drag_coefficient answered {}, outside its declared domain 1.5 … 5 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "aero_drag_coefficient produced a value that is not a number for Cd");
+            assert!(v.get() >= 1.5 && v.get() <= 5.0, "aero_drag_coefficient answered {} for Cd, outside its declared domain 1.5 … 5 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Ratio::new(8.6435), Length::new(2.0), Length::new(0.6), Ratio::new(0.9918), Temperature::new(300.0), Velocity::new(7754.6 * scale), MolarMass::new(0.01872), Ratio::new(10000.0)) {
-            assert!(v.get().is_finite(), "aero_drag_coefficient produced a value that is not a number");
-            assert!(v.get() >= 1.5 && v.get() <= 5.0, "aero_drag_coefficient answered {}, outside its declared domain 1.5 … 5 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "aero_drag_coefficient produced a value that is not a number for Cd");
+            assert!(v.get() >= 1.5 && v.get() <= 5.0, "aero_drag_coefficient answered {} for Cd, outside its declared domain 1.5 … 5 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Ratio::new(8.6435), Length::new(2.0), Length::new(0.6), Ratio::new(0.9918), Temperature::new(300.0), Velocity::new(7754.6), MolarMass::new(0.01872 * scale), Ratio::new(10000.0)) {
-            assert!(v.get().is_finite(), "aero_drag_coefficient produced a value that is not a number");
-            assert!(v.get() >= 1.5 && v.get() <= 5.0, "aero_drag_coefficient answered {}, outside its declared domain 1.5 … 5 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "aero_drag_coefficient produced a value that is not a number for Cd");
+            assert!(v.get() >= 1.5 && v.get() <= 5.0, "aero_drag_coefficient answered {} for Cd, outside its declared domain 1.5 … 5 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Ratio::new(8.6435), Length::new(2.0), Length::new(0.6), Ratio::new(0.9918), Temperature::new(300.0), Velocity::new(7754.6), MolarMass::new(0.01872), Ratio::new(10000.0 * scale)) {
-            assert!(v.get().is_finite(), "aero_drag_coefficient produced a value that is not a number");
-            assert!(v.get() >= 1.5 && v.get() <= 5.0, "aero_drag_coefficient answered {}, outside its declared domain 1.5 … 5 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "aero_drag_coefficient produced a value that is not a number for Cd");
+            assert!(v.get() >= 1.5 && v.get() <= 5.0, "aero_drag_coefficient answered {} for Cd, outside its declared domain 1.5 … 5 — the guard did not stop it", v.get());
         }
     }
 }
@@ -161,7 +161,9 @@ fn the_same_inputs_give_the_same_answer() {
     let a = model::evaluate(Ratio::new(8.6435), Length::new(2.0), Length::new(0.6), Ratio::new(0.9918), Temperature::new(300.0), Velocity::new(7754.6), MolarMass::new(0.01872), Ratio::new(10000.0));
     let b = model::evaluate(Ratio::new(8.6435), Length::new(2.0), Length::new(0.6), Ratio::new(0.9918), Temperature::new(300.0), Velocity::new(7754.6), MolarMass::new(0.01872), Ratio::new(10000.0));
     match (a, b) {
-        (Ok(x), Ok(y)) => assert!(x.get().to_bits() == y.get().to_bits(), "aero_drag_coefficient is not deterministic: {} then {}", x.get(), y.get()),
+        (Ok(x), Ok(y)) => {
+            assert!(x.get().to_bits() == y.get().to_bits(), "aero_drag_coefficient is not deterministic for Cd: {} then {}", x.get(), y.get());
+        }
         (Err(_), Err(_)) => {}
         _ => panic!("aero_drag_coefficient refused on one call and answered on the other"),
     }

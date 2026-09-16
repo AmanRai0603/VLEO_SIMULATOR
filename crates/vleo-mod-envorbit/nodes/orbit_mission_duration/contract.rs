@@ -15,8 +15,10 @@ pub const INPUT_VARS: &[&str] = &[
 ];
 /// The variables this node publishes.
 pub const OUTPUT_VARS: &[&str] = &["orbit_mission_duration"];
-/// The SI unit every value crossing this boundary is expressed in.
+/// The SI unit this node's own answer crosses the boundary in.
 pub const OUTPUT_UNIT: Unit = Time::UNIT;
+/// The SI unit of each published variable, in `OUTPUT_VARS` order.
+pub const OUTPUT_UNITS: &[Unit] = &[Time::UNIT];
 
 /// The untyped adapter. Values cross as SI `f64` and are re-typed here,
 /// so the bus carries no quantity types and a face cannot pass arguments

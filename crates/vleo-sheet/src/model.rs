@@ -120,6 +120,11 @@ pub struct Fixture {
     pub provenance: String,
     pub source: String,
     pub inputs: Vec<(String, f64)>,
+    /// Which published variable this expected value is for, by the `[[publishes]]`
+    /// id. Empty means the node's own answer, which is every row that has one
+    /// answer. A row whose conclusion is a set must say which member a fixture
+    /// is about; the gate refuses a name that is not one of its publishes.
+    pub variable: String,
 }
 
 #[derive(Clone, Debug, Default)]

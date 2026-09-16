@@ -93,14 +93,14 @@ fn answers_near_the_known_good_point() {
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Length::new(250000.0 * scale), Temperature::new(949.6)) {
-            assert!(v.get().is_finite(), "env_mass_density produced a value that is not a number");
-            assert!(v.get() >= 1e-15 && v.get() <= 1e-6, "env_mass_density answered {}, outside its declared domain 0.000000000000001 … 0.000001 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "env_mass_density produced a value that is not a number for rho");
+            assert!(v.get() >= 1e-15 && v.get() <= 1e-6, "env_mass_density answered {} for rho, outside its declared domain 0.000000000000001 … 0.000001 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Length::new(250000.0), Temperature::new(949.6 * scale)) {
-            assert!(v.get().is_finite(), "env_mass_density produced a value that is not a number");
-            assert!(v.get() >= 1e-15 && v.get() <= 1e-6, "env_mass_density answered {}, outside its declared domain 0.000000000000001 … 0.000001 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "env_mass_density produced a value that is not a number for rho");
+            assert!(v.get() >= 1e-15 && v.get() <= 1e-6, "env_mass_density answered {} for rho, outside its declared domain 0.000000000000001 … 0.000001 — the guard did not stop it", v.get());
         }
     }
 }
@@ -115,7 +115,9 @@ fn the_same_inputs_give_the_same_answer() {
     let a = model::evaluate(Length::new(250000.0), Temperature::new(949.6));
     let b = model::evaluate(Length::new(250000.0), Temperature::new(949.6));
     match (a, b) {
-        (Ok(x), Ok(y)) => assert!(x.get().to_bits() == y.get().to_bits(), "env_mass_density is not deterministic: {} then {}", x.get(), y.get()),
+        (Ok(x), Ok(y)) => {
+            assert!(x.get().to_bits() == y.get().to_bits(), "env_mass_density is not deterministic for rho: {} then {}", x.get(), y.get());
+        }
         (Err(_), Err(_)) => {}
         _ => panic!("env_mass_density refused on one call and answered on the other"),
     }

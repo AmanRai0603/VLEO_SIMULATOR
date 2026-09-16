@@ -78,20 +78,20 @@ fn answers_near_the_known_good_point() {
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Velocity::new(7754.6 * scale), Temperature::new(905.8), MolarMass::new(0.01872)) {
-            assert!(v.get().is_finite(), "aero_speed_ratio produced a value that is not a number");
-            assert!(v.get() >= 1.0 && v.get() <= 30.0, "aero_speed_ratio answered {}, outside its declared domain 1 … 30 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "aero_speed_ratio produced a value that is not a number for s");
+            assert!(v.get() >= 1.0 && v.get() <= 30.0, "aero_speed_ratio answered {} for s, outside its declared domain 1 … 30 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Velocity::new(7754.6), Temperature::new(905.8 * scale), MolarMass::new(0.01872)) {
-            assert!(v.get().is_finite(), "aero_speed_ratio produced a value that is not a number");
-            assert!(v.get() >= 1.0 && v.get() <= 30.0, "aero_speed_ratio answered {}, outside its declared domain 1 … 30 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "aero_speed_ratio produced a value that is not a number for s");
+            assert!(v.get() >= 1.0 && v.get() <= 30.0, "aero_speed_ratio answered {} for s, outside its declared domain 1 … 30 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Velocity::new(7754.6), Temperature::new(905.8), MolarMass::new(0.01872 * scale)) {
-            assert!(v.get().is_finite(), "aero_speed_ratio produced a value that is not a number");
-            assert!(v.get() >= 1.0 && v.get() <= 30.0, "aero_speed_ratio answered {}, outside its declared domain 1 … 30 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "aero_speed_ratio produced a value that is not a number for s");
+            assert!(v.get() >= 1.0 && v.get() <= 30.0, "aero_speed_ratio answered {} for s, outside its declared domain 1 … 30 — the guard did not stop it", v.get());
         }
     }
 }
@@ -106,7 +106,9 @@ fn the_same_inputs_give_the_same_answer() {
     let a = model::evaluate(Velocity::new(7754.6), Temperature::new(905.8), MolarMass::new(0.01872));
     let b = model::evaluate(Velocity::new(7754.6), Temperature::new(905.8), MolarMass::new(0.01872));
     match (a, b) {
-        (Ok(x), Ok(y)) => assert!(x.get().to_bits() == y.get().to_bits(), "aero_speed_ratio is not deterministic: {} then {}", x.get(), y.get()),
+        (Ok(x), Ok(y)) => {
+            assert!(x.get().to_bits() == y.get().to_bits(), "aero_speed_ratio is not deterministic for s: {} then {}", x.get(), y.get());
+        }
         (Err(_), Err(_)) => {}
         _ => panic!("aero_speed_ratio refused on one call and answered on the other"),
     }

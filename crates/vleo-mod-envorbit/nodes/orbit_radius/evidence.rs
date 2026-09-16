@@ -68,8 +68,8 @@ fn answers_near_the_known_good_point() {
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Length::new(250000.0 * scale)) {
-            assert!(v.get().is_finite(), "orbit_radius produced a value that is not a number");
-            assert!(v.get() >= 6400000.0 && v.get() <= 7000000.0, "orbit_radius answered {}, outside its declared domain 6400000 … 7000000 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "orbit_radius produced a value that is not a number for r");
+            assert!(v.get() >= 6400000.0 && v.get() <= 7000000.0, "orbit_radius answered {} for r, outside its declared domain 6400000 … 7000000 — the guard did not stop it", v.get());
         }
     }
 }
@@ -84,7 +84,9 @@ fn the_same_inputs_give_the_same_answer() {
     let a = model::evaluate(Length::new(250000.0));
     let b = model::evaluate(Length::new(250000.0));
     match (a, b) {
-        (Ok(x), Ok(y)) => assert!(x.get().to_bits() == y.get().to_bits(), "orbit_radius is not deterministic: {} then {}", x.get(), y.get()),
+        (Ok(x), Ok(y)) => {
+            assert!(x.get().to_bits() == y.get().to_bits(), "orbit_radius is not deterministic for r: {} then {}", x.get(), y.get());
+        }
         (Err(_), Err(_)) => {}
         _ => panic!("orbit_radius refused on one call and answered on the other"),
     }

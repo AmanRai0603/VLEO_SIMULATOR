@@ -93,14 +93,14 @@ fn answers_near_the_known_good_point() {
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Ratio::new(22.095389 * scale), Ratio::new(3.593688)) {
-            assert!(v.get().is_finite(), "sw_ap_design_long produced a value that is not a number");
-            assert!(v.get() >= 0.0 && v.get() <= 300.0, "sw_ap_design_long answered {}, outside its declared domain 0 … 300 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "sw_ap_design_long produced a value that is not a number for Ap_long");
+            assert!(v.get() >= 0.0 && v.get() <= 300.0, "sw_ap_design_long answered {} for Ap_long, outside its declared domain 0 … 300 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Ratio::new(22.095389), Ratio::new(3.593688 * scale)) {
-            assert!(v.get().is_finite(), "sw_ap_design_long produced a value that is not a number");
-            assert!(v.get() >= 0.0 && v.get() <= 300.0, "sw_ap_design_long answered {}, outside its declared domain 0 … 300 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "sw_ap_design_long produced a value that is not a number for Ap_long");
+            assert!(v.get() >= 0.0 && v.get() <= 300.0, "sw_ap_design_long answered {} for Ap_long, outside its declared domain 0 … 300 — the guard did not stop it", v.get());
         }
     }
 }
@@ -115,7 +115,9 @@ fn the_same_inputs_give_the_same_answer() {
     let a = model::evaluate(Ratio::new(22.095389), Ratio::new(3.593688));
     let b = model::evaluate(Ratio::new(22.095389), Ratio::new(3.593688));
     match (a, b) {
-        (Ok(x), Ok(y)) => assert!(x.get().to_bits() == y.get().to_bits(), "sw_ap_design_long is not deterministic: {} then {}", x.get(), y.get()),
+        (Ok(x), Ok(y)) => {
+            assert!(x.get().to_bits() == y.get().to_bits(), "sw_ap_design_long is not deterministic for Ap_long: {} then {}", x.get(), y.get());
+        }
         (Err(_), Err(_)) => {}
         _ => panic!("sw_ap_design_long refused on one call and answered on the other"),
     }
