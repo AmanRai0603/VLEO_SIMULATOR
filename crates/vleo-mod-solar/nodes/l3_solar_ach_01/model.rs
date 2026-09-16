@@ -8,24 +8,24 @@ use vleo_core::physics::*;
 use vleo_core::units::pmath;
 use vleo_core::units::*;
 
-/// What is the worst solar flux the record says this mission will present?
+/// What sustained F10.7 does the record say this mission will present?
 ///
-/// `F107_ach_flux = sw_f107_design`
+/// `F107_ach_flux = sw_f107_design_long`
 ///
 /// Source: `noaa_swpc`
 ///
-/// The headline of the three. It is the same number the interface carries to
-/// sys_space_environment, restated on the achieved side of the closure so
-/// that the comparison against what the spacecraft can sustain happens on a
-/// row rather than in somebody's head.
+/// The headline of the five. It is the same number the interface carries to
+/// sys_space_environment as its primary member, restated on the achieved side
+/// of the closure so that the comparison against what the spacecraft can
+/// sustain happens on a row rather than in somebody's head.
 ///
 /// # Assumptions
 ///
-/// * It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when the same cost as the interface, and worth repeating on the row a closure actually binds. The number is sized on the cycle analogue at the mission's own epoch rather than on the record's unconditional mean, which this chain now reads the epoch to do — it was an open decision on sw_central_expectation and it has been made, moving this row by 28.0 sfu; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way.
+/// * It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when the same cost as the interface, and worth repeating on the row a closure actually binds. The number is sized on the cycle analogue at the mission's own epoch rather than on the record's unconditional mean, which this chain now reads the epoch to do; where it is a band it is 1.28 sigma, the 90th percentile, and not the 95 per cent the run is labelled; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way.
 pub const NODE_ID: &str = "l3_solar_ach_01";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x39aab8ae4b479383;
+pub const SHEET_HASH: u64 = 0xddeb61e35dbb0a27;
 
 pub fn evaluate(conclusion: Ratio) -> Result<Ratio, Fault> {
     // ---- HOLE 1 : restate the subsystem's conclusion on the achieved side of the closure -> Ratio
@@ -40,10 +40,10 @@ pub fn evaluate(conclusion: Ratio) -> Result<Ratio, Fault> {
         return Err(Fault::Degenerate { node: NODE_ID, field: "F107_ach_flux", reason: "the computation produced a value that is not a number" });
     }
     if answer.get() < 60.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_ach_flux", value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "the same floor as env_f107 and sw_f107_design: below 60 sfu has never been observed and no relation reading F10.7 has support there" });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_ach_flux", value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "the same floor as env_f107 and sw_f107_design_long: below 60 sfu has never been observed and no relation reading F10.7 has support there" });
     }
     if answer.get() > 400.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_ach_flux", value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "the same ceiling as env_f107 and sw_f107_design: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value" });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_ach_flux", value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "the same ceiling as env_f107 and sw_f107_design_long: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value" });
     }
     Ok(answer)
 }

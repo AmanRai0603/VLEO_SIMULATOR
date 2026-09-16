@@ -1,0 +1,17 @@
+{
+  "id": "l3_solar_req_04",
+  "state": "published",
+  "sheet_hash": "11877e",
+  "impl_hash": "222325",
+  "owner": "environment",
+  "tier": "A",
+  "fixtures": 0,
+  "criticality": "significant",
+  "reviewers": 2,
+  "differential_fill": true,
+  "migrated_from": "",
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did", "significant, and one fixture or none — a significant node is the one that gets a second independent check, which is the whole reason for the word", "a declared value with nobody's confirmation against it"]
+}

@@ -1,7 +1,7 @@
-<article class="node" data-node="l3_solar_req_01" data-sheet-hash="fd300b" data-impl-hash="222325">
+<article class="node" data-node="l3_solar_req_01" data-sheet-hash="24e9df" data-impl-hash="222325">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>Solar flux</h2>
+  <h2>F10.7, sustained</h2>
   <p class="ident"><code>l3_solar_req_01</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
@@ -17,13 +17,26 @@
   <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="question">What solar flux must this design survive?</p>
+<p class="question">What sustained F10.7 must this design operate in, for as long as the mission lasts?</p>
 <p class="maths"><code>F107_req = 250 sfu</code></p>
 <p class="src">Source <b>orbitt_case_c1</b> — Orbitt Space — VLEO multipayload reference case C1 <span class="where">internal, 2026-09-01</span></p>
-<p class="note">The headline requirement of the three, and the first `required` row written anywhere in this repository — no other subsystem has one, so the shape here is the shape the other sixteen will copy. It is a ceiling the environment must not exceed, and l3_solar_ach_01 is the number the record actually presents.</p>
+<p class="note">The headline requirement of the five, and the first `required` row written
+anywhere in this repository — no other subsystem has one, so the shape here is
+the shape the other sixteen will copy. It is a ceiling the environment must not
+exceed, and l3_solar_ach_01 is the number the record actually presents.
+
+WHAT THIS ROW USED TO ASK, AND WHY IT CHANGED. It asked &quot;what solar flux must
+this design survive?&quot; with no horizon on it, and l3_solar_req_02 asked the same
+thing again at 95 per cent confidence — two rows, one question, one number.
+§20 splits every driver into a level the mission SITS AT for months and a level
+one day inside it reaches, because a design uses them for different things: an
+array is sized on the sustained level, a thermal transient on the day. This row
+is now the sustained half and req_02 is the single day, so the duplication is
+gone and two different commitments are stated instead of one commitment twice.
+</p>
 <h4>Assumptions</h4>
 <dl class="asm">
-<dt>250 is the design value with a round margin on it, and the margin is a decision rather than a calculation</dt><dd>fails when somebody looks for the derivation. At the declared five-year mission sw_f107_design comes to 228.14 sfu — the central expectation of 114.84 plus the 95th-percentile growth of 113.29 — and 250 is the next round number above it, 9.6 per cent of headroom. Nothing in the record picks 250. It is chosen so the closure passes with visible room rather than by a hair, and so that a modest change in mission length or epoch does not silently break it. A design that wants the margin to mean something specific should replace this with a number that has a derivation.</dd>
+<dt>250 is the design value with a round margin on it, and the margin is a decision rather than a calculation</dt><dd>fails when somebody looks for the derivation. Nothing in the record picks 250. It was the next round number above the 228.14 the chain achieved when it was written, 9.6 per cent of headroom, chosen so the closure passed with visible room rather than by a hair. THE ACHIEVED SIDE IS NOW 104.07 AND THE HEADROOM IS 140 PER CENT, which is no longer a margin — it is a ceiling the environment cannot reach, and a requirement that cannot be violated is not a requirement. Its Ap siblings l3_solar_req_04 and l3_solar_req_05 are set at published G-scale thresholds instead, which is a number a reader can check and which stays still while the environment estimate moves underneath it. This row should be re-derived the same way, and that is a decision rather than an arithmetic consequence.</dd>
 <dt>It is a ceiling on the DRIVER and says nothing about what the driver does to the vehicle</dt><dd>fails when the requirement is read as a survivability statement. F10.7 is an index of solar radio flux; what a spacecraft actually feels is the density that flux produces at its altitude, through a model this subsystem does not own. A design that meets F10.7 &lt;= 250 and is sized on a density model with the wrong drag coefficient has met this requirement and will still deorbit early. The closure this row takes part in is on the environment, and the environment is only the first half.</dd>
 <dt>One number for the whole mission, with no epoch and no phase in it</dt><dd>fails when the mission slips. The record runs 64 to 343 sfu across a cycle, so the flux a mission sees depends on where in the cycle it flies; the declared epoch of 2027-01-01 sits at phase 0.619, past maximum on the declining side. A mission starting in 2030 would sit near minimum and 250 would be enormously conservative. The requirement does not move with the epoch and is not meant to — it is the vehicle's capability, and the sky's variation belongs on the achieved side.</dd>
 </dl>
@@ -33,8 +46,10 @@
 <div class="theory-walk" data-steps="5">
 <ol class="derive">
 <li><span class="dt">Start from what a requirement row must be able to do: be violated. If the committed number were computed from the design value it would track every change to the design and would always pass, which makes the closure a tautology. So the value is DECLARED — a person's number with their name against it — and the sense says which side of it is safe.</span><code class="dm">F107 &lt;= F107_req (sense: &lt;=)</code></li>
-<li><span class="dt">The number starts from the capability the design chain actually produces. sw_f107_design at the declared five-year mission is the central expectation of 86.85 plus the 95th-percentile growth of 113.29.</span><code class="dm">F107_design = 200.14 sfu</code></li>
-<li><span class="dt">A requirement set exactly at the capability has no room in it: any change in mission length or epoch would break the closure without anything being wrong. So a margin is added, and this one is a round number rather than a calculation — 250 was the next round figure above the 228.14 the chain achieved when this was written, 9.6 per cent of headroom. The achieved side is now 200.14 and the same 250 gives 24.9 per cent.</span><code class="dm">250 / 228.14 = 1.096, when written · 250 / 200.14 = 1.249, now</code></li>
+<li><span class="dt">The number started from the capability the design chain produced WHEN IT WAS WRITTEN, which was sw_f107_design — a one-sided 95th-percentile PERSISTENCE growth on the central expectation. That row is no longer the achieved side of this closure. sw_f107_design_long is, and it answers a different question: how far the pattern has historically been from the rotation level it predicted, which is the width of the window rather than the drift from today.</span><code class="dm">was F107_design = 200.14 sfu · now F107_long = 104.07 sfu</code></li>
+<li><span class="dt">A requirement set exactly at the capability has no room in it: any change in mission length or epoch would break the closure without anything being wrong. So a margin is added, and this one is a round number rather than a calculation — 250 was the next round figure above the 228.14 the chain achieved when this was written, 9.6 per cent of headroom.
+
+THE HEADROOM IS NOW ABSURD AND THE NUMBER HAS NOT BEEN RE-DERIVED. The achieved side is 104.07, so 250 is 140 per cent above it. Two changes did that: the centre moved from the record's unconditional mean to the cycle analogue at the mission's own epoch, and the achieved row changed from a persistence growth to a band width. Whether 250 should come down is a decision and not an arithmetic consequence — but a ceiling nothing can approach is a closure that cannot fail, which is the one thing a requirement must be able to do.</span><code class="dm">250 / 228.14 = 1.096, when written · 250 / 104.07 = 2.402, now</code></li>
 <li><span class="dt">The number does not move with the epoch and is not meant to. The record runs 64 to 343 sfu across a cycle, so a mission starting in 2030 near minimum would find 250 enormously conservative — but the requirement is the vehicle's capability, and the sky's variation belongs on the achieved side of the closure where it can be seen.</span></li>
 <li><span class="dt">This is the first `required` row written anywhere in this repository, so its shape is the shape sixteen other subsystems will copy. Two things about that shape are worth stating: the seed's kind = &quot;required&quot; means computed-with-a-sense, and a committed number like this one is kind = &quot;declared&quot; with a top-level sense.</span></li>
 </ol>
@@ -53,10 +68,10 @@
 </section>
 <section class="panel" data-panel="3">
 <p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
-<p>This is a declared value: <b>250</b> -, confirmed by <b>A. Rai / 2026-09-14</b>.</p>
+<p>This is a declared value: <b>250</b> -, confirmed by <b></b>.</p>
 <h4>Pseudocode</h4>
 <pre class="pseudo"><code>function l3_solar_req_01() -> Ratio
-    F107_req ← 250          // declared, confirmed by A. Rai / 2026-09-14
+    F107_req ← 250          // declared, confirmed by 
 
     // a guard whose reason is not written down gets deleted
     require F107_req ≥ 60
@@ -90,27 +105,35 @@ use vleo_core::physics::*;
 use vleo_core::units::pmath;
 use vleo_core::units::*;
 
-/// What solar flux must this design survive?
+/// What sustained F10.7 must this design operate in, for as long as the mission lasts?
 ///
 /// `F107_req = 250 sfu`
 ///
 /// Source: `orbitt_case_c1`
 ///
-/// The headline requirement of the three, and the first `required` row
-/// written anywhere in this repository — no other subsystem has one, so the
-/// shape here is the shape the other sixteen will copy. It is a ceiling the
+/// The headline requirement of the five, and the first `required` row written
+/// anywhere in this repository — no other subsystem has one, so the shape
+/// here is the shape the other sixteen will copy. It is a ceiling the
 /// environment must not exceed, and l3_solar_ach_01 is the number the record
-/// actually presents.
+/// actually presents. WHAT THIS ROW USED TO ASK, AND WHY IT CHANGED. It asked
+/// &quot;what solar flux must this design survive?&quot; with no horizon on it, and
+/// l3_solar_req_02 asked the same thing again at 95 per cent confidence —
+/// two rows, one question, one number. §20 splits every driver into a level
+/// the mission SITS AT for months and a level one day inside it reaches,
+/// because a design uses them for different things: an array is sized on the
+/// sustained level, a thermal transient on the day. This row is now the
+/// sustained half and req_02 is the single day, so the duplication is gone
+/// and two different commitments are stated instead of one commitment twice.
 ///
 /// # Assumptions
 ///
-/// * 250 is the design value with a round margin on it, and the margin is a decision rather than a calculation — fails when somebody looks for the derivation. At the declared five-year mission sw_f107_design comes to 228.14 sfu — the central expectation of 114.84 plus the 95th-percentile growth of 113.29 — and 250 is the next round number above it, 9.6 per cent of headroom. Nothing in the record picks 250. It is chosen so the closure passes with visible room rather than by a hair, and so that a modest change in mission length or epoch does not silently break it. A design that wants the margin to mean something specific should replace this with a number that has a derivation.
+/// * 250 is the design value with a round margin on it, and the margin is a decision rather than a calculation — fails when somebody looks for the derivation. Nothing in the record picks 250. It was the next round number above the 228.14 the chain achieved when it was written, 9.6 per cent of headroom, chosen so the closure passed with visible room rather than by a hair. THE ACHIEVED SIDE IS NOW 104.07 AND THE HEADROOM IS 140 PER CENT, which is no longer a margin — it is a ceiling the environment cannot reach, and a requirement that cannot be violated is not a requirement. Its Ap siblings l3_solar_req_04 and l3_solar_req_05 are set at published G-scale thresholds instead, which is a number a reader can check and which stays still while the environment estimate moves underneath it. This row should be re-derived the same way, and that is a decision rather than an arithmetic consequence.
 /// * It is a ceiling on the DRIVER and says nothing about what the driver does to the vehicle — fails when the requirement is read as a survivability statement. F10.7 is an index of solar radio flux; what a spacecraft actually feels is the density that flux produces at its altitude, through a model this subsystem does not own. A design that meets F10.7 &lt;= 250 and is sized on a density model with the wrong drag coefficient has met this requirement and will still deorbit early. The closure this row takes part in is on the environment, and the environment is only the first half.
 /// * One number for the whole mission, with no epoch and no phase in it — fails when the mission slips. The record runs 64 to 343 sfu across a cycle, so the flux a mission sees depends on where in the cycle it flies; the declared epoch of 2027-01-01 sits at phase 0.619, past maximum on the declining side. A mission starting in 2030 would sit near minimum and 250 would be enormously conservative. The requirement does not move with the epoch and is not meant to — it is the vehicle's capability, and the sky's variation belongs on the achieved side.
 pub const NODE_ID: &amp;str = &quot;l3_solar_req_01&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x97ebce8d28fd300b;
+pub const SHEET_HASH: u64 = 0x0d0aacbad724e9df;
 
 pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
     // generated · a declared value, converted from the unit it was written in
@@ -159,6 +182,8 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 <li>significant, and one fixture or none — a significant node is the one that gets a second independent check, which is the whole reason for the word</li>
+<li>a declared value with nobody's confirmation against it</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

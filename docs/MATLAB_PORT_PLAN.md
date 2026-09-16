@@ -979,9 +979,65 @@ against it, and one of the three has to be settled first.
    rows 20.4 did not foresee.
 4. ~~`sw_driver_set`, then `l3_solar_interface` re-specified.~~ Done as the
    interface alone. The Kp columns are outstanding.
-5. The four required/achieved pairs, replacing the three. `l3_solar_ach_01` and
-   `_ach_02` still read `sw_f107_design`, the one-sided persistence row, which is
-   none of the five scenarios.
+5. ~~The four required/achieved pairs, replacing the three.~~ Done as FIVE pairs,
+   for the reason in 20.10 below.
 6. Layer 2: three rows written, three left seeded and saying why. **Blocked on
    the refusal in 20.8 above**: a layer-2 row written against a crossing that
    does not publish would be a row that cannot run.
+
+### 20.10 · What step 5 did, and where it departed
+
+**Five pairs, not four.** §20.4 said "four required/achieved pairs, one per
+design output, replacing the three that exist". Replacing all three would have
+dropped `req_03`/`ach_03`, and that pair asks a question none of the four design
+outputs asks: `sw_storm_return_level` is an extreme-value return level, the one
+storm expected in the whole mission, while `sw_ap_design_short` is the top of an
+ordinary design band. At the declared window they are 158.38 and 41.70 — a
+factor of nearly four. A single ceiling covering both would have to be the storm
+one, and the design would then be claiming to operate through a G3 storm. So
+`req_03`/`ach_03` is untouched and there are five pairs:
+
+| pair | question | required | achieved |
+|---|---|---|---|
+| 01 | F10.7, sustained | 250 sfu | 104.07 |
+| 02 | F10.7, single day | 350 sfu | 138.30 |
+| 04 | Ap, sustained | 48 | 26.70 |
+| 05 | Ap, single day | 80 | 41.70 |
+| 03 | Ap, the one storm | 150 | **158.38 — does not close** |
+
+**Four requirement rows lost their confirmation, and two of them kept their
+number.** `req_01` still says 250 and `req_03` still says 150. But `req_01`'s
+question narrowed from "what solar flux must this design survive" to "what
+SUSTAINED F10.7 must it operate in", and the question is inside the sheet hash,
+so the name against it was against a sheet that no longer exists. `req_02`'s
+number moved as well, 250 to 350. `req_04` and `req_05` are new. All four are
+gate-red on `declared-value` and each says on its own sheet exactly what a
+person would be agreeing to.
+
+**Two requirement numbers now have derivations and two still do not.** `req_04`
+and `req_05` are the published ap equivalent amplitudes at Kp 5 and Kp 6, the G1
+and G2 thresholds, so a reader can check them against a scale. `req_02`'s 350 is
+anchored at the record's largest daily F10.7, 343 sfu on 2023-02-17, rounded up.
+`req_01`'s 250 is still what it always was — the next round number above what
+the chain achieved when it was written — and its headroom has drifted from 9.6
+per cent to 140, because the achieved side went from 228.14 to 104.07 across two
+separate changes. A ceiling the environment cannot approach is a closure that
+cannot fail, which is the one thing a requirement must be able to do. Re-deriving
+it the way `req_04` and `req_05` are derived is the obvious move and it is a
+decision rather than an arithmetic consequence.
+
+**`sw_f107_design` now has no consumers.** It was the subsystem's headline and
+all three of its readers — both closures and the interface — moved to the design
+rows in steps 4 and 5. It is not wrong and it was not replaced: it answers a
+different question, a one-sided 95th-percentile persistence drift from today's
+value rather than the width of the window. But a published number nothing reads
+is a number nobody checks. Give it a consumer, deprecate it, or leave it
+published with the paragraph now on its sheet; retiring a row is a decision
+about the tree.
+
+**Nothing in the tree evaluates a closure.** `sense` is declared on each
+requirement row and the gate checks only that it is present; the pairing is a
+convention the matrix draws. So `req_03` failing at 158.38 against 150 is visible
+to a reader of the matrix and to nothing else, and has been since it was written.
+That is the largest finding of this step and it is not a solar-weather problem —
+it is true of every closure in the tree.

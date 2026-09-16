@@ -8,25 +8,26 @@ use vleo_core::physics::*;
 use vleo_core::units::pmath;
 use vleo_core::units::*;
 
-/// What F10.7 does the record say this mission will present, at 95% confidence?
+/// What F10.7 does the record say a single day inside this mission window will reach?
 ///
-/// `F107_ach = sw_f107_design`
+/// `F107_ach = sw_f107_design_short`
 ///
 /// Source: `noaa_swpc`
 ///
-/// The F10.7 driver on the achieved side. It is the same quantity as ach_01
-/// in this subsystem because the solar flux IS F10.7 here — the layer-2
-/// rows separate them and the subsystem does not, which is a finding rather
-/// than a design and is stated in the assumptions.
+/// The single-day half of the F10.7 closure. Its partner, l3_solar_req_02,
+/// commits the design to surviving 350 sfu — above the largest daily value
+/// in the record — and this says what the window's own band actually
+/// reaches.
 ///
 /// # Assumptions
 ///
-/// * It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when the same cost as the interface, and worth repeating on the row a closure actually binds. The number is sized on the cycle analogue at the mission's own epoch rather than on the record's unconditional mean, which this chain now reads the epoch to do — it was an open decision on sw_central_expectation and it has been made, moving this row by 28.0 sfu; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way.
-/// * ach_01 and ach_02 carry the same number, because at layer 3 the solar flux IS F10.7 — fails when sys_space_environment declares sys_space_environment_solar_flux and sys_space_environment_f10_7 as separate rows, and the seeder mirrored both into this group. In the study they are one quantity: F10.7 is the solar flux index, and nothing in prf_drivers distinguishes them. So two rows here answer with one number, which is honest but redundant, and the redundancy belongs to the layer-2 decomposition rather than to this subsystem. Whoever settles what an interface publishes should settle this at the same time — either sys_space_environment_solar_flux means something else, such as the headline with its credibility, or one of the two rows should not exist.
+/// * It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when a margin is computed from this row against a capability. The centre beneath it is a cycle analogue at the mission's own epoch, scaled beyond one cycle past cycle 25's maximum by the mean amplitude of two completed cycles whose peaks differ by 41 per cent; the band around it is 1.28 sigma, the 90th percentile, while the run is labelled 95 per cent; and the daily term stacked on top is a separate one-sided percentile, so the combination is nearer a 1-in-100 day than a 1-in-20 one. None of that travels across the closure, and the margin looks like a clean number either way
+/// * It restates the single-day level and not one of its two siblings — fails when somebody reads it as the sustained level or as the persistence drift. The three are 138.30, 104.07 and 200.14 — all fluxes, same unit, same declared domain — so nothing in the tree would catch the substitution, and each would report a different margin against the same requirement
+/// * Nothing compares this row with its requirement automatically — fails when a reader assumes the tree checks the closure. The pairing is a convention the matrix draws; `sense` is declared on the requirement row and the gate checks only that it is present. The Ap storm closure in this same group, l3_solar_req_03 against l3_solar_ach_03, currently FAILS at 158.38 against 150 and nothing in the tree says so
 pub const NODE_ID: &str = "l3_solar_ach_02";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x7d362c230887ce84;
+pub const SHEET_HASH: u64 = 0x1a9dfda8f33ebb6b;
 
 pub fn evaluate(conclusion: Ratio) -> Result<Ratio, Fault> {
     // ---- HOLE 1 : restate the subsystem's conclusion on the achieved side of the closure -> Ratio
@@ -44,7 +45,7 @@ pub fn evaluate(conclusion: Ratio) -> Result<Ratio, Fault> {
         return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_ach", value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "the same floor as env_f107: below 60 sfu has never been observed" });
     }
     if answer.get() > 400.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_ach", value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating" });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_ach", value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating. This is the achieved row most likely to reach it, being a sustained level with a daily excursion on top" });
     }
     Ok(answer)
 }

@@ -6,12 +6,12 @@
 use vleo_core::fault::Fault;
 use vleo_core::units::*;
 
-/// What this node publishes: `F107_ach` (F10.7), in `-`.
+/// What this node publishes: `F107_ach` (F10.7, single day), in `-`.
 pub const NODE_ID: &str = "l3_solar_ach_02";
-pub const SHEET_HASH: u64 = 0x7d362c230887ce84;
+pub const SHEET_HASH: u64 = 0x1a9dfda8f33ebb6b;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
-    "sw_f107_design",
+    "sw_f107_design_short",
 ];
 /// The variables this node publishes.
 pub const OUTPUT_VARS: &[&str] = &["l3_solar_ach_02"];

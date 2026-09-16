@@ -1,7 +1,7 @@
 {
   "id": "l3_solar_ach_02",
   "state": "published",
-  "sheet_hash": "87ce84",
+  "sheet_hash": "3ebb6b",
   "impl_hash": "6f6f4a",
   "owner": "environment",
   "tier": "A",
@@ -11,7 +11,7 @@
   "differential_fill": false,
   "migrated_from": "",
   "holes": 1,
-  "inputs": ["sw_f107_design"],
+  "inputs": ["sw_f107_design_short"],
   "contributes": [],
   "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did"]
 }

@@ -2,7 +2,7 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "l3_solar_req_01"
-label = "Solar flux"
+label = "F10.7, sustained"
 folder = "l3_solar_req_01"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
@@ -19,11 +19,32 @@ state = "published"
 sense = "<="
 
 [question]
-text = "What solar flux must this design survive?"
-note = "The headline requirement of the three, and the first `required` row written anywhere in this repository — no other subsystem has one, so the shape here is the shape the other sixteen will copy. It is a ceiling the environment must not exceed, and l3_solar_ach_01 is the number the record actually presents."
+text = "What sustained F10.7 must this design operate in, for as long as the mission lasts?"
+note = """
+The headline requirement of the five, and the first `required` row written
+anywhere in this repository — no other subsystem has one, so the shape here is
+the shape the other sixteen will copy. It is a ceiling the environment must not
+exceed, and l3_solar_ach_01 is the number the record actually presents.
+
+WHAT THIS ROW USED TO ASK, AND WHY IT CHANGED. It asked "what solar flux must
+this design survive?" with no horizon on it, and l3_solar_req_02 asked the same
+thing again at 95 per cent confidence — two rows, one question, one number.
+§20 splits every driver into a level the mission SITS AT for months and a level
+one day inside it reaches, because a design uses them for different things: an
+array is sized on the sustained level, a thermal transient on the day. This row
+is now the sustained half and req_02 is the single day, so the duplication is
+gone and two different commitments are stated instead of one commitment twice.
+"""
 
 [maths]
-confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
+# NOT A CONFIRMATION. The relation `F107_req = 250 sfu` and its source are
+# unchanged, and the person who read them read them against a sheet that asked a
+# DIFFERENT question: "what solar flux must this design survive?", with no
+# horizon on it. This row now commits to a sustained level specifically. The
+# question is inside the sheet hash, so the confirmation is against a sheet that
+# no longer exists. If the same commitment is meant, restoring the name is one
+# edit — but it has to be somebody making it, not an agent keeping it.
+confirmed_by = ""
 expression = "F107_req = 250 sfu"
 source = "orbitt_case_c1"
 
@@ -71,11 +92,14 @@ math = "F107 <= F107_req (sense: <=)"
 
 [[theory.step]]
 text = """
-The number starts from the capability the design chain actually produces.
-sw_f107_design at the declared five-year mission is the central expectation
-of 86.85 plus the 95th-percentile growth of 113.29.
+The number started from the capability the design chain produced WHEN IT WAS
+WRITTEN, which was sw_f107_design — a one-sided 95th-percentile PERSISTENCE
+growth on the central expectation. That row is no longer the achieved side of
+this closure. sw_f107_design_long is, and it answers a different question: how
+far the pattern has historically been from the rotation level it predicted,
+which is the width of the window rather than the drift from today.
 """
-math = "F107_design = 200.14 sfu"
+math = "was F107_design = 200.14 sfu   ·   now F107_long = 104.07 sfu"
 
 [[theory.step]]
 text = """
@@ -83,10 +107,17 @@ A requirement set exactly at the capability has no room in it: any change in
 mission length or epoch would break the closure without anything being
 wrong. So a margin is added, and this one is a round number rather than a
 calculation — 250 was the next round figure above the 228.14 the chain
-achieved when this was written, 9.6 per cent of headroom. The achieved side is
-now 200.14 and the same 250 gives 24.9 per cent.
+achieved when this was written, 9.6 per cent of headroom.
+
+THE HEADROOM IS NOW ABSURD AND THE NUMBER HAS NOT BEEN RE-DERIVED. The achieved
+side is 104.07, so 250 is 140 per cent above it. Two changes did that: the
+centre moved from the record's unconditional mean to the cycle analogue at the
+mission's own epoch, and the achieved row changed from a persistence growth to
+a band width. Whether 250 should come down is a decision and not an arithmetic
+consequence — but a ceiling nothing can approach is a closure that cannot fail,
+which is the one thing a requirement must be able to do.
 """
-math = "250 / 228.14 = 1.096, when written   ·   250 / 200.14 = 1.249, now"
+math = "250 / 228.14 = 1.096, when written   ·   250 / 104.07 = 2.402, now"
 
 [[theory.step]]
 text = """
@@ -109,7 +140,7 @@ computed-with-a-sense, and a committed number like this one is kind =
 
 [[assumption]]
 text = "250 is the design value with a round margin on it, and the margin is a decision rather than a calculation"
-fails_when = "somebody looks for the derivation. At the declared five-year mission sw_f107_design comes to 228.14 sfu — the central expectation of 114.84 plus the 95th-percentile growth of 113.29 — and 250 is the next round number above it, 9.6 per cent of headroom. Nothing in the record picks 250. It is chosen so the closure passes with visible room rather than by a hair, and so that a modest change in mission length or epoch does not silently break it. A design that wants the margin to mean something specific should replace this with a number that has a derivation."
+fails_when = "somebody looks for the derivation. Nothing in the record picks 250. It was the next round number above the 228.14 the chain achieved when it was written, 9.6 per cent of headroom, chosen so the closure passed with visible room rather than by a hair. THE ACHIEVED SIDE IS NOW 104.07 AND THE HEADROOM IS 140 PER CENT, which is no longer a margin — it is a ceiling the environment cannot reach, and a requirement that cannot be violated is not a requirement. Its Ap siblings l3_solar_req_04 and l3_solar_req_05 are set at published G-scale thresholds instead, which is a number a reader can check and which stays still while the environment estimate moves underneath it. This row should be re-derived the same way, and that is a decision rather than an arithmetic consequence."
 
 [[assumption]]
 text = "It is a ceiling on the DRIVER and says nothing about what the driver does to the vehicle"
@@ -134,7 +165,11 @@ reason_upper = "the same ceiling as env_f107: above 400 sfu every consumer of F1
 # A number a person picked. It carries the same discipline as a
 # fixture, because every margin in the design is built out of these.
 number = 250.0
-confirmed_by = "A. Rai / 2026-09-14"
+# NOT A CONFIRMATION, and the number has NOT moved. See the note against the
+# relation above: the question narrowed from "what flux must this design
+# survive" to "what sustained flux must it operate in", and a confirmation is
+# against a sheet rather than against a digit.
+confirmed_by = ""
 
 [view]
 kind = "number"
