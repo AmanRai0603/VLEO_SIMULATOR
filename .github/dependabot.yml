@@ -9,10 +9,12 @@
 #
 # The model names Renovate for this rung. Dependabot is used instead because it
 # runs on this platform with nothing to install, and the three safety settings
-# that actually matter are the same ones and are all set below: the bot works
-# on its own branch under its own identity, a release must have been public for
-# fourteen days before it is proposed, and a major version is never proposed
-# automatically. A bot nobody installed is a rung that does not exist, which is
+# that actually matter are the same ones and are set below FOR BOTH ECOSYSTEMS:
+# the bot works on its own branch under its own identity, a release must have
+# been public for fourteen days before it is proposed, and a major version is
+# never proposed automatically. For a while that sentence was true of cargo and
+# false of github-actions, which is how four major action bumps arrived in one
+# pull request. A bot nobody installed is a rung that does not exist, which is
 # worse than a different bot with the same guarantees.
 version: 2
 
@@ -52,9 +54,30 @@ updates:
       interval: monthly
     labels: ["rung-1", "pipeline"]
     open-pull-requests-limit: 3
+    # THE TWO SETTINGS ABOVE WERE MISSING HERE, and the header of this file
+    # said they applied to the bot rather than to one ecosystem. They did not:
+    # cargo had both, github-actions had neither, so the guarantee this file
+    # states in prose was implemented for half the things it governs. The
+    # consequence was a real pull request -- #7, four MAJOR bumps at once,
+    # checkout v4 to v7, cache v4 to v6, upload-artifact v4 to v7,
+    # download-artifact v4 to v8 -- proposed automatically by a configuration
+    # whose documentation says that never happens.
+    cooldown:
+      default-days: 14
+    # A major version of an action is a contract change in the same way a major
+    # crate version is: checkout v5 changed its default ref behaviour, and an
+    # action that silently checks out something else is a pipeline that tests
+    # something else. It fires a human decision instead.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
+      # Minor and patch only, matching cargo's group. With majors ignored the
+      # group could not collect one anyway; saying so keeps the two ecosystems
+      # readable side by side rather than subtly different.
       actions:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
 
 # Deliberately not here: rust-toolchain.toml. A compiler change can move a
 # floating-point result, and this whole system rests on the same numbers
