@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1373 rows** — 660 a person picked, 713 worked out. Two thirds of any design tree is
+**1374 rows** — 660 a person picked, 714 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -19278,7 +19278,7 @@ Counted over 128135 day pairs at the same seventeen leads sw_uncertainty_growth 
 - **lower bound** — the answer is a weighted blend of today's F10.7 and a window mean of the analogue, so it cannot leave the interval between them. The analogue is bounded below by 0.324026 x 193.8580 = 62.8 sfu, its smallest shape on its smallest amplitude, and env_f107 by 60 because below 60 sfu has never been observed; the blend therefore floors at 60
 - **upper bound** — env_f107's upper bound is 400, above which the exospheric temperature relation is extrapolated past the largest recorded daily value. The analogue cannot exceed cycle 25's own 81-day peak of 225.1 sfu, and a blend cannot exceed its larger input, so this bound catches a broken weight or a broken table rather than an extreme sky
 - **reads** — `env_f107`, `orbit_mission_duration`, `sys_mission_requirements_mission_epoch`
-- **read by** — `sw_f107_design`
+- **read by** — `sw_f107_design`, `sw_f107_design_long`
 - **assumes** Two completed cycles is the whole sample, and eleven of the ninety-three grid points rest on one of them — fails when the record spans cycles 23, 24 and the incomplete 25, so the shape R is a mean of TWO curves and its spread between them is not published by this row. Where the two cycles' differing lengths leave only one of them covering a point — eleven of ninety-three, near the wrap — the value is that one cycle's shape rather than an average. Two cycles cannot establish that a shape repeats; they can only establish what the last two did, and this row says the next one resembles them because that is the best the record supports, not because it is known.
 - **assumes** Outside cycle 25 the amplitude is the mean of TWO completed cycles, and their spread is a factor of 1.41 — fails when cycle 23 peaked at 226.8 sfu and cycle 24 at 160.9, so the 193.9 this row uses for every future cycle is the midpoint of two numbers that differ by 41%. A window reaching past about 2030 is reading a level whose size is that average, and if the next cycle runs like cycle 23 the answer is 17% low, if like cycle 24 it is 17% high. That is an honest estimate rather than a repeat of the current cycle, which is what this row used to do, but two cycles cannot support an uncertainty on it and none is published. The row does not know, and does not claim to know, which kind of cycle comes next.
 - **assumes** The answer is a window MEAN, so it understates the early years of a long mission — fails when a five-year mission opening at the declared epoch averages 90.4 sfu, but its first ninety days average 104.6 and it falls to 73.2 by the end of the window — a spread of 39 sfu inside one number. Drag is not linear in flux and a vehicle does not average its propellant over five years, so a design whose sizing case is its worst sustained period is reading the wrong statistic here. This row publishes a centre because it is a centre; the maximum of the analogue over the window is a different number and nothing publishes it yet.
@@ -19623,6 +19623,43 @@ The second driver every empirical density model wants, beside the daily flux. At
 
 One of the two numbers the subsystem exists to produce. The centre comes from sw_central_expectation, the spread from sw_uncertainty_growth, and the confidence is the 95th percentile that sw_uncertainty_growth publishes — so this is a value the mission should not exceed in 95% of histories, not a value it will see.
 
+### `sw_f107_design_long` — Sustained F10.7 to design to
+
+> What F10.7 must the design survive as a sustained level over the mission window?
+
+| | |
+|---|---|
+| symbol | `F107_long` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `F107_long = F107_central + 1.28 * sigma_total` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
+
+- **lower bound** — below 60 sfu has never been observed and every relation reading F10.7 has no support there; a design level below it means the spread has been subtracted rather than added
+- **upper bound** — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, and a sustained level there is not a window this tool can model
+- **reads** — `sw_central_expectation`, `sw_mean_band_spread`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** 1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent — fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997. A one-sided 95 per cent bound is 1.645 sigma, which at this sigma is a further 4.9 sfu. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it
+- **assumes** The residual spread is normal enough for a z multiplier to mean a percentile — fails when it is not. The residuals of a forecast that misses hardest when activity is highest are skewed, and a normal multiplier under-covers the high tail — which is the tail a design is sized against. The empirical percentile of the residuals would be the honest statistic, and sw_mean_band_spread publishes only their standard deviation
+- **assumes** One sigma covers the whole window — fails when sigma is not flat across the cycle — the source says so about its own number — so a window spanning a rise or a fall is given one width where it needs two
+- **evidence** a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.554959 — expect 177.35034752 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** round numbers, so the arithmetic is checkable without a calculator — 100 + 1.28 × 20 — expect 125.6 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** a cycle-maximum centre of 240, which is where the upper guard starts to matter — expect 257.35034752 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The LONG TERM of the pair. This is the level the mission sits at for months at
+a time — what an array is sized on, what a drag budget integrates. Its short
+sibling, sw_f107_design_short, says what one day inside it reaches.
+
+The existing sw_f107_design is neither: it adds a one-sided 95th-percentile
+PERSISTENCE growth, which answers "how far might the flux drift from today's
+value" rather than "how wrong is the pattern about the window". Both are
+defensible and they are not the same question.
+
+
 ### `sw_f107a_ratio` — Daily F10.7 scatter about F10.7A
 
 > How far does a single day's F10.7 stray from its own 81-day centred mean?
@@ -19944,7 +19981,7 @@ sw_kp_from_ap applies the published scale as published, and the scale is defined
 
 - **lower bound** — a spread of zero would mean the pattern predicts every rotation exactly, which the record contradicts at every rotation it scores; below zero is not a spread
 - **upper bound** — above 60 sfu the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean and the band would be arithmetic rather than physics
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **read by** — `sw_f107_design_long`
 - **assumes** One sigma holds across the whole cycle — fails when it does not, and the source this was rebuilt from says so about its own number: 'sigma is NOT flat across the cycle; a design that uses one number is too tight somewhere and too loose somewhere else.' prf_rebuild reports sigma split into five phase bins for that reason. This row publishes the pooled number, so a design near solar maximum is given a band that is too narrow and one near minimum a band too wide
 - **assumes** The 273-day hole in 2017 is filled by straight-line interpolation before the rotations are cut — fails when those interpolated days are counted as observations. Nine months of invented flux sit inside about ten rotations, and they are smoother than the sun, so every one of those rotations is easier to predict than a real one and the pooled spread is a little narrower than the record can support
 - **assumes** It is the residual of a pattern, not of a forecast — fails when this is read as what a forecaster would get wrong. There is no forecast in it: no flare watch, no active-region count, no observation later than the rotation before. A real 27-day outlook does better, which is what sw_forecast_skill measures

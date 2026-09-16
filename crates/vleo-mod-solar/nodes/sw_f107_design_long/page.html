@@ -1,0 +1,186 @@
+<article class="node" data-node="sw_f107_design_long" data-sheet-hash="76420f" data-impl-hash="b74e54">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Sustained F10.7 to design to</h2>
+  <p class="ident"><code>sw_f107_design_long</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">What F10.7 must the design survive as a sustained level over the mission window?</p>
+<p class="maths"><code>F107_long = F107_central + 1.28 * sigma_total</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The LONG TERM of the pair. This is the level the mission sits at for months at
+a time — what an array is sized on, what a drag budget integrates. Its short
+sibling, sw_f107_design_short, says what one day inside it reaches.
+
+The existing sw_f107_design is neither: it adds a one-sided 95th-percentile
+PERSISTENCE growth, which answers &quot;how far might the flux drift from today's
+value&quot; rather than &quot;how wrong is the pattern about the window&quot;. Both are
+defensible and they are not the same question.
+</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent</dt><dd>fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997. A one-sided 95 per cent bound is 1.645 sigma, which at this sigma is a further 4.9 sfu. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it</dd>
+<dt>The residual spread is normal enough for a z multiplier to mean a percentile</dt><dd>fails when it is not. The residuals of a forecast that misses hardest when activity is highest are skewed, and a normal multiplier under-covers the high tail — which is the tail a design is sized against. The empirical percentile of the residuals would be the honest statistic, and sw_mean_band_spread publishes only their standard deviation</dd>
+<dt>One sigma covers the whole window</dt><dd>fails when sigma is not flat across the cycle — the source says so about its own number — so a window spanning a rise or a fall is given one width where it needs two</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">A central expectation is a line. A design cannot be built on a line: it needs the width, and the width has to be the width of the thing actually being predicted. sw_mean_band_spread measures exactly that — how far the pattern has historically been from the rotation level it predicted — so adding a multiple of it to the centre gives a level the window is unlikely to exceed on a sustained basis.</p>
+<p class="why">The multiplier is 1.28, which is where a reader should stop and look. 1.28 is the one-sided 90th percentile of a normal distribution, not the 95th. The study this is ported from forms its mean band as centre +/- 1.28*sigma while labelling the run 95 per cent confidence, and in the same function it forms the DAILY band at the true p.Conf/100 = 0.95. So the two halves of one published band sit at different confidences. That is reproduced here rather than corrected, because a port that quietly changes a number stops being a port, but it is declared so that changing it is one edit in one place rather than an archaeology exercise.</p>
+<div class="theory-walk" data-steps="3">
+<ol class="derive">
+<li><span class="dt">Take the centre the cycle analogue gives for the window.</span><code class="dm">F107_central = sw_central_expectation</code></li>
+<li><span class="dt">Take the spread the pattern has historically missed a rotation level by.</span><code class="dm">sigma_total = sw_mean_band_spread = 13.5550 sfu</code></li>
+<li><span class="dt">Add 1.28 of them. One-sided, because a design is sized against the high side; the cold case is its own scenario and not this row.</span><code class="dm">F107_long = F107_central + 1.28 * sigma_total</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">At the study's own window the arithmetic is exact: its nominal 158.3304112313 plus 1.28 * 13.4968815767 is 175.6064196495, which is the hotmean scenario it published to the last digit. That is what makes this relation checkable rather than plausible.</p>
+<p class="maths concl">which is the relation this node states: <code>F107_long = F107_central + 1.28 * sigma_total</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>central</code></td><td><a class="xref" data-goto="sw_central_expectation">sw_central_expectation</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>spread</code></td><td><a class="xref" data-goto="sw_mean_band_spread">sw_mean_band_spread</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>F107_long</code></td><td>sw_f107_design_long</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+</section>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">add 1.28 standard deviations of the rotation-forecast residual to the central expectation</span> <span class="binds">→ <code>sustained: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_f107_design_long(central: Ratio, spread: Ratio) -> Ratio
+    given central from sw_central_expectation
+    given spread from sw_mean_band_spread
+    // add 1.28 standard deviations of the rotation-forecast residual to the central expectation
+    sustained ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require F107_long ≥ 60
+    require F107_long ≤ 400
+    require F107_long is finite
+
+    return F107_long
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>F107_long &ge; 60</code> — below 60 sfu has never been observed and every relation reading F10.7 has no support there; a design level below it means the spread has been subtracted rather than added</li>
+<li><code>F107_long &le; 400</code> — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, and a sustained level there is not a window this tool can model</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sw_f107_design_long" data-lo="60" data-hi="400" data-symbol="F107_long">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What F10.7 must the design survive as a sustained level over the mission window?
+///
+/// `F107_long = F107_central + 1.28 * sigma_total`
+///
+/// Source: `noaa_swpc`
+///
+/// The LONG TERM of the pair. This is the level the mission sits at for
+/// months at a time — what an array is sized on, what a drag budget
+/// integrates. Its short sibling, sw_f107_design_short, says what one day
+/// inside it reaches. The existing sw_f107_design is neither: it adds a
+/// one-sided 95th-percentile PERSISTENCE growth, which answers &quot;how far might
+/// the flux drift from today's value&quot; rather than &quot;how wrong is the pattern
+/// about the window&quot;. Both are defensible and they are not the same question.
+///
+/// # Assumptions
+///
+/// * 1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent — fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997. A one-sided 95 per cent bound is 1.645 sigma, which at this sigma is a further 4.9 sfu. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it
+/// * The residual spread is normal enough for a z multiplier to mean a percentile — fails when it is not. The residuals of a forecast that misses hardest when activity is highest are skewed, and a normal multiplier under-covers the high tail — which is the tail a design is sized against. The empirical percentile of the residuals would be the honest statistic, and sw_mean_band_spread publishes only their standard deviation
+/// * One sigma covers the whole window — fails when sigma is not flat across the cycle — the source says so about its own number — so a window spanning a rise or a fall is given one width where it needs two
+pub const NODE_ID: &amp;str = &quot;sw_f107_design_long&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x472055909976420f;
+
+pub fn evaluate(central: Ratio, spread: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : add 1.28 standard deviations of the rotation-forecast residual to the central expectation -&gt; Ratio
+    // 1.28 is declared in the sheet, not chosen here: it is the one-sided 90th
+    // percentile of a normal, and the sheet argues about why a run labelled 95
+    // per cent uses it. A coefficient that appears only in a hole body is
+    // exactly what the gate's portable-maths check exists to refuse.
+    let sustained: Ratio = central + spread * 1.28;
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = sustained;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_long&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_long&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;below 60 sfu has never been observed and every relation reading F10.7 has no support there; a design level below it means the spread has been subtracted rather than added&quot; });
+    }
+    if answer.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_long&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, and a sustained level there is not a window this tool can model&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.554959"><td>a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.554959</td><td class="num">177.35034752</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="round numbers, so the arithmetic is checkable without a calculator — 100 + 1.28 × 20"><td>round numbers, so the arithmetic is checkable without a calculator — 100 + 1.28 × 20</td><td class="num">125.6</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="a cycle-maximum centre of 240, which is where the upper guard starts to matter"><td>a cycle-maximum centre of 240, which is where the upper guard starts to matter</td><td class="num">257.35034752</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 60 — below 60 sfu has never been observed and every relation reading F10.7 has no support there; a design level below it means the spread has been subtracted rather than added</li>
+<li><code>OutOfDomain</code> above 400 — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, and a sustained level there is not a window this tool can model</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_f107_design_long"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>60 &hellip; 400</code> -.</p>
+<ul class="guards"><li>lower — below 60 sfu has never been observed and every relation reading F10.7 has no support there; a design level below it means the spread has been subtracted rather than added</li><li>upper — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, and a sustained level there is not a window this tool can model</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>
