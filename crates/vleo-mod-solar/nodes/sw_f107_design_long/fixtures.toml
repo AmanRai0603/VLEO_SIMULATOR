@@ -13,12 +13,12 @@
 # not be a fixture. It is in parity.csv beside this sheet, where it belongs.
 
 [[fixture]]
-label = "a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.554959"
-expect = 177.35034752
+label = "a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.454382"
+expect = 177.22160896
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { central = 160.0, spread = 13.554959 }
+inputs = { central = 160.0, spread = 13.454382 }
 
 [[fixture]]
 label = "round numbers, so the arithmetic is checkable without a calculator — 100 + 1.28 × 20"
@@ -30,8 +30,8 @@ inputs = { central = 100.0, spread = 20.0 }
 
 [[fixture]]
 label = "a cycle-maximum centre of 240, which is where the upper guard starts to matter"
-expect = 257.35034752
+expect = 257.22160896
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { central = 240.0, spread = 13.554959 }
+inputs = { central = 240.0, spread = 13.454382 }

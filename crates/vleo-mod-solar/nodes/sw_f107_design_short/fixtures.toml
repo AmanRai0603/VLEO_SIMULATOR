@@ -13,11 +13,11 @@
 
 [[fixture]]
 label = "this repository's own chain: the sustained level from sw_f107_design_long's first fixture plus its measured daily departure"
-expect = 211.5818290015
+expect = 211.4530904415
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { sustained = 177.35034752, daily = 34.2314814815 }
+inputs = { sustained = 177.2216089600, daily = 34.2314814815 }
 
 [[fixture]]
 label = "round numbers, so the arithmetic is checkable without a calculator"

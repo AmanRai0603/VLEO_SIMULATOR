@@ -16,14 +16,14 @@ fn relative_error(got: f64, expected: f64) -> f64 {
     if expected == 0.0 { pmath::abs(got) } else { pmath::abs((got - expected) / expected) }
 }
 
-/// a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.554959
+/// a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.454382
 ///
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_0() {
-    let got = model::evaluate(Ratio::new(160.0), Ratio::new(13.554959)).expect("the fixture case must not be refused");
-    let err = relative_error(got.get(), 177.35034752);
-    assert!(err <= 1e-12, "a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.554959: got {} want 177.35034752, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    let got = model::evaluate(Ratio::new(160.0), Ratio::new(13.454382)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 177.22160896);
+    assert!(err <= 1e-12, "a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.454382: got {} want 177.22160896, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
 /// round numbers, so the arithmetic is checkable without a calculator — 100 + 1.28 × 20
@@ -41,9 +41,9 @@ fn fixture_1() {
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_2() {
-    let got = model::evaluate(Ratio::new(240.0), Ratio::new(13.554959)).expect("the fixture case must not be refused");
-    let err = relative_error(got.get(), 257.35034752);
-    assert!(err <= 1e-12, "a cycle-maximum centre of 240, which is where the upper guard starts to matter: got {} want 257.35034752, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    let got = model::evaluate(Ratio::new(240.0), Ratio::new(13.454382)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 257.22160896);
+    assert!(err <= 1e-12, "a cycle-maximum centre of 240, which is where the upper guard starts to matter: got {} want 257.22160896, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
 // ---- properties, generated from the declared domain ---------------------
@@ -55,7 +55,7 @@ fn fixture_2() {
 
 /// One per cent either side of the known-good point, this node still answers.
 ///
-/// Derived from `a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.554959` and the declared domain 60 … 400.
+/// Derived from `a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.454382` and the declared domain 60 … 400.
 ///
 /// One per cent, not a decade. These domains are design bands — an altitude
 /// range somebody chose, not a range over which the mathematics holds — so a
@@ -68,12 +68,12 @@ fn fixture_2() {
 fn answers_near_the_known_good_point() {
     let mut refused: Vec<String> = Vec::new();
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(160.0 * scale), Ratio::new(13.554959)) {
+        if let Err(f) = model::evaluate(Ratio::new(160.0 * scale), Ratio::new(13.454382)) {
             refused.push(format!("central x{scale} -> {f}"));
         }
     }
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(160.0), Ratio::new(13.554959 * scale)) {
+        if let Err(f) = model::evaluate(Ratio::new(160.0), Ratio::new(13.454382 * scale)) {
             refused.push(format!("spread x{scale} -> {f}"));
         }
     }
@@ -92,13 +92,13 @@ fn answers_near_the_known_good_point() {
 #[test]
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(160.0 * scale), Ratio::new(13.554959)) {
+        if let Ok(v) = model::evaluate(Ratio::new(160.0 * scale), Ratio::new(13.454382)) {
             assert!(v.get().is_finite(), "sw_f107_design_long produced a value that is not a number");
             assert!(v.get() >= 60.0 && v.get() <= 400.0, "sw_f107_design_long answered {}, outside its declared domain 60 … 400 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(160.0), Ratio::new(13.554959 * scale)) {
+        if let Ok(v) = model::evaluate(Ratio::new(160.0), Ratio::new(13.454382 * scale)) {
             assert!(v.get().is_finite(), "sw_f107_design_long produced a value that is not a number");
             assert!(v.get() >= 60.0 && v.get() <= 400.0, "sw_f107_design_long answered {}, outside its declared domain 60 … 400 — the guard did not stop it", v.get());
         }
@@ -112,8 +112,8 @@ fn every_answer_is_inside_the_declared_domain() {
 /// agreement across the faces impossible rather than merely hard.
 #[test]
 fn the_same_inputs_give_the_same_answer() {
-    let a = model::evaluate(Ratio::new(160.0), Ratio::new(13.554959));
-    let b = model::evaluate(Ratio::new(160.0), Ratio::new(13.554959));
+    let a = model::evaluate(Ratio::new(160.0), Ratio::new(13.454382));
+    let b = model::evaluate(Ratio::new(160.0), Ratio::new(13.454382));
     match (a, b) {
         (Ok(x), Ok(y)) => assert!(x.get().to_bits() == y.get().to_bits(), "sw_f107_design_long is not deterministic: {} then {}", x.get(), y.get()),
         (Err(_), Err(_)) => {}

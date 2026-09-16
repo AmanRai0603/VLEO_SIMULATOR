@@ -42,7 +42,7 @@ defensible and they are not the same question.
 <div class="theory-walk" data-steps="3">
 <ol class="derive">
 <li><span class="dt">Take the centre the cycle analogue gives for the window.</span><code class="dm">F107_central = sw_central_expectation</code></li>
-<li><span class="dt">Take the spread the pattern has historically missed a rotation level by.</span><code class="dm">sigma_total = sw_mean_band_spread = 13.5550 sfu</code></li>
+<li><span class="dt">Take the spread the pattern has historically missed a rotation level by.</span><code class="dm">sigma_total = sw_mean_band_spread = 13.4544 sfu</code></li>
 <li><span class="dt">Add 1.28 of them. One-sided, because a design is sized against the high side; the cold case is its own scenario and not this row.</span><code class="dm">F107_long = F107_central + 1.28 * sigma_total</code></li>
 </ol>
 </div>
@@ -154,9 +154,9 @@ pub fn evaluate(central: Ratio, spread: Ratio) -&gt; Result&lt;Ratio, Fault&gt; 
 </section>
 <section class="panel" data-panel="6">
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
-<tr data-fixture="a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.554959"><td>a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.554959</td><td class="num">177.35034752</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.454382"><td>a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.454382</td><td class="num">177.22160896</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
 <tr data-fixture="round numbers, so the arithmetic is checkable without a calculator — 100 + 1.28 × 20"><td>round numbers, so the arithmetic is checkable without a calculator — 100 + 1.28 × 20</td><td class="num">125.6</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
-<tr data-fixture="a cycle-maximum centre of 240, which is where the upper guard starts to matter"><td>a cycle-maximum centre of 240, which is where the upper guard starts to matter</td><td class="num">257.35034752</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="a cycle-maximum centre of 240, which is where the upper guard starts to matter"><td>a cycle-maximum centre of 240, which is where the upper guard starts to matter</td><td class="num">257.22160896</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>

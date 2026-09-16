@@ -21,9 +21,9 @@ fn relative_error(got: f64, expected: f64) -> f64 {
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_0() {
-    let got = model::evaluate(Ratio::new(177.35034752), Ratio::new(34.2314814815)).expect("the fixture case must not be refused");
-    let err = relative_error(got.get(), 211.5818290015);
-    assert!(err <= 1e-12, "this repository's own chain: the sustained level from sw_f107_design_long's first fixture plus its measured daily departure: got {} want 211.5818290015, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    let got = model::evaluate(Ratio::new(177.22160896), Ratio::new(34.2314814815)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 211.4530904415);
+    assert!(err <= 1e-12, "this repository's own chain: the sustained level from sw_f107_design_long's first fixture plus its measured daily departure: got {} want 211.4530904415, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
 /// round numbers, so the arithmetic is checkable without a calculator
@@ -68,12 +68,12 @@ fn fixture_2() {
 fn answers_near_the_known_good_point() {
     let mut refused: Vec<String> = Vec::new();
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(177.35034752 * scale), Ratio::new(34.2314814815)) {
+        if let Err(f) = model::evaluate(Ratio::new(177.22160896 * scale), Ratio::new(34.2314814815)) {
             refused.push(format!("sustained x{scale} -> {f}"));
         }
     }
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(177.35034752), Ratio::new(34.2314814815 * scale)) {
+        if let Err(f) = model::evaluate(Ratio::new(177.22160896), Ratio::new(34.2314814815 * scale)) {
             refused.push(format!("daily x{scale} -> {f}"));
         }
     }
@@ -92,13 +92,13 @@ fn answers_near_the_known_good_point() {
 #[test]
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(177.35034752 * scale), Ratio::new(34.2314814815)) {
+        if let Ok(v) = model::evaluate(Ratio::new(177.22160896 * scale), Ratio::new(34.2314814815)) {
             assert!(v.get().is_finite(), "sw_f107_design_short produced a value that is not a number");
             assert!(v.get() >= 60.0 && v.get() <= 400.0, "sw_f107_design_short answered {}, outside its declared domain 60 … 400 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(177.35034752), Ratio::new(34.2314814815 * scale)) {
+        if let Ok(v) = model::evaluate(Ratio::new(177.22160896), Ratio::new(34.2314814815 * scale)) {
             assert!(v.get().is_finite(), "sw_f107_design_short produced a value that is not a number");
             assert!(v.get() >= 60.0 && v.get() <= 400.0, "sw_f107_design_short answered {}, outside its declared domain 60 … 400 — the guard did not stop it", v.get());
         }
@@ -112,8 +112,8 @@ fn every_answer_is_inside_the_declared_domain() {
 /// agreement across the faces impossible rather than merely hard.
 #[test]
 fn the_same_inputs_give_the_same_answer() {
-    let a = model::evaluate(Ratio::new(177.35034752), Ratio::new(34.2314814815));
-    let b = model::evaluate(Ratio::new(177.35034752), Ratio::new(34.2314814815));
+    let a = model::evaluate(Ratio::new(177.22160896), Ratio::new(34.2314814815));
+    let b = model::evaluate(Ratio::new(177.22160896), Ratio::new(34.2314814815));
     match (a, b) {
         (Ok(x), Ok(y)) => assert!(x.get().to_bits() == y.get().to_bits(), "sw_f107_design_short is not deterministic: {} then {}", x.get(), y.get()),
         (Err(_), Err(_)) => {}

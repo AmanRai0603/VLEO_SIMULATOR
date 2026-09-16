@@ -19,14 +19,14 @@
 #     = (175.60641964945182 - 158.3304112313161) / 1.28
 #     = 13.496881576668528
 #
-# THE TWO AGREE TO 0.43 PER CENT. Two implementations of one documented method,
+# THE TWO AGREE TO 0.31 PER CENT. Two implementations of one documented method,
 # in different languages, over one record. The residual is unexplained and the
 # candidates are named rather than chosen: the 273-day 2017 hole each fills by
 # interpolation, the least-squares solver's conditioning on a near-collinear
 # AR(2) design matrix, and the exact warm-up rotation each begins scoring at.
 #
 # The Ap side, by the same route, is (26.683328217449382 - 22.092538390203554)
-# / 1.28 = 3.5865545525358034 against 3.581641 derived here — 0.14 per cent. It
+# / 1.28 = 3.5865545525358034 against 3.593688 derived here — 0.20 per cent. It
 # is recorded here although no row publishes it yet.
 variable,matlab_sigma_total
 f107,13.496881576668528

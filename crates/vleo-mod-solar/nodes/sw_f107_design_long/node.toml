@@ -93,7 +93,7 @@ math = "F107_central = sw_central_expectation"
 
 [[theory.step]]
 text = "Take the spread the pattern has historically missed a rotation level by."
-math = "sigma_total = sw_mean_band_spread = 13.5550 sfu"
+math = "sigma_total = sw_mean_band_spread = 13.4544 sfu"
 
 [[theory.step]]
 text = "Add 1.28 of them. One-sided, because a design is sized against the high side; the cold case is its own scenario and not this row."

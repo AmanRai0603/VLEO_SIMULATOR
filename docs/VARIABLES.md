@@ -19646,9 +19646,9 @@ One of the two numbers the subsystem exists to produce. The centre comes from sw
 - **assumes** 1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent — fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997. A one-sided 95 per cent bound is 1.645 sigma, which at this sigma is a further 4.9 sfu. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it
 - **assumes** The residual spread is normal enough for a z multiplier to mean a percentile — fails when it is not. The residuals of a forecast that misses hardest when activity is highest are skewed, and a normal multiplier under-covers the high tail — which is the tail a design is sized against. The empirical percentile of the residuals would be the honest statistic, and sw_mean_band_spread publishes only their standard deviation
 - **assumes** One sigma covers the whole window — fails when sigma is not flat across the cycle — the source says so about its own number — so a window spanning a rise or a fall is given one width where it needs two
-- **evidence** a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.554959 — expect 177.35034752 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.454382 — expect 177.22160896 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** round numbers, so the arithmetic is checkable without a calculator — 100 + 1.28 × 20 — expect 125.6 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** a cycle-maximum centre of 240, which is where the upper guard starts to matter — expect 257.35034752 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** a cycle-maximum centre of 240, which is where the upper guard starts to matter — expect 257.22160896 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 
 The LONG TERM of the pair. This is the level the mission sits at for months at
 a time — what an array is sized on, what a drag budget integrates. Its short
@@ -19683,7 +19683,7 @@ defensible and they are not the same question.
 - **assumes** The two spreads stack, and stacking two percentiles is not a percentile — fails when the published number is read as the 95th percentile of a day. It is not: it is the 90th percentile of the rotation level plus the 95th percentile of the daily departure, which for independent normals lands near the 99th. The bound is conservative, the label is not, and the honest statistic would be the percentile of the daily value itself rather than a sum of two
 - **assumes** The rotation error and the daily departure are independent — fails when they are not. Both widen with activity, so a window the pattern gets wrong on the high side is also a window whose days scatter most, and the true joint tail is fatter than the sum of two marginals suggests in one direction and thinner in the other
 - **assumes** One day in twenty is the day worth designing to — fails when the mission is long. Over a 365-day window a one-in-twenty day happens about eighteen times, so this is not a rare event but a routine one; the rare day a design might actually care about is further out and this row does not publish it
-- **evidence** this repository's own chain: the sustained level from sw_f107_design_long's first fixture plus its measured daily departure — expect 211.5818290015 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** this repository's own chain: the sustained level from sw_f107_design_long's first fixture plus its measured daily departure — expect 211.4530904415 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** round numbers, so the arithmetic is checkable without a calculator — expect 230 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** a quieter sustained level with a wider daily departure — the two terms are independent and the row must not assume otherwise — expect 190 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 
@@ -20007,9 +20007,9 @@ sw_kp_from_ap applies the published scale as published, and the scale is defined
 | kind | declared |
 | owner | environment |
 | evidence tier | A |
-| relation | `sigma_total = std(pred - truth) over 361 walk-forward next-rotation forecasts = 13.5550 sfu` |
+| relation | `sigma_total = std(pred - truth) over 361 walk-forward next-rotation forecasts = 13.4544 sfu` |
 | source | `noaa_swpc` |
-| declared value | **13.554959** - |
+| declared value | **13.454382** - |
 | confirmed by |  |
 | valid over | 0 … 60 - |
 
@@ -20017,6 +20017,7 @@ sw_kp_from_ap applies the published scale as published, and the scale is defined
 - **upper bound** — above 60 sfu the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean and the band would be arithmetic rather than physics
 - **read by** — `sw_f107_design_long`
 - **assumes** One sigma holds across the whole cycle — fails when it does not, and the source this was rebuilt from says so about its own number: 'sigma is NOT flat across the cycle; a design that uses one number is too tight somewhere and too loose somewhere else.' prf_rebuild reports sigma split into five phase bins for that reason. This row publishes the pooled number, so a design near solar maximum is given a band that is too narrow and one near minimum a band too wide
+- **assumes** The cycle table ends before the record does, and the phase past it is an extrapolation — fails when it is read as measured. Cycle 25 is tabulated to 2025-12-15 and the record runs to 2025-12-31, so the last sixteen days carry a phase computed from the MEAN length of the three cycles the table holds — one of which is itself incomplete. Every day the window is held forward from inherits that extrapolation
 - **assumes** The 273-day hole in 2017 is filled by straight-line interpolation before the rotations are cut — fails when those interpolated days are counted as observations. Nine months of invented flux sit inside about ten rotations, and they are smoother than the sun, so every one of those rotations is easier to predict than a real one and the pooled spread is a little narrower than the record can support
 - **assumes** It is the residual of a pattern, not of a forecast — fails when this is read as what a forecaster would get wrong. There is no forecast in it: no flare watch, no active-region count, no observation later than the rotation before. A real 27-day outlook does better, which is what sw_forecast_skill measures
 

@@ -42,7 +42,7 @@ is a line with no width.
 [maths]
 # A person has NOT read this relation against its source yet.
 confirmed_by = ""
-expression = "sigma_total = std(pred - truth) over 361 walk-forward next-rotation forecasts = 13.5550 sfu"
+expression = "sigma_total = std(pred - truth) over 361 walk-forward next-rotation forecasts = 13.4544 sfu"
 source = "noaa_swpc"
 
 [theory]
@@ -69,12 +69,12 @@ there is no forecast in it, only the cycle and the memory of the last two
 rotations.
 """
 reading = """
-13.5550 sfu, against rotation means that run from about 70 to 240 over the
+13.4544 sfu, against rotation means that run from about 70 to 240 over the
 record. The pattern explains most of where a rotation sits and misses by about
 fourteen units of flux, and a design band of centre +/- 1.28*sigma is roughly
 +/- 17 sfu.
 
-The same method on Ap gives 3.5816. It is measured and recorded here but not
+The same method on Ap gives 3.5937. It is measured and recorded here but not
 published, for the same reason as the daily row: sw_ap_design_long does not
 exist yet, and a published number nothing reads is a number nobody checks.
 """
@@ -93,11 +93,19 @@ math = "pred = base(p_next)*sc + a1*an[-1] + a2*an[-2] - mean(residuals so far)"
 
 [[theory.step]]
 text = "The spread of what is left, over every rotation the walk-forward scored."
-math = "sigma_total = std(pred - truth) = 13.5550 sfu over 361 rotations"
+math = "sigma_total = std(pred - truth) = 13.4544 sfu over 361 rotations"
 
 [[assumption]]
 text = "One sigma holds across the whole cycle"
 fails_when = "it does not, and the source this was rebuilt from says so about its own number: 'sigma is NOT flat across the cycle; a design that uses one number is too tight somewhere and too loose somewhere else.' prf_rebuild reports sigma split into five phase bins for that reason. This row publishes the pooled number, so a design near solar maximum is given a band that is too narrow and one near minimum a band too wide"
+
+[[theory.step]]
+text = "Phase past the end of the cycle table WRAPS on the mean cycle length rather than stopping at 1. Sixteen days of the record sit past cycle 25's tabulated end, and clamping them to phase 1 puts them at the cycle minimum: it moved the held-forward centre from 158.37 to 138.74, fourteen per cent, while barely touching this pooled number."
+math = "u = mod((t - start_last) / mean_cycle_length, 1), clamped to 0.999"
+
+[[assumption]]
+text = "The cycle table ends before the record does, and the phase past it is an extrapolation"
+fails_when = "it is read as measured. Cycle 25 is tabulated to 2025-12-15 and the record runs to 2025-12-31, so the last sixteen days carry a phase computed from the MEAN length of the three cycles the table holds — one of which is itself incomplete. Every day the window is held forward from inherits that extrapolation"
 
 [[assumption]]
 text = "The 273-day hole in 2017 is filled by straight-line interpolation before the rotations are cut"
@@ -119,10 +127,10 @@ reason_lower = "a spread of zero would mean the pattern predicts every rotation 
 reason_upper = "above 60 sfu the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean and the band would be arithmetic rather than physics"
 
 [value]
-number = 13.554959
+number = 13.454382
 # NOT A CONFIRMATION. Derived on 2026-09-16 from bundles/solar-weather@2026.09.14
 # by the method above, and cross-checked against prf_rebuild's own 13.496882 for
-# the same record — 0.43 per cent between two implementations of one documented
+# the same record — 0.31 per cent between two implementations of one documented
 # method sharing no code, recorded in parity.csv beside this sheet. Nobody has
 # yet read the number and agreed it, which is what this field is for.
 confirmed_by = ""
