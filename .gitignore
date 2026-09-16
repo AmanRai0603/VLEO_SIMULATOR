@@ -9,3 +9,12 @@
 node_modules
 *.pyc
 __pycache__
+
+# The local data store, if anyone points VLEO_DATA inside a checkout. The
+# devcontainer used to, and every Codespace therefore opened with ten untracked
+# files that were a byte copy of bundles/ and looked like forgotten work. That
+# override is gone and the store lives under $HOME again; this line is what
+# stops it coming back. The store is generated -- it syncs from bundles/ when
+# it opens empty -- and bundles/ is the tracked copy, the one with a manifest
+# and a provenance line.
+/.vleo/

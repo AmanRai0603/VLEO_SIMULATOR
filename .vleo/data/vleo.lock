@@ -1,9 +1,0 @@
-# vleo.lock — exactly which versions are installed, with their hashes.
-# Committed alongside a study. Two machines with the same lockfile
-# produce the same numbers.
-
-[[bundle]]
-name = "solar-drivers"
-version = "2026.09.04"
-hash = "54784567db11b868"
-

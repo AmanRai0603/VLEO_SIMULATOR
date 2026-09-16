@@ -62,17 +62,23 @@ from 200.14 to 258.23 sfu and stops the closure passing.
 
 ### In a Codespace, or any devcontainer
 
-`.devcontainer/` pins the toolchain, fills the reference-data store and
-regenerates the per-node artefacts on create, so a fresh Codespace needs no
-setup:
+**There is nothing to type.** `.devcontainer/` pins the toolchain, fills the
+reference-data store, regenerates the per-node artefacts and builds the daemon
+when the container is created; attaching to it starts the daemon if nothing is
+already serving. Port 7777 is forwarded and opens a preview, so the first tab a
+new Codespace shows you is the tool.
+
+To run it yourself instead — after stopping the one that started, or on a
+machine with no devcontainer:
 
 ```
 cargo run --release -p vleo-daemon
 ```
 
-Port 7777 is forwarded and opens a preview by itself. Nothing about the tool is
-different there — it is the same single process serving the same one origin,
-which is the point of it having no database and no service to install.
+Nothing about the tool is different there. It is the same single process
+serving the same one origin, which is the point of it having no database and no
+service to install. The reference-data store is kept under `$HOME`, outside the
+checkout, so running the tool never makes the working tree look dirty.
 
 ### From the command line
 
@@ -328,8 +334,8 @@ human approval. A model is the wrong tool for work with no judgement in it.
 | a session opens | tree state, what is blocking, whether reference data is present |
 | a sheet or fixture is saved | the gate on that node |
 | a commit message is written | its form, by the same script the pipeline runs |
-| every push | build, regenerate, gate, test, both profiles, no-std, panels |
-| every push | an advisory review that cannot fail the build |
+| every pull request, and every push to `main` | build, regenerate, gate, test, both profiles, no-std, panels |
+| every pull request, and every push to `main` | an advisory review that cannot fail the build |
 | every night | six passes over the whole tree, the ledger and yesterday's state |
 | weekly | a dependency bot on its own branch, fourteen-day minimum age, no majors |
 | on a tag | prove, build, then one human approval |
@@ -410,7 +416,7 @@ mechanically, not by convention.
 | A guard carries the reason it exists | the reason is a required field; a guard without one is generated with it or not at all |
 | An expected value may never come from the code under test | the gate refuses a fixture whose provenance is `self-snapshot` or `agent-generated` |
 | A refusal is never a substitution | a blocked row is named; a sweep records refused points |
-| The same sheet gives the same bytes | the regeneration diff and a byte-stability check on every push |
+| The same sheet gives the same bytes | the regeneration diff and a byte-stability check on every pull request |
 
 Two consequences worth stating because they are unusual:
 
@@ -514,6 +520,10 @@ showing an optimum near 300 km](docs/img/sweep.png)
 | [`docs/AGENT_EVIDENCE.md`](docs/AGENT_EVIDENCE.md) | what each agent produced when it was first used here |
 | [`docs/VARIABLES.md`](docs/VARIABLES.md) | every variable, unit, bound and the reason for it — generated |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | what to do when the tool is down |
+| [`docs/RELEASE_SETUP.md`](docs/RELEASE_SETUP.md) | tagging, proving and shipping a release |
+| [`docs/MATLAB_PORT_PLAN.md`](docs/MATLAB_PORT_PLAN.md) | how the study was ported, row by row — the record of a finished job |
+| [`docs/DELIVERY_PLAN.md`](docs/DELIVERY_PLAN.md) | what was to be built, in what order |
+| [`docs/GITLAB_TRANSFER.md`](docs/GITLAB_TRANSFER.md) | what moving off GitHub would cost, measured rather than guessed |
 | [`ADOPTION.lock`](ADOPTION.lock) | every external dependency, its licence, its fallback and when it was last checked |
 
 ## Provenance
