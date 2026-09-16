@@ -788,3 +788,130 @@ statistic is fitted on the record **outside** the kernel, and the fit's
 coefficients are declared in the sheet where a reviewer can see them, with the
 residual against the empirical curve declared as an assumption. What must never
 happen is a coefficient appearing only in a hole body.
+
+## 20 · The correction: the driver product, long and short term
+
+§18 above describes a seam that was built differently and a layer 2 that was
+never written. This section records what is actually there, what was decided on
+2026-09-16, and the order the correction goes in. It supersedes §18's account of
+what crosses.
+
+### 20.1 · What is actually there
+
+| | measured state |
+|---|---|
+| layer 2, all six `sys_space_environment_*` rows | `computed` and **`empty`** — nothing receives anything |
+| `l3_solar_interface` | `F107_crossing = F107_design` — **F10.7 only**; Ap never crosses |
+| `l3_solar_req_01` / `ach_01` | `F107_req = 250` ← `sw_f107_design` |
+| `l3_solar_req_02` / `ach_02` | `F107_req = 250 at 95%` ← `sw_f107_design` — **the same quantity again** |
+| `l3_solar_req_03` / `ach_03` | `Ap_req = 150` ← `sw_storm_return_level` |
+| long term / short term | **no rows at all** |
+| `sys_mission_requirements_mission_duration` | `declared` and **`empty`**, while `orbit_mission_duration` is published at layer 3 |
+
+So the subsystem has 35 study rows and two distinct conclusions, one of which
+crosses; the far side of the seam is unwritten; and the split this section
+exists to add does not exist.
+
+### 20.2 · What long and short term are, in the study's own numbers
+
+`matlab/reference/mission_drivers.csv` is the tool's saved output for one run —
+window opening 2027-06-26, 365 days, 95 per cent, Kp slot `mean`:
+
+| scenario | f107 | f107bar | ap | kp_mean | kp_peak |
+|---|---|---|---|---|---|
+| nominal | 158.3304 | 158.3304 | 22.0925 | 3.5481 | 4.7953 |
+| hotmean | 175.6064 | 175.6064 | 26.6833 | 3.8311 | 5.1968 |
+| coldmean | 141.0544 | 141.0544 | 17.5017 | 3.1669 | 4.2780 |
+| hotday | 209.7546 | 175.6064 | 41.5352 | 4.5009 | 6.1367 |
+| coldday | 109.7211 | 141.0544 | 6.8721 | 1.8533 | 2.8116 |
+
+The three `*mean` scenarios have `f107 == f107bar`: they are the **window mean**,
+what the mission sustains — the LONG TERM. The two `*day` scenarios have
+`f107 != f107bar`: a single day riding on the mean beneath it — the SHORT TERM.
+A design sizes its array and its propellant against different ones of these, and
+a tool that publishes only one has decided for the reader which.
+
+`tools/mat_parity.py` already carries this as an open finding in its own words:
+*"MATLAB turns (date, duration, confidence) into five driver sets. The port has
+no such row."*
+
+### 20.3 · The decision about crossing
+
+A subsystem publishes exactly one crossing row; there are seventeen and no
+exceptions, and §18 left "how a subsystem with more than one conclusion crosses"
+unsettled for all twenty-one interfaces. It is settled here:
+
+> **`l3_solar_interface` publishes the driver set as one conclusion.** Not four
+> crossings, and not one number chosen as governing. The study's product is the
+> set; splitting it at the seam would mean layer 2 reassembling something layer
+> 3 already had.
+
+What that costs is a change to what a row may publish. The kernel does not need
+one: `call(inputs: &[f64], outputs: &mut [f64])` already takes a slice, and the
+bus already carries `Vec<ValueOut>`. Only the generator assumes one output —
+`crates/vleo-sheet/src/emit.rs` writes `OUTPUT_VARS` with a single name. The
+sheet gains repeatable `[[publishes]]` blocks and `emit.rs` writes the list.
+Every existing sheet declares one and is unaffected.
+
+### 20.4 · The rows to add
+
+Long and short term as separate published rows, because a design reads one or
+the other and a reader must see which:
+
+| row | kind | what it answers |
+|---|---|---|
+| `sw_mean_band_spread` | computed | the ±1.28σ that makes hotmean and coldmean from the centre |
+| `sw_daily_band_spread` | computed | the within-rotation percentile a single day adds on top |
+| `sw_f107_design_long` | computed | the sustained F10.7 to design to — the mean band |
+| `sw_f107_design_short` | computed | the single-day F10.7 to survive — the daily band |
+| `sw_ap_design_long` | computed | the sustained Ap |
+| `sw_ap_design_short` | computed | the single-day Ap |
+| `sw_driver_set` | computed | the five scenarios assembled, which the interface publishes |
+
+The Kp columns need no new rows: `sw_kp_from_ap`, `sw_kp_slot_bias` and
+`sw_kp_mean_bias` already produce both slots.
+
+Then four required/achieved pairs, one per design output, replacing the three
+that exist — `req_01`/`ach_01` and `req_02`/`ach_02` answer the same quantity
+today and collapse into one.
+
+### 20.5 · Layer 2, and the duration
+
+`sys_space_environment_solar_flux` receives the driver set — it is the headline
+and the other two read from it. `_f10_7` and `_ap` receive their design values.
+`_atmospheric_density`, `_thermospheric_wind` and `_atomic_oxygen_fluence` stay
+seeded: no subsystem computes them, and filling a row from nothing is the defect
+the density panel exists to point at.
+
+`sys_mission_requirements_mission_duration` is filled and becomes the one
+declared duration. `orbit_mission_duration` reads it rather than declaring its
+own; two rows declaring a mission length is two rows that can disagree about how
+long the mission is. That is a change in another subsystem and goes through its
+owner.
+
+### 20.6 · What may not be a fixture
+
+**The five driver sets are parity data, not fixtures.** `model.migrated_from`
+says it plainly: an implementation cannot supply its own expected values. Every
+new row above needs expected values derived independently — from the paper, from
+the record, or by a person working the arithmetic — and `mission_drivers.csv`
+goes in `parity.csv` beside the node, where a disagreement is a finding about
+one of the two rather than a check either has passed.
+
+That is the expensive part of this section and it is not optional.
+
+### 20.7 · The order
+
+1. The generator: `[[publishes]]` in the sheet, `OUTPUT_VARS` as a list. No node
+   changes; the regeneration diff must come back empty for all 1371.
+2. `sys_mission_requirements_mission_duration` filled, `orbit_mission_duration`
+   routed to read it.
+3. The two spread rows, then the four design rows, each with independently
+   derived fixtures.
+4. `sw_driver_set`, then `l3_solar_interface` re-specified to publish it.
+5. The four required/achieved pairs, replacing the three.
+6. Layer 2: three rows written, three left seeded and saying why.
+
+Each step is a pull request that stops for review, as §19 requires. A step that
+cannot get its expected values from outside the code does not proceed to the
+next.
