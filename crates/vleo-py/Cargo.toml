@@ -20,5 +20,4 @@ crate-type = ["cdylib"]
 vleo-modules = { path = "../vleo-modules", features = ["std"] }
 vleo-bus = { path = "../vleo-bus", features = ["std"] }
 vleo-core = { path = "../vleo-core", features = ["std"] }
-vleo-units = { path = "../vleo-units", features = ["std"] }
 pyo3 = { version = "0.22", features = ["extension-module"] }
