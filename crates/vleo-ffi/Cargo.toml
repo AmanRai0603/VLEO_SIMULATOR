@@ -14,8 +14,6 @@ crate-type = ["rlib", "cdylib", "staticlib"]
 [dependencies]
 vleo-modules = { workspace = true, features = ["std"] }
 vleo-bus = { workspace = true, features = ["std"] }
-vleo-core = { workspace = true, features = ["std"] }
-vleo-units = { workspace = true, features = ["std"] }
 
 [lints.rust]
 # The one place `unsafe` is unavoidable: a C caller hands us raw pointers.
