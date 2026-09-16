@@ -915,3 +915,73 @@ That is the expensive part of this section and it is not optional.
 Each step is a pull request that stops for review, as §19 requires. A step that
 cannot get its expected values from outside the code does not proceed to the
 next.
+
+### 20.8 · What steps 3 and 4 actually did, and where they departed
+
+Written after the fact, against what is in the tree. Four departures from §20.4
+and §20.7, each with its reason.
+
+**Six rows were added that §20.4 did not list.** The four design rows publish the
+HOT side only — `sw_f107_design_long`'s own third theory step says "one-sided,
+because a design is sized against the high side; the cold case is its own
+scenario and not this row" — so the five scenarios need a cold side that did not
+exist. Two measured rows for the low tail of the within-rotation sample
+(`sw_daily_band_drop` 31.2722, `sw_ap_daily_band_drop` 10.5889), because the two
+tails are not each other's negation: the F10.7 tails differ by nine per cent and
+the Ap tails by forty-two, both because the quantities are bounded below and not
+above. Then four relations (`sw_f107_cold_long`, `sw_f107_cold_short`,
+`sw_ap_cold_long`, `sw_ap_cold_short`). Composing the cold side inside the
+interface instead would have put the 1.28 in a hole body, which is what the
+gate's portable-maths check exists to refuse.
+
+**`sw_driver_set` was NOT built, and the interface publishes the set directly.**
+§20.3 decided that `l3_solar_interface` publishes the driver set as one
+conclusion, and §20.4 then listed a separate row to assemble it for the interface
+to republish. That is thirty variables where fifteen do, each of the fifteen
+equal to one of the other fifteen, and a second place for the scenario-to-value
+mapping to be decided. The assembly is selection rather than arithmetic — no
+value is combined with another — and §20.3's rule is that a crossing relays. So
+the interface reads the ten producing rows and publishes fifteen members.
+
+**The Kp columns do not cross.** The study's driver set has five columns; this
+one has three. `sw_kp_from_ap`, `sw_kp_mean_bias` and `sw_kp_slot_bias` all
+exist, and none can be used here, because the bus passes a node's VALUE and not
+its RELATION: each answers at one Ap and a driver set needs them at five. Three
+ways out, none free — those three rows each publish a set of five keyed to the
+scenarios; or the ap-to-Kp scale and both bias tables move into `vleo-core` as
+named functions, at the cost of putting measured data in the kernel; or ten more
+rows exist, one per scenario per slot. Until one is chosen a consumer needing Kp
+must convert it itself, which is the duplication the crossing exists to prevent.
+This is the one part of §20.4 that is not done rather than done differently.
+
+**The seam refuses, and that is the state to review.** `sw_f107_cold_short` is
+blocked on the nominal case: `sw_central_expectation` reads the cycle analogue
+and gives 86.8497 sfu at the declared epoch rather than the study's 158.33, and a
+symmetric 1.28-sigma band with a 5th-percentile daily drop stacked on it reaches
+38.36, below the floor of 60 that every relation reading F10.7 declares. The
+guard is right — 38 sfu has never been observed — and the construction is what is
+wrong at a centre that low. All three candidate resolutions are upstream: a
+phase-conditioned sigma rather than one pooled across the cycle; empirical
+percentiles of the residuals rather than a normal multiplier on a skewed sample;
+and not stacking a day's departure on a rotation already at its band's low edge.
+The crossing is the AND of ten rows, so it refuses with it. Nothing reads the
+crossing yet, so the refusal is contained to that row — but step 6 writes layer 2
+against it, and one of the three has to be settled first.
+
+### 20.9 · The order, revised
+
+1. ~~The generator: `[[publishes]]` in the sheet, `OUTPUT_VARS` as a list.~~ Done,
+   and finished afterwards: the sheet could declare a set and the contract still
+   wrote one slot, so the members were never published.
+2. ~~`sys_mission_requirements_mission_duration` filled, `orbit_mission_duration`
+   routed to read it.~~ Done.
+3. ~~The two spread rows, then the four design rows.~~ Done, plus the six cold-side
+   rows 20.4 did not foresee.
+4. ~~`sw_driver_set`, then `l3_solar_interface` re-specified.~~ Done as the
+   interface alone. The Kp columns are outstanding.
+5. The four required/achieved pairs, replacing the three. `l3_solar_ach_01` and
+   `_ach_02` still read `sw_f107_design`, the one-sided persistence row, which is
+   none of the five scenarios.
+6. Layer 2: three rows written, three left seeded and saying why. **Blocked on
+   the refusal in 20.8 above**: a layer-2 row written against a crossing that
+   does not publish would be a row that cannot run.

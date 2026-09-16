@@ -200,10 +200,9 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
         );
         o.push_str("    // usable set, and the member a consumer reads may be any of them.\n");
         let f0 = field_name(&sh.symbol);
-        o.push_str(&format!("    let m_{f0} = answer.{f0};\n"));
         guard(
             &mut o,
-            &format!("m_{f0}"),
+            &format!("answer.{f0}"),
             &sh.symbol,
             &sh.ty,
             sh.lower,
@@ -214,10 +213,9 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
         );
         for pb in &sh.publishes {
             let f = field_name(&pb.symbol);
-            o.push_str(&format!("    let m_{f} = answer.{f};\n"));
             guard(
                 &mut o,
-                &format!("m_{f}"),
+                &format!("answer.{f}"),
                 &pb.symbol,
                 &pb.ty,
                 pb.lower,

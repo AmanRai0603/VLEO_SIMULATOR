@@ -7,45 +7,167 @@
 #
 # A CROSSING'S EVIDENCE IS THAT IT CHANGES NOTHING
 #
-# There is no physics here to check. What can go wrong at a seam is that the
-# seam alters what it carries — a stray factor, a unit conversion nobody asked
-# for, a clamp inherited from the wrong row — and the failure is invisible
-# because both sides look plausible. So every fixture below is the identity, at
-# a value taken from somewhere real, and what they pin is that the number
-# arriving is the number leaving.
+# There is no physics here to check. What can go wrong at a seam is that the seam
+# alters what it carries — a stray factor, a unit conversion nobody asked for, a
+# clamp inherited from the wrong row — and the failure is invisible because both
+# sides look plausible. So every fixture below is an identity, and what they pin
+# is that the number arriving is the number leaving.
 #
-# The four inputs are sw_f107_design's own fixture answers, so if that row's
-# numbers move these move with it and a divergence means the seam started
-# computing.
+# WHAT CHANGED WHEN THIS ROW STARTED CARRYING A SET. One identity per input is no
+# longer enough evidence. Fifteen members are assembled from ten inputs, and the
+# failure this row can now have that it could not before is a MISROUTING: a member
+# published from the wrong input. Every member is a flux or an Ap in the same
+# range as its neighbours, so a transposition would be a plausible number in the
+# wrong scenario and no guard would see it.
+#
+# So the inputs below are the ten values of one coherent driver set — the declared
+# window's, computed from this repository's own centre, spreads and drops by hand —
+# and there is one fixture per member, each naming the member it is about. Ten
+# distinct inputs and fifteen distinct expected values mean a transposition of any
+# two inputs fails at least two fixtures. That is the whole point of them.
+#
+# NOT THE STUDY'S NUMBERS. The study's driver sets are in parity.csv territory and
+# are not used here; these are this tree's own chain, so a fixture cannot pass by
+# agreeing with the implementation this row was ported from.
+#
+# The ten inputs, for reference, are the same in every fixture:
+#   f107_centre     158.3304112313    ap_centre       22.095389
+#   f107_hot_long   175.5520201913    ap_hot_long     26.69530964
+#   f107_cold_long  141.1088022713    ap_cold_long    17.49546836
+#   f107_hot_day    209.7835016728    ap_hot_day      41.6971614919
+#   f107_cold_day   109.8365800491    ap_cold_day     6.9065794711
 
 [[fixture]]
-label = "the five-year conclusion crosses unchanged — 228.1374 sfu"
-expect = 228.1374378829
+label = "the sustained hot F10.7 crosses unchanged, from sw_f107_design_long"
+variable = "F107_hotmean"
+expect = 175.5520201913
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { conclusion = 228.1374378829 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
 
 [[fixture]]
-label = "the half-year conclusion crosses unchanged — the narrowest band"
-expect = 171.8843338669
+label = "the nominal F10.7 crosses unchanged, from sw_central_expectation"
+variable = "f107_nominal"
+expect = 158.3304112313
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { conclusion = 171.8843338669 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
 
 [[fixture]]
-label = "the ten-year conclusion crosses unchanged — where the cycle brings the band in"
-expect = 180.8437378829
+label = "the sustained cold F10.7 crosses unchanged, from sw_f107_cold_long"
+variable = "f107_coldmean"
+expect = 141.1088022713
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { conclusion = 180.8437378829 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
 
 [[fixture]]
-label = "the record's own climatology crosses unchanged, as the floor case"
-expect = 114.8437378829
+label = "the hot single day crosses unchanged, from sw_f107_design_short"
+variable = "f107_hotday"
+expect = 209.7835016728
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { conclusion = 114.8437378829 }
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+
+[[fixture]]
+label = "the cold single day crosses unchanged, from sw_f107_cold_short"
+variable = "f107_coldday"
+expect = 109.8365800491
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+
+[[fixture]]
+label = "the nominal scenario's 81-day mean is its own value — a *mean scenario IS its mean"
+variable = "f107bar_nominal"
+expect = 158.3304112313
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+
+[[fixture]]
+label = "the hot sustained scenario's 81-day mean is its own value"
+variable = "f107bar_hotmean"
+expect = 175.5520201913
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+
+[[fixture]]
+label = "the cold sustained scenario's 81-day mean is its own value"
+variable = "f107bar_coldmean"
+expect = 141.1088022713
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+
+[[fixture]]
+label = "THE HOT DAY RIDES ON THE HOT MEAN — its 81-day mean is 175.55, not its own 209.78. The one member that is not a copy of its namesake input"
+variable = "f107bar_hotday"
+expect = 175.5520201913
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+
+[[fixture]]
+label = "THE COLD DAY RIDES ON THE COLD MEAN — its 81-day mean is 141.11, not its own 109.84"
+variable = "f107bar_coldday"
+expect = 141.1088022713
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+
+[[fixture]]
+label = "the nominal Ap crosses unchanged, from sw_ap_central_expectation"
+variable = "ap_nominal"
+expect = 22.095389
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+
+[[fixture]]
+label = "the sustained disturbed Ap crosses unchanged, from sw_ap_design_long"
+variable = "ap_hotmean"
+expect = 26.69530964
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+
+[[fixture]]
+label = "the sustained quiet Ap crosses unchanged, from sw_ap_cold_long"
+variable = "ap_coldmean"
+expect = 17.49546836
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+
+[[fixture]]
+label = "the most disturbed single day crosses unchanged, from sw_ap_design_short"
+variable = "ap_hotday"
+expect = 41.6971614919
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
+
+[[fixture]]
+label = "the quietest single day crosses unchanged, from sw_ap_cold_short — the member closest to a declared bound, seven units clear of zero"
+variable = "ap_coldday"
+expect = 6.9065794711
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { f107_centre = 158.3304112313, f107_hot_long = 175.5520201913, f107_cold_long = 141.1088022713, f107_hot_day = 209.7835016728, f107_cold_day = 109.8365800491, ap_centre = 22.095389, ap_hot_long = 26.69530964, ap_cold_long = 17.49546836, ap_hot_day = 41.6971614919, ap_cold_day = 6.9065794711 }
