@@ -1,0 +1,36 @@
+# Known-good values, and where each came from. An expected value may
+# never be produced by the code under test.
+#
+# WHAT THESE ARE. A sum of two numbers this node does not compute. Both come
+# from rows pinned by their own evidence; what is checked here is only that the
+# addition is that addition, and that the upper guard refuses a level no
+# consumer of F10.7 can model — which this row, being the sustained level plus a
+# daily excursion, is the likeliest in the subsystem to reach.
+#
+# The study's own pair — 175.60641964945182 and 34.14814814814815 — is NOT used
+# here. Its sum is the prior implementation's published answer, and that may not
+# be a fixture; it is in parity.csv beside this sheet.
+
+[[fixture]]
+label = "this repository's own chain: the sustained level from sw_f107_design_long's first fixture plus its measured daily departure"
+expect = 211.5818290015
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { sustained = 177.35034752, daily = 34.2314814815 }
+
+[[fixture]]
+label = "round numbers, so the arithmetic is checkable without a calculator"
+expect = 230.0
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { sustained = 200.0, daily = 30.0 }
+
+[[fixture]]
+label = "a quieter sustained level with a wider daily departure — the two terms are independent and the row must not assume otherwise"
+expect = 190.0
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { sustained = 150.0, daily = 40.0 }

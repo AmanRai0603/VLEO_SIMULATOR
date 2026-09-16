@@ -1,0 +1,18 @@
+# The prior implementation, at the one window it was exported for.
+#
+# NOT A FIXTURE. An expected value may never come from the implementation under
+# test, and this file is the OTHER implementation's answer — a second opinion.
+# A disagreement here is a finding about one of the two, and the answer is never
+# to widen parity_tolerance or to edit this file until it agrees.
+#
+# WHERE THIS ROW COMES FROM. designWindow_ line 227 forms the daily bound as the
+# rotation band plus the within-rotation spread, and publishes it as `hotday` in
+# matlab/reference/mission_drivers.csv:
+#
+#   hotmean.f107 + qHi = 175.60641964945182 + 34.14814814814815
+#                      = 209.75456779760012 = hotday.f107
+#
+# exactly, to the last digit. The inputs below are that sustained level and that
+# spread; the answer is the hotday flux it published.
+sustained,daily,matlab_F107_short
+175.60641964945182,34.14814814814815,209.75456779760012

@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1374 rows** — 660 a person picked, 714 worked out. Two thirds of any design tree is
+**1375 rows** — 660 a person picked, 715 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -19404,7 +19404,7 @@ The correlation between cycles 23 and 24 after stacking both on phase. It is the
 
 - **lower bound** — a spread of zero would mean every day equals its rotation mean, which the record contradicts on every day it holds; below zero is not a spread
 - **upper bound** — above 120 sfu the departure exceeds the largest single-day excursion in the record, so a value there is an arithmetic error rather than an active sun
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **read by** — `sw_f107_design_short`
 - **assumes** One number holds for the whole window, and the window is a year — fails when the spread is not constant across a cycle — it widens near maximum as active regions grow — so a single percentile measured on the 2001 days before the window is too wide for a quiet stretch inside it and too narrow for an active one. The MATLAB source says the same thing about its own sigma in as many words: 'sigma is NOT flat across the cycle; a design that uses one number is too tight somewhere and too loose somewhere else'
 - **assumes** The 27-day moving mean is the rotation — fails when the solar rotation is 27.27 days at the equator and slower at the poles, and the active longitudes that drive F10.7 are not at one latitude. A 27-day window is the conventional round number rather than a measured period, and the departures it leaves carry whatever the mismatch contributes
 - **assumes** It is the record's own daily scatter, not a forecast error — fails when this is read as an uncertainty. It is not: it says how variable the sun is within a rotation, measured on days that already happened. What a forecast of a future day would get wrong is sw_uncertainty_growth's question and a larger number
@@ -19642,7 +19642,7 @@ One of the two numbers the subsystem exists to produce. The centre comes from sw
 - **lower bound** — below 60 sfu has never been observed and every relation reading F10.7 has no support there; a design level below it means the spread has been subtracted rather than added
 - **upper bound** — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, and a sustained level there is not a window this tool can model
 - **reads** — `sw_central_expectation`, `sw_mean_band_spread`
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **read by** — `sw_f107_design_short`
 - **assumes** 1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent — fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997. A one-sided 95 per cent bound is 1.645 sigma, which at this sigma is a further 4.9 sfu. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it
 - **assumes** The residual spread is normal enough for a z multiplier to mean a percentile — fails when it is not. The residuals of a forecast that misses hardest when activity is highest are skewed, and a normal multiplier under-covers the high tail — which is the tail a design is sized against. The empirical percentile of the residuals would be the honest statistic, and sw_mean_band_spread publishes only their standard deviation
 - **assumes** One sigma covers the whole window — fails when sigma is not flat across the cycle — the source says so about its own number — so a window spanning a rise or a fall is given one width where it needs two
@@ -19658,6 +19658,40 @@ The existing sw_f107_design is neither: it adds a one-sided 95th-percentile
 PERSISTENCE growth, which answers "how far might the flux drift from today's
 value" rather than "how wrong is the pattern about the window". Both are
 defensible and they are not the same question.
+
+
+### `sw_f107_design_short` — Single-day F10.7 to design to
+
+> What F10.7 must the design survive on a single day inside the mission window?
+
+| | |
+|---|---|
+| symbol | `F107_short` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `F107_short = F107_long + dF107_day` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
+
+- **lower bound** — below 60 sfu has never been observed and every relation reading F10.7 has no support there; a single-day design level below it means a spread has been subtracted rather than added
+- **upper bound** — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value — and this row, being the sustained level plus a daily excursion, is the one most likely to reach it, which is exactly why the guard is here
+- **reads** — `sw_f107_design_long`, `sw_daily_band_spread`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** The two spreads stack, and stacking two percentiles is not a percentile — fails when the published number is read as the 95th percentile of a day. It is not: it is the 90th percentile of the rotation level plus the 95th percentile of the daily departure, which for independent normals lands near the 99th. The bound is conservative, the label is not, and the honest statistic would be the percentile of the daily value itself rather than a sum of two
+- **assumes** The rotation error and the daily departure are independent — fails when they are not. Both widen with activity, so a window the pattern gets wrong on the high side is also a window whose days scatter most, and the true joint tail is fatter than the sum of two marginals suggests in one direction and thinner in the other
+- **assumes** One day in twenty is the day worth designing to — fails when the mission is long. Over a 365-day window a one-in-twenty day happens about eighteen times, so this is not a rare event but a routine one; the rare day a design might actually care about is further out and this row does not publish it
+- **evidence** this repository's own chain: the sustained level from sw_f107_design_long's first fixture plus its measured daily departure — expect 211.5818290015 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** round numbers, so the arithmetic is checkable without a calculator — expect 230 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** a quieter sustained level with a wider daily departure — the two terms are independent and the row must not assume otherwise — expect 190 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The SHORT TERM of the pair. sw_f107_design_long says what the mission sits at
+for months; this says what one day in twenty reaches while sitting there. A
+thermal case and a drag transient are sized on this one, an array and a
+propellant budget on its long sibling, and giving a design only one of the two
+decides for the reader which problem they have.
 
 
 ### `sw_f107a_ratio` — Daily F10.7 scatter about F10.7A

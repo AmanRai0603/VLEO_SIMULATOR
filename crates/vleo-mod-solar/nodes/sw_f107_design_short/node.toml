@@ -1,0 +1,121 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_f107_design_short"
+label = "Single-day F10.7 to design to"
+folder = "sw_f107_design_short"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "computed"
+owner = "environment"
+tier = "A"
+# SIGNIFICANT, and not by default. This is one of the four numbers §20 has the
+# subsystem publish, it feeds density then drag then lifetime, and its
+# multiplier is a constant this sheet had to argue about rather than inherit.
+# Two reviewers and a differential fill is the right cost for that.
+criticality = "significant"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1368
+state = "published"
+
+# The prior implementation, named so the parity grid beside this node has
+# something to be the parity of. designWindow_ forms this as the rotation band
+# plus the within-rotation spread and publishes it as the `hotday` scenario.
+migrated_from = "prf_density.m:227 (01_kernel/sw_study/06_density, local function designWindow_)"
+# Arithmetic on two supplied numbers, so the two implementations should agree to
+# the last bits. A grid loose enough to hide a dropped term would defeat the
+# only thing this grid is here to catch.
+parity_tolerance = 1e-9
+
+[question]
+text = "What F10.7 must the design survive on a single day inside the mission window?"
+note = """
+The SHORT TERM of the pair. sw_f107_design_long says what the mission sits at
+for months; this says what one day in twenty reaches while sitting there. A
+thermal case and a drag transient are sized on this one, an array and a
+propellant budget on its long sibling, and giving a design only one of the two
+decides for the reader which problem they have.
+"""
+
+[maths]
+# A person has NOT read this relation against its source yet.
+confirmed_by = ""
+expression = "F107_short = F107_long + dF107_day"
+source = "noaa_swpc"
+
+[[input]]
+binding = "sustained"
+var = "sw_f107_design_long"
+type = "Ratio"
+
+[[input]]
+binding = "daily"
+var = "sw_daily_band_spread"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "add the within-rotation daily departure to the sustained level"
+binds = "single_day"
+type = "Ratio"
+
+[theory]
+why = """
+The two spreads are of different things and they stack rather than combine.
+sw_mean_band_spread is how wrong the pattern is about the LEVEL a rotation sits
+at — a forecast error. sw_daily_band_spread is how far a day departs from the
+rotation it belongs to — the sun's own variability, measured on days that
+already happened. A day is high because its rotation is high AND because it is
+a high day within that rotation, so the design level for a day is the sustained
+level with the daily departure added on top.
+
+That is a deliberately conservative construction and the sheet says so. Adding
+two one-sided percentiles gives a bound further out than either — roughly the
+99th rather than the 95th if the two were independent and normal — so the
+published day is rarer than the confidence attached to it suggests. The study
+does the same thing and the port follows it.
+"""
+reading = """
+At the study's own window: 175.6064196495 sustained plus 34.1481481481 daily is
+209.7545677976, which is the hotday scenario it published, to the last digit.
+
+The cold side is not this row. coldday is the same construction with the lower
+percentile, and it is the case a design checks for a cold, thin atmosphere
+rather than a hot one; it needs its own row and does not have one yet.
+"""
+
+[[theory.step]]
+text = "Take the sustained level the window is designed to."
+math = "F107_long = sw_f107_design_long"
+
+[[theory.step]]
+text = "Take how far above its rotation a day reaches, one day in twenty."
+math = "dF107_day = sw_daily_band_spread = 34.2315 sfu"
+
+[[theory.step]]
+text = "Add them. A high day on a high rotation is both, and the design must survive the pair."
+math = "F107_short = F107_long + dF107_day"
+
+[[assumption]]
+text = "The two spreads stack, and stacking two percentiles is not a percentile"
+fails_when = "the published number is read as the 95th percentile of a day. It is not: it is the 90th percentile of the rotation level plus the 95th percentile of the daily departure, which for independent normals lands near the 99th. The bound is conservative, the label is not, and the honest statistic would be the percentile of the daily value itself rather than a sum of two"
+
+[[assumption]]
+text = "The rotation error and the daily departure are independent"
+fails_when = "they are not. Both widen with activity, so a window the pattern gets wrong on the high side is also a window whose days scatter most, and the true joint tail is fatter than the sum of two marginals suggests in one direction and thinner in the other"
+
+[[assumption]]
+text = "One day in twenty is the day worth designing to"
+fails_when = "the mission is long. Over a 365-day window a one-in-twenty day happens about eighteen times, so this is not a rare event but a routine one; the rare day a design might actually care about is further out and this row does not publish it"
+
+[output]
+symbol = "F107_short"
+type = "Ratio"
+unit = "One"
+lower = 60.0
+upper = 400.0
+reason_lower = "below 60 sfu has never been observed and every relation reading F10.7 has no support there; a single-day design level below it means a spread has been subtracted rather than added"
+reason_upper = "above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value — and this row, being the sustained level plus a daily excursion, is the one most likely to reach it, which is exactly why the guard is here"
+
+[view]
+kind = "number"

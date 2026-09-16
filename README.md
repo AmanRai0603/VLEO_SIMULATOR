@@ -18,7 +18,7 @@ command in this repository, named beside it where it is not obvious.
 
 | | |
 |---|---|
-| rows in the tree | 1374 across four layers — 293 written, 1078 seeded |
+| rows in the tree | 1375 across four layers — 293 written, 1078 seeded |
 | layer 1 · management | 174 rows, from CD-06 verbatim |
 | layer 2 · the system | 319 rows, from CD-06 verbatim |
 | layer 3 · subsystem | 878 rows across 17 subsystems |
@@ -202,12 +202,12 @@ part that is neither a decision nor a derivation.
 
 Two human decisions per node, and everything between them is a command. If a
 node takes materially longer than that, the template has a defect worth finding
-— it will be paid 1374 times.
+— it will be paid 1375 times.
 
 ### The nine generators
 
 Six run per node. Each reads that node's sheet and nothing else, which is what
-makes 1374 rows 1374 independent pieces of work rather than one large one.
+makes 1375 rows 1375 independent pieces of work rather than one large one.
 
 | generator | emits | what it is for |
 |---|---|---|
@@ -435,7 +435,7 @@ achievable and the nightly check becomes one people learn to ignore.
 ## Where it stands
 
 The tree is built and mostly empty, which is the state it is designed to be
-useful in. 293 rows of 1374 have content, and `xtask ready` reports 12 of those
+useful in. 293 rows of 1375 have content, and `xtask ready` reports 12 of those
 293 past every machine stage and waiting on a person. It names what holds the
 other 281:
 
