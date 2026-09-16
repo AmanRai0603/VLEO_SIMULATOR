@@ -68,9 +68,15 @@ jobs:
       # discarded by regeneration and therefore caught here, which is what makes
       # the generated region genuinely owned by the generator rather than merely
       # labelled that way.
+      # `variables` as well as `docs`, because it was missing and the register
+      # went stale without anything noticing: docs/VARIABLES.md still carried
+      # the pre-cycle-analogue prose from six solar sheets that had already
+      # been corrected and regenerated. A generated file nothing regenerates in
+      # CI is a file that drifts from its source and is believed anyway.
       - name: regenerate and compare
         run: |
           cargo run -p xtask -- docs
+          cargo run -p xtask -- variables
           if ! git diff --quiet; then
             echo "::error::the committed artefacts differ from what the sheets generate."
             echo "Run 'cargo run -p xtask -- docs' and commit the result."
@@ -84,7 +90,9 @@ jobs:
       - name: generators are byte-stable
         run: |
           cargo run -p xtask -- docs
+          cargo run -p xtask -- variables
           cargo run -p xtask -- docs
+          cargo run -p xtask -- variables
           git diff --quiet || { echo "::error::a generator is not deterministic"; exit 1; }
 
       - name: the gate
