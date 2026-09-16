@@ -106,10 +106,11 @@ daily value drives the EUV heating of the day and the 81-day mean the background
 state. It carries the same number this row does, 104.07, because the hot day's
 81-day companion IS the hot sustained level.
 
-WHAT STILL DOES NOT ARRIVE is Kp, which does not cross at all. §20.8 names the
-three ways out and none has been chosen. It is recorded on
-sys_space_environment_atmospheric_density, which is where somebody writing that
-row will meet it.
+KP ARRIVES TOO, as sys_space_environment_kp, which was the last of the three and
+needed the Kp columns to cross first. So the three drivers a thermospheric
+density model takes are all at layer 2, and what
+sys_space_environment_atmospheric_density is waiting on is the model rather than
+its arguments.
 """
 
 [[theory.step]]
@@ -128,8 +129,8 @@ text = "It receives and does not compute, and a system reader sees none of the s
 fails_when = "a margin is taken against this number. It is a 1.28-sigma band edge — the 90th percentile, while the run is labelled 95 per cent — on a centre that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles whose peaks differ by 41 per cent. The credibility vector crosses the seam; the assumptions do not, and that is the ordinary cost of having a seam at all"
 
 [[assumption]]
-text = "Kp does not reach layer 2 at all, and a density model needs it"
-fails_when = "somebody writes sys_space_environment_atmospheric_density from the flux rows alone. The daily flux and the 81-day mean both arrive now; Kp does not cross, because the subsystem's three Kp relations each answer at one Ap and a driver set needs them at five. §20.8 names the three ways out. Until one is chosen a density row would have to convert Ap to Kp itself, which is the duplication the crossing exists to prevent"
+text = "The three drivers arrive but nothing says which SCENARIO they are"
+fails_when = "somebody reads the three as one case. sys_space_environment_f10_7 carries the hot single day, sys_space_environment_f10_7_81day the level beneath it, and sys_space_environment_kp the worst slot of that same day — so they ARE one coherent case, the hot day. But nothing in the tree enforces that, and a fourth row added later naming a different scenario's member would sit beside them looking identical. The crossing carries the five scenarios precisely so a consumer can pick one; picking is still a decision a row makes in its own sheet"
 
 [[assumption]]
 text = "It is the sustained level and not the single day"

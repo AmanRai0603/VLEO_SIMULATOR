@@ -1,0 +1,17 @@
+{
+  "id": "sw_kp_scenarios",
+  "state": "published",
+  "sheet_hash": "c92977",
+  "impl_hash": "c8d783",
+  "owner": "environment",
+  "tier": "A",
+  "fixtures": 10,
+  "criticality": "significant",
+  "reviewers": 2,
+  "differential_fill": true,
+  "migrated_from": "prf_ap2kp.m (01_kernel/sw_study/02_drivers) with prf_density.m's designWindow_ supplying the five Ap",
+  "holes": 1,
+  "inputs": ["sw_ap_central_expectation", "sw_ap_design_long", "sw_ap_cold_long", "sw_ap_design_short", "sw_ap_cold_short"],
+  "contributes": [],
+  "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did"]
+}

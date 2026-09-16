@@ -36,30 +36,18 @@ pub fn evaluate(ap: Ratio) -> Result<Ratio, Fault> {
     // ---- HOLE 1 : read the measured peak-slot offset off the nine binned medians at this Ap -> Ratio
     // The nine bin medians, measured on solar-weather@2026.09.14. The x values are
     // prf_ap2kp's own bin CENTRES — the midpoints of its edges 0 5 10 15 20 30 45
-    // 70 110 400 — and the y values are the median of max_8(Kp) - table(Ap) in each
-    // bin. They belong to the record, not to this code, and the sheet names the
-    // bundle version they came from.
+    // 70 110 400 — and the y values are the medians in each bin. They belong to
+    // the record, not to this code, and the sheet names the bundle version.
     //
-    // Table1::at holds the end values instead of extrapolating, which is the same
-    // choice prf_ap2kp makes explicitly ("hold the end bins, never extrapolate").
-    // The eighth and ninth entries are NOT monotone; that is the record's shape and
-    // the sheet declares it rather than this code smoothing it.
-    use vleo_core::math::Table1;
-    const OFFSET: Table1 = Table1 {
-        x: &[2.5, 7.5, 12.5, 17.5, 25.0, 37.5, 57.5, 90.0, 255.0],
-        y: &[
-            1.0,
-            0.8333333333333333,
-            1.1144067796610169,
-            1.0,
-            1.2,
-            1.3333333333333333,
-            1.5454545454545454,
-            1.7469135802469136,
-            1.3174603174603174,
-        ],
-    };
-    let off: Ratio = Ratio::new(OFFSET.at(ap.get()));
+    // THE TABLE LIVES IN vleo-core AS `env::kp_peak_slot_bias` RATHER THAN HERE, and
+    // this hole calls it. Two callers read it now: this row, at one Ap, and
+    // sw_kp_scenarios, at the five the driver set carries. A table copied into
+    // both would drift from itself without anything noticing — which is not
+    // hypothetical, it is what happened to the ap-to-Kp scale.
+    //
+    // It holds the end values instead of extrapolating, which is the same choice
+    // prf_ap2kp makes explicitly ("hold the end bins, never extrapolate").
+    let off: Ratio = Ratio::new(vleo_core::physics::env::kp_peak_slot_bias(ap.get()));
     // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The

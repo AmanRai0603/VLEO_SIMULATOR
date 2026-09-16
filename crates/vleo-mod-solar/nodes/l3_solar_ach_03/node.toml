@@ -11,7 +11,7 @@ owner = "environment"
 tier = "A"
 criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1336
+order = 1337
 state = "published"
 
 # THE ACHIEVED SIDE ONLY. Its paired requirement row, l3_solar_req_03, is

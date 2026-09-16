@@ -1347,8 +1347,34 @@ pub fn tables_rs(tree: &Tree) -> String {
     o.push_str(&format!("pub const NODE_COUNT: usize = {n};\n"));
     o.push_str(&format!(
         "/// One per row, plus the extras declared by rows whose answer is a set.\n\
-         pub const VAR_COUNT: usize = {};\n\n",
+         pub const VAR_COUNT: usize = {};\n",
         n + extras.len()
+    ));
+    // THE SCRATCH SIZES ARE MEASURED FROM THE TREE, NOT GUESSED.
+    //
+    // They were two hand-written constants in the kernel, 16 and 4, and both
+    // were outgrown. The output one panicked on the first set row, which is a
+    // loud failure. The INPUT one did not: `eval` sliced to the cap, so a node
+    // declaring more inputs than the cap silently received fewer, and the only
+    // reason that surfaced at all was the generated length guard refusing the
+    // short slice — as a node "blocked on an input that has never run", which
+    // is not what had happened.
+    //
+    // Emitted from the tree, neither can be too small again.
+    let max_in = sheets.iter().map(|sh| sh.inputs.len()).max().unwrap_or(0);
+    let max_out = sheets
+        .iter()
+        .map(|sh| 1 + sh.publishes.len())
+        .max()
+        .unwrap_or(1);
+    o.push_str(&format!(
+        "/// The most inputs any row declares. Measured from the tree by the\n\
+         /// generator, so the kernel's scratch cannot be outgrown by a sheet.\n\
+         pub const MAX_INPUTS: usize = {max_in};\n"
+    ));
+    o.push_str(&format!(
+        "/// The most variables any row publishes, its own answer included.\n\
+         pub const MAX_OUTPUTS: usize = {max_out};\n\n"
     ));
 
     o.push_str("pub static NODES: [NodeDef; NODE_COUNT] = [\n");

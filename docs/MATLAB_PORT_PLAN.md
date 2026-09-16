@@ -1222,3 +1222,56 @@ second of §20.8's three ways out for the Kp columns.
 still do not cross. `l3_solar_req_05` fails at 90.55 against 80 and
 `l3_solar_req_03` at 158.38 against 150. And seven rows carry a measured number
 or a design commitment with no name against them.
+
+### 20.15 · The Kp columns cross, and three things that assumed one row means one variable
+
+The driver set now carries all five of the study's columns. `sw_kp_scenarios`
+reads the five scenario `Ap` values and publishes ten `Kp` — two slots across
+five scenarios — and `l3_solar_interface` relays them, taking the crossing from
+fifteen members to twenty-five. `sys_space_environment_kp` receives the one a
+design reads, the peak slot of the disturbed day.
+
+**Fed the study's own five `Ap`, this chain reproduces all ten of its `Kp`
+numbers to the four decimals it printed.** For three relations and two measured
+tables composed at five points that is as close as the published precision
+allows, and it is what the parity grid holds.
+
+The resolution taken is §20.8's second: the published scale and both measured
+slot-bias tables live in `vleo-core` as named functions, so one row can evaluate
+all three at five points. The arithmetic is a subsystem row and not the crossing,
+because §20.3's rule is that a crossing relays — putting `kp_from_ap(ap) + bias`
+in the interface's hole would be subsystem work done where no subsystem reviewer
+reads it.
+
+The kernel now holds three pieces of measured data where its own comment used to
+say `SOLAR_CYCLE_SHAPE` was the only one. That claim is corrected rather than
+quietly falsified, and the rule it rests on is the reason both tables moved:
+more than one caller reads each, and a hand-copied table drifts.
+
+**THREE PLACES ASSUMED A ROW PUBLISHES EXACTLY ONE VARIABLE.** All three were
+written long before `[[publishes]]` existed, none was wrong until a set row
+existed, and only one failed loudly.
+
+- `Scratch.slots` was sized at `NODE_COUNT`. A slot is one VARIABLE. It panicked
+  on the first set row — the right failure, found in §20.11's probe.
+- `MAX_INPUTS` was 16, hand-written. The crossing now declares 20. `eval` sliced
+  to the cap, so the node silently received four fewer inputs, and what surfaced
+  was the generated length guard refusing the short slice — reported as a node
+  "blocked on an input that has never run", which is not what had happened. Both
+  caps are now EMITTED FROM THE TREE by the generator, measured as the actual
+  maxima, so neither can be outgrown by a sheet again.
+- The daemon's `/v1/index` emitted VARIABLE indices in each row's `in` array, and
+  the face reads that array as ROW indices. Identical numbers while the two were
+  1:1. A member's variable index sits past the end of the row list, so
+  `state.js` indexed off the end of an array, threw inside `ingest()`, and every
+  panel then drew from broken state: the matrix rendered nothing at all, the
+  design panel differed from its reference in 100 per cent of pixels, density in
+  4.6 and climate in 2.9.
+
+**That last one shipped.** It went in with §20.13's layer-2 rows, which were the
+first member-variable edges in the tree, and it was not caught because
+`tools/panel_check.py` was read as passing when it had in fact crashed before
+printing a verdict. The gate was green throughout — nothing in the KERNEL was
+wrong — and the whole failure lived in the one place the gate does not look. It
+is the argument for `panel_check` being in CI, which it is, and against reading
+a tail of its output as a result.

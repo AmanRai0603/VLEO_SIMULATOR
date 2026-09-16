@@ -15,7 +15,7 @@ tier = "A"
 # Two reviewers and a differential fill is the right cost for that.
 criticality = "significant"
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1383
+order = 1384
 state = "published"
 
 # The prior implementation, named so the parity grid beside this node has

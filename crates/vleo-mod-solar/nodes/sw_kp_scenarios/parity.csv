@@ -1,0 +1,26 @@
+# The prior implementation, at the one window it was exported for.
+#
+# NOT A FIXTURE. An expected value may never come from the implementation under
+# test, and this file is the OTHER implementation's answer — a second opinion.
+#
+# prf_ap2kp turns each scenario's Ap into a mean-slot and a peak-slot Kp, and
+# prf_density's designWindow_ supplies the five Ap. Both columns are published
+# directly in matlab/reference/mission_drivers.csv, so this grid holds the study's
+# own numbers rather than something implied by them.
+#
+# THE INPUTS ARE THE STUDY'S OWN FIVE Ap VALUES, not this tree's. That is the
+# point of the grid: it asks whether the two implementations do the same
+# arithmetic, and feeding this tree's Ap would be asking a different question —
+# this tree's hot Ap day is 90.55 against the study's 41.54, because its
+# within-rotation band is conditioned on the rotation level.
+#
+# ALL TEN AGREE TO THE FOUR DECIMALS THE STUDY PRINTED. For a chain of three
+# relations and two measured tables composed at five points, that is as close as
+# the published precision allows.
+#
+# The grid convention for a row with inputs: each data row is one case, and the
+# LAST column is the prior implementation's answer for this row's PRIMARY member,
+# Kp_peak_hotday. The other nine columns are the study's for the other members
+# and are checked by the fixtures beside this file rather than here.
+ap_nominal,ap_hotmean,ap_coldmean,ap_hotday,ap_coldday,matlab_kp_peak_hotday
+22.092538390203554,26.683328217449382,17.50174856295763,41.53518006930126,6.872118933328018,6.1367

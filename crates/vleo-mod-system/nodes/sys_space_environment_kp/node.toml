@@ -1,0 +1,124 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sys_space_environment_kp"
+label = "Kp, worst slot of the design day"
+folder = "sys_space_environment_kp"   # frozen at seed
+subsystem = "sys"
+parent = "sys_space_environment"
+kind = "computed"
+owner = "environment"
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
+layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 310
+state = "published"
+
+# THE THIRD OF THE THREE DRIVERS A DENSITY MODEL NEEDS, AND THE LAST TO ARRIVE.
+#
+# The seeded tree gave this heading six rows and none of them was Kp, although
+# every thermospheric density model in use takes it: Jacchia's exospheric
+# temperature correction is stated in Kp, and
+# vleo_core::physics::env::exospheric_temperature has the signature
+# (f107, f107a, kp) to match.
+#
+# It could not arrive until the Kp columns crossed. §20.8 recorded why they did
+# not — the subsystem's three Kp relations each answer at one Ap and a driver set
+# needs them at five — and sw_kp_scenarios is the row that resolved it.
+#
+# WHICH SLOT AND WHICH SCENARIO. Kp is reported in eight three-hourly slots and
+# the crossing carries both a mean-slot and a peak-slot value for each of the
+# five scenarios: ten members. This row takes the PEAK slot of the DISTURBED
+# SINGLE DAY, which is the worst three hours of the worst day and what a design
+# sized against geomagnetic activity reads. The other nine are one input away for
+# a row that wants a different case.
+
+[question]
+text = "What Kp does the system design to, in the worst three-hour slot of its design day?"
+note = """
+The peak slot and not the daily mean, and the distinction is the whole reason
+the subsystem measures a slot offset at all. Ap is a daily mean, Kp is reported
+in eight three-hourly slots, and the published conversion run on a daily mean
+lands ABOVE the mean of the eight and far BELOW the peak. A design that converts
+Ap to Kp and stops is sized on a sky quieter than the record's, on exactly the
+days a drag design is sized by.
+"""
+
+[maths]
+# A person has NOT read this relation against its source yet.
+confirmed_by = ""
+expression = "Kp_sys = l3_solar_interface.kp_peak_hotday"
+source = "iaga_kp_ap"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "crossing"
+var = "l3_solar_interface.kp_peak_hotday"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "receive the peak-slot Kp of the disturbed design day across the seam"
+binds = "received"
+type = "Ratio"
+
+[theory]
+why = """
+A layer-2 row states what the SYSTEM works with and computes nothing. This one
+receives the third of the three drivers a thermospheric density model takes,
+alongside sys_space_environment_f10_7 and sys_space_environment_f10_7_81day.
+
+Which member is the content of the row. The crossing carries ten Kp values —
+two slots across five scenarios — and they span 1.27 to 8.00, which is the
+difference between a quiet day and a severe storm. Naming the wrong one changes
+the atmosphere this system designs to, and nothing in the tree would notice: all
+ten are dimensionless, in the same declared domain, produced by one node.
+"""
+reading = """
+7.9966 at the declared window: the worst three hours of the disturbed design
+day, which is a G4 severe storm.
+
+That number is high and it follows from a correction rather than from a
+judgement. The subsystem's hot Ap day is 90.55, where the study this was ported
+from publishes 41.54, because the within-rotation band is conditioned on the
+rotation level; the peak-slot offset at that Ap is 1.75 Kp on top of a converted
+6.24. The study's own equivalent is Kp 6.14.
+
+For a reader who wants the ordinary day rather than the worst slot of the worst
+one, the crossing carries nine other Kp members and each is one input away.
+"""
+
+[[theory.step]]
+text = "The system layer states what it works with and does not compute the environment. So the row receives."
+
+[[theory.step]]
+text = "It receives the member a design sized against geomagnetic activity reads: the peak slot of the disturbed single day."
+math = "Kp_sys = l3_solar_interface.kp_peak_hotday — identity, deliberately"
+
+[[assumption]]
+text = "It names one of ten Kp members and they span a quiet day to a severe storm"
+fails_when = "the wrong one is named. The crossing's ten Kp values run from 1.27 to 8.00 at the declared window. All ten are dimensionless, in the same declared domain, and produced by one node, so assembly checks that the variable exists and that its type matches and nothing checks that it is the one this row meant"
+
+[[assumption]]
+text = "The peak slot is a MEDIAN correction, so half the days in its Ap bin exceed it"
+fails_when = "this is read as a bound. sw_kp_slot_bias measures the median of max_8(Kp) - table(Ap) in nine bins of Ap. The median is the middle of a spread, not its top, and the correction knows only the daily mean and the bin it falls in — not whether the day was one long storm or seven quiet slots and one severe"
+
+[[assumption]]
+text = "It receives and does not compute, and a reader here sees none of the subsystem's limitations"
+fails_when = "a margin is taken against this number. It rests on an Ap that stacks two one-sided percentiles, a conversion that is a lookup with straight lines between 28 points, and a slot offset measured over one bundle version. None of that crosses the seam"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "Kp_sys"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "the crossing's own floor, restated: Kp is defined on 0 to 9 and a negative index is a sign error, not a quiet sky"
+reason_upper = "the crossing's own ceiling, restated: Kp is defined on 0 to 9. This member is the worst slot of the worst day, so it is the one of the ten nearest it — 8.00 at the declared window"
+
+[view]
+kind = "number"

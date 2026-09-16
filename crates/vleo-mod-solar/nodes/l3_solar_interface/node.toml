@@ -15,7 +15,7 @@ tier = "A"
 # scenario. Two reviewers and a differential fill.
 criticality = "significant"
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1330
+order = 1331
 state = "published"
 # The single node that crosses between this layer and the one above.
 # A subsystem is reached through its interface node, never by reaching
@@ -366,6 +366,116 @@ upper = 400.0
 reason_lower = "Ap floors at zero, and this is the member in the whole subsystem closest to a declared bound: at the declared window it crosses at 6.91, seven units clear. Its producer's own sheet says a centre below 15.2 would put it through the floor"
 reason_upper = "400 is the top of the Ap index itself. On the QUIETEST scenario a value anywhere near it means a sign is wrong beneath this row"
 
+[[publishes]]
+id = "kp_mean_nominal"
+symbol = "Kp_mean_nominal"
+label = "Kp, mean slot, nominal scenario"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky"
+reason_upper = "Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400"
+
+[[publishes]]
+id = "kp_mean_hotmean"
+symbol = "Kp_mean_hotmean"
+label = "Kp, mean slot, sustained disturbed scenario"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky"
+reason_upper = "Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400"
+
+[[publishes]]
+id = "kp_mean_coldmean"
+symbol = "Kp_mean_coldmean"
+label = "Kp, mean slot, sustained quiet scenario"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky"
+reason_upper = "Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400"
+
+[[publishes]]
+id = "kp_mean_hotday"
+symbol = "Kp_mean_hotday"
+label = "Kp, mean slot, disturbed single day"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky"
+reason_upper = "Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400"
+
+[[publishes]]
+id = "kp_mean_coldday"
+symbol = "Kp_mean_coldday"
+label = "Kp, mean slot, quietest single day"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky"
+reason_upper = "Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400"
+
+[[publishes]]
+id = "kp_peak_nominal"
+symbol = "Kp_peak_nominal"
+label = "Kp, peak slot, nominal scenario"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky"
+reason_upper = "Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400"
+
+[[publishes]]
+id = "kp_peak_hotmean"
+symbol = "Kp_peak_hotmean"
+label = "Kp, peak slot, sustained disturbed scenario"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky"
+reason_upper = "Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400"
+
+[[publishes]]
+id = "kp_peak_coldmean"
+symbol = "Kp_peak_coldmean"
+label = "Kp, peak slot, sustained quiet scenario"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky"
+reason_upper = "Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400"
+
+[[publishes]]
+id = "kp_peak_hotday"
+symbol = "Kp_peak_hotday"
+label = "Kp, peak slot, disturbed single day"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky"
+reason_upper = "Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400"
+
+[[publishes]]
+id = "kp_peak_coldday"
+symbol = "Kp_peak_coldday"
+label = "Kp, peak slot, quietest single day"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky"
+reason_upper = "Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400"
+
 # ---- what it reads -------------------------------------------------------
 #
 # Ten rows, each the producer of one scenario's one quantity. The consumer
@@ -421,6 +531,61 @@ type = "Ratio"
 [[input]]
 binding = "ap_cold_day"
 var = "sw_ap_cold_short"
+type = "Ratio"
+
+# The two Kp columns. They come from ONE row rather than from ten, because the
+# bus passes a node's value and not its relation: sw_kp_scenarios evaluates the
+# published scale and both measured slot offsets at all five scenario Ap values
+# and publishes the ten results. That row exists so this one can stay a relay.
+
+[[input]]
+binding = "kp_mean_nominal"
+var = "sw_kp_scenarios.kp_mean_nominal"
+type = "Ratio"
+
+[[input]]
+binding = "kp_mean_hotmean"
+var = "sw_kp_scenarios.kp_mean_hotmean"
+type = "Ratio"
+
+[[input]]
+binding = "kp_mean_coldmean"
+var = "sw_kp_scenarios.kp_mean_coldmean"
+type = "Ratio"
+
+[[input]]
+binding = "kp_mean_hotday"
+var = "sw_kp_scenarios.kp_mean_hotday"
+type = "Ratio"
+
+[[input]]
+binding = "kp_mean_coldday"
+var = "sw_kp_scenarios.kp_mean_coldday"
+type = "Ratio"
+
+[[input]]
+binding = "kp_peak_nominal"
+var = "sw_kp_scenarios.kp_peak_nominal"
+type = "Ratio"
+
+[[input]]
+binding = "kp_peak_hotmean"
+var = "sw_kp_scenarios.kp_peak_hotmean"
+type = "Ratio"
+
+[[input]]
+binding = "kp_peak_coldmean"
+var = "sw_kp_scenarios.kp_peak_coldmean"
+type = "Ratio"
+
+[[input]]
+binding = "kp_peak_hotday"
+var = "sw_kp_scenarios"
+type = "Ratio"
+
+[[input]]
+binding = "kp_peak_coldday"
+var = "sw_kp_scenarios.kp_peak_coldday"
 type = "Ratio"
 
 [[algorithm.step]]

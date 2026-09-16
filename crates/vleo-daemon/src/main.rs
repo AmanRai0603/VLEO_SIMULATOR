@@ -525,12 +525,25 @@ fn index_json() -> String {
         j.num_field("lo", v.limit.lower);
         j.num_field("hi", v.limit.upper);
         j.num_field("fixtures", d.fixtures.len() as f64);
+        // THE PRODUCING NODE, NOT THE VARIABLE.
+        //
+        // `d.inputs` holds VARIABLE indices, and the face reads this array as
+        // ROW indices — `S.consumers[p].push(r.i)` in state.js. That was the
+        // same number while every row published exactly one variable. It stopped
+        // being one when a row's answer became a SET: a member's variable index
+        // sits past the end of the row list, so the face indexed off the end of
+        // an array, threw inside ingest(), and drew an empty matrix. Nothing in
+        // the kernel noticed, because nothing in the kernel was wrong.
+        //
+        // Mapped here rather than in the face because the face's array is
+        // documented as node-to-node coupling; which MEMBER was read is a
+        // question the node page answers from the contract, not the index.
         j.key("in").open_arr();
         for (k, x) in d.inputs.iter().enumerate() {
             if k > 0 {
                 j.raw(",");
             }
-            j.raw(&x.to_string());
+            j.raw(&VARS[*x as usize].producer.to_string());
         }
         j.close_arr();
         j.key("kpi").open_arr();

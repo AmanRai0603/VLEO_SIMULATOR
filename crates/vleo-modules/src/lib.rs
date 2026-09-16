@@ -36,7 +36,8 @@ pub mod tables {
 }
 
 pub use tables::{
-    CaseDef, CycleDef, GroupDef, CASES, GROUPS, NODES, NODE_COUNT, RELATIONS, VARS, VAR_COUNT,
+    CaseDef, CycleDef, GroupDef, CASES, GROUPS, MAX_INPUTS, MAX_OUTPUTS, NODES, NODE_COUNT,
+    RELATIONS, VARS, VAR_COUNT,
 };
 
 /// Re-exported so a face has one name to import.
@@ -44,21 +45,15 @@ pub use vleo_bus as bus;
 pub use vleo_core as core_engine;
 pub use vleo_units as units;
 
-/// The largest number of inputs any node declares. Fixed at build time so the
-/// adapter needs no allocator — the kernel runs where there is not one.
-const MAX_INPUTS: usize = 16;
-
-/// The largest number of variables any node publishes. Fixed at build time for
-/// the same reason as `MAX_INPUTS`.
-///
-/// Almost every row publishes one. A row whose conclusion is a SET publishes
-/// several — the solar subsystem's driver product is five scenarios of five
-/// quantities — and this is what the scratch array in each dispatch site is
-/// sized to. It was 4, written inline at five call sites with no name and no
-/// reason, which is one row away from being silently too small: `outputs` is
-/// sliced to `def.outputs.len()`, so a node publishing more than the array
-/// holds would panic on the slice rather than at the sheet.
-const MAX_OUTPUTS: usize = 32;
+// MAX_INPUTS and MAX_OUTPUTS come from `tables`, measured off the tree by the
+// generator rather than written here by hand. Both were hand-written once — 16
+// and 4 — and both were outgrown. The output cap panicked on the first row whose
+// answer was a set, which is a loud failure and an acceptable one. The INPUT cap
+// did not: `eval` sliced to it, so a row declaring more inputs than the cap
+// silently received fewer, and what surfaced was the generated length guard
+// refusing the short slice — reported as a node blocked on "an input that has
+// never run", which is not what had happened. A constant that can be outgrown
+// by a sheet belongs to the sheet, so it is generated.
 
 /// The engine, holding the resolved data handle for one run.
 ///

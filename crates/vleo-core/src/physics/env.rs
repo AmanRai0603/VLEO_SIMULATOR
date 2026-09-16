@@ -135,6 +135,79 @@ pub fn kp_from_ap(ap: f64) -> f64 {
     pmath::interp(ap, AP, KP)
 }
 
+/// The bin centres both slot-bias tables are measured on.
+///
+/// `prf_ap2kp`'s own bins, as the midpoints of its edges 0 5 10 15 20 30 45 70
+/// 110 400. Shared by the two functions below so the pair cannot drift apart in
+/// their x values while agreeing in their y, which is a failure mode neither
+/// one's tests would see.
+const SLOT_BIN_CENTRES: &[f64] = &[2.5, 7.5, 12.5, 17.5, 25.0, 37.5, 57.5, 90.0, 255.0];
+
+/// How far the daily peak `Kp` slot sits above what [`kp_from_ap`] returns.
+///
+/// `Kp(ap)` is concave, so a table run on a DAILY MEAN `Ap` returns a value
+/// above the mean of the eight three-hourly `Kp` and well below the daily peak.
+/// A design sized on the peak slot through the conversion alone is sized on a
+/// quieter sky than the record's, and on exactly the days a drag design is
+/// sized by. This is the measured correction.
+///
+/// MEASURED DATA, not a published relation. The nine values are the median of
+/// `max_8(Kp) - kp_from_ap(Ap)` in each bin over
+/// `bundles/solar-weather@2026.09.14`, and must be re-measured when that bundle
+/// moves. It sits here rather than in a caller by the rule the whole module
+/// follows: more than one caller reads it — `sw_kp_slot_bias` at one `Ap` and
+/// `sw_kp_scenarios` at five — and a hand-copied table drifts from its original
+/// without anything noticing.
+///
+/// The eighth and ninth entries are NOT monotone. That is the record's shape,
+/// declared rather than smoothed.
+///
+/// Held at the end values rather than extrapolated, which is the choice
+/// `prf_ap2kp` makes explicitly: "hold the end bins, never extrapolate".
+pub fn kp_peak_slot_bias(ap: f64) -> f64 {
+    const OFFSET: &[f64] = &[
+        1.0,
+        0.8333333333333333,
+        1.1144067796610169,
+        1.0,
+        1.2,
+        1.3333333333333333,
+        1.5454545454545454,
+        1.7469135802469136,
+        1.3174603174603174,
+    ];
+    pmath::interp(ap, SLOT_BIN_CENTRES, OFFSET)
+}
+
+/// How far the daily MEAN `Kp` slot sits from what [`kp_from_ap`] returns.
+///
+/// The companion to [`kp_peak_slot_bias`], on the same day set and the same
+/// bins, taking the mean over the eight slots where that one takes the maximum.
+/// Almost every value is negative, which is what the concavity of `Kp(ap)`
+/// predicts: the table run on a daily mean reads above the mean of the slots.
+///
+/// MEASURED DATA, not a published relation, from
+/// `bundles/solar-weather@2026.09.14`, and here for the same reason its
+/// companion is.
+///
+/// The FIRST entry is positive where every other is negative. That is the
+/// record disagreeing with the concavity argument in the quietest bin, carried
+/// rather than clipped to zero.
+pub fn kp_mean_slot_bias(ap: f64) -> f64 {
+    const OFFSET: &[f64] = &[
+        0.041666666666666685,
+        -0.125,
+        -0.09763888888888905,
+        -0.11111111111111116,
+        -0.13333333333333286,
+        -0.24099537037037067,
+        -0.33333333333333304,
+        -0.4487179487179489,
+        -0.4868948412698413,
+    ];
+    pmath::interp(ap, SLOT_BIN_CENTRES, OFFSET)
+}
+
 /// The mean solar cycle, as a shape, an amplitude and a period.
 ///
 /// `SOLAR_CYCLE_SHAPE[k]` is the expected F10.7 at `k` knots past a cycle

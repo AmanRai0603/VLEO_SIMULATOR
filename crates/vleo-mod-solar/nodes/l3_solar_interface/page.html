@@ -1,4 +1,4 @@
-<article class="node" data-node="l3_solar_interface" data-sheet-hash="713460" data-impl-hash="3d8752">
+<article class="node" data-node="l3_solar_interface" data-sheet-hash="826449" data-impl-hash="a6bede">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Solar weather — subsystem interface</h2>
@@ -74,6 +74,16 @@ which of those their problem is.
 <tr><td>in</td><td><code>ap_cold_long</code></td><td><a class="xref" data-goto="sw_ap_cold_long">sw_ap_cold_long</a></td><td>Ratio</td><td>-</td></tr>
 <tr><td>in</td><td><code>ap_hot_day</code></td><td><a class="xref" data-goto="sw_ap_design_short">sw_ap_design_short</a></td><td>Ratio</td><td>-</td></tr>
 <tr><td>in</td><td><code>ap_cold_day</code></td><td><a class="xref" data-goto="sw_ap_cold_short">sw_ap_cold_short</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>kp_mean_nominal</code></td><td><a class="xref" data-goto="sw_kp_scenarios.kp_mean_nominal">sw_kp_scenarios.kp_mean_nominal</a></td><td>Ratio</td><td>?</td></tr>
+<tr><td>in</td><td><code>kp_mean_hotmean</code></td><td><a class="xref" data-goto="sw_kp_scenarios.kp_mean_hotmean">sw_kp_scenarios.kp_mean_hotmean</a></td><td>Ratio</td><td>?</td></tr>
+<tr><td>in</td><td><code>kp_mean_coldmean</code></td><td><a class="xref" data-goto="sw_kp_scenarios.kp_mean_coldmean">sw_kp_scenarios.kp_mean_coldmean</a></td><td>Ratio</td><td>?</td></tr>
+<tr><td>in</td><td><code>kp_mean_hotday</code></td><td><a class="xref" data-goto="sw_kp_scenarios.kp_mean_hotday">sw_kp_scenarios.kp_mean_hotday</a></td><td>Ratio</td><td>?</td></tr>
+<tr><td>in</td><td><code>kp_mean_coldday</code></td><td><a class="xref" data-goto="sw_kp_scenarios.kp_mean_coldday">sw_kp_scenarios.kp_mean_coldday</a></td><td>Ratio</td><td>?</td></tr>
+<tr><td>in</td><td><code>kp_peak_nominal</code></td><td><a class="xref" data-goto="sw_kp_scenarios.kp_peak_nominal">sw_kp_scenarios.kp_peak_nominal</a></td><td>Ratio</td><td>?</td></tr>
+<tr><td>in</td><td><code>kp_peak_hotmean</code></td><td><a class="xref" data-goto="sw_kp_scenarios.kp_peak_hotmean">sw_kp_scenarios.kp_peak_hotmean</a></td><td>Ratio</td><td>?</td></tr>
+<tr><td>in</td><td><code>kp_peak_coldmean</code></td><td><a class="xref" data-goto="sw_kp_scenarios.kp_peak_coldmean">sw_kp_scenarios.kp_peak_coldmean</a></td><td>Ratio</td><td>?</td></tr>
+<tr><td>in</td><td><code>kp_peak_hotday</code></td><td><a class="xref" data-goto="sw_kp_scenarios">sw_kp_scenarios</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>kp_peak_coldday</code></td><td><a class="xref" data-goto="sw_kp_scenarios.kp_peak_coldday">sw_kp_scenarios.kp_peak_coldday</a></td><td>Ratio</td><td>?</td></tr>
 <tr class="out"><td>out</td><td><code>F107_hotmean</code></td><td>l3_solar_interface</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="sys_space_environment_solar_flux">sys_space_environment_solar_flux</a></p>
@@ -83,7 +93,7 @@ which of those their problem is.
 <li><span class="step">assemble the five scenarios from the ten rows that computed them, and carry them across the seam unchanged</span> <span class="binds">→ <code>set: Answer</code></span></li>
 </ol>
 <h4>Pseudocode</h4>
-<pre class="pseudo"><code>function l3_solar_interface(f107_centre: Ratio, f107_hot_long: Ratio, f107_cold_long: Ratio, f107_hot_day: Ratio, f107_cold_day: Ratio, ap_centre: Ratio, ap_hot_long: Ratio, ap_cold_long: Ratio, ap_hot_day: Ratio, ap_cold_day: Ratio) -> Ratio
+<pre class="pseudo"><code>function l3_solar_interface(f107_centre: Ratio, f107_hot_long: Ratio, f107_cold_long: Ratio, f107_hot_day: Ratio, f107_cold_day: Ratio, ap_centre: Ratio, ap_hot_long: Ratio, ap_cold_long: Ratio, ap_hot_day: Ratio, ap_cold_day: Ratio, kp_mean_nominal: Ratio, kp_mean_hotmean: Ratio, kp_mean_coldmean: Ratio, kp_mean_hotday: Ratio, kp_mean_coldday: Ratio, kp_peak_nominal: Ratio, kp_peak_hotmean: Ratio, kp_peak_coldmean: Ratio, kp_peak_hotday: Ratio, kp_peak_coldday: Ratio) -> Ratio
     given f107_centre from sw_central_expectation
     given f107_hot_long from sw_f107_design_long
     given f107_cold_long from sw_f107_cold_long
@@ -94,6 +104,16 @@ which of those their problem is.
     given ap_cold_long from sw_ap_cold_long
     given ap_hot_day from sw_ap_design_short
     given ap_cold_day from sw_ap_cold_short
+    given kp_mean_nominal from sw_kp_scenarios.kp_mean_nominal
+    given kp_mean_hotmean from sw_kp_scenarios.kp_mean_hotmean
+    given kp_mean_coldmean from sw_kp_scenarios.kp_mean_coldmean
+    given kp_mean_hotday from sw_kp_scenarios.kp_mean_hotday
+    given kp_mean_coldday from sw_kp_scenarios.kp_mean_coldday
+    given kp_peak_nominal from sw_kp_scenarios.kp_peak_nominal
+    given kp_peak_hotmean from sw_kp_scenarios.kp_peak_hotmean
+    given kp_peak_coldmean from sw_kp_scenarios.kp_peak_coldmean
+    given kp_peak_hotday from sw_kp_scenarios
+    given kp_peak_coldday from sw_kp_scenarios.kp_peak_coldday
     // assemble the five scenarios from the ten rows that computed them, and carry them across the seam unchanged
     set ← step 1
 
@@ -155,7 +175,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &amp;str = &quot;l3_solar_interface&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x7bfa34ea86713460;
+pub const SHEET_HASH: u64 = 0xab82ebb6e9826449;
 
 /// The set this node publishes. One field per published variable, named
 /// by the sheet's own symbol, in the order `OUTPUT_VARS` declares: this
@@ -194,9 +214,29 @@ pub struct Answer {
     pub Ap_hotday: Ratio,
     /// Ap on the quietest single day — published as `l3_solar_interface.ap_coldday`.
     pub Ap_coldday: Ratio,
+    /// Kp, mean slot, nominal scenario — published as `l3_solar_interface.kp_mean_nominal`.
+    pub Kp_mean_nominal: Ratio,
+    /// Kp, mean slot, sustained disturbed scenario — published as `l3_solar_interface.kp_mean_hotmean`.
+    pub Kp_mean_hotmean: Ratio,
+    /// Kp, mean slot, sustained quiet scenario — published as `l3_solar_interface.kp_mean_coldmean`.
+    pub Kp_mean_coldmean: Ratio,
+    /// Kp, mean slot, disturbed single day — published as `l3_solar_interface.kp_mean_hotday`.
+    pub Kp_mean_hotday: Ratio,
+    /// Kp, mean slot, quietest single day — published as `l3_solar_interface.kp_mean_coldday`.
+    pub Kp_mean_coldday: Ratio,
+    /// Kp, peak slot, nominal scenario — published as `l3_solar_interface.kp_peak_nominal`.
+    pub Kp_peak_nominal: Ratio,
+    /// Kp, peak slot, sustained disturbed scenario — published as `l3_solar_interface.kp_peak_hotmean`.
+    pub Kp_peak_hotmean: Ratio,
+    /// Kp, peak slot, sustained quiet scenario — published as `l3_solar_interface.kp_peak_coldmean`.
+    pub Kp_peak_coldmean: Ratio,
+    /// Kp, peak slot, disturbed single day — published as `l3_solar_interface.kp_peak_hotday`.
+    pub Kp_peak_hotday: Ratio,
+    /// Kp, peak slot, quietest single day — published as `l3_solar_interface.kp_peak_coldday`.
+    pub Kp_peak_coldday: Ratio,
 }
 
-pub fn evaluate(f107_centre: Ratio, f107_hot_long: Ratio, f107_cold_long: Ratio, f107_hot_day: Ratio, f107_cold_day: Ratio, ap_centre: Ratio, ap_hot_long: Ratio, ap_cold_long: Ratio, ap_hot_day: Ratio, ap_cold_day: Ratio) -&gt; Result&lt;Answer, Fault&gt; {
+pub fn evaluate(f107_centre: Ratio, f107_hot_long: Ratio, f107_cold_long: Ratio, f107_hot_day: Ratio, f107_cold_day: Ratio, ap_centre: Ratio, ap_hot_long: Ratio, ap_cold_long: Ratio, ap_hot_day: Ratio, ap_cold_day: Ratio, kp_mean_nominal: Ratio, kp_mean_hotmean: Ratio, kp_mean_coldmean: Ratio, kp_mean_hotday: Ratio, kp_mean_coldday: Ratio, kp_peak_nominal: Ratio, kp_peak_hotmean: Ratio, kp_peak_coldmean: Ratio, kp_peak_hotday: Ratio, kp_peak_coldday: Ratio) -&gt; Result&lt;Answer, Fault&gt; {
     // ---- HOLE 1 : assemble the five scenarios from the ten rows that computed them, and carry them across the seam unchanged -&gt; Answer
     // A crossing carries; it does not compute. The one thing that can go wrong
     // here is that the seam alters what it is handed — a stray factor, an
@@ -237,6 +277,23 @@ pub fn evaluate(f107_centre: Ratio, f107_hot_long: Ratio, f107_cold_long: Ratio,
         Ap_coldmean: ap_cold_long,
         Ap_hotday: ap_hot_day,
         Ap_coldday: ap_cold_day,
+
+        // The two Kp columns, relayed from the one row that evaluates the
+        // published scale and both measured slot offsets at all five Ap. The
+        // arithmetic is there and not here, because a crossing relays: putting
+        // kp_from_ap(ap) + bias in this block would be subsystem work done where
+        // no subsystem reviewer reads it.
+        Kp_mean_nominal: kp_mean_nominal,
+        Kp_mean_hotmean: kp_mean_hotmean,
+        Kp_mean_coldmean: kp_mean_coldmean,
+        Kp_mean_hotday: kp_mean_hotday,
+        Kp_mean_coldday: kp_mean_coldday,
+
+        Kp_peak_nominal: kp_peak_nominal,
+        Kp_peak_hotmean: kp_peak_hotmean,
+        Kp_peak_coldmean: kp_peak_coldmean,
+        Kp_peak_hotday: kp_peak_hotday,
+        Kp_peak_coldday: kp_peak_coldday,
     };
     // ---- end HOLE 1
 
@@ -383,6 +440,96 @@ pub fn evaluate(f107_centre: Ratio, f107_hot_long: Ratio, f107_cold_long: Ratio,
     if answer.Ap_coldday.get() &gt; 400.0 {
         return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_coldday&quot;, value: answer.Ap_coldday.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;400 is the top of the Ap index itself. On the QUIETEST scenario a value anywhere near it means a sign is wrong beneath this row&quot; });
     }
+    if !answer.Kp_mean_nominal.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_mean_nominal&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_mean_nominal.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_nominal&quot;, value: answer.Kp_mean_nominal.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_mean_nominal.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_nominal&quot;, value: answer.Kp_mean_nominal.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_mean_hotmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_mean_hotmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_mean_hotmean.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_hotmean&quot;, value: answer.Kp_mean_hotmean.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_mean_hotmean.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_hotmean&quot;, value: answer.Kp_mean_hotmean.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_mean_coldmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_mean_coldmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_mean_coldmean.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_coldmean&quot;, value: answer.Kp_mean_coldmean.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_mean_coldmean.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_coldmean&quot;, value: answer.Kp_mean_coldmean.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_mean_hotday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_mean_hotday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_mean_hotday.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_hotday&quot;, value: answer.Kp_mean_hotday.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_mean_hotday.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_hotday&quot;, value: answer.Kp_mean_hotday.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_mean_coldday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_mean_coldday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_mean_coldday.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_coldday&quot;, value: answer.Kp_mean_coldday.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_mean_coldday.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_coldday&quot;, value: answer.Kp_mean_coldday.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_peak_nominal.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_peak_nominal&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_peak_nominal.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_nominal&quot;, value: answer.Kp_peak_nominal.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_peak_nominal.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_nominal&quot;, value: answer.Kp_peak_nominal.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_peak_hotmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_peak_hotmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_peak_hotmean.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_hotmean&quot;, value: answer.Kp_peak_hotmean.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_peak_hotmean.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_hotmean&quot;, value: answer.Kp_peak_hotmean.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_peak_coldmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_peak_coldmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_peak_coldmean.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_coldmean&quot;, value: answer.Kp_peak_coldmean.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_peak_coldmean.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_coldmean&quot;, value: answer.Kp_peak_coldmean.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_peak_hotday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_peak_hotday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_peak_hotday.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_hotday&quot;, value: answer.Kp_peak_hotday.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_peak_hotday.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_hotday&quot;, value: answer.Kp_peak_hotday.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_peak_coldday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_peak_coldday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_peak_coldday.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_coldday&quot;, value: answer.Kp_peak_coldday.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_peak_coldday.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_coldday&quot;, value: answer.Kp_peak_coldday.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
     Ok(answer)
 }
 </code></pre>
@@ -404,6 +551,16 @@ pub fn evaluate(f107_centre: Ratio, f107_hot_long: Ratio, f107_cold_long: Ratio,
 <tr data-fixture="the sustained quiet Ap crosses unchanged, from sw_ap_cold_long"><td>the sustained quiet Ap crosses unchanged, from sw_ap_cold_long</td><td class="num">17.49546836</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
 <tr data-fixture="the most disturbed single day crosses unchanged, from sw_ap_design_short"><td>the most disturbed single day crosses unchanged, from sw_ap_design_short</td><td class="num">90.54720964</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
 <tr data-fixture="the quietest single day crosses unchanged, from sw_ap_cold_short — the member closest to a declared bound, seven units clear of zero"><td>the quietest single day crosses unchanged, from sw_ap_cold_short — the member closest to a declared bound, seven units clear of zero</td><td class="num">4.9319536205</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the nominal mean-slot Kp crosses unchanged, from sw_kp_scenarios"><td>the nominal mean-slot Kp crosses unchanged, from sw_kp_scenarios</td><td class="num">3.5482988548</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="the sustained disturbed mean-slot Kp crosses unchanged"><td>the sustained disturbed mean-slot Kp crosses unchanged</td><td class="num">3.8317523369</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="the sustained quiet mean-slot Kp crosses unchanged"><td>the sustained quiet mean-slot Kp crosses unchanged</td><td class="num">3.1661753614</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="the disturbed single day, mean slot — Kp 5.80, where the study has 4.50, because this tree's hot Ap day is more than twice the study's"><td>the disturbed single day, mean slot — Kp 5.80, where the study has 4.50, because this tree's hot Ap day is more than twice the study's</td><td class="num">5.8022794796</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="the quietest single day, mean slot — the lowest of the twenty-five members"><td>the quietest single day, mean slot — the lowest of the twenty-five members</td><td class="num">1.2712527528</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="the nominal peak-slot Kp crosses unchanged"><td>the nominal peak-slot Kp crosses unchanged</td><td class="num">4.79556964</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="the sustained disturbed peak-slot Kp crosses unchanged — Kp 5.20, a G1 storm in the worst slot of an ordinary sustained day"><td>the sustained disturbed peak-slot Kp crosses unchanged — Kp 5.20, a G1 storm in the worst slot of an ordinary sustained day</td><td class="num">5.1977706122</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="the sustained quiet peak-slot Kp crosses unchanged"><td>the sustained quiet peak-slot Kp crosses unchanged</td><td class="num">4.2773779523</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="THE WORST SLOT OF THE WORST DAY, Kp 8.00 — a G4 severe storm, and the member a design sized against geomagnetic activity reads"><td>THE WORST SLOT OF THE WORST DAY, Kp 8.00 — a G4 severe storm, and the member a design sized against geomagnetic activity reads</td><td class="num">7.996613371</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="the quietest single day, peak slot"><td>the quietest single day, peak slot</td><td class="num">2.2295860861</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>

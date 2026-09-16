@@ -1,17 +1,17 @@
 {
   "id": "l3_solar_interface",
   "state": "published",
-  "sheet_hash": "713460",
-  "impl_hash": "3d8752",
+  "sheet_hash": "826449",
+  "impl_hash": "a6bede",
   "owner": "environment",
   "tier": "A",
-  "fixtures": 15,
+  "fixtures": 25,
   "criticality": "significant",
   "reviewers": 2,
   "differential_fill": true,
   "migrated_from": "",
   "holes": 1,
-  "inputs": ["sw_central_expectation", "sw_f107_design_long", "sw_f107_cold_long", "sw_f107_design_short", "sw_f107_cold_short", "sw_ap_central_expectation", "sw_ap_design_long", "sw_ap_cold_long", "sw_ap_design_short", "sw_ap_cold_short"],
+  "inputs": ["sw_central_expectation", "sw_f107_design_long", "sw_f107_cold_long", "sw_f107_design_short", "sw_f107_cold_short", "sw_ap_central_expectation", "sw_ap_design_long", "sw_ap_cold_long", "sw_ap_design_short", "sw_ap_cold_short", "sw_kp_scenarios.kp_mean_nominal", "sw_kp_scenarios.kp_mean_hotmean", "sw_kp_scenarios.kp_mean_coldmean", "sw_kp_scenarios.kp_mean_hotday", "sw_kp_scenarios.kp_mean_coldday", "sw_kp_scenarios.kp_peak_nominal", "sw_kp_scenarios.kp_peak_hotmean", "sw_kp_scenarios.kp_peak_coldmean", "sw_kp_scenarios", "sw_kp_scenarios.kp_peak_coldday"],
   "contributes": [],
   "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did"]
 }

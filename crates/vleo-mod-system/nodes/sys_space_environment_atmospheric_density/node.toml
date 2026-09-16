@@ -15,7 +15,7 @@ layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 # is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
 # reverses the order the source put them in, and the order is part of
 # what the source said.
-order = 310
+order = 311
 state = "empty"
 
 # SEEDED — the folder exists and nothing has been specified in it.
@@ -37,7 +37,7 @@ state = "empty"
 # sys_thermal_free_molecular_heat_flux. So this is not a decorative gap — it is
 # the single row between the solar record and the drag budget.
 #
-# WHAT WHOEVER WRITES IT WILL NEED, AND WHAT IS AND IS NOT THERE.
+# WHAT WHOEVER WRITES IT WILL NEED. All of it is now here.
 #
 # A thermospheric density model takes, at minimum, (altitude, F10.7 daily,
 # F10.7 81-day mean, Kp). vleo_core::physics::env::exospheric_temperature has
@@ -49,14 +49,15 @@ state = "empty"
 #                   mean of the hot day — a *day scenario rides on the sustained
 #                   level beneath it, so the pair is (124.14 daily, 104.07
 #                   background).
-#   Kp              DOES NOT CROSS AT ALL. The subsystem has the conversion
-#                   (sw_kp_from_ap) and both slot corrections (sw_kp_mean_bias,
-#                   sw_kp_slot_bias) and cannot use them in the crossing,
-#                   because the bus passes a node's VALUE and not its RELATION:
-#                   each answers at one Ap and a driver set needs them at five.
-#                   §20.8 names the three ways out. Until one is chosen, a
-#                   density row would have to convert Ap to Kp itself, which is
-#                   the duplication the crossing exists to prevent.
+#   Kp              ARRIVES, as sys_space_environment_kp. It carries
+#                   kp_peak_hotday — the worst three-hour slot of the disturbed
+#                   design day, Kp 8.00 — and the crossing carries nine other Kp
+#                   members for a row that wants a different case.
+#
+# SO ALL THREE DRIVERS ARE HERE. What is left is the density model itself, and
+# the choice of which scenario this row means: the three flux and Kp rows
+# currently receive the hot single day and the level beneath it, which is one of
+# the five cases the crossing carries.
 #
 # AND IT WILL HAVE TO CHOOSE A SCENARIO. The crossing carries five and this
 # heading's rows each receive one member. A density row reading the single-day

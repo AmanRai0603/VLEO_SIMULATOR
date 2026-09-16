@@ -1,0 +1,113 @@
+# Known-good values, and where each came from. An expected value may
+# never be produced by the code under test.
+#
+# WHAT THESE CHECK.
+#
+# One input vector, ten fixtures, one per published member. Every Ap below is a
+# BIN CENTRE of the two slot-bias tables, so each bias lookup is an exact table
+# entry rather than an interpolation, and the published IAGA scale is the only
+# thing interpolated. That makes every expected value two table reads and one
+# addition — arithmetic a person can redo from the two sources without running
+# this code, which is what an independent derivation has to mean when the
+# relation is a composition of lookups.
+#
+# The ten expected values are DISTINCT, and the five inputs are distinct. So a
+# scenario wired to the wrong Ap, or a slot wired to the wrong table, moves at
+# least two of the ten. That is the failure this row can have that its
+# constituents cannot: each of them reads one Ap and cannot mispair anything.
+#
+# WHAT THEY CANNOT CHECK is whether the two bias tables are right. Those are
+# medians of the record, measured by sw_kp_mean_bias and sw_kp_slot_bias, and
+# they are those rows' evidence to carry. Nor do they check the study's own
+# numbers — that is parity.csv beside this file, where all ten agree to the four
+# decimals the study printed.
+
+[[fixture]]
+label = "the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94"
+variable = "Kp_peak_hotday"
+expect = 7.9850088183
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "iaga_kp_ap"
+inputs = { ap_nominal = 12.5, ap_hotmean = 25.0, ap_coldmean = 7.5, ap_hotday = 90.0, ap_coldday = 2.5 }
+
+[[fixture]]
+label = "ap 12.5, a bin centre. The scale interpolates between Kp 8/3 at ap 12 and Kp 3 at ap 15; the mean offset -0.0976 is exact"
+variable = "kp_mean_nominal"
+expect = 2.6245833333
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "iaga_kp_ap"
+inputs = { ap_nominal = 12.5, ap_hotmean = 25.0, ap_coldmean = 7.5, ap_hotday = 90.0, ap_coldday = 2.5 }
+
+[[fixture]]
+label = "ap 25, a bin centre. Scale between Kp 11/3 at ap 22 and Kp 4 at ap 27, mean offset -0.1333 exact"
+variable = "kp_mean_hotmean"
+expect = 3.7333333333
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "iaga_kp_ap"
+inputs = { ap_nominal = 12.5, ap_hotmean = 25.0, ap_coldmean = 7.5, ap_hotday = 90.0, ap_coldday = 2.5 }
+
+[[fixture]]
+label = "ap 7.5, a bin centre. Scale between Kp 2 at ap 7 and Kp 7/3 at ap 9, mean offset -0.125 exact"
+variable = "kp_mean_coldmean"
+expect = 1.9583333333
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "iaga_kp_ap"
+inputs = { ap_nominal = 12.5, ap_hotmean = 25.0, ap_coldmean = 7.5, ap_hotday = 90.0, ap_coldday = 2.5 }
+
+[[fixture]]
+label = "ap 90, a bin centre. The mean offset -0.4487 is exact and the scale is the same interpolation the primary uses — so this and Kp_peak_hotday differ by exactly the two offsets, 2.1956"
+variable = "kp_mean_hotday"
+expect = 5.7893772894
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "iaga_kp_ap"
+inputs = { ap_nominal = 12.5, ap_hotmean = 25.0, ap_coldmean = 7.5, ap_hotday = 90.0, ap_coldday = 2.5 }
+
+[[fixture]]
+label = "ap 2.5, the first bin centre. The scale interpolates between Kp 1/3 at ap 2 and Kp 2/3 at ap 3; the mean offset is the one POSITIVE entry in that table, +0.0417"
+variable = "kp_mean_coldday"
+expect = 0.5416666667
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "iaga_kp_ap"
+inputs = { ap_nominal = 12.5, ap_hotmean = 25.0, ap_coldmean = 7.5, ap_hotday = 90.0, ap_coldday = 2.5 }
+
+[[fixture]]
+label = "ap 12.5. Peak offset 1.1144 exact, and this is the bin where that table is not monotone with its neighbours"
+variable = "kp_peak_nominal"
+expect = 3.8366290019
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "iaga_kp_ap"
+inputs = { ap_nominal = 12.5, ap_hotmean = 25.0, ap_coldmean = 7.5, ap_hotday = 90.0, ap_coldday = 2.5 }
+
+[[fixture]]
+label = "ap 25. Peak offset 1.2 exact. Kp 5.07 is a G1 storm in the worst slot of an ordinary sustained day"
+variable = "kp_peak_hotmean"
+expect = 5.0666666667
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "iaga_kp_ap"
+inputs = { ap_nominal = 12.5, ap_hotmean = 25.0, ap_coldmean = 7.5, ap_hotday = 90.0, ap_coldday = 2.5 }
+
+[[fixture]]
+label = "ap 7.5. Peak offset 0.8333 exact"
+variable = "kp_peak_coldmean"
+expect = 2.9166666667
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "iaga_kp_ap"
+inputs = { ap_nominal = 12.5, ap_hotmean = 25.0, ap_coldmean = 7.5, ap_hotday = 90.0, ap_coldday = 2.5 }
+
+[[fixture]]
+label = "ap 2.5, the first bin centre, where the peak offset is exactly 1.0 and the scale is exactly 0.5 — the one case in this set a reader can check without a calculator"
+variable = "kp_peak_coldday"
+expect = 1.5000000000
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "iaga_kp_ap"
+inputs = { ap_nominal = 12.5, ap_hotmean = 25.0, ap_coldmean = 7.5, ap_hotday = 90.0, ap_coldday = 2.5 }

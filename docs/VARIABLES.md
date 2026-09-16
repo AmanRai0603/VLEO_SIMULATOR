@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1391 rows** — 663 a person picked, 728 worked out. Two thirds of any design tree is
+**1393 rows** — 663 a person picked, 730 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -19120,7 +19120,7 @@ tree instead of an edge somebody has to trace.
 
 - **lower bound** — the same floor as env_f107 and every design row beneath this one: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A crossing that narrowed or widened the range it carries would be changing the answer, so it declares the producer's own bounds
 - **upper bound** — the same ceiling as env_f107 and every design row beneath this one: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. Restating it here means a system reader sees the limit without opening the subsystem
-- **reads** — `sw_central_expectation`, `sw_f107_design_long`, `sw_f107_cold_long`, `sw_f107_design_short`, `sw_f107_cold_short`, `sw_ap_central_expectation`, `sw_ap_design_long`, `sw_ap_cold_long`, `sw_ap_design_short`, `sw_ap_cold_short`
+- **reads** — `sw_central_expectation`, `sw_f107_design_long`, `sw_f107_cold_long`, `sw_f107_design_short`, `sw_f107_cold_short`, `sw_ap_central_expectation`, `sw_ap_design_long`, `sw_ap_cold_long`, `sw_ap_design_short`, `sw_ap_cold_short`, `sw_kp_scenarios.kp_mean_nominal`, `sw_kp_scenarios.kp_mean_hotmean`, `sw_kp_scenarios.kp_mean_coldmean`, `sw_kp_scenarios.kp_mean_hotday`, `sw_kp_scenarios.kp_mean_coldday`, `sw_kp_scenarios.kp_peak_nominal`, `sw_kp_scenarios.kp_peak_hotmean`, `sw_kp_scenarios.kp_peak_coldmean`, `sw_kp_scenarios`, `sw_kp_scenarios.kp_peak_coldday`
 - **read by** — `sys_space_environment_solar_flux`
 - **assumes** The Kp columns do not cross, and the study's driver set has two of them — fails when a consumer needs Kp. The study publishes kp_mean and kp_peak per scenario, formed from that scenario's Ap by the published ap-to-Kp scale plus a measured slot bias. This tree has all three relations — sw_kp_from_ap, sw_kp_mean_bias, sw_kp_slot_bias — and cannot use them here, because the bus passes a node's VALUE and not its RELATION: each of those rows answers at one Ap, and a driver set needs them at five. Three ways out, none of them free: those three rows each publish a set of five, keyed to the scenarios; or the ap-to-Kp scale and both bias tables move into vleo-core as named functions this hole can call, at the cost of putting measured data in the kernel; or ten more rows exist, one per scenario per slot. Until one is chosen the Ap column crosses and the Kp columns do not, and a consumer that needs Kp must convert it itself — which is the duplication this row exists to prevent
 - **assumes** It relays and does not compute, and the f107bar column is the edge of that claim — fails when somebody calls the f107bar mapping a calculation. No value is combined with another and no constant appears; what happens is that one input is published under two names, because the study's hotday scenario carries hotmean's 81-day mean beneath it. If that is computation then a crossing cannot carry a set at all, and §20.3's decision needs revisiting rather than this hole
@@ -19141,6 +19141,16 @@ tree instead of an edge somebody has to trace.
 - **evidence** the sustained quiet Ap crosses unchanged, from sw_ap_cold_long — expect 17.49546836 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** the most disturbed single day crosses unchanged, from sw_ap_design_short — expect 90.54720964 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** the quietest single day crosses unchanged, from sw_ap_cold_short — the member closest to a declared bound, seven units clear of zero — expect 4.9319536205 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the nominal mean-slot Kp crosses unchanged, from sw_kp_scenarios — expect 3.5482988548 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the sustained disturbed mean-slot Kp crosses unchanged — expect 3.8317523369 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the sustained quiet mean-slot Kp crosses unchanged — expect 3.1661753614 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the disturbed single day, mean slot — Kp 5.80, where the study has 4.50, because this tree's hot Ap day is more than twice the study's — expect 5.8022794796 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the quietest single day, mean slot — the lowest of the twenty-five members — expect 1.2712527528 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the nominal peak-slot Kp crosses unchanged — expect 4.79556964 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the sustained disturbed peak-slot Kp crosses unchanged — Kp 5.20, a G1 storm in the worst slot of an ordinary sustained day — expect 5.1977706122 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the sustained quiet peak-slot Kp crosses unchanged — expect 4.2773779523 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** THE WORST SLOT OF THE WORST DAY, Kp 8.00 — a G4 severe storm, and the member a design sized against geomagnetic activity reads — expect 7.996613371 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the quietest single day, peak slot — expect 2.2295860861 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
 
 One row, one conclusion, no reaching in. Everything the subsystem establishes —
 the record, the cycle, the storms, the slot bias, the two spreads, both tails of
@@ -19412,7 +19422,7 @@ Not a property of the sky but of the people watching it, and it is the operation
 
 - **lower bound** — a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0
 - **upper bound** — above 80 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun
-- **read by** — `l3_solar_interface`, `sw_ap_cold_long`, `sw_ap_design_long`
+- **read by** — `l3_solar_interface`, `sw_ap_cold_long`, `sw_ap_design_long`, `sw_kp_scenarios`
 - **assumes** The level the sun was last at is the level it will be at — fails when the window is long or far out. This carries no cycle trend at all: the same number is published for a window opening next month and one opening in 2032, and over a 365-day window the sun demonstrably moves
 - **assumes** A rotation-mean level stands in for a daily level — fails when a design reads it as a day. It is the mean of 27 days; half the days in the window are above it by construction, which is what sw_ap_daily_band_spread exists to say
 - **assumes** The phase past the cycle table is an extrapolation — fails when it is read as measured. The last rotations sit past cycle 25's tabulated end and their phase wraps on the mean length of three cycles, one of which is incomplete
@@ -19442,7 +19452,7 @@ before it can have edges.
 - **lower bound** — Ap floors at zero — a perfectly quiet day is Ap 0 and there is nothing below it. On this row the guard is load-bearing rather than decorative: a symmetric band subtracted from a small centre reaches below zero, and what comes out then is arithmetic rather than sky
 - **upper bound** — above 300 the level exceeds the largest daily Ap in the record, 273. A COLD level there means the spread has been added rather than subtracted, which is the one failure this row has that its twin does not
 - **reads** — `sw_ap_central_expectation`, `sw_ap_mean_band_spread`
-- **read by** — `l3_solar_interface`, `sw_ap_cold_short`, `sw_ap_daily_band_drop`
+- **read by** — `l3_solar_interface`, `sw_ap_cold_short`, `sw_ap_daily_band_drop`, `sw_kp_scenarios`
 - **assumes** 1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent — fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997, so this edge is the 10th percentile and not the 5th. A one-sided 95 per cent bound is 1.645 sigma, a further 1.3 down at this sigma. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it
 - **assumes** A symmetric band on a quantity truncated at zero — fails when the centre is small. Ap cannot be negative, so the true low edge of any band is bounded by the centre itself, and a symmetric subtraction of 1.28 sigma ignores that. With this sigma the crossing is at a centre near 4.6, which is a deep-minimum window rather than an impossible one. The guard catches it; the arithmetic does not know about it
 - **assumes** One sigma covers the whole window — fails when sigma is not flat across the cycle, and Ap's is least flat of all — geomagnetic activity peaks in the DECLINING phase rather than at maximum, when coronal holes are largest and high-speed streams recur. A window spanning that transition is given one width where it needs two
@@ -19480,7 +19490,7 @@ design case.
 - **lower bound** — Ap floors at zero — a perfectly quiet day is Ap 0 and there is nothing below it. This is the row in the subsystem closest to its own floor, seven units clear at the declared window, and the only one where the guard is likely to fire on an ordinary input rather than on a mistake
 - **upper bound** — 400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all. On the QUIETEST of the five scenarios a value anywhere near it means a sign is wrong somewhere in the chain above
 - **reads** — `sw_ap_cold_long`, `sw_ap_daily_band_drop`
-- **read by** — `l3_solar_interface`
+- **read by** — `l3_solar_interface`, `sw_kp_scenarios`
 - **assumes** The result stays above zero, and nothing in the arithmetic ensures it — fails when the sustained quiet level is small. With this subsystem's level-conditioned drop the crossing is at a sustained Ap near 15.6, and the declared window's 17.50 clears it by under two units of level. The guard refuses rather than publishing a negative index, which is right, but it means this row is the one most likely in the subsystem to fire on an ordinary input rather than on a mistake
 - **assumes** The two spreads stack rather than combine — fails when a reader takes the result as a 95 per cent day. Stacking a 10th-percentile rotation level with a 5th-percentile day inside it is nearer a 1-in-100 day than a 1-in-20 one, assuming independence — and a quiet rotation is made of quiet days, so they are not independent. The study does this and the port reproduces it; the number is conservative and its label is wrong
 - **assumes** The quiet day is not the disturbed day mirrored — fails when somebody builds it by negating sw_ap_design_short's daily term. Two things make that wrong. The tails differ by a factor of two to three at every level; and the two rows read the table at DIFFERENT LEVELS, Ap 17.50 here against 26.70 there, so the terms are 12.56 and 63.85 — a factor of five. Mirroring would put this scenario at Ap -46, which is not a sky
@@ -19634,7 +19644,7 @@ The design-side companion to sw_storm_return_level. That row says what the recor
 - **lower bound** — Ap floors at zero — a perfectly quiet day is Ap 0 — so a design level below it means a spread has been subtracted rather than added
 - **upper bound** — above 300 the level exceeds the largest daily Ap in the record, 273, so a SUSTAINED level there is not a window this tool can model
 - **reads** — `sw_ap_central_expectation`, `sw_ap_mean_band_spread`
-- **read by** — `l3_solar_ach_04`, `l3_solar_interface`, `sw_ap_daily_band_spread`, `sw_ap_design_short`
+- **read by** — `l3_solar_ach_04`, `l3_solar_interface`, `sw_ap_daily_band_spread`, `sw_ap_design_short`, `sw_kp_scenarios`
 - **evidence** this repository's own chain — the Ap centre with its measured spread — expect 26.69530964 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** round numbers, checkable without a calculator — expect 25.12 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** a quiet centre with a narrow spread, where the lower guard starts to matter — expect 32.56 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
@@ -19664,7 +19674,7 @@ of several.
 - **lower bound** — Ap floors at zero, so a single-day design level below it means a spread has been subtracted rather than added
 - **upper bound** — 400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all, and this row — a sustained level plus a daily excursion — is the one in the subsystem most likely to reach for it
 - **reads** — `sw_ap_design_long`, `sw_ap_daily_band_spread`
-- **read by** — `l3_solar_ach_05`, `l3_solar_interface`
+- **read by** — `l3_solar_ach_05`, `l3_solar_interface`, `sw_kp_scenarios`
 - **evidence** the sustained Ap level with the daily departure this row USED to be handed, before sw_ap_daily_band_spread was conditioned on level. Kept as an arithmetic case: the conditioned departure at Ap 26.70 is 63.85, not 15.00 — expect 41.6971614919 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** round numbers, checkable without a calculator — expect 40 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** a higher sustained level with a narrower daily departure — the terms are independent and the row must not assume otherwise — expect 42 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
@@ -20593,6 +20603,53 @@ The atmosphere model wants Kp; the design product carries Ap. This is that conve
 - **evidence** above the last bin centre — Ap 1000 holds the 110-to-400 bin — expect -0.4868948412698413 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 
 The pair to sw_kp_slot_bias, and the half of the pair a thermospheric model actually asks for more often. DTM2020_Oper takes Kp in two senses — akp(1) a single three-hourly value, akp(3) the mean of the day's eight — and the published scale answers neither, because it is defined for a three-hourly ap while the design product carries a daily mean. sw_kp_slot_bias measures the peak-slot gap and this measures the mean-slot one. They have opposite signs, so applying the wrong one doubles the error instead of removing it.
+
+### `sw_kp_scenarios` — Kp in both slots, for all five scenarios
+
+> What Kp does each of the five driver scenarios carry, in the mean slot and in the peak slot?
+
+| | |
+|---|---|
+| symbol | `Kp_peak_hotday` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `Kp_slot(s) = kp_from_ap(Ap_s) + dKp_slot(Ap_s), for each of the five scenarios and each of the two slots` |
+| source | `iaga_kp_ap` |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400. This member is the worst slot of the worst day, so it is the one of the ten most likely to reach it
+- **reads** — `sw_ap_central_expectation`, `sw_ap_design_long`, `sw_ap_cold_long`, `sw_ap_design_short`, `sw_ap_cold_short`
+- **read by** — `l3_solar_interface`
+- **assumes** The offsets are medians over nine bins of Ap and nothing else — fails when the day is unusual in a way Ap does not capture. The correction knows the daily mean and the bin it falls in; it does not know whether the day was one long storm or eight quiet slots and one severe one, and those have the same Ap and very different peaks. The median is the middle of that spread, so half of the days in any bin exceed the peak this row publishes
+- **assumes** The tables are clamped at both ends rather than extrapolated — fails when a scenario's Ap falls outside them. The scale runs to ap 400 and the bias bins to a centre of 255, so a hot day above that reads the last bin's offset. This tree's hot Ap day is 90.55, inside both; the study's driver sets never exceeded 42. A scenario multiplier applied to a disturbed day would reach the clamp silently
+- **assumes** Both slot corrections are measured on the record and belong to a bundle version — fails when the bundle moves. They are medians over bundles/solar-weather@2026.09.14 and must be re-measured when it does. They live in vleo-core, which is the second and third pieces of measured data in a kernel whose own comment used to say SOLAR_CYCLE_SHAPE was the only one — that claim is now wrong and the kernel says so
+- **assumes** This row composes and does not measure, so its errors are its constituents' errors — fails when a reader looks here for the physics. The scale is sw_kp_from_ap's, both offsets are sw_kp_mean_bias's and sw_kp_slot_bias's, and the five Ap values are the design rows'. What this row owns is the composition and the choice of five points, and its parity grid is the only place all three are checked together
+- **evidence** the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94 — expect 7.9850088183 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 12.5, a bin centre. The scale interpolates between Kp 8/3 at ap 12 and Kp 3 at ap 15; the mean offset -0.0976 is exact — expect 2.6245833333 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 25, a bin centre. Scale between Kp 11/3 at ap 22 and Kp 4 at ap 27, mean offset -0.1333 exact — expect 3.7333333333 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 7.5, a bin centre. Scale between Kp 2 at ap 7 and Kp 7/3 at ap 9, mean offset -0.125 exact — expect 1.9583333333 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 90, a bin centre. The mean offset -0.4487 is exact and the scale is the same interpolation the primary uses — so this and Kp_peak_hotday differ by exactly the two offsets, 2.1956 — expect 5.7893772894 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 2.5, the first bin centre. The scale interpolates between Kp 1/3 at ap 2 and Kp 2/3 at ap 3; the mean offset is the one POSITIVE entry in that table, +0.0417 — expect 0.5416666667 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 12.5. Peak offset 1.1144 exact, and this is the bin where that table is not monotone with its neighbours — expect 3.8366290019 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 25. Peak offset 1.2 exact. Kp 5.07 is a G1 storm in the worst slot of an ordinary sustained day — expect 5.0666666667 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 7.5. Peak offset 0.8333 exact — expect 2.9166666667 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 2.5, the first bin centre, where the peak offset is exactly 1.0 and the scale is exactly 0.5 — the one case in this set a reader can check without a calculator — expect 1.5 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+
+Ten numbers, and they are the last two columns of the study's driver product.
+Every relation behind them already existed on its own row in this subsystem; what
+did not exist was a way to evaluate them at five Ap values at once, because a
+node publishes a value and a consumer cannot ask it for its relation.
+
+The two slots are different questions about the same day. Ap is a daily mean, Kp
+is reported in eight three-hourly slots, and Kp(ap) is concave — so the published
+conversion run on a daily mean lands ABOVE the mean of the eight slots and well
+BELOW the peak. A design sized on the conversion alone is sized on a sky quieter
+than the record's, and on exactly the days a drag design is sized by.
+
 
 ### `sw_kp_slot_bias` — Kp slot bias, daily peak
 
@@ -28264,6 +28321,41 @@ f107 and f107bar columns: the three *mean scenarios have the two equal, because
 they ARE the window mean, and the two *day scenarios do not.
 
 
+### `sys_space_environment_kp` — Kp, worst slot of the design day
+
+> What Kp does the system design to, in the worst three-hour slot of its design day?
+
+| | |
+|---|---|
+| symbol | `Kp_sys` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `Kp_sys = l3_solar_interface.kp_peak_hotday` |
+| source | `iaga_kp_ap` |
+| valid over | 0 … 9 - |
+
+- **lower bound** — the crossing's own floor, restated: Kp is defined on 0 to 9 and a negative index is a sign error, not a quiet sky
+- **upper bound** — the crossing's own ceiling, restated: Kp is defined on 0 to 9. This member is the worst slot of the worst day, so it is the one of the ten nearest it — 8.00 at the declared window
+- **reads** — `l3_solar_interface.kp_peak_hotday`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** It names one of ten Kp members and they span a quiet day to a severe storm — fails when the wrong one is named. The crossing's ten Kp values run from 1.27 to 8.00 at the declared window. All ten are dimensionless, in the same declared domain, and produced by one node, so assembly checks that the variable exists and that its type matches and nothing checks that it is the one this row meant
+- **assumes** The peak slot is a MEDIAN correction, so half the days in its Ap bin exceed it — fails when this is read as a bound. sw_kp_slot_bias measures the median of max_8(Kp) - table(Ap) in nine bins of Ap. The median is the middle of a spread, not its top, and the correction knows only the daily mean and the bin it falls in — not whether the day was one long storm or seven quiet slots and one severe
+- **assumes** It receives and does not compute, and a reader here sees none of the subsystem's limitations — fails when a margin is taken against this number. It rests on an Ap that stacks two one-sided percentiles, a conversion that is a lookup with straight lines between 28 points, and a slot offset measured over one bundle version. None of that crosses the seam
+- **evidence** the peak-slot Kp this tree's own chain gives for the declared window's disturbed day — a G4 severe storm — expect 7.996613371 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the study's own kp_peak for its hotday scenario, 6.1367, carried so the two ports' numbers are visible together — expect 6.1367 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** Kp 5 exactly, the G1 storm threshold and an anchor of the published scale — expect 5 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
+
+The peak slot and not the daily mean, and the distinction is the whole reason
+the subsystem measures a slot offset at all. Ap is a daily mean, Kp is reported
+in eight three-hourly slots, and the published conversion run on a daily mean
+lands ABOVE the mean of the eight and far BELOW the peak. A design that converts
+Ap to Kp and stops is sized on a sky quieter than the record's, on exactly the
+days a drag design is sized by.
+
+
 ### `sys_space_environment_solar_flux` — Solar flux, sustained
 
 > What solar flux does the system design to, as a level sustained for months at a time?
@@ -28285,7 +28377,7 @@ they ARE the window mean, and the two *day scenarios do not.
 - **reads** — `l3_solar_interface`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **assumes** It receives and does not compute, and a system reader sees none of the subsystem's limitations — fails when a margin is taken against this number. It is a 1.28-sigma band edge — the 90th percentile, while the run is labelled 95 per cent — on a centre that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles whose peaks differ by 41 per cent. The credibility vector crosses the seam; the assumptions do not, and that is the ordinary cost of having a seam at all
-- **assumes** Kp does not reach layer 2 at all, and a density model needs it — fails when somebody writes sys_space_environment_atmospheric_density from the flux rows alone. The daily flux and the 81-day mean both arrive now; Kp does not cross, because the subsystem's three Kp relations each answer at one Ap and a driver set needs them at five. §20.8 names the three ways out. Until one is chosen a density row would have to convert Ap to Kp itself, which is the duplication the crossing exists to prevent
+- **assumes** The three drivers arrive but nothing says which SCENARIO they are — fails when somebody reads the three as one case. sys_space_environment_f10_7 carries the hot single day, sys_space_environment_f10_7_81day the level beneath it, and sys_space_environment_kp the worst slot of that same day — so they ARE one coherent case, the hot day. But nothing in the tree enforces that, and a fourth row added later naming a different scenario's member would sit beside them looking identical. The crossing carries the five scenarios precisely so a consumer can pick one; picking is still a decision a row makes in its own sheet
 - **assumes** It is the sustained level and not the single day — fails when somebody sizes a thermal transient on it. The single day is sys_space_environment_f10_7 at 124.14, twenty sfu higher. Reading the wrong one of the two under-sizes a transient case or over-sizes a steady one
 - **evidence** the sustained level this tree's own chain gives for the declared window — expect 104.07110896 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** the level the study publishes for its own window, which this row does not use but a reader will compare against — expect 175.5520201913 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)

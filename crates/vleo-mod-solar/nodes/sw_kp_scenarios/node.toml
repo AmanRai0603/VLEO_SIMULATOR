@@ -1,0 +1,279 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_kp_scenarios"
+label = "Kp in both slots, for all five scenarios"
+folder = "sw_kp_scenarios"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "computed"
+owner = "environment"
+tier = "A"
+# SIGNIFICANT. Ten published values from five inputs through three relations,
+# and the two Kp columns are the last part of the study's driver product this
+# port did not carry. Two reviewers and a differential fill.
+criticality = "significant"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1385
+state = "published"
+
+# THE ROW THAT EXISTS BECAUSE THE BUS PASSES VALUES AND NOT RELATIONS.
+#
+# The study's driver set has five columns per scenario — f107, f107bar, ap,
+# kp_mean, kp_peak. This port carried three of them and §20.8 recorded why not
+# the other two: this tree has all three Kp relations, and none could be used at
+# the seam, because sw_kp_from_ap, sw_kp_mean_bias and sw_kp_slot_bias each
+# answer at ONE Ap and a driver set needs them at five.
+#
+# §20.8 named three ways out. This is the second, finished: the published scale
+# and both measured bias tables now live in vleo-core as named functions, so one
+# row can evaluate all three at five points and publish the ten results. The
+# alternatives were ten more rows, or five members on each of three rows and a
+# combining row after them — thirty variables where twenty do.
+#
+# WHY THE COMBINATION IS HERE AND NOT IN THE CROSSING. l3_solar_interface relays
+# and does not compute; that is §20.3's rule and it is what let the driver set
+# cross as one conclusion. Adding kp_from_ap(ap) + bias to its hole would break
+# it. So the arithmetic is a subsystem row and the crossing relays ten more
+# members, which is what a crossing is for.
+
+migrated_from = "prf_ap2kp.m (01_kernel/sw_study/02_drivers) with prf_density.m's designWindow_ supplying the five Ap"
+# Three relations composed at five points, against a prior implementation that
+# publishes the ten results directly. Pure arithmetic once the tables agree, so
+# the two should agree to the last digits the study printed.
+parity_tolerance = 1e-4
+
+[question]
+text = "What Kp does each of the five driver scenarios carry, in the mean slot and in the peak slot?"
+note = """
+Ten numbers, and they are the last two columns of the study's driver product.
+Every relation behind them already existed on its own row in this subsystem; what
+did not exist was a way to evaluate them at five Ap values at once, because a
+node publishes a value and a consumer cannot ask it for its relation.
+
+The two slots are different questions about the same day. Ap is a daily mean, Kp
+is reported in eight three-hourly slots, and Kp(ap) is concave — so the published
+conversion run on a daily mean lands ABOVE the mean of the eight slots and well
+BELOW the peak. A design sized on the conversion alone is sized on a sky quieter
+than the record's, and on exactly the days a drag design is sized by.
+"""
+
+[maths]
+# A person has NOT read this relation against its source yet.
+confirmed_by = ""
+expression = "Kp_slot(s) = kp_from_ap(Ap_s) + dKp_slot(Ap_s), for each of the five scenarios and each of the two slots"
+source = "iaga_kp_ap"
+
+[[input]]
+binding = "ap_nominal"
+var = "sw_ap_central_expectation"
+type = "Ratio"
+
+[[input]]
+binding = "ap_hotmean"
+var = "sw_ap_design_long"
+type = "Ratio"
+
+[[input]]
+binding = "ap_coldmean"
+var = "sw_ap_cold_long"
+type = "Ratio"
+
+[[input]]
+binding = "ap_hotday"
+var = "sw_ap_design_short"
+type = "Ratio"
+
+[[input]]
+binding = "ap_coldday"
+var = "sw_ap_cold_short"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "convert each scenario's Ap to Kp on the published scale and add the measured slot offset, for both slots"
+binds = "set"
+type = "Answer"
+
+[theory]
+why = """
+Three relations, composed, at five points.
+
+The published IAGA scale turns a daily Ap into a Kp. It is a lookup and not a
+formula, and it is concave — ap grows roughly geometrically with Kp — which is
+the whole reason the slot corrections exist. Run on a DAILY MEAN Ap the scale
+returns a value that sits above the mean of the day's eight three-hourly Kp and
+far below its peak, by Jensen's inequality, and both offsets are measurable on
+the record rather than arguable from the shape.
+
+sw_kp_mean_bias and sw_kp_slot_bias measure them, in nine bins of Ap, as the
+median of mean_8(Kp) - table(Ap) and of max_8(Kp) - table(Ap). Both tables now
+live in vleo-core beside the scale, because more than one caller reads each:
+those two rows at one Ap, and this row at five.
+
+What this row adds is nothing but the composition and the five points. That is
+deliberately thin — a row that did more would be doing physics its own
+constituents already own — and the value of it is that the ten numbers exist as
+variables the crossing can relay, rather than as a relation nothing downstream
+can evaluate.
+"""
+reading = """
+FED THE STUDY'S OWN FIVE Ap VALUES THIS ROW REPRODUCES ALL TEN OF ITS Kp
+NUMBERS TO FOUR DECIMALS — every scenario, both slots, which is what the parity
+grid beside this sheet holds. That is a strong result for a chain of three
+relations and two measured tables, and it says the port of prf_ap2kp is right.
+
+On this tree's own Ap values the three *mean scenarios still agree closely with
+the study — 3.5483 against 3.5481 in the mean slot at nominal — because this
+tree's sustained Ap values are within half a per cent of the study's. The two
+*day scenarios do not, and they are not meant to: this tree's hot Ap day is
+90.55 against the study's 41.54, because the within-rotation band is conditioned
+on the rotation level. So the hot day carries Kp 5.80 in the mean slot and 8.00
+in the peak, against the study's 4.50 and 6.14.
+
+Kp 8.0 in the peak slot is a severe geomagnetic storm, G4. That follows from the
+Ap correction rather than from anything here, and it is the same finding
+l3_solar_req_05 is now failing on.
+"""
+
+[[theory.step]]
+text = "Take each scenario's daily Ap. Five of them, from the five rows that compute them."
+math = "Ap_s for s in {nominal, hotmean, coldmean, hotday, coldday}"
+
+[[theory.step]]
+text = "Convert on the published 28-point IAGA scale, which is a lookup rather than a formula and is clamped at both ends rather than extrapolated."
+math = "base_s = kp_from_ap(Ap_s)"
+
+[[theory.step]]
+text = "Add the measured offset for the slot. The scale is fed a daily MEAN and Kp(ap) is concave, so it reads above the mean of the eight three-hourly slots and far below the peak; both offsets are medians of the record in nine bins of Ap."
+math = "Kp_mean_s = base_s + dKp_mean(Ap_s)   ·   Kp_peak_s = base_s + dKp_peak(Ap_s)"
+
+[[theory.step]]
+text = "Ten results, published as a set, because the crossing carries the driver product as one conclusion and these are two of its five columns."
+
+[[assumption]]
+text = "The offsets are medians over nine bins of Ap and nothing else"
+fails_when = "the day is unusual in a way Ap does not capture. The correction knows the daily mean and the bin it falls in; it does not know whether the day was one long storm or eight quiet slots and one severe one, and those have the same Ap and very different peaks. The median is the middle of that spread, so half of the days in any bin exceed the peak this row publishes"
+
+[[assumption]]
+text = "The tables are clamped at both ends rather than extrapolated"
+fails_when = "a scenario's Ap falls outside them. The scale runs to ap 400 and the bias bins to a centre of 255, so a hot day above that reads the last bin's offset. This tree's hot Ap day is 90.55, inside both; the study's driver sets never exceeded 42. A scenario multiplier applied to a disturbed day would reach the clamp silently"
+
+[[assumption]]
+text = "Both slot corrections are measured on the record and belong to a bundle version"
+fails_when = "the bundle moves. They are medians over bundles/solar-weather@2026.09.14 and must be re-measured when it does. They live in vleo-core, which is the second and third pieces of measured data in a kernel whose own comment used to say SOLAR_CYCLE_SHAPE was the only one — that claim is now wrong and the kernel says so"
+
+[[assumption]]
+text = "This row composes and does not measure, so its errors are its constituents' errors"
+fails_when = "a reader looks here for the physics. The scale is sw_kp_from_ap's, both offsets are sw_kp_mean_bias's and sw_kp_slot_bias's, and the five Ap values are the design rows'. What this row owns is the composition and the choice of five points, and its parity grid is the only place all three are checked together"
+
+[output]
+symbol = "Kp_peak_hotday"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky"
+reason_upper = "Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400. This member is the worst slot of the worst day, so it is the one of the ten most likely to reach it"
+
+[[publishes]]
+id = "kp_mean_nominal"
+symbol = "Kp_mean_nominal"
+label = "Kp, mean slot, nominal scenario"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9; a negative value is a sign error"
+reason_upper = "Kp is defined on 0 to 9"
+
+[[publishes]]
+id = "kp_mean_hotmean"
+symbol = "Kp_mean_hotmean"
+label = "Kp, mean slot, sustained disturbed scenario"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9; a negative value is a sign error"
+reason_upper = "Kp is defined on 0 to 9"
+
+[[publishes]]
+id = "kp_mean_coldmean"
+symbol = "Kp_mean_coldmean"
+label = "Kp, mean slot, sustained quiet scenario"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9; a negative value is a sign error, and the quiet scenarios are the ones that approach the floor"
+reason_upper = "Kp is defined on 0 to 9"
+
+[[publishes]]
+id = "kp_mean_hotday"
+symbol = "Kp_mean_hotday"
+label = "Kp, mean slot, disturbed single day"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9; a negative value is a sign error"
+reason_upper = "Kp is defined on 0 to 9"
+
+[[publishes]]
+id = "kp_mean_coldday"
+symbol = "Kp_mean_coldday"
+label = "Kp, mean slot, quietest single day"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9. This is the lowest of the ten and the one nearest the floor: at the declared window it is 1.27"
+reason_upper = "Kp is defined on 0 to 9"
+
+[[publishes]]
+id = "kp_peak_nominal"
+symbol = "Kp_peak_nominal"
+label = "Kp, peak slot, nominal scenario"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9; a negative value is a sign error"
+reason_upper = "Kp is defined on 0 to 9"
+
+[[publishes]]
+id = "kp_peak_hotmean"
+symbol = "Kp_peak_hotmean"
+label = "Kp, peak slot, sustained disturbed scenario"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9; a negative value is a sign error"
+reason_upper = "Kp is defined on 0 to 9"
+
+[[publishes]]
+id = "kp_peak_coldmean"
+symbol = "Kp_peak_coldmean"
+label = "Kp, peak slot, sustained quiet scenario"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9; a negative value is a sign error"
+reason_upper = "Kp is defined on 0 to 9"
+
+[[publishes]]
+id = "kp_peak_coldday"
+symbol = "Kp_peak_coldday"
+label = "Kp, peak slot, quietest single day"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 9.0
+reason_lower = "Kp is defined on 0 to 9; a negative value is a sign error"
+reason_upper = "Kp is defined on 0 to 9"
+
+[view]
+kind = "number"
