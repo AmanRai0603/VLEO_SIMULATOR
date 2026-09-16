@@ -20,14 +20,15 @@ Open it. You get the tree on the left and a panel on the right. Four layers:
 | layer | what it holds | rows | of those, written |
 |---|---|---|---|
 | 1 | management — the programme's own view | 174 | 0 |
-| 2 | the system — what the spacecraft must do | 319 | 0 |
-| 3 | subsystem — seventeen of them | 836 | 250 |
+| 2 | the system — what the spacecraft must do | 319 | 1 |
+| 3 | subsystem — seventeen of them | 878 | 292 |
 | 4 | the run — what a single evaluation produced | — | — |
 
 `cargo run -p xtask -- status` prints that table, and a second one by
-subsystem. Today 250 of 1329 rows carry content and 1079 are seeded shape
+subsystem. Today 293 of 1371 rows carry content and 1078 are seeded shape
 waiting to be filled — which is the state this tool is designed to be useful
-in, not a defect.
+in, not a defect. One subsystem is written all the way through, solar weather
+at 42 of 42, and section 2b drives it.
 
 Each subsystem reaches the layer above through exactly one node — seventeen
 `l3_*_interface` rows for the seventeen subsystems, and three customer rows
@@ -120,6 +121,116 @@ vleo cases              # what customers' cases supply
 vleo campaign kpi_thrust_margin
 vleo selftest
 ```
+
+---
+
+## 2b · Changing an input and watching the answer move
+
+The worked example, on the subsystem that is written all the way through. Every
+number below is what the commands print.
+
+### What you are allowed to change
+
+Only **declared** rows — the ones where a person picked a number. Everything
+else works its answer out during the run, so a supplied value would be
+overwritten the moment it was evaluated. The tool refuses by name rather than
+accepting it quietly:
+
+```
+$ vleo run sw_f107_design --set sw_central_expectation=150
+vleo: 'sw_central_expectation' is computed from its inputs, so a supplied value
+would be overwritten the moment it is evaluated. Set one of the declared
+numbers it reads instead — `vleo show sw_central_expectation` lists them.
+```
+
+That refusal exists because the silent version is worse: a sweep over a
+computed row draws a flat line and reports "0 refused", which reads exactly
+like a real result.
+
+`vleo show <node>` lists what a row reads. For the solar design flux the
+declared numbers behind it are the mission **epoch**, the mission **duration**,
+and today's **flux**.
+
+### The sun moves, so the launch date is an input
+
+```
+$ vleo run sw_f107_design
+  F107_design = 200.143 -
+```
+
+That is the flux a five-year mission opening on 1 January 2027 should be sized
+to. Move the launch date and nothing else:
+
+| launch | `sys_mission_requirements_mission_epoch` | `F107_design` |
+|---|---|---:|
+| 2018-01-01 | `--set ...=568080000` | 228.332 |
+| **2027-01-01 (declared)** | `--set ...=852076800` | **200.143** |
+| 2032-11-08 | `--set ...=1036800000` | 258.230 |
+
+```
+vleo run sw_f107_design --set sys_mission_requirements_mission_epoch=1036800000
+```
+
+Fifty-eight solar flux units between two launch dates for the same spacecraft,
+because one flies the declining half of cycle 25 and the other flies into the
+next maximum. A `Time` crosses the interface in **seconds** whatever unit the
+sheet declares it in, which is why the epoch is 852076800 and not 9862.
+
+### It changes whether the design closes
+
+`l3_solar_ach_01` is what the subsystem hands upward, against a requirement of
+250:
+
+```
+$ vleo run l3_solar_ach_01 --set sys_mission_requirements_mission_epoch=1036800000
+  sw_f107_design    258.230
+  l3_solar_ach_01   258.230
+```
+
+At the declared epoch the achieved side is 200.14 against 250 and the closure
+passes with 24.9 per cent of room. Slip the launch to late 2032 and it is
+258.23 against the same 250, and it does not pass. Nothing was tuned to make
+that happen and nothing hides it.
+
+### Mission length is not monotone, and that is the point
+
+```
+$ for y in 0.5 2 5 10 15; do vleo run sw_f107_design --set orbit_mission_duration=...; done
+```
+
+| mission | `F107_design` |
+|---|---:|
+| 0.5 yr | 162.547 |
+| 2 yr | 188.326 |
+| 5 yr | 200.143 |
+| 10 yr | 181.080 |
+| **15 yr** | 220.727 |
+
+A longer mission is not reliably a worse sky. Ten years is quieter than five
+because the window averages across a whole cycle; fifteen is worse again
+because it reaches into the next maximum. A tool that fitted a rising curve
+through these would be smoothing away the one feature a mission planner is
+paid to notice.
+
+### The same thing with a picture
+
+`cargo run --release -p vleo-daemon`, then **Solar weather** beside the tree.
+Eight tabs over the record the rows argue about, every control recomputing from
+the bundle:
+
+- **Design** — the return curve against what the vehicle is built for, with the
+  crossing marked. That crossing is `sw_design_safe_duration`, and the picture
+  and the row are reading the same engine.
+- **Forecast → by calendar year** — how the published outlook scored, per year.
+  The line breaks at years too thin to score rather than joining across them.
+- **Repeatability** — every cycle stacked on phase, with cycle 25 dashed
+  because it is still running.
+
+Open any solar row from the tree and its node page carries the same argument in
+ten tabs, including **the relation, moving**: the input crosses its declared
+domain, the answer moves, and the guards are drawn as the walls they are. That
+animation is the engine's own sweep, so a picture that disagrees with the row
+is impossible.
 
 ---
 

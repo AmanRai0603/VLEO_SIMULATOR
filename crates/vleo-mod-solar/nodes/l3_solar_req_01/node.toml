@@ -49,9 +49,14 @@ is the density that flux produces at its altitude, through a model this
 subsystem does not own. A design that meets F10.7 <= 250 and is sized with
 the wrong drag coefficient has met this requirement and will still deorbit
 early. The margin also has no derivation behind it: 250 is a round number
-above 228.14, chosen so the closure passes with visible room rather than by
-a hair, and a design that wants the margin to mean something specific should
-replace it with a number that has a derivation.
+above what the chain then achieved, chosen so the closure passes with visible
+room rather than by a hair, and a design that wants the margin to mean
+something specific should replace it with a number that has a derivation. The
+achieved side has since fallen from 228.14 to 200.14 — sw_central_expectation
+stopped using the record's unconditional mean — so the headroom this round
+number happens to give has widened from 9.6 to 24.9 per cent. The requirement
+has NOT been re-derived to match, and whether it should come down is a decision
+rather than an arithmetic consequence.
 """
 
 [[theory.step]]
@@ -68,19 +73,20 @@ math = "F107 <= F107_req (sense: <=)"
 text = """
 The number starts from the capability the design chain actually produces.
 sw_f107_design at the declared five-year mission is the central expectation
-of 114.84 plus the 95th-percentile growth of 113.29.
+of 86.85 plus the 95th-percentile growth of 113.29.
 """
-math = "F107_design = 228.14 sfu"
+math = "F107_design = 200.14 sfu"
 
 [[theory.step]]
 text = """
 A requirement set exactly at the capability has no room in it: any change in
 mission length or epoch would break the closure without anything being
 wrong. So a margin is added, and this one is a round number rather than a
-calculation — 250 is the next round figure above 228.14, which is 9.6 per
-cent of headroom.
+calculation — 250 was the next round figure above the 228.14 the chain
+achieved when this was written, 9.6 per cent of headroom. The achieved side is
+now 200.14 and the same 250 gives 24.9 per cent.
 """
-math = "250 / 228.14 = 1.096"
+math = "250 / 228.14 = 1.096, when written   ·   250 / 200.14 = 1.249, now"
 
 [[theory.step]]
 text = """

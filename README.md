@@ -54,6 +54,12 @@ with networking disabled.
 It binds `127.0.0.1` and takes the first free port from 7777 upward, printing
 the one it got. Set `VLEO_PORT` to pin it.
 
+To change an input and watch the answer move —
+[`docs/USING_IT.md` §2b](docs/USING_IT.md) drives it end to end on the solar
+rows: only declared numbers can be set, the tool refuses a computed one by
+name, and moving the launch date from 2027 to late 2032 takes the design flux
+from 200.14 to 258.23 sfu and stops the closure passing.
+
 ### In a Codespace, or any devcontainer
 
 `.devcontainer/` pins the toolchain, fills the reference-data store and
