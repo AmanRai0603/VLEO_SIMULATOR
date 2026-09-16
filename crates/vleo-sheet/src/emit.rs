@@ -247,9 +247,16 @@ pub fn contract_rs(sh: &Sheet) -> String {
     }
     o.push_str("];\n");
     o.push_str("/// The variables this node publishes.\n");
+    let mut outs = vec![sh.id.clone()];
+    for pb in &sh.publishes {
+        outs.push(format!("{}.{}", sh.id, pb.id));
+    }
     o.push_str(&format!(
-        "pub const OUTPUT_VARS: &[&str] = &[\"{}\"];\n",
-        sh.id
+        "pub const OUTPUT_VARS: &[&str] = &[{}];\n",
+        outs.iter()
+            .map(|v| format!("\"{}\"", esc(v)))
+            .collect::<Vec<_>>()
+            .join(", ")
     ));
     o.push_str(&format!(
         "/// The SI unit every value crossing this boundary is expressed in.\n\
@@ -1013,11 +1020,24 @@ fn crate_ident(c: &str) -> String {
 pub fn tables_rs(tree: &Tree) -> String {
     let sheets = tree.ordered();
     let n = sheets.len();
-    let idx: BTreeMap<&str, usize> = sheets
+    let mut idx: BTreeMap<String, usize> = sheets
         .iter()
         .enumerate()
-        .map(|(i, s)| (s.id.as_str(), i))
+        .map(|(i, s)| (s.id.clone(), i))
         .collect();
+    // Extra published variables are APPENDED, after every primary. Node i's own
+    // answer stays at index i, so every `inputs: &[51, 54]` already emitted
+    // still points at what it pointed at. Renumbering here would rewire the
+    // whole graph silently, which is the one failure this ordering exists to
+    // make impossible.
+    let mut extras: Vec<(usize, &crate::model::Publish)> = Vec::new();
+    for (i, sh) in sheets.iter().enumerate() {
+        for pb in &sh.publishes {
+            idx.insert(format!("{}.{}", sh.id, pb.id), n + extras.len());
+            extras.push((i, pb));
+        }
+    }
+    let idx = idx;
 
     let mut o = String::new();
     o.push_str("// GENERATED at build time from the sheets. Never committed: it is an\n");
@@ -1028,7 +1048,12 @@ pub fn tables_rs(tree: &Tree) -> String {
     o.push_str("use vleo_core::fault::Fault;\n");
     o.push_str("use vleo_core::graph::{Kind, Limit, NodeDef, Retirement, State, VarDef, View};\n");
     o.push_str("use vleo_core::units::Unit;\n\n");
-    o.push_str(&format!("pub const NODE_COUNT: usize = {n};\n\n"));
+    o.push_str(&format!("pub const NODE_COUNT: usize = {n};\n"));
+    o.push_str(&format!(
+        "/// One per row, plus the extras declared by rows whose answer is a set.\n\
+         pub const VAR_COUNT: usize = {};\n\n",
+        n + extras.len()
+    ));
 
     o.push_str("pub static NODES: [NodeDef; NODE_COUNT] = [\n");
     for sh in &sheets {
@@ -1042,7 +1067,13 @@ pub fn tables_rs(tree: &Tree) -> String {
             })
             .collect::<Vec<_>>()
             .join(", ");
-        let outputs = idx[sh.id.as_str()].to_string();
+        let outputs = {
+            let mut v = vec![idx[sh.id.as_str()].to_string()];
+            for pb in &sh.publishes {
+                v.push(idx[format!("{}.{}", sh.id, pb.id).as_str()].to_string());
+            }
+            v.join(", ")
+        };
         let assumptions = sh
             .assumptions
             .iter()
@@ -1130,7 +1161,7 @@ pub fn tables_rs(tree: &Tree) -> String {
     }
     o.push_str("];\n\n");
 
-    o.push_str("pub static VARS: [VarDef; NODE_COUNT] = [\n");
+    o.push_str("pub static VARS: [VarDef; VAR_COUNT] = [\n");
     for (i, sh) in sheets.iter().enumerate() {
         o.push_str(&format!(
             "    VarDef {{ id: \"{id}\", symbol: \"{sym}\", label: \"{label}\", unit: Unit::{unit}, producer: {p}, \
@@ -1144,6 +1175,22 @@ pub fn tables_rs(tree: &Tree) -> String {
             hi = to_si(sh.upper, &sh.unit),
             rl = esc(&sh.reason_lower),
             ru = esc(&sh.reason_upper),
+        ));
+    }
+    // The extras, after every primary, in the order they were indexed above.
+    for (producer, pb) in &extras {
+        o.push_str(&format!(
+            "    VarDef {{ id: \"{id}\", symbol: \"{sym}\", label: \"{label}\", unit: Unit::{unit}, producer: {p}, \
+             limit: Limit {{ lower: {lo:?}, upper: {hi:?}, reason_lower: \"{rl}\", reason_upper: \"{ru}\" }} }},\n",
+            id = esc(&format!("{}.{}", sheets[*producer].id, pb.id)),
+            sym = esc(&pb.symbol),
+            label = esc(&pb.label),
+            unit = unit_of(&pb.unit).name(),
+            p = producer,
+            lo = to_si(pb.lower, &pb.unit),
+            hi = to_si(pb.upper, &pb.unit),
+            rl = esc(&pb.reason_lower),
+            ru = esc(&pb.reason_upper),
         ));
     }
     o.push_str("];\n\n");

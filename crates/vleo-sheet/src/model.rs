@@ -61,6 +61,37 @@ impl Theory {
     }
 }
 
+/// One extra variable a node publishes beyond its primary answer.
+///
+/// The rule everywhere else is one row, one question, one answer, and the
+/// variable id is the node id. This is the declared exception, and it exists
+/// for one shape of thing: a conclusion that is a SET rather than a number.
+/// The solar subsystem's product is five driver scenarios, each carrying five
+/// quantities; splitting that at the seam would mean layer 2 reassembling
+/// something layer 3 already had, and four crossings would break the rule that
+/// a subsystem has exactly one.
+///
+/// The variable id is `<node id>.<id>`. A node id never contains a dot, so an
+/// extra can never collide with a row, and a reader seeing one knows without
+/// being told that it is part of another row's answer rather than a row.
+///
+/// A sheet that declares none of these is unaffected in every way, including
+/// its hash: the primary answer is still emitted first and still sits at the
+/// same index in the variable table.
+#[derive(Clone, Debug, Default)]
+pub struct Publish {
+    /// The suffix. The full variable id is `<node id>.<id>`.
+    pub id: String,
+    pub symbol: String,
+    pub label: String,
+    pub ty: String,
+    pub unit: String,
+    pub lower: f64,
+    pub upper: f64,
+    pub reason_lower: String,
+    pub reason_upper: String,
+}
+
 /// One declared input.
 #[derive(Clone, Debug, Default)]
 pub struct Input {
@@ -167,6 +198,9 @@ pub struct Sheet {
     pub upper: f64,
     pub reason_lower: String,
     pub reason_upper: String,
+    /// Extra variables published alongside the primary answer. Empty for all
+    /// but the rows whose conclusion is a set; see [`Publish`].
+    pub publishes: Vec<Publish>,
     pub value: Option<f64>,
     pub confirmed_by: String,
     /// Criticality: `"minor"` or `"significant"`.

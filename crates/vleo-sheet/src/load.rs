@@ -174,6 +174,27 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
         sh.reason_lower = s(o.get("reason_lower"));
         sh.reason_upper = s(o.get("reason_upper"));
     }
+    for pb in t
+        .get("publishes")
+        .and_then(|p| p.as_array())
+        .unwrap_or(&vec![])
+    {
+        let pb = match pb.as_table() {
+            Some(x) => x,
+            None => continue,
+        };
+        sh.publishes.push(crate::model::Publish {
+            id: s(pb.get("id")),
+            symbol: s(pb.get("symbol")),
+            label: s(pb.get("label")),
+            ty: s(pb.get("type")),
+            unit: s(pb.get("unit")),
+            lower: f(pb.get("lower")),
+            upper: f(pb.get("upper")),
+            reason_lower: s(pb.get("reason_lower")),
+            reason_upper: s(pb.get("reason_upper")),
+        });
+    }
     if let Some(val) = t.get("value").and_then(|v| v.as_table()) {
         sh.value = Some(f(val.get("number")));
         sh.confirmed_by = s(val.get("confirmed_by"));
