@@ -13,11 +13,26 @@ hazards in the git data itself.
 
 What does not move is everything GitHub was doing *around* the git data.
 
+> **The `.gitlab-ci.yml` this plan describes is no longer in the repository.**
+> It was a complete second copy of all twelve jobs, and because the transfer
+> did not happen, nothing ever ran it — so nothing ever caught it going out of
+> date. By the time it was removed it had already missed the `xtask variables`
+> regeneration step, the change from a per-branch to a per-pull-request
+> trigger, and every cache key. A pipeline that is wrong and unrunnable is
+> worse than no pipeline, because a reader assumes it is current.
+>
+> It is not lost: `git log --diff-filter=D -- .gitlab-ci.yml` finds the commit
+> that removed it and `git show <commit>^:.gitlab-ci.yml` prints the last
+> version. Anyone resuming this transfer should regenerate it from the CURRENT
+> `.github/workflows/gate.yml` rather than restore that copy, which is exactly
+> the work this section was always describing.
+
+
 | | moves on a mirror push | needs work |
 |---|---|---|
 | commits, branches, tags | yes | — |
 | commit authorship | yes, unchanged | see §2 |
-| the 12 CI jobs | no | `.gitlab-ci.yml`, written |
+| the 12 CI jobs | no | `.gitlab-ci.yml`, **written and then removed — see below** |
 | CODEOWNERS enforcement | file moves, effect does not | **Premium** |
 | the release approval | no | **Premium** |
 | pull requests #1–#14 | no | importer only, see §3 |
