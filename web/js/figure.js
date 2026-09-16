@@ -99,6 +99,19 @@ export function drawStatus(disp) {
     $('#caserow-note').textContent = '';
     return;
   }
+  // Every view that is not the layer view returns above. Without this guard
+  // one that forgets to fell through to the crumb below and described the
+  // LAST LAYER SELECTION instead of itself: the solar view printed
+  // "Layer 3 · Solar weather — addition · C1 · sw_recurrence_lag · 0 rows ·
+  // 1 box · 0 crossing · 5 against tree order" over the mean-cycle chart,
+  // every figure of it stale, including a tree-order count from a matrix that
+  // was no longer on screen. A status line that describes something else is
+  // worse than none, because it is read as a caption.
+  if (S.view !== 'layer') {
+    $('#status').textContent = 'a view with no status line of its own';
+    $('#caserow-note').textContent = '';
+    return;
+  }
   const bits = ['Layer ' + S.layer, LAYERS[S.layer].name];
   if (S.layer === 3 && S.G.has(S.subsys)) bits[1] = S.G.get(S.subsys).label;
   bits.push(S.caseSel.toUpperCase(), S.selected || '—',

@@ -22,16 +22,16 @@ tolerance = 0.02
 # check two has to wait on the content changing rather than on a fixed pause.
 settle_ms = 8000
 
-# The solar view is not where the page opens, and each tab is a separate
-# panel sharing one canvas. This drives to the view and selects this tab;
-# panel_check re-runs it after every input to restore the starting state.
+# A figure lives on the row it argues about, so driving it means opening that
+# row. There is no solar view any more: it was a sixth item in a navigation
+# whose subtitle says four layers, and it showed solar weather in a second
+# place that disagreed with layer 3. panel_check re-runs this after every
+# input to restore the starting state.
 ready = """(async () => {
-  S.view = 'solar';
-  draw();
-  await new Promise(r => setTimeout(r, 150));
-  const tab = document.querySelector('.sw-tab[data-panel=climate]');
-  if (!tab) throw new Error('no tab for the climate panel');
-  tab.click();
+  await window.openNode('sw_central_expectation');
+  await new Promise(r => setTimeout(r, 200));
+  const cv = document.querySelector('.row-figure canvas.sw-panel');
+  if (!cv) throw new Error('no figure on sw_central_expectation for the climate panel');
 })()"""
 
 [[input]]
