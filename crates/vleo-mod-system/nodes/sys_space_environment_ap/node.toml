@@ -2,47 +2,127 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sys_space_environment_ap"
-label = "Ap"
+label = "Ap, sustained"
 folder = "sys_space_environment_ap"   # frozen at seed; renaming the label never moves the directory
 subsystem = "sys"
 parent = "sys_space_environment"
 kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
-# Where this row sits among its siblings, as whoever wrote them ordered
-# them. Folders sort alphabetically and a tree that reads alphabetically
-# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
-# reverses the order the source put them in, and the order is part of
-# what the source said.
-order = 308
-state = "empty"
+order = 309
+state = "published"
 
-# SEEDED — the folder exists and nothing has been specified in it.
-# Every field below is required before anything can be generated. An
-# open field blocks generation, which is the mechanism: ambiguity
-# becomes a blocking item on an engineer's screen rather than
-# something an implementer resolves silently.
+# THE SINGLE-DAY HALF. sys_space_environment_solar_flux receives the level the
+# mission SUSTAINS; this receives what one day inside it reaches. The convention
+# for a layer-2 row reading a crossing is set on that row and copied here: read
+# `l3_solar_interface` and nothing else inside l3_solar, name the member of the
+# set this row is about, compute nothing.
+#
+# The member is `l3_solar_interface.ap_hotmean`.
+
+
+# THE DEFAULT AT LAYER 2 IS THE SUSTAINED SCENARIO, decided 2026-09-16.
+#
+# The crossing carries five scenarios. Every row under this heading takes the
+# SUSTAINED one — the level the mission sits in for months — because that is
+# what the system designs to by default. The two *day scenarios are SPIKES: real
+# cases, carried by the crossing, and not what a default reads.
+#
+# A consequence worth seeing rather than hiding: on a sustained scenario the
+# daily value and its 81-day mean ARE THE SAME NUMBER, by construction — a
+# *mean scenario is its own 81-day mean, which is why the study's own driver set
+# has f107 == f107bar on exactly those three rows. So sys_space_environment
+# _solar_flux, _f10_7 and _f10_7_81day all read 104.07 at the declared window.
+# Three rows, one number, and that is the physics rather than a duplication:
+# they diverge the moment a spike scenario is read, where the day is 124.14 and
+# the mean beneath it is still 104.07.
+#
+# A row that wants a spike names the member: f107_hotday, ap_hotday,
+# kp_peak_hotday. None exists yet, because nothing at layer 2 has asked for one.
 
 [question]
-text = ""
+text = "What geomagnetic index does the system design to, as a level sustained over the mission?"
+note = """
+A day at this level may cost a safe mode, a slewed array and some propellant;
+what it may not cost is the vehicle. That is a different design case from the
+sustained level its sibling carries, and the two are separate rows here because
+they are separate rows in the subsystem below.
+"""
 
 [maths]
-expression = ""
-source = ""
+# A person has NOT read this relation against its source yet.
+confirmed_by = ""
+expression = "Ap_sys = l3_solar_interface.ap_hotmean"
+source = "noaa_swpc"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "crossing"
+var = "l3_solar_interface.ap_hotmean"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "receive the subsystem's single-day conclusion across the seam"
+binds = "received"
+type = "Ratio"
+
+[theory]
+why = """
+A layer-2 row states what the SYSTEM works with. It does not compute the
+environment, so what it does is receive — from the one node of the subsystem
+below that is visible from here, and from nothing else inside it.
+
+Which MEMBER of the crossing's set it receives is the whole content of the row.
+The crossing publishes fifteen variables and five of them are fluxes in the same
+range with the same unit and the same declared domain, so naming the wrong one
+would change this number without anything in the tree noticing. This row names
+`l3_solar_interface.ap_hotday`: the hot scenario, single day.
+"""
+reading = """
+90.55 at the declared window.
+
+It inherits every limitation of the chain beneath it and a reader here sees none
+of them. It stacks two one-sided percentiles — a band edge on the rotation level
+and a within-rotation percentile on top — so the day it describes is rarer than
+the confidence attached to it, nearer one in a hundred than one in twenty. And
+the band it stacks is 1.28 sigma, the 90th percentile, while the run is labelled
+95 per cent. The credibility vector crosses the seam; that does not.
+"""
+
+[[theory.step]]
+text = "The system layer states what it works with and does not compute the environment. So the row receives."
+
+[[theory.step]]
+text = "It receives from the subsystem's one visible node, naming the member of the set it is about."
+math = "Ap_sys = l3_solar_interface.ap_hotmean — identity, deliberately"
+
+[[assumption]]
+text = "It receives and does not compute, and a reader here sees none of the subsystem's limitations"
+fails_when = "a margin is taken against this number. It stacks a 1.28-sigma band edge on the rotation level with a within-rotation percentile on top, which is nearer a one-in-a-hundred day than a one-in-twenty one, and the two terms are not independent because a disturbed rotation is made of disturbed days. None of that crosses the seam"
+
+[[assumption]]
+text = "It names one member of a fifteen-variable set, and five of them look alike"
+fails_when = "the wrong member is named. The crossing's f107 column alone holds five values in the same range with the same unit and the same declared domain, and the ap column another five. Assembly checks that the variable EXISTS and that its type matches; nothing checks that it is the one this row meant"
+
+[[assumption]]
+text = "It is the single day and not the sustained level"
+fails_when = "somebody integrates it over a mission. The sustained level is what sys_space_environment_solar_flux carries, and a drag budget or an array sizing built on a single-day value is designing for a sky the mission does not sit in"
 
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.
-# A unit is a decision, not data. None of these is filled yet.
-symbol = ""
-type = ""
-unit = ""
+symbol = "Ap_sys"
+type = "Ratio"
+unit = "One"
 lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+upper = 400.0
+reason_lower = "the crossing's own floor, restated. A row that narrowed the range it received would be changing the answer while appearing to relay it"
+reason_upper = "the crossing's own ceiling, restated. This is a single-day value, so it is the one most likely of the pair to approach it"
 
 [view]
 kind = "number"
-

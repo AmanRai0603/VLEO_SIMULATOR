@@ -788,3 +788,602 @@ statistic is fitted on the record **outside** the kernel, and the fit's
 coefficients are declared in the sheet where a reviewer can see them, with the
 residual against the empirical curve declared as an assumption. What must never
 happen is a coefficient appearing only in a hole body.
+
+## 20 · The correction: the driver product, long and short term
+
+§18 above describes a seam that was built differently and a layer 2 that was
+never written. This section records what is actually there, what was decided on
+2026-09-16, and the order the correction goes in. It supersedes §18's account of
+what crosses.
+
+### 20.1 · What is actually there
+
+| | measured state |
+|---|---|
+| layer 2, all six `sys_space_environment_*` rows | `computed` and **`empty`** — nothing receives anything |
+| `l3_solar_interface` | `F107_crossing = F107_design` — **F10.7 only**; Ap never crosses |
+| `l3_solar_req_01` / `ach_01` | `F107_req = 250` ← `sw_f107_design` |
+| `l3_solar_req_02` / `ach_02` | `F107_req = 250 at 95%` ← `sw_f107_design` — **the same quantity again** |
+| `l3_solar_req_03` / `ach_03` | `Ap_req = 150` ← `sw_storm_return_level` |
+| long term / short term | **no rows at all** |
+| `sys_mission_requirements_mission_duration` | `declared` and **`empty`**, while `orbit_mission_duration` is published at layer 3 |
+
+So the subsystem has 35 study rows and two distinct conclusions, one of which
+crosses; the far side of the seam is unwritten; and the split this section
+exists to add does not exist.
+
+### 20.2 · What long and short term are, in the study's own numbers
+
+`matlab/reference/mission_drivers.csv` is the tool's saved output for one run —
+window opening 2027-06-26, 365 days, 95 per cent, Kp slot `mean`:
+
+| scenario | f107 | f107bar | ap | kp_mean | kp_peak |
+|---|---|---|---|---|---|
+| nominal | 158.3304 | 158.3304 | 22.0925 | 3.5481 | 4.7953 |
+| hotmean | 175.6064 | 175.6064 | 26.6833 | 3.8311 | 5.1968 |
+| coldmean | 141.0544 | 141.0544 | 17.5017 | 3.1669 | 4.2780 |
+| hotday | 209.7546 | 175.6064 | 41.5352 | 4.5009 | 6.1367 |
+| coldday | 109.7211 | 141.0544 | 6.8721 | 1.8533 | 2.8116 |
+
+The three `*mean` scenarios have `f107 == f107bar`: they are the **window mean**,
+what the mission sustains — the LONG TERM. The two `*day` scenarios have
+`f107 != f107bar`: a single day riding on the mean beneath it — the SHORT TERM.
+A design sizes its array and its propellant against different ones of these, and
+a tool that publishes only one has decided for the reader which.
+
+`tools/mat_parity.py` already carries this as an open finding in its own words:
+*"MATLAB turns (date, duration, confidence) into five driver sets. The port has
+no such row."*
+
+### 20.3 · The decision about crossing
+
+A subsystem publishes exactly one crossing row; there are seventeen and no
+exceptions, and §18 left "how a subsystem with more than one conclusion crosses"
+unsettled for all twenty-one interfaces. It is settled here:
+
+> **`l3_solar_interface` publishes the driver set as one conclusion.** Not four
+> crossings, and not one number chosen as governing. The study's product is the
+> set; splitting it at the seam would mean layer 2 reassembling something layer
+> 3 already had.
+
+What that costs is a change to what a row may publish. The kernel does not need
+one: `call(inputs: &[f64], outputs: &mut [f64])` already takes a slice, and the
+bus already carries `Vec<ValueOut>`. Only the generator assumes one output —
+`crates/vleo-sheet/src/emit.rs` writes `OUTPUT_VARS` with a single name. The
+sheet gains repeatable `[[publishes]]` blocks and `emit.rs` writes the list.
+Every existing sheet declares one and is unaffected.
+
+### 20.4 · The rows to add
+
+Long and short term as separate published rows, because a design reads one or
+the other and a reader must see which:
+
+| row | kind | what it answers |
+|---|---|---|
+| `sw_mean_band_spread` | computed | the ±1.28σ that makes hotmean and coldmean from the centre |
+| `sw_daily_band_spread` | computed | the within-rotation percentile a single day adds on top |
+| `sw_f107_design_long` | computed | the sustained F10.7 to design to — the mean band |
+| `sw_f107_design_short` | computed | the single-day F10.7 to survive — the daily band |
+| `sw_ap_design_long` | computed | the sustained Ap |
+| `sw_ap_design_short` | computed | the single-day Ap |
+| `sw_driver_set` | computed | the five scenarios assembled, which the interface publishes |
+
+The Kp columns need no new rows: `sw_kp_from_ap`, `sw_kp_slot_bias` and
+`sw_kp_mean_bias` already produce both slots.
+
+Then four required/achieved pairs, one per design output, replacing the three
+that exist — `req_01`/`ach_01` and `req_02`/`ach_02` answer the same quantity
+today and collapse into one.
+
+### 20.5 · Layer 2, and the duration
+
+`sys_space_environment_solar_flux` receives the driver set — it is the headline
+and the other two read from it. `_f10_7` and `_ap` receive their design values.
+`_atmospheric_density`, `_thermospheric_wind` and `_atomic_oxygen_fluence` stay
+seeded: no subsystem computes them, and filling a row from nothing is the defect
+the density panel exists to point at.
+
+`sys_mission_requirements_mission_duration` is filled and becomes the one
+declared duration. `orbit_mission_duration` reads it rather than declaring its
+own; two rows declaring a mission length is two rows that can disagree about how
+long the mission is. That is a change in another subsystem and goes through its
+owner.
+
+### 20.6 · What may not be a fixture
+
+**The five driver sets are parity data, not fixtures.** `model.migrated_from`
+says it plainly: an implementation cannot supply its own expected values. Every
+new row above needs expected values derived independently — from the paper, from
+the record, or by a person working the arithmetic — and `mission_drivers.csv`
+goes in `parity.csv` beside the node, where a disagreement is a finding about
+one of the two rather than a check either has passed.
+
+That is the expensive part of this section and it is not optional.
+
+### 20.7 · The order
+
+1. The generator: `[[publishes]]` in the sheet, `OUTPUT_VARS` as a list. No node
+   changes; the regeneration diff must come back empty for all 1371.
+2. `sys_mission_requirements_mission_duration` filled, `orbit_mission_duration`
+   routed to read it.
+3. The two spread rows, then the four design rows, each with independently
+   derived fixtures.
+4. `sw_driver_set`, then `l3_solar_interface` re-specified to publish it.
+5. The four required/achieved pairs, replacing the three.
+6. Layer 2: three rows written, three left seeded and saying why.
+
+Each step is a pull request that stops for review, as §19 requires. A step that
+cannot get its expected values from outside the code does not proceed to the
+next.
+
+### 20.8 · What steps 3 and 4 actually did, and where they departed
+
+Written after the fact, against what is in the tree. Four departures from §20.4
+and §20.7, each with its reason.
+
+**Six rows were added that §20.4 did not list.** The four design rows publish the
+HOT side only — `sw_f107_design_long`'s own third theory step says "one-sided,
+because a design is sized against the high side; the cold case is its own
+scenario and not this row" — so the five scenarios need a cold side that did not
+exist. Two measured rows for the low tail of the within-rotation sample
+(`sw_daily_band_drop` 31.2722, `sw_ap_daily_band_drop` 10.5889), because the two
+tails are not each other's negation: the F10.7 tails differ by nine per cent and
+the Ap tails by forty-two, both because the quantities are bounded below and not
+above. Then four relations (`sw_f107_cold_long`, `sw_f107_cold_short`,
+`sw_ap_cold_long`, `sw_ap_cold_short`). Composing the cold side inside the
+interface instead would have put the 1.28 in a hole body, which is what the
+gate's portable-maths check exists to refuse.
+
+**`sw_driver_set` was NOT built, and the interface publishes the set directly.**
+§20.3 decided that `l3_solar_interface` publishes the driver set as one
+conclusion, and §20.4 then listed a separate row to assemble it for the interface
+to republish. That is thirty variables where fifteen do, each of the fifteen
+equal to one of the other fifteen, and a second place for the scenario-to-value
+mapping to be decided. The assembly is selection rather than arithmetic — no
+value is combined with another — and §20.3's rule is that a crossing relays. So
+the interface reads the ten producing rows and publishes fifteen members.
+
+**The Kp columns do not cross.** The study's driver set has five columns; this
+one has three. `sw_kp_from_ap`, `sw_kp_mean_bias` and `sw_kp_slot_bias` all
+exist, and none can be used here, because the bus passes a node's VALUE and not
+its RELATION: each answers at one Ap and a driver set needs them at five. Three
+ways out, none free — those three rows each publish a set of five keyed to the
+scenarios; or the ap-to-Kp scale and both bias tables move into `vleo-core` as
+named functions, at the cost of putting measured data in the kernel; or ten more
+rows exist, one per scenario per slot. Until one is chosen a consumer needing Kp
+must convert it itself, which is the duplication the crossing exists to prevent.
+This is the one part of §20.4 that is not done rather than done differently.
+
+**The seam refuses, and that is the state to review.** `sw_f107_cold_short` is
+blocked on the nominal case: `sw_central_expectation` reads the cycle analogue
+and gives 86.8497 sfu at the declared epoch rather than the study's 158.33, and a
+symmetric 1.28-sigma band with a 5th-percentile daily drop stacked on it reaches
+38.36, below the floor of 60 that every relation reading F10.7 declares. The
+guard is right — 38 sfu has never been observed — and the construction is what is
+wrong at a centre that low. All three candidate resolutions are upstream: a
+phase-conditioned sigma rather than one pooled across the cycle; empirical
+percentiles of the residuals rather than a normal multiplier on a skewed sample;
+and not stacking a day's departure on a rotation already at its band's low edge.
+The crossing is the AND of ten rows, so it refuses with it. Nothing reads the
+crossing yet, so the refusal is contained to that row — but step 6 writes layer 2
+against it, and one of the three has to be settled first.
+
+### 20.9 · The order, revised
+
+1. ~~The generator: `[[publishes]]` in the sheet, `OUTPUT_VARS` as a list.~~ Done,
+   and finished afterwards: the sheet could declare a set and the contract still
+   wrote one slot, so the members were never published.
+2. ~~`sys_mission_requirements_mission_duration` filled, `orbit_mission_duration`
+   routed to read it.~~ Done.
+3. ~~The two spread rows, then the four design rows.~~ Done, plus the six cold-side
+   rows 20.4 did not foresee.
+4. ~~`sw_driver_set`, then `l3_solar_interface` re-specified.~~ Done as the
+   interface alone. The Kp columns are outstanding.
+5. ~~The four required/achieved pairs, replacing the three.~~ Done as FIVE pairs,
+   for the reason in 20.10 below.
+6. ~~Layer 2: three rows written, three left seeded and saying why.~~ Done; see
+   20.13.
+
+### 20.10 · What step 5 did, and where it departed
+
+**Five pairs, not four.** §20.4 said "four required/achieved pairs, one per
+design output, replacing the three that exist". Replacing all three would have
+dropped `req_03`/`ach_03`, and that pair asks a question none of the four design
+outputs asks: `sw_storm_return_level` is an extreme-value return level, the one
+storm expected in the whole mission, while `sw_ap_design_short` is the top of an
+ordinary design band. At the declared window they are 158.38 and 41.70 — a
+factor of nearly four. A single ceiling covering both would have to be the storm
+one, and the design would then be claiming to operate through a G3 storm. So
+`req_03`/`ach_03` is untouched and there are five pairs:
+
+| pair | question | required | achieved |
+|---|---|---|---|
+| 01 | F10.7, sustained | 250 sfu | 104.07 |
+| 02 | F10.7, single day | 350 sfu | 138.30 |
+| 04 | Ap, sustained | 48 | 26.70 |
+| 05 | Ap, single day | 80 | 41.70 |
+| 03 | Ap, the one storm | 150 | **158.38 — does not close** |
+
+**Four requirement rows lost their confirmation, and two of them kept their
+number.** `req_01` still says 250 and `req_03` still says 150. But `req_01`'s
+question narrowed from "what solar flux must this design survive" to "what
+SUSTAINED F10.7 must it operate in", and the question is inside the sheet hash,
+so the name against it was against a sheet that no longer exists. `req_02`'s
+number moved as well, 250 to 350. `req_04` and `req_05` are new. All four are
+gate-red on `declared-value` and each says on its own sheet exactly what a
+person would be agreeing to.
+
+**Two requirement numbers now have derivations and two still do not.** `req_04`
+and `req_05` are the published ap equivalent amplitudes at Kp 5 and Kp 6, the G1
+and G2 thresholds, so a reader can check them against a scale. `req_02`'s 350 is
+anchored at the record's largest daily F10.7, 343 sfu on 2023-02-17, rounded up.
+`req_01`'s 250 is still what it always was — the next round number above what
+the chain achieved when it was written — and its headroom has drifted from 9.6
+per cent to 140, because the achieved side went from 228.14 to 104.07 across two
+separate changes. A ceiling the environment cannot approach is a closure that
+cannot fail, which is the one thing a requirement must be able to do. Re-deriving
+it the way `req_04` and `req_05` are derived is the obvious move and it is a
+decision rather than an arithmetic consequence.
+
+**`sw_f107_design` now has no consumers.** It was the subsystem's headline and
+all three of its readers — both closures and the interface — moved to the design
+rows in steps 4 and 5. It is not wrong and it was not replaced: it answers a
+different question, a one-sided 95th-percentile persistence drift from today's
+value rather than the width of the window. But a published number nothing reads
+is a number nobody checks. Give it a consumer, deprecate it, or leave it
+published with the paragraph now on its sheet; retiring a row is a decision
+about the tree.
+
+**Nothing in the tree evaluates a closure.** `sense` is declared on each
+requirement row and the gate checks only that it is present; the pairing is a
+convention the matrix draws. So `req_03` failing at 158.38 against 150 is visible
+to a reader of the matrix and to nothing else, and has been since it was written.
+That is the largest finding of this step and it is not a solar-weather problem —
+it is true of every closure in the tree.
+
+### 20.11 · The daily band is a curve, not a number
+
+The refusal 20.8 recorded is settled, and settling it changed four published
+design levels. This is the largest correction the port has made and it is a
+departure from the source rather than a reproduction of it.
+
+**What was wrong.** `designWindow_` reads one percentile of the within-rotation
+departure over the 2001 days before the window and applies it wherever it is
+needed. The departure is not one number. Measured over the whole record and
+conditioned on the level of the rotation each day sits in, the 95th percentile
+runs from 4.63 sfu at a rotation of 70 to 46.93 at 210 — a factor of ten — and on
+Ap from 6.02 at Ap 4 to 63.85 at Ap 26, a factor of eleven. A fixed-window
+percentile is that statistic MIXED over whatever levels fell in the window, so it
+is right near the mean level of its own sample and wrong everywhere else.
+
+The study never met the failure because its centre was high: it holds its last
+rotation forecast forward and gets 158.33 sfu, close to the 136.63 its sample
+averaged. This port reads the cycle analogue and gets 86.85, so the old drop of
+31.27 was being applied at a rotation of 69.63 and gave 38.36 sfu — below the
+floor of 60 and below anything ever observed. `sw_f107_cold_short` refused and
+the seam refused with it.
+
+**What replaced it.** The four daily rows are `computed` instead of `declared`.
+Each reads the sustained level it applies at — the hot day rides on the hot mean
+and the cold day on the cold mean, so each row is evaluated at exactly the one
+point its consumer needs, which is why a level-conditioned table can live on a
+row at all given the bus passes values and not relations. The table in each hole
+is measured by one stated rule: a geometric ladder of knots, each bin every day
+whose rotation sits within 15 per cent of the knot, a knot kept while its bin
+holds at least 200 days and both tails stay monotone, the ladder stopping at the
+last knot that passes. Seven knots for F10.7 from 70 to 210, eight for Ap from 4
+to 26.
+
+**What moved.**
+
+| | was | is |
+|---|---|---|
+| `sw_f107_design_short` | 138.30 | 124.14 |
+| `sw_f107_cold_short` | refused | 65.24 |
+| `sw_ap_design_short` | 41.70 | **90.55** |
+| `sw_ap_cold_short` | 6.91 | 4.93 |
+
+The Ap correction is the one to read. The declared window's sustained Ap is
+26.70 against a sample mean of 11.64, so the old single number understated the
+band by more than four times: the previous Ap single-day design level was less
+than half what the record supports for the subsystem's own hot scenario. **A
+design sized on 41.70 was under-designed by a factor of two.**
+
+**What it broke.** `l3_solar_req_05` commits the design to one day at the G2
+threshold, Ap 80, and the achieved side is now 90.55. That closure fails, and the
+requirement has NOT been moved to make it pass. Two of the five closures in this
+group now fail and neither is visible to any machine check in this repository.
+
+**What the four rows lost.** `migrated_from` and their parity grids. They no
+longer answer the question `prf_density.m:221` answers, so a grid against it
+would compare two answers to two different questions. For the record, at the mean
+rotation level of the study's own 2001-day sample the F10.7 table gives 32.10
+against the study's 34.15 — the level-mixed statistic is about six per cent
+wider, which is what mixing distributions of different widths does to a tail.
+
+**What is still open.** Two of the three resolutions 20.8 named are untouched and
+neither would have been enough on its own: the daily drop alone took 86.85 below
+60, so no change to sigma could have saved it. A sigma measured for the window's
+own phase rather than pooled across the cycle, and empirical percentiles of the
+residuals in place of a normal multiplier on a skewed sample, both remain worth
+doing. And the table conditions on LEVEL but not on cycle PHASE: a rotation at
+100 sfu on a rising cycle and one at 100 sfu on a declining cycle get the same
+band, and the record does not say they should.
+
+### 20.12 · req_01, re-derived
+
+`l3_solar_req_01` committed the design to 250 sfu because 250 was the next round
+number above what the chain achieved when the row was written. That number
+tracked the design rather than the sky: two later changes moved the achieved side
+to 104.07 and the same 250 became 140 per cent of headroom — a ceiling the
+environment cannot approach, which is a closure that cannot fail.
+
+It is now 260 sfu, anchored the way `req_02`, `req_04` and `req_05` are anchored:
+in something a reader can check. The largest 27-day mean F10.7 in 28.2 years is
+252.67, centred 2024-08-13, and the 27-day mean is the right timescale because
+the achieved side is a band on rotation-mean forecasts. Rounded up to the next
+ten, the commitment is that the design operates through any rotation the record
+has ever shown. `confirmed_by` is empty: the anchor is a fact about the record,
+but the commitment is a claim about a spacecraft.
+
+All four of this group's F10.7 and Ap ceilings now have derivations. None of them
+has a name against it.
+
+### 20.13 · What step 6 did
+
+Three layer-2 rows written, three left seeded. `sys_space_environment` had six
+empty rows and no layer-3 group to answer them — which is the gap
+`layers/l3_solar.toml` opens by describing, and which the solar-weather subsystem
+was added to fill. These are the far side of the crossing, and the first layer-2
+rows in the repository to receive anything.
+
+| row | receives | at the declared window |
+|---|---|---|
+| `_solar_flux` | `l3_solar_interface` (primary) | 104.07 sustained |
+| `_f10_7` | `l3_solar_interface.f107_hotday` | 124.14 single day |
+| `_ap` | `l3_solar_interface.ap_hotday` | 90.55 single day |
+
+`vleo run sys_space_environment_ap` walks 22 nodes with none blocked, from the
+pinned record through the subsystem, across the seam, to layer 2.
+
+**The convention these set, since sixteen more subsystems will copy it.** A
+layer-2 row reads its subsystem's interface node and NOTHING else inside that
+subsystem. It computes nothing — it is an identity, and its declared range is the
+crossing's own restated, because a row that narrowed the range it received would
+be changing the answer while appearing to relay it. Where the crossing publishes
+a set, the layer-2 row names the member it is about; five of the fifteen members
+are fluxes in the same range with the same unit and the same declared domain, so
+naming the wrong one changes the number and nothing in the tree notices.
+
+**Two gate holes this found.** Teaching the node-level contract check about
+`<node>.<member>` inputs in step 4 was not enough — two other places resolved a
+variable by node id alone. The assembly edge check called every member input
+dangling, which is a loud failure. The CYCLE DETECTOR silently skipped them,
+which is not: an edge it cannot follow is a loop it cannot find, and a cycle the
+resolver cannot see is a run that does not terminate rather than a gate failure.
+Both now resolve through a shared helper.
+
+**The three left seeded, and what each is waiting on.** No subsystem computes
+them, and filling a row from nothing is the defect this heading's empty rows
+exist to point at. Each now carries a comment block naming what writing it would
+need, because five layer-2 rows are waiting on these three:
+
+- `_atmospheric_density` is the single row between the solar record and the drag
+  budget; `sys_mass_and_aero_drag_acceleration`, `sys_propulsion_decay_rate` and
+  `sys_thermal_free_molecular_heat_flux` all read it. A density model needs
+  (altitude, F10.7 daily, F10.7 81-day, Kp). The daily flux now arrives; **the
+  81-day mean does not** — the crossing publishes `f107bar` for all five
+  scenarios and no layer-2 row receives it, which is a row rather than a
+  redesign — and **Kp does not cross at all**, which is §20.8's open finding.
+- `_thermospheric_wind` needs a horizontal wind model. The drivers it would take
+  are now here; the model is a subsystem's worth of work.
+- `_atomic_oxygen_fluence` follows from density, so it is waiting on a row that
+  is waiting on a subsystem that does not exist.
+
+**§20 is now complete as a plan.** What remains from it is not a step but three
+named findings: the Kp columns, the 81-day mean, and the two closures that do not
+hold. Two of those are dealt with in 20.14; the closures are decisions.
+
+### 20.14 · Two of the three findings, closed
+
+**The 81-day mean now reaches layer 2.** `sys_space_environment_f10_7_81day`
+receives `l3_solar_interface.f107bar_hotday`. It was one row, as 20.13 said it
+would be. A density model takes the daily value and the 81-day mean together
+because the two carry different physics — the day's EUV heating and the
+background state the atmosphere has settled into — and it now has both.
+
+The member's name is the trap and the sheet says so: `f107bar_hotday` is the hot
+MEAN, 104.07, not the 81-day mean of the hot day. A `*day` scenario is a single
+day riding on the sustained level beneath it, so its 81-day companion is that
+sustained level, and only the three `*mean` scenarios have the two equal. The
+design pair is (124.14 daily, 104.07 background).
+
+**The ap-to-Kp table was written twice and the two copies disagreed.**
+`vleo_core::physics::env::kp_from_ap` held the 28 published pairs with Kp
+tabulated as decimals — 0.33, 0.67 — while `sw_kp_from_ap`'s hole held the same
+pairs in exact thirds, which is how IAGA defines the index. They differed by up
+to 0.0033 Kp everywhere between the anchors.
+
+Nothing caught it for as long as both existed, and WHY is the part worth keeping.
+That node's eleven fixtures are `published-source`, drawn from the table's own
+anchor points, and the anchors are precisely where two transcriptions of one
+table agree. A fixture set drawn only from a source's tabulated points cannot see
+a transcription error in what lies between them. The kernel's own comment on
+`SOLAR_CYCLE_SHAPE` had already stated the principle — "a hand-copied table
+drifts from its original without anything noticing" — and cited `kp_from_ap` as
+the example of doing it right, while `kp_from_ap` was the thing that had drifted.
+
+The kernel's copy is now in thirds and is the only one; the node calls it. No
+published value moved, because the node was already using the correct
+transcription. This also makes the relation callable from any hole, which is the
+second of §20.8's three ways out for the Kp columns.
+
+**What is left of §20 is three decisions, none of them mine.** The Kp columns
+still do not cross. `l3_solar_req_05` fails at 90.55 against 80 and
+`l3_solar_req_03` at 158.38 against 150. And seven rows carry a measured number
+or a design commitment with no name against them.
+
+### 20.15 · The Kp columns cross, and three things that assumed one row means one variable
+
+The driver set now carries all five of the study's columns. `sw_kp_scenarios`
+reads the five scenario `Ap` values and publishes ten `Kp` — two slots across
+five scenarios — and `l3_solar_interface` relays them, taking the crossing from
+fifteen members to twenty-five. `sys_space_environment_kp` receives the one a
+design reads, the peak slot of the disturbed day.
+
+**Fed the study's own five `Ap`, this chain reproduces all ten of its `Kp`
+numbers to the four decimals it printed.** For three relations and two measured
+tables composed at five points that is as close as the published precision
+allows, and it is what the parity grid holds.
+
+The resolution taken is §20.8's second: the published scale and both measured
+slot-bias tables live in `vleo-core` as named functions, so one row can evaluate
+all three at five points. The arithmetic is a subsystem row and not the crossing,
+because §20.3's rule is that a crossing relays — putting `kp_from_ap(ap) + bias`
+in the interface's hole would be subsystem work done where no subsystem reviewer
+reads it.
+
+The kernel now holds three pieces of measured data where its own comment used to
+say `SOLAR_CYCLE_SHAPE` was the only one. That claim is corrected rather than
+quietly falsified, and the rule it rests on is the reason both tables moved:
+more than one caller reads each, and a hand-copied table drifts.
+
+**THREE PLACES ASSUMED A ROW PUBLISHES EXACTLY ONE VARIABLE.** All three were
+written long before `[[publishes]]` existed, none was wrong until a set row
+existed, and only one failed loudly.
+
+- `Scratch.slots` was sized at `NODE_COUNT`. A slot is one VARIABLE. It panicked
+  on the first set row — the right failure, found in §20.11's probe.
+- `MAX_INPUTS` was 16, hand-written. The crossing now declares 20. `eval` sliced
+  to the cap, so the node silently received four fewer inputs, and what surfaced
+  was the generated length guard refusing the short slice — reported as a node
+  "blocked on an input that has never run", which is not what had happened. Both
+  caps are now EMITTED FROM THE TREE by the generator, measured as the actual
+  maxima, so neither can be outgrown by a sheet again.
+- The daemon's `/v1/index` emitted VARIABLE indices in each row's `in` array, and
+  the face reads that array as ROW indices. Identical numbers while the two were
+  1:1. A member's variable index sits past the end of the row list, so
+  `state.js` indexed off the end of an array, threw inside `ingest()`, and every
+  panel then drew from broken state: the matrix rendered nothing at all, the
+  design panel differed from its reference in 100 per cent of pixels, density in
+  4.6 and climate in 2.9.
+
+**That last one shipped.** It went in with §20.13's layer-2 rows, which were the
+first member-variable edges in the tree, and it was not caught because
+`tools/panel_check.py` was read as passing when it had in fact crashed before
+printing a verdict. The gate was green throughout — nothing in the KERNEL was
+wrong — and the whole failure lived in the one place the gate does not look. It
+is the argument for `panel_check` being in CI, which it is, and against reading
+a tail of its output as a result.
+
+### 20.16 · The gate is green, and four decisions that made it so
+
+`xtask gate` reports **1393 nodes, 0 node check failures, 0 assembly failures**
+for the first time on this branch. Everything that closed it was a person's
+decision on 2026-09-16, because everything that was open needed one.
+
+**Seven rows confirmed.** Three measured — `sw_mean_band_spread` 13.454382,
+`sw_ap_mean_band_spread` 3.593688, `sw_ap_central_expectation` 22.095389 — and
+four design commitments. Each sheet records what was agreed to alongside the
+name, so a later reader sees the claim and not only the signature.
+
+**Two closures raised, and neither to make the arithmetic pass.**
+
+`l3_solar_req_05` went from the G2 threshold, 80, to G3, 132. The level-
+conditioned band took `sw_ap_design_short` from 41.70 to 90.55, and a one-day
+commitment at G2 is simply below what this window presents — 90.55 is a G3-G4
+day. It now closes with 46 per cent of room.
+
+`l3_solar_req_03` went from 150 to 207, the G4 threshold, and the framing
+changed with it. The old sheet REJECTED exactly this number: "a margin chosen so
+the closure passes would have to exceed 158.4, which means about 200 — and 200
+sits in G4 territory, committing the vehicle on paper to a level it is not built
+for." That objection holds for an OPERATING commitment, and it is why
+`sw_storm_design_level` is untouched at G3 and the four exceedance rows do not
+move. It does not hold for a SURVIVAL one, which is what this row asks: what
+must not DESTROY the mission. Its own `reason_upper` already said G4 is
+"handled by operating through the event rather than by building for it".
+
+So 158.38 now sits BETWEEN the two levels — above the 132 the vehicle operates
+through, below the 207 it must survive — and that is more informative than
+either verdict alone: the mission will meet a storm it cannot work through and
+will not be destroyed by it. The three exceedance rows still measure the
+operating violation: 1.42 days over five years, about 1.24 events, longest run
+2 days in 29 years.
+
+All five requirements in this group are now anchored on something a reader can
+check — two on the record's own extremes, three on published G thresholds. None
+can pass merely because its number was picked above whatever the chain gave,
+which was true of exactly one of them before.
+
+**Layer 2 defaults to the sustained scenario.** The crossing carries five; every
+row under `sys_space_environment` now takes the sustained one, because that is
+what the system designs to by default and the two `*day` scenarios are spikes.
+`_ap` moved from 90.55 to 26.70 and `_kp` from 8.00 to 5.20.
+
+A consequence worth seeing rather than hiding: on a sustained scenario the daily
+value and its 81-day mean ARE the same number — a `*mean` scenario is its own
+81-day mean, which is why the study's driver set has `f107 == f107bar` on
+exactly those three rows. So `_solar_flux`, `_f10_7` and `_f10_7_81day` all read
+104.07. Three rows, one number, and it is the physics rather than a duplication:
+they diverge the moment a spike scenario is read, where the day is 124.14 and
+the mean beneath it is still 104.07. A row wanting a spike names the member; none
+exists because nothing at layer 2 has asked for one.
+
+**`sw_f107_design` is deprecated.** All three of its readers moved to the band-
+width rows across steps 4 and 5. The gate stops treating it as live and the
+contract check refuses it as a NEW dependency, so nothing picks it up by
+accident. What it answers — a one-sided persistence drift from today's value —
+is still a real question, and reviving it is now a deliberate act.
+
+### 20.17 · Three more places that assumed one row means one variable
+
+20.15 named three: `Scratch.slots`, `MAX_INPUTS`, and the daemon's index. That
+list was a description of the kernel, and the same assumption was in the FACE.
+A set row reached the run correctly and was then described wrongly by everything
+that reads the tree.
+
+**The interface table showed one output of twenty-five.** Its own opening line
+is *"Every input and output, typed, with its unit. If it is not here it is not
+an interface"* — so on `l3_solar_interface` that sentence was false about 24
+variables. The table now emits one row per published member, showing the full
+dotted variable, its symbol, type and unit, and says how many the set holds. A
+member sits indented behind the primary, so the table reads as one answer plus
+its set rather than twenty-five equal outputs: the first is the answer the node
+is NAMED for, and that distinction is what `kind` and the bus both act on.
+
+**An input on a member printed `?` for its unit.** The unit was looked up by the
+whole dotted name in the sheet map, which holds nodes. A member's unit is
+declared on the producing node's `[[publishes]]` entry and is read from there
+now; the cross-reference opens the producing node, because that is the page
+which answers it.
+
+**The dependency edges into both set rows did not exist.** The consumers line,
+and the `in` list in the index the shell loads, matched inputs against node ids.
+`sys_space_environment_ap` reads `l3_solar_interface.ap_hotmean`, so it was
+counted as reading nothing and the interface reported three readers where it has
+five. In the index this was the SAME mismatch as the matrix defect in `83ea5910`
+— variable names where row indices were meant — and silent for the same reason:
+`filter_map` drops what does not resolve. Both now map a variable to the node
+that answers it, and the edge list is de-duplicated, because a node reading
+twenty members of one interface is one edge and not twenty.
+
+**And `docs/VARIABLES.md` was wrong about 33 variables.** It says it holds every
+variable in the tree, its unit, its range, the reason for each bound, and what
+reads it; it held one of the interface's twenty-five and one of
+`sw_kp_scenarios`' ten. Each member now gets its own entry under the row that
+publishes it. That file is generated precisely so a register maintained by hand
+cannot drift, which is what makes being wrong in it worse than being wrong in
+prose: nobody was going to check it.
+
+The shape of all six is the same, and worth stating once for the next set row: a
+NODE and a VARIABLE stopped being the same thing when `[[publishes]]` was added,
+and every place that had conflated them was silent about it. Three failed in the
+kernel — one loudly, two quietly — and three in the face, where nothing fails at
+all; a page simply says something untrue. The generators are the defence, so
+what they emit is now derived from the variable list rather than the row list.
+Resolving a variable to the node that answers it is the operation that was
+missing everywhere, and it is now written four times — `producer_of` in
+`gate.rs` and in `page.rs`, the `producer` field on `VARS` in the daemon, and
+the reader test in the register generator. That is three too many, and worth
+collapsing into `vleo-sheet` the next time one of them needs a change.

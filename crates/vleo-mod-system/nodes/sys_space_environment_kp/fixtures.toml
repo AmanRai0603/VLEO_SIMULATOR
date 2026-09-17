@@ -1,0 +1,31 @@
+# Known-good values, and where each came from.
+#
+# A RECEIVING ROW'S EVIDENCE IS THAT IT CHANGES NOTHING
+#
+# There is no physics at a seam. What can go wrong is that the row alters what it
+# carries, and the failure is invisible because both sides look plausible. So
+# every fixture is the identity, at a value taken from somewhere real.
+
+[[fixture]]
+label = "the peak-slot Kp this tree's own chain gives for the declared window's disturbed day — a G4 severe storm"
+expect = 7.9966133710
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "iaga_kp_ap"
+inputs = { crossing = 7.9966133710 }
+
+[[fixture]]
+label = "the study's own kp_peak for its hotday scenario, 6.1367, carried so the two ports' numbers are visible together"
+expect = 6.1367
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "iaga_kp_ap"
+inputs = { crossing = 6.1367 }
+
+[[fixture]]
+label = "Kp 5 exactly, the G1 storm threshold and an anchor of the published scale"
+expect = 5.0
+tolerance = 1e-12
+provenance = "published-source"
+source = "iaga_kp_ap"
+inputs = { crossing = 5.0 }

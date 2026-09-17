@@ -15,9 +15,22 @@ on:
   #
   # Nothing reaches main except through a pull request, and `pull_request`
   # fires on every push to an open one, so no mergeable commit goes untested.
-  # What is given up is CI on a branch with no pull request open yet -- where
-  # the local gate is the check that is actually load-bearing, because a person
-  # is still writing.
+  # What is given up is CI on a branch with no pull request open yet.
+  #
+  # THAT COST IS LARGER THAN THIS COMMENT USED TO CLAIM. It said the local gate
+  # is the check that is actually load-bearing there. The local gate is
+  # `xtask gate && cargo test`, and it does not run tools/panel_check.py --
+  # which is the only check the visual layer has, and which this repository's
+  # own areas/document.md says is where the defects actually live. So on a
+  # branch with no pull request the visual layer has NO automatic check at all.
+  #
+  # It is not hypothetical. Eleven commits ran on this branch with no pull
+  # request; a daemon change broke the face's index; the matrix rendered
+  # nothing and three panels went out of tolerance; the local gate was green
+  # throughout and correctly so, because nothing in the kernel was wrong.
+  # Anyone working a branch without a pull request open should run
+  # `python3 tools/panel_check.py` by hand before pushing, and read its EXIT
+  # CODE rather than its last line.
   push:
     branches: ["main"]
   pull_request:

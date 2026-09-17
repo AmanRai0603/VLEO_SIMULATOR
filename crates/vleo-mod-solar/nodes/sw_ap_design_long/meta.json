@@ -1,0 +1,17 @@
+{
+  "id": "sw_ap_design_long",
+  "state": "published",
+  "sheet_hash": "b53157",
+  "impl_hash": "b1318b",
+  "owner": "environment",
+  "tier": "A",
+  "fixtures": 3,
+  "criticality": "significant",
+  "reviewers": 2,
+  "differential_fill": true,
+  "migrated_from": "prf_density.m:217 (01_kernel/sw_study/06_density, designWindow_, hotmean for ap)",
+  "holes": 1,
+  "inputs": ["sw_ap_central_expectation", "sw_ap_mean_band_spread"],
+  "contributes": [],
+  "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did"]
+}

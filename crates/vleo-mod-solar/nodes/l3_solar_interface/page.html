@@ -1,4 +1,4 @@
-<article class="node" data-node="l3_solar_interface" data-sheet-hash="cd32a9" data-impl-hash="59681f">
+<article class="node" data-node="l3_solar_interface" data-sheet-hash="826449" data-impl-hash="a6bede">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Solar weather — subsystem interface</h2>
@@ -18,65 +18,147 @@
 </div>
 <section class="panel sel" data-panel="0">
 <p class="question">What does the solar-weather subsystem conclude, for a system reader who will not open it?</p>
-<p class="maths"><code>F107_crossing = F107_design</code></p>
+<p class="maths"><code>driver_set = {nominal, hotmean, coldmean, hotday, coldday} x {f107, f107bar, ap}, each member relayed from the row that computed it</code></p>
 <p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
-<p class="note">One row, one number, no reaching in. Everything the subsystem establishes — the record, the cycle, the storms, the slot bias, the spread — arrives at sw_f107_design, and this carries that across to sys_space_environment. A reader who wants the working opens l3_solar and finds forty rows; a reader who wants the answer opens this one.</p>
+<p class="note">One row, one conclusion, no reaching in. Everything the subsystem establishes —
+the record, the cycle, the storms, the slot bias, the two spreads, both tails of
+each — arrives at five design scenarios, and this carries them across to
+sys_space_environment as one thing.
+
+Five scenarios because that is what the study's product is and what a design
+reads: nominal is where the mission sits, the two *mean scenarios are what it
+SUSTAINS for months, and the two *day scenarios are what one day inside that
+reaches. An array is sized on a sustained level and a thermal transient on a
+day. A tool that published one of the five would have decided for the reader
+which of those their problem is.
+</p>
 <h4>Assumptions</h4>
 <dl class="asm">
-<dt>It carries the F10.7 driver only, and the subsystem concludes more than that</dt><dd>fails when sys_space_environment holds six rows — solar flux, F10.7, Ap, atmospheric density, thermospheric wind, atomic oxygen fluence — and this crossing answers one of them. The Ap side is measured and published inside the subsystem (sw_storm_return_level, and the peak-slot correction in sw_kp_slot_bias) and does not cross yet, because one row publishes one number and the convention allows exactly one crossing per subsystem. How a subsystem with more than one conclusion crosses is the same unsettled question as the kind above, and it is unsettled for all twenty-one interfaces, not just this one.</dd>
-<dt>It inherits every limitation of the row beneath it, and a system reader sees none of them</dt><dd>fails when this is the ordinary cost of a seam and it is worth stating where the seam is. The number crossing here is a 95th percentile and not a worst case. Its centre is now the cycle analogue at the mission's own epoch rather than the record's unconditional mean, so this chain does read the epoch; what the centre cannot tell you is which kind of cycle comes next, because beyond this one it is scaled by the mean of two. A reader at layer 2 sees 228 sfu and a credibility vector, and would have to open sw_f107_design and then sw_central_expectation to learn any of that. The credibility travels; the assumptions do not.</dd>
+<dt>The Kp columns do not cross, and the study's driver set has two of them</dt><dd>fails when a consumer needs Kp. The study publishes kp_mean and kp_peak per scenario, formed from that scenario's Ap by the published ap-to-Kp scale plus a measured slot bias. This tree has all three relations — sw_kp_from_ap, sw_kp_mean_bias, sw_kp_slot_bias — and cannot use them here, because the bus passes a node's VALUE and not its RELATION: each of those rows answers at one Ap, and a driver set needs them at five. Three ways out, none of them free: those three rows each publish a set of five, keyed to the scenarios; or the ap-to-Kp scale and both bias tables move into vleo-core as named functions this hole can call, at the cost of putting measured data in the kernel; or ten more rows exist, one per scenario per slot. Until one is chosen the Ap column crosses and the Kp columns do not, and a consumer that needs Kp must convert it itself — which is the duplication this row exists to prevent</dd>
+<dt>It relays and does not compute, and the f107bar column is the edge of that claim</dt><dd>fails when somebody calls the f107bar mapping a calculation. No value is combined with another and no constant appears; what happens is that one input is published under two names, because the study's hotday scenario carries hotmean's 81-day mean beneath it. If that is computation then a crossing cannot carry a set at all, and §20.3's decision needs revisiting rather than this hole</dd>
+<dt>Every member inherits every limitation of the row beneath it, and a system reader sees none of them</dt><dd>fails when this is the ordinary cost of a seam and it is worth stating where the seam is. The two *mean scenarios are 1.28-sigma bands, which is the 90th percentile and not the 95 per cent the run is labelled; the two *day scenarios stack a second one-sided percentile on top, which is nearer a 1-in-100 day than a 1-in-20; and the centre beneath all five is a cycle analogue that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles, whose peaks differ by 41 per cent. A reader at layer 2 sees fifteen numbers and a credibility vector, and would have to open five rows to learn any of that. The credibility travels; the assumptions do not</dd>
+<dt>One refused member refuses the whole set</dt><dd>fails when this is read as a defect in the seam. It is the seam's job: a driver set with one member the record cannot support is not a driver set, and publishing four members and a hole would put the judgement about which was which above the seam. It does mean this row's availability is the AND of ten rows, so the seam is the least available thing in the subsystem by construction</dd>
 </dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="why">A four-layer tree is only worth having if each layer can be reasoned about without opening the ones below it. That requires a rule about seams, and the rule taken here is the strict one: a subsystem is reached through exactly one node, never by reaching into it. This row is that node for solar weather, and it computes nothing — it republishes the subsystem's conclusion so that the seam is a row somebody owns rather than an edge nobody looks at. It is also the first written crossing in the repository, so what it does sets a convention for twenty more.</p>
-<div class="theory-walk" data-steps="5">
+<p class="why">A four-layer tree is only worth having if each layer can be reasoned about without opening the ones below it. That requires a rule about seams, and the rule taken here is the strict one: a subsystem is reached through exactly one node, never by reaching into it. This row is that node for solar weather, and it computes nothing — it relays what the subsystem concluded so that the seam is a row somebody owns rather than an edge nobody looks at.</p>
+<p class="why">What crosses is a SET, and the argument for that is the same argument as for the seam itself. The study's product is five driver scenarios; a design reads one or another of them depending on what it is sizing. Crossing one number chosen as governing would push the choice of scenario above the seam, where the subsystem's reasons for it are not visible. Crossing four separate times would break the rule that a subsystem has exactly one crossing. Assembling the set at layer 2 from fifteen separate reaches into l3_solar would break the rule that a layer is not reached into. So the set crosses whole, through one row.</p>
+<p class="why">The f107bar column is the one place this row does anything other than copy. The three *mean scenarios have f107 == f107bar: they ARE the window mean, so the daily value and the 81-day mean beneath it are the same number. The two *day scenarios do not: a hot day rides on the hotmean level and a cold day on the coldmean level, so their f107bar is the corresponding mean rather than their own f107. That is selection and not arithmetic — no value is combined with another — and it is written out member by member in the hole body rather than inferred, so a reader can check the mapping against the study's own table.</p>
+<div class="theory-walk" data-steps="6">
 <ol class="derive">
 <li><span class="dt">The property to be preserved is that a layer is independently reasonable. If any row at layer 2 could read any row at layer 3, the layers would be a drawing rather than a structure, and a change inside a subsystem could reach anywhere.</span></li>
-<li><span class="dt">The mechanism is to allow exactly one node per subsystem to be visible from above. Then the surface a subsystem presents is one number wide, and every consumer of it is reading the same thing.</span></li>
-<li><span class="dt">Which forces the crossing to be a pass-through rather than a calculation. A crossing that computed anything would be doing subsystem work in a place no subsystem reviewer reads, and the number a system reader saw would not exist anywhere inside the subsystem.</span><code class="dm">F107_crossing = F107_design — identity, deliberately</code></li>
-<li><span class="dt">The declared range is copied from the producer for the same reason. Narrowing it would refuse answers the subsystem considers valid, and widening it would admit answers the subsystem would refuse — either way the crossing would be changing the answer while appearing to relay it.</span></li>
-<li><span class="dt">One reading of this row was NOT taken, and it is worth stating because a reviewer can overturn it cheaply now and expensively later. kind = &quot;required&quot; could mean this row states a spacecraft CAPABILITY — the worst sky the design can sustain — with the environment's answer arriving as the achieved side, which is how layers/l3_solar.toml frames the three req/ach pairs. On that reading this row would be kind = &quot;achieved&quot;. The two differ in which side of the closure the row sits on, which is not a detail.</span></li>
+<li><span class="dt">The mechanism is to allow exactly one node per subsystem to be visible from above. Then the surface a subsystem presents is one row wide, and every consumer of it is reading the same thing.</span></li>
+<li><span class="dt">Which forces the crossing to relay rather than calculate. A crossing that computed anything would be doing subsystem work in a place no subsystem reviewer reads, and the number a system reader saw would not exist anywhere inside the subsystem.</span><code class="dm">each member = the row that computed it — identity, deliberately</code></li>
+<li><span class="dt">And it forces the SET across rather than a number out of it. A design reads the sustained level or the single day depending on what it is sizing, and choosing between them is the reader's decision, not the seam's.</span><code class="dm">{nominal, hotmean, coldmean, hotday, coldday} x {f107, f107bar, ap}</code></li>
+<li><span class="dt">The f107bar column is selection and not arithmetic. A *mean scenario's 81-day mean is its own value; a *day scenario's is the mean it rides on.</span><code class="dm">f107bar(*mean) = f107(*mean) · f107bar(hotday) = f107(hotmean) · f107bar(coldday) = f107(coldmean)</code></li>
+<li><span class="dt">Every member's declared range is copied from the producer, for the same reason the relation is an identity. Narrowing one would refuse answers the subsystem considers valid and widening one would admit answers it would refuse — either way the crossing would be changing the answer while appearing to relay it.</span></li>
 </ol>
 </div>
 <h4>Reading the answer</h4>
-<p class="reading">It carries the F10.7 driver only, and the subsystem concludes more than that. The Ap side is measured and published inside the subsystem and does not cross, because one row publishes one number and the convention allows one crossing per subsystem. How a subsystem with more than one conclusion crosses is unsettled, for all twenty-one interfaces. And a system reader sees 228 sfu with a credibility vector and none of the assumptions underneath it: the credibility travels across the seam, the assumptions do not.</p>
-<p class="maths concl">which is the relation this node states: <code>F107_crossing = F107_design</code></p>
+<p class="reading">THIS ROW REFUSED UNTIL THE DAILY BANDS WERE CONDITIONED ON LEVEL, and how it came back is the best argument for the seam existing. One member, coldday f107, came from sw_f107_cold_short, which was blocked: a daily drop of 31.27 measured over rotations averaging 136.63 sfu, subtracted from a rotation at 69.63, gave 38.36 — below the floor of 60 and below anything ever observed. A crossing is the AND of its members by construction, so the whole set refused for one impossible scenario. That is the seam doing its job: the alternative is four honest members and one arithmetic one crossing into layer 2 where nothing knows which was which.</p>
+<p class="reading">What it publishes at the declared window:</p>
+<p class="reading">f107 nominal 158.33 hotmean 175.55 coldmean 141.11 hotday 124.14 coldday 65.24 f107bar nominal 158.33 hotmean 175.55 coldmean 141.11 hotday 175.55 coldday 141.11 ap nominal 22.10 hotmean 26.70 coldmean 17.50 hotday 90.55 coldday 4.93</p>
+<p class="reading">The two *day rows are the ones the level conditioning moved, and it moved them in opposite directions: the F10.7 hot day fell from 138.30 because the window's sustained level is below the old band's sample mean, and the Ap hot day more than doubled from 41.70 because it is far above it.</p>
+<p class="maths concl">which is the relation this node states: <code>driver_set = {nominal, hotmean, coldmean, hotday, coldday} x {f107, f107bar, ap}, each member relayed from the row that computed it</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr><td>in</td><td><code>conclusion</code></td><td><a class="xref" data-goto="sw_f107_design">sw_f107_design</a></td><td>Ratio</td><td>-</td></tr>
-<tr class="out"><td>out</td><td><code>F107_crossing</code></td><td>l3_solar_interface</td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>f107_centre</code></td><td><a class="xref" data-goto="sw_central_expectation">sw_central_expectation</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>f107_hot_long</code></td><td><a class="xref" data-goto="sw_f107_design_long">sw_f107_design_long</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>f107_cold_long</code></td><td><a class="xref" data-goto="sw_f107_cold_long">sw_f107_cold_long</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>f107_hot_day</code></td><td><a class="xref" data-goto="sw_f107_design_short">sw_f107_design_short</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>f107_cold_day</code></td><td><a class="xref" data-goto="sw_f107_cold_short">sw_f107_cold_short</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>ap_centre</code></td><td><a class="xref" data-goto="sw_ap_central_expectation">sw_ap_central_expectation</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>ap_hot_long</code></td><td><a class="xref" data-goto="sw_ap_design_long">sw_ap_design_long</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>ap_cold_long</code></td><td><a class="xref" data-goto="sw_ap_cold_long">sw_ap_cold_long</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>ap_hot_day</code></td><td><a class="xref" data-goto="sw_ap_design_short">sw_ap_design_short</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>ap_cold_day</code></td><td><a class="xref" data-goto="sw_ap_cold_short">sw_ap_cold_short</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>kp_mean_nominal</code></td><td><a class="xref" data-goto="sw_kp_scenarios">sw_kp_scenarios.kp_mean_nominal</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>kp_mean_hotmean</code></td><td><a class="xref" data-goto="sw_kp_scenarios">sw_kp_scenarios.kp_mean_hotmean</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>kp_mean_coldmean</code></td><td><a class="xref" data-goto="sw_kp_scenarios">sw_kp_scenarios.kp_mean_coldmean</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>kp_mean_hotday</code></td><td><a class="xref" data-goto="sw_kp_scenarios">sw_kp_scenarios.kp_mean_hotday</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>kp_mean_coldday</code></td><td><a class="xref" data-goto="sw_kp_scenarios">sw_kp_scenarios.kp_mean_coldday</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>kp_peak_nominal</code></td><td><a class="xref" data-goto="sw_kp_scenarios">sw_kp_scenarios.kp_peak_nominal</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>kp_peak_hotmean</code></td><td><a class="xref" data-goto="sw_kp_scenarios">sw_kp_scenarios.kp_peak_hotmean</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>kp_peak_coldmean</code></td><td><a class="xref" data-goto="sw_kp_scenarios">sw_kp_scenarios.kp_peak_coldmean</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>kp_peak_hotday</code></td><td><a class="xref" data-goto="sw_kp_scenarios">sw_kp_scenarios</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>kp_peak_coldday</code></td><td><a class="xref" data-goto="sw_kp_scenarios">sw_kp_scenarios.kp_peak_coldday</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>F107_hotmean</code></td><td>l3_solar_interface</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>F107_nominal</code></td><td>l3_solar_interface.f107_nominal</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>F107_coldmean</code></td><td>l3_solar_interface.f107_coldmean</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>F107_hotday</code></td><td>l3_solar_interface.f107_hotday</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>F107_coldday</code></td><td>l3_solar_interface.f107_coldday</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>F107bar_nominal</code></td><td>l3_solar_interface.f107bar_nominal</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>F107bar_hotmean</code></td><td>l3_solar_interface.f107bar_hotmean</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>F107bar_coldmean</code></td><td>l3_solar_interface.f107bar_coldmean</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>F107bar_hotday</code></td><td>l3_solar_interface.f107bar_hotday</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>F107bar_coldday</code></td><td>l3_solar_interface.f107bar_coldday</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Ap_nominal</code></td><td>l3_solar_interface.ap_nominal</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Ap_hotmean</code></td><td>l3_solar_interface.ap_hotmean</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Ap_coldmean</code></td><td>l3_solar_interface.ap_coldmean</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Ap_hotday</code></td><td>l3_solar_interface.ap_hotday</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Ap_coldday</code></td><td>l3_solar_interface.ap_coldday</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_mean_nominal</code></td><td>l3_solar_interface.kp_mean_nominal</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_mean_hotmean</code></td><td>l3_solar_interface.kp_mean_hotmean</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_mean_coldmean</code></td><td>l3_solar_interface.kp_mean_coldmean</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_mean_hotday</code></td><td>l3_solar_interface.kp_mean_hotday</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_mean_coldday</code></td><td>l3_solar_interface.kp_mean_coldday</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_peak_nominal</code></td><td>l3_solar_interface.kp_peak_nominal</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_peak_hotmean</code></td><td>l3_solar_interface.kp_peak_hotmean</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_peak_coldmean</code></td><td>l3_solar_interface.kp_peak_coldmean</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_peak_hotday</code></td><td>l3_solar_interface.kp_peak_hotday</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_peak_coldday</code></td><td>l3_solar_interface.kp_peak_coldday</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
-<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+<p class="muted">This node answers with a set: <b>25</b> variables in all. The first is the answer the node is named for; the rest are read by name.</p>
+<p class="consumers"><b>5</b> nodes read this: <a class="xref" data-goto="sys_space_environment_ap">sys_space_environment_ap</a>, <a class="xref" data-goto="sys_space_environment_f10_7">sys_space_environment_f10_7</a>, <a class="xref" data-goto="sys_space_environment_f10_7_81day">sys_space_environment_f10_7_81day</a>, <a class="xref" data-goto="sys_space_environment_kp">sys_space_environment_kp</a>, <a class="xref" data-goto="sys_space_environment_solar_flux">sys_space_environment_solar_flux</a></p>
 </section>
 <section class="panel" data-panel="3">
 <ol class="algo">
-<li><span class="step">carry the subsystem's F10.7 conclusion across the seam unchanged</span> <span class="binds">→ <code>crossing: Ratio</code></span></li>
+<li><span class="step">assemble the five scenarios from the ten rows that computed them, and carry them across the seam unchanged</span> <span class="binds">→ <code>set: Answer</code></span></li>
 </ol>
 <h4>Pseudocode</h4>
-<pre class="pseudo"><code>function l3_solar_interface(conclusion: Ratio) -> Ratio
-    given conclusion from sw_f107_design
-    // carry the subsystem's F10.7 conclusion across the seam unchanged
-    crossing ← step 1
+<pre class="pseudo"><code>function l3_solar_interface(f107_centre: Ratio, f107_hot_long: Ratio, f107_cold_long: Ratio, f107_hot_day: Ratio, f107_cold_day: Ratio, ap_centre: Ratio, ap_hot_long: Ratio, ap_cold_long: Ratio, ap_hot_day: Ratio, ap_cold_day: Ratio, kp_mean_nominal: Ratio, kp_mean_hotmean: Ratio, kp_mean_coldmean: Ratio, kp_mean_hotday: Ratio, kp_mean_coldday: Ratio, kp_peak_nominal: Ratio, kp_peak_hotmean: Ratio, kp_peak_coldmean: Ratio, kp_peak_hotday: Ratio, kp_peak_coldday: Ratio) -> Ratio
+    given f107_centre from sw_central_expectation
+    given f107_hot_long from sw_f107_design_long
+    given f107_cold_long from sw_f107_cold_long
+    given f107_hot_day from sw_f107_design_short
+    given f107_cold_day from sw_f107_cold_short
+    given ap_centre from sw_ap_central_expectation
+    given ap_hot_long from sw_ap_design_long
+    given ap_cold_long from sw_ap_cold_long
+    given ap_hot_day from sw_ap_design_short
+    given ap_cold_day from sw_ap_cold_short
+    given kp_mean_nominal from sw_kp_scenarios.kp_mean_nominal
+    given kp_mean_hotmean from sw_kp_scenarios.kp_mean_hotmean
+    given kp_mean_coldmean from sw_kp_scenarios.kp_mean_coldmean
+    given kp_mean_hotday from sw_kp_scenarios.kp_mean_hotday
+    given kp_mean_coldday from sw_kp_scenarios.kp_mean_coldday
+    given kp_peak_nominal from sw_kp_scenarios.kp_peak_nominal
+    given kp_peak_hotmean from sw_kp_scenarios.kp_peak_hotmean
+    given kp_peak_coldmean from sw_kp_scenarios.kp_peak_coldmean
+    given kp_peak_hotday from sw_kp_scenarios
+    given kp_peak_coldday from sw_kp_scenarios.kp_peak_coldday
+    // assemble the five scenarios from the ten rows that computed them, and carry them across the seam unchanged
+    set ← step 1
 
     // a guard whose reason is not written down gets deleted
-    require F107_crossing ≥ 60
-    require F107_crossing ≤ 400
-    require F107_crossing is finite
+    require F107_hotmean ≥ 60
+    require F107_hotmean ≤ 400
+    require F107_hotmean is finite
 
-    return F107_crossing
+    return F107_hotmean
 </code></pre>
 <p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code>F107_crossing &ge; 60</code> — the same floor as env_f107 and sw_f107_design: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A crossing that narrowed or widened the range it carries would be changing the answer, so it declares the producer's own bounds</li>
-<li><code>F107_crossing &le; 400</code> — the same ceiling as env_f107 and sw_f107_design: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. Restating it here means a system reader sees the limit without opening the subsystem</li>
+<li><code>F107_hotmean &ge; 60</code> — the same floor as env_f107 and every design row beneath this one: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A crossing that narrowed or widened the range it carries would be changing the answer, so it declares the producer's own bounds</li>
+<li><code>F107_hotmean &le; 400</code> — the same ceiling as env_f107 and every design row beneath this one: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. Restating it here means a system reader sees the limit without opening the subsystem</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="4">
-<div class="relation-host" data-node="l3_solar_interface" data-lo="60" data-hi="400" data-symbol="F107_crossing">
+<div class="relation-host" data-node="l3_solar_interface" data-lo="60" data-hi="400" data-symbol="F107_hotmean">
 <p class="muted">asking the engine…</p>
 </div>
 </section>
@@ -94,52 +176,384 @@ use vleo_core::units::*;
 
 /// What does the solar-weather subsystem conclude, for a system reader who will not open it?
 ///
-/// `F107_crossing = F107_design`
+/// `driver_set = {nominal, hotmean, coldmean, hotday, coldday} x {f107, f107bar, ap}, each member relayed from the row that computed it`
 ///
 /// Source: `noaa_swpc`
 ///
-/// One row, one number, no reaching in. Everything the subsystem establishes
-/// — the record, the cycle, the storms, the slot bias, the spread —
-/// arrives at sw_f107_design, and this carries that across to
-/// sys_space_environment. A reader who wants the working opens l3_solar and
-/// finds forty rows; a reader who wants the answer opens this one.
+/// One row, one conclusion, no reaching in. Everything the subsystem
+/// establishes — the record, the cycle, the storms, the slot bias, the two
+/// spreads, both tails of each — arrives at five design scenarios, and this
+/// carries them across to sys_space_environment as one thing. Five scenarios
+/// because that is what the study's product is and what a design reads:
+/// nominal is where the mission sits, the two *mean scenarios are what it
+/// SUSTAINS for months, and the two *day scenarios are what one day inside
+/// that reaches. An array is sized on a sustained level and a thermal
+/// transient on a day. A tool that published one of the five would have
+/// decided for the reader which of those their problem is.
 ///
 /// # Assumptions
 ///
-/// * It carries the F10.7 driver only, and the subsystem concludes more than that — fails when sys_space_environment holds six rows — solar flux, F10.7, Ap, atmospheric density, thermospheric wind, atomic oxygen fluence — and this crossing answers one of them. The Ap side is measured and published inside the subsystem (sw_storm_return_level, and the peak-slot correction in sw_kp_slot_bias) and does not cross yet, because one row publishes one number and the convention allows exactly one crossing per subsystem. How a subsystem with more than one conclusion crosses is the same unsettled question as the kind above, and it is unsettled for all twenty-one interfaces, not just this one.
-/// * It inherits every limitation of the row beneath it, and a system reader sees none of them — fails when this is the ordinary cost of a seam and it is worth stating where the seam is. The number crossing here is a 95th percentile and not a worst case. Its centre is now the cycle analogue at the mission's own epoch rather than the record's unconditional mean, so this chain does read the epoch; what the centre cannot tell you is which kind of cycle comes next, because beyond this one it is scaled by the mean of two. A reader at layer 2 sees 228 sfu and a credibility vector, and would have to open sw_f107_design and then sw_central_expectation to learn any of that. The credibility travels; the assumptions do not.
+/// * The Kp columns do not cross, and the study's driver set has two of them — fails when a consumer needs Kp. The study publishes kp_mean and kp_peak per scenario, formed from that scenario's Ap by the published ap-to-Kp scale plus a measured slot bias. This tree has all three relations — sw_kp_from_ap, sw_kp_mean_bias, sw_kp_slot_bias — and cannot use them here, because the bus passes a node's VALUE and not its RELATION: each of those rows answers at one Ap, and a driver set needs them at five. Three ways out, none of them free: those three rows each publish a set of five, keyed to the scenarios; or the ap-to-Kp scale and both bias tables move into vleo-core as named functions this hole can call, at the cost of putting measured data in the kernel; or ten more rows exist, one per scenario per slot. Until one is chosen the Ap column crosses and the Kp columns do not, and a consumer that needs Kp must convert it itself — which is the duplication this row exists to prevent
+/// * It relays and does not compute, and the f107bar column is the edge of that claim — fails when somebody calls the f107bar mapping a calculation. No value is combined with another and no constant appears; what happens is that one input is published under two names, because the study's hotday scenario carries hotmean's 81-day mean beneath it. If that is computation then a crossing cannot carry a set at all, and §20.3's decision needs revisiting rather than this hole
+/// * Every member inherits every limitation of the row beneath it, and a system reader sees none of them — fails when this is the ordinary cost of a seam and it is worth stating where the seam is. The two *mean scenarios are 1.28-sigma bands, which is the 90th percentile and not the 95 per cent the run is labelled; the two *day scenarios stack a second one-sided percentile on top, which is nearer a 1-in-100 day than a 1-in-20; and the centre beneath all five is a cycle analogue that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles, whose peaks differ by 41 per cent. A reader at layer 2 sees fifteen numbers and a credibility vector, and would have to open five rows to learn any of that. The credibility travels; the assumptions do not
+/// * One refused member refuses the whole set — fails when this is read as a defect in the seam. It is the seam's job: a driver set with one member the record cannot support is not a driver set, and publishing four members and a hole would put the judgement about which was which above the seam. It does mean this row's availability is the AND of ten rows, so the seam is the least available thing in the subsystem by construction
 pub const NODE_ID: &amp;str = &quot;l3_solar_interface&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xf3e237172ccd32a9;
+pub const SHEET_HASH: u64 = 0xab82ebb6e9826449;
 
-pub fn evaluate(conclusion: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
-    // ---- HOLE 1 : carry the subsystem's F10.7 conclusion across the seam unchanged -&gt; Ratio
+/// The set this node publishes. One field per published variable, named
+/// by the sheet's own symbol, in the order `OUTPUT_VARS` declares: this
+/// node's own answer first, then each `[[publishes]]` block. The field
+/// NAMES are what a hole body assigns, so the order cannot be got wrong
+/// by hand, and every member is guarded against its own declared domain.
+#[allow(non_snake_case)]
+pub struct Answer {
+    /// Solar weather — subsystem interface — this node's own answer.
+    pub F107_hotmean: Ratio,
+    /// F10.7 the mission is expected to sit at — published as `l3_solar_interface.f107_nominal`.
+    pub F107_nominal: Ratio,
+    /// F10.7 sustained on the cold side — published as `l3_solar_interface.f107_coldmean`.
+    pub F107_coldmean: Ratio,
+    /// F10.7 on the worst single day — published as `l3_solar_interface.f107_hotday`.
+    pub F107_hotday: Ratio,
+    /// F10.7 on the quietest single day — published as `l3_solar_interface.f107_coldday`.
+    pub F107_coldday: Ratio,
+    /// 81-day mean F10.7 beneath the nominal scenario — published as `l3_solar_interface.f107bar_nominal`.
+    pub F107bar_nominal: Ratio,
+    /// 81-day mean F10.7 beneath the hot sustained scenario — published as `l3_solar_interface.f107bar_hotmean`.
+    pub F107bar_hotmean: Ratio,
+    /// 81-day mean F10.7 beneath the cold sustained scenario — published as `l3_solar_interface.f107bar_coldmean`.
+    pub F107bar_coldmean: Ratio,
+    /// 81-day mean F10.7 the hot day rides on — published as `l3_solar_interface.f107bar_hotday`.
+    pub F107bar_hotday: Ratio,
+    /// 81-day mean F10.7 the cold day rides on — published as `l3_solar_interface.f107bar_coldday`.
+    pub F107bar_coldday: Ratio,
+    /// Ap the mission is expected to sit at — published as `l3_solar_interface.ap_nominal`.
+    pub Ap_nominal: Ratio,
+    /// Ap sustained on the disturbed side — published as `l3_solar_interface.ap_hotmean`.
+    pub Ap_hotmean: Ratio,
+    /// Ap sustained on the quiet side — published as `l3_solar_interface.ap_coldmean`.
+    pub Ap_coldmean: Ratio,
+    /// Ap on the most disturbed single day — published as `l3_solar_interface.ap_hotday`.
+    pub Ap_hotday: Ratio,
+    /// Ap on the quietest single day — published as `l3_solar_interface.ap_coldday`.
+    pub Ap_coldday: Ratio,
+    /// Kp, mean slot, nominal scenario — published as `l3_solar_interface.kp_mean_nominal`.
+    pub Kp_mean_nominal: Ratio,
+    /// Kp, mean slot, sustained disturbed scenario — published as `l3_solar_interface.kp_mean_hotmean`.
+    pub Kp_mean_hotmean: Ratio,
+    /// Kp, mean slot, sustained quiet scenario — published as `l3_solar_interface.kp_mean_coldmean`.
+    pub Kp_mean_coldmean: Ratio,
+    /// Kp, mean slot, disturbed single day — published as `l3_solar_interface.kp_mean_hotday`.
+    pub Kp_mean_hotday: Ratio,
+    /// Kp, mean slot, quietest single day — published as `l3_solar_interface.kp_mean_coldday`.
+    pub Kp_mean_coldday: Ratio,
+    /// Kp, peak slot, nominal scenario — published as `l3_solar_interface.kp_peak_nominal`.
+    pub Kp_peak_nominal: Ratio,
+    /// Kp, peak slot, sustained disturbed scenario — published as `l3_solar_interface.kp_peak_hotmean`.
+    pub Kp_peak_hotmean: Ratio,
+    /// Kp, peak slot, sustained quiet scenario — published as `l3_solar_interface.kp_peak_coldmean`.
+    pub Kp_peak_coldmean: Ratio,
+    /// Kp, peak slot, disturbed single day — published as `l3_solar_interface.kp_peak_hotday`.
+    pub Kp_peak_hotday: Ratio,
+    /// Kp, peak slot, quietest single day — published as `l3_solar_interface.kp_peak_coldday`.
+    pub Kp_peak_coldday: Ratio,
+}
+
+pub fn evaluate(f107_centre: Ratio, f107_hot_long: Ratio, f107_cold_long: Ratio, f107_hot_day: Ratio, f107_cold_day: Ratio, ap_centre: Ratio, ap_hot_long: Ratio, ap_cold_long: Ratio, ap_hot_day: Ratio, ap_cold_day: Ratio, kp_mean_nominal: Ratio, kp_mean_hotmean: Ratio, kp_mean_coldmean: Ratio, kp_mean_hotday: Ratio, kp_mean_coldday: Ratio, kp_peak_nominal: Ratio, kp_peak_hotmean: Ratio, kp_peak_coldmean: Ratio, kp_peak_hotday: Ratio, kp_peak_coldday: Ratio) -&gt; Result&lt;Answer, Fault&gt; {
+    // ---- HOLE 1 : assemble the five scenarios from the ten rows that computed them, and carry them across the seam unchanged -&gt; Answer
     // A crossing carries; it does not compute. The one thing that can go wrong
     // here is that the seam alters what it is handed — a stray factor, an
     // unasked-for unit conversion, a clamp inherited from the wrong row — and
-    // both sides would still look plausible. So this is the identity, and the
-    // fixtures beside it pin the identity at four real values.
+    // both sides would still look plausible. So every member below is one input,
+    // named, with no arithmetic anywhere in the block.
     //
-    // The declared range is the producer's own, restated so a system reader sees
-    // the limit without opening the subsystem. It therefore guards nothing this
-    // line can break, and that is correct: a crossing that narrowed the range it
-    // carried would be changing the answer.
-    let crossing: Ratio = conclusion;
+    // Written out member by member rather than looped, because the mapping from
+    // scenario to producing row IS the content of this row and a reader has to
+    // be able to check it against the study's own table. Fifteen assignments is
+    // the price of that being checkable.
+    let set: Answer = Answer {
+        // The three *mean scenarios: f107 == f107bar, because they ARE the
+        // window mean. The study's own table shows the same.
+        F107_hotmean: f107_hot_long,
+        F107bar_hotmean: f107_hot_long,
+
+        F107_nominal: f107_centre,
+        F107bar_nominal: f107_centre,
+
+        F107_coldmean: f107_cold_long,
+        F107bar_coldmean: f107_cold_long,
+
+        // The two *day scenarios: f107 is the day, f107bar is the SUSTAINED
+        // level it rides on. This is the one place the row publishes an input
+        // under a second name, and it is selection rather than arithmetic.
+        F107_hotday: f107_hot_day,
+        F107bar_hotday: f107_hot_long,
+
+        F107_coldday: f107_cold_day,
+        F107bar_coldday: f107_cold_long,
+
+        // Ap has no 81-day companion in the study's driver set, so five members
+        // rather than ten. The Kp columns are the ones missing from this set and
+        // the sheet's first assumption says why.
+        Ap_nominal: ap_centre,
+        Ap_hotmean: ap_hot_long,
+        Ap_coldmean: ap_cold_long,
+        Ap_hotday: ap_hot_day,
+        Ap_coldday: ap_cold_day,
+
+        // The two Kp columns, relayed from the one row that evaluates the
+        // published scale and both measured slot offsets at all five Ap. The
+        // arithmetic is there and not here, because a crossing relays: putting
+        // kp_from_ap(ap) + bias in this block would be subsystem work done where
+        // no subsystem reviewer reads it.
+        Kp_mean_nominal: kp_mean_nominal,
+        Kp_mean_hotmean: kp_mean_hotmean,
+        Kp_mean_coldmean: kp_mean_coldmean,
+        Kp_mean_hotday: kp_mean_hotday,
+        Kp_mean_coldday: kp_mean_coldday,
+
+        Kp_peak_nominal: kp_peak_nominal,
+        Kp_peak_hotmean: kp_peak_hotmean,
+        Kp_peak_coldmean: kp_peak_coldmean,
+        Kp_peak_hotday: kp_peak_hotday,
+        Kp_peak_coldday: kp_peak_coldday,
+    };
     // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = crossing;
-    if !answer.is_finite() {
-        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_crossing&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    let answer: Answer = set;
+
+    // generated · every published member carries its own declared domain.
+    // A set whose primary is in range and whose fifth member is not is not a
+    // usable set, and the member a consumer reads may be any of them.
+    if !answer.F107_hotmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_hotmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
     }
-    if answer.get() &lt; 60.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_crossing&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the same floor as env_f107 and sw_f107_design: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A crossing that narrowed or widened the range it carries would be changing the answer, so it declares the producer's own bounds&quot; });
+    if answer.F107_hotmean.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_hotmean&quot;, value: answer.F107_hotmean.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the same floor as env_f107 and every design row beneath this one: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A crossing that narrowed or widened the range it carries would be changing the answer, so it declares the producer's own bounds&quot; });
     }
-    if answer.get() &gt; 400.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_crossing&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the same ceiling as env_f107 and sw_f107_design: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. Restating it here means a system reader sees the limit without opening the subsystem&quot; });
+    if answer.F107_hotmean.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_hotmean&quot;, value: answer.F107_hotmean.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the same ceiling as env_f107 and every design row beneath this one: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. Restating it here means a system reader sees the limit without opening the subsystem&quot; });
+    }
+    if !answer.F107_nominal.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_nominal&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.F107_nominal.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_nominal&quot;, value: answer.F107_nominal.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the producer's own floor, restated: below 60 sfu has never been observed&quot; });
+    }
+    if answer.F107_nominal.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_nominal&quot;, value: answer.F107_nominal.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the producer's own ceiling, restated: above 400 sfu the temperature relation is extrapolated past the record&quot; });
+    }
+    if !answer.F107_coldmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_coldmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.F107_coldmean.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_coldmean&quot;, value: answer.F107_coldmean.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the producer's own floor, restated. On the cold scenarios it is load-bearing rather than decorative: a band wider than the sky reaches through it&quot; });
+    }
+    if answer.F107_coldmean.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_coldmean&quot;, value: answer.F107_coldmean.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the producer's own ceiling, restated. A COLD level near it means a spread has been added rather than subtracted somewhere beneath this row&quot; });
+    }
+    if !answer.F107_hotday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_hotday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.F107_hotday.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_hotday&quot;, value: answer.F107_hotday.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the producer's own floor, restated: below 60 sfu has never been observed&quot; });
+    }
+    if answer.F107_hotday.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_hotday&quot;, value: answer.F107_hotday.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the producer's own ceiling, restated. This is the member most likely to reach it — a sustained level with a daily excursion stacked on top — which is why the guard is on every member and not only the primary&quot; });
+    }
+    if !answer.F107_coldday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_coldday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.F107_coldday.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_coldday&quot;, value: answer.F107_coldday.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the producer's own floor, restated, and THIS IS THE MEMBER THAT REFUSES on the nominal case: sw_f107_cold_short reaches 38.36 sfu from a centre of 86.85, and 38 sfu has never been observed. The guard is beneath this row and fires there; this restates the same limit so a system reader sees it without opening the subsystem&quot; });
+    }
+    if answer.F107_coldday.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_coldday&quot;, value: answer.F107_coldday.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the producer's own ceiling, restated. On the QUIETEST of the five scenarios a value near it means a sign is wrong somewhere beneath this row&quot; });
+    }
+    if !answer.F107bar_nominal.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107bar_nominal&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.F107bar_nominal.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107bar_nominal&quot;, value: answer.F107bar_nominal.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the same floor as the daily value it equals. An 81-day mean cannot sit below a floor every day of it respects&quot; });
+    }
+    if answer.F107bar_nominal.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107bar_nominal&quot;, value: answer.F107bar_nominal.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the same ceiling as the daily value it equals&quot; });
+    }
+    if !answer.F107bar_hotmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107bar_hotmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.F107bar_hotmean.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107bar_hotmean&quot;, value: answer.F107bar_hotmean.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the same floor as the daily value it equals: a *mean scenario IS its own 81-day mean&quot; });
+    }
+    if answer.F107bar_hotmean.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107bar_hotmean&quot;, value: answer.F107bar_hotmean.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the same ceiling as the daily value it equals&quot; });
+    }
+    if !answer.F107bar_coldmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107bar_coldmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.F107bar_coldmean.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107bar_coldmean&quot;, value: answer.F107bar_coldmean.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the same floor as the daily value it equals: a *mean scenario IS its own 81-day mean&quot; });
+    }
+    if answer.F107bar_coldmean.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107bar_coldmean&quot;, value: answer.F107bar_coldmean.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the same ceiling as the daily value it equals&quot; });
+    }
+    if !answer.F107bar_hotday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107bar_hotday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.F107bar_hotday.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107bar_hotday&quot;, value: answer.F107bar_hotday.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the hotmean level's own floor, because that is what this member is: a single day rides on the sustained level beneath it, and its 81-day mean is that level rather than the day's own value&quot; });
+    }
+    if answer.F107bar_hotday.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107bar_hotday&quot;, value: answer.F107bar_hotday.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the hotmean level's own ceiling. A *day scenario whose f107bar equalled its f107 would be claiming eighty-one consecutive days of the worst one, which the record does not support and the study does not publish&quot; });
+    }
+    if !answer.F107bar_coldday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107bar_coldday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.F107bar_coldday.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107bar_coldday&quot;, value: answer.F107bar_coldday.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the coldmean level's own floor, because that is what this member is: the quietest day still rides on the sustained cold level beneath it&quot; });
+    }
+    if answer.F107bar_coldday.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107bar_coldday&quot;, value: answer.F107bar_coldday.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the coldmean level's own ceiling&quot; });
+    }
+    if !answer.Ap_nominal.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_nominal&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Ap_nominal.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_nominal&quot;, value: answer.Ap_nominal.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Ap floors at zero — a perfectly quiet day is Ap 0 — and there is nothing below it&quot; });
+    }
+    if answer.Ap_nominal.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_nominal&quot;, value: answer.Ap_nominal.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all&quot; });
+    }
+    if !answer.Ap_hotmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_hotmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Ap_hotmean.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_hotmean&quot;, value: answer.Ap_hotmean.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Ap floors at zero, so a sustained level below it means a spread has been subtracted rather than added beneath this row&quot; });
+    }
+    if answer.Ap_hotmean.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_hotmean&quot;, value: answer.Ap_hotmean.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;400 is the top of the Ap index itself&quot; });
+    }
+    if !answer.Ap_coldmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_coldmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Ap_coldmean.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_coldmean&quot;, value: answer.Ap_coldmean.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Ap floors at zero. On the quiet scenarios the floor is close: the producer's band subtracted from a centre below about 4.6 reaches through it&quot; });
+    }
+    if answer.Ap_coldmean.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_coldmean&quot;, value: answer.Ap_coldmean.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;400 is the top of the Ap index itself&quot; });
+    }
+    if !answer.Ap_hotday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_hotday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Ap_hotday.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_hotday&quot;, value: answer.Ap_hotday.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Ap floors at zero&quot; });
+    }
+    if answer.Ap_hotday.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_hotday&quot;, value: answer.Ap_hotday.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;400 is the top of the Ap index itself, and this member — a sustained level with a daily excursion stacked on top — is the one in the set most likely to reach for it&quot; });
+    }
+    if !answer.Ap_coldday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_coldday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Ap_coldday.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_coldday&quot;, value: answer.Ap_coldday.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Ap floors at zero, and this is the member in the whole subsystem closest to a declared bound: at the declared window it crosses at 6.91, seven units clear. Its producer's own sheet says a centre below 15.2 would put it through the floor&quot; });
+    }
+    if answer.Ap_coldday.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_coldday&quot;, value: answer.Ap_coldday.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;400 is the top of the Ap index itself. On the QUIETEST scenario a value anywhere near it means a sign is wrong beneath this row&quot; });
+    }
+    if !answer.Kp_mean_nominal.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_mean_nominal&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_mean_nominal.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_nominal&quot;, value: answer.Kp_mean_nominal.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_mean_nominal.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_nominal&quot;, value: answer.Kp_mean_nominal.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_mean_hotmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_mean_hotmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_mean_hotmean.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_hotmean&quot;, value: answer.Kp_mean_hotmean.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_mean_hotmean.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_hotmean&quot;, value: answer.Kp_mean_hotmean.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_mean_coldmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_mean_coldmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_mean_coldmean.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_coldmean&quot;, value: answer.Kp_mean_coldmean.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_mean_coldmean.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_coldmean&quot;, value: answer.Kp_mean_coldmean.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_mean_hotday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_mean_hotday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_mean_hotday.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_hotday&quot;, value: answer.Kp_mean_hotday.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_mean_hotday.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_hotday&quot;, value: answer.Kp_mean_hotday.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_mean_coldday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_mean_coldday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_mean_coldday.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_coldday&quot;, value: answer.Kp_mean_coldday.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_mean_coldday.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_coldday&quot;, value: answer.Kp_mean_coldday.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_peak_nominal.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_peak_nominal&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_peak_nominal.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_nominal&quot;, value: answer.Kp_peak_nominal.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_peak_nominal.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_nominal&quot;, value: answer.Kp_peak_nominal.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_peak_hotmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_peak_hotmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_peak_hotmean.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_hotmean&quot;, value: answer.Kp_peak_hotmean.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_peak_hotmean.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_hotmean&quot;, value: answer.Kp_peak_hotmean.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_peak_coldmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_peak_coldmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_peak_coldmean.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_coldmean&quot;, value: answer.Kp_peak_coldmean.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_peak_coldmean.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_coldmean&quot;, value: answer.Kp_peak_coldmean.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_peak_hotday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_peak_hotday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_peak_hotday.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_hotday&quot;, value: answer.Kp_peak_hotday.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_peak_hotday.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_hotday&quot;, value: answer.Kp_peak_hotday.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
+    }
+    if !answer.Kp_peak_coldday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_peak_coldday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_peak_coldday.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_coldday&quot;, value: answer.Kp_peak_coldday.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_peak_coldday.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_coldday&quot;, value: answer.Kp_peak_coldday.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400&quot; });
     }
     Ok(answer)
 }
@@ -147,18 +561,39 @@ pub fn evaluate(conclusion: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="panel" data-panel="6">
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
-<tr data-fixture="the five-year conclusion crosses unchanged — 228.1374 sfu"><td>the five-year conclusion crosses unchanged — 228.1374 sfu</td><td class="num">228.1374378829</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
-<tr data-fixture="the half-year conclusion crosses unchanged — the narrowest band"><td>the half-year conclusion crosses unchanged — the narrowest band</td><td class="num">171.8843338669</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
-<tr data-fixture="the ten-year conclusion crosses unchanged — where the cycle brings the band in"><td>the ten-year conclusion crosses unchanged — where the cycle brings the band in</td><td class="num">180.8437378829</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
-<tr data-fixture="the record's own climatology crosses unchanged, as the floor case"><td>the record's own climatology crosses unchanged, as the floor case</td><td class="num">114.8437378829</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the sustained hot F10.7 crosses unchanged, from sw_f107_design_long"><td>the sustained hot F10.7 crosses unchanged, from sw_f107_design_long</td><td class="num">175.5520201913</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the nominal F10.7 crosses unchanged, from sw_central_expectation"><td>the nominal F10.7 crosses unchanged, from sw_central_expectation</td><td class="num">158.3304112313</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the sustained cold F10.7 crosses unchanged, from sw_f107_cold_long"><td>the sustained cold F10.7 crosses unchanged, from sw_f107_cold_long</td><td class="num">141.1088022713</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the hot single day crosses unchanged, from sw_f107_design_short"><td>the hot single day crosses unchanged, from sw_f107_design_short</td><td class="num">124.1432752988</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the cold single day crosses unchanged, from sw_f107_cold_short"><td>the cold single day crosses unchanged, from sw_f107_cold_short</td><td class="num">65.24109104</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the nominal scenario's 81-day mean is its own value — a *mean scenario IS its mean"><td>the nominal scenario's 81-day mean is its own value — a *mean scenario IS its mean</td><td class="num">158.3304112313</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the hot sustained scenario's 81-day mean is its own value"><td>the hot sustained scenario's 81-day mean is its own value</td><td class="num">175.5520201913</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the cold sustained scenario's 81-day mean is its own value"><td>the cold sustained scenario's 81-day mean is its own value</td><td class="num">141.1088022713</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="THE HOT DAY RIDES ON THE HOT MEAN — its 81-day mean is 175.55, not its own 209.78. The one member that is not a copy of its namesake input"><td>THE HOT DAY RIDES ON THE HOT MEAN — its 81-day mean is 175.55, not its own 209.78. The one member that is not a copy of its namesake input</td><td class="num">175.5520201913</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="THE COLD DAY RIDES ON THE COLD MEAN — its 81-day mean is 141.11, not its own 109.84"><td>THE COLD DAY RIDES ON THE COLD MEAN — its 81-day mean is 141.11, not its own 109.84</td><td class="num">141.1088022713</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the nominal Ap crosses unchanged, from sw_ap_central_expectation"><td>the nominal Ap crosses unchanged, from sw_ap_central_expectation</td><td class="num">22.095389</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the sustained disturbed Ap crosses unchanged, from sw_ap_design_long"><td>the sustained disturbed Ap crosses unchanged, from sw_ap_design_long</td><td class="num">26.69530964</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the sustained quiet Ap crosses unchanged, from sw_ap_cold_long"><td>the sustained quiet Ap crosses unchanged, from sw_ap_cold_long</td><td class="num">17.49546836</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the most disturbed single day crosses unchanged, from sw_ap_design_short"><td>the most disturbed single day crosses unchanged, from sw_ap_design_short</td><td class="num">90.54720964</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the quietest single day crosses unchanged, from sw_ap_cold_short — the member closest to a declared bound, seven units clear of zero"><td>the quietest single day crosses unchanged, from sw_ap_cold_short — the member closest to a declared bound, seven units clear of zero</td><td class="num">4.9319536205</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the nominal mean-slot Kp crosses unchanged, from sw_kp_scenarios"><td>the nominal mean-slot Kp crosses unchanged, from sw_kp_scenarios</td><td class="num">3.5482988548</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="the sustained disturbed mean-slot Kp crosses unchanged"><td>the sustained disturbed mean-slot Kp crosses unchanged</td><td class="num">3.8317523369</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="the sustained quiet mean-slot Kp crosses unchanged"><td>the sustained quiet mean-slot Kp crosses unchanged</td><td class="num">3.1661753614</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="the disturbed single day, mean slot — Kp 5.80, where the study has 4.50, because this tree's hot Ap day is more than twice the study's"><td>the disturbed single day, mean slot — Kp 5.80, where the study has 4.50, because this tree's hot Ap day is more than twice the study's</td><td class="num">5.8022794796</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="the quietest single day, mean slot — the lowest of the twenty-five members"><td>the quietest single day, mean slot — the lowest of the twenty-five members</td><td class="num">1.2712527528</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="the nominal peak-slot Kp crosses unchanged"><td>the nominal peak-slot Kp crosses unchanged</td><td class="num">4.79556964</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="the sustained disturbed peak-slot Kp crosses unchanged — Kp 5.20, a G1 storm in the worst slot of an ordinary sustained day"><td>the sustained disturbed peak-slot Kp crosses unchanged — Kp 5.20, a G1 storm in the worst slot of an ordinary sustained day</td><td class="num">5.1977706122</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="the sustained quiet peak-slot Kp crosses unchanged"><td>the sustained quiet peak-slot Kp crosses unchanged</td><td class="num">4.2773779523</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="THE WORST SLOT OF THE WORST DAY, Kp 8.00 — a G4 severe storm, and the member a design sized against geomagnetic activity reads"><td>THE WORST SLOT OF THE WORST DAY, Kp 8.00 — a G4 severe storm, and the member a design sized against geomagnetic activity reads</td><td class="num">7.996613371</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="the quietest single day, peak slot"><td>the quietest single day, peak slot</td><td class="num">2.2295860861</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
 <section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 60 — the same floor as env_f107 and sw_f107_design: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A crossing that narrowed or widened the range it carries would be changing the answer, so it declares the producer's own bounds</li>
-<li><code>OutOfDomain</code> above 400 — the same ceiling as env_f107 and sw_f107_design: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. Restating it here means a system reader sees the limit without opening the subsystem</li>
+<li><code>OutOfDomain</code> below 60 — the same floor as env_f107 and every design row beneath this one: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A crossing that narrowed or widened the range it carries would be changing the answer, so it declares the producer's own bounds</li>
+<li><code>OutOfDomain</code> above 400 — the same ceiling as env_f107 and every design row beneath this one: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. Restating it here means a system reader sees the limit without opening the subsystem</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
 <li><code>Blocked</code> when any declared input has never run — and it names which</li>
 </ul>
@@ -170,7 +605,7 @@ pub fn evaluate(conclusion: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="panel" data-panel="9">
 <p>Valid over <code>60 &hellip; 400</code> -.</p>
-<ul class="guards"><li>lower — the same floor as env_f107 and sw_f107_design: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A crossing that narrowed or widened the range it carries would be changing the answer, so it declares the producer's own bounds</li><li>upper — the same ceiling as env_f107 and sw_f107_design: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. Restating it here means a system reader sees the limit without opening the subsystem</li></ul>
+<ul class="guards"><li>lower — the same floor as env_f107 and every design row beneath this one: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A crossing that narrowed or widened the range it carries would be changing the answer, so it declares the producer's own bounds</li><li>upper — the same ceiling as env_f107 and every design row beneath this one: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. Restating it here means a system reader sees the limit without opening the subsystem</li></ul>
 <div class="sweep" data-over="orbit_mission_duration" data-points="60" data-y="l3_solar_interface"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a> over 60 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>

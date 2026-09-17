@@ -98,20 +98,20 @@ fn answers_near_the_known_good_point() {
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Ratio::new(70.0 * scale), Ratio::new(70.0), Ratio::new(1.0)) {
-            assert!(v.get().is_finite(), "env_exospheric_temperature produced a value that is not a number");
-            assert!(v.get() >= 400.0 && v.get() <= 2500.0, "env_exospheric_temperature answered {}, outside its declared domain 400 … 2500 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "env_exospheric_temperature produced a value that is not a number for T_inf");
+            assert!(v.get() >= 400.0 && v.get() <= 2500.0, "env_exospheric_temperature answered {} for T_inf, outside its declared domain 400 … 2500 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Ratio::new(70.0), Ratio::new(70.0 * scale), Ratio::new(1.0)) {
-            assert!(v.get().is_finite(), "env_exospheric_temperature produced a value that is not a number");
-            assert!(v.get() >= 400.0 && v.get() <= 2500.0, "env_exospheric_temperature answered {}, outside its declared domain 400 … 2500 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "env_exospheric_temperature produced a value that is not a number for T_inf");
+            assert!(v.get() >= 400.0 && v.get() <= 2500.0, "env_exospheric_temperature answered {} for T_inf, outside its declared domain 400 … 2500 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Ratio::new(70.0), Ratio::new(70.0), Ratio::new(1.0 * scale)) {
-            assert!(v.get().is_finite(), "env_exospheric_temperature produced a value that is not a number");
-            assert!(v.get() >= 400.0 && v.get() <= 2500.0, "env_exospheric_temperature answered {}, outside its declared domain 400 … 2500 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "env_exospheric_temperature produced a value that is not a number for T_inf");
+            assert!(v.get() >= 400.0 && v.get() <= 2500.0, "env_exospheric_temperature answered {} for T_inf, outside its declared domain 400 … 2500 — the guard did not stop it", v.get());
         }
     }
 }
@@ -126,7 +126,9 @@ fn the_same_inputs_give_the_same_answer() {
     let a = model::evaluate(Ratio::new(70.0), Ratio::new(70.0), Ratio::new(1.0));
     let b = model::evaluate(Ratio::new(70.0), Ratio::new(70.0), Ratio::new(1.0));
     match (a, b) {
-        (Ok(x), Ok(y)) => assert!(x.get().to_bits() == y.get().to_bits(), "env_exospheric_temperature is not deterministic: {} then {}", x.get(), y.get()),
+        (Ok(x), Ok(y)) => {
+            assert!(x.get().to_bits() == y.get().to_bits(), "env_exospheric_temperature is not deterministic for T_inf: {} then {}", x.get(), y.get());
+        }
         (Err(_), Err(_)) => {}
         _ => panic!("env_exospheric_temperature refused on one call and answered on the other"),
     }

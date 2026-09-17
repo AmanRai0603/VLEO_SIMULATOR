@@ -16,22 +16,38 @@ is the panel's claim and must be visible."""
 # is right. That is what makes check three mean anything: the reference is the
 # claim, and without a name against it the check only proves the chart has not
 # changed since a machine drew it.
-confirmed_by = "A. Rai / 2026-09-15"
+confirmed_by = "A. Rai / 2026-09-15 (against the pre-move picture; content unchanged, canvas resized 2026-09-16, reference re-recorded 2026-09-16, not yet re-looked)"
+# WHY THE REFERENCE WAS RE-RECORDED, AND A FINDING ABOUT THIS CHECK.
+#
+# Adding sw_f107_cold_long put a third name in sw_central_expectation's
+# "nodes read this" line. That line wrapped, everything under it moved a
+# fraction of a pixel, and 2.6 per cent of this picture's pixels changed
+# against a 2 per cent tolerance. The chart itself is identical: same bars,
+# same axes, same mean line at 114.84 over the same 10316 days. Both images
+# were compared before the reference was replaced.
+#
+# So this check currently measures sub-pixel layout as well as the chart, and
+# it will fail again every time a row this panel opens gains a consumer — which
+# on a row as widely read as sw_central_expectation is often. The tolerance is
+# NOT the thing to change: 2 per cent is the right sensitivity for a chart. The
+# candidates are capturing the canvas at a fixed device pixel ratio, or
+# comparing after a structural-similarity pass rather than pixel by pixel.
+# Left as a finding for the panel's owner rather than fixed here.
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.
 settle_ms = 8000
 
-# The solar view is not where the page opens, and each tab is a separate
-# panel sharing one canvas. This drives to the view and selects this tab;
-# panel_check re-runs it after every input to restore the starting state.
+# A figure lives on the row it argues about, so driving it means opening that
+# row. There is no solar view any more: it was a sixth item in a navigation
+# whose subtitle says four layers, and it showed solar weather in a second
+# place that disagreed with layer 3. panel_check re-runs this after every
+# input to restore the starting state.
 ready = """(async () => {
-  S.view = 'solar';
-  draw();
-  await new Promise(r => setTimeout(r, 150));
-  const tab = document.querySelector('.sw-tab[data-panel=climate]');
-  if (!tab) throw new Error('no tab for the climate panel');
-  tab.click();
+  await window.openNode('sw_central_expectation');
+  await new Promise(r => setTimeout(r, 200));
+  const cv = document.querySelector('.row-figure canvas.sw-panel');
+  if (!cv) throw new Error('no figure on sw_central_expectation for the climate panel');
 })()"""
 
 [[input]]

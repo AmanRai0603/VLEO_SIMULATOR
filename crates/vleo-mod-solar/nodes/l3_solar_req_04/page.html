@@ -1,0 +1,172 @@
+<article class="node" data-node="l3_solar_req_04" data-sheet-hash="11877e" data-impl-hash="222325">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Ap, sustained</h2>
+  <p class="ident"><code>l3_solar_req_04</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">What sustained Ap must this design operate in, for as long as the mission lasts?</p>
+<p class="maths"><code>Ap_req_long = ap(G1) = 48</code></p>
+<p class="src">Source <b>orbitt_case_c1</b> — Orbitt Space — VLEO multipayload reference case C1 <span class="where">internal, 2026-09-01</span></p>
+<p class="note">Not survive — OPERATE IN. A sustained level is the sky the mission sits in for
+months, so the commitment is about continuous service rather than about coming
+through intact. That is a stronger claim than its single-day sibling makes and
+is why its number is lower.
+
+The checking partner is l3_solar_ach_04, which reports the sustained Ap the
+record says the window will present.
+</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>It is a ceiling on the driver and says nothing about what the driver does to the vehicle</dt><dd>fails when a reader takes a passing closure as evidence the design is adequate. Ap is an index; what a spacecraft feels is the heating, the density and the torque it produces, through models this subsystem does not own. A design that meets Ap &lt;= 48 and is sized with the wrong drag coefficient has met this requirement and will still deorbit early</dd>
+<dt>The G1 threshold is a reasonable place for a CONTINUOUS-operation commitment, and nothing here establishes that</dt><dd>fails when the vehicle's real limit is elsewhere. 48 is a published threshold rather than an arbitrary round number, which makes it checkable, but checkable is not the same as correct: the level at which a particular design must stop operating comes from its thermal, its torque authority and its propellant, none of which this subsystem sees. What this row guarantees is that a reader can see what the commitment IS</dd>
+<dt>A sustained level and a single day are different commitments, and this is the sustained one</dt><dd>fails when somebody compares the achieved single-day Ap against this row. That is l3_solar_req_05's closure and its ceiling is 80. Reading the wrong one of the two reports a failure where there is none, or a pass where there is not</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">A requirement is not a prediction and not a capability: it is a commitment, and its purpose is to be checkable against something measured. This row commits the design to operating continuously in a geomagnetic field up to the G1 threshold, and the checking partner is l3_solar_ach_04.</p>
+<p class="why">The number is taken from the published G scale rather than chosen as a round number above the achieved value, which is a deliberate departure from how l3_solar_req_01's 250 sfu was picked. A ceiling set above whatever the chain currently computes moves whenever the chain does and can never be violated; a ceiling set at a published threshold is a claim about the vehicle that stays still while the environment estimate moves underneath it. Both are in this group, side by side, and the difference is worth seeing.</p>
+<div class="theory-walk" data-steps="3">
+<ol class="derive">
+<li><span class="dt">The closure to be made checkable is sustained Ap achieved against sustained Ap required. Both sides must be rows, at the same layer, in the same quantity and unit.</span></li>
+<li><span class="dt">The requirement side is a commitment about the vehicle, so it cannot be computed from the record. It is taken from the published G scale at the minor-storm threshold.</span><code class="dm">Ap_req_long = ap(Kp 5) = 48</code></li>
+<li><span class="dt">Which the achieved side clears at the declared window, and would not clear at a cycle maximum.</span><code class="dm">26.70 &lt;= 48 — the closure holds, with 80 per cent of room</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">48 against an achieved 26.70 at the declared window — 80 per cent of room, which sounds generous and is not the point. The achieved side is a 1.28-sigma band on a centre that is itself a cycle analogue; if the epoch moved to a cycle maximum the sustained Ap would roughly double and this closure would come close.</p>
+<p class="reading">It is a ceiling on the DRIVER and says nothing about what the driver does to the vehicle. Ap is an index of geomagnetic disturbance; what a spacecraft feels is the heating, the density and the torque that disturbance produces, through models this subsystem does not own.</p>
+<p class="maths concl">which is the relation this node states: <code>Ap_req_long = ap(G1) = 48</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
+<tr class="out"><td>out</td><td><code>Ap_req_long</code></td><td>l3_solar_req_04</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
+<p>This is a declared value: <b>48</b> -, confirmed by <b>A. Rai / 2026-09-16</b>.</p>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function l3_solar_req_04() -> Ratio
+    Ap_req_long ← 48          // declared, confirmed by A. Rai / 2026-09-16
+
+    // a guard whose reason is not written down gets deleted
+    require Ap_req_long ≥ 0
+    require Ap_req_long ≤ 400
+    require Ap_req_long is finite
+
+    return Ap_req_long
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>Ap_req_long &ge; 0</code> — Ap floors at zero, and a sustained requirement of zero would commit the design to operating only in a perfectly quiet field, which no mission window presents</li>
+<li><code>Ap_req_long &le; 400</code> — 400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="l3_solar_req_04" data-lo="0" data-hi="400" data-symbol="Ap_req_long">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What sustained Ap must this design operate in, for as long as the mission lasts?
+///
+/// `Ap_req_long = ap(G1) = 48`
+///
+/// Source: `orbitt_case_c1`
+///
+/// Not survive — OPERATE IN. A sustained level is the sky the mission sits
+/// in for months, so the commitment is about continuous service rather than
+/// about coming through intact. That is a stronger claim than its single-day
+/// sibling makes and is why its number is lower. The checking partner is
+/// l3_solar_ach_04, which reports the sustained Ap the record says the window
+/// will present.
+///
+/// # Assumptions
+///
+/// * It is a ceiling on the driver and says nothing about what the driver does to the vehicle — fails when a reader takes a passing closure as evidence the design is adequate. Ap is an index; what a spacecraft feels is the heating, the density and the torque it produces, through models this subsystem does not own. A design that meets Ap &lt;= 48 and is sized with the wrong drag coefficient has met this requirement and will still deorbit early
+/// * The G1 threshold is a reasonable place for a CONTINUOUS-operation commitment, and nothing here establishes that — fails when the vehicle's real limit is elsewhere. 48 is a published threshold rather than an arbitrary round number, which makes it checkable, but checkable is not the same as correct: the level at which a particular design must stop operating comes from its thermal, its torque authority and its propellant, none of which this subsystem sees. What this row guarantees is that a reader can see what the commitment IS
+/// * A sustained level and a single day are different commitments, and this is the sustained one — fails when somebody compares the achieved single-day Ap against this row. That is l3_solar_req_05's closure and its ceiling is 80. Reading the wrong one of the two reports a failure where there is none, or a pass where there is not
+pub const NODE_ID: &amp;str = &quot;l3_solar_req_04&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x9f7df30a6d11877e;
+
+pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
+    // generated · a declared value, converted from the unit it was written in
+    let declared: Ratio = match Ratio::from_unit(48.0, Unit::One) {
+        Some(q) =&gt; q,
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_req_long&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+    };
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = declared;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_req_long&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_req_long&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Ap floors at zero, and a sustained requirement of zero would commit the design to operating only in a perfectly quiet field, which no mission window presents&quot; });
+    }
+    if answer.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_req_long&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0 — Ap floors at zero, and a sustained requirement of zero would commit the design to operating only in a perfectly quiet field, which no mission window presents</li>
+<li><code>OutOfDomain</code> above 400 — 400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="l3_solar_req_04"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>0 &hellip; 400</code> -.</p>
+<ul class="guards"><li>lower — Ap floors at zero, and a sustained requirement of zero would commit the design to operating only in a perfectly quiet field, which no mission window presents</li><li>upper — 400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>significant, and one fixture or none — a significant node is the one that gets a second independent check, which is the whole reason for the word</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

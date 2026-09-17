@@ -1,8 +1,8 @@
-<article class="node" data-node="sys_space_environment_solar_flux" data-sheet-hash="9baece" data-impl-hash="222325">
+<article class="node" data-node="sys_space_environment_solar_flux" data-sheet-hash="5679a6" data-impl-hash="964c6a">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="sys_vleo_multipayload">VLEO multipayload</a> <span class="sep">/</span> <a class="xref" data-group="sys_orbit_and_environment">Orbit and environment</a> <span class="sep">/</span> <a class="xref" data-group="sys_space_environment">Space environment</a></nav>
-  <h2>Solar flux</h2>
-  <p class="ident"><code>sys_space_environment_solar_flux</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b></b> · state <b>empty</b></p>
+  <h2>Solar flux, sustained</h2>
+  <p class="ident"><code>sys_space_environment_solar_flux</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
@@ -17,59 +17,180 @@
   <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="empty">Not yet specified. Needs a question, an expression and a source.</p>
-<p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
+<p class="question">What solar flux does the system design to, as a level sustained for months at a time?</p>
+<p class="maths"><code>F107_sys = l3_solar_interface</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The headline of the space-environment heading, and the number an array is sized
+on and a drag budget integrates. Its siblings carry what one DAY inside it
+reaches: sys_space_environment_f10_7 for the flux and sys_space_environment_ap
+for the geomagnetic index.
+
+Sustained and single-day are two rows here for the same reason they are two rows
+in the subsystem below: a design reads one or the other depending on what it is
+sizing, and a tool that published only one would have decided for the reader
+which of the two their problem is.
+</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>It receives and does not compute, and a system reader sees none of the subsystem's limitations</dt><dd>fails when a margin is taken against this number. It is a 1.28-sigma band edge — the 90th percentile, while the run is labelled 95 per cent — on a centre that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles whose peaks differ by 41 per cent. The credibility vector crosses the seam; the assumptions do not, and that is the ordinary cost of having a seam at all</dd>
+<dt>The three drivers arrive but nothing says which SCENARIO they are</dt><dd>fails when somebody reads the three as one case. sys_space_environment_f10_7 carries the hot single day, sys_space_environment_f10_7_81day the level beneath it, and sys_space_environment_kp the worst slot of that same day — so they ARE one coherent case, the hot day. But nothing in the tree enforces that, and a fourth row added later naming a different scenario's member would sit beside them looking identical. The crossing carries the five scenarios precisely so a consumer can pick one; picking is still a decision a row makes in its own sheet</dd>
+<dt>It is the sustained level and not the single day</dt><dd>fails when somebody sizes a thermal transient on it. The single day is sys_space_environment_f10_7 at 124.14, twenty sfu higher. Reading the wrong one of the two under-sizes a transient case or over-sizes a steady one</dd>
+</dl>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">A layer-2 row states what the SYSTEM works with. It does not compute the environment — nobody builds the Sun — so what it does is receive, from the one node of the subsystem below that is visible from here.</p>
+<p class="why">It is an identity, and the identity is the point rather than an omission. A layer-2 row that recomputed anything would be doing subsystem work in a place no subsystem reviewer reads, and the number a system reader saw would not exist anywhere inside the subsystem that owns it.</p>
+<p class="why">The declared range is the crossing's own, restated. Narrowing it would refuse answers the subsystem considers valid and widening it would admit answers the subsystem would refuse — either way this row would be changing the answer while appearing to receive it.</p>
+<div class="theory-walk" data-steps="3">
+<ol class="derive">
+<li><span class="dt">The system layer states what it works with and does not compute the environment. So the row receives.</span></li>
+<li><span class="dt">It receives from the subsystem's one visible node and from nothing else inside it, which is what makes layer 3 something layer 2 can reason about without opening.</span><code class="dm">F107_sys = l3_solar_interface — identity, deliberately</code></li>
+<li><span class="dt">The crossing carries a set of fifteen, so this row names the member it is about: the primary, which is the sustained hot level.</span><code class="dm">l3_solar_interface (primary) = F107_hotmean = 104.07 sfu</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">104.07 sfu at the declared window. Two things about that number are worth a system reader's attention and neither is visible from here.</p>
+<p class="reading">It is far below the 158.33 the study this was ported from publishes for its own window, because sw_central_expectation reads a cycle analogue over the mission's own dates rather than holding the last rotation forecast forward. That is a recorded decision, not a discrepancy.</p>
+<p class="reading">And it is a 1.28-sigma band edge, which is the 90th percentile although the run is labelled 95 per cent. The credibility vector travels across the seam; that does not.</p>
+<p class="reading">THE 81-DAY MEAN NOW ARRIVES TOO, as sys_space_environment_f10_7_81day, which was added after step 6 found it missing. Every thermospheric density model in use takes the pair, daily and 81-day, because the two carry different physics: the daily value drives the EUV heating of the day and the 81-day mean the background state. It carries the same number this row does, 104.07, because the hot day's 81-day companion IS the hot sustained level.</p>
+<p class="reading">KP ARRIVES TOO, as sys_space_environment_kp, which was the last of the three and needed the Kp columns to cross first. So the three drivers a thermospheric density model takes are all at layer 2, and what sys_space_environment_atmospheric_density is waiting on is the model rather than its arguments.</p>
+<p class="maths concl">which is the relation this node states: <code>F107_sys = l3_solar_interface</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code></code></td><td>sys_space_environment_solar_flux</td><td></td><td>-</td></tr>
+<tr><td>in</td><td><code>crossing</code></td><td><a class="xref" data-goto="l3_solar_interface">l3_solar_interface</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>F107_sys</code></td><td>sys_space_environment_solar_flux</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
 <section class="panel" data-panel="3">
-<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
+<ol class="algo">
+<li><span class="step">receive the subsystem's sustained flux conclusion across the seam</span> <span class="binds">→ <code>received: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sys_space_environment_solar_flux(crossing: Ratio) -> Ratio
+    given crossing from l3_solar_interface
+    // receive the subsystem's sustained flux conclusion across the seam
+    received ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require F107_sys ≥ 60
+    require F107_sys ≤ 400
+    require F107_sys is finite
+
+    return F107_sys
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code> &ge; 0</code> — </li>
-<li><code> &le; 0</code> — </li>
+<li><code>F107_sys &ge; 60</code> — the crossing's own floor, restated: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A row that narrowed the range it received would be changing the answer</li>
+<li><code>F107_sys &le; 400</code> — the crossing's own ceiling, restated: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="4">
-<p class="empty">Nothing to walk: the sheet is seeded and the node returns NotRun.</p>
+<div class="relation-host" data-node="sys_space_environment_solar_flux" data-lo="60" data-hi="400" data-symbol="F107_sys">
+<p class="muted">asking the engine…</p>
+</div>
 </section>
 <section class="panel" data-panel="5">
-<p class="empty">Nothing generated — the sheet is incomplete.</p>
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What solar flux does the system design to, as a level sustained for months at a time?
+///
+/// `F107_sys = l3_solar_interface`
+///
+/// Source: `noaa_swpc`
+///
+/// The headline of the space-environment heading, and the number an array is
+/// sized on and a drag budget integrates. Its siblings carry what one DAY
+/// inside it reaches: sys_space_environment_f10_7 for the flux and
+/// sys_space_environment_ap for the geomagnetic index. Sustained and
+/// single-day are two rows here for the same reason they are two rows in the
+/// subsystem below: a design reads one or the other depending on what it is
+/// sizing, and a tool that published only one would have decided for the
+/// reader which of the two their problem is.
+///
+/// # Assumptions
+///
+/// * It receives and does not compute, and a system reader sees none of the subsystem's limitations — fails when a margin is taken against this number. It is a 1.28-sigma band edge — the 90th percentile, while the run is labelled 95 per cent — on a centre that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles whose peaks differ by 41 per cent. The credibility vector crosses the seam; the assumptions do not, and that is the ordinary cost of having a seam at all
+/// * The three drivers arrive but nothing says which SCENARIO they are — fails when somebody reads the three as one case. sys_space_environment_f10_7 carries the hot single day, sys_space_environment_f10_7_81day the level beneath it, and sys_space_environment_kp the worst slot of that same day — so they ARE one coherent case, the hot day. But nothing in the tree enforces that, and a fourth row added later naming a different scenario's member would sit beside them looking identical. The crossing carries the five scenarios precisely so a consumer can pick one; picking is still a decision a row makes in its own sheet
+/// * It is the sustained level and not the single day — fails when somebody sizes a thermal transient on it. The single day is sys_space_environment_f10_7 at 124.14, twenty sfu higher. Reading the wrong one of the two under-sizes a transient case or over-sizes a steady one
+pub const NODE_ID: &amp;str = &quot;sys_space_environment_solar_flux&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x1319a361ca5679a6;
+
+pub fn evaluate(crossing: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : receive the subsystem's sustained flux conclusion across the seam -&gt; Ratio
+    // A layer-2 row receives; it does not compute. The one thing that can go
+    // wrong here is that the seam alters what it carries — a stray factor, an
+    // unasked-for unit conversion, a clamp inherited from the wrong row — and
+    // both sides would still look plausible. So this is the identity, and the
+    // fixtures beside it pin the identity at real values.
+    //
+    // The declared range is the crossing's own, restated so a system reader sees
+    // the limit without opening the subsystem. It therefore guards nothing this
+    // line can break, and that is correct.
+    let received: Ratio = crossing;
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = received;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_sys&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_sys&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the crossing's own floor, restated: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A row that narrowed the range it received would be changing the answer&quot; });
+    }
+    if answer.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_sys&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the crossing's own ceiling, restated: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
 </section>
 <section class="panel" data-panel="6">
-<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="the sustained level this tree's own chain gives for the declared window"><td>the sustained level this tree's own chain gives for the declared window</td><td class="num">104.07110896</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the level the study publishes for its own window, which this row does not use but a reader will compare against"><td>the level the study publishes for its own window, which this row does not use but a reader will compare against</td><td class="num">175.5520201913</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the requirement ceiling l3_solar_req_01 declares — the value at which the design's own sustained limit would be met exactly"><td>the requirement ceiling l3_solar_req_01 declares — the value at which the design's own sustained limit would be met exactly</td><td class="num">260</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
 <section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — </li>
-<li><code>OutOfDomain</code> above 0 — </li>
+<li><code>OutOfDomain</code> below 60 — the crossing's own floor, restated: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A row that narrowed the range it received would be changing the answer</li>
+<li><code>OutOfDomain</code> above 400 — the crossing's own ceiling, restated: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
 <section class="panel" data-panel="8">
-<p class="empty">Tier not set — this decides how much evidence the gate demands.</p>
-<p>Evidence tier <b></b>. What this tier cannot detect: anything.</p>
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sys_space_environment_solar_flux"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
 <section class="panel" data-panel="9">
-<p>Valid over <code>0 &hellip; 0</code> -.</p>
-<ul class="guards"><li>lower — </li><li>upper — </li></ul>
+<p>Valid over <code>60 &hellip; 400</code> -.</p>
+<ul class="guards"><li>lower — the crossing's own floor, restated: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A row that narrowed the range it received would be changing the answer</li><li>upper — the crossing's own ceiling, restated: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code</li>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

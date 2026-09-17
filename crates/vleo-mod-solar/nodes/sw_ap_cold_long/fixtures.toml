@@ -1,0 +1,32 @@
+# Known-good values, and where each came from. An expected value may
+# never be produced by the code under test.
+#
+# The study's own pair is NOT used here: its difference is the prior
+# implementation's published coldmean Ap, and that may not be a fixture. It is in
+# parity.csv beside this sheet. What is checked here is that the relation
+# subtracts rather than adds, which is the only thing separating this row from
+# sw_ap_design_long.
+
+[[fixture]]
+label = "this repository's own chain — the Ap centre with its measured spread"
+expect = 17.49546836
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { central = 22.095389, spread = 3.593688 }
+
+[[fixture]]
+label = "round numbers, checkable without a calculator — 20 - 1.28 × 4"
+expect = 14.88
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { central = 20.0, spread = 4.0 }
+
+[[fixture]]
+label = "a quiet centre of 16, closer to the floor the sheet argues about — the guard fires below a centre of 4.6"
+expect = 11.40007936
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { central = 16.0, spread = 3.593688 }

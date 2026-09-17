@@ -1,0 +1,360 @@
+<article class="node" data-node="sw_kp_scenarios" data-sheet-hash="c92977" data-impl-hash="c8d783">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Kp in both slots, for all five scenarios</h2>
+  <p class="ident"><code>sw_kp_scenarios</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">What Kp does each of the five driver scenarios carry, in the mean slot and in the peak slot?</p>
+<p class="maths"><code>Kp_slot(s) = kp_from_ap(Ap_s) + dKp_slot(Ap_s), for each of the five scenarios and each of the two slots</code></p>
+<p class="src">Source <b>iaga_kp_ap</b> — Bartels, J. — The standardized index Ks and the planetary index Kp, with the ap equivalent-amplitude table <span class="where">IATME Bulletin 12b, IUGG Publication Office, 1949; the 28-point table as published by IAGA and distributed by GFZ Potsdam</span></p>
+<p class="note">Ten numbers, and they are the last two columns of the study's driver product.
+Every relation behind them already existed on its own row in this subsystem; what
+did not exist was a way to evaluate them at five Ap values at once, because a
+node publishes a value and a consumer cannot ask it for its relation.
+
+The two slots are different questions about the same day. Ap is a daily mean, Kp
+is reported in eight three-hourly slots, and Kp(ap) is concave — so the published
+conversion run on a daily mean lands ABOVE the mean of the eight slots and well
+BELOW the peak. A design sized on the conversion alone is sized on a sky quieter
+than the record's, and on exactly the days a drag design is sized by.
+</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>The offsets are medians over nine bins of Ap and nothing else</dt><dd>fails when the day is unusual in a way Ap does not capture. The correction knows the daily mean and the bin it falls in; it does not know whether the day was one long storm or eight quiet slots and one severe one, and those have the same Ap and very different peaks. The median is the middle of that spread, so half of the days in any bin exceed the peak this row publishes</dd>
+<dt>The tables are clamped at both ends rather than extrapolated</dt><dd>fails when a scenario's Ap falls outside them. The scale runs to ap 400 and the bias bins to a centre of 255, so a hot day above that reads the last bin's offset. This tree's hot Ap day is 90.55, inside both; the study's driver sets never exceeded 42. A scenario multiplier applied to a disturbed day would reach the clamp silently</dd>
+<dt>Both slot corrections are measured on the record and belong to a bundle version</dt><dd>fails when the bundle moves. They are medians over bundles/solar-weather@2026.09.14 and must be re-measured when it does. They live in vleo-core, which is the second and third pieces of measured data in a kernel whose own comment used to say SOLAR_CYCLE_SHAPE was the only one — that claim is now wrong and the kernel says so</dd>
+<dt>This row composes and does not measure, so its errors are its constituents' errors</dt><dd>fails when a reader looks here for the physics. The scale is sw_kp_from_ap's, both offsets are sw_kp_mean_bias's and sw_kp_slot_bias's, and the five Ap values are the design rows'. What this row owns is the composition and the choice of five points, and its parity grid is the only place all three are checked together</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">Three relations, composed, at five points.</p>
+<p class="why">The published IAGA scale turns a daily Ap into a Kp. It is a lookup and not a formula, and it is concave — ap grows roughly geometrically with Kp — which is the whole reason the slot corrections exist. Run on a DAILY MEAN Ap the scale returns a value that sits above the mean of the day's eight three-hourly Kp and far below its peak, by Jensen's inequality, and both offsets are measurable on the record rather than arguable from the shape.</p>
+<p class="why">sw_kp_mean_bias and sw_kp_slot_bias measure them, in nine bins of Ap, as the median of mean_8(Kp) - table(Ap) and of max_8(Kp) - table(Ap). Both tables now live in vleo-core beside the scale, because more than one caller reads each: those two rows at one Ap, and this row at five.</p>
+<p class="why">What this row adds is nothing but the composition and the five points. That is deliberately thin — a row that did more would be doing physics its own constituents already own — and the value of it is that the ten numbers exist as variables the crossing can relay, rather than as a relation nothing downstream can evaluate.</p>
+<div class="theory-walk" data-steps="4">
+<ol class="derive">
+<li><span class="dt">Take each scenario's daily Ap. Five of them, from the five rows that compute them.</span><code class="dm">Ap_s for s in {nominal, hotmean, coldmean, hotday, coldday}</code></li>
+<li><span class="dt">Convert on the published 28-point IAGA scale, which is a lookup rather than a formula and is clamped at both ends rather than extrapolated.</span><code class="dm">base_s = kp_from_ap(Ap_s)</code></li>
+<li><span class="dt">Add the measured offset for the slot. The scale is fed a daily MEAN and Kp(ap) is concave, so it reads above the mean of the eight three-hourly slots and far below the peak; both offsets are medians of the record in nine bins of Ap.</span><code class="dm">Kp_mean_s = base_s + dKp_mean(Ap_s) · Kp_peak_s = base_s + dKp_peak(Ap_s)</code></li>
+<li><span class="dt">Ten results, published as a set, because the crossing carries the driver product as one conclusion and these are two of its five columns.</span></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">FED THE STUDY'S OWN FIVE Ap VALUES THIS ROW REPRODUCES ALL TEN OF ITS Kp NUMBERS TO FOUR DECIMALS — every scenario, both slots, which is what the parity grid beside this sheet holds. That is a strong result for a chain of three relations and two measured tables, and it says the port of prf_ap2kp is right.</p>
+<p class="reading">On this tree's own Ap values the three *mean scenarios still agree closely with the study — 3.5483 against 3.5481 in the mean slot at nominal — because this tree's sustained Ap values are within half a per cent of the study's. The two *day scenarios do not, and they are not meant to: this tree's hot Ap day is 90.55 against the study's 41.54, because the within-rotation band is conditioned on the rotation level. So the hot day carries Kp 5.80 in the mean slot and 8.00 in the peak, against the study's 4.50 and 6.14.</p>
+<p class="reading">Kp 8.0 in the peak slot is a severe geomagnetic storm, G4. That follows from the Ap correction rather than from anything here, and it is the same finding l3_solar_req_05 is now failing on.</p>
+<p class="maths concl">which is the relation this node states: <code>Kp_slot(s) = kp_from_ap(Ap_s) + dKp_slot(Ap_s), for each of the five scenarios and each of the two slots</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>ap_nominal</code></td><td><a class="xref" data-goto="sw_ap_central_expectation">sw_ap_central_expectation</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>ap_hotmean</code></td><td><a class="xref" data-goto="sw_ap_design_long">sw_ap_design_long</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>ap_coldmean</code></td><td><a class="xref" data-goto="sw_ap_cold_long">sw_ap_cold_long</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>ap_hotday</code></td><td><a class="xref" data-goto="sw_ap_design_short">sw_ap_design_short</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>ap_coldday</code></td><td><a class="xref" data-goto="sw_ap_cold_short">sw_ap_cold_short</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>Kp_peak_hotday</code></td><td>sw_kp_scenarios</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_mean_nominal</code></td><td>sw_kp_scenarios.kp_mean_nominal</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_mean_hotmean</code></td><td>sw_kp_scenarios.kp_mean_hotmean</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_mean_coldmean</code></td><td>sw_kp_scenarios.kp_mean_coldmean</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_mean_hotday</code></td><td>sw_kp_scenarios.kp_mean_hotday</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_mean_coldday</code></td><td>sw_kp_scenarios.kp_mean_coldday</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_peak_nominal</code></td><td>sw_kp_scenarios.kp_peak_nominal</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_peak_hotmean</code></td><td>sw_kp_scenarios.kp_peak_hotmean</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_peak_coldmean</code></td><td>sw_kp_scenarios.kp_peak_coldmean</td><td>Ratio</td><td>-</td></tr>
+<tr class="out member"><td>out</td><td><code>Kp_peak_coldday</code></td><td>sw_kp_scenarios.kp_peak_coldday</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="muted">This node answers with a set: <b>10</b> variables in all. The first is the answer the node is named for; the rest are read by name.</p>
+<p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="l3_solar_interface">l3_solar_interface</a></p>
+</section>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">convert each scenario's Ap to Kp on the published scale and add the measured slot offset, for both slots</span> <span class="binds">→ <code>set: Answer</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_kp_scenarios(ap_nominal: Ratio, ap_hotmean: Ratio, ap_coldmean: Ratio, ap_hotday: Ratio, ap_coldday: Ratio) -> Ratio
+    given ap_nominal from sw_ap_central_expectation
+    given ap_hotmean from sw_ap_design_long
+    given ap_coldmean from sw_ap_cold_long
+    given ap_hotday from sw_ap_design_short
+    given ap_coldday from sw_ap_cold_short
+    // convert each scenario's Ap to Kp on the published scale and add the measured slot offset, for both slots
+    set ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require Kp_peak_hotday ≥ 0
+    require Kp_peak_hotday ≤ 9
+    require Kp_peak_hotday is finite
+
+    return Kp_peak_hotday
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>Kp_peak_hotday &ge; 0</code> — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky</li>
+<li><code>Kp_peak_hotday &le; 9</code> — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400. This member is the worst slot of the worst day, so it is the one of the ten most likely to reach it</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sw_kp_scenarios" data-lo="0" data-hi="9" data-symbol="Kp_peak_hotday">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What Kp does each of the five driver scenarios carry, in the mean slot and in the peak slot?
+///
+/// `Kp_slot(s) = kp_from_ap(Ap_s) + dKp_slot(Ap_s), for each of the five scenarios and each of the two slots`
+///
+/// Source: `iaga_kp_ap`
+///
+/// Ten numbers, and they are the last two columns of the study's driver
+/// product. Every relation behind them already existed on its own row in this
+/// subsystem; what did not exist was a way to evaluate them at five Ap values
+/// at once, because a node publishes a value and a consumer cannot ask it for
+/// its relation. The two slots are different questions about the same day. Ap
+/// is a daily mean, Kp is reported in eight three-hourly slots, and Kp(ap) is
+/// concave — so the published conversion run on a daily mean lands ABOVE
+/// the mean of the eight slots and well BELOW the peak. A design sized on the
+/// conversion alone is sized on a sky quieter than the record's, and on
+/// exactly the days a drag design is sized by.
+///
+/// # Assumptions
+///
+/// * The offsets are medians over nine bins of Ap and nothing else — fails when the day is unusual in a way Ap does not capture. The correction knows the daily mean and the bin it falls in; it does not know whether the day was one long storm or eight quiet slots and one severe one, and those have the same Ap and very different peaks. The median is the middle of that spread, so half of the days in any bin exceed the peak this row publishes
+/// * The tables are clamped at both ends rather than extrapolated — fails when a scenario's Ap falls outside them. The scale runs to ap 400 and the bias bins to a centre of 255, so a hot day above that reads the last bin's offset. This tree's hot Ap day is 90.55, inside both; the study's driver sets never exceeded 42. A scenario multiplier applied to a disturbed day would reach the clamp silently
+/// * Both slot corrections are measured on the record and belong to a bundle version — fails when the bundle moves. They are medians over bundles/solar-weather@2026.09.14 and must be re-measured when it does. They live in vleo-core, which is the second and third pieces of measured data in a kernel whose own comment used to say SOLAR_CYCLE_SHAPE was the only one — that claim is now wrong and the kernel says so
+/// * This row composes and does not measure, so its errors are its constituents' errors — fails when a reader looks here for the physics. The scale is sw_kp_from_ap's, both offsets are sw_kp_mean_bias's and sw_kp_slot_bias's, and the five Ap values are the design rows'. What this row owns is the composition and the choice of five points, and its parity grid is the only place all three are checked together
+pub const NODE_ID: &amp;str = &quot;sw_kp_scenarios&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x50102f9afbc92977;
+
+/// The set this node publishes. One field per published variable, named
+/// by the sheet's own symbol, in the order `OUTPUT_VARS` declares: this
+/// node's own answer first, then each `[[publishes]]` block. The field
+/// NAMES are what a hole body assigns, so the order cannot be got wrong
+/// by hand, and every member is guarded against its own declared domain.
+#[allow(non_snake_case)]
+pub struct Answer {
+    /// Kp in both slots, for all five scenarios — this node's own answer.
+    pub Kp_peak_hotday: Ratio,
+    /// Kp, mean slot, nominal scenario — published as `sw_kp_scenarios.kp_mean_nominal`.
+    pub Kp_mean_nominal: Ratio,
+    /// Kp, mean slot, sustained disturbed scenario — published as `sw_kp_scenarios.kp_mean_hotmean`.
+    pub Kp_mean_hotmean: Ratio,
+    /// Kp, mean slot, sustained quiet scenario — published as `sw_kp_scenarios.kp_mean_coldmean`.
+    pub Kp_mean_coldmean: Ratio,
+    /// Kp, mean slot, disturbed single day — published as `sw_kp_scenarios.kp_mean_hotday`.
+    pub Kp_mean_hotday: Ratio,
+    /// Kp, mean slot, quietest single day — published as `sw_kp_scenarios.kp_mean_coldday`.
+    pub Kp_mean_coldday: Ratio,
+    /// Kp, peak slot, nominal scenario — published as `sw_kp_scenarios.kp_peak_nominal`.
+    pub Kp_peak_nominal: Ratio,
+    /// Kp, peak slot, sustained disturbed scenario — published as `sw_kp_scenarios.kp_peak_hotmean`.
+    pub Kp_peak_hotmean: Ratio,
+    /// Kp, peak slot, sustained quiet scenario — published as `sw_kp_scenarios.kp_peak_coldmean`.
+    pub Kp_peak_coldmean: Ratio,
+    /// Kp, peak slot, quietest single day — published as `sw_kp_scenarios.kp_peak_coldday`.
+    pub Kp_peak_coldday: Ratio,
+}
+
+pub fn evaluate(ap_nominal: Ratio, ap_hotmean: Ratio, ap_coldmean: Ratio, ap_hotday: Ratio, ap_coldday: Ratio) -&gt; Result&lt;Answer, Fault&gt; {
+    // ---- HOLE 1 : convert each scenario's Ap to Kp on the published scale and add the measured slot offset, for both slots -&gt; Answer
+    // Three relations from vleo-core, composed at five points. None of the three
+    // is written here: the scale is env::kp_from_ap, the two offsets are
+    // env::kp_mean_slot_bias and env::kp_peak_slot_bias, and each is read by
+    // this row and by the row that owns it. A table copied into both would
+    // drift from itself without anything noticing, which is what happened to
+    // the ap-to-Kp scale for as long as it had two copies.
+    use vleo_core::physics::env::{kp_from_ap, kp_mean_slot_bias, kp_peak_slot_bias};
+
+    // One closure per slot, so the composition is written once rather than ten
+    // times. Ten hand-written lines of `kp_from_ap(x) + bias(x)` is ten chances
+    // to pair the wrong scenario with the wrong table.
+    let mean = |ap: Ratio| -&gt; Ratio { Ratio::new(kp_from_ap(ap.get()) + kp_mean_slot_bias(ap.get())) };
+    let peak = |ap: Ratio| -&gt; Ratio { Ratio::new(kp_from_ap(ap.get()) + kp_peak_slot_bias(ap.get())) };
+
+    let set: Answer = Answer {
+        // The primary: the worst slot of the worst day, which is what a design
+        // sized against geomagnetic activity reads.
+        Kp_peak_hotday: peak(ap_hotday),
+
+        Kp_mean_nominal: mean(ap_nominal),
+        Kp_mean_hotmean: mean(ap_hotmean),
+        Kp_mean_coldmean: mean(ap_coldmean),
+        Kp_mean_hotday: mean(ap_hotday),
+        Kp_mean_coldday: mean(ap_coldday),
+
+        Kp_peak_nominal: peak(ap_nominal),
+        Kp_peak_hotmean: peak(ap_hotmean),
+        Kp_peak_coldmean: peak(ap_coldmean),
+        Kp_peak_coldday: peak(ap_coldday),
+    };
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Answer = set;
+
+    // generated · every published member carries its own declared domain.
+    // A set whose primary is in range and whose fifth member is not is not a
+    // usable set, and the member a consumer reads may be any of them.
+    if !answer.Kp_peak_hotday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_peak_hotday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_peak_hotday.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_hotday&quot;, value: answer.Kp_peak_hotday.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky&quot; });
+    }
+    if answer.Kp_peak_hotday.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_hotday&quot;, value: answer.Kp_peak_hotday.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400. This member is the worst slot of the worst day, so it is the one of the ten most likely to reach it&quot; });
+    }
+    if !answer.Kp_mean_nominal.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_mean_nominal&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_mean_nominal.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_nominal&quot;, value: answer.Kp_mean_nominal.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9; a negative value is a sign error&quot; });
+    }
+    if answer.Kp_mean_nominal.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_nominal&quot;, value: answer.Kp_mean_nominal.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9&quot; });
+    }
+    if !answer.Kp_mean_hotmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_mean_hotmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_mean_hotmean.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_hotmean&quot;, value: answer.Kp_mean_hotmean.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9; a negative value is a sign error&quot; });
+    }
+    if answer.Kp_mean_hotmean.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_hotmean&quot;, value: answer.Kp_mean_hotmean.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9&quot; });
+    }
+    if !answer.Kp_mean_coldmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_mean_coldmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_mean_coldmean.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_coldmean&quot;, value: answer.Kp_mean_coldmean.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9; a negative value is a sign error, and the quiet scenarios are the ones that approach the floor&quot; });
+    }
+    if answer.Kp_mean_coldmean.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_coldmean&quot;, value: answer.Kp_mean_coldmean.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9&quot; });
+    }
+    if !answer.Kp_mean_hotday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_mean_hotday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_mean_hotday.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_hotday&quot;, value: answer.Kp_mean_hotday.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9; a negative value is a sign error&quot; });
+    }
+    if answer.Kp_mean_hotday.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_hotday&quot;, value: answer.Kp_mean_hotday.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9&quot; });
+    }
+    if !answer.Kp_mean_coldday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_mean_coldday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_mean_coldday.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_coldday&quot;, value: answer.Kp_mean_coldday.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9. This is the lowest of the ten and the one nearest the floor: at the declared window it is 1.27&quot; });
+    }
+    if answer.Kp_mean_coldday.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_mean_coldday&quot;, value: answer.Kp_mean_coldday.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9&quot; });
+    }
+    if !answer.Kp_peak_nominal.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_peak_nominal&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_peak_nominal.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_nominal&quot;, value: answer.Kp_peak_nominal.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9; a negative value is a sign error&quot; });
+    }
+    if answer.Kp_peak_nominal.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_nominal&quot;, value: answer.Kp_peak_nominal.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9&quot; });
+    }
+    if !answer.Kp_peak_hotmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_peak_hotmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_peak_hotmean.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_hotmean&quot;, value: answer.Kp_peak_hotmean.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9; a negative value is a sign error&quot; });
+    }
+    if answer.Kp_peak_hotmean.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_hotmean&quot;, value: answer.Kp_peak_hotmean.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9&quot; });
+    }
+    if !answer.Kp_peak_coldmean.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_peak_coldmean&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_peak_coldmean.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_coldmean&quot;, value: answer.Kp_peak_coldmean.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9; a negative value is a sign error&quot; });
+    }
+    if answer.Kp_peak_coldmean.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_coldmean&quot;, value: answer.Kp_peak_coldmean.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9&quot; });
+    }
+    if !answer.Kp_peak_coldday.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Kp_peak_coldday&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.Kp_peak_coldday.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_coldday&quot;, value: answer.Kp_peak_coldday.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9; a negative value is a sign error&quot; });
+    }
+    if answer.Kp_peak_coldday.get() &gt; 9.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Kp_peak_coldday&quot;, value: answer.Kp_peak_coldday.get(), bound: 9.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;Kp is defined on 0 to 9&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94"><td>the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94</td><td class="num">7.9850088183</td><td class="num">0.000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="ap 12.5, a bin centre. The scale interpolates between Kp 8/3 at ap 12 and Kp 3 at ap 15; the mean offset -0.0976 is exact"><td>ap 12.5, a bin centre. The scale interpolates between Kp 8/3 at ap 12 and Kp 3 at ap 15; the mean offset -0.0976 is exact</td><td class="num">2.6245833333</td><td class="num">0.000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="ap 25, a bin centre. Scale between Kp 11/3 at ap 22 and Kp 4 at ap 27, mean offset -0.1333 exact"><td>ap 25, a bin centre. Scale between Kp 11/3 at ap 22 and Kp 4 at ap 27, mean offset -0.1333 exact</td><td class="num">3.7333333333</td><td class="num">0.000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="ap 7.5, a bin centre. Scale between Kp 2 at ap 7 and Kp 7/3 at ap 9, mean offset -0.125 exact"><td>ap 7.5, a bin centre. Scale between Kp 2 at ap 7 and Kp 7/3 at ap 9, mean offset -0.125 exact</td><td class="num">1.9583333333</td><td class="num">0.000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="ap 90, a bin centre. The mean offset -0.4487 is exact and the scale is the same interpolation the primary uses — so this and Kp_peak_hotday differ by exactly the two offsets, 2.1956"><td>ap 90, a bin centre. The mean offset -0.4487 is exact and the scale is the same interpolation the primary uses — so this and Kp_peak_hotday differ by exactly the two offsets, 2.1956</td><td class="num">5.7893772894</td><td class="num">0.000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="ap 2.5, the first bin centre. The scale interpolates between Kp 1/3 at ap 2 and Kp 2/3 at ap 3; the mean offset is the one POSITIVE entry in that table, +0.0417"><td>ap 2.5, the first bin centre. The scale interpolates between Kp 1/3 at ap 2 and Kp 2/3 at ap 3; the mean offset is the one POSITIVE entry in that table, +0.0417</td><td class="num">0.5416666667</td><td class="num">0.000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="ap 12.5. Peak offset 1.1144 exact, and this is the bin where that table is not monotone with its neighbours"><td>ap 12.5. Peak offset 1.1144 exact, and this is the bin where that table is not monotone with its neighbours</td><td class="num">3.8366290019</td><td class="num">0.000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="ap 25. Peak offset 1.2 exact. Kp 5.07 is a G1 storm in the worst slot of an ordinary sustained day"><td>ap 25. Peak offset 1.2 exact. Kp 5.07 is a G1 storm in the worst slot of an ordinary sustained day</td><td class="num">5.0666666667</td><td class="num">0.000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="ap 7.5. Peak offset 0.8333 exact"><td>ap 7.5. Peak offset 0.8333 exact</td><td class="num">2.9166666667</td><td class="num">0.000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+<tr data-fixture="ap 2.5, the first bin centre, where the peak offset is exactly 1.0 and the scale is exactly 0.5 — the one case in this set a reader can check without a calculator"><td>ap 2.5, the first bin centre, where the peak offset is exactly 1.0 and the scale is exactly 0.5 — the one case in this set a reader can check without a calculator</td><td class="num">1.5</td><td class="num">0.000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0 — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky</li>
+<li><code>OutOfDomain</code> above 9 — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400. This member is the worst slot of the worst day, so it is the one of the ten most likely to reach it</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_kp_scenarios"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>0 &hellip; 9</code> -.</p>
+<ul class="guards"><li>lower — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky</li><li>upper — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400. This member is the worst slot of the worst day, so it is the one of the ten most likely to reach it</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

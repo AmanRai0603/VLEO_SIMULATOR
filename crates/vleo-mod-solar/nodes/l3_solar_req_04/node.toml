@@ -1,0 +1,144 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "l3_solar_req_04"
+label = "Ap, sustained"
+folder = "l3_solar_req_04"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "declared"
+owner = "environment"
+tier = "A"
+criticality = "significant"   # minor | significant — significant means two reviewers and a differential fill
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1338
+state = "published"
+# A ceiling, not a floor. The environment is something the vehicle must
+# survive, so the requirement is satisfied by the sky being no worse than
+# this, and the achieved row beside it must come in at or under.
+sense = "<="
+
+# THE SUSTAINED HALF OF THE Ap PAIR. §20 splits every driver into a level the
+# mission SITS AT for months and a level one day inside it reaches, because a
+# design uses them for different things. This is the sustained half;
+# l3_solar_req_05 is the single day, and l3_solar_req_03 is a third question
+# again — the one storm the mission is expected to meet at all.
+#
+# Three Ap ceilings, and they are not redundant:
+#
+#     req_04   48    what the vehicle operates in INDEFINITELY
+#     req_05   80    what it survives for ONE DAY
+#     req_03  150    the one storm in the mission it must not be destroyed by
+#
+# A design that can only take 48 for a day and 48 for a decade has not been
+# thought about; the whole point of a transient is that it is easier to survive.
+#
+# THE NUMBER HAS A DERIVATION, WHICH IS NOT TRUE OF EVERY REQUIREMENT HERE. The
+# G scale is defined on Kp, and the published ap equivalent amplitude gives the
+# daily Ap each level bounds:
+#
+#     G1 minor     Kp 5     ap  48
+#     G2 moderate  Kp 6     ap  80
+#     G3 strong    Kp 7     ap 132
+#     G4 severe    Kp 8     ap 207
+#     G5 extreme   Kp 9     ap 400
+#
+# 48 is the G1 threshold exactly: the commitment is that the vehicle operates
+# through minor-storm conditions indefinitely, with no duty cycle and no safe
+# mode. That is a statement a reader can check against a published scale, which
+# l3_solar_req_01's 250 sfu is not.
+
+[question]
+text = "What sustained Ap must this design operate in, for as long as the mission lasts?"
+note = """
+Not survive — OPERATE IN. A sustained level is the sky the mission sits in for
+months, so the commitment is about continuous service rather than about coming
+through intact. That is a stronger claim than its single-day sibling makes and
+is why its number is lower.
+
+The checking partner is l3_solar_ach_04, which reports the sustained Ap the
+record says the window will present.
+"""
+
+[maths]
+confirmed_by = "A. Rai / 2026-09-16"
+expression = "Ap_req_long = ap(G1) = 48"
+source = "orbitt_case_c1"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact.
+[theory]
+why = """
+A requirement is not a prediction and not a capability: it is a commitment, and
+its purpose is to be checkable against something measured. This row commits the
+design to operating continuously in a geomagnetic field up to the G1 threshold,
+and the checking partner is l3_solar_ach_04.
+
+The number is taken from the published G scale rather than chosen as a round
+number above the achieved value, which is a deliberate departure from how
+l3_solar_req_01's 250 sfu was picked. A ceiling set above whatever the chain
+currently computes moves whenever the chain does and can never be violated; a
+ceiling set at a published threshold is a claim about the vehicle that stays
+still while the environment estimate moves underneath it. Both are in this
+group, side by side, and the difference is worth seeing.
+"""
+reading = """
+48 against an achieved 26.70 at the declared window — 80 per cent of room, which
+sounds generous and is not the point. The achieved side is a 1.28-sigma band on
+a centre that is itself a cycle analogue; if the epoch moved to a cycle maximum
+the sustained Ap would roughly double and this closure would come close.
+
+It is a ceiling on the DRIVER and says nothing about what the driver does to the
+vehicle. Ap is an index of geomagnetic disturbance; what a spacecraft feels is
+the heating, the density and the torque that disturbance produces, through
+models this subsystem does not own.
+"""
+
+[[theory.step]]
+text = "The closure to be made checkable is sustained Ap achieved against sustained Ap required. Both sides must be rows, at the same layer, in the same quantity and unit."
+
+[[theory.step]]
+text = "The requirement side is a commitment about the vehicle, so it cannot be computed from the record. It is taken from the published G scale at the minor-storm threshold."
+math = "Ap_req_long = ap(Kp 5) = 48"
+
+[[theory.step]]
+text = "Which the achieved side clears at the declared window, and would not clear at a cycle maximum."
+math = "26.70 <= 48 — the closure holds, with 80 per cent of room"
+
+[[assumption]]
+text = "It is a ceiling on the driver and says nothing about what the driver does to the vehicle"
+fails_when = "a reader takes a passing closure as evidence the design is adequate. Ap is an index; what a spacecraft feels is the heating, the density and the torque it produces, through models this subsystem does not own. A design that meets Ap <= 48 and is sized with the wrong drag coefficient has met this requirement and will still deorbit early"
+
+[[assumption]]
+text = "The G1 threshold is a reasonable place for a CONTINUOUS-operation commitment, and nothing here establishes that"
+fails_when = "the vehicle's real limit is elsewhere. 48 is a published threshold rather than an arbitrary round number, which makes it checkable, but checkable is not the same as correct: the level at which a particular design must stop operating comes from its thermal, its torque authority and its propellant, none of which this subsystem sees. What this row guarantees is that a reader can see what the commitment IS"
+
+[[assumption]]
+text = "A sustained level and a single day are different commitments, and this is the sustained one"
+fails_when = "somebody compares the achieved single-day Ap against this row. That is l3_solar_req_05's closure and its ceiling is 80. Reading the wrong one of the two reports a failure where there is none, or a pass where there is not"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "Ap_req_long"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 400.0
+reason_lower = "Ap floors at zero, and a sustained requirement of zero would commit the design to operating only in a perfectly quiet field, which no mission window presents"
+reason_upper = "400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all"
+
+[value]
+# A number a person picked. It carries the same discipline as a
+# fixture, because every margin in the design is built out of these.
+number = 48.0
+# NOT A CONFIRMATION. 48 is the published ap equivalent amplitude at Kp 5, the
+# G1 threshold, which is a fact about the scale and not a decision. The DECISION
+# is that continuous operation is committed to at G1 and not at G2 or at the
+# quiet level, and that is a spacecraft claim nobody has made yet. An agent may
+# not make it.
+# Ap 48 sustained — the published G1 threshold, committed to as continuous operation.
+confirmed_by = "A. Rai / 2026-09-16"
+
+[view]
+kind = "number"

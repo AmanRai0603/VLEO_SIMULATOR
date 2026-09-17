@@ -259,7 +259,7 @@ def check(port):
     epoch_s = (WIN_OPEN - date(2000, 1, 1)).days * 86400
     cen = run_node(port, "sw_central_expectation",
                    [("sys_mission_requirements_mission_epoch", epoch_s),
-                    ("orbit_mission_duration", lead_s)])
+                    ("sys_mission_requirements_mission_duration", lead_s)])
     ml = ref["nominal"]["f107"]
     ana, lag, n_an, here = cycle_analogue(rows)
     if cen is not None:
@@ -283,13 +283,16 @@ def check(port):
           "Composing the two rows now reproduces that run exactly, above.")
     entry("NO ROW", "a window-driven driver product",
           "MATLAB turns (date, duration, confidence) into five driver sets. The port "
-          "has no such row: sys_mission_requirements_mission_duration is still seeded, "
-          "so there is no duration to drive a window with.")
+          "still has no such row, but the reason has changed: the duration it needed "
+          "is now declared at sys_mission_requirements_mission_duration, which used to "
+          "be seeded and is what blocked this. What is missing now is the product "
+          "itself \u2014 the mean band and the daily band as separate published rows, "
+          "planned as steps 3 and 4 of section 20 of the port plan.")
     # The window maximum, which MATLAB has no equivalent of: its own driver
     # construction takes the window MEAN and never the peak.
     mx = run_node(port, "sw_window_peak_level",
                   [("sys_mission_requirements_mission_epoch", epoch_s),
-                   ("orbit_mission_duration", lead_s)])
+                   ("sys_mission_requirements_mission_duration", lead_s)])
     if mx is not None and cen is not None:
         entry("NO ROW", "the peak of the expectation inside the window",
               f"sw_window_peak_level publishes {mx:.2f} sfu against the centre's "

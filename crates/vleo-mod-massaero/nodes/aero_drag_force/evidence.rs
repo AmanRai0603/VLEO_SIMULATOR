@@ -78,20 +78,20 @@ fn answers_near_the_known_good_point() {
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Pressure::new(0.0019938 * scale), Ratio::new(2.85807), Area::new(0.3327)) {
-            assert!(v.get().is_finite(), "aero_drag_force produced a value that is not a number");
-            assert!(v.get() >= 0.0 && v.get() <= 10.0, "aero_drag_force answered {}, outside its declared domain 0 … 10 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "aero_drag_force produced a value that is not a number for D");
+            assert!(v.get() >= 0.0 && v.get() <= 10.0, "aero_drag_force answered {} for D, outside its declared domain 0 … 10 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Pressure::new(0.0019938), Ratio::new(2.85807 * scale), Area::new(0.3327)) {
-            assert!(v.get().is_finite(), "aero_drag_force produced a value that is not a number");
-            assert!(v.get() >= 0.0 && v.get() <= 10.0, "aero_drag_force answered {}, outside its declared domain 0 … 10 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "aero_drag_force produced a value that is not a number for D");
+            assert!(v.get() >= 0.0 && v.get() <= 10.0, "aero_drag_force answered {} for D, outside its declared domain 0 … 10 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Pressure::new(0.0019938), Ratio::new(2.85807), Area::new(0.3327 * scale)) {
-            assert!(v.get().is_finite(), "aero_drag_force produced a value that is not a number");
-            assert!(v.get() >= 0.0 && v.get() <= 10.0, "aero_drag_force answered {}, outside its declared domain 0 … 10 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "aero_drag_force produced a value that is not a number for D");
+            assert!(v.get() >= 0.0 && v.get() <= 10.0, "aero_drag_force answered {} for D, outside its declared domain 0 … 10 — the guard did not stop it", v.get());
         }
     }
 }
@@ -106,7 +106,9 @@ fn the_same_inputs_give_the_same_answer() {
     let a = model::evaluate(Pressure::new(0.0019938), Ratio::new(2.85807), Area::new(0.3327));
     let b = model::evaluate(Pressure::new(0.0019938), Ratio::new(2.85807), Area::new(0.3327));
     match (a, b) {
-        (Ok(x), Ok(y)) => assert!(x.get().to_bits() == y.get().to_bits(), "aero_drag_force is not deterministic: {} then {}", x.get(), y.get()),
+        (Ok(x), Ok(y)) => {
+            assert!(x.get().to_bits() == y.get().to_bits(), "aero_drag_force is not deterministic for D: {} then {}", x.get(), y.get());
+        }
         (Err(_), Err(_)) => {}
         _ => panic!("aero_drag_force refused on one call and answered on the other"),
     }

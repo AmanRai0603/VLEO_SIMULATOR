@@ -197,7 +197,7 @@ def comparisons(days, cyc):
             "amplitude of 193.86 where the record's own mean is lifted by cycle "
             "23 at 226.81. The tolerance is wide for that reason and still "
             "catches a broken amplitude: a peak 20% high reads 2.4e-01",
-            sets=(("orbit_mission_duration", 15 * 31557600.0),))
+            sets=(("sys_mission_requirements_mission_duration", 15 * 31557600.0),))
 
     # --- prf_cycles: the boundaries are published, the fold is the sheet's.
     epoch = 9862.0

@@ -2,7 +2,7 @@
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>F10.7 to design to</h2>
-  <p class="ident"><code>sw_f107_design</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+  <p class="ident"><code>sw_f107_design</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>deprecated</b></p>
 </header>
 <div class="tabs" role="tablist">
   <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
@@ -20,7 +20,33 @@
 <p class="question">What F10.7 should this design be sized to?</p>
 <p class="maths"><code>F107_design = F107_central + dF107_p95</code></p>
 <p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
-<p class="note">One of the two numbers the subsystem exists to produce. The centre comes from sw_central_expectation, the spread from sw_uncertainty_growth, and the confidence is the 95th percentile that sw_uncertainty_growth publishes — so this is a value the mission should not exceed in 95% of histories, not a value it will see.</p>
+<p class="note">The centre comes from sw_central_expectation, the spread from
+sw_uncertainty_growth, and the confidence is the 95th percentile that
+sw_uncertainty_growth publishes — so this is a value the mission should not
+exceed in 95 per cent of histories, not a value it will see.
+
+NOTHING READS THIS ROW ANY MORE, AND THAT IS A DECISION SOMEBODY SHOULD MAKE.
+It used to be the subsystem's headline: l3_solar_ach_01, l3_solar_ach_02 and
+l3_solar_interface all restated it. §20 step 5 re-pointed the two closures at
+sw_f107_design_long and sw_f107_design_short, and §20 step 4 gave the interface
+the whole driver set, so this row now has no consumers at all.
+
+It is not wrong and it was not replaced — it answers a DIFFERENT question from
+the design rows. This is a one-sided 95th-percentile PERSISTENCE growth: how far
+might the flux drift from today's value over the mission. sw_f107_design_long is
+a band width: how wrong has the pattern historically been about the level a
+rotation sits at. Both are defensible and they are not the same question, which
+sw_f107_design_long's own question note says in as many words.
+
+A published number nothing reads is a number nobody checks, which is the
+standard this subsystem holds itself to elsewhere. THE ROW IS THEREFORE
+DEPRECATED, decided 2026-09-16. It stays readable with its whole history, the
+gate stops treating it as live, and the contract check refuses it as a NEW
+dependency — so nothing can pick it up again without that being a deliberate
+act. What it answers is still a real question, and if a design wants the
+persistence reading back it should be revived on purpose rather than found by
+accident.
+</p>
 <h4>Assumptions</h4>
 <dl class="asm">
 <dt>95% and no other confidence, because that is the percentile the spread row publishes</dt><dd>fails when prf_design offers p50, p90, p95 and p99 and expects the caller to pick what the mission needs. This row inherits p95 from sw_uncertainty_growth and cannot be asked for another: a mission needing p99 is reading a number about 32 sfu too small at a one-year lead. Changing the confidence means changing the row underneath, which is where the percentile is chosen and declared.</dd>
@@ -50,7 +76,7 @@
 <tr><td>in</td><td><code>spread</code></td><td><a class="xref" data-goto="sw_uncertainty_growth">sw_uncertainty_growth</a></td><td>Ratio</td><td>-</td></tr>
 <tr class="out"><td>out</td><td><code>F107_design</code></td><td>sw_f107_design</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
-<p class="consumers"><b>3</b> nodes read this: <a class="xref" data-goto="l3_solar_ach_01">l3_solar_ach_01</a>, <a class="xref" data-goto="l3_solar_ach_02">l3_solar_ach_02</a>, <a class="xref" data-goto="l3_solar_interface">l3_solar_interface</a></p>
+<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
 <section class="panel" data-panel="3">
 <ol class="algo">
@@ -101,11 +127,29 @@ use vleo_core::units::*;
 ///
 /// Source: `noaa_swpc`
 ///
-/// One of the two numbers the subsystem exists to produce. The centre comes
-/// from sw_central_expectation, the spread from sw_uncertainty_growth, and
-/// the confidence is the 95th percentile that sw_uncertainty_growth publishes
-/// — so this is a value the mission should not exceed in 95% of histories,
-/// not a value it will see.
+/// The centre comes from sw_central_expectation, the spread from
+/// sw_uncertainty_growth, and the confidence is the 95th percentile that
+/// sw_uncertainty_growth publishes — so this is a value the mission should
+/// not exceed in 95 per cent of histories, not a value it will see. NOTHING
+/// READS THIS ROW ANY MORE, AND THAT IS A DECISION SOMEBODY SHOULD MAKE. It
+/// used to be the subsystem's headline: l3_solar_ach_01, l3_solar_ach_02 and
+/// l3_solar_interface all restated it. §20 step 5 re-pointed the two
+/// closures at sw_f107_design_long and sw_f107_design_short, and §20 step 4
+/// gave the interface the whole driver set, so this row now has no consumers
+/// at all. It is not wrong and it was not replaced — it answers a DIFFERENT
+/// question from the design rows. This is a one-sided 95th-percentile
+/// PERSISTENCE growth: how far might the flux drift from today's value over
+/// the mission. sw_f107_design_long is a band width: how wrong has the
+/// pattern historically been about the level a rotation sits at. Both are
+/// defensible and they are not the same question, which sw_f107_design_long's
+/// own question note says in as many words. A published number nothing reads
+/// is a number nobody checks, which is the standard this subsystem holds
+/// itself to elsewhere. THE ROW IS THEREFORE DEPRECATED, decided 2026-09-16.
+/// It stays readable with its whole history, the gate stops treating it as
+/// live, and the contract check refuses it as a NEW dependency — so nothing
+/// can pick it up again without that being a deliberate act. What it answers
+/// is still a real question, and if a design wants the persistence reading
+/// back it should be revived on purpose rather than found by accident.
 ///
 /// # Assumptions
 ///

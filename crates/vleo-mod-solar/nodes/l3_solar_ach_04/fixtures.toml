@@ -1,0 +1,43 @@
+# Known-good values, and where each came from.
+#
+# The one rule: an expected value may never be produced by the code
+# under test. The schema refuses a row whose provenance is the
+# implementation, because a number worked out by the thing being
+# checked proves nothing.
+#
+# AN ACHIEVED ROW'S EVIDENCE IS THAT IT CHANGES NOTHING
+#
+# There is no physics here. What can go wrong is that the restatement alters what
+# it carries — a stray factor, a unit conversion nobody asked for, a clamp
+# inherited from the wrong row — and the failure is invisible because both sides
+# look plausible. So every fixture is the identity, at a value taken from
+# somewhere real, and what they pin is that the number arriving is the number
+# leaving.
+#
+# The inputs are sw_ap_design_long's own fixture answers, so if that row's
+# numbers move these move with it and a divergence means the restatement started
+# computing.
+
+[[fixture]]
+label = "the sustained Ap this repository's own chain gives for the declared window crosses unchanged"
+expect = 26.69530964
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { conclusion = 26.69530964 }
+
+[[fixture]]
+label = "the requirement's own ceiling crosses unchanged — the value at which this closure would sit exactly on its limit"
+expect = 48.0
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { conclusion = 48.0 }
+
+[[fixture]]
+label = "a round number, so the identity is checkable without a calculator"
+expect = 20.0
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { conclusion = 20.0 }

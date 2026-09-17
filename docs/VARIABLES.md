@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1371 rows** — 659 a person picked, 712 worked out. Two thirds of any design tree is
+**1393 rows** — 663 a person picked, 730 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -12305,19 +12305,19 @@ This is the number an air-breathing system exists to make free. A stored-propell
 | symbol | `T_mis` |
 | type | `Time` |
 | unit | yr |
-| kind | declared |
+| kind | computed |
 | owner | systems |
 | evidence tier | A |
-| relation | `T_mis = 5` |
+| relation | `T_mis = T_mis_req` |
 | source | `orbitt_case_c1` |
-| declared value | **5** yr |
-| confirmed by | A. Rai / 2026-09-01 |
 | valid over | 0.5 … 15 yr |
 
 - **lower bound** — below six months the programme cannot amortise a satellite, so it is not the mission being designed
 - **upper bound** — above 15 years the cost model, the degradation model and the battery cycle model are all extrapolated well past their fits
+- **reads** — `sys_mission_requirements_mission_duration`
 - **read by** — `aero_ao_fluence`, `cost_per_year`, `cost_programme`, `pwr_battery_cycles`, `pwr_degradation`, `sw_central_expectation`, `sw_horizon_climatology`, `sw_horizon_persistence`, `sw_storm_return_level`, `sw_uncertainty_growth`, `sw_window_peak_level`
 - **contributes to** — kpi_cost_per_year
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
 ### `orbit_nodal_regression` — Nodal regression rate
 
@@ -18944,9 +18944,9 @@ At or above one the orbit holds indefinitely. Below one the mission has a lifeti
 
 ## `solar` — Solar weather — addition
 
-### `l3_solar_ach_01` — Solar flux
+### `l3_solar_ach_01` — F10.7, sustained
 
-> What is the worst solar flux the record says this mission will present?
+> What sustained F10.7 does the record say this mission will present?
 
 | | |
 |---|---|
@@ -18956,24 +18956,28 @@ At or above one the orbit holds indefinitely. Below one the mission has a lifeti
 | kind | achieved |
 | owner | environment |
 | evidence tier | A |
-| relation | `F107_ach_flux = sw_f107_design` |
+| relation | `F107_ach_flux = sw_f107_design_long` |
 | source | `noaa_swpc` |
 | valid over | 60 … 400 - |
 
-- **lower bound** — the same floor as env_f107 and sw_f107_design: below 60 sfu has never been observed and no relation reading F10.7 has support there
-- **upper bound** — the same ceiling as env_f107 and sw_f107_design: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value
-- **reads** — `sw_f107_design`
+- **lower bound** — the same floor as env_f107 and sw_f107_design_long: below 60 sfu has never been observed and no relation reading F10.7 has support there
+- **upper bound** — the same ceiling as env_f107 and sw_f107_design_long: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value
+- **reads** — `sw_f107_design_long`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **assumes** It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when the same cost as the interface, and worth repeating on the row a closure actually binds. The number is sized on the cycle analogue at the mission's own epoch rather than on the record's unconditional mean, which this chain now reads the epoch to do — it was an open decision on sw_central_expectation and it has been made, moving this row by 28.0 sfu; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way.
+- **assumes** It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when the same cost as the interface, and worth repeating on the row a closure actually binds. The number is sized on the cycle analogue at the mission's own epoch rather than on the record's unconditional mean, which this chain now reads the epoch to do; where it is a band it is 1.28 sigma, the 90th percentile, and not the 95 per cent the run is labelled; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way.
 - **evidence** the five-year conclusion, restated unchanged — expect 228.1374378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** the half-year conclusion, restated unchanged — expect 171.8843338669 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** the fifteen-year conclusion, restated unchanged — expect 229.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 
-The headline of the three. It is the same number the interface carries to sys_space_environment, restated on the achieved side of the closure so that the comparison against what the spacecraft can sustain happens on a row rather than in somebody's head.
+The headline of the five. It is the same number the interface carries to
+sys_space_environment as its primary member, restated on the achieved side of
+the closure so that the comparison against what the spacecraft can sustain
+happens on a row rather than in somebody's head.
 
-### `l3_solar_ach_02` — F10.7
 
-> What F10.7 does the record say this mission will present, at 95% confidence?
+### `l3_solar_ach_02` — F10.7, single day
+
+> What F10.7 does the record say a single day inside this mission window will reach?
 
 | | |
 |---|---|
@@ -18983,21 +18987,25 @@ The headline of the three. It is the same number the interface carries to sys_sp
 | kind | achieved |
 | owner | environment |
 | evidence tier | A |
-| relation | `F107_ach = sw_f107_design` |
+| relation | `F107_ach = sw_f107_design_short` |
 | source | `noaa_swpc` |
 | valid over | 60 … 400 - |
 
 - **lower bound** — the same floor as env_f107: below 60 sfu has never been observed
-- **upper bound** — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating
-- **reads** — `sw_f107_design`
+- **upper bound** — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating. This is the achieved row most likely to reach it, being a sustained level with a daily excursion on top
+- **reads** — `sw_f107_design_short`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **assumes** It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when the same cost as the interface, and worth repeating on the row a closure actually binds. The number is sized on the cycle analogue at the mission's own epoch rather than on the record's unconditional mean, which this chain now reads the epoch to do — it was an open decision on sw_central_expectation and it has been made, moving this row by 28.0 sfu; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way.
-- **assumes** ach_01 and ach_02 carry the same number, because at layer 3 the solar flux IS F10.7 — fails when sys_space_environment declares sys_space_environment_solar_flux and sys_space_environment_f10_7 as separate rows, and the seeder mirrored both into this group. In the study they are one quantity: F10.7 is the solar flux index, and nothing in prf_drivers distinguishes them. So two rows here answer with one number, which is honest but redundant, and the redundancy belongs to the layer-2 decomposition rather than to this subsystem. Whoever settles what an interface publishes should settle this at the same time — either sys_space_environment_solar_flux means something else, such as the headline with its credibility, or one of the two rows should not exist.
+- **assumes** It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when a margin is computed from this row against a capability. The centre beneath it is a cycle analogue at the mission's own epoch, scaled beyond one cycle past cycle 25's maximum by the mean amplitude of two completed cycles whose peaks differ by 41 per cent; the band around it is 1.28 sigma, the 90th percentile, while the run is labelled 95 per cent; and the daily term stacked on top is a separate one-sided percentile, so the combination is nearer a 1-in-100 day than a 1-in-20 one. None of that travels across the closure, and the margin looks like a clean number either way
+- **assumes** It restates the single-day level and not one of its two siblings — fails when somebody reads it as the sustained level or as the persistence drift. The three are 124.14, 104.07 and 200.14 — all fluxes, same unit, same declared domain — so nothing in the tree would catch the substitution, and each would report a different margin against the same requirement
+- **assumes** Nothing compares this row with its requirement automatically — fails when a reader assumes the tree checks the closure. The pairing is a convention the matrix draws; `sense` is declared on the requirement row and the gate checks only that it is present. The Ap storm closure in this same group, l3_solar_req_03 against l3_solar_ach_03, currently FAILS at 158.38 against 150 and nothing in the tree says so
 - **evidence** the five-year conclusion, restated unchanged — expect 228.1374378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** the half-year conclusion, restated unchanged — expect 171.8843338669 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** the fifteen-year conclusion, restated unchanged — expect 229.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 
-The F10.7 driver on the achieved side. It is the same quantity as ach_01 in this subsystem because the solar flux IS F10.7 here — the layer-2 rows separate them and the subsystem does not, which is a finding rather than a design and is stated in the assumptions.
+The single-day half of the F10.7 closure. Its partner, l3_solar_req_02, commits
+the design to surviving 350 sfu — above the largest daily value in the record —
+and this says what the window's own band actually reaches.
+
 
 ### `l3_solar_ach_03` — Ap
 
@@ -19026,38 +19034,454 @@ The F10.7 driver on the achieved side. It is the same quantity as ach_01 in this
 
 The geomagnetic driver on the achieved side: the storm that recurs once per mission lifetime. Unlike the F10.7 pair this has no confidence attached, because geomagnetic activity has no usable long-term forecast and the study designs to a return period instead.
 
+### `l3_solar_ach_04` — Ap, sustained
+
+> What sustained Ap does the record say this mission will present?
+
+| | |
+|---|---|
+| symbol | `Ap_ach_long` |
+| type | `Ratio` |
+| unit | - |
+| kind | achieved |
+| owner | environment |
+| evidence tier | A |
+| relation | `Ap_ach_long = sw_ap_design_long` |
+| source | `noaa_swpc` |
+| valid over | 0 … 400 - |
+
+- **lower bound** — the same floor as the row it restates: Ap floors at zero, and a perfectly quiet day is Ap 0
+- **upper bound** — the same ceiling as the row it restates: 400 is the top of the Ap index itself, and a value above it is not a geomagnetic index at all
+- **reads** — `sw_ap_design_long`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when a margin is computed from this row against a capability. The centre beneath it is a cycle analogue scaled, beyond one cycle past cycle 25's maximum, by the mean amplitude of two completed cycles whose peaks differ by 41 per cent; the band is 1.28 sigma, which is the 90th percentile and not the 95 per cent the run is labelled; and the residuals it is a sigma of are skewed. None of that travels across the closure, and the margin looks like a clean number either way
+- **assumes** It restates the sustained level and not one of its two siblings — fails when somebody reads it as the other. The subsystem publishes three Ap conclusions — 26.70 sustained, 41.70 for the worst day of the design band, 158.38 for the one storm expected in the mission — and they answer three different questions. Restating the wrong one would move this closure from passing to failing or back without anything in the tree noticing
+- **assumes** Nothing compares this row with its requirement automatically — fails when a reader assumes the tree checks the closure. The pairing is a convention the matrix draws; `sense` is declared on the requirement row and the gate checks only that it is present. The Ap storm closure beside this one, l3_solar_req_03 against l3_solar_ach_03, currently FAILS at 158.38 against 150 and nothing in the tree says so
+- **evidence** the sustained Ap this repository's own chain gives for the declared window crosses unchanged — expect 26.69530964 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the requirement's own ceiling crosses unchanged — the value at which this closure would sit exactly on its limit — expect 48 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** a round number, so the identity is checkable without a calculator — expect 20 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+An achieved row restates the subsystem's conclusion on the side of the
+comparison the closure reads. It computes nothing of its own, and it exists
+rather than the closure reading sw_ap_design_long directly so that the
+comparison binds two rows of the same shape at the same layer — visible on the
+tree instead of an edge somebody has to trace.
+
+
+### `l3_solar_ach_05` — Ap, single day
+
+> What single-day Ap does the record say this mission will present?
+
+| | |
+|---|---|
+| symbol | `Ap_ach_short` |
+| type | `Ratio` |
+| unit | - |
+| kind | achieved |
+| owner | environment |
+| evidence tier | A |
+| relation | `Ap_ach_short = sw_ap_design_short` |
+| source | `noaa_swpc` |
+| valid over | 0 … 400 - |
+
+- **lower bound** — the same floor as the row it restates: Ap floors at zero, and a perfectly quiet day is Ap 0
+- **upper bound** — the same ceiling as the row it restates: 400 is the top of the Ap index itself, and a value above it is not a geomagnetic index at all
+- **reads** — `sw_ap_design_short`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when a margin is computed from this row against a capability. The centre beneath it is a cycle analogue scaled, beyond one cycle past cycle 25's maximum, by the mean amplitude of two completed cycles whose peaks differ by 41 per cent; the band is 1.28 sigma, which is the 90th percentile and not the 95 per cent the run is labelled; and the residuals it is a sigma of are skewed. None of that travels across the closure, and the margin looks like a clean number either way
+- **assumes** It restates the single-day level and not one of its two siblings — fails when somebody reads it as the other. The subsystem publishes three Ap conclusions — 26.70 sustained, 90.55 for the worst day of the design band, 158.38 for the one storm expected in the mission — and they answer three different questions. Restating the wrong one would move this closure from passing to failing or back without anything in the tree noticing
+- **assumes** Nothing compares this row with its requirement automatically — fails when a reader assumes the tree checks the closure. The pairing is a convention the matrix draws; `sense` is declared on the requirement row and the gate checks only that it is present. All five closures in this group hold as of 2026-09-16, and two of them did not the day before — this one at 90.55 against 80, and the Ap storm at 158.38 against 150. Both were invisible to every machine check in this repository, and both were found by a person reading the numbers rather than by anything running
+- **evidence** the single-day Ap this repository's own chain gives for the declared window crosses unchanged — expect 41.6971614919 ± 0.0000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the requirement's own ceiling crosses unchanged — the value at which this closure would sit exactly on its limit — expect 80 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the G3 storm level, well above this closure's ceiling, to show the row carries rather than clamps — expect 132 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+An achieved row restates the subsystem's conclusion on the side of the
+comparison the closure reads. It computes nothing of its own, and it exists
+rather than the closure reading sw_ap_design_short directly so that the
+comparison binds two rows of the same shape at the same layer — visible on the
+tree instead of an edge somebody has to trace.
+
+
 ### `l3_solar_interface` — Solar weather — subsystem interface
 
 > What does the solar-weather subsystem conclude, for a system reader who will not open it?
 
 | | |
 |---|---|
-| symbol | `F107_crossing` |
+| symbol | `F107_hotmean` |
 | type | `Ratio` |
 | unit | - |
 | kind | required |
 | owner | environment |
 | evidence tier | A |
-| relation | `F107_crossing = F107_design` |
+| relation | `driver_set = {nominal, hotmean, coldmean, hotday, coldday} x {f107, f107bar, ap}, each member relayed from the row that computed it` |
 | source | `noaa_swpc` |
 | valid over | 60 … 400 - |
 
-- **lower bound** — the same floor as env_f107 and sw_f107_design: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A crossing that narrowed or widened the range it carries would be changing the answer, so it declares the producer's own bounds
-- **upper bound** — the same ceiling as env_f107 and sw_f107_design: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. Restating it here means a system reader sees the limit without opening the subsystem
-- **reads** — `sw_f107_design`
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **assumes** It carries the F10.7 driver only, and the subsystem concludes more than that — fails when sys_space_environment holds six rows — solar flux, F10.7, Ap, atmospheric density, thermospheric wind, atomic oxygen fluence — and this crossing answers one of them. The Ap side is measured and published inside the subsystem (sw_storm_return_level, and the peak-slot correction in sw_kp_slot_bias) and does not cross yet, because one row publishes one number and the convention allows exactly one crossing per subsystem. How a subsystem with more than one conclusion crosses is the same unsettled question as the kind above, and it is unsettled for all twenty-one interfaces, not just this one.
-- **assumes** It inherits every limitation of the row beneath it, and a system reader sees none of them — fails when this is the ordinary cost of a seam and it is worth stating where the seam is. The number crossing here is a 95th percentile and not a worst case. Its centre is now the cycle analogue at the mission's own epoch rather than the record's unconditional mean, so this chain does read the epoch; what the centre cannot tell you is which kind of cycle comes next, because beyond this one it is scaled by the mean of two. A reader at layer 2 sees 228 sfu and a credibility vector, and would have to open sw_f107_design and then sw_central_expectation to learn any of that. The credibility travels; the assumptions do not.
-- **evidence** the five-year conclusion crosses unchanged — 228.1374 sfu — expect 228.1374378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** the half-year conclusion crosses unchanged — the narrowest band — expect 171.8843338669 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** the ten-year conclusion crosses unchanged — where the cycle brings the band in — expect 180.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** the record's own climatology crosses unchanged, as the floor case — expect 114.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **lower bound** — the same floor as env_f107 and every design row beneath this one: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A crossing that narrowed or widened the range it carries would be changing the answer, so it declares the producer's own bounds
+- **upper bound** — the same ceiling as env_f107 and every design row beneath this one: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. Restating it here means a system reader sees the limit without opening the subsystem
+- **reads** — `sw_central_expectation`, `sw_f107_design_long`, `sw_f107_cold_long`, `sw_f107_design_short`, `sw_f107_cold_short`, `sw_ap_central_expectation`, `sw_ap_design_long`, `sw_ap_cold_long`, `sw_ap_design_short`, `sw_ap_cold_short`, `sw_kp_scenarios.kp_mean_nominal`, `sw_kp_scenarios.kp_mean_hotmean`, `sw_kp_scenarios.kp_mean_coldmean`, `sw_kp_scenarios.kp_mean_hotday`, `sw_kp_scenarios.kp_mean_coldday`, `sw_kp_scenarios.kp_peak_nominal`, `sw_kp_scenarios.kp_peak_hotmean`, `sw_kp_scenarios.kp_peak_coldmean`, `sw_kp_scenarios`, `sw_kp_scenarios.kp_peak_coldday`
+- **read by** — `sys_space_environment_ap`, `sys_space_environment_f10_7`, `sys_space_environment_f10_7_81day`, `sys_space_environment_kp`, `sys_space_environment_solar_flux`
+- **assumes** The Kp columns do not cross, and the study's driver set has two of them — fails when a consumer needs Kp. The study publishes kp_mean and kp_peak per scenario, formed from that scenario's Ap by the published ap-to-Kp scale plus a measured slot bias. This tree has all three relations — sw_kp_from_ap, sw_kp_mean_bias, sw_kp_slot_bias — and cannot use them here, because the bus passes a node's VALUE and not its RELATION: each of those rows answers at one Ap, and a driver set needs them at five. Three ways out, none of them free: those three rows each publish a set of five, keyed to the scenarios; or the ap-to-Kp scale and both bias tables move into vleo-core as named functions this hole can call, at the cost of putting measured data in the kernel; or ten more rows exist, one per scenario per slot. Until one is chosen the Ap column crosses and the Kp columns do not, and a consumer that needs Kp must convert it itself — which is the duplication this row exists to prevent
+- **assumes** It relays and does not compute, and the f107bar column is the edge of that claim — fails when somebody calls the f107bar mapping a calculation. No value is combined with another and no constant appears; what happens is that one input is published under two names, because the study's hotday scenario carries hotmean's 81-day mean beneath it. If that is computation then a crossing cannot carry a set at all, and §20.3's decision needs revisiting rather than this hole
+- **assumes** Every member inherits every limitation of the row beneath it, and a system reader sees none of them — fails when this is the ordinary cost of a seam and it is worth stating where the seam is. The two *mean scenarios are 1.28-sigma bands, which is the 90th percentile and not the 95 per cent the run is labelled; the two *day scenarios stack a second one-sided percentile on top, which is nearer a 1-in-100 day than a 1-in-20; and the centre beneath all five is a cycle analogue that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles, whose peaks differ by 41 per cent. A reader at layer 2 sees fifteen numbers and a credibility vector, and would have to open five rows to learn any of that. The credibility travels; the assumptions do not
+- **assumes** One refused member refuses the whole set — fails when this is read as a defect in the seam. It is the seam's job: a driver set with one member the record cannot support is not a driver set, and publishing four members and a hole would put the judgement about which was which above the seam. It does mean this row's availability is the AND of ten rows, so the seam is the least available thing in the subsystem by construction
+- **evidence** the sustained hot F10.7 crosses unchanged, from sw_f107_design_long — expect 175.5520201913 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the nominal F10.7 crosses unchanged, from sw_central_expectation — expect 158.3304112313 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the sustained cold F10.7 crosses unchanged, from sw_f107_cold_long — expect 141.1088022713 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the hot single day crosses unchanged, from sw_f107_design_short — expect 124.1432752988 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the cold single day crosses unchanged, from sw_f107_cold_short — expect 65.24109104 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the nominal scenario's 81-day mean is its own value — a *mean scenario IS its mean — expect 158.3304112313 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the hot sustained scenario's 81-day mean is its own value — expect 175.5520201913 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the cold sustained scenario's 81-day mean is its own value — expect 141.1088022713 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** THE HOT DAY RIDES ON THE HOT MEAN — its 81-day mean is 175.55, not its own 209.78. The one member that is not a copy of its namesake input — expect 175.5520201913 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** THE COLD DAY RIDES ON THE COLD MEAN — its 81-day mean is 141.11, not its own 109.84 — expect 141.1088022713 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the nominal Ap crosses unchanged, from sw_ap_central_expectation — expect 22.095389 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the sustained disturbed Ap crosses unchanged, from sw_ap_design_long — expect 26.69530964 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the sustained quiet Ap crosses unchanged, from sw_ap_cold_long — expect 17.49546836 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the most disturbed single day crosses unchanged, from sw_ap_design_short — expect 90.54720964 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the quietest single day crosses unchanged, from sw_ap_cold_short — the member closest to a declared bound, seven units clear of zero — expect 4.9319536205 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the nominal mean-slot Kp crosses unchanged, from sw_kp_scenarios — expect 3.5482988548 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the sustained disturbed mean-slot Kp crosses unchanged — expect 3.8317523369 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the sustained quiet mean-slot Kp crosses unchanged — expect 3.1661753614 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the disturbed single day, mean slot — Kp 5.80, where the study has 4.50, because this tree's hot Ap day is more than twice the study's — expect 5.8022794796 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the quietest single day, mean slot — the lowest of the twenty-five members — expect 1.2712527528 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the nominal peak-slot Kp crosses unchanged — expect 4.79556964 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the sustained disturbed peak-slot Kp crosses unchanged — Kp 5.20, a G1 storm in the worst slot of an ordinary sustained day — expect 5.1977706122 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the sustained quiet peak-slot Kp crosses unchanged — expect 4.2773779523 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** THE WORST SLOT OF THE WORST DAY, Kp 8.00 — a G4 severe storm, and the member a design sized against geomagnetic activity reads — expect 7.996613371 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the quietest single day, peak slot — expect 2.2295860861 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
 
-One row, one number, no reaching in. Everything the subsystem establishes — the record, the cycle, the storms, the slot bias, the spread — arrives at sw_f107_design, and this carries that across to sys_space_environment. A reader who wants the working opens l3_solar and finds forty rows; a reader who wants the answer opens this one.
+One row, one conclusion, no reaching in. Everything the subsystem establishes —
+the record, the cycle, the storms, the slot bias, the two spreads, both tails of
+each — arrives at five design scenarios, and this carries them across to
+sys_space_environment as one thing.
 
-### `l3_solar_req_01` — Solar flux
+Five scenarios because that is what the study's product is and what a design
+reads: nominal is where the mission sits, the two *mean scenarios are what it
+SUSTAINS for months, and the two *day scenarios are what one day inside that
+reaches. An array is sized on a sustained level and a thermal transient on a
+day. A tool that published one of the five would have decided for the reader
+which of those their problem is.
 
-> What solar flux must this design survive?
+- **publishes a set of 25** — this row's own answer, above, and the members below. Each is read as `l3_solar_interface.<member>`.
+
+#### `l3_solar_interface.f107_nominal` — F10.7 the mission is expected to sit at
+
+| | |
+|---|---|
+| symbol | `F107_nominal` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the producer's own floor, restated: below 60 sfu has never been observed
+- **upper bound** — the producer's own ceiling, restated: above 400 sfu the temperature relation is extrapolated past the record
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.f107_coldmean` — F10.7 sustained on the cold side
+
+| | |
+|---|---|
+| symbol | `F107_coldmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the producer's own floor, restated. On the cold scenarios it is load-bearing rather than decorative: a band wider than the sky reaches through it
+- **upper bound** — the producer's own ceiling, restated. A COLD level near it means a spread has been added rather than subtracted somewhere beneath this row
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.f107_hotday` — F10.7 on the worst single day
+
+| | |
+|---|---|
+| symbol | `F107_hotday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the producer's own floor, restated: below 60 sfu has never been observed
+- **upper bound** — the producer's own ceiling, restated. This is the member most likely to reach it — a sustained level with a daily excursion stacked on top — which is why the guard is on every member and not only the primary
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.f107_coldday` — F10.7 on the quietest single day
+
+| | |
+|---|---|
+| symbol | `F107_coldday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the producer's own floor, restated, and THIS IS THE MEMBER THAT REFUSES on the nominal case: sw_f107_cold_short reaches 38.36 sfu from a centre of 86.85, and 38 sfu has never been observed. The guard is beneath this row and fires there; this restates the same limit so a system reader sees it without opening the subsystem
+- **upper bound** — the producer's own ceiling, restated. On the QUIETEST of the five scenarios a value near it means a sign is wrong somewhere beneath this row
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.f107bar_nominal` — 81-day mean F10.7 beneath the nominal scenario
+
+| | |
+|---|---|
+| symbol | `F107bar_nominal` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the same floor as the daily value it equals. An 81-day mean cannot sit below a floor every day of it respects
+- **upper bound** — the same ceiling as the daily value it equals
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.f107bar_hotmean` — 81-day mean F10.7 beneath the hot sustained scenario
+
+| | |
+|---|---|
+| symbol | `F107bar_hotmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the same floor as the daily value it equals: a *mean scenario IS its own 81-day mean
+- **upper bound** — the same ceiling as the daily value it equals
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.f107bar_coldmean` — 81-day mean F10.7 beneath the cold sustained scenario
+
+| | |
+|---|---|
+| symbol | `F107bar_coldmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the same floor as the daily value it equals: a *mean scenario IS its own 81-day mean
+- **upper bound** — the same ceiling as the daily value it equals
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.f107bar_hotday` — 81-day mean F10.7 the hot day rides on
+
+| | |
+|---|---|
+| symbol | `F107bar_hotday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the hotmean level's own floor, because that is what this member is: a single day rides on the sustained level beneath it, and its 81-day mean is that level rather than the day's own value
+- **upper bound** — the hotmean level's own ceiling. A *day scenario whose f107bar equalled its f107 would be claiming eighty-one consecutive days of the worst one, which the record does not support and the study does not publish
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.f107bar_coldday` — 81-day mean F10.7 the cold day rides on
+
+| | |
+|---|---|
+| symbol | `F107bar_coldday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the coldmean level's own floor, because that is what this member is: the quietest day still rides on the sustained cold level beneath it
+- **upper bound** — the coldmean level's own ceiling
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.ap_nominal` — Ap the mission is expected to sit at
+
+| | |
+|---|---|
+| symbol | `Ap_nominal` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 400 - |
+
+- **lower bound** — Ap floors at zero — a perfectly quiet day is Ap 0 — and there is nothing below it
+- **upper bound** — 400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.ap_hotmean` — Ap sustained on the disturbed side
+
+| | |
+|---|---|
+| symbol | `Ap_hotmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 400 - |
+
+- **lower bound** — Ap floors at zero, so a sustained level below it means a spread has been subtracted rather than added beneath this row
+- **upper bound** — 400 is the top of the Ap index itself
+- **read by** — `sys_space_environment_ap`
+
+#### `l3_solar_interface.ap_coldmean` — Ap sustained on the quiet side
+
+| | |
+|---|---|
+| symbol | `Ap_coldmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 400 - |
+
+- **lower bound** — Ap floors at zero. On the quiet scenarios the floor is close: the producer's band subtracted from a centre below about 4.6 reaches through it
+- **upper bound** — 400 is the top of the Ap index itself
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.ap_hotday` — Ap on the most disturbed single day
+
+| | |
+|---|---|
+| symbol | `Ap_hotday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 400 - |
+
+- **lower bound** — Ap floors at zero
+- **upper bound** — 400 is the top of the Ap index itself, and this member — a sustained level with a daily excursion stacked on top — is the one in the set most likely to reach for it
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.ap_coldday` — Ap on the quietest single day
+
+| | |
+|---|---|
+| symbol | `Ap_coldday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 400 - |
+
+- **lower bound** — Ap floors at zero, and this is the member in the whole subsystem closest to a declared bound: at the declared window it crosses at 6.91, seven units clear. Its producer's own sheet says a centre below 15.2 would put it through the floor
+- **upper bound** — 400 is the top of the Ap index itself. On the QUIETEST scenario a value anywhere near it means a sign is wrong beneath this row
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_mean_nominal` — Kp, mean slot, nominal scenario
+
+| | |
+|---|---|
+| symbol | `Kp_mean_nominal` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_mean_hotmean` — Kp, mean slot, sustained disturbed scenario
+
+| | |
+|---|---|
+| symbol | `Kp_mean_hotmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_mean_coldmean` — Kp, mean slot, sustained quiet scenario
+
+| | |
+|---|---|
+| symbol | `Kp_mean_coldmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_mean_hotday` — Kp, mean slot, disturbed single day
+
+| | |
+|---|---|
+| symbol | `Kp_mean_hotday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_mean_coldday` — Kp, mean slot, quietest single day
+
+| | |
+|---|---|
+| symbol | `Kp_mean_coldday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_peak_nominal` — Kp, peak slot, nominal scenario
+
+| | |
+|---|---|
+| symbol | `Kp_peak_nominal` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_peak_hotmean` — Kp, peak slot, sustained disturbed scenario
+
+| | |
+|---|---|
+| symbol | `Kp_peak_hotmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — `sys_space_environment_kp`
+
+#### `l3_solar_interface.kp_peak_coldmean` — Kp, peak slot, sustained quiet scenario
+
+| | |
+|---|---|
+| symbol | `Kp_peak_coldmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_peak_hotday` — Kp, peak slot, disturbed single day
+
+| | |
+|---|---|
+| symbol | `Kp_peak_hotday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_peak_coldday` — Kp, peak slot, quietest single day
+
+| | |
+|---|---|
+| symbol | `Kp_peak_coldday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+
+### `l3_solar_req_01` — F10.7, sustained
+
+> What sustained F10.7 must this design operate in, for as long as the mission lasts?
 
 | | |
 |---|---|
@@ -19067,47 +19491,69 @@ One row, one number, no reaching in. Everything the subsystem establishes — th
 | kind | declared |
 | owner | environment |
 | evidence tier | A |
-| relation | `F107_req = 250 sfu` |
+| relation | `F107_req = 260 sfu, above the record's largest 27-day mean of 252.67` |
 | source | `orbitt_case_c1` |
-| declared value | **250** - |
-| confirmed by | A. Rai / 2026-09-14 |
+| declared value | **260** - |
+| confirmed by | A. Rai / 2026-09-16 |
 | valid over | 60 … 400 - |
 
 - **lower bound** — the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement
 - **upper bound** — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **assumes** 250 is the design value with a round margin on it, and the margin is a decision rather than a calculation — fails when somebody looks for the derivation. At the declared five-year mission sw_f107_design comes to 228.14 sfu — the central expectation of 114.84 plus the 95th-percentile growth of 113.29 — and 250 is the next round number above it, 9.6 per cent of headroom. Nothing in the record picks 250. It is chosen so the closure passes with visible room rather than by a hair, and so that a modest change in mission length or epoch does not silently break it. A design that wants the margin to mean something specific should replace this with a number that has a derivation.
+- **assumes** 260 is the record's hottest sustained rotation rounded up, and the SATELLITE-ERA record is not the sun's history — fails when the record is read as the sun's history. 260 is anchored at 252.67 sfu, the largest 27-day mean in 28.2 years of SATELLITE-ERA record, centred 2024-08-13. Cycle 19 in the late 1950s ran higher than anything in that record, so a design meant to operate through a cycle-19 maximum needs a larger number and the rounding to 260 buys seven sfu against it. The anchor is at least checkable, which its predecessor was not: 250 was the next round number above whatever the chain happened to give, so it moved with the design rather than with the sky and its headroom drifted from 9.6 per cent to 140 without anything being wrong.
 - **assumes** It is a ceiling on the DRIVER and says nothing about what the driver does to the vehicle — fails when the requirement is read as a survivability statement. F10.7 is an index of solar radio flux; what a spacecraft actually feels is the density that flux produces at its altitude, through a model this subsystem does not own. A design that meets F10.7 <= 250 and is sized on a density model with the wrong drag coefficient has met this requirement and will still deorbit early. The closure this row takes part in is on the environment, and the environment is only the first half.
 - **assumes** One number for the whole mission, with no epoch and no phase in it — fails when the mission slips. The record runs 64 to 343 sfu across a cycle, so the flux a mission sees depends on where in the cycle it flies; the declared epoch of 2027-01-01 sits at phase 0.619, past maximum on the declining side. A mission starting in 2030 would sit near minimum and 250 would be enormously conservative. The requirement does not move with the epoch and is not meant to — it is the vehicle's capability, and the sky's variation belongs on the achieved side.
 
-The headline requirement of the three, and the first `required` row written anywhere in this repository — no other subsystem has one, so the shape here is the shape the other sixteen will copy. It is a ceiling the environment must not exceed, and l3_solar_ach_01 is the number the record actually presents.
+The headline requirement of the five, and the first `required` row written
+anywhere in this repository — no other subsystem has one, so the shape here is
+the shape the other sixteen will copy. It is a ceiling the environment must not
+exceed, and l3_solar_ach_01 is the number the record actually presents.
 
-### `l3_solar_req_02` — F10.7
+WHAT THIS ROW USED TO ASK, AND WHY IT CHANGED. It asked "what solar flux must
+this design survive?" with no horizon on it, and l3_solar_req_02 asked the same
+thing again at 95 per cent confidence — two rows, one question, one number.
+§20 splits every driver into a level the mission SITS AT for months and a level
+one day inside it reaches, because a design uses them for different things: an
+array is sized on the sustained level, a thermal transient on the day. This row
+is now the sustained half and req_02 is the single day, so the duplication is
+gone and two different commitments are stated instead of one commitment twice.
 
-> What F10.7 must this design survive, at 95 per cent confidence?
+
+### `l3_solar_req_02` — F10.7, single day
+
+> What F10.7 must this design survive on a single day inside the mission window?
 
 | | |
 |---|---|
-| symbol | `F107_req_95` |
+| symbol | `F107_req_day` |
 | type | `Ratio` |
 | unit | - |
 | kind | declared |
 | owner | environment |
 | evidence tier | A |
-| relation | `F107_req = 250 sfu at 95% confidence` |
+| relation | `F107_req_day = 350 sfu, above the record's largest daily value of 343` |
 | source | `orbitt_case_c1` |
-| declared value | **250** - |
-| confirmed by | A. Rai / 2026-09-14 |
+| declared value | **350** - |
+| confirmed by | A. Rai / 2026-09-16 |
 | valid over | 60 … 400 - |
 
 - **lower bound** — the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement
 - **upper bound** — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **assumes** It is the same number as req_01 and the duplication is real — fails when the two are treated as independent requirements. l3_solar_ach_01 and l3_solar_ach_02 already say this about the achieved side — the solar flux this subsystem publishes is F10.7 and nothing else — so the two requirement rows are one commitment written twice. They are both written because the layer-2 rows sys_space_environment_solar_flux and sys_space_environment_f10_7 are separate and each needs a partner. Merging them is a change to the layer-2 tree, not to this subsystem.
-- **assumes** The 95 per cent is inherited from the achieved side, not chosen here — fails when a different confidence is wanted. There is no confidence row anywhere in this tree; the figure is 95 because sw_uncertainty_growth publishes a 95th percentile and sw_f107_design adds it. sw_band_coverage checks that the band is worth its label and measures the coverage at 0.9509, so the stated confidence is honest. A requirement at a different confidence would need that percentile re-measured, which is a change to sw_uncertainty_growth.
-- **assumes** A percentile is not a worst case, and a requirement written on one is not a survival guarantee — fails when the mission meets a day in the upper five per cent. By construction one day in twenty exceeds the band, and over a five-year mission that is a great many days. What 250 buys is that the design point is not exceeded by the typical excursion — not that it is never exceeded. The record's largest daily F10.7 is 343 sfu, well above this requirement, and a design that must survive that day needs a worst-case row rather than a percentile one.
+- **assumes** 350 is anchored in the record's largest observed day, and a longer record would move it — fails when a day above 343 sfu is observed. The record is 28.2 years and covers two and a half cycles; cycle 19 in the late 1950s ran higher than anything in it, with F10.7 reported above 350. So this requirement is anchored in the SATELLITE-ERA record rather than in the observed history of the sun, and a design meant to survive a cycle-19 maximum needs a larger number. The rounding to 350 buys seven sfu against that, which is not much
+- **assumes** A single day and a sustained level are different commitments, and this is the single day — fails when somebody compares the achieved sustained flux against this row, or the achieved day against l3_solar_req_01. The two closures are 138.30 against 350 and 104.07 against 250, and crossing them reports a margin that belongs to neither
+- **assumes** It is a ceiling on the DRIVER and says nothing about what the driver does to the vehicle — fails when the requirement is read as a survivability statement. F10.7 is an index of solar radio flux; what a spacecraft actually feels is the density that flux produces at its altitude, through a model this subsystem does not own. A design that meets F10.7 <= 350 and is sized on a density model with the wrong drag coefficient has met this requirement and will still deorbit early
+- **assumes** One number for the whole mission, with no epoch and no phase in it — fails when the mission slips. The requirement does not move with the epoch and is not meant to — it is the vehicle's capability, and the sky's variation belongs on the achieved side of the closure where it can be seen
 
-The same quantity as req_01 and the same number, because in this subsystem the solar flux IS F10.7. The layer-2 rows separate them and the subsystem does not. That is a finding about the tree rather than a design decision, and it is stated here rather than resolved by inventing a difference.
+Survive, not operate in. A day at this level may cost a safe mode, a slewed
+array and some propellant; what it may not cost is the vehicle. That is a weaker
+claim than l3_solar_req_01 makes about continuous operation, which is why its
+number is higher — a transient is easier to survive than a permanent condition,
+and a design whose two numbers were equal would not have been thought about.
+
+The checking partner is l3_solar_ach_02, which restates sw_f107_design_short:
+the sustained hot level with the within-rotation daily excursion on top.
+
 
 ### `l3_solar_req_03` — Ap
 
@@ -19121,22 +19567,91 @@ The same quantity as req_01 and the same number, because in this subsystem the s
 | kind | declared |
 | owner | environment |
 | evidence tier | A |
-| relation | `Ap_req = Ap_design(G3) * 1.14 = 150` |
+| relation | `Ap_req = ap(G4) = 207` |
 | source | `orbitt_case_c1` |
-| declared value | **150** - |
-| confirmed by | A. Rai / 2026-09-14 |
+| declared value | **207** - |
+| confirmed by | A. Rai / 2026-09-16 |
 | valid over | 20 … 400 - |
 
 - **lower bound** — below 20 the requirement would be under the level at which the record's storms begin — the median day is Ap 7 and sw_storm_return_level's own floor is 20 — so a requirement there could not be met by any mission and is not a requirement
 - **upper bound** — 400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **assumes** 150 is a capability plus a margin, and the margin is a decision with no derivation behind it — fails when somebody looks for where 14 per cent came from. sw_ap_design at the declared G3 gives 132 and 150 is the next round number with usable room above it. Nothing in the record picks it. What it is NOT is a number chosen so the closure passes: 150 is below the 158.4 the record expects over the mission, so this requirement is violated by design rather than by accident. A margin chosen to make a closure pass would have been 200, which sits in G4 territory and would have committed the vehicle to a level it is not built for.
-- **assumes** The closure fails and the exceedance rows are the reason that is acceptable — fails when a failing closure is treated as a blocking defect. sw_storm_return_level gives 158.4 at five years against this 150, so l3_solar_ach_03 comes in above the requirement. What a designer needs next is not a bigger number here but the size of the violation, and it is small and bounded: 0.284 days a year above the design Ap of 132, which is 1.42 days over the mission in about 1.24 events averaging 1.14 days each, with the longest run in 29 years being 2 days. The vehicle is outside its design environment for roughly thirty-four hours of a five-year mission. If that is unacceptable the answer is to move sw_storm_design_level, not to raise this row until the arithmetic stops complaining.
+- **assumes** 207 is a SURVIVAL commitment and not an operating capability, and the two are easy to confuse — fails when a reader takes this as the level the vehicle works through. It is not. sw_storm_design_level declares G3 and sw_ap_design turns it into 132, and that is the operating level; nothing about it moved. This row says a G4 storm does not end the mission, which sw_storm_design_level's own reason_upper describes as the right treatment for G4 — handled 'by operating through the event rather than by building for it'. A design that claimed to OPERATE at G4 would change sw_storm_design_level, and four exceedance rows would move with it.
+- **assumes** This closure now holds and the OPERATING one still does not, and the second is the one that matters — fails when a passing closure here is read as the storm case being closed. 158.4 sits between the two levels: above the 132 the vehicle operates through, below the 207 it must survive. So the mission meets a storm it cannot work through, and the size of that is what a designer needs — 0.284 days a year above 132, 1.42 days over the mission, about 1.24 events averaging 1.14 days each, longest run in 29 years 2 days. Roughly thirty-four hours outside the operating environment across five years. Nothing in the tree compares 158.4 against 132 automatically; the three exceedance rows measure it and a person reads them.
 - **assumes** Switching the G level moves the design value and the exceedance statistics, and not this row — fails when somebody expects the requirement to follow the switch. sw_storm_design_level is the input a design turns to ask what a different storm level costs — G1 gives 48, G2 gives 80, G3 gives 132 — and sw_ap_design and all three exceedance rows move with it. At G2 the exceedance rate is 1.24 days a year, 6.21 days over the mission in 5.1 events. This row does not move: it is a commitment, and a commitment that silently tracked the design would never be violated and would therefore never be a requirement. Changing it is a separate, deliberate act.
 - **assumes** A daily mean, which is the wrong shape for what a storm does — fails when the storm is short or long. Daily Ap averages eight three-hourly slots, so a violent six-hour storm and a mild day-long disturbance can share a value, and a requirement written on the daily mean is satisfied by both. The atmosphere responds to the integral with a lag, not to the daily mean. The record's largest daily Ap is 273 — above this requirement — and it is one day in 29 years.
 - **assumes** It is met by the record and the record is 29 years long — fails when the mission meets something the record has not seen. The return level this is checked against is fitted through ranks 2 and 3 of a 28.2-year sample at the mission's five-year period, and the largest event in that sample, Ap 273, has an apparent return period of 28.2 years for no reason but that it is the largest thing in 28.2 years. Events well beyond this requirement are known from longer proxy records. A requirement that a 29-year record cannot violate is not thereby safe.
 
 The G3 design capability of Ap 132 with a 14 per cent margin on it. The record expects 158.4 over the declared five-year mission, so this requirement is NOT met — and the three exceedance rows say what that costs: about 1.42 days outside the bound over the mission, in one or two one-day events, on the declining side of the cycle where the epoch sits.
+
+### `l3_solar_req_04` — Ap, sustained
+
+> What sustained Ap must this design operate in, for as long as the mission lasts?
+
+| | |
+|---|---|
+| symbol | `Ap_req_long` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `Ap_req_long = ap(G1) = 48` |
+| source | `orbitt_case_c1` |
+| declared value | **48** - |
+| confirmed by | A. Rai / 2026-09-16 |
+| valid over | 0 … 400 - |
+
+- **lower bound** — Ap floors at zero, and a sustained requirement of zero would commit the design to operating only in a perfectly quiet field, which no mission window presents
+- **upper bound** — 400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** It is a ceiling on the driver and says nothing about what the driver does to the vehicle — fails when a reader takes a passing closure as evidence the design is adequate. Ap is an index; what a spacecraft feels is the heating, the density and the torque it produces, through models this subsystem does not own. A design that meets Ap <= 48 and is sized with the wrong drag coefficient has met this requirement and will still deorbit early
+- **assumes** The G1 threshold is a reasonable place for a CONTINUOUS-operation commitment, and nothing here establishes that — fails when the vehicle's real limit is elsewhere. 48 is a published threshold rather than an arbitrary round number, which makes it checkable, but checkable is not the same as correct: the level at which a particular design must stop operating comes from its thermal, its torque authority and its propellant, none of which this subsystem sees. What this row guarantees is that a reader can see what the commitment IS
+- **assumes** A sustained level and a single day are different commitments, and this is the sustained one — fails when somebody compares the achieved single-day Ap against this row. That is l3_solar_req_05's closure and its ceiling is 80. Reading the wrong one of the two reports a failure where there is none, or a pass where there is not
+
+Not survive — OPERATE IN. A sustained level is the sky the mission sits in for
+months, so the commitment is about continuous service rather than about coming
+through intact. That is a stronger claim than its single-day sibling makes and
+is why its number is lower.
+
+The checking partner is l3_solar_ach_04, which reports the sustained Ap the
+record says the window will present.
+
+
+### `l3_solar_req_05` — Ap, single day
+
+> What Ap must this design survive on a single day inside the mission window?
+
+| | |
+|---|---|
+| symbol | `Ap_req_short` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `Ap_req_short = ap(G3) = 132` |
+| source | `orbitt_case_c1` |
+| declared value | **132** - |
+| confirmed by | A. Rai / 2026-09-16 |
+| valid over | 0 … 400 - |
+
+- **lower bound** — Ap floors at zero, and a single-day requirement of zero would commit the design to surviving only a perfectly quiet day, which is not a survival requirement
+- **upper bound** — 400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** It is a ceiling on the driver and says nothing about what the driver does to the vehicle — fails when a reader takes a passing closure as evidence the design is adequate. Ap is an index; what a spacecraft feels is the heating, the density and the torque it produces, through models this subsystem does not own
+- **assumes** The worst day of a design band and the one storm of a mission are different questions — fails when somebody collapses this row into l3_solar_req_03. At the declared window the two achieved sides differ by a factor of nearly four, 41.70 against 158.38, because one is a percentile of ordinary variation and the other an extreme-value return level. A single ceiling covering both would have to be the storm one, and the design would then be claiming to operate through a G3 storm
+- **assumes** The G3 threshold is a reasonable place for a one-day survival commitment, and nothing here establishes that — fails when the vehicle's real limit is elsewhere. 132 is a published threshold rather than an arbitrary round number, which makes it checkable, but checkable is not the same as correct: the level at which a particular design must stop is a thermal, torque and propellant question this subsystem does not see
+
+Survive, not operate in. A day at this level may cost a safe mode, a missed
+downlink and some propellant; what it may not cost is the vehicle. That is a
+weaker claim than l3_solar_req_04 makes about continuous operation, which is why
+its number is higher.
+
+Its checking partner is l3_solar_ach_05. Above it sits l3_solar_req_03, which is
+a third question again: the one storm in the whole mission, not the worst day of
+an ordinary design band.
+
 
 ### `sw_activity_band` — F10.7 activity band
 
@@ -19201,6 +19716,199 @@ The coarse label that puts a flux value in context — a reader who sees 228 sfu
 
 Not a property of the sky but of the people watching it, and it is the operational floor a mission's own alerting should not sit below. Read from the thresholds attached to the alerts as issued rather than chosen here.
 
+### `sw_ap_central_expectation` — Expected Ap over the mission window
+
+> What daily planetary Ap should the mission window be expected to sit at?
+
+| | |
+|---|---|
+| symbol | `Ap_central` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `Ap_central = the last rotation forecast, held forward = 22.0954` |
+| source | `noaa_swpc` |
+| declared value | **22.095389** - |
+| confirmed by | A. Rai / 2026-09-16 |
+| valid over | 0 … 80 - |
+
+- **lower bound** — a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0
+- **upper bound** — above 80 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun
+- **read by** — `l3_solar_interface`, `sw_ap_cold_long`, `sw_ap_design_long`, `sw_kp_scenarios`
+- **assumes** The level the sun was last at is the level it will be at — fails when the window is long or far out. This carries no cycle trend at all: the same number is published for a window opening next month and one opening in 2032, and over a 365-day window the sun demonstrably moves
+- **assumes** A rotation-mean level stands in for a daily level — fails when a design reads it as a day. It is the mean of 27 days; half the days in the window are above it by construction, which is what sw_ap_daily_band_spread exists to say
+- **assumes** The phase past the cycle table is an extrapolation — fails when it is read as measured. The last rotations sit past cycle 25's tabulated end and their phase wraps on the mean length of three cycles, one of which is incomplete
+
+Every other Ap row in this subsystem answers an EXTREME — what recurs once
+per mission, what G level to survive, how often a threshold is crossed. None of
+them says what the window sits at on an ordinary day, and a band needs a centre
+before it can have edges.
+
+
+### `sw_ap_cold_long` — Sustained cold Ap to design to
+
+> What Ap must the design still work at as a sustained level over the mission window, on the low side?
+
+| | |
+|---|---|
+| symbol | `Ap_cold_long` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `Ap_cold_long = Ap_central - 1.28 * sigma_ap` |
+| source | `noaa_swpc` |
+| valid over | 0 … 300 - |
+
+- **lower bound** — Ap floors at zero — a perfectly quiet day is Ap 0 and there is nothing below it. On this row the guard is load-bearing rather than decorative: a symmetric band subtracted from a small centre reaches below zero, and what comes out then is arithmetic rather than sky
+- **upper bound** — above 300 the level exceeds the largest daily Ap in the record, 273. A COLD level there means the spread has been added rather than subtracted, which is the one failure this row has that its twin does not
+- **reads** — `sw_ap_central_expectation`, `sw_ap_mean_band_spread`
+- **read by** — `l3_solar_interface`, `sw_ap_cold_short`, `sw_ap_daily_band_drop`, `sw_kp_scenarios`
+- **assumes** 1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent — fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997, so this edge is the 10th percentile and not the 5th. A one-sided 95 per cent bound is 1.645 sigma, a further 1.3 down at this sigma. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it
+- **assumes** A symmetric band on a quantity truncated at zero — fails when the centre is small. Ap cannot be negative, so the true low edge of any band is bounded by the centre itself, and a symmetric subtraction of 1.28 sigma ignores that. With this sigma the crossing is at a centre near 4.6, which is a deep-minimum window rather than an impossible one. The guard catches it; the arithmetic does not know about it
+- **assumes** One sigma covers the whole window — fails when sigma is not flat across the cycle, and Ap's is least flat of all — geomagnetic activity peaks in the DECLINING phase rather than at maximum, when coronal holes are largest and high-speed streams recur. A window spanning that transition is given one width where it needs two
+- **assumes** The quiet edge is a design case and not a nuisance — fails when it is read as the harmless side. A quiet field is the coolest, thinnest thermosphere, the weakest signal a magnetometer has to work with and the least torque a magnetorquer can generate. The last of those sizes an actuator
+- **evidence** this repository's own chain — the Ap centre with its measured spread — expect 17.49546836 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** round numbers, checkable without a calculator — 20 - 1.28 × 4 — expect 14.88 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** a quiet centre of 16, closer to the floor the sheet argues about — the guard fires below a centre of 4.6 — expect 11.40007936 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The lower edge of the Ap mean band, and the Ap column of the scenario the study
+calls coldmean. Its hot twin, sw_ap_design_long, is the disturbed sky the design
+must survive; this is the quiet sky it must still work in.
+
+A quiet geomagnetic field is the case where the thermosphere is coolest and
+thinnest, and on the Ap side it also sets the floor of what a magnetometer sees
+and what a magnetorquer has to push against. Quiet is not the absence of a
+design case.
+
+
+### `sw_ap_cold_short` — Single-day cold Ap to design to
+
+> How quiet can a single day of Ap be inside the mission window?
+
+| | |
+|---|---|
+| symbol | `Ap_cold_short` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `Ap_cold_short = Ap_cold_long - dAp_day_low` |
+| source | `noaa_swpc` |
+| valid over | 0 … 400 - |
+
+- **lower bound** — Ap floors at zero — a perfectly quiet day is Ap 0 and there is nothing below it. This is the row in the subsystem closest to its own floor, seven units clear at the declared window, and the only one where the guard is likely to fire on an ordinary input rather than on a mistake
+- **upper bound** — 400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all. On the QUIETEST of the five scenarios a value anywhere near it means a sign is wrong somewhere in the chain above
+- **reads** — `sw_ap_cold_long`, `sw_ap_daily_band_drop`
+- **read by** — `l3_solar_interface`, `sw_kp_scenarios`
+- **assumes** The result stays above zero, and nothing in the arithmetic ensures it — fails when the sustained quiet level is small. With this subsystem's level-conditioned drop the crossing is at a sustained Ap near 15.6, and the declared window's 17.50 clears it by under two units of level. The guard refuses rather than publishing a negative index, which is right, but it means this row is the one most likely in the subsystem to fire on an ordinary input rather than on a mistake
+- **assumes** The two spreads stack rather than combine — fails when a reader takes the result as a 95 per cent day. Stacking a 10th-percentile rotation level with a 5th-percentile day inside it is nearer a 1-in-100 day than a 1-in-20 one, assuming independence — and a quiet rotation is made of quiet days, so they are not independent. The study does this and the port reproduces it; the number is conservative and its label is wrong
+- **assumes** The quiet day is not the disturbed day mirrored — fails when somebody builds it by negating sw_ap_design_short's daily term. Two things make that wrong. The tails differ by a factor of two to three at every level; and the two rows read the table at DIFFERENT LEVELS, Ap 17.50 here against 26.70 there, so the terms are 12.56 and 63.85 — a factor of five. Mirroring would put this scenario at Ap -46, which is not a sky
+- **assumes** The daily drop measured before the window applies inside it — fails when the window spans a different part of the cycle. Ap's within-rotation variability peaks in the DECLINING phase, when coronal holes are largest and high-speed streams recur, rather than at maximum. A drop measured on one phase is the wrong depth for another
+- **evidence** 17.4955 minus 10.5889 — the pair this row was handed before sw_ap_daily_band_drop was conditioned on level. The conditioned drop at Ap 17.50 is 12.56, so the published answer is 4.93 rather than 6.91 — expect 6.9065794711 ± 0.0000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** round numbers, checkable without a calculator — 50 - 10 — expect 40 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** a sustained level of 11, four tenths above the floor — the narrowest case this row can publish, and the reason the guard at zero is load-bearing here rather than decorative — expect 0.4111111111 ± 0.0000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The quietest of the five scenarios, and the one that comes nearest a declared
+bound anywhere in this subsystem: at the declared window it lands at Ap 6.9,
+seven units above a floor of zero.
+
+That closeness is the point of reading this row rather than only its number. Ap
+is bounded below and unbounded above, its mean band is symmetric anyway because
+a standard deviation has no sides, and its daily tails are forty-two per cent
+apart because percentiles of a truncated sample are. Three facts that disagree
+about shape meet in one subtraction here.
+
+
+### `sw_ap_daily_band_drop` — Within-rotation daily Ap drop
+
+> How far below its own rotation does a single day of Ap fall, at the declared confidence, at the level that rotation sits at?
+
+| | |
+|---|---|
+| symbol | `dAp_day_low` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `dAp_day_low(L) = -pctl(Ap - movmean(Ap, 27 d), 0.05) over days whose rotation sits within 15% of L` |
+| source | `noaa_swpc` |
+| valid over | 0 … 150 - |
+
+- **lower bound** — a drop of zero would mean no day ever falls below its rotation mean, which the record contradicts on about half the days it holds; below zero is not a distance, and a negative value here means the tail has been read from the wrong end
+- **upper bound** — above 150 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than a quiet sky
+- **reads** — `sw_ap_cold_long`
+- **read by** — `sw_ap_cold_short`
+- **assumes** The result stays above zero, and nothing in the arithmetic ensures it — fails when the sustained quiet level is small. With this table the crossing is at a sustained Ap near 15.6, and the declared window's 17.50 clears it by under two units of level — where before, with a single 10.59, the crossing was at 15.2. Conditioning on level did not move that crossing much because the drop falls with the level too, but the margin on the ANSWER narrowed from seven to five. sw_ap_cold_short's guard refuses rather than publishing a negative index, and it is the row most likely in this subsystem to fire
+- **assumes** Ap's departures are strongly asymmetric at every level, and this row exists because of it — fails when it is treated as the negation of sw_ap_daily_band_spread. The high tail is twice the low one at Ap 4 and three times at Ap 26. Anything that mirrors one onto the other is wrong by a factor of two to three, and in the direction that puts the cold day below zero
+- **assumes** A percentile of departures does not know that Ap floors at zero — fails when the rotation mean it is subtracted from is smaller than the drop. The table is measured from a sample that is itself truncated, so the low tail already reflects the floor implicitly — but the interpolation between knots does not, and neither does the subtraction in sw_ap_cold_short. The guard there is what stops it, not the statistic here
+- **assumes** A 15 per cent bin half-width, which trades resolution against sample size — fails when either matters more than the other. The declared window sits between the Ap 15 knot, holding 1558 days, and the Ap 20 knot, holding 803. Both are well populated, so this row's own answer is on firmer ground than its high-tail twin's, which is reading the table's top knot at 300 days
+- **assumes** The 27-day moving mean is the rotation — fails when Ap's recurrence is driven by coronal holes and high-speed streams whose period is nearer 27.0 days than the 27.27 of the equatorial photosphere. A 27-day window is the conventional round number rather than a measured period
+- **assumes** It is the record's own daily scatter, not a forecast error — fails when this is read as an uncertainty. It says how far below its rotation the geomagnetic field has gone, measured on days that already happened
+- **evidence** at the declared window's own sustained quiet level, Ap 17.50 — a genuine interpolation between the 15 and 20 knots, unlike its high-tail twin's clamp — expect 12.5635147395 ± 0.000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the Ap 15 knot, exactly — a transcription check on the lower bracket of that interpolation — expect 10.837 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the Ap 11 knot, exactly — a transcription check where the high tail is twice this value — expect 7.5556 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** between the Ap 20 and Ap 24 knots — the interpolation on the upper half of the ladder — expect 15.99445 ± 0.000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** below the bottom of the table — the clamp — expect 2.9704 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The cold tail of sw_ap_daily_band_spread's sample, and a separate row because
+Ap's two tails are nothing like each other at any level. At a rotation of Ap 11
+they are 14.67 up and 7.56 down; at Ap 26, 63.85 and 21.02 — the high tail is
+three times the low one. The geomagnetic index is the most skewed quantity in
+this subsystem, because it floors hard at zero and has no ceiling at all.
+
+The cold day is the low-drag case, and on the Ap side it is also the quiet-sky
+case a magnetometer, a magnetorquer sizing and an aerodynamic control authority
+are bounded by from below.
+
+
+### `sw_ap_daily_band_spread` — Within-rotation daily Ap spread
+
+> How far above its own rotation does a single day of Ap reach, at the declared confidence, at the level that rotation sits at?
+
+| | |
+|---|---|
+| symbol | `dAp_day` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `dAp_day(L) = pctl(Ap - movmean(Ap, 27 d), 0.95) over days whose rotation sits within 15% of L` |
+| source | `noaa_swpc` |
+| valid over | 0 … 150 - |
+
+- **lower bound** — a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0
+- **upper bound** — above 150 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun
+- **reads** — `sw_ap_design_long`
+- **read by** — `sw_ap_design_short`
+- **assumes** THE DECLARED WINDOW IS ABOVE THE TOP KNOT, so its answer is the clamp and not an interpolation — fails when the sustained Ap exceeds 26, as it does here at 26.70. The table holds its top value rather than extrapolating, and the segment below that top knot is the steepest in the table — 40.61 at Ap 24 to 63.85 at 26. Extrapolating that slope to 26.70 would give about 72 rather than 63.85, so the clamp is the CONSERVATIVE-DOWNWARD choice here and the published single-day Ap may be low. The record cannot settle it: Ap 28 holds 170 days and Ap 30 holds 105
+- **assumes** Conditioning on level more than doubled this row's consumer, and the previous value was not a margin but an error — fails when this is read as a refinement. sw_ap_design_short was 41.70 and is 90.55. A design sized on 41.70 for its own hot scenario was under-designed by a factor of two, because the band it used was measured over a sample whose rotations averaged Ap 11.64 and applied at 26.70
+- **assumes** The top of the table rests on very little record — fails when a design sits near it. The Ap 26 knot holds 300 days, and the whole record has only 27 rotation-sized blocks above Ap 22 in 28.2 years. A 95th percentile of 300 days is the fifteenth-largest of them, so the top of this table moves if one storm period is added to or removed from the record. The bottom knots hold thousands of days and are not like this, and the table does not say which regime a caller is in at the point of use
+- **assumes** A disturbed rotation is not a quiet rotation scaled up — fails when somebody fits a smooth law through these knots. The rise is a factor of eleven and most of it is in the last third, because high-Ap rotations contain storms and a storm day's departure has little to do with its rotation's own level. A power law or a constant ratio through this table would be wrong at both ends
+- **assumes** The 27-day moving mean is the rotation — fails when Ap's recurrence is driven by coronal holes and high-speed streams whose period is nearer 27.0 days than the 27.27 of the equatorial photosphere, and they persist for many rotations. A 27-day window is the conventional round number rather than a measured period
+- **assumes** It is the record's own daily scatter, not a forecast error — fails when this is read as an uncertainty. It says how variable the geomagnetic field is within a rotation, measured on days that already happened
+- **evidence** at the declared window's own sustained level, Ap 26.70 — just above the top knot, so this is the clamp and the sheet argues about what it costs — expect 63.8519 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the Ap 11 knot, exactly — a transcription check, and near where the study's own sample sat at Ap 11.64 — expect 14.6667 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the Ap 20 knot, exactly — a transcription check below the steep last segment — expect 28.6759 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** halfway between the Ap 15 and Ap 20 knots — the interpolation — expect 26.23055 ± 0.000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** below the bottom of the table — the clamp, not an extrapolation toward zero — expect 6.0167 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The geomagnetic index is the most level-dependent quantity in this subsystem.
+At a rotation level of Ap 4 a one-in-twenty day is 6.0 above it; at Ap 26 it is
+63.9 — a factor of eleven, and most of it in the top third of the range, because
+high-Ap rotations are driven by recurrent streams and storms and their
+individual days swing enormously.
+
+A single number for that is not a band, it is an average of bands, and it is
+correct only near the mean level of whatever sample produced it.
+
+
 ### `sw_ap_design` — Ap design value
 
 > What daily Ap is this design built to survive?
@@ -19230,6 +19938,94 @@ Not a property of the sky but of the people watching it, and it is the operation
 - **evidence** G3 strong — Kp 7 — daily Ap bounded at 132, the declared default — expect 132 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
 
 The design-side companion to sw_storm_return_level. That row says what the record will present over the mission; this says what the vehicle is built for, from the G level sw_storm_design_level declares. At the default G3 the answer is 132 and the record's five-year expectation is 158.4, and the gap between them is the finding.
+
+### `sw_ap_design_long` — Sustained Ap to design to
+
+> What daily planetary Ap must the design survive as a sustained level over the mission window?
+
+| | |
+|---|---|
+| symbol | `Ap_long` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `Ap_long = Ap_central + 1.28 * sigma_ap` |
+| source | `noaa_swpc` |
+| valid over | 0 … 300 - |
+
+- **lower bound** — Ap floors at zero — a perfectly quiet day is Ap 0 — so a design level below it means a spread has been subtracted rather than added
+- **upper bound** — above 300 the level exceeds the largest daily Ap in the record, 273, so a SUSTAINED level there is not a window this tool can model
+- **reads** — `sw_ap_central_expectation`, `sw_ap_mean_band_spread`
+- **read by** — `l3_solar_ach_04`, `l3_solar_interface`, `sw_ap_daily_band_spread`, `sw_ap_design_short`, `sw_kp_scenarios`
+- **evidence** this repository's own chain — the Ap centre with its measured spread — expect 26.69530964 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** round numbers, checkable without a calculator — expect 25.12 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** a quiet centre with a narrow spread, where the lower guard starts to matter — expect 32.56 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The Ap twin of sw_f107_design_long, and NOT the same question as sw_ap_design.
+That row asks what extreme recurs once per mission; this asks what level the
+window sits at. A design needs both and they are different numbers by a factor
+of several.
+
+
+### `sw_ap_design_short` — Single-day Ap to design to
+
+> What daily planetary Ap must the design survive on a single day inside the mission window?
+
+| | |
+|---|---|
+| symbol | `Ap_short` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `Ap_short = Ap_long + dAp_day` |
+| source | `noaa_swpc` |
+| valid over | 0 … 400 - |
+
+- **lower bound** — Ap floors at zero, so a single-day design level below it means a spread has been subtracted rather than added
+- **upper bound** — 400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all, and this row — a sustained level plus a daily excursion — is the one in the subsystem most likely to reach for it
+- **reads** — `sw_ap_design_long`, `sw_ap_daily_band_spread`
+- **read by** — `l3_solar_ach_05`, `l3_solar_interface`, `sw_kp_scenarios`
+- **evidence** the sustained Ap level with the daily departure this row USED to be handed, before sw_ap_daily_band_spread was conditioned on level. Kept as an arithmetic case: the conditioned departure at Ap 26.70 is 63.85, not 15.00 — expect 41.6971614919 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** round numbers, checkable without a calculator — expect 40 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** a higher sustained level with a narrower daily departure — the terms are independent and the row must not assume otherwise — expect 42 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The one a drag transient and a single-orbit attitude case are sized on. Its
+sustained sibling is what a propellant budget integrates.
+
+
+### `sw_ap_mean_band_spread` — Ap rotation-forecast residual spread
+
+> How much of the next rotation's Ap does the pattern fail to explain?
+
+| | |
+|---|---|
+| symbol | `sigma_ap` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `sigma_ap = std(pred - truth) over 361 walk-forward next-rotation forecasts = 3.5937` |
+| source | `noaa_swpc` |
+| declared value | **3.593688** - |
+| confirmed by | A. Rai / 2026-09-16 |
+| valid over | 0 … 20 - |
+
+- **lower bound** — a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0
+- **upper bound** — above 20 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun
+- **read by** — `sw_ap_cold_long`, `sw_ap_design_long`
+- **assumes** One sigma holds across the whole cycle — fails when it does not, and the source says so about its own number. Geomagnetic activity is burstier near the declining phase than at minimum, so a window there is given a band too narrow
+- **assumes** The residual spread is a usable margin for a non-negative index — fails when Ap floors at zero and its residuals are strongly skewed — a quiet rotation cannot undershoot far but an active one can overshoot a long way. A symmetric sigma understates the high tail, which is the tail a design is sized against
+- **assumes** The 273-day hole in 2017 is interpolated before the rotations are cut — fails when those days are counted as observations. Interpolated Ap is far smoother than real Ap, so the rotations covering them are easier to predict than any real rotation and the pooled spread is narrower than the record supports
+
+The Ap twin of sw_mean_band_spread, by the same method on the same rotations.
+It is a separate row because it is a separate measurement of a separate
+quantity, and because a row publishes one number.
+
 
 ### `sw_band_coverage` — Stated band coverage
 
@@ -19278,7 +20074,7 @@ Counted over 128135 day pairs at the same seventeen leads sw_uncertainty_growth 
 - **lower bound** — the answer is a weighted blend of today's F10.7 and a window mean of the analogue, so it cannot leave the interval between them. The analogue is bounded below by 0.324026 x 193.8580 = 62.8 sfu, its smallest shape on its smallest amplitude, and env_f107 by 60 because below 60 sfu has never been observed; the blend therefore floors at 60
 - **upper bound** — env_f107's upper bound is 400, above which the exospheric temperature relation is extrapolated past the largest recorded daily value. The analogue cannot exceed cycle 25's own 81-day peak of 225.1 sfu, and a blend cannot exceed its larger input, so this bound catches a broken weight or a broken table rather than an extreme sky
 - **reads** — `env_f107`, `orbit_mission_duration`, `sys_mission_requirements_mission_epoch`
-- **read by** — `sw_f107_design`
+- **read by** — `l3_solar_interface`, `sw_f107_cold_long`, `sw_f107_design`, `sw_f107_design_long`
 - **assumes** Two completed cycles is the whole sample, and eleven of the ninety-three grid points rest on one of them — fails when the record spans cycles 23, 24 and the incomplete 25, so the shape R is a mean of TWO curves and its spread between them is not published by this row. Where the two cycles' differing lengths leave only one of them covering a point — eleven of ninety-three, near the wrap — the value is that one cycle's shape rather than an average. Two cycles cannot establish that a shape repeats; they can only establish what the last two did, and this row says the next one resembles them because that is the best the record supports, not because it is known.
 - **assumes** Outside cycle 25 the amplitude is the mean of TWO completed cycles, and their spread is a factor of 1.41 — fails when cycle 23 peaked at 226.8 sfu and cycle 24 at 160.9, so the 193.9 this row uses for every future cycle is the midpoint of two numbers that differ by 41%. A window reaching past about 2030 is reading a level whose size is that average, and if the next cycle runs like cycle 23 the answer is 17% low, if like cycle 24 it is 17% high. That is an honest estimate rather than a repeat of the current cycle, which is what this row used to do, but two cycles cannot support an uncertainty on it and none is published. The row does not know, and does not claim to know, which kind of cycle comes next.
 - **assumes** The answer is a window MEAN, so it understates the early years of a long mission — fails when a five-year mission opening at the declared epoch averages 90.4 sfu, but its first ninety days average 104.6 and it falls to 73.2 by the end of the window — a spread of 39 sfu inside one number. Drag is not linear in flux and a vehicle does not average its propellant over five years, so a design whose sizing case is its worst sustained period is reading the wrong statistic here. This row publishes a centre because it is a centre; the maximum of the analogue over the window is a different number and nothing publishes it yet.
@@ -19383,6 +20179,95 @@ Zero at the cycle's start and one at its end. This is the row the whole cycle-de
 - **assumes** Twenty equal-width phase bins, and cycle length is taken from the published boundaries — fails when the boundaries move. Cycle 23 spans 4338 days and cycle 24 spans 4017, an 8 per cent difference, so an equal-PHASE bin is a different number of DAYS in each cycle — 217 against 201. Stacking on phase rather than on days since minimum is the choice that lets two unequal cycles be compared at all, and it means this row says nothing about whether the two cycles took the same TIME to do the same thing. They did not
 
 The correlation between cycles 23 and 24 after stacking both on phase. It is the credibility of sw_mean_cycle_level: that row hands a design a mean-cycle curve, and this row says how much a single cycle can be expected to look like it. The answer is that the SHAPE repeats and the AMPLITUDE does not, and a design that reads only the correlation will miss the second half.
+
+### `sw_daily_band_drop` — Within-rotation daily drop
+
+> How far below its own rotation does a single day of F10.7 fall, at the declared confidence, at the level that rotation sits at?
+
+| | |
+|---|---|
+| symbol | `dF107_day_low` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `dF107_day_low(L) = -pctl(F107 - movmean(F107, 27 d), 0.05) over days whose rotation sits within 15% of L` |
+| source | `noaa_swpc` |
+| valid over | 0 … 120 - |
+
+- **lower bound** — a drop of zero would mean no day ever falls below its rotation mean, which the record contradicts on about half the days it holds; below zero is not a distance, and a negative value here means the tail has been read from the wrong end
+- **upper bound** — above 120 sfu the departure exceeds the largest single-day excursion in the record in either direction, so a value there is an arithmetic error rather than a quiet sun
+- **reads** — `sw_f107_cold_long`
+- **read by** — `sw_f107_cold_short`
+- **assumes** The departure scales with the level, and the old single number was seven times too large at this window — fails when this is read as a refinement. 31.27 subtracted from 69.63 is 38.36 sfu, which has never been observed and which sw_f107_cold_short's guard refused. Conditioned on the level the drop is 4.39. A factor of seven is not a correction to a margin, it is a different answer
+- **assumes** The declared window sits at the clamp, so this row is reading the end of its own table — fails when the sustained cold level falls below 70 sfu, as it does here at 69.63. The answer is held at the lowest knot's 4.39 rather than extrapolated, which is the right choice — below 70 the record has few rotations and a line drawn onward would be invention — but it does mean this window's answer is the table's endpoint and not an interpolation. A colder window gets the same 4.39
+- **assumes** The departures are asymmetric, and this row exists because of it — fails when it is treated as the negation of sw_daily_band_spread. The gap runs from six per cent at a rotation of 70 to fifteen per cent at 210, because F10.7 has a floor near 65 and no ceiling, and the room below a rotation shrinks as the rotation approaches that floor. Mirroring the high tail onto the low one is asserting a symmetry the record refuses at every level
+- **assumes** A 15 per cent bin half-width, which trades resolution against sample size — fails when either matters more than the other. Narrower bins resolve the level dependence better and hold fewer days, so the percentile gets noisier; wider bins are the defect this row exists to fix, in miniature
+- **assumes** The 27-day moving mean is the rotation — fails when the solar rotation is 27.27 days at the equator and slower at the poles, and the active longitudes that drive F10.7 are not at one latitude. A 27-day window is the conventional round number rather than a measured period, and the departures it leaves carry whatever the mismatch contributes
+- **assumes** It is the record's own daily scatter, not a forecast error — fails when this is read as an uncertainty. It is not: it says how far below its rotation the sun has gone, measured on days that already happened. What a forecast of a future day would get wrong is sw_uncertainty_growth's question and a larger number
+- **evidence** at the declared window's own sustained cold level, 69.63 — just under the bottom knot, so this is the clamp and it is the case that unblocked the chain — expect 4.387 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the 70 sfu knot, exactly — a transcription check, and the value the clamp holds — expect 4.387 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the 120 sfu knot, exactly — a transcription check on a middle pair — expect 23.2593 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** halfway between the 120 and 145 knots — the interpolation, on round numbers — expect 27.82225 ± 0.000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** far above the top of the table — the clamp — expect 40.7778 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The other tail of sw_daily_band_spread's sample, and a separate row because it
+is a separate number at every level: the departures are not symmetric. The sun
+has a floor and no ceiling, so a day can rise further above its rotation than it
+can fall below it, and a design that mirrors one tail onto the other is assuming
+a shape the record does not have.
+
+It is the cold side, which sounds like the side nobody sizes against. It is not:
+a cold day is the low-drag case, and the low-drag case is what a propellant
+budget's LOWER bound and an aerodynamic control authority's worst case are made
+of. The hot day and the cold day both bound something.
+
+
+### `sw_daily_band_spread` — Within-rotation daily spread
+
+> How far above its own rotation does a single day of F10.7 reach, at the declared confidence, at the level that rotation sits at?
+
+| | |
+|---|---|
+| symbol | `dF107_day` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `dF107_day(L) = pctl(F107 - movmean(F107, 27 d), 0.95) over days whose rotation sits within 15% of L` |
+| source | `noaa_swpc` |
+| valid over | 0 … 120 - |
+
+- **lower bound** — a spread of zero would mean every day equals its rotation mean, which the record contradicts on every day it holds; below zero is not a spread
+- **upper bound** — above 120 sfu the departure exceeds the largest single-day excursion in the record, so a value there is an arithmetic error rather than an active sun
+- **reads** — `sw_f107_design_long`
+- **read by** — `sw_f107_design_short`
+- **assumes** The departure scales with the level, and a single number for it is wrong away from its own sample's mean — fails when this is read as a refinement. It is a correction. Over the whole record the 95th-percentile departure runs 4.63 at a rotation level of 70 to 46.93 at 210 — a factor of ten — and the previous version of this row published one number, 34.23, measured on a 2001-day window whose rotations averaged 136.63. Applied at 69.63 it took the cold chain below the floor of 60 and sw_f107_cold_short refused. The refusal was the construction failing, not the guard being tight
+- **assumes** The table is clamped beyond its ends rather than extrapolated — fails when a design level falls outside 70 to 210 sfu. Below 70 the answer is held at 4.63 and above 210 at 46.93. The record's own rotation means run from about 65 to 253, so the top of that range is reachable by a mission at cycle maximum, and a level above 210 gets a band measured at 210 — narrower than the record supports. The clamp is deliberate and it is the same choice sw_kp_from_ap makes at the ends of the published Kp scale
+- **assumes** A 15 per cent bin half-width, which trades resolution against sample size — fails when either matters more than the other. Narrower bins resolve the level dependence better and hold fewer days, so the percentile gets noisier; wider bins are the defect this row exists to fix, in miniature. 15 per cent keeps every bin above 2000 days except the top one, at 850, and still separates the ends by a factor of ten
+- **assumes** The knots rest on the whole record, and the record is 28.2 years — fails when the top knot is leaned on. 210 sfu holds 850 days against 3061 at 70, and those days are concentrated in two cycle maxima. A design at a high sustained level is reading a percentile with far less behind it than one at a low level, and the table does not say so at the point of use
+- **assumes** The 27-day moving mean is the rotation — fails when the solar rotation is 27.27 days at the equator and slower at the poles, and the active longitudes that drive F10.7 are not at one latitude. A 27-day window is the conventional round number rather than a measured period, and the departures it leaves carry whatever the mismatch contributes
+- **assumes** It is the record's own daily scatter, not a forecast error — fails when this is read as an uncertainty. It is not: it says how variable the sun is within a rotation, measured on days that already happened. What a forecast of a future day would get wrong is sw_uncertainty_growth's question and a larger number
+- **evidence** at the declared window's own sustained level, 104.07 — an interpolation between the 100 and 120 knots — expect 20.0721663388 ± 0.000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the 100 sfu knot, exactly — a transcription check on one of the seven pairs — expect 18.2741 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the 145 sfu knot, exactly — near where the study's own sample sat — expect 34.6148 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** halfway between the 100 and 120 knots — the interpolation, on round numbers — expect 23.7949125 ± 0.000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** below the bottom of the table — the clamp, not an extrapolation toward zero — expect 4.6259 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** far above the top of the table — the clamp again, which is where a cycle-maximum window would land — expect 46.9259 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The mean band says what the mission SUSTAINS. This says what one day inside it
+does. They are different numbers and a design uses them for different things: an
+array is sized on the sustained level, a thermal case and a drag transient on
+the day.
+
+AND IT DEPENDS ON THE LEVEL, which is the whole content of this row. A quiet sun
+is quiet in both senses — its rotations sit low AND its days stay near their
+rotation. At a rotation level of 70 sfu a one-in-twenty day is 4.6 above it; at
+210 it is 46.9. Any construction that applies one number at both is wrong at
+one end, and which end depends on where its sample happened to sit.
+
 
 ### `sw_design_safe_duration` — How long the design Ap lasts
 
@@ -19561,6 +20446,89 @@ The exceedance rate of sw_ap_design, measured over 28.197 years. Multiply by the
 
 The second driver every empirical density model wants, beside the daily flux. At an epoch past the record it is a prediction rather than an observation, and the prediction is the mean cycle at that phase.
 
+### `sw_f107_cold_long` — Sustained cold F10.7 to design to
+
+> What F10.7 must the design still work at as a sustained level over the mission window, on the low side?
+
+| | |
+|---|---|
+| symbol | `F107_cold_long` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `F107_cold_long = F107_central - 1.28 * sigma_total` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
+
+- **lower bound** — below 60 sfu has never been observed and every relation reading F10.7 has no support there. On this row the guard means something specific: a sustained level below the record's own floor says the band is wider than the sky, which happens when a window near solar minimum is given a sigma measured across a whole cycle
+- **upper bound** — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. A COLD level there is arithmetic rather than sky — it means the spread has been added rather than subtracted, which is the one failure this row has that its twin does not
+- **reads** — `sw_central_expectation`, `sw_mean_band_spread`
+- **read by** — `l3_solar_interface`, `sw_daily_band_drop`, `sw_f107_cold_short`
+- **assumes** 1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent — fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997, so this edge is the 10th percentile and not the 5th. A one-sided 95 per cent bound is 1.645 sigma, which at this sigma is a further 4.9 sfu DOWN. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it
+- **assumes** The band is symmetric because sigma is a standard deviation — fails when the residuals are skewed, which they are. A forecast that misses hardest when activity is highest has a long high tail and a short low one, so the true 10th percentile of the residuals is nearer the centre than 1.28 sigma and this edge is a little too cold. It errs toward the conservative on THIS side — a colder cold case is a harder case for drag authority — but it is the wrong number, not a safe one
+- **assumes** One sigma covers the whole window — fails when sigma is not flat across the cycle — the source says so about its own number — so a window spanning a rise or a fall is given one width where it needs two
+- **assumes** The cold edge is a design case and not a nuisance — fails when it is read as the harmless side. Thin air is the case with the least aerodynamic control authority, the slowest differential-drag phasing, the longest end-of-life de-orbit and the least array flux. Two of those are mission-ending in their own way
+- **evidence** a mid-cycle centre of 160 with this repository's own measured spread — 160 - 1.28 × 13.454382 — expect 142.77839104 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** round numbers, so the arithmetic is checkable without a calculator — 100 - 1.28 × 20 — expect 74.4 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the centre sw_central_expectation actually gives at the declared epoch, 86.8497 — the case that matters, nine and a half sfu above the guard — expect 69.62809104 ± 0.0000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The lower edge of the mean band, and the scenario the study calls coldmean. Its
+hot twin, sw_f107_design_long, is the level the mission must SURVIVE; this is
+the level it must still WORK at, and they bound different failures.
+
+A cold sky is thin air. Thin air is less drag, which sounds like good news and
+is not: it is the case where an aerodynamically controlled vehicle has the least
+authority, where a differential-drag constellation phases slowest, where a
+de-orbit at end of life takes longest, and where a power budget gets the least
+flux into the array. A tool that publishes only the hot edge has told the reader
+about half of their problem.
+
+
+### `sw_f107_cold_short` — Single-day cold F10.7 to design to
+
+> How cold can a single day of F10.7 be inside the mission window?
+
+| | |
+|---|---|
+| symbol | `F107_cold_short` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `F107_cold_short = F107_cold_long - dF107_day_low` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
+
+- **lower bound** — below 60 sfu has never been observed and every relation reading F10.7 has no support there. This is the row most likely to reach it — a symmetric rotation band and a daily drop stacked on a low centre — and it DID reach it, until sw_daily_band_drop was conditioned on the rotation level. The guard is here rather than downstream because this is where the impossible number is formed
+- **upper bound** — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. On the COLDEST of the five scenarios a value there means a sign is wrong somewhere in the chain above it
+- **reads** — `sw_f107_cold_long`, `sw_daily_band_drop`
+- **read by** — `l3_solar_interface`
+- **assumes** The two spreads stack rather than combine — fails when a reader takes the result as a 95 per cent day. It is not: stacking a 10th-percentile rotation level with a 5th-percentile day inside it is nearer a 1-in-100 day than a 1-in-20 one, assuming the two are independent — and they are not independent either, because a quiet rotation is made of quiet days. The study does this and the port reproduces it; the number is conservative and its label is wrong
+- **assumes** The cold day is not the hot day mirrored — fails when somebody builds it by negating sw_f107_design_short's daily term. Two things make that wrong and only one is the tail asymmetry. The tails differ by six to fifteen per cent depending on level; and the two rows read the table at DIFFERENT LEVELS, 69.63 here against 104.07 there, so the terms are 4.39 and 20.07 — a factor of four and a half. Mirroring would put this scenario nearly sixteen sfu below what the record supports
+- **assumes** The daily drop measured before the window applies inside it — fails when the LEVEL is now carried but the PHASE is not. sw_daily_band_drop conditions on the rotation level, which removes the error that made this row refuse; it does not condition on where in the cycle that level occurs. A rotation at 100 sfu on a rising cycle and one at 100 sfu on a declining cycle get the same drop, and the record does not say they should
+- **assumes** A day at this level is a day the rest of the tool can model — fails when the value approaches the guard. Below 60 sfu every relation reading F10.7 in this repository is extrapolating past its own support, so this row refuses rather than handing a number downstream that looks like flux and is not
+- **assumes** THIS ROW REFUSED UNTIL THE DAILY DROP WAS CONDITIONED ON LEVEL, and the history is worth keeping — fails when a reader assumes the construction was always sound. It was not. With a single un-conditioned drop of 31.2722 this relation gave 38.3559 sfu at the declared window and the guard refused it, because 38 sfu has never been observed and the quiet sun's floor is near 64. A drop measured over rotations averaging 136.63 sfu does not apply at a rotation of 69.63; conditioned on level it is 4.3870 and the answer is 65.2411. The guard was what caught it, so a design that quietly widened a floor to get a number would have shipped a sun that cannot exist
+- **evidence** 141.1088 minus 31.2722 — the pair this row was handed before sw_daily_band_drop was conditioned on level. Kept as an arithmetic case; the pair no longer occurs in this tree — expect 109.8365800491 ± 0.0000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** round numbers, so the arithmetic is checkable without a calculator — 200 - 30 — expect 170 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** a sustained level of 120 with the old un-conditioned drop of 31.27, which used to be the lowest level that cleared the guard. The conditioned drop at 120 sfu is 23.26, so the crossing has moved and this row no longer refuses at the declared window — expect 88.7277777778 ± 0.0000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The coldest of the five scenarios, and the one a drag-based capability is
+weakest at. Its hot twin, sw_f107_design_short, is the worst single day upward;
+this is the worst single day downward, and the two are NOT mirror images even
+though the rows look identical bar a sign.
+
+They are not mirrors because the two terms behave differently. The rotation band
+is symmetric — both edges are 1.28 standard deviations from the centre. The
+daily term is not, at any level: at a rotation of 70 sfu the tails are 4.63 up
+and 4.39 down, at 145 they are 34.61 and 32.39, at 210 they are 46.93 and 40.78.
+And the two days are not even read off the same point of the table, because the
+hot day rides on the hot mean and the cold day on the cold mean. At this window
+that is 20.07 added at 104.07 against 4.39 taken off at 69.63.
+
+
 ### `sw_f107_design` — F10.7 to design to
 
 > What F10.7 should this design be sized to?
@@ -19580,7 +20548,7 @@ The second driver every empirical density model wants, beside the daily flux. At
 - **lower bound** — below 60 sfu has never been observed and every relation reading F10.7 has no support there — env_f107's own floor, and a design value below it means the spread has been subtracted rather than added
 - **upper bound** — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, which is env_f107's stated reason for the same bound. This guard is reachable: a central expectation near the top of its range plus a fifteen-year spread would exceed it, and it should refuse rather than hand a consumer a flux it cannot model
 - **reads** — `sw_central_expectation`, `sw_uncertainty_growth`
-- **read by** — `l3_solar_ach_01`, `l3_solar_ach_02`, `l3_solar_interface`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **assumes** 95% and no other confidence, because that is the percentile the spread row publishes — fails when prf_design offers p50, p90, p95 and p99 and expects the caller to pick what the mission needs. This row inherits p95 from sw_uncertainty_growth and cannot be asked for another: a mission needing p99 is reading a number about 32 sfu too small at a one-year lead. Changing the confidence means changing the row underneath, which is where the percentile is chosen and declared.
 - **assumes** It cannot tell solar maximum from solar minimum, because no row in this tree publishes a date — fails when the whole of this limitation belongs to sw_central_expectation and it is repeated here because this is the row a system reader opens. THIS IS NOW FIXED AND THE FIX MOVED THIS ROW. The centre used to be the record's unconditional mean, 114.84 sfu, which gave a mission through solar maximum and one through minimum the same number; it is now the cycle analogue averaged over the mission's own dates, 86.85 sfu at the declared epoch, and this row fell from 228.14 to 200.14 with it. What remains is the weaker half of the same limitation: beyond one cycle past cycle 25's maximum the analogue is scaled by the mean amplitude of two completed cycles, whose peaks differ by 41 per cent, so a long mission is reading a level with a wide and unpublished uncertainty on it.
 - **assumes** Adding a percentile of the CHANGE to a central value is not the same as the percentile of the VALUE — fails when the record's own 95th percentile of daily F10.7 is 201 sfu, while this construction returns 228 at a five-year lead. The two answer different questions — the highest flux a day is likely to show, against how far the flux can move from its central expectation — and the second is the larger because it compounds where the centre sits with how wrong the centre can be. A reader who wants 'the 95th percentile of F10.7' wants the record, not this row.
@@ -19589,7 +20557,104 @@ The second driver every empirical density model wants, beside the daily flux. At
 - **evidence** ten years — the cycle's own turn brings the band IN, so the design value falls — expect 180.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** fifteen years — the widest band the record supports — expect 229.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 
-One of the two numbers the subsystem exists to produce. The centre comes from sw_central_expectation, the spread from sw_uncertainty_growth, and the confidence is the 95th percentile that sw_uncertainty_growth publishes — so this is a value the mission should not exceed in 95% of histories, not a value it will see.
+The centre comes from sw_central_expectation, the spread from
+sw_uncertainty_growth, and the confidence is the 95th percentile that
+sw_uncertainty_growth publishes — so this is a value the mission should not
+exceed in 95 per cent of histories, not a value it will see.
+
+NOTHING READS THIS ROW ANY MORE, AND THAT IS A DECISION SOMEBODY SHOULD MAKE.
+It used to be the subsystem's headline: l3_solar_ach_01, l3_solar_ach_02 and
+l3_solar_interface all restated it. §20 step 5 re-pointed the two closures at
+sw_f107_design_long and sw_f107_design_short, and §20 step 4 gave the interface
+the whole driver set, so this row now has no consumers at all.
+
+It is not wrong and it was not replaced — it answers a DIFFERENT question from
+the design rows. This is a one-sided 95th-percentile PERSISTENCE growth: how far
+might the flux drift from today's value over the mission. sw_f107_design_long is
+a band width: how wrong has the pattern historically been about the level a
+rotation sits at. Both are defensible and they are not the same question, which
+sw_f107_design_long's own question note says in as many words.
+
+A published number nothing reads is a number nobody checks, which is the
+standard this subsystem holds itself to elsewhere. THE ROW IS THEREFORE
+DEPRECATED, decided 2026-09-16. It stays readable with its whole history, the
+gate stops treating it as live, and the contract check refuses it as a NEW
+dependency — so nothing can pick it up again without that being a deliberate
+act. What it answers is still a real question, and if a design wants the
+persistence reading back it should be revived on purpose rather than found by
+accident.
+
+
+### `sw_f107_design_long` — Sustained F10.7 to design to
+
+> What F10.7 must the design survive as a sustained level over the mission window?
+
+| | |
+|---|---|
+| symbol | `F107_long` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `F107_long = F107_central + 1.28 * sigma_total` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
+
+- **lower bound** — below 60 sfu has never been observed and every relation reading F10.7 has no support there; a design level below it means the spread has been subtracted rather than added
+- **upper bound** — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, and a sustained level there is not a window this tool can model
+- **reads** — `sw_central_expectation`, `sw_mean_band_spread`
+- **read by** — `l3_solar_ach_01`, `l3_solar_interface`, `sw_daily_band_spread`, `sw_f107_design_short`
+- **assumes** 1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent — fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997. A one-sided 95 per cent bound is 1.645 sigma, which at this sigma is a further 4.9 sfu. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it
+- **assumes** The residual spread is normal enough for a z multiplier to mean a percentile — fails when it is not. The residuals of a forecast that misses hardest when activity is highest are skewed, and a normal multiplier under-covers the high tail — which is the tail a design is sized against. The empirical percentile of the residuals would be the honest statistic, and sw_mean_band_spread publishes only their standard deviation
+- **assumes** One sigma covers the whole window — fails when sigma is not flat across the cycle — the source says so about its own number — so a window spanning a rise or a fall is given one width where it needs two
+- **evidence** a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.454382 — expect 177.22160896 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** round numbers, so the arithmetic is checkable without a calculator — 100 + 1.28 × 20 — expect 125.6 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** a cycle-maximum centre of 240, which is where the upper guard starts to matter — expect 257.22160896 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The LONG TERM of the pair. This is the level the mission sits at for months at
+a time — what an array is sized on, what a drag budget integrates. Its short
+sibling, sw_f107_design_short, says what one day inside it reaches.
+
+The existing sw_f107_design is neither: it adds a one-sided 95th-percentile
+PERSISTENCE growth, which answers "how far might the flux drift from today's
+value" rather than "how wrong is the pattern about the window". Both are
+defensible and they are not the same question.
+
+
+### `sw_f107_design_short` — Single-day F10.7 to design to
+
+> What F10.7 must the design survive on a single day inside the mission window?
+
+| | |
+|---|---|
+| symbol | `F107_short` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `F107_short = F107_long + dF107_day` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
+
+- **lower bound** — below 60 sfu has never been observed and every relation reading F10.7 has no support there; a single-day design level below it means a spread has been subtracted rather than added
+- **upper bound** — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value — and this row, being the sustained level plus a daily excursion, is the one most likely to reach it, which is exactly why the guard is here
+- **reads** — `sw_f107_design_long`, `sw_daily_band_spread`
+- **read by** — `l3_solar_ach_02`, `l3_solar_interface`
+- **assumes** The two spreads stack, and stacking two percentiles is not a percentile — fails when the published number is read as the 95th percentile of a day. It is not: it is the 90th percentile of the rotation level plus the 95th percentile of the daily departure, which for independent normals lands near the 99th. The bound is conservative, the label is not, and the honest statistic would be the percentile of the daily value itself rather than a sum of two
+- **assumes** The rotation error and the daily departure are independent — fails when they are not. Both widen with activity, so a window the pattern gets wrong on the high side is also a window whose days scatter most, and the true joint tail is fatter than the sum of two marginals suggests in one direction and thinner in the other
+- **assumes** One day in twenty is the day worth designing to — fails when the mission is long. Over a 365-day window a one-in-twenty day happens about eighteen times, so this is not a rare event but a routine one; the rare day a design might actually care about is further out and this row does not publish it
+- **evidence** the sustained level from sw_f107_design_long's first fixture plus the daily departure this row USED to be handed, before sw_daily_band_spread was conditioned on level. Kept as an arithmetic case: the pair no longer occurs in this tree, and what it still checks is that the relation is that addition — expect 211.4530904415 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** round numbers, so the arithmetic is checkable without a calculator — expect 230 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** a quieter sustained level with a wider daily departure — the two terms are independent and the row must not assume otherwise — expect 190 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The SHORT TERM of the pair. sw_f107_design_long says what the mission sits at
+for months; this says what one day in twenty reaches while sitting there. A
+thermal case and a drag transient are sized on this one, an array and a
+propellant budget on its long sibling, and giving a design only one of the two
+decides for the reader which problem they have.
+
 
 ### `sw_f107a_ratio` — Daily F10.7 scatter about F10.7A
 
@@ -19801,6 +20866,7 @@ prf_horizon's structure function D(L) = RMS[F107(t+L) - F107(t)], its first meth
 - **reads** — `sw_storm_return_level`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **assumes** The table is defined for the three-hourly ap and is being fed a daily mean Ap — fails when Kp(ap) is concave, so by Jensen's inequality the table run on a daily mean returns a Kp above the mean of the eight three-hourly Kp and well below the daily peak. Measured on the solar-weather record over 10,297 days with both an Ap and all eight Kp: against the 24-hour mean the table reads high by 0.083 Kp (median), against the daily peak it reads low by 1.000 Kp; on disturbed days (Ap >= 48, 131 of them) those become 0.397 high and 1.606 low. Both signs are what the concavity argument predicts. A design sized on the peak slot through this node alone is sized on a sky 1.6 Kp quieter than the record's, and that is on exactly the days a drag design is sized by. sw_kp_slot_bias now measures both offsets and publishes the peak one, +1.317 Kp at the design Ap of 158; this node's own answer still carries them uncorrected, because the correction is a separate row a consumer adds rather than something applied inside the conversion.
+- **assumes** The 28 pairs are written once, in vleo-core, and THEY USED TO BE WRITTEN TWICE — fails when a published table is hand-copied. `vleo_core::physics::env::kp_from_ap` held the same scale with Kp tabulated as decimals — 0.33, 0.67 — where this node's hole held it in exact thirds, which is how IAGA defines the index. The two disagreed by up to 0.0033 Kp everywhere between the anchors, and nothing caught it for as long as both existed, because the fixtures on this row are the published table's ANCHOR points and the anchors are precisely where two transcriptions of one table agree. The kernel's copy is now in thirds and this hole calls it, so there is one table; but the lesson is about the evidence rather than the table — a fixture set drawn only from a source's own tabulated points cannot see a transcription error in what lies between them
 - **assumes** Straight lines between the 28 tabulated points — fails when the published scale is a discrete table, so every value strictly between two anchors is this node's choice and not the source's. ap grows roughly geometrically with Kp, so interpolating linearly in ap rather than in its logarithm understates Kp inside a bin; the worst departure between the two over the whole domain is 0.017 Kp, in the 2-to-3 bin. That is the size of the arbitrariness, and it is smaller than the slot bias above by two orders of magnitude.
 - **assumes** Clipped to the table's ends: below ap 0 and above ap 400 the answer is 0 and 9, and the guard against the first of those lives in the producer, not here — fails when above ap 400 every storm returns exactly 9, so the largest storm on record and a merely severe one become the same number and any relation reading Kp stops responding. The largest daily Ap in the solar-weather record is 273, so nothing in this record reaches the clip — but a scenario multiplier applied to a disturbed day can, and it will do so silently. At the other end the clamp is worse than silent, it is plausible: ap -1, ap -1e9 and negative infinity all read back as Kp 0, the quietest possible sky, which no guard on this node can catch because 0 is a legitimate Kp. What protects a run is the PRODUCER's declared range — sw_storm_return_level publishes 20 to 230 and refuses before this node is reached — because in this repository a range travels with the variable and an [[input]] declares no range of its own. So a direct call to evaluate() with a negative ap, which is what a test does and what a future consumer with a looser range would do, returns Kp 0 rather than refusing. This was going to be fixed here with an explicit fault; generation refused the body, correctly — a hole may not construct a fault, because guards belong to declared domains where their reason is attached. The honest fix is a range on the producer, and that is where it now is.
 - **evidence** Kp 0 — ap 0, the table's first point — expect 0 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
@@ -19855,6 +20921,172 @@ The atmosphere model wants Kp; the design product carries Ap. This is that conve
 
 The pair to sw_kp_slot_bias, and the half of the pair a thermospheric model actually asks for more often. DTM2020_Oper takes Kp in two senses — akp(1) a single three-hourly value, akp(3) the mean of the day's eight — and the published scale answers neither, because it is defined for a three-hourly ap while the design product carries a daily mean. sw_kp_slot_bias measures the peak-slot gap and this measures the mean-slot one. They have opposite signs, so applying the wrong one doubles the error instead of removing it.
 
+### `sw_kp_scenarios` — Kp in both slots, for all five scenarios
+
+> What Kp does each of the five driver scenarios carry, in the mean slot and in the peak slot?
+
+| | |
+|---|---|
+| symbol | `Kp_peak_hotday` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `Kp_slot(s) = kp_from_ap(Ap_s) + dKp_slot(Ap_s), for each of the five scenarios and each of the two slots` |
+| source | `iaga_kp_ap` |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400. This member is the worst slot of the worst day, so it is the one of the ten most likely to reach it
+- **reads** — `sw_ap_central_expectation`, `sw_ap_design_long`, `sw_ap_cold_long`, `sw_ap_design_short`, `sw_ap_cold_short`
+- **read by** — `l3_solar_interface`
+- **assumes** The offsets are medians over nine bins of Ap and nothing else — fails when the day is unusual in a way Ap does not capture. The correction knows the daily mean and the bin it falls in; it does not know whether the day was one long storm or eight quiet slots and one severe one, and those have the same Ap and very different peaks. The median is the middle of that spread, so half of the days in any bin exceed the peak this row publishes
+- **assumes** The tables are clamped at both ends rather than extrapolated — fails when a scenario's Ap falls outside them. The scale runs to ap 400 and the bias bins to a centre of 255, so a hot day above that reads the last bin's offset. This tree's hot Ap day is 90.55, inside both; the study's driver sets never exceeded 42. A scenario multiplier applied to a disturbed day would reach the clamp silently
+- **assumes** Both slot corrections are measured on the record and belong to a bundle version — fails when the bundle moves. They are medians over bundles/solar-weather@2026.09.14 and must be re-measured when it does. They live in vleo-core, which is the second and third pieces of measured data in a kernel whose own comment used to say SOLAR_CYCLE_SHAPE was the only one — that claim is now wrong and the kernel says so
+- **assumes** This row composes and does not measure, so its errors are its constituents' errors — fails when a reader looks here for the physics. The scale is sw_kp_from_ap's, both offsets are sw_kp_mean_bias's and sw_kp_slot_bias's, and the five Ap values are the design rows'. What this row owns is the composition and the choice of five points, and its parity grid is the only place all three are checked together
+- **evidence** the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94 — expect 7.9850088183 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 12.5, a bin centre. The scale interpolates between Kp 8/3 at ap 12 and Kp 3 at ap 15; the mean offset -0.0976 is exact — expect 2.6245833333 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 25, a bin centre. Scale between Kp 11/3 at ap 22 and Kp 4 at ap 27, mean offset -0.1333 exact — expect 3.7333333333 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 7.5, a bin centre. Scale between Kp 2 at ap 7 and Kp 7/3 at ap 9, mean offset -0.125 exact — expect 1.9583333333 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 90, a bin centre. The mean offset -0.4487 is exact and the scale is the same interpolation the primary uses — so this and Kp_peak_hotday differ by exactly the two offsets, 2.1956 — expect 5.7893772894 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 2.5, the first bin centre. The scale interpolates between Kp 1/3 at ap 2 and Kp 2/3 at ap 3; the mean offset is the one POSITIVE entry in that table, +0.0417 — expect 0.5416666667 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 12.5. Peak offset 1.1144 exact, and this is the bin where that table is not monotone with its neighbours — expect 3.8366290019 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 25. Peak offset 1.2 exact. Kp 5.07 is a G1 storm in the worst slot of an ordinary sustained day — expect 5.0666666667 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 7.5. Peak offset 0.8333 exact — expect 2.9166666667 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** ap 2.5, the first bin centre, where the peak offset is exactly 1.0 and the scale is exactly 0.5 — the one case in this set a reader can check without a calculator — expect 1.5 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+
+Ten numbers, and they are the last two columns of the study's driver product.
+Every relation behind them already existed on its own row in this subsystem; what
+did not exist was a way to evaluate them at five Ap values at once, because a
+node publishes a value and a consumer cannot ask it for its relation.
+
+The two slots are different questions about the same day. Ap is a daily mean, Kp
+is reported in eight three-hourly slots, and Kp(ap) is concave — so the published
+conversion run on a daily mean lands ABOVE the mean of the eight slots and well
+BELOW the peak. A design sized on the conversion alone is sized on a sky quieter
+than the record's, and on exactly the days a drag design is sized by.
+
+- **publishes a set of 10** — this row's own answer, above, and the members below. Each is read as `sw_kp_scenarios.<member>`.
+
+#### `sw_kp_scenarios.kp_mean_nominal` — Kp, mean slot, nominal scenario
+
+| | |
+|---|---|
+| symbol | `Kp_mean_nominal` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9; a negative value is a sign error
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
+
+#### `sw_kp_scenarios.kp_mean_hotmean` — Kp, mean slot, sustained disturbed scenario
+
+| | |
+|---|---|
+| symbol | `Kp_mean_hotmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9; a negative value is a sign error
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
+
+#### `sw_kp_scenarios.kp_mean_coldmean` — Kp, mean slot, sustained quiet scenario
+
+| | |
+|---|---|
+| symbol | `Kp_mean_coldmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9; a negative value is a sign error, and the quiet scenarios are the ones that approach the floor
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
+
+#### `sw_kp_scenarios.kp_mean_hotday` — Kp, mean slot, disturbed single day
+
+| | |
+|---|---|
+| symbol | `Kp_mean_hotday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9; a negative value is a sign error
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
+
+#### `sw_kp_scenarios.kp_mean_coldday` — Kp, mean slot, quietest single day
+
+| | |
+|---|---|
+| symbol | `Kp_mean_coldday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9. This is the lowest of the ten and the one nearest the floor: at the declared window it is 1.27
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
+
+#### `sw_kp_scenarios.kp_peak_nominal` — Kp, peak slot, nominal scenario
+
+| | |
+|---|---|
+| symbol | `Kp_peak_nominal` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9; a negative value is a sign error
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
+
+#### `sw_kp_scenarios.kp_peak_hotmean` — Kp, peak slot, sustained disturbed scenario
+
+| | |
+|---|---|
+| symbol | `Kp_peak_hotmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9; a negative value is a sign error
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
+
+#### `sw_kp_scenarios.kp_peak_coldmean` — Kp, peak slot, sustained quiet scenario
+
+| | |
+|---|---|
+| symbol | `Kp_peak_coldmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9; a negative value is a sign error
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
+
+#### `sw_kp_scenarios.kp_peak_coldday` — Kp, peak slot, quietest single day
+
+| | |
+|---|---|
+| symbol | `Kp_peak_coldday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9; a negative value is a sign error
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
+
+
 ### `sw_kp_slot_bias` — Kp slot bias, daily peak
 
 > By how much does the published table under-read the daily PEAK Kp at this Ap?
@@ -19891,6 +21123,39 @@ The pair to sw_kp_slot_bias, and the half of the pair a thermospheric model actu
 - **evidence** above the last bin centre — Ap 1000 holds the 110-to-400 bin — expect 1.3174603174603174 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 
 sw_kp_from_ap applies the published scale as published, and the scale is defined for the three-hourly ap while the design product carries a daily mean. This row measures the resulting bias for the slot that sizes a drag design — the daily peak — and publishes it as a correction to be added. The 24-hour-mean slot has its own, smaller and oppositely-signed bias, recorded in the assumptions rather than published, because a node answers one question.
+
+### `sw_mean_band_spread` — Rotation-forecast residual spread
+
+> How much of the next rotation's level does the pattern fail to explain?
+
+| | |
+|---|---|
+| symbol | `sigma_total` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `sigma_total = std(pred - truth) over 361 walk-forward next-rotation forecasts = 13.4544 sfu` |
+| source | `noaa_swpc` |
+| declared value | **13.454382** - |
+| confirmed by | A. Rai / 2026-09-16 |
+| valid over | 0 … 60 - |
+
+- **lower bound** — a spread of zero would mean the pattern predicts every rotation exactly, which the record contradicts at every rotation it scores; below zero is not a spread
+- **upper bound** — above 60 sfu the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean and the band would be arithmetic rather than physics
+- **read by** — `sw_f107_cold_long`, `sw_f107_design_long`
+- **assumes** One sigma holds across the whole cycle — fails when it does not, and the source this was rebuilt from says so about its own number: 'sigma is NOT flat across the cycle; a design that uses one number is too tight somewhere and too loose somewhere else.' prf_rebuild reports sigma split into five phase bins for that reason. This row publishes the pooled number, so a design near solar maximum is given a band that is too narrow and one near minimum a band too wide
+- **assumes** The cycle table ends before the record does, and the phase past it is an extrapolation — fails when it is read as measured. Cycle 25 is tabulated to 2025-12-15 and the record runs to 2025-12-31, so the last sixteen days carry a phase computed from the MEAN length of the three cycles the table holds — one of which is itself incomplete. Every day the window is held forward from inherits that extrapolation
+- **assumes** The 273-day hole in 2017 is filled by straight-line interpolation before the rotations are cut — fails when those interpolated days are counted as observations. Nine months of invented flux sit inside about ten rotations, and they are smoother than the sun, so every one of those rotations is easier to predict than a real one and the pooled spread is a little narrower than the record can support
+- **assumes** It is the residual of a pattern, not of a forecast — fails when this is read as what a forecaster would get wrong. There is no forecast in it: no flare watch, no active-region count, no observation later than the rotation before. A real 27-day outlook does better, which is what sw_forecast_skill measures
+
+sw_mean_cycle_level and sw_cycle_phase say where in the cycle the mission sits
+and what that phase usually brings. This says how wrong that has been, measured
+on the record, one rotation at a time, never using a rotation to predict itself.
+It is the number a design carries as margin: the central expectation without it
+is a line with no width.
+
 
 ### `sw_mean_cycle_level` — Mean-cycle F10.7 at a phase
 
@@ -25125,23 +26390,26 @@ The companion to sw_central_expectation, and the number a design that must SURVI
 
 ### `sys_mission_requirements_mission_duration` — Mission duration
 
-> 
+> How long must the mission operate?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `T_mis_req` |
+| type | `Time` |
+| unit | yr |
 | kind | declared |
 | owner | systems |
 | evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| relation | `T_mis_req = 5` |
+| source | `orbitt_case_c1` |
+| declared value | **5** yr |
+| confirmed by | A. Rai / 2026-09-01, carried unchanged from orbit_mission_duration |
+| valid over | 0.5 … 15 yr |
 
-- **lower bound** — 
-- **upper bound** — 
-- **read by** — `sys_orbit_maintenance_station_keeping_delta_v`
+- **lower bound** — below six months the programme cannot amortise a satellite, so it is not the mission being designed
+- **upper bound** — above 15 years the cost model, the degradation model and the battery cycle model are all extrapolated well past their fits
+- **read by** — `orbit_mission_duration`, `sys_orbit_maintenance_station_keeping_delta_v`
+- **assumes** One duration governs the whole programme — every subsystem sizes against the same mission length — fails when a constellation replenishes on a schedule shorter than a satellite's life, so the satellite duration and the service duration are different numbers and this row is the second of them
 
 ### `sys_mission_requirements_mission_epoch` — Mission epoch
 
@@ -27345,26 +28613,38 @@ The date every dated question in the design keys off. It is a mission requiremen
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **contributes to** — sys_kpi_achieved_comms_time_transfer, sys_kpi_achieved_pnt_time_transfer, sys_kpi_achieved_eo_isr_cep90, sys_kpi_achieved_pnt_cep90, sys_kpi_achieved_pnt_position_accuracy, sys_kpi_achieved_pnt_integrity_risk
 
-### `sys_space_environment_ap` — Ap
+### `sys_space_environment_ap` — Ap, sustained
 
-> 
+> What geomagnetic index does the system design to, as a level sustained over the mission?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `Ap_sys` |
+| type | `Ratio` |
+| unit | - |
 | kind | computed |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `Ap_sys = l3_solar_interface.ap_hotmean` |
+| source | `noaa_swpc` |
+| valid over | 0 … 400 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — the crossing's own floor, restated. A row that narrowed the range it received would be changing the answer while appearing to relay it
+- **upper bound** — the crossing's own ceiling, restated. This is a single-day value, so it is the one most likely of the pair to approach it
+- **reads** — `l3_solar_interface.ap_hotmean`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+- **assumes** It receives and does not compute, and a reader here sees none of the subsystem's limitations — fails when a margin is taken against this number. It stacks a 1.28-sigma band edge on the rotation level with a within-rotation percentile on top, which is nearer a one-in-a-hundred day than a one-in-twenty one, and the two terms are not independent because a disturbed rotation is made of disturbed days. None of that crosses the seam
+- **assumes** It names one member of a fifteen-variable set, and five of them look alike — fails when the wrong member is named. The crossing's f107 column alone holds five values in the same range with the same unit and the same declared domain, and the ap column another five. Assembly checks that the variable EXISTS and that its type matches; nothing checks that it is the one this row meant
+- **assumes** It is the single day and not the sustained level — fails when somebody integrates it over a mission. The sustained level is what sys_space_environment_solar_flux carries, and a drag budget or an array sizing built on a single-day value is designing for a sky the mission does not sit in
+- **evidence** the single-day Ap this tree's own chain gives for the declared window, which exceeds its own requirement — expect 90.54720964 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the G2 threshold l3_solar_req_05 declares as the single-day commitment — expect 80 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the one storm expected in the mission, from sw_storm_return_level — well above this row and a different question — expect 158.384 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+A day at this level may cost a safe mode, a slewed array and some propellant;
+what it may not cost is the vehicle. That is a different design case from the
+sustained level its sibling carries, and the two are separate rows here because
+they are separate rows in the subsystem below.
+
 
 ### `sys_space_environment_atmospheric_density` — Atmospheric density
 
@@ -27408,47 +28688,147 @@ The date every dated question in the design keys off. It is a mission requiremen
 - **read by** — `sys_mass_and_aero_erosion_depth`
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `sys_space_environment_f10_7` — F10.7
+### `sys_space_environment_f10_7` — F10.7, sustained daily value
 
-> 
-
-| | |
-|---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
-| kind | computed |
-| owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
-
-- **lower bound** — 
-- **upper bound** — 
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
-
-### `sys_space_environment_solar_flux` — Solar flux
-
-> 
+> What daily F10.7 does the system design to, on the scenario it sits in?
 
 | | |
 |---|---|
-| symbol | `` |
-| type | `` |
-| unit | ? |
+| symbol | `F107_sys_daily` |
+| type | `Ratio` |
+| unit | - |
 | kind | computed |
 | owner | environment |
-| evidence tier |  |
-| relation | `` |
-| source | `` |
-| valid over | 0 … 0 ? |
+| evidence tier | A |
+| relation | `F107_sys_daily = l3_solar_interface` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
 
-- **lower bound** — 
-- **upper bound** — 
+- **lower bound** — the crossing's own floor, restated. A row that narrowed the range it received would be changing the answer while appearing to relay it
+- **upper bound** — the crossing's own ceiling, restated. This is a single-day value, so it is the one most likely of the pair to approach it
+- **reads** — `l3_solar_interface`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
-- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+- **assumes** It receives and does not compute, and a reader here sees none of the subsystem's limitations — fails when a margin is taken against this number. It stacks a 1.28-sigma band edge on the rotation level with a within-rotation percentile on top, which is nearer a one-in-a-hundred day than a one-in-twenty one, and the two terms are not independent because a disturbed rotation is made of disturbed days. None of that crosses the seam
+- **assumes** It names one member of a fifteen-variable set, and five of them look alike — fails when the wrong member is named. The crossing's f107 column alone holds five values in the same range with the same unit and the same declared domain, and the ap column another five. Assembly checks that the variable EXISTS and that its type matches; nothing checks that it is the one this row meant
+- **assumes** It is the single day and not the sustained level — fails when somebody integrates it over a mission. The sustained level is what sys_space_environment_solar_flux carries, and a drag budget or an array sizing built on a single-day value is designing for a sky the mission does not sit in
+- **evidence** the single-day level this tree's own chain gives for the declared window — expect 124.1432752988 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the requirement ceiling l3_solar_req_02 declares, which is the record's largest observed day rounded up — expect 350 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the hotday value the study publishes for its own window, for a reader comparing the two ports — expect 209.7545677976 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+A day at this level may cost a safe mode, a slewed array and some propellant;
+what it may not cost is the vehicle. That is a different design case from the
+sustained level its sibling carries, and the two are separate rows here because
+they are separate rows in the subsystem below.
+
+
+### `sys_space_environment_f10_7_81day` — F10.7, 81-day mean
+
+> What 81-day mean F10.7 does the single-day design value ride on?
+
+| | |
+|---|---|
+| symbol | `F107bar_sys` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `F107bar_sys = l3_solar_interface` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the crossing's own floor, restated: an 81-day mean cannot sit below a floor every day of it respects
+- **upper bound** — the crossing's own ceiling, restated: above 400 sfu every consumer of F10.7 is extrapolating
+- **reads** — `l3_solar_interface`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** f107bar_hotday is the hot MEAN, not the 81-day mean of the hot day, and the two are different numbers — fails when a reader assumes the name means the latter. It is 104.07 where the hot day is 124.14. A *day scenario is a single day riding on the sustained level beneath it, so its 81-day companion is that sustained level; only the three *mean scenarios have the daily value and the 81-day mean equal. Taking the wrong one puts the atmosphere's background state twenty sfu out
+- **assumes** It pairs with the SINGLE-DAY flux row and not the sustained one — fails when somebody pairs it with sys_space_environment_solar_flux and thinks they have two numbers. That row carries 104.07 and so does this one, because the hot day's 81-day companion IS the hot sustained level — the two rows are the same value seen from two roles. The pair a density model wants is (124.14 daily, 104.07 background); the pair (104.07, 104.07) is the sustained scenario, which is a different case and not wrong, only different
+- **assumes** It receives and does not compute, and a reader here sees none of the subsystem's limitations — fails when a margin is taken against this number. It is a 1.28-sigma band edge — the 90th percentile, while the run is labelled 95 per cent — on a centre that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles whose peaks differ by 41 per cent
+- **evidence** the 81-day mean this tree's own chain gives for the declared window's hot day — the sustained hot level, 104.07, not the day's own 124.14 — expect 104.07110896 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the value the STUDY publishes as f107bar for its own hotday scenario, 175.61, which is its own hotmean — carried here so the two ports' numbers are visible together — expect 175.60641964945182 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the record's own climatology, as a round case well inside the declared range — expect 114.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The companion to sys_space_environment_f10_7, and NOT the same number. A hot day
+rides on the sustained hot level beneath it, so the pair for the design case is
+124.14 daily on 104.07 background, not 124.14 on 124.14.
+
+That distinction is the study's own and it is why its driver set has separate
+f107 and f107bar columns: the three *mean scenarios have the two equal, because
+they ARE the window mean, and the two *day scenarios do not.
+
+
+### `sys_space_environment_kp` — Kp, worst slot of the sustained day
+
+> What Kp does the system design to, in the worst three-hour slot of its design day?
+
+| | |
+|---|---|
+| symbol | `Kp_sys` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `Kp_sys = l3_solar_interface.kp_peak_hotmean` |
+| source | `iaga_kp_ap` |
+| valid over | 0 … 9 - |
+
+- **lower bound** — the crossing's own floor, restated: Kp is defined on 0 to 9 and a negative index is a sign error, not a quiet sky
+- **upper bound** — the crossing's own ceiling, restated: Kp is defined on 0 to 9. This member is the worst slot of the worst day, so it is the one of the ten nearest it — 8.00 at the declared window
+- **reads** — `l3_solar_interface.kp_peak_hotmean`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** It names one of ten Kp members and they span a quiet day to a severe storm — fails when the wrong one is named. The crossing's ten Kp values run from 1.27 to 8.00 at the declared window. All ten are dimensionless, in the same declared domain, and produced by one node, so assembly checks that the variable exists and that its type matches and nothing checks that it is the one this row meant
+- **assumes** The peak slot is a MEDIAN correction, so half the days in its Ap bin exceed it — fails when this is read as a bound. sw_kp_slot_bias measures the median of max_8(Kp) - table(Ap) in nine bins of Ap. The median is the middle of a spread, not its top, and the correction knows only the daily mean and the bin it falls in — not whether the day was one long storm or seven quiet slots and one severe
+- **assumes** It receives and does not compute, and a reader here sees none of the subsystem's limitations — fails when a margin is taken against this number. It rests on an Ap that stacks two one-sided percentiles, a conversion that is a lookup with straight lines between 28 points, and a slot offset measured over one bundle version. None of that crosses the seam
+- **evidence** the peak-slot Kp this tree's own chain gives for the declared window's disturbed day — a G4 severe storm — expect 7.996613371 ± 0.000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** the study's own kp_peak for its hotday scenario, 6.1367, carried so the two ports' numbers are visible together — expect 6.1367 ± 0.000000000001 relative, from `iaga_kp_ap` (independent-derivation)
+- **evidence** Kp 5 exactly, the G1 storm threshold and an anchor of the published scale — expect 5 ± 0.000000000001 relative, from `iaga_kp_ap` (published-source)
+
+The peak slot and not the daily mean, and the distinction is the whole reason
+the subsystem measures a slot offset at all. Ap is a daily mean, Kp is reported
+in eight three-hourly slots, and the published conversion run on a daily mean
+lands ABOVE the mean of the eight and far BELOW the peak. A design that converts
+Ap to Kp and stops is sized on a sky quieter than the record's, on exactly the
+days a drag design is sized by.
+
+
+### `sys_space_environment_solar_flux` — Solar flux, sustained
+
+> What solar flux does the system design to, as a level sustained for months at a time?
+
+| | |
+|---|---|
+| symbol | `F107_sys` |
+| type | `Ratio` |
+| unit | - |
+| kind | computed |
+| owner | environment |
+| evidence tier | A |
+| relation | `F107_sys = l3_solar_interface` |
+| source | `noaa_swpc` |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the crossing's own floor, restated: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A row that narrowed the range it received would be changing the answer
+- **upper bound** — the crossing's own ceiling, restated: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value
+- **reads** — `l3_solar_interface`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **assumes** It receives and does not compute, and a system reader sees none of the subsystem's limitations — fails when a margin is taken against this number. It is a 1.28-sigma band edge — the 90th percentile, while the run is labelled 95 per cent — on a centre that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles whose peaks differ by 41 per cent. The credibility vector crosses the seam; the assumptions do not, and that is the ordinary cost of having a seam at all
+- **assumes** The three drivers arrive but nothing says which SCENARIO they are — fails when somebody reads the three as one case. sys_space_environment_f10_7 carries the hot single day, sys_space_environment_f10_7_81day the level beneath it, and sys_space_environment_kp the worst slot of that same day — so they ARE one coherent case, the hot day. But nothing in the tree enforces that, and a fourth row added later naming a different scenario's member would sit beside them looking identical. The crossing carries the five scenarios precisely so a consumer can pick one; picking is still a decision a row makes in its own sheet
+- **assumes** It is the sustained level and not the single day — fails when somebody sizes a thermal transient on it. The single day is sys_space_environment_f10_7 at 124.14, twenty sfu higher. Reading the wrong one of the two under-sizes a transient case or over-sizes a steady one
+- **evidence** the sustained level this tree's own chain gives for the declared window — expect 104.07110896 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the level the study publishes for its own window, which this row does not use but a reader will compare against — expect 175.5520201913 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the requirement ceiling l3_solar_req_01 declares — the value at which the design's own sustained limit would be met exactly — expect 260 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+
+The headline of the space-environment heading, and the number an array is sized
+on and a drag budget integrates. Its siblings carry what one DAY inside it
+reaches: sys_space_environment_f10_7 for the flux and sys_space_environment_ap
+for the geomagnetic index.
+
+Sustained and single-day are two rows here for the same reason they are two rows
+in the subsystem below: a design reads one or the other depending on what it is
+sizing, and a tool that published only one would have decided for the reader
+which of the two their problem is.
+
 
 ### `sys_space_environment_thermospheric_wind` — Thermospheric wind
 

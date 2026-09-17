@@ -1,0 +1,124 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_f107_design_long"
+label = "Sustained F10.7 to design to"
+folder = "sw_f107_design_long"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "computed"
+owner = "environment"
+tier = "A"
+# SIGNIFICANT, and not by default. This is one of the four numbers §20 has the
+# subsystem publish, it feeds density then drag then lifetime, and its
+# multiplier is a constant this sheet had to argue about rather than inherit.
+# Two reviewers and a differential fill is the right cost for that.
+criticality = "significant"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1374
+state = "published"
+
+# The prior implementation, named so the parity grid beside this node has
+# something to be the parity of. designWindow_ does not publish this level; it
+# publishes the scenario formed from it, and the grid holds that.
+migrated_from = "prf_density.m:217 (01_kernel/sw_study/06_density, local function designWindow_)"
+# Pure arithmetic on two supplied numbers, so the two implementations should
+# agree to the last bits. A grid loose enough to hide a wrong multiplier would
+# defeat the only thing this grid is here to catch.
+parity_tolerance = 1e-9
+
+[question]
+text = "What F10.7 must the design survive as a sustained level over the mission window?"
+note = """
+The LONG TERM of the pair. This is the level the mission sits at for months at
+a time — what an array is sized on, what a drag budget integrates. Its short
+sibling, sw_f107_design_short, says what one day inside it reaches.
+
+The existing sw_f107_design is neither: it adds a one-sided 95th-percentile
+PERSISTENCE growth, which answers "how far might the flux drift from today's
+value" rather than "how wrong is the pattern about the window". Both are
+defensible and they are not the same question.
+"""
+
+[maths]
+# A person has NOT read this relation against its source yet.
+confirmed_by = ""
+expression = "F107_long = F107_central + 1.28 * sigma_total"
+source = "noaa_swpc"
+
+[[input]]
+binding = "central"
+var = "sw_central_expectation"
+type = "Ratio"
+
+[[input]]
+binding = "spread"
+var = "sw_mean_band_spread"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "add 1.28 standard deviations of the rotation-forecast residual to the central expectation"
+binds = "sustained"
+type = "Ratio"
+
+[theory]
+why = """
+A central expectation is a line. A design cannot be built on a line: it needs
+the width, and the width has to be the width of the thing actually being
+predicted. sw_mean_band_spread measures exactly that — how far the pattern has
+historically been from the rotation level it predicted — so adding a multiple
+of it to the centre gives a level the window is unlikely to exceed on a
+sustained basis.
+
+The multiplier is 1.28, which is where a reader should stop and look. 1.28 is
+the one-sided 90th percentile of a normal distribution, not the 95th. The study
+this is ported from forms its mean band as centre +/- 1.28*sigma while labelling
+the run 95 per cent confidence, and in the same function it forms the DAILY band
+at the true p.Conf/100 = 0.95. So the two halves of one published band sit at
+different confidences. That is reproduced here rather than corrected, because a
+port that quietly changes a number stops being a port, but it is declared so
+that changing it is one edit in one place rather than an archaeology exercise.
+"""
+reading = """
+At the study's own window the arithmetic is exact: its nominal 158.3304112313
+plus 1.28 * 13.4968815767 is 175.6064196495, which is the hotmean scenario it
+published to the last digit. That is what makes this relation checkable rather
+than plausible.
+"""
+
+[[theory.step]]
+text = "Take the centre the cycle analogue gives for the window."
+math = "F107_central = sw_central_expectation"
+
+[[theory.step]]
+text = "Take the spread the pattern has historically missed a rotation level by."
+math = "sigma_total = sw_mean_band_spread = 13.4544 sfu"
+
+[[theory.step]]
+text = "Add 1.28 of them. One-sided, because a design is sized against the high side; the cold case is its own scenario and not this row."
+math = "F107_long = F107_central + 1.28 * sigma_total"
+
+[[assumption]]
+text = "1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent"
+fails_when = "a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997. A one-sided 95 per cent bound is 1.645 sigma, which at this sigma is a further 4.9 sfu. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it"
+
+[[assumption]]
+text = "The residual spread is normal enough for a z multiplier to mean a percentile"
+fails_when = "it is not. The residuals of a forecast that misses hardest when activity is highest are skewed, and a normal multiplier under-covers the high tail — which is the tail a design is sized against. The empirical percentile of the residuals would be the honest statistic, and sw_mean_band_spread publishes only their standard deviation"
+
+[[assumption]]
+text = "One sigma covers the whole window"
+fails_when = "sigma is not flat across the cycle — the source says so about its own number — so a window spanning a rise or a fall is given one width where it needs two"
+
+[output]
+symbol = "F107_long"
+type = "Ratio"
+unit = "One"
+lower = 60.0
+upper = 400.0
+reason_lower = "below 60 sfu has never been observed and every relation reading F10.7 has no support there; a design level below it means the spread has been subtracted rather than added"
+reason_upper = "above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, and a sustained level there is not a window this tool can model"
+
+[view]
+kind = "number"

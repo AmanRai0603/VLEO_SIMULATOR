@@ -1,9 +1,9 @@
 // GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
 // regeneration and fails the regeneration diff in the gate.
-//! `l3_solar_req_02` — F10.7
+//! `l3_solar_req_02` — F10.7, single day
 //!
-//! What F10.7 must this design survive, at 95 per cent confidence?
+//! What F10.7 must this design survive on a single day inside the mission window?
 
 #[path = "model.rs"]
 pub mod model;

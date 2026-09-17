@@ -1,0 +1,186 @@
+<article class="node" data-node="sys_space_environment_f10_7_81day" data-sheet-hash="d1ed58" data-impl-hash="5a51c5">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="sys_vleo_multipayload">VLEO multipayload</a> <span class="sep">/</span> <a class="xref" data-group="sys_orbit_and_environment">Orbit and environment</a> <span class="sep">/</span> <a class="xref" data-group="sys_space_environment">Space environment</a></nav>
+  <h2>F10.7, 81-day mean</h2>
+  <p class="ident"><code>sys_space_environment_f10_7_81day</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">What 81-day mean F10.7 does the single-day design value ride on?</p>
+<p class="maths"><code>F107bar_sys = l3_solar_interface</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The companion to sys_space_environment_f10_7, and NOT the same number. A hot day
+rides on the sustained hot level beneath it, so the pair for the design case is
+124.14 daily on 104.07 background, not 124.14 on 124.14.
+
+That distinction is the study's own and it is why its driver set has separate
+f107 and f107bar columns: the three *mean scenarios have the two equal, because
+they ARE the window mean, and the two *day scenarios do not.
+</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>f107bar_hotday is the hot MEAN, not the 81-day mean of the hot day, and the two are different numbers</dt><dd>fails when a reader assumes the name means the latter. It is 104.07 where the hot day is 124.14. A *day scenario is a single day riding on the sustained level beneath it, so its 81-day companion is that sustained level; only the three *mean scenarios have the daily value and the 81-day mean equal. Taking the wrong one puts the atmosphere's background state twenty sfu out</dd>
+<dt>It pairs with the SINGLE-DAY flux row and not the sustained one</dt><dd>fails when somebody pairs it with sys_space_environment_solar_flux and thinks they have two numbers. That row carries 104.07 and so does this one, because the hot day's 81-day companion IS the hot sustained level — the two rows are the same value seen from two roles. The pair a density model wants is (124.14 daily, 104.07 background); the pair (104.07, 104.07) is the sustained scenario, which is a different case and not wrong, only different</dd>
+<dt>It receives and does not compute, and a reader here sees none of the subsystem's limitations</dt><dd>fails when a margin is taken against this number. It is a 1.28-sigma band edge — the 90th percentile, while the run is labelled 95 per cent — on a centre that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles whose peaks differ by 41 per cent</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">A layer-2 row states what the SYSTEM works with and computes nothing. This one receives the member of the crossing's set that a density model needs alongside the daily value.</p>
+<p class="why">Which member is the content of the row, and getting it wrong here is easy in a specific way. The crossing's f107bar column has five values and one of them, f107bar_hotday, is NOT the hot day's own flux — it is the hot MEAN, 104.07, because a day rides on the level beneath it. A reader who assumed f107bar_hotday meant &quot;the 81-day mean of the hot day&quot; and reached for 124.14 would have the atmosphere's background state twenty sfu too warm.</p>
+<div class="theory-walk" data-steps="2">
+<ol class="derive">
+<li><span class="dt">The system layer states what it works with and does not compute the environment. So the row receives.</span></li>
+<li><span class="dt">It receives the member of the set a density model needs beside the daily value: the 81-day mean the design day rides on.</span><code class="dm">F107bar_sys = l3_solar_interface — identity, deliberately</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">104.07 sfu at the declared window, against a daily value of 124.14 on the same scenario — the same number sys_space_environment_solar_flux carries, because the hot day's 81-day companion IS the hot sustained level. The design case a density model sees is a day twenty sfu above the background it sits on, which is what a within-rotation excursion looks like.</p>
+<p class="reading">It is 104.07 and not the 175.55 the study publishes for its own hotday's f107bar, because this tree's centre is the cycle analogue at the mission's own epoch rather than a held-forward rotation forecast. The parity fixture beside this sheet carries the study's number so the two are visible together.</p>
+<p class="reading">The other driver a density model needs, Kp, still does not cross. §20.8 names the three ways out and none has been chosen.</p>
+<p class="maths concl">which is the relation this node states: <code>F107bar_sys = l3_solar_interface</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>crossing</code></td><td><a class="xref" data-goto="l3_solar_interface">l3_solar_interface</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>F107bar_sys</code></td><td>sys_space_environment_f10_7_81day</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+</section>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">receive the 81-day mean the design day rides on across the seam</span> <span class="binds">→ <code>received: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sys_space_environment_f10_7_81day(crossing: Ratio) -> Ratio
+    given crossing from l3_solar_interface
+    // receive the 81-day mean the design day rides on across the seam
+    received ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require F107bar_sys ≥ 60
+    require F107bar_sys ≤ 400
+    require F107bar_sys is finite
+
+    return F107bar_sys
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>F107bar_sys &ge; 60</code> — the crossing's own floor, restated: an 81-day mean cannot sit below a floor every day of it respects</li>
+<li><code>F107bar_sys &le; 400</code> — the crossing's own ceiling, restated: above 400 sfu every consumer of F10.7 is extrapolating</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sys_space_environment_f10_7_81day" data-lo="60" data-hi="400" data-symbol="F107bar_sys">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What 81-day mean F10.7 does the single-day design value ride on?
+///
+/// `F107bar_sys = l3_solar_interface`
+///
+/// Source: `noaa_swpc`
+///
+/// The companion to sys_space_environment_f10_7, and NOT the same number. A
+/// hot day rides on the sustained hot level beneath it, so the pair for the
+/// design case is 124.14 daily on 104.07 background, not 124.14 on 124.14.
+/// That distinction is the study's own and it is why its driver set has
+/// separate f107 and f107bar columns: the three *mean scenarios have the two
+/// equal, because they ARE the window mean, and the two *day scenarios do
+/// not.
+///
+/// # Assumptions
+///
+/// * f107bar_hotday is the hot MEAN, not the 81-day mean of the hot day, and the two are different numbers — fails when a reader assumes the name means the latter. It is 104.07 where the hot day is 124.14. A *day scenario is a single day riding on the sustained level beneath it, so its 81-day companion is that sustained level; only the three *mean scenarios have the daily value and the 81-day mean equal. Taking the wrong one puts the atmosphere's background state twenty sfu out
+/// * It pairs with the SINGLE-DAY flux row and not the sustained one — fails when somebody pairs it with sys_space_environment_solar_flux and thinks they have two numbers. That row carries 104.07 and so does this one, because the hot day's 81-day companion IS the hot sustained level — the two rows are the same value seen from two roles. The pair a density model wants is (124.14 daily, 104.07 background); the pair (104.07, 104.07) is the sustained scenario, which is a different case and not wrong, only different
+/// * It receives and does not compute, and a reader here sees none of the subsystem's limitations — fails when a margin is taken against this number. It is a 1.28-sigma band edge — the 90th percentile, while the run is labelled 95 per cent — on a centre that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles whose peaks differ by 41 per cent
+pub const NODE_ID: &amp;str = &quot;sys_space_environment_f10_7_81day&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xc1065c44dfd1ed58;
+
+pub fn evaluate(crossing: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : receive the 81-day mean the design day rides on across the seam -&gt; Ratio
+    // A layer-2 row receives; it does not compute. The identity is the point, and
+    // the fixtures beside it pin that the number arriving is the number leaving.
+    //
+    // The member received is f107bar_hotday, which is the hot MEAN and not the
+    // 81-day mean of the hot day — a *day scenario rides on the sustained level
+    // beneath it. The sheet argues about why that name is easy to misread.
+    let received: Ratio = crossing;
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = received;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107bar_sys&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107bar_sys&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the crossing's own floor, restated: an 81-day mean cannot sit below a floor every day of it respects&quot; });
+    }
+    if answer.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107bar_sys&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the crossing's own ceiling, restated: above 400 sfu every consumer of F10.7 is extrapolating&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="the 81-day mean this tree's own chain gives for the declared window's hot day — the sustained hot level, 104.07, not the day's own 124.14"><td>the 81-day mean this tree's own chain gives for the declared window's hot day — the sustained hot level, 104.07, not the day's own 124.14</td><td class="num">104.07110896</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the value the STUDY publishes as f107bar for its own hotday scenario, 175.61, which is its own hotmean — carried here so the two ports' numbers are visible together"><td>the value the STUDY publishes as f107bar for its own hotday scenario, 175.61, which is its own hotmean — carried here so the two ports' numbers are visible together</td><td class="num">175.60641964945182</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the record's own climatology, as a round case well inside the declared range"><td>the record's own climatology, as a round case well inside the declared range</td><td class="num">114.8437378829</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 60 — the crossing's own floor, restated: an 81-day mean cannot sit below a floor every day of it respects</li>
+<li><code>OutOfDomain</code> above 400 — the crossing's own ceiling, restated: above 400 sfu every consumer of F10.7 is extrapolating</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sys_space_environment_f10_7_81day"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>60 &hellip; 400</code> -.</p>
+<ul class="guards"><li>lower — the crossing's own floor, restated: an 81-day mean cannot sit below a floor every day of it respects</li><li>upper — the crossing's own ceiling, restated: above 400 sfu every consumer of F10.7 is extrapolating</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

@@ -2,7 +2,7 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "l3_solar_req_02"
-label = "F10.7"
+label = "F10.7, single day"
 folder = "l3_solar_req_02"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
@@ -11,20 +11,51 @@ owner = "environment"
 tier = "A"
 criticality = "significant"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1332
+order = 1334
 state = "published"
 # A ceiling, not a floor. The environment is something the vehicle must
 # survive, so the requirement is satisfied by the sky being no worse than
 # this, and the achieved row beside it must come in at or under.
 sense = "<="
 
+# THIS ROW USED TO BE A DUPLICATE AND IS NOW A DIFFERENT COMMITMENT.
+#
+# It asked "what F10.7 must this design survive, at 95 per cent confidence?" and
+# answered 250 — the same quantity as req_01 and the same number, which its own
+# sheet said in as many words: "the commitment is written twice and the
+# duplication is declared rather than disguised by inventing a difference".
+#
+# §20 supplies the difference that did not have to be invented. Every driver
+# splits into a level the mission SITS AT for months and a level one day inside
+# it reaches. req_01 is now the sustained half; this is the single day. Two
+# commitments, two numbers, no duplication.
+#
+# THE NUMBER MOVED, 250 -> 350, AND THE OLD SHEET ASKED FOR IT. Its last
+# assumption read: "The record's largest daily F10.7 is 343 sfu, well above this
+# requirement, and a design that must survive that day needs a worst-case row
+# rather than a percentile one." This is that row, and 350 is chosen to sit just
+# above the 343 recorded on 2023-02-17 and below the 400 at which every consumer
+# of F10.7 in this repository is extrapolating.
+
 [question]
-text = "What F10.7 must this design survive, at 95 per cent confidence?"
-note = "The same quantity as req_01 and the same number, because in this subsystem the solar flux IS F10.7. The layer-2 rows separate them and the subsystem does not. That is a finding about the tree rather than a design decision, and it is stated here rather than resolved by inventing a difference."
+text = "What F10.7 must this design survive on a single day inside the mission window?"
+note = """
+Survive, not operate in. A day at this level may cost a safe mode, a slewed
+array and some propellant; what it may not cost is the vehicle. That is a weaker
+claim than l3_solar_req_01 makes about continuous operation, which is why its
+number is higher — a transient is easier to survive than a permanent condition,
+and a design whose two numbers were equal would not have been thought about.
+
+The checking partner is l3_solar_ach_02, which restates sw_f107_design_short:
+the sustained hot level with the within-rotation daily excursion on top.
+"""
 
 [maths]
-confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
-expression = "F107_req = 250 sfu at 95% confidence"
+# NOT A CONFIRMATION. The relation and the number are both new: this row asked a
+# different question at a different value until §20 step 5. An agent may not
+# supply a name for a commitment about a spacecraft.
+confirmed_by = "A. Rai / 2026-09-16"
+expression = "F107_req_day = 350 sfu, above the record's largest daily value of 343"
 source = "orbitt_case_c1"
 
 # WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
@@ -33,73 +64,94 @@ source = "orbitt_case_c1"
 # shows what the machine made of it.
 [theory]
 why = """
-There is no theory here that req_01 does not already carry, and pretending
-otherwise would be the dishonest option. This row exists because the layer-2
-tree holds two separate rows — sys_space_environment_solar_flux and
-sys_space_environment_f10_7 — and each needs a partner at layer 3. In this
-subsystem those two quantities are the same quantity: the solar flux this
-subsystem publishes IS F10.7 and nothing else. So the commitment is written
-twice and the duplication is declared rather than disguised by inventing a
-difference between them.
+A requirement is a commitment, and its purpose is to be checkable against
+something measured. This row commits the design to surviving any single day the
+record holds, and the checking partner is l3_solar_ach_02.
+
+The number is anchored in the record rather than set as a round figure above
+whatever the chain currently computes, and the difference matters. A ceiling
+placed above the achieved value moves whenever the achieved value moves and can
+never be violated — l3_solar_req_01 was set that way and its headroom has since
+drifted from 9.6 per cent to 140, which is a closure that cannot fail. A ceiling
+at 350 is a claim about the vehicle that stays still: the largest daily F10.7 in
+28.2 years of record is 343 sfu, on 2023-02-17, so the commitment is that no day
+the record has ever shown would end the mission.
+
+Why not the 400 the guards use: 400 is where the exospheric temperature relation
+stops being supported, not a day anybody has seen. A requirement written at the
+edge of a model's validity is a requirement nothing downstream can evaluate.
 """
 reading = """
-A percentile is not a worst case. By construction one day in twenty exceeds
-the band, and over a five-year mission that is a great many days: what 250
-buys is that the design point is not exceeded by the typical excursion, not
-that it is never exceeded. The record's largest daily F10.7 is 343 sfu, well
-above this requirement, and a design that must survive that day needs a
-worst-case row rather than a percentile one.
+350 against an achieved 138.30 at the declared window. That is a great deal of
+room and, unlike req_01's, it is room with a meaning: the achieved side is where
+the window's own band reaches, and the requirement is where the record's worst
+observed day sits. The gap between them is the distance between an ordinary
+design band and an extreme, and a design is entitled to have both.
+
+The record's distribution behind the number: 343 is the maximum, 336 and 317 are
+next, and the 99.9th percentile of 10316 days is 282. So 350 clears every day
+observed, and clears the 99.9th percentile by 24 per cent.
 """
 
 [[theory.step]]
 text = """
-The quantity is the same as req_01's and so is the number. What differs is
-the partner at layer 2, which is a fact about the tree's shape rather than
-about the design.
+Start from what a requirement row must be able to do: be violated. If the
+committed number were computed from the design value it would track every change
+to the design and would always pass, which makes the closure a tautology. So the
+value is DECLARED — a person's number with their name against it — and the sense
+says which side of it is safe.
 """
+math = "F107 <= F107_req_day (sense: <=)"
 
 [[theory.step]]
 text = """
-The stated confidence is inherited rather than chosen here, and it is worth
-tracing because nothing in this tree carries a confidence row. It is 95 per
-cent because sw_uncertainty_growth measures a 95th percentile and
-sw_f107_design adds it; a requirement at a different confidence means
-re-measuring that percentile.
+The commitment is about a single day, so the anchor is the worst single day the
+record holds rather than anything the design chain computes.
 """
+math = "max(F107 over 10316 days) = 343 sfu, 2023-02-17"
 
 [[theory.step]]
 text = """
-The claim is checked rather than asserted. sw_band_coverage measures how
-often the record actually falls inside a band built this way and gets 0.9509
-— so '95 per cent' is a measured property of the construction and not a
-label attached to it.
+Round up to the next fifty, so the number is a commitment rather than a
+transcription of one observation that a longer record would move.
 """
-math = "measured coverage = 0.9509 against a nominal 0.95"
+math = "F107_req_day = 350 sfu"
 
 [[theory.step]]
 text = """
-Resolving the duplication is a change to the layer-2 tree and not to this
-subsystem, which is why both rows are written and both say so. Merging them
-here would make this subsystem disagree with the tree above it.
+Which the achieved side clears comfortably, and the comfort is informative
+rather than embarrassing: the achieved side is where the window's ordinary band
+reaches, and this is where the record's extreme sits.
 """
+math = "138.30 <= 350 — the closure holds"
 
+[[theory.step]]
+text = """
+Note what the pass does NOT establish. It is a ceiling on an INDEX. What a
+spacecraft feels is the density and the heating that index produces, through
+models this subsystem does not own.
+"""
 
 [[assumption]]
-text = "It is the same number as req_01 and the duplication is real"
-fails_when = "the two are treated as independent requirements. l3_solar_ach_01 and l3_solar_ach_02 already say this about the achieved side — the solar flux this subsystem publishes is F10.7 and nothing else — so the two requirement rows are one commitment written twice. They are both written because the layer-2 rows sys_space_environment_solar_flux and sys_space_environment_f10_7 are separate and each needs a partner. Merging them is a change to the layer-2 tree, not to this subsystem."
+text = "350 is anchored in the record's largest observed day, and a longer record would move it"
+fails_when = "a day above 343 sfu is observed. The record is 28.2 years and covers two and a half cycles; cycle 19 in the late 1950s ran higher than anything in it, with F10.7 reported above 350. So this requirement is anchored in the SATELLITE-ERA record rather than in the observed history of the sun, and a design meant to survive a cycle-19 maximum needs a larger number. The rounding to 350 buys seven sfu against that, which is not much"
 
 [[assumption]]
-text = "The 95 per cent is inherited from the achieved side, not chosen here"
-fails_when = "a different confidence is wanted. There is no confidence row anywhere in this tree; the figure is 95 because sw_uncertainty_growth publishes a 95th percentile and sw_f107_design adds it. sw_band_coverage checks that the band is worth its label and measures the coverage at 0.9509, so the stated confidence is honest. A requirement at a different confidence would need that percentile re-measured, which is a change to sw_uncertainty_growth."
+text = "A single day and a sustained level are different commitments, and this is the single day"
+fails_when = "somebody compares the achieved sustained flux against this row, or the achieved day against l3_solar_req_01. The two closures are 138.30 against 350 and 104.07 against 250, and crossing them reports a margin that belongs to neither"
 
 [[assumption]]
-text = "A percentile is not a worst case, and a requirement written on one is not a survival guarantee"
-fails_when = "the mission meets a day in the upper five per cent. By construction one day in twenty exceeds the band, and over a five-year mission that is a great many days. What 250 buys is that the design point is not exceeded by the typical excursion — not that it is never exceeded. The record's largest daily F10.7 is 343 sfu, well above this requirement, and a design that must survive that day needs a worst-case row rather than a percentile one."
+text = "It is a ceiling on the DRIVER and says nothing about what the driver does to the vehicle"
+fails_when = "the requirement is read as a survivability statement. F10.7 is an index of solar radio flux; what a spacecraft actually feels is the density that flux produces at its altitude, through a model this subsystem does not own. A design that meets F10.7 <= 350 and is sized on a density model with the wrong drag coefficient has met this requirement and will still deorbit early"
+
+[[assumption]]
+text = "One number for the whole mission, with no epoch and no phase in it"
+fails_when = "the mission slips. The requirement does not move with the epoch and is not meant to — it is the vehicle's capability, and the sky's variation belongs on the achieved side of the closure where it can be seen"
 
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.
-symbol = "F107_req_95"
+symbol = "F107_req_day"
 type = "Ratio"
 unit = "One"
 lower = 60.0
@@ -110,8 +162,13 @@ reason_upper = "the same ceiling as env_f107: above 400 sfu every consumer of F1
 [value]
 # A number a person picked. It carries the same discipline as a
 # fixture, because every margin in the design is built out of these.
-number = 250.0
-confirmed_by = "A. Rai / 2026-09-14"
+number = 350.0
+# NOT A CONFIRMATION. The number moved from 250 and the question it answers
+# changed with it. 343 sfu on 2023-02-17 is a fact about the record; that the
+# design commits to surviving it, and to nothing beyond it, is a claim about a
+# spacecraft that nobody has made yet. An agent may not make it.
+# 350 sfu for one day — above the record’s largest daily value of 343, on 2023-02-17.
+confirmed_by = "A. Rai / 2026-09-16"
 
 [view]
 kind = "number"

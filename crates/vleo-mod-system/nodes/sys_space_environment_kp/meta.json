@@ -1,0 +1,17 @@
+{
+  "id": "sys_space_environment_kp",
+  "state": "published",
+  "sheet_hash": "870c21",
+  "impl_hash": "7eb482",
+  "owner": "environment",
+  "tier": "A",
+  "fixtures": 3,
+  "criticality": "minor",
+  "reviewers": 1,
+  "differential_fill": false,
+  "migrated_from": "",
+  "holes": 1,
+  "inputs": ["l3_solar_interface.kp_peak_hotmean"],
+  "contributes": [],
+  "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did"]
+}

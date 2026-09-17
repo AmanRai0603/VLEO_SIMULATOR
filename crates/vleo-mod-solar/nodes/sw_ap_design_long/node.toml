@@ -1,0 +1,87 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_ap_design_long"
+label = "Sustained Ap to design to"
+folder = "sw_ap_design_long"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "computed"
+owner = "environment"
+tier = "A"
+# SIGNIFICANT, and not by default. This is one of the four numbers §20 has the
+# subsystem publish, it feeds density then drag then lifetime, and its
+# multiplier is a constant this sheet had to argue about rather than inherit.
+# Two reviewers and a differential fill is the right cost for that.
+criticality = "significant"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1376
+state = "published"
+
+# The prior implementation, named so the parity grid beside this node has
+# something to be the parity of.
+migrated_from = "prf_density.m:217 (01_kernel/sw_study/06_density, designWindow_, hotmean for ap)"
+# Arithmetic on two supplied numbers: the two should agree to the last bits.
+parity_tolerance = 1e-9
+
+[question]
+text = "What daily planetary Ap must the design survive as a sustained level over the mission window?"
+note = """
+The Ap twin of sw_f107_design_long, and NOT the same question as sw_ap_design.
+That row asks what extreme recurs once per mission; this asks what level the
+window sits at. A design needs both and they are different numbers by a factor
+of several.
+"""
+
+[maths]
+# A person has NOT read this relation against its source yet.
+confirmed_by = ""
+expression = "Ap_long = Ap_central + 1.28 * sigma_ap"
+source = "noaa_swpc"
+
+[[input]]
+binding = "central"
+var = "sw_ap_central_expectation"
+type = "Ratio"
+
+[[input]]
+binding = "spread"
+var = "sw_ap_mean_band_spread"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "add 1.28 standard deviations of the Ap rotation-forecast residual to the central expectation"
+binds = "sustained"
+type = "Ratio"
+
+[theory]
+why = """
+Ap_central says where the window sits, sw_ap_mean_band_spread says how wrong
+the pattern has been about that, and 1.28 of the spread is the margin. The
+multiplier is the same 1.28 as its F10.7 twin and carries the same problem: it
+is the one-sided 90th percentile of a normal while the run is labelled 95 per
+cent, and the daily half of the band uses the true 0.95.
+
+Ap makes the normal assumption worse than F10.7 does. The index floors at zero,
+a quiet rotation cannot undershoot far, and an active one overshoots a long
+way — so the residuals are strongly right-skewed and a symmetric z multiplier
+understates exactly the tail a design is sized against.
+"""
+reading = """
+26.6953 at the declared window, against the study's hotmean of 26.6833 — 0.045
+per cent, and the construction is exact on the study's own inputs:
+22.0925383902 + 1.28 * 3.5865545525 = 26.6833282174.
+"""
+
+[output]
+symbol = "Ap_long"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 300.0
+reason_lower = "Ap floors at zero — a perfectly quiet day is Ap 0 — so a design level below it means a spread has been subtracted rather than added"
+reason_upper = "above 300 the level exceeds the largest daily Ap in the record, 273, so a SUSTAINED level there is not a window this tool can model"
+
+[view]
+kind = "number"

@@ -1,0 +1,21 @@
+# The prior implementation, at the one window it was exported for.
+#
+# NOT A FIXTURE. An expected value may never come from the implementation under
+# test, and this file is the OTHER implementation's answer — a second opinion.
+# A disagreement here is a finding about one of the two, and the answer is never
+# to widen parity_tolerance or to edit this file until it agrees.
+#
+# WHERE THIS ROW COMES FROM. designWindow_ forms the mean band as
+# centre +/- 1.28*sigma and publishes the upper edge as the `hotmean` scenario,
+# in matlab/reference/mission_drivers.csv. The inputs below are the centre and
+# sigma that run used; the answer is the hotmean flux it published.
+#
+#   nominal.f107 + 1.28 * sigma_total
+#     = 158.3304112313161 + 1.28 * 13.496881576668528
+#     = 175.60641964945182 = hotmean.f107      exactly, to the last digit
+#
+# That exactness is the point: it is what makes the relation checkable rather
+# than merely plausible, and it is why 1e-9 is tight enough here where the
+# spread rows beside this one needed a per cent.
+central,spread,matlab_F107_long
+158.3304112313161,13.496881576668528,175.60641964945182

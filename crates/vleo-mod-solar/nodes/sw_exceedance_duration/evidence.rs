@@ -88,8 +88,8 @@ fn answers_near_the_known_good_point() {
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Ratio::new(80.0 * scale)) {
-            assert!(v.get().is_finite(), "sw_exceedance_duration produced a value that is not a number");
-            assert!(v.get() >= 86400.0 && v.get() <= 432000.0, "sw_exceedance_duration answered {}, outside its declared domain 86400 … 432000 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "sw_exceedance_duration produced a value that is not a number for D_exc");
+            assert!(v.get() >= 86400.0 && v.get() <= 432000.0, "sw_exceedance_duration answered {} for D_exc, outside its declared domain 86400 … 432000 — the guard did not stop it", v.get());
         }
     }
 }
@@ -104,7 +104,9 @@ fn the_same_inputs_give_the_same_answer() {
     let a = model::evaluate(Ratio::new(80.0));
     let b = model::evaluate(Ratio::new(80.0));
     match (a, b) {
-        (Ok(x), Ok(y)) => assert!(x.get().to_bits() == y.get().to_bits(), "sw_exceedance_duration is not deterministic: {} then {}", x.get(), y.get()),
+        (Ok(x), Ok(y)) => {
+            assert!(x.get().to_bits() == y.get().to_bits(), "sw_exceedance_duration is not deterministic for D_exc: {} then {}", x.get(), y.get());
+        }
         (Err(_), Err(_)) => {}
         _ => panic!("sw_exceedance_duration refused on one call and answered on the other"),
     }

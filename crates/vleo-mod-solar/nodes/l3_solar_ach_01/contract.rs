@@ -6,17 +6,19 @@
 use vleo_core::fault::Fault;
 use vleo_core::units::*;
 
-/// What this node publishes: `F107_ach_flux` (Solar flux), in `-`.
+/// What this node publishes: `F107_ach_flux` (F10.7, sustained), in `-`.
 pub const NODE_ID: &str = "l3_solar_ach_01";
-pub const SHEET_HASH: u64 = 0x39aab8ae4b479383;
+pub const SHEET_HASH: u64 = 0xddeb61e35dbb0a27;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
-    "sw_f107_design",
+    "sw_f107_design_long",
 ];
 /// The variables this node publishes.
 pub const OUTPUT_VARS: &[&str] = &["l3_solar_ach_01"];
-/// The SI unit every value crossing this boundary is expressed in.
+/// The SI unit this node's own answer crosses the boundary in.
 pub const OUTPUT_UNIT: Unit = Ratio::UNIT;
+/// The SI unit of each published variable, in `OUTPUT_VARS` order.
+pub const OUTPUT_UNITS: &[Unit] = &[Ratio::UNIT];
 
 /// The untyped adapter. Values cross as SI `f64` and are re-typed here,
 /// so the bus carries no quantity types and a face cannot pass arguments

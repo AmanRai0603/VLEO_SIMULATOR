@@ -1,0 +1,154 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_daily_band_drop"
+label = "Within-rotation daily drop"
+folder = "sw_daily_band_drop"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "computed"
+owner = "environment"
+tier = "A"
+# SIGNIFICANT. This is the row whose old construction took the cold chain below
+# a floor nothing has ever been observed under, so its table is the one a
+# reviewer should read hardest.
+criticality = "significant"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1379
+state = "published"
+
+# NO migrated_from. The same reason as its high-tail twin: it no longer answers
+# the question prf_density.m:221 answers. See sw_daily_band_spread's header for
+# the argument; this row is the one that broke first.
+#
+# THE FAILURE, IN ONE LINE. A drop of 31.27 sfu, measured over days whose
+# rotations averaged 136.63, subtracted from a rotation at 69.63, gave 38.36 —
+# below the 60 sfu floor and below anything ever recorded. Conditioned on the
+# level, the drop at a rotation of 69.63 is 4.39 and the cold day is 65.24.
+
+[question]
+text = "How far below its own rotation does a single day of F10.7 fall, at the declared confidence, at the level that rotation sits at?"
+note = """
+The other tail of sw_daily_band_spread's sample, and a separate row because it
+is a separate number at every level: the departures are not symmetric. The sun
+has a floor and no ceiling, so a day can rise further above its rotation than it
+can fall below it, and a design that mirrors one tail onto the other is assuming
+a shape the record does not have.
+
+It is the cold side, which sounds like the side nobody sizes against. It is not:
+a cold day is the low-drag case, and the low-drag case is what a propellant
+budget's LOWER bound and an aerodynamic control authority's worst case are made
+of. The hot day and the cold day both bound something.
+"""
+
+[maths]
+# A person has NOT read this relation against its source yet. The table is
+# measured from the record by the method the theory sets out; nobody has agreed
+# that the method or the knots are the right ones.
+confirmed_by = ""
+expression = "dF107_day_low(L) = -pctl(F107 - movmean(F107, 27 d), 0.05) over days whose rotation sits within 15% of L"
+source = "noaa_swpc"
+
+[[input]]
+# The level this drop applies AT. The cold day rides on the cold sustained level
+# and on nothing else, so the row is evaluated at exactly the one point its
+# consumer needs.
+binding = "level"
+var = "sw_f107_cold_long"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "read the 5th-percentile within-rotation departure off the measured table at this rotation level, as a magnitude"
+binds = "band"
+type = "Ratio"
+
+[theory]
+why = """
+sw_daily_band_spread takes the daily record, subtracts its own centred 27-day
+moving mean, bins every day by the level of the rotation it sits in, and reads
+the 95th percentile inside each bin. This reads the 5th percentile of the same
+bins, and publishes its magnitude. Same sample, same moving mean, same ladder of
+knots, same 15 per cent bins, same rule for where the ladder stops — one
+measurement, read from both ends.
+
+That it is a second row rather than the same row negated holds at every level.
+At a rotation of 70 the two tails are 4.63 up and 4.39 down, six per cent apart;
+at 145 they are 34.61 and 32.39; at 210, 46.93 and 40.78, fifteen per cent
+apart. The reason is physical rather than statistical: F10.7 has a floor near 65
+sfu that the quiet sun sits on, so there is less room below a rotation than
+above it, and the gap widens as the rotation rises above the floor.
+
+The magnitude is published rather than the signed percentile so that the row
+reads as a distance, its declared floor is zero, and the sign lives in the
+relation that consumes it. A row whose value is negative and whose consumers
+must remember to add rather than subtract is a row waiting to be used the wrong
+way round once.
+"""
+reading = """
+4.39 sfu at the declared window, where sw_f107_cold_long puts the sustained cold
+level at 69.63 — just under the table's lowest knot, so the answer is the clamp.
+The old single-number version of this row gave 31.27 for the same window, seven
+times as much, because it was measured over days whose rotations averaged 136.63
+and applied unchanged at 69.63.
+
+That seven-fold error is what made sw_f107_cold_short refuse. It now publishes
+65.24 sfu, which clears the floor of 60 by five and is a genuinely quiet day
+rather than an impossible one.
+"""
+
+[[theory.step]]
+text = "Take the daily record up to the day the window opens and subtract the centred 27-day moving mean. The sample is identical to sw_daily_band_spread's — the same days, the same moving mean, one measurement."
+math = "dev(t) = F107(t) - movmean(F107, 27)(t)"
+
+[[theory.step]]
+text = "Bin every day by the level of its own rotation, within 15 per cent of each knot, exactly as the high tail does."
+math = "bin(L) = { dev(t) : |movmean(F107,27)(t) - L| <= 0.15 L }"
+
+[[theory.step]]
+text = "Read the 5th percentile instead of the 95th. One call on one sorted bin gives both tails; this row is the lower one."
+math = "lo(L) = pctl(bin(L), 0.05)"
+
+[[theory.step]]
+text = "Publish its magnitude, interpolated between knots and clamped beyond the ends, so the row is a distance with a floor of zero and the sign travels with the relation that uses it."
+math = "dF107_day_low(L) = -interp(L; knots) = 4.39 at L = 69.63, which is the clamp"
+
+[[assumption]]
+text = "The departure scales with the level, and the old single number was seven times too large at this window"
+fails_when = "this is read as a refinement. 31.27 subtracted from 69.63 is 38.36 sfu, which has never been observed and which sw_f107_cold_short's guard refused. Conditioned on the level the drop is 4.39. A factor of seven is not a correction to a margin, it is a different answer"
+
+[[assumption]]
+text = "The declared window sits at the clamp, so this row is reading the end of its own table"
+fails_when = "the sustained cold level falls below 70 sfu, as it does here at 69.63. The answer is held at the lowest knot's 4.39 rather than extrapolated, which is the right choice — below 70 the record has few rotations and a line drawn onward would be invention — but it does mean this window's answer is the table's endpoint and not an interpolation. A colder window gets the same 4.39"
+
+[[assumption]]
+text = "The departures are asymmetric, and this row exists because of it"
+fails_when = "it is treated as the negation of sw_daily_band_spread. The gap runs from six per cent at a rotation of 70 to fifteen per cent at 210, because F10.7 has a floor near 65 and no ceiling, and the room below a rotation shrinks as the rotation approaches that floor. Mirroring the high tail onto the low one is asserting a symmetry the record refuses at every level"
+
+[[assumption]]
+text = "A 15 per cent bin half-width, which trades resolution against sample size"
+fails_when = "either matters more than the other. Narrower bins resolve the level dependence better and hold fewer days, so the percentile gets noisier; wider bins are the defect this row exists to fix, in miniature"
+
+[[assumption]]
+text = "The 27-day moving mean is the rotation"
+fails_when = "the solar rotation is 27.27 days at the equator and slower at the poles, and the active longitudes that drive F10.7 are not at one latitude. A 27-day window is the conventional round number rather than a measured period, and the departures it leaves carry whatever the mismatch contributes"
+
+[[assumption]]
+text = "It is the record's own daily scatter, not a forecast error"
+fails_when = "this is read as an uncertainty. It is not: it says how far below its rotation the sun has gone, measured on days that already happened. What a forecast of a future day would get wrong is sw_uncertainty_growth's question and a larger number"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "dF107_day_low"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 120.0
+reason_lower = "a drop of zero would mean no day ever falls below its rotation mean, which the record contradicts on about half the days it holds; below zero is not a distance, and a negative value here means the tail has been read from the wrong end"
+reason_upper = "above 120 sfu the departure exceeds the largest single-day excursion in the record in either direction, so a value there is an arithmetic error rather than a quiet sun"
+
+[view]
+kind = "line"
+over = "sw_f107_cold_long"
+points = 60

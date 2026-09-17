@@ -2,47 +2,170 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "sys_space_environment_solar_flux"
-label = "Solar flux"
+label = "Solar flux, sustained"
 folder = "sys_space_environment_solar_flux"   # frozen at seed; renaming the label never moves the directory
 subsystem = "sys"
 parent = "sys_space_environment"
 kind = "computed"
 owner = "environment"
-tier = ""
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 # Where this row sits among its siblings, as whoever wrote them ordered
 # them. Folders sort alphabetically and a tree that reads alphabetically
-# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
-# reverses the order the source put them in, and the order is part of
-# what the source said.
+# is a tree nobody wrote.
 order = 306
-state = "empty"
+state = "published"
 
-# SEEDED — the folder exists and nothing has been specified in it.
-# Every field below is required before anything can be generated. An
-# open field blocks generation, which is the mechanism: ambiguity
-# becomes a blocking item on an engineer's screen rather than
-# something an implementer resolves silently.
+# THE FIRST LAYER-2 ROW IN THIS REPOSITORY TO RECEIVE ANYTHING.
+#
+# All six sys_space_environment rows were seeded and empty, and layers/l3_solar
+# .toml opens by saying why: the seeded tree gave this heading six rows and no
+# layer-3 group to answer them. The solar-weather subsystem was added to be that
+# group, and §20 built the crossing. This is the far side of it.
+#
+# WHAT A LAYER-2 ROW READING A CROSSING LOOKS LIKE, since this is the first and
+# sixteen more will copy it. It reads `l3_solar_interface`, which is the one node
+# of the solar subsystem visible from here, and NOTHING else in l3_solar. That is
+# the whole rule: a subsystem is reached through its interface, never into.
+#
+# The crossing publishes a SET — five scenarios across three quantities, fifteen
+# variables — so a layer-2 row picks the member it is about and says which. This
+# row takes the primary: the sustained hot level, which is the one number a
+# system reader wants if they read one.
+
+
+# THE DEFAULT AT LAYER 2 IS THE SUSTAINED SCENARIO, decided 2026-09-16.
+#
+# The crossing carries five scenarios. Every row under this heading takes the
+# SUSTAINED one — the level the mission sits in for months — because that is
+# what the system designs to by default. The two *day scenarios are SPIKES: real
+# cases, carried by the crossing, and not what a default reads.
+#
+# A consequence worth seeing rather than hiding: on a sustained scenario the
+# daily value and its 81-day mean ARE THE SAME NUMBER, by construction — a
+# *mean scenario is its own 81-day mean, which is why the study's own driver set
+# has f107 == f107bar on exactly those three rows. So sys_space_environment
+# _solar_flux, _f10_7 and _f10_7_81day all read 104.07 at the declared window.
+# Three rows, one number, and that is the physics rather than a duplication:
+# they diverge the moment a spike scenario is read, where the day is 124.14 and
+# the mean beneath it is still 104.07.
+#
+# A row that wants a spike names the member: f107_hotday, ap_hotday,
+# kp_peak_hotday. None exists yet, because nothing at layer 2 has asked for one.
 
 [question]
-text = ""
+text = "What solar flux does the system design to, as a level sustained for months at a time?"
+note = """
+The headline of the space-environment heading, and the number an array is sized
+on and a drag budget integrates. Its siblings carry what one DAY inside it
+reaches: sys_space_environment_f10_7 for the flux and sys_space_environment_ap
+for the geomagnetic index.
+
+Sustained and single-day are two rows here for the same reason they are two rows
+in the subsystem below: a design reads one or the other depending on what it is
+sizing, and a tool that published only one would have decided for the reader
+which of the two their problem is.
+"""
 
 [maths]
-expression = ""
-source = ""
+# A person has NOT read this relation against its source yet.
+confirmed_by = ""
+expression = "F107_sys = l3_solar_interface"
+source = "noaa_swpc"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "crossing"
+var = "l3_solar_interface"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "receive the subsystem's sustained flux conclusion across the seam"
+binds = "received"
+type = "Ratio"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact.
+[theory]
+why = """
+A layer-2 row states what the SYSTEM works with. It does not compute the
+environment — nobody builds the Sun — so what it does is receive, from the one
+node of the subsystem below that is visible from here.
+
+It is an identity, and the identity is the point rather than an omission. A
+layer-2 row that recomputed anything would be doing subsystem work in a place no
+subsystem reviewer reads, and the number a system reader saw would not exist
+anywhere inside the subsystem that owns it.
+
+The declared range is the crossing's own, restated. Narrowing it would refuse
+answers the subsystem considers valid and widening it would admit answers the
+subsystem would refuse — either way this row would be changing the answer while
+appearing to receive it.
+"""
+reading = """
+104.07 sfu at the declared window. Two things about that number are worth a
+system reader's attention and neither is visible from here.
+
+It is far below the 158.33 the study this was ported from publishes for its own
+window, because sw_central_expectation reads a cycle analogue over the mission's
+own dates rather than holding the last rotation forecast forward. That is a
+recorded decision, not a discrepancy.
+
+And it is a 1.28-sigma band edge, which is the 90th percentile although the run
+is labelled 95 per cent. The credibility vector travels across the seam; that
+does not.
+
+THE 81-DAY MEAN NOW ARRIVES TOO, as sys_space_environment_f10_7_81day, which
+was added after step 6 found it missing. Every thermospheric density model in use
+takes the pair, daily and 81-day, because the two carry different physics: the
+daily value drives the EUV heating of the day and the 81-day mean the background
+state. It carries the same number this row does, 104.07, because the hot day's
+81-day companion IS the hot sustained level.
+
+KP ARRIVES TOO, as sys_space_environment_kp, which was the last of the three and
+needed the Kp columns to cross first. So the three drivers a thermospheric
+density model takes are all at layer 2, and what
+sys_space_environment_atmospheric_density is waiting on is the model rather than
+its arguments.
+"""
+
+[[theory.step]]
+text = "The system layer states what it works with and does not compute the environment. So the row receives."
+
+[[theory.step]]
+text = "It receives from the subsystem's one visible node and from nothing else inside it, which is what makes layer 3 something layer 2 can reason about without opening."
+math = "F107_sys = l3_solar_interface — identity, deliberately"
+
+[[theory.step]]
+text = "The crossing carries a set of fifteen, so this row names the member it is about: the primary, which is the sustained hot level."
+math = "l3_solar_interface (primary) = F107_hotmean = 104.07 sfu"
+
+[[assumption]]
+text = "It receives and does not compute, and a system reader sees none of the subsystem's limitations"
+fails_when = "a margin is taken against this number. It is a 1.28-sigma band edge — the 90th percentile, while the run is labelled 95 per cent — on a centre that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles whose peaks differ by 41 per cent. The credibility vector crosses the seam; the assumptions do not, and that is the ordinary cost of having a seam at all"
+
+[[assumption]]
+text = "The three drivers arrive but nothing says which SCENARIO they are"
+fails_when = "somebody reads the three as one case. sys_space_environment_f10_7 carries the hot single day, sys_space_environment_f10_7_81day the level beneath it, and sys_space_environment_kp the worst slot of that same day — so they ARE one coherent case, the hot day. But nothing in the tree enforces that, and a fourth row added later naming a different scenario's member would sit beside them looking identical. The crossing carries the five scenarios precisely so a consumer can pick one; picking is still a decision a row makes in its own sheet"
+
+[[assumption]]
+text = "It is the sustained level and not the single day"
+fails_when = "somebody sizes a thermal transient on it. The single day is sys_space_environment_f10_7 at 124.14, twenty sfu higher. Reading the wrong one of the two under-sizes a transient case or over-sizes a steady one"
 
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.
-# A unit is a decision, not data. None of these is filled yet.
-symbol = ""
-type = ""
-unit = ""
-lower = 0.0
-upper = 0.0
-reason_lower = ""
-reason_upper = ""
+symbol = "F107_sys"
+type = "Ratio"
+unit = "One"
+lower = 60.0
+upper = 400.0
+reason_lower = "the crossing's own floor, restated: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A row that narrowed the range it received would be changing the answer"
+reason_upper = "the crossing's own ceiling, restated: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value"
 
 [view]
 kind = "number"
-

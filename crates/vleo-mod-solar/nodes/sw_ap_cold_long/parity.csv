@@ -1,0 +1,18 @@
+# The prior implementation, at the one window it was exported for.
+#
+# NOT A FIXTURE. An expected value may never come from the implementation under
+# test, and this file is the OTHER implementation's answer — a second opinion.
+#
+# designWindow_ forms both edges of the mean band in one statement and publishes
+# the lower one as the `coldmean` scenario, in matlab/reference/mission_drivers.csv:
+#
+#   nominal.ap - 1.28 * sigma_ap
+#     = 22.092538390203554 - 1.28 * 3.5865545525358034
+#     = 17.50174856295763 = coldmean.ap      exactly, to the last digit
+#
+# Unlike the F10.7 side, this row's own chain lands within 0.04 per cent of the
+# grid at the declared window — 17.4955 against 17.5017 — because
+# sw_ap_central_expectation holds the last rotation forecast forward the way the
+# study does. The two chains differ in that choice, not in this relation.
+central,spread,matlab_Ap_cold_long
+22.092538390203554,3.5865545525358034,17.50174856295763

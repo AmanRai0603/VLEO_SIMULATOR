@@ -1,0 +1,12 @@
+# The prior implementation, at the one window it was exported for.
+#
+# NOT A FIXTURE. An expected value may never come from the implementation under
+# test, and this file is the OTHER implementation's answer — a second opinion.
+#
+# designWindow_ line 227 forms the daily bound as the rotation band plus the
+# within-rotation spread and publishes it as `hotday`:
+#
+#   hotmean.ap + qHi = 26.683328217449382 + 14.851851851851848
+#                    = 41.53518006930126 = hotday.ap      exactly
+sustained,daily,matlab_Ap_short
+26.683328217449382,14.851851851851848,41.53518006930126

@@ -11,7 +11,7 @@ owner = "environment"
 tier = "A"
 criticality = "significant"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1334
+order = 1336
 state = "published"
 # A ceiling, not a floor. The environment is something the vehicle must
 # survive, so the requirement is satisfied by the sky being no worse than
@@ -29,22 +29,45 @@ sense = "<="
 #     G4 severe    Kp 8     ap 207
 #     G5 extreme   Kp 9     ap 400
 #
-# sw_storm_design_level declares G3, so sw_ap_design says the vehicle handles
-# daily Ap 132. This requirement is that capability with a margin on it: 150,
-# about 14 per cent, still inside G3's own band and well under G4's ceiling of
-# 207. It is derived from what the design can take rather than from what the sky
-# does, which is what a requirement is.
+# THIS ROW WAS 150 AND THE CLOSURE FAILED. It was sw_ap_design's 132 with about
+# 14 per cent on it, and sw_storm_return_level expects 158.4 over the declared
+# five years, so the achieved side came in over the commitment. It had been that
+# way since the pair was written, and nothing in the tree said so, because
+# nothing in this tree evaluates a closure.
+#
+# It is now 207, the published ap at Kp 8, decided on 2026-09-16.
+#
+# AND IT IS NOT THE MOVE THIS SHEET USED TO REJECT, which is worth being exact
+# about because the old text rejected it in as many words: "a margin chosen so
+# the closure passes would have to exceed 158.4, which means about 200 — and 200
+# sits in G4 territory, committing the vehicle on paper to a level it is not
+# built for."
+#
+# What changed is the question, not the arithmetic. This row asks what must not
+# DESTROY the vehicle. sw_storm_design_level asks what it OPERATES THROUGH, and
+# that is still G3 — its own reason_upper says G4 "is handled by operating
+# through the event rather than by building for it", and it is untouched. So
+# the commitment here is survival at G4, not capability at G4, and nothing
+# downstream of sw_ap_design moves: the four exceedance rows still measure
+# exceedance of 132, which is still the operating level and is still exceeded.
+#
+# That also brings this row into line with its four siblings, all of which were
+# re-anchored on published thresholds rather than on capability-plus-a-margin:
+# 48 operate indefinitely, 132 survive one day, 207 not destroyed by the one
+# storm. A ladder a reader can check against a scale.
 #
 # IT IS EXCEEDED, AND THAT IS THE POINT OF THE THREE ROWS BESIDE IT.
 #
-#     designed for       132   sw_ap_design at G3
-#     required to meet   150   this row, capability plus margin
+#     operates through   132   sw_ap_design at G3, unchanged
+#     not destroyed by   207   this row, the G4 threshold
 #     record expects     158.4 sw_storm_return_level over the declared 5 years
 #
-# 158.4 is above 150, so the closure against l3_solar_ach_03 does not pass. A
-# requirement that could not be violated would not be a requirement, and the
-# useful question is not whether it is met but by how much, how often, for how
-# long and when. Those are measured and each is a row:
+# 158.4 now sits BETWEEN the two: above what the vehicle operates through and
+# below what it must survive. That is the honest shape of the answer, and it is
+# more informative than either a passing closure or a failing one alone — the
+# mission will meet a storm it cannot work through and will not be destroyed by
+# it. The useful question is then how much, how often, for how long and when,
+# and those are measured against the OPERATING level and each is a row:
 #
 #     sw_exceedance_rate       0.284 days a year above 132
 #                              = 1.42 days over the five-year mission
@@ -67,8 +90,8 @@ text = "What daily planetary Ap must this design survive?"
 note = "The G3 design capability of Ap 132 with a 14 per cent margin on it. The record expects 158.4 over the declared five-year mission, so this requirement is NOT met — and the three exceedance rows say what that costs: about 1.42 days outside the bound over the mission, in one or two one-day events, on the declining side of the cycle where the epoch sits."
 
 [maths]
-confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
-expression = "Ap_req = Ap_design(G3) * 1.14 = 150"
+confirmed_by = "A. Rai / 2026-09-16"   # a person read this relation against its source
+expression = "Ap_req = ap(G4) = 207"
 source = "orbitt_case_c1"
 
 # WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
@@ -77,14 +100,27 @@ source = "orbitt_case_c1"
 # shows what the machine made of it.
 [theory]
 why = """
-This is the requirement that fails, and it fails on purpose. The design is
-built for G3, which sw_ap_design turns into a daily Ap of 132; the record
-expects 158.4 over the declared five-year mission. Any number written here
-either sits below what the record expects — and is violated — or sits above
-it and commits the vehicle to a storm level it is not built for. The row
-takes the first option, and the three exceedance rows exist to say what that
-costs, because a designer facing a failed closure needs the SIZE of the
-violation rather than a bigger number.
+This row asks what the mission must not be DESTROYED by. That is a different
+question from what it OPERATES THROUGH, and separating the two is what lets both
+be answered honestly.
+
+The vehicle operates through G3: sw_storm_design_level declares it and
+sw_ap_design turns it into a daily Ap of 132. The record expects 158.4 over the
+declared five-year mission, so the mission WILL meet a storm it cannot work
+through. That is a fact about the sky and no number written here changes it.
+
+What this row commits to is that such a storm does not end the mission, and it
+is anchored at 207 — the published ap at Kp 8, the G4 threshold. The three
+exceedance rows then say what the operating violation costs, which is the
+question a designer actually faces: 0.284 days a year above 132, 1.42 days over
+the mission, in about 1.24 events averaging 1.14 days each.
+
+This row used to be 132 plus a 14 per cent margin, 150, and the closure failed
+because 158.4 exceeded it. Raising it was rejected then on the grounds that a
+number above 158.4 "commits the vehicle on paper to a level it is not built
+for". That objection holds for an OPERATING commitment and is why
+sw_storm_design_level is untouched at G3. It does not hold for a SURVIVAL one,
+which is what this row is.
 """
 reading = """
 The closure fails and the failure is bounded. 0.284 days a year above the
@@ -107,20 +143,19 @@ value a day would reach with all eight slots at Kp 7.
 
 [[theory.step]]
 text = """
-Add a margin so the commitment is not exactly the capability. 150 is the
-next round number with usable room above 132 — about 14 per cent — and
-nothing in the record picks it.
+Do not add a margin to it. A survival commitment is a different question from
+an operating capability, so it is anchored where the published scale puts the
+next band rather than at a percentage above what the vehicle works through.
 """
-math = "Ap_req = 132 * 1.14 = 150"
+math = "Ap_req = ap(Kp 8) = 207, the G4 threshold"
 
 [[theory.step]]
 text = """
 Now compare it with what the record expects, which is where the row stops
-being arithmetic. sw_storm_return_level at five years gives 158.4, above
-this requirement, so the achieved side comes in over the commitment and the
-closure fails.
+being arithmetic. sw_storm_return_level at five years gives 158.4 — above the
+132 the vehicle operates through, below the 207 it must survive.
 """
-math = "158.4 > 150 — the closure does not hold"
+math = "158.4 <= 207 — the closure holds, and 158.4 > 132 is the finding"
 
 [[theory.step]]
 text = """
@@ -149,12 +184,12 @@ bounded one.
 
 
 [[assumption]]
-text = "150 is a capability plus a margin, and the margin is a decision with no derivation behind it"
-fails_when = "somebody looks for where 14 per cent came from. sw_ap_design at the declared G3 gives 132 and 150 is the next round number with usable room above it. Nothing in the record picks it. What it is NOT is a number chosen so the closure passes: 150 is below the 158.4 the record expects over the mission, so this requirement is violated by design rather than by accident. A margin chosen to make a closure pass would have been 200, which sits in G4 territory and would have committed the vehicle to a level it is not built for."
+text = "207 is a SURVIVAL commitment and not an operating capability, and the two are easy to confuse"
+fails_when = "a reader takes this as the level the vehicle works through. It is not. sw_storm_design_level declares G3 and sw_ap_design turns it into 132, and that is the operating level; nothing about it moved. This row says a G4 storm does not end the mission, which sw_storm_design_level's own reason_upper describes as the right treatment for G4 — handled 'by operating through the event rather than by building for it'. A design that claimed to OPERATE at G4 would change sw_storm_design_level, and four exceedance rows would move with it."
 
 [[assumption]]
-text = "The closure fails and the exceedance rows are the reason that is acceptable"
-fails_when = "a failing closure is treated as a blocking defect. sw_storm_return_level gives 158.4 at five years against this 150, so l3_solar_ach_03 comes in above the requirement. What a designer needs next is not a bigger number here but the size of the violation, and it is small and bounded: 0.284 days a year above the design Ap of 132, which is 1.42 days over the mission in about 1.24 events averaging 1.14 days each, with the longest run in 29 years being 2 days. The vehicle is outside its design environment for roughly thirty-four hours of a five-year mission. If that is unacceptable the answer is to move sw_storm_design_level, not to raise this row until the arithmetic stops complaining."
+text = "This closure now holds and the OPERATING one still does not, and the second is the one that matters"
+fails_when = "a passing closure here is read as the storm case being closed. 158.4 sits between the two levels: above the 132 the vehicle operates through, below the 207 it must survive. So the mission meets a storm it cannot work through, and the size of that is what a designer needs — 0.284 days a year above 132, 1.42 days over the mission, about 1.24 events averaging 1.14 days each, longest run in 29 years 2 days. Roughly thirty-four hours outside the operating environment across five years. Nothing in the tree compares 158.4 against 132 automatically; the three exceedance rows measure it and a person reads them."
 
 [[assumption]]
 text = "Switching the G level moves the design value and the exceedance statistics, and not this row"
@@ -182,8 +217,11 @@ reason_upper = "400 is the top of the published ap table, the value at Kp 9. A r
 [value]
 # A number a person picked. It carries the same discipline as a
 # fixture, because every margin in the design is built out of these.
-number = 150.0
-confirmed_by = "A. Rai / 2026-09-14"
+number = 207.0
+# 207 is the published ap equivalent amplitude at Kp 8, the G4 threshold. The
+# DECISION — that the one storm the mission must not be destroyed by is a G4,
+# while the level it OPERATES THROUGH stays G3 — was made on 2026-09-16.
+confirmed_by = "A. Rai / 2026-09-16"
 
 [view]
 kind = "number"

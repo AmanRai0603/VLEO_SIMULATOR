@@ -1,0 +1,187 @@
+<article class="node" data-node="l3_solar_ach_05" data-sheet-hash="75f841" data-impl-hash="7ffc3c">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Ap, single day</h2>
+  <p class="ident"><code>l3_solar_ach_05</code> · <span class="kind kind-achieved">achieved</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">What single-day Ap does the record say this mission will present?</p>
+<p class="maths"><code>Ap_ach_short = sw_ap_design_short</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">An achieved row restates the subsystem's conclusion on the side of the
+comparison the closure reads. It computes nothing of its own, and it exists
+rather than the closure reading sw_ap_design_short directly so that the
+comparison binds two rows of the same shape at the same layer — visible on the
+tree instead of an edge somebody has to trace.
+</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>It inherits every limitation of the row it restates, and a closure reading it sees none of them</dt><dd>fails when a margin is computed from this row against a capability. The centre beneath it is a cycle analogue scaled, beyond one cycle past cycle 25's maximum, by the mean amplitude of two completed cycles whose peaks differ by 41 per cent; the band is 1.28 sigma, which is the 90th percentile and not the 95 per cent the run is labelled; and the residuals it is a sigma of are skewed. None of that travels across the closure, and the margin looks like a clean number either way</dd>
+<dt>It restates the single-day level and not one of its two siblings</dt><dd>fails when somebody reads it as the other. The subsystem publishes three Ap conclusions — 26.70 sustained, 90.55 for the worst day of the design band, 158.38 for the one storm expected in the mission — and they answer three different questions. Restating the wrong one would move this closure from passing to failing or back without anything in the tree noticing</dd>
+<dt>Nothing compares this row with its requirement automatically</dt><dd>fails when a reader assumes the tree checks the closure. The pairing is a convention the matrix draws; `sense` is declared on the requirement row and the gate checks only that it is present. All five closures in this group hold as of 2026-09-16, and two of them did not the day before — this one at 90.55 against 80, and the Ap storm at 158.38 against 150. Both were invisible to every machine check in this repository, and both were found by a person reading the numbers rather than by anything running</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">A closure is a comparison between what is required and what is achieved, and it is only checkable if both sides are rows. The requirement side is l3_solar_req_05, a declared commitment about the vehicle; this is the achieved side, and it is an identity on sw_ap_design_short.</p>
+<p class="why">Which of the subsystem's Ap conclusions it restates is the whole content of the row, because the subsystem has three that a reader could mistake for each other: the sustained level, the worst day of the design band, and the one storm the mission is expected to meet. This one is the single-day level. Its siblings are sw_ap_design_long and sw_storm_return_level, and at the declared window the three are 26.70, 90.55 and 158.38 — far enough apart that restating the wrong one would move a closure from passing to failing or back.</p>
+<div class="theory-walk" data-steps="3">
+<ol class="derive">
+<li><span class="dt">The closure to be made checkable is single-day Ap achieved against single-day Ap required. Both sides must be rows, at the same layer, in the same quantity and unit, or the comparison is not something the tree can verify.</span></li>
+<li><span class="dt">The requirement side is a declared commitment with a person's name against it. The achieved side must be the subsystem's own conclusion and nothing else, so this row is an identity on sw_ap_design_short.</span><code class="dm">Ap_ach_short = sw_ap_design_short = 90.5472</code></li>
+<li><span class="dt">Which makes the closure arithmetic trivial: 90.55 achieved against 132 required. The ceiling is the G3 threshold, raised from G2 once the level-conditioned band showed this window's own hot scenario reaching a G3-G4 day.</span><code class="dm">90.55 &lt;= 132 — the closure holds</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">90.5472 at the declared window, against a ceiling of 132. THE CLOSURE HOLDS, with 46 per cent of room, and it did not until 2026-09-16.</p>
+<p class="reading">It held at 41.70 before that, on a number that was wrong: the daily band was one percentile measured over days whose rotations averaged Ap 11.64 and applied at a sustained Ap of 26.70, where the record says a one-in-twenty day departs by 63.85. Conditioning the band on the rotation level took this row to 90.55 and the closure failed at the old ceiling of 80, the G2 threshold.</p>
+<p class="reading">The ceiling was raised to 132, the G3 threshold, by decision — not to make the arithmetic pass but because a one-day commitment at G2 is below what this window presents, and 90.55 is a G3-G4 day. The ladder stays anchored in the published scale and stays ordered: 48 operate indefinitely, 132 survive one day, 207 not destroyed by the one storm.</p>
+<p class="reading">It inherits every limitation of the row it restates and a closure reading it sees none of them: the centre beneath it is a cycle analogue at the mission's own epoch, the band around that centre is 1.28 sigma — the 90th percentile, while the run is labelled 95 per cent — and the within-rotation term is read at the top knot of a table whose top knot rests on 300 days.</p>
+<p class="maths concl">which is the relation this node states: <code>Ap_ach_short = sw_ap_design_short</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>conclusion</code></td><td><a class="xref" data-goto="sw_ap_design_short">sw_ap_design_short</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>Ap_ach_short</code></td><td>l3_solar_ach_05</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+</section>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">restate the subsystem's conclusion on the achieved side of the closure</span> <span class="binds">→ <code>ach: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function l3_solar_ach_05(conclusion: Ratio) -> Ratio
+    given conclusion from sw_ap_design_short
+    // restate the subsystem's conclusion on the achieved side of the closure
+    ach ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require Ap_ach_short ≥ 0
+    require Ap_ach_short ≤ 400
+    require Ap_ach_short is finite
+
+    return Ap_ach_short
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>Ap_ach_short &ge; 0</code> — the same floor as the row it restates: Ap floors at zero, and a perfectly quiet day is Ap 0</li>
+<li><code>Ap_ach_short &le; 400</code> — the same ceiling as the row it restates: 400 is the top of the Ap index itself, and a value above it is not a geomagnetic index at all</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="l3_solar_ach_05" data-lo="0" data-hi="400" data-symbol="Ap_ach_short">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What single-day Ap does the record say this mission will present?
+///
+/// `Ap_ach_short = sw_ap_design_short`
+///
+/// Source: `noaa_swpc`
+///
+/// An achieved row restates the subsystem's conclusion on the side of the
+/// comparison the closure reads. It computes nothing of its own, and it
+/// exists rather than the closure reading sw_ap_design_short directly so that
+/// the comparison binds two rows of the same shape at the same layer —
+/// visible on the tree instead of an edge somebody has to trace.
+///
+/// # Assumptions
+///
+/// * It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when a margin is computed from this row against a capability. The centre beneath it is a cycle analogue scaled, beyond one cycle past cycle 25's maximum, by the mean amplitude of two completed cycles whose peaks differ by 41 per cent; the band is 1.28 sigma, which is the 90th percentile and not the 95 per cent the run is labelled; and the residuals it is a sigma of are skewed. None of that travels across the closure, and the margin looks like a clean number either way
+/// * It restates the single-day level and not one of its two siblings — fails when somebody reads it as the other. The subsystem publishes three Ap conclusions — 26.70 sustained, 90.55 for the worst day of the design band, 158.38 for the one storm expected in the mission — and they answer three different questions. Restating the wrong one would move this closure from passing to failing or back without anything in the tree noticing
+/// * Nothing compares this row with its requirement automatically — fails when a reader assumes the tree checks the closure. The pairing is a convention the matrix draws; `sense` is declared on the requirement row and the gate checks only that it is present. All five closures in this group hold as of 2026-09-16, and two of them did not the day before — this one at 90.55 against 80, and the Ap storm at 158.38 against 150. Both were invisible to every machine check in this repository, and both were found by a person reading the numbers rather than by anything running
+pub const NODE_ID: &amp;str = &quot;l3_solar_ach_05&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x4f467829c475f841;
+
+pub fn evaluate(conclusion: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : restate the subsystem's conclusion on the achieved side of the closure -&gt; Ratio
+    // A crossing carries and so does a closure's achieved side; neither computes.
+    // The one thing that can go wrong here is that the restatement alters what it
+    // is handed — a stray factor, an unasked-for unit conversion, a clamp
+    // inherited from the wrong row — and both sides would still look plausible.
+    //
+    // The declared range is sw_ap_design_short's own, restated so a reader of the
+    // closure sees the limit without opening the producing row. It therefore
+    // guards nothing this line can break, which is correct: an achieved row that
+    // narrowed the range it carried would be changing the answer.
+    let ach: Ratio = conclusion;
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = ach;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_ach_short&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_ach_short&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the same floor as the row it restates: Ap floors at zero, and a perfectly quiet day is Ap 0&quot; });
+    }
+    if answer.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_ach_short&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the same ceiling as the row it restates: 400 is the top of the Ap index itself, and a value above it is not a geomagnetic index at all&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="the single-day Ap this repository's own chain gives for the declared window crosses unchanged"><td>the single-day Ap this repository's own chain gives for the declared window crosses unchanged</td><td class="num">41.6971614919</td><td class="num">0.0000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the requirement's own ceiling crosses unchanged — the value at which this closure would sit exactly on its limit"><td>the requirement's own ceiling crosses unchanged — the value at which this closure would sit exactly on its limit</td><td class="num">80</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the G3 storm level, well above this closure's ceiling, to show the row carries rather than clamps"><td>the G3 storm level, well above this closure's ceiling, to show the row carries rather than clamps</td><td class="num">132</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0 — the same floor as the row it restates: Ap floors at zero, and a perfectly quiet day is Ap 0</li>
+<li><code>OutOfDomain</code> above 400 — the same ceiling as the row it restates: 400 is the top of the Ap index itself, and a value above it is not a geomagnetic index at all</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="l3_solar_ach_05"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>0 &hellip; 400</code> -.</p>
+<ul class="guards"><li>lower — the same floor as the row it restates: Ap floors at zero, and a perfectly quiet day is Ap 0</li><li>upper — the same ceiling as the row it restates: 400 is the top of the Ap index itself, and a value above it is not a geomagnetic index at all</li></ul>
+<div class="sweep" data-over="orbit_mission_duration" data-points="60" data-y="l3_solar_ach_05"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a> over 60 points. Run the branch to draw it.</p></div>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

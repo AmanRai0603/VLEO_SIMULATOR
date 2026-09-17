@@ -103,50 +103,50 @@ fn answers_near_the_known_good_point() {
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Area::new(0.2 * scale), Area::new(0.01), Ratio::new(0.9), Ratio::new(0.06), Temperature::new(600.0), MolarMass::new(0.01872), NumberDensity::new(2133000000000000.0), Velocity::new(7754.6)) {
-            assert!(v.get().is_finite(), "prop_capture_efficiency produced a value that is not a number");
-            assert!(v.get() >= 0.0 && v.get() <= 1.0, "prop_capture_efficiency answered {}, outside its declared domain 0 … 1 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "prop_capture_efficiency produced a value that is not a number for eta_c");
+            assert!(v.get() >= 0.0 && v.get() <= 1.0, "prop_capture_efficiency answered {} for eta_c, outside its declared domain 0 … 1 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Area::new(0.2), Area::new(0.01 * scale), Ratio::new(0.9), Ratio::new(0.06), Temperature::new(600.0), MolarMass::new(0.01872), NumberDensity::new(2133000000000000.0), Velocity::new(7754.6)) {
-            assert!(v.get().is_finite(), "prop_capture_efficiency produced a value that is not a number");
-            assert!(v.get() >= 0.0 && v.get() <= 1.0, "prop_capture_efficiency answered {}, outside its declared domain 0 … 1 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "prop_capture_efficiency produced a value that is not a number for eta_c");
+            assert!(v.get() >= 0.0 && v.get() <= 1.0, "prop_capture_efficiency answered {} for eta_c, outside its declared domain 0 … 1 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Area::new(0.2), Area::new(0.01), Ratio::new(0.9 * scale), Ratio::new(0.06), Temperature::new(600.0), MolarMass::new(0.01872), NumberDensity::new(2133000000000000.0), Velocity::new(7754.6)) {
-            assert!(v.get().is_finite(), "prop_capture_efficiency produced a value that is not a number");
-            assert!(v.get() >= 0.0 && v.get() <= 1.0, "prop_capture_efficiency answered {}, outside its declared domain 0 … 1 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "prop_capture_efficiency produced a value that is not a number for eta_c");
+            assert!(v.get() >= 0.0 && v.get() <= 1.0, "prop_capture_efficiency answered {} for eta_c, outside its declared domain 0 … 1 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Area::new(0.2), Area::new(0.01), Ratio::new(0.9), Ratio::new(0.06 * scale), Temperature::new(600.0), MolarMass::new(0.01872), NumberDensity::new(2133000000000000.0), Velocity::new(7754.6)) {
-            assert!(v.get().is_finite(), "prop_capture_efficiency produced a value that is not a number");
-            assert!(v.get() >= 0.0 && v.get() <= 1.0, "prop_capture_efficiency answered {}, outside its declared domain 0 … 1 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "prop_capture_efficiency produced a value that is not a number for eta_c");
+            assert!(v.get() >= 0.0 && v.get() <= 1.0, "prop_capture_efficiency answered {} for eta_c, outside its declared domain 0 … 1 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Area::new(0.2), Area::new(0.01), Ratio::new(0.9), Ratio::new(0.06), Temperature::new(600.0 * scale), MolarMass::new(0.01872), NumberDensity::new(2133000000000000.0), Velocity::new(7754.6)) {
-            assert!(v.get().is_finite(), "prop_capture_efficiency produced a value that is not a number");
-            assert!(v.get() >= 0.0 && v.get() <= 1.0, "prop_capture_efficiency answered {}, outside its declared domain 0 … 1 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "prop_capture_efficiency produced a value that is not a number for eta_c");
+            assert!(v.get() >= 0.0 && v.get() <= 1.0, "prop_capture_efficiency answered {} for eta_c, outside its declared domain 0 … 1 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Area::new(0.2), Area::new(0.01), Ratio::new(0.9), Ratio::new(0.06), Temperature::new(600.0), MolarMass::new(0.01872 * scale), NumberDensity::new(2133000000000000.0), Velocity::new(7754.6)) {
-            assert!(v.get().is_finite(), "prop_capture_efficiency produced a value that is not a number");
-            assert!(v.get() >= 0.0 && v.get() <= 1.0, "prop_capture_efficiency answered {}, outside its declared domain 0 … 1 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "prop_capture_efficiency produced a value that is not a number for eta_c");
+            assert!(v.get() >= 0.0 && v.get() <= 1.0, "prop_capture_efficiency answered {} for eta_c, outside its declared domain 0 … 1 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Area::new(0.2), Area::new(0.01), Ratio::new(0.9), Ratio::new(0.06), Temperature::new(600.0), MolarMass::new(0.01872), NumberDensity::new(2133000000000000.0 * scale), Velocity::new(7754.6)) {
-            assert!(v.get().is_finite(), "prop_capture_efficiency produced a value that is not a number");
-            assert!(v.get() >= 0.0 && v.get() <= 1.0, "prop_capture_efficiency answered {}, outside its declared domain 0 … 1 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "prop_capture_efficiency produced a value that is not a number for eta_c");
+            assert!(v.get() >= 0.0 && v.get() <= 1.0, "prop_capture_efficiency answered {} for eta_c, outside its declared domain 0 … 1 — the guard did not stop it", v.get());
         }
     }
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Area::new(0.2), Area::new(0.01), Ratio::new(0.9), Ratio::new(0.06), Temperature::new(600.0), MolarMass::new(0.01872), NumberDensity::new(2133000000000000.0), Velocity::new(7754.6 * scale)) {
-            assert!(v.get().is_finite(), "prop_capture_efficiency produced a value that is not a number");
-            assert!(v.get() >= 0.0 && v.get() <= 1.0, "prop_capture_efficiency answered {}, outside its declared domain 0 … 1 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "prop_capture_efficiency produced a value that is not a number for eta_c");
+            assert!(v.get() >= 0.0 && v.get() <= 1.0, "prop_capture_efficiency answered {} for eta_c, outside its declared domain 0 … 1 — the guard did not stop it", v.get());
         }
     }
 }
@@ -161,7 +161,9 @@ fn the_same_inputs_give_the_same_answer() {
     let a = model::evaluate(Area::new(0.2), Area::new(0.01), Ratio::new(0.9), Ratio::new(0.06), Temperature::new(600.0), MolarMass::new(0.01872), NumberDensity::new(2133000000000000.0), Velocity::new(7754.6));
     let b = model::evaluate(Area::new(0.2), Area::new(0.01), Ratio::new(0.9), Ratio::new(0.06), Temperature::new(600.0), MolarMass::new(0.01872), NumberDensity::new(2133000000000000.0), Velocity::new(7754.6));
     match (a, b) {
-        (Ok(x), Ok(y)) => assert!(x.get().to_bits() == y.get().to_bits(), "prop_capture_efficiency is not deterministic: {} then {}", x.get(), y.get()),
+        (Ok(x), Ok(y)) => {
+            assert!(x.get().to_bits() == y.get().to_bits(), "prop_capture_efficiency is not deterministic for eta_c: {} then {}", x.get(), y.get());
+        }
         (Err(_), Err(_)) => {}
         _ => panic!("prop_capture_efficiency refused on one call and answered on the other"),
     }

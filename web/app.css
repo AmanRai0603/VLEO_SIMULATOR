@@ -308,6 +308,10 @@ table.iface th, table.fx th { text-align: left; font-size: 9.5px; text-transform
   letter-spacing: .07em; color: var(--ink-3); border-bottom: 1px solid var(--rule); padding: .3rem .5rem; }
 table.iface td, table.fx td { padding: .25rem .5rem; border-bottom: 1px solid var(--rule-2); }
 table.iface tr.out td { background: #fdf9f2; }
+/* A set row publishes more than one variable, and every one of them is an
+   output. The first row is the answer the node is named for; the members sit
+   indented behind it, so the table reads as one answer plus its set. */
+table.iface tr.out.member td:first-child { padding-left: 1.4rem; color: var(--ink-3); }
 td.num { text-align: right; }
 .xref { color: var(--in); cursor: pointer; text-decoration: underline dotted; }
 /* the theory tab. Serif for the prose, because it is prose and is meant to be

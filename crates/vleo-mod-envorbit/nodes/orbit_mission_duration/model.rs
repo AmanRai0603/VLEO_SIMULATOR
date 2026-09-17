@@ -10,25 +10,23 @@ use vleo_core::units::*;
 
 /// How long must one satellite operate?
 ///
-/// `T_mis = 5`
+/// `T_mis = T_mis_req`
 ///
 /// Source: `orbitt_case_c1`
 pub const NODE_ID: &str = "orbit_mission_duration";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xaf9b3686fa71d8f9;
+pub const SHEET_HASH: u64 = 0xa4de90cb1b5e53e8;
 
-pub fn evaluate() -> Result<Time, Fault> {
-    // generated · a declared value, converted from the unit it was written in
-    let declared: Time = match Time::from_unit(5.0, Unit::Year) {
-        Some(q) => q,
-        None => return Err(Fault::Degenerate { node: NODE_ID, field: "T_mis", reason: "the declared unit does not match the declared type" }),
-    };
+pub fn evaluate(required: Time) -> Result<Time, Fault> {
+    // ---- HOLE 1 : carry the declared mission duration through unchanged -> Time
+    let duration: Time = required;
+    // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Time = declared;
+    let answer: Time = duration;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "T_mis", reason: "the computation produced a value that is not a number" });
     }

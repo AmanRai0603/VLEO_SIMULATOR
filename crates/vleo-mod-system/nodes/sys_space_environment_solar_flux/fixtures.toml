@@ -4,4 +4,35 @@
 # under test. The schema refuses a row whose provenance is the
 # implementation, because a number worked out by the thing being
 # checked proves nothing.
+#
+# A RECEIVING ROW'S EVIDENCE IS THAT IT CHANGES NOTHING
+#
+# There is no physics at a seam. What can go wrong is that the row alters what it
+# carries — a stray factor, a unit conversion nobody asked for, a clamp inherited
+# from the wrong producer — and the failure is invisible because both sides look
+# plausible. So every fixture is the identity, at a value taken from somewhere
+# real, and what they pin is that the number arriving is the number leaving.
 
+[[fixture]]
+label = "the sustained level this tree's own chain gives for the declared window"
+expect = 104.07110896
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { crossing = 104.07110896 }
+
+[[fixture]]
+label = "the level the study publishes for its own window, which this row does not use but a reader will compare against"
+expect = 175.5520201913
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { crossing = 175.5520201913 }
+
+[[fixture]]
+label = "the requirement ceiling l3_solar_req_01 declares — the value at which the design's own sustained limit would be met exactly"
+expect = 260.0
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { crossing = 260.0 }

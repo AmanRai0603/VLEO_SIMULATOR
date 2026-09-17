@@ -14,12 +14,14 @@ import { S, isSeeded } from './state.js';
 import { renderRun } from './run.js';
 import { mountRelation } from './relation.js';
 import { mountTheory } from './theory.js';
+import { figuresForRow, drawRowFigure } from './solar.js';
 
 export async function openNode(id) {
   const r = S.byId.get(id);
   if (!r) return;
   const body = $('#node-body');
   body.innerHTML = '<p class="muted">loading the node…</p>';
+  const figs = figuresForRow(id);
 
   const [meta, fragment] = await Promise.all([
     fetch('/v1/node/' + encodeURIComponent(id)).then(x => x.json()).catch(() => null),
@@ -36,7 +38,35 @@ export async function openNode(id) {
     '<section class="seg" data-seg="sheet"><h3 class="seg-h">' +
       '<span class="seg-n">3</span>the sheet — what it says</h3>' +
       (fragment || '<p class="empty">The sheet for <code>' + esc(id) +
-        '</code> is not on disk. Run <code>cargo xtask docs</code>.</p>') + '</section>';
+        '</code> is not on disk. Run <code>cargo xtask docs</code>.</p>') + '</section>' +
+    // A FIGURE IS NOT A ROW, and it is not a place of its own either. The eight
+    // study figures used to live behind a sixth item in a navigation whose own
+    // subtitle says there are four layers, showing solar weather in a second
+    // place that disagreed with layer 3. They belong to the rows they argue
+    // about, which every one of them already declared; this segment is that
+    // declaration read the other way round.
+    (figs.length
+      ? '<section class="seg" data-seg="figure"><h3 class="seg-h">' +
+        '<span class="seg-n">4</span>the figure — the picture this claim is argued from</h3>' +
+        (figs.length > 1
+          ? '<div class="tabrow sub sw-tabs">' + figs.map((f, i) =>
+              '<button class="ctl sw-tab' + (i ? '' : ' sel') + '" data-fig="' + esc(f.id) +
+              '">' + esc(f.label) + '</button>').join('') + '</div>'
+          : '') +
+        '<div class="row-figure"></div></section>'
+      : '');
+
+  if (figs.length) {
+    const hostFig = $('.row-figure', body);
+    drawRowFigure(hostFig, figs[0].id);
+    $$('.sw-tabs .sw-tab', body).forEach(b => {
+      b.onclick = () => {
+        $$('.sw-tabs .sw-tab', body).forEach(x => x.classList.remove('sel'));
+        b.classList.add('sel');
+        drawRowFigure(hostFig, b.dataset.fig);
+      };
+    });
+  }
 
   // The generated fragment styles its tabs as `.tab`; inside `.tabs` that is
   // the underline tab, not a layer tab.

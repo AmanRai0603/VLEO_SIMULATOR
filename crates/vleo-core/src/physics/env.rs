@@ -84,16 +84,128 @@ const ALPHA_HE: f64 = -0.38;
 /// without complaining. That is exactly the class of silent, plausible-looking
 /// failure a guard exists to prevent, so the conversion is a named function
 /// with a table rather than an assumption inside a caller.
+///
+/// IT IS THE ONLY COPY, AND IT DID NOT USED TO BE. `sw_kp_from_ap` carried a
+/// second hand-written copy of the same 28 pairs in its hole, tabulated in
+/// exact thirds where this one used decimals, so the two disagreed by up to
+/// 0.0033 Kp everywhere between the anchors. Nothing caught it: both were
+/// evidenced against the published table at the anchor points, and the anchors
+/// are where the two agree. That node now calls this function.
 pub fn kp_from_ap(ap: f64) -> f64 {
     const AP: &[f64] = &[
         0.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 9.0, 12.0, 15.0, 18.0, 22.0, 27.0, 32.0, 39.0, 48.0,
         56.0, 67.0, 80.0, 94.0, 111.0, 132.0, 154.0, 179.0, 207.0, 236.0, 300.0, 400.0,
     ];
+    // WRITTEN AS THIRDS, NOT AS DECIMALS. Kp is defined in thirds of a unit and
+    // the scale is tabulated that way, so 0.33 and 0.67 are lossy
+    // transcriptions of 1/3 and 2/3 rather than the published values. The
+    // difference reaches 0.0033 Kp, which is small — and it was enough for this
+    // copy and the one that used to sit in sw_kp_from_ap's hole to disagree at
+    // every point between the anchors.
     const KP: &[f64] = &[
-        0.0, 0.33, 0.67, 1.0, 1.33, 1.67, 2.0, 2.33, 2.67, 3.0, 3.33, 3.67, 4.0, 4.33, 4.67, 5.0,
-        5.33, 5.67, 6.0, 6.33, 6.67, 7.0, 7.33, 7.67, 8.0, 8.33, 8.67, 9.0,
+        0.0,
+        1.0 / 3.0,
+        2.0 / 3.0,
+        1.0,
+        4.0 / 3.0,
+        5.0 / 3.0,
+        2.0,
+        7.0 / 3.0,
+        8.0 / 3.0,
+        3.0,
+        10.0 / 3.0,
+        11.0 / 3.0,
+        4.0,
+        13.0 / 3.0,
+        14.0 / 3.0,
+        5.0,
+        16.0 / 3.0,
+        17.0 / 3.0,
+        6.0,
+        19.0 / 3.0,
+        20.0 / 3.0,
+        7.0,
+        22.0 / 3.0,
+        23.0 / 3.0,
+        8.0,
+        25.0 / 3.0,
+        26.0 / 3.0,
+        9.0,
     ];
     pmath::interp(ap, AP, KP)
+}
+
+/// The bin centres both slot-bias tables are measured on.
+///
+/// `prf_ap2kp`'s own bins, as the midpoints of its edges 0 5 10 15 20 30 45 70
+/// 110 400. Shared by the two functions below so the pair cannot drift apart in
+/// their x values while agreeing in their y, which is a failure mode neither
+/// one's tests would see.
+const SLOT_BIN_CENTRES: &[f64] = &[2.5, 7.5, 12.5, 17.5, 25.0, 37.5, 57.5, 90.0, 255.0];
+
+/// How far the daily peak `Kp` slot sits above what [`kp_from_ap`] returns.
+///
+/// `Kp(ap)` is concave, so a table run on a DAILY MEAN `Ap` returns a value
+/// above the mean of the eight three-hourly `Kp` and well below the daily peak.
+/// A design sized on the peak slot through the conversion alone is sized on a
+/// quieter sky than the record's, and on exactly the days a drag design is
+/// sized by. This is the measured correction.
+///
+/// MEASURED DATA, not a published relation. The nine values are the median of
+/// `max_8(Kp) - kp_from_ap(Ap)` in each bin over
+/// `bundles/solar-weather@2026.09.14`, and must be re-measured when that bundle
+/// moves. It sits here rather than in a caller by the rule the whole module
+/// follows: more than one caller reads it — `sw_kp_slot_bias` at one `Ap` and
+/// `sw_kp_scenarios` at five — and a hand-copied table drifts from its original
+/// without anything noticing.
+///
+/// The eighth and ninth entries are NOT monotone. That is the record's shape,
+/// declared rather than smoothed.
+///
+/// Held at the end values rather than extrapolated, which is the choice
+/// `prf_ap2kp` makes explicitly: "hold the end bins, never extrapolate".
+pub fn kp_peak_slot_bias(ap: f64) -> f64 {
+    const OFFSET: &[f64] = &[
+        1.0,
+        0.8333333333333333,
+        1.1144067796610169,
+        1.0,
+        1.2,
+        1.3333333333333333,
+        1.5454545454545454,
+        1.7469135802469136,
+        1.3174603174603174,
+    ];
+    pmath::interp(ap, SLOT_BIN_CENTRES, OFFSET)
+}
+
+/// How far the daily MEAN `Kp` slot sits from what [`kp_from_ap`] returns.
+///
+/// The companion to [`kp_peak_slot_bias`], on the same day set and the same
+/// bins, taking the mean over the eight slots where that one takes the maximum.
+/// Almost every value is negative, which is what the concavity of `Kp(ap)`
+/// predicts: the table run on a daily mean reads above the mean of the slots.
+///
+/// MEASURED DATA, not a published relation, from
+/// `bundles/solar-weather@2026.09.14`, and here for the same reason its
+/// companion is.
+///
+/// The FIRST entry is positive where every other is negative. That is the
+/// record disagreeing with the concavity argument in the quietest bin, carried
+/// rather than clipped to zero.
+pub fn kp_mean_slot_bias(ap: f64) -> f64 {
+    const OFFSET: &[f64] = &[
+        0.041666666666666685,
+        -0.125,
+        -0.09763888888888905,
+        -0.11111111111111116,
+        -0.13333333333333286,
+        -0.24099537037037067,
+        -0.33333333333333304,
+        -0.4487179487179489,
+        -0.4868948412698413,
+    ];
+    pmath::interp(ap, SLOT_BIN_CENTRES, OFFSET)
 }
 
 /// The mean solar cycle, as a shape, an amplitude and a period.
@@ -109,8 +221,10 @@ pub fn kp_from_ap(ap: f64) -> f64 {
 /// This is MEASURED DATA, not a published relation, and it is the one thing in
 /// this kernel that is: it comes from `bundles/solar-weather@2026.09.14` and
 /// must be re-measured when that bundle moves. It is here rather than in a
-/// caller for the same reason [`kp_from_ap`] is — two nodes read it, and two
-/// hand-copied tables drift apart without anything noticing.
+/// caller for the same reason [`kp_from_ap`] is: a hand-copied table drifts
+/// from its original without anything noticing, which is not hypothetical —
+/// `kp_from_ap` had exactly that happen and the two copies disagreed for as
+/// long as both existed.
 pub const SOLAR_CYCLE_SHAPE: &[f64] = &[
     1.000000, 0.903695, 0.807593, 0.773599, 0.747277, 0.750621, 0.702665, 0.699680, 0.671394,
     0.633116, 0.593519, 0.561394, 0.560421, 0.530158, 0.554559, 0.572413, 0.522981, 0.489549,

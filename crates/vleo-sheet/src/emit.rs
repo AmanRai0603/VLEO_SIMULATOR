@@ -77,9 +77,43 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
         .map(|i| format!("{}: {}", i.binding, i.ty))
         .collect::<Vec<_>>()
         .join(", ");
+    // A row whose conclusion is a SET returns a named struct rather than a
+    // tuple. The bus writes output slots positionally, and a hole body that
+    // built a 25-element tuple would be one transposition away from publishing
+    // the cold day as the hot one — with both inside the declared domain, so
+    // nothing would catch it. Named fields make that mistake unrepresentable.
+    if !sh.publishes.is_empty() {
+        o.push_str("/// The set this node publishes. One field per published variable, named\n");
+        o.push_str("/// by the sheet's own symbol, in the order `OUTPUT_VARS` declares: this\n");
+        o.push_str("/// node's own answer first, then each `[[publishes]]` block. The field\n");
+        o.push_str("/// NAMES are what a hole body assigns, so the order cannot be got wrong\n");
+        o.push_str("/// by hand, and every member is guarded against its own declared domain.\n");
+        o.push_str("#[allow(non_snake_case)]\npub struct Answer {\n");
+        o.push_str(&format!(
+            "    /// {} — this node's own answer.\n    pub {}: {},\n",
+            esc(&sh.label),
+            field_name(&sh.symbol),
+            sh.ty
+        ));
+        for pb in &sh.publishes {
+            o.push_str(&format!(
+                "    /// {} — published as `{}.{}`.\n    pub {}: {},\n",
+                esc(&pb.label),
+                sh.id,
+                pb.id,
+                field_name(&pb.symbol),
+                pb.ty
+            ));
+        }
+        o.push_str("}\n\n");
+    }
+    let ret = if sh.publishes.is_empty() {
+        sh.ty.clone()
+    } else {
+        "Answer".to_string()
+    };
     o.push_str(&format!(
-        "pub fn evaluate({args}) -> Result<{ty}, Fault> {{\n",
-        ty = sh.ty
+        "pub fn evaluate({args}) -> Result<{ret}, Fault> {{\n"
     ));
 
     let last = if sh.steps.is_empty() {
@@ -137,35 +171,177 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
     o.push_str("\n    // generated · the declared domain of this node's own answer. The\n");
     o.push_str("    // reason travels with the guard, because a guard whose reason is not\n");
     o.push_str("    // written down gets deleted by the next person who finds it awkward.\n");
-    o.push_str(&format!("    let answer: {ty} = {last};\n", ty = sh.ty));
-    o.push_str("    if !answer.is_finite() {\n");
+    if sh.publishes.is_empty() {
+        o.push_str(&format!("    let answer: {ty} = {last};\n", ty = sh.ty));
+        guard(
+            &mut o,
+            "answer",
+            &sh.symbol,
+            &sh.ty,
+            sh.lower,
+            sh.upper,
+            &sh.unit,
+            &sh.reason_lower,
+            &sh.reason_upper,
+        );
+        o.push_str("    Ok(answer)\n}\n");
+    } else {
+        // Every member of a set is guarded, not only the primary. A set with one
+        // impossible member is an impossible set, and the member that is wrong is
+        // the one a consumer is about to read: `sw_ap_cold_short` is the row in
+        // this repository closest to a declared bound and it is not anybody's
+        // primary.
+        o.push_str(&format!("    let answer: Answer = {last};\n"));
+        o.push_str(
+            "\n    // generated · every published member carries its own declared domain.\n",
+        );
+        o.push_str(
+            "    // A set whose primary is in range and whose fifth member is not is not a\n",
+        );
+        o.push_str("    // usable set, and the member a consumer reads may be any of them.\n");
+        let f0 = field_name(&sh.symbol);
+        guard(
+            &mut o,
+            &format!("answer.{f0}"),
+            &sh.symbol,
+            &sh.ty,
+            sh.lower,
+            sh.upper,
+            &sh.unit,
+            &sh.reason_lower,
+            &sh.reason_upper,
+        );
+        for pb in &sh.publishes {
+            let f = field_name(&pb.symbol);
+            guard(
+                &mut o,
+                &format!("answer.{f}"),
+                &pb.symbol,
+                &pb.ty,
+                pb.lower,
+                pb.upper,
+                &pb.unit,
+                &pb.reason_lower,
+                &pb.reason_upper,
+            );
+        }
+        o.push_str("    Ok(answer)\n}\n");
+    }
+    o
+}
+
+/// One value's finiteness and domain guards, with the sheet's own reasons.
+///
+/// Factored out because a set row needs them once per published member and a
+/// row with one answer needs them once, and the two must be the same guards:
+/// a member guarded more loosely than a primary is a hole in the domain the
+/// tree claims to enforce.
+#[allow(clippy::too_many_arguments)]
+fn guard(
+    o: &mut String,
+    binding: &str,
+    symbol: &str,
+    ty: &str,
+    lower: f64,
+    upper: f64,
+    unit: &str,
+    reason_lower: &str,
+    reason_upper: &str,
+) {
+    o.push_str(&format!("    if !{binding}.is_finite() {{\n"));
     o.push_str(&format!(
         "        return Err(Fault::Degenerate {{ node: NODE_ID, field: \"{}\", reason: \"the computation produced a value that is not a number\" }});\n",
-        esc(&sh.symbol)
+        esc(symbol)
     ));
     o.push_str("    }\n");
-    let lo_si = to_si(sh.lower, &sh.unit);
-    let hi_si = to_si(sh.upper, &sh.unit);
+    let lo_si = to_si(lower, unit);
+    let hi_si = to_si(upper, unit);
     if lo_si.is_finite() {
         o.push_str(&format!(
-            "    if answer.get() < {lo:?} {{\n        return Err(Fault::OutOfDomain {{ node: NODE_ID, field: \"{sym}\", value: answer.get(), bound: {lo:?}, edge: Edge::Lower, unit: {ty}::UNIT, reason: \"{r}\" }});\n    }}\n",
+            "    if {binding}.get() < {lo:?} {{\n        return Err(Fault::OutOfDomain {{ node: NODE_ID, field: \"{sym}\", value: {binding}.get(), bound: {lo:?}, edge: Edge::Lower, unit: {ty}::UNIT, reason: \"{r}\" }});\n    }}\n",
             lo = lo_si,
-            sym = esc(&sh.symbol),
-            ty = sh.ty,
-            r = esc(&sh.reason_lower)
+            sym = esc(symbol),
+            r = esc(reason_lower)
         ));
     }
     if hi_si.is_finite() {
         o.push_str(&format!(
-            "    if answer.get() > {hi:?} {{\n        return Err(Fault::OutOfDomain {{ node: NODE_ID, field: \"{sym}\", value: answer.get(), bound: {hi:?}, edge: Edge::Upper, unit: {ty}::UNIT, reason: \"{r}\" }});\n    }}\n",
+            "    if {binding}.get() > {hi:?} {{\n        return Err(Fault::OutOfDomain {{ node: NODE_ID, field: \"{sym}\", value: {binding}.get(), bound: {hi:?}, edge: Edge::Upper, unit: {ty}::UNIT, reason: \"{r}\" }});\n    }}\n",
             hi = hi_si,
-            sym = esc(&sh.symbol),
-            ty = sh.ty,
-            r = esc(&sh.reason_upper)
+            sym = esc(symbol),
+            r = esc(reason_upper)
         ));
     }
-    o.push_str("    Ok(answer)\n}\n");
-    o
+}
+
+/// Every variable a row publishes: field name, symbol, declared domain in SI.
+///
+/// The primary first, then each `[[publishes]]` block, which is the order of
+/// `OUTPUT_VARS` and of the slots the bus writes. Everything that has to walk a
+/// row's answers — the guards, the contract adapter, the domain property — walks
+/// this, so a row with one answer and a row with twenty-five take the same code
+/// path and there is no second place for the order to be decided.
+pub struct Member {
+    pub field: String,
+    pub symbol: String,
+    pub ty: String,
+    pub lo_si: f64,
+    pub hi_si: f64,
+}
+
+fn members(sh: &Sheet) -> Vec<Member> {
+    let mut v = vec![Member {
+        field: field_name(&sh.symbol),
+        symbol: sh.symbol.clone(),
+        ty: sh.ty.clone(),
+        lo_si: to_si(sh.lower, &sh.unit),
+        hi_si: to_si(sh.upper, &sh.unit),
+    }];
+    for pb in &sh.publishes {
+        v.push(Member {
+            field: field_name(&pb.symbol),
+            symbol: pb.symbol.clone(),
+            ty: pb.ty.clone(),
+            lo_si: to_si(pb.lower, &pb.unit),
+            hi_si: to_si(pb.upper, &pb.unit),
+        });
+    }
+    v
+}
+
+/// How a test reads one member out of what `evaluate` returned.
+///
+/// `got.get()` for a row with one answer, `got.<field>.get()` for a set. Every
+/// generated test goes through this, so adding a set row did not mean auditing
+/// each test emitter for the one that still assumed a scalar.
+fn access(sh: &Sheet, slot: usize) -> String {
+    if sh.publishes.is_empty() {
+        String::new()
+    } else {
+        format!(".{}", members(sh)[slot].field)
+    }
+}
+
+/// A published symbol as a Rust field name.
+///
+/// The symbol is used verbatim rather than lowered to snake case, so the field
+/// a hole body assigns and the symbol the page shows are the same word. A
+/// renamed field is one more thing to hold in your head while reading a
+/// relation, and the struct carries `#[allow(non_snake_case)]` for it.
+fn field_name(symbol: &str) -> String {
+    let mut out: String = symbol
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+        .collect();
+    if out
+        .chars()
+        .next()
+        .map(|c| c.is_ascii_digit())
+        .unwrap_or(true)
+    {
+        out.insert(0, 'v');
+    }
+    out
 }
 
 fn to_si(v: f64, unit: &str) -> f64 {
@@ -247,14 +423,34 @@ pub fn contract_rs(sh: &Sheet) -> String {
     }
     o.push_str("];\n");
     o.push_str("/// The variables this node publishes.\n");
+    let mut outs = vec![sh.id.clone()];
+    for pb in &sh.publishes {
+        outs.push(format!("{}.{}", sh.id, pb.id));
+    }
     o.push_str(&format!(
-        "pub const OUTPUT_VARS: &[&str] = &[\"{}\"];\n",
-        sh.id
+        "pub const OUTPUT_VARS: &[&str] = &[{}];\n",
+        outs.iter()
+            .map(|v| format!("\"{}\"", esc(v)))
+            .collect::<Vec<_>>()
+            .join(", ")
     ));
     o.push_str(&format!(
-        "/// The SI unit every value crossing this boundary is expressed in.\n\
-         pub const OUTPUT_UNIT: Unit = {}::UNIT;\n\n",
+        "/// The SI unit this node's own answer crosses the boundary in.\n\
+         pub const OUTPUT_UNIT: Unit = {}::UNIT;\n",
         sh.ty
+    ));
+    // A set row's members are not all one quantity, so one OUTPUT_UNIT cannot
+    // describe the boundary. The list is emitted for every row — one entry for
+    // a row with one answer — so a reader never has to know which kind of row
+    // they are looking at to find the unit of slot k.
+    o.push_str("/// The SI unit of each published variable, in `OUTPUT_VARS` order.\n");
+    let mut units = vec![format!("{}::UNIT", sh.ty)];
+    for pb in &sh.publishes {
+        units.push(format!("{}::UNIT", pb.ty));
+    }
+    o.push_str(&format!(
+        "pub const OUTPUT_UNITS: &[Unit] = &[{}];\n\n",
+        units.join(", ")
     ));
     o.push_str(
         "/// The untyped adapter. Values cross as SI `f64` and are re-typed here,\n\
@@ -262,12 +458,20 @@ pub fn contract_rs(sh: &Sheet) -> String {
          /// in the wrong order.\n",
     );
     o.push_str("pub fn call(inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {\n");
+    // The output guard asks for every slot this node fills, not merely one. A
+    // set row handed a shorter slice than it publishes would write what it
+    // could and return Ok, and the members past the end would read as whatever
+    // the caller's scratch last held.
+    let n_out = 1 + sh.publishes.len();
+    let out_guard = if n_out == 1 {
+        "outputs.is_empty()".to_string()
+    } else {
+        format!("outputs.len() < {n_out}")
+    };
     match sh.inputs.len() {
-        0 => o.push_str("    if outputs.is_empty() {\n"),
-        1 => o.push_str("    if inputs.is_empty() || outputs.is_empty() {\n"),
-        n => o.push_str(&format!(
-            "    if inputs.len() < {n} || outputs.is_empty() {{\n"
-        )),
+        0 => o.push_str(&format!("    if {out_guard} {{\n")),
+        1 => o.push_str(&format!("    if inputs.is_empty() || {out_guard} {{\n")),
+        n => o.push_str(&format!("    if inputs.len() < {n} || {out_guard} {{\n")),
     }
     o.push_str("        return Err(Fault::Blocked { node: NODE_ID, missing: \"an input the contract declares\" });\n");
     o.push_str("    }\n");
@@ -288,7 +492,26 @@ pub fn contract_rs(sh: &Sheet) -> String {
     o.push_str(&format!(
         "    let answer = super::model::evaluate({args})?;\n"
     ));
-    o.push_str("    outputs[0] = answer.get();\n    Ok(())\n}\n");
+    if sh.publishes.is_empty() {
+        o.push_str("    outputs[0] = answer.get();\n    Ok(())\n}\n");
+    } else {
+        // Written by FIELD NAME, in declaration order, so the mapping from a
+        // struct field to a bus slot is generated from the same list that
+        // generated `OUTPUT_VARS`. There is no arithmetic here and no chance for
+        // the two orders to drift.
+        o.push_str(&format!(
+            "    outputs[0] = answer.{}.get();\n",
+            field_name(&sh.symbol)
+        ));
+        for (k, pb) in sh.publishes.iter().enumerate() {
+            o.push_str(&format!(
+                "    outputs[{}] = answer.{}.get();\n",
+                k + 1,
+                field_name(&pb.symbol)
+            ));
+        }
+        o.push_str("    Ok(())\n}\n");
+    }
     o
 }
 
@@ -347,6 +570,9 @@ pub fn evidence_rs(sh: &Sheet) -> String {
     if !sh.fixtures.is_empty() {
         o.push_str("#![allow(clippy::approx_constant, clippy::excessive_precision)]\n\n");
     }
+    // Only when something below uses them. A declared row with neither fixtures
+    // nor a parity grid emits no test, and the imports it did not need failed
+    // `clippy -D warnings` — the generator produced code the pipeline rejected.
     o.push_str("use super::model;\nuse vleo_core::units::*;\n\n");
     o.push_str("fn relative_error(got: f64, expected: f64) -> f64 {\n");
     o.push_str("    if expected == 0.0 { pmath::abs(got) } else { pmath::abs((got - expected) / expected) }\n}\n\n");
@@ -367,16 +593,28 @@ pub fn evidence_rs(sh: &Sheet) -> String {
                 .unwrap_or(0.0);
             args.push(format!("{}::new({:?})", i.ty, v));
         }
+        // Which member this expected value is about. A set row's fixture names
+        // it in the sheet; a row with one answer has one and names nothing.
+        let slot = if fx.variable.is_empty() {
+            0
+        } else {
+            sh.publishes
+                .iter()
+                .position(|pb| pb.id == fx.variable)
+                .map(|k| k + 1)
+                .unwrap_or(0)
+        };
+        let acc = access(sh, slot);
         o.push_str(&format!(
             "    let got = model::evaluate({}).expect(\"the fixture case must not be refused\");\n",
             args.join(", ")
         ));
         o.push_str(&format!(
-            "    let err = relative_error(got.get(), {:?});\n",
+            "    let err = relative_error(got{acc}.get(), {:?});\n",
             fx.expect
         ));
         o.push_str(&format!(
-            "    assert!(err <= {tol:?}, \"{label}: got {{}} want {expect:?}, relative error {{}} exceeds the declared tolerance {tol:?}. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.\", got.get(), err);\n",
+            "    assert!(err <= {tol:?}, \"{label}: got {{}} want {expect:?}, relative error {{}} exceeds the declared tolerance {tol:?}. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.\", got{acc}.get(), err);\n",
             tol = fx.tolerance,
             label = esc(&fx.label),
             expect = fx.expect
@@ -407,7 +645,55 @@ pub fn has_parity_grid(sh: &Sheet) -> bool {
 /// Read at compile time from the file beside the node, so a grid that is edited
 /// and a test that is not cannot drift apart: there is no second copy.
 fn parity(sh: &Sheet, o: &mut String) {
-    if sh.is_declared() || sh.inputs.is_empty() || !has_parity_grid(sh) {
+    if !has_parity_grid(sh) {
+        return;
+    }
+    // A set row's grid is compared against its PRIMARY member. A grid with a
+    // column per published member is a larger convention than any row needs
+    // yet: the rows that assemble into a set each carry their own grid, so a
+    // set's parity is already recorded one level down.
+    let acc = access(sh, 0);
+    // A DECLARED ROW HAS NO INPUTS TO SWEEP, and until this branch existed it
+    // got no parity test at all — `gate` reported "parity ok" for it, which
+    // only ever meant the FILE IS PRESENT (gate.rs:305), and nothing compared
+    // the two numbers. A grid nobody reads is a second opinion nobody asked
+    // for, and `parity_tolerance` beside it was decoration. The convention for
+    // a row with nothing to sweep: the LAST COLUMN of the FIRST data row is the
+    // prior implementation's answer.
+    if sh.is_declared() || sh.inputs.is_empty() {
+        o.push_str(&format!(
+            "/// The prior implementation's one number, against this row's one number.\n\
+             ///\n\
+             /// Migrated from `{from}`. A second opinion and never an expected\n\
+             /// value: an implementation cannot supply its own. A disagreement is\n\
+             /// a finding about one of the two.\n\
+             #[test]\n\
+             fn parity_grid() {{\n\
+             \x20   const GRID: &str = include_str!(\"parity.csv\");\n\
+             \x20   const TOL: f64 = {tol:?};\n\
+             \x20   let row = GRID\n\
+             \x20       .lines()\n\
+             \x20       .filter(|l| !l.trim_start().starts_with('#') && !l.trim().is_empty())\n\
+             \x20       .nth(1)\n\
+             \x20       .expect(\"parity.csv has a header and at least one data row\");\n\
+             \x20   let expected: f64 = row\n\
+             \x20       .rsplit(',')\n\
+             \x20       .next()\n\
+             \x20       .expect(\"a last column\")\n\
+             \x20       .trim()\n\
+             \x20       .parse()\n\
+             \x20       .expect(\"the last column of the first data row is a number\");\n\
+             \x20   let got = model::evaluate().expect(\"the declared value\"){acc}.get();\n\
+             \x20   let err = relative_error(got, expected);\n\
+             \x20   assert!(\n\
+             \x20       err <= TOL,\n\
+             \x20       \"{id}: this row says {{got}} and the prior implementation `{from}` says {{expected}} — {{err}} apart, beyond {{TOL}}.\\nThis is a finding about one of the two implementations, not a build failure and not proof this one is wrong. Take it to the node owner. Do not widen parity_tolerance and do not edit parity.csv to agree.\"\n\
+             \x20   );\n\
+             }}\n\n",
+            from = esc(&sh.migrated_from),
+            id = esc(&sh.id),
+            tol = sh.parity_tolerance,
+        ));
         return;
     }
     let bindings: Vec<String> = sh
@@ -500,7 +786,7 @@ fn parity(sh: &Sheet, o: &mut String) {
          \x20       // answered this point, so either its inputs were outside a domain\n\
          \x20       // this node declares too narrowly, or the guard is wrong.\n\
          \x20       let got = match model::evaluate({args}) {{\n\
-         \x20           Ok(v) => v.get(),\n\
+         \x20           Ok(v) => v{acc}.get(),\n\
          \x20           Err(e) => {{\n\
          \x20               findings.push(format!(\n\
          \x20                   \"line {{line_no}}: this engine refused a point the prior implementation answered ({{e:?}})\"\n\
@@ -654,18 +940,29 @@ fn properties(sh: &Sheet, o: &mut String) {
     o.push_str("/// is not a number. A division by zero inside a hole is caught by no guard.\n");
     o.push_str("#[test]\n");
     o.push_str("fn every_answer_is_inside_the_declared_domain() {\n");
+    let ms = members(sh);
     for (i, _) in sh.inputs.iter().enumerate() {
         o.push_str("    for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {\n");
         o.push_str(&format!(
             "        if let Ok(v) = model::evaluate({}) {{\n",
             at("scale", i)
         ));
-        o.push_str(&format!(
-            "            assert!(v.get().is_finite(), \"{id} produced a value that is not a number\");\n"
-        ));
-        o.push_str(&format!(
-            "            assert!(v.get() >= {lo:?} && v.get() <= {hi:?}, \"{id} answered {{}}, outside its declared domain {lo} … {hi} — the guard did not stop it\", v.get());\n"
-        ));
+        // Every published member, against ITS OWN declared domain. Checking a
+        // set against the primary's bounds would pass a row whose Kp column sat
+        // at 40 because the flux column's ceiling is 400.
+        for (k, m) in ms.iter().enumerate() {
+            let acc = access(sh, k);
+            o.push_str(&format!(
+                "            assert!(v{acc}.get().is_finite(), \"{id} produced a value that is not a number for {sym}\");\n",
+                sym = esc(&m.symbol)
+            ));
+            o.push_str(&format!(
+                "            assert!(v{acc}.get() >= {lo:?} && v{acc}.get() <= {hi:?}, \"{id} answered {{}} for {sym}, outside its declared domain {lo} … {hi} — the guard did not stop it\", v{acc}.get());\n",
+                lo = m.lo_si,
+                hi = m.hi_si,
+                sym = esc(&m.symbol)
+            ));
+        }
         o.push_str("        }\n");
         o.push_str("    }\n");
     }
@@ -688,9 +985,15 @@ fn properties(sh: &Sheet, o: &mut String) {
         at("1.0", usize::MAX)
     ));
     o.push_str("    match (a, b) {\n");
-    o.push_str(&format!(
-        "        (Ok(x), Ok(y)) => assert!(x.get().to_bits() == y.get().to_bits(), \"{id} is not deterministic: {{}} then {{}}\", x.get(), y.get()),\n"
-    ));
+    o.push_str("        (Ok(x), Ok(y)) => {\n");
+    for (k, m) in members(sh).iter().enumerate() {
+        let acc = access(sh, k);
+        o.push_str(&format!(
+            "            assert!(x{acc}.get().to_bits() == y{acc}.get().to_bits(), \"{id} is not deterministic for {sym}: {{}} then {{}}\", x{acc}.get(), y{acc}.get());\n",
+            sym = esc(&m.symbol)
+        ));
+    }
+    o.push_str("        }\n");
     o.push_str("        (Err(_), Err(_)) => {}\n");
     o.push_str(&format!(
         "        _ => panic!(\"{id} refused on one call and answered on the other\"),\n"
@@ -1013,11 +1316,24 @@ fn crate_ident(c: &str) -> String {
 pub fn tables_rs(tree: &Tree) -> String {
     let sheets = tree.ordered();
     let n = sheets.len();
-    let idx: BTreeMap<&str, usize> = sheets
+    let mut idx: BTreeMap<String, usize> = sheets
         .iter()
         .enumerate()
-        .map(|(i, s)| (s.id.as_str(), i))
+        .map(|(i, s)| (s.id.clone(), i))
         .collect();
+    // Extra published variables are APPENDED, after every primary. Node i's own
+    // answer stays at index i, so every `inputs: &[51, 54]` already emitted
+    // still points at what it pointed at. Renumbering here would rewire the
+    // whole graph silently, which is the one failure this ordering exists to
+    // make impossible.
+    let mut extras: Vec<(usize, &crate::model::Publish)> = Vec::new();
+    for (i, sh) in sheets.iter().enumerate() {
+        for pb in &sh.publishes {
+            idx.insert(format!("{}.{}", sh.id, pb.id), n + extras.len());
+            extras.push((i, pb));
+        }
+    }
+    let idx = idx;
 
     let mut o = String::new();
     o.push_str("// GENERATED at build time from the sheets. Never committed: it is an\n");
@@ -1028,7 +1344,38 @@ pub fn tables_rs(tree: &Tree) -> String {
     o.push_str("use vleo_core::fault::Fault;\n");
     o.push_str("use vleo_core::graph::{Kind, Limit, NodeDef, Retirement, State, VarDef, View};\n");
     o.push_str("use vleo_core::units::Unit;\n\n");
-    o.push_str(&format!("pub const NODE_COUNT: usize = {n};\n\n"));
+    o.push_str(&format!("pub const NODE_COUNT: usize = {n};\n"));
+    o.push_str(&format!(
+        "/// One per row, plus the extras declared by rows whose answer is a set.\n\
+         pub const VAR_COUNT: usize = {};\n",
+        n + extras.len()
+    ));
+    // THE SCRATCH SIZES ARE MEASURED FROM THE TREE, NOT GUESSED.
+    //
+    // They were two hand-written constants in the kernel, 16 and 4, and both
+    // were outgrown. The output one panicked on the first set row, which is a
+    // loud failure. The INPUT one did not: `eval` sliced to the cap, so a node
+    // declaring more inputs than the cap silently received fewer, and the only
+    // reason that surfaced at all was the generated length guard refusing the
+    // short slice — as a node "blocked on an input that has never run", which
+    // is not what had happened.
+    //
+    // Emitted from the tree, neither can be too small again.
+    let max_in = sheets.iter().map(|sh| sh.inputs.len()).max().unwrap_or(0);
+    let max_out = sheets
+        .iter()
+        .map(|sh| 1 + sh.publishes.len())
+        .max()
+        .unwrap_or(1);
+    o.push_str(&format!(
+        "/// The most inputs any row declares. Measured from the tree by the\n\
+         /// generator, so the kernel's scratch cannot be outgrown by a sheet.\n\
+         pub const MAX_INPUTS: usize = {max_in};\n"
+    ));
+    o.push_str(&format!(
+        "/// The most variables any row publishes, its own answer included.\n\
+         pub const MAX_OUTPUTS: usize = {max_out};\n\n"
+    ));
 
     o.push_str("pub static NODES: [NodeDef; NODE_COUNT] = [\n");
     for sh in &sheets {
@@ -1042,7 +1389,13 @@ pub fn tables_rs(tree: &Tree) -> String {
             })
             .collect::<Vec<_>>()
             .join(", ");
-        let outputs = idx[sh.id.as_str()].to_string();
+        let outputs = {
+            let mut v = vec![idx[sh.id.as_str()].to_string()];
+            for pb in &sh.publishes {
+                v.push(idx[format!("{}.{}", sh.id, pb.id).as_str()].to_string());
+            }
+            v.join(", ")
+        };
         let assumptions = sh
             .assumptions
             .iter()
@@ -1083,8 +1436,20 @@ pub fn tables_rs(tree: &Tree) -> String {
                     })
                     .collect::<Vec<_>>()
                     .join(", ");
+                // Which published variable the expected value is for. The
+                // sheet names it; the index is resolved here, once, from the
+                // same publishes list that built OUTPUT_VARS.
+                let slot = if f.variable.is_empty() {
+                    0
+                } else {
+                    sh.publishes
+                        .iter()
+                        .position(|pb| pb.id == f.variable)
+                        .map(|k| k + 1)
+                        .unwrap_or(0)
+                };
                 format!(
-                    "Fixture {{ label: \"{}\", expected: {:?}, tolerance: {:?}, provenance: {}, source: \"{}\", inputs: &[{ins}] }}",
+                    "Fixture {{ label: \"{}\", expected: {:?}, tolerance: {:?}, provenance: {}, source: \"{}\", inputs: &[{ins}], slot: {slot} }}",
                     esc(&f.label),
                     f.expect,
                     f.tolerance,
@@ -1130,7 +1495,7 @@ pub fn tables_rs(tree: &Tree) -> String {
     }
     o.push_str("];\n\n");
 
-    o.push_str("pub static VARS: [VarDef; NODE_COUNT] = [\n");
+    o.push_str("pub static VARS: [VarDef; VAR_COUNT] = [\n");
     for (i, sh) in sheets.iter().enumerate() {
         o.push_str(&format!(
             "    VarDef {{ id: \"{id}\", symbol: \"{sym}\", label: \"{label}\", unit: Unit::{unit}, producer: {p}, \
@@ -1144,6 +1509,22 @@ pub fn tables_rs(tree: &Tree) -> String {
             hi = to_si(sh.upper, &sh.unit),
             rl = esc(&sh.reason_lower),
             ru = esc(&sh.reason_upper),
+        ));
+    }
+    // The extras, after every primary, in the order they were indexed above.
+    for (producer, pb) in &extras {
+        o.push_str(&format!(
+            "    VarDef {{ id: \"{id}\", symbol: \"{sym}\", label: \"{label}\", unit: Unit::{unit}, producer: {p}, \
+             limit: Limit {{ lower: {lo:?}, upper: {hi:?}, reason_lower: \"{rl}\", reason_upper: \"{ru}\" }} }},\n",
+            id = esc(&format!("{}.{}", sheets[*producer].id, pb.id)),
+            sym = esc(&pb.symbol),
+            label = esc(&pb.label),
+            unit = unit_of(&pb.unit).name(),
+            p = producer,
+            lo = to_si(pb.lower, &pb.unit),
+            hi = to_si(pb.upper, &pb.unit),
+            rl = esc(&pb.reason_lower),
+            ru = esc(&pb.reason_upper),
         ));
     }
     o.push_str("];\n\n");

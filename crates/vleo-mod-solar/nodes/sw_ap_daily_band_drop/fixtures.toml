@@ -1,0 +1,58 @@
+# Known-good values, and where each came from. An expected value may
+# never be produced by the code under test.
+#
+# WHAT THESE CHECK, AND WHAT THEY CANNOT.
+#
+# The table in this node's hole is MEASURED DATA. Its knots were derived from
+# bundles/solar-weather@2026.09.14 by the method the theory tab sets out, in a
+# separate implementation that shares no code with this one — so a fixture AT A
+# KNOT is a transcription check: it says the seven or eight pairs were copied
+# into the hole correctly, which is the commonest way a table goes wrong and is
+# wrong everywhere at once when it does.
+#
+# A fixture BETWEEN knots checks the interpolation, worked out by hand from the
+# two bracketing knots. A fixture outside the ends checks the clamp.
+#
+# What no fixture here can check is whether the KNOTS THEMSELVES are right. That
+# is a question about the derivation and the record, and it is what the empty
+# confirmed_by on this sheet is asking a person for.
+
+[[fixture]]
+label = "at the declared window's own sustained quiet level, Ap 17.50 — a genuine interpolation between the 15 and 20 knots, unlike its high-tail twin's clamp"
+expect = 12.5635147395
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { level = 17.49546836 }
+
+[[fixture]]
+label = "the Ap 15 knot, exactly — a transcription check on the lower bracket of that interpolation"
+expect = 10.837
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { level = 15.0 }
+
+[[fixture]]
+label = "the Ap 11 knot, exactly — a transcription check where the high tail is twice this value"
+expect = 7.5556
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { level = 11.0 }
+
+[[fixture]]
+label = "between the Ap 20 and Ap 24 knots — the interpolation on the upper half of the ladder"
+expect = 15.99445
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { level = 22.0 }
+
+[[fixture]]
+label = "below the bottom of the table — the clamp"
+expect = 2.9704
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { level = 1.0 }

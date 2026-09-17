@@ -1806,11 +1806,25 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
         return Err(format!("{} already exists", dir.display()));
     }
     let sheet = fs::read_to_string(src.dir.join("node.toml")).map_err(|e| e.to_string())?;
+    let src_order = src.order;
     // Blank what must be re-decided. A literal copy drags a stale source
     // citation and someone else's domain limits through thirty nodes.
     let mut out = String::new();
+    // A blanked field whose value is a multi-line string leaves its BODY behind,
+    // and the body is not TOML on its own. `text = "\"\"\"` became
+    // `text = ""` and the twenty prose lines under it were still there,
+    // starting with a bare word where a key was expected, so the sheet the tool
+    // had just written could not be parsed by the tool's own next command. It
+    // happened twice before this skipped the body.
+    let mut in_blanked_block = false;
     for line in sheet.lines() {
         let l = line.trim_start();
+        if in_blanked_block {
+            if l == "\"\"\"" || l.ends_with("\"\"\"") {
+                in_blanked_block = false;
+            }
+            continue;
+        }
         if l.starts_with("id = ") {
             out.push_str(&format!("id = \"{id}\"\n"));
         } else if l.starts_with("folder = ") {
@@ -1823,11 +1837,31 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
             || l.starts_with("reason_lower = ")
             || l.starts_with("reason_upper = ")
             || l.starts_with("confirmed_by = ")
+            // `migrated_from` is a source citation, and this loop exists
+            // because "a literal copy drags a stale source citation through
+            // thirty nodes". It was not in the list, so a clone pointed at the
+            // sibling's MATLAB function and at a parity grid that was not its
+            // own.
+            || l.starts_with("migrated_from = ")
         {
             let key = l.split(" = ").next().unwrap();
             out.push_str(&format!(
                 "{key} = \"\"   # REQUIRED — re-decide, do not inherit\n"
             ));
+            // Opened a \"\"\" block and did not close it on the same line: the
+            // rest belongs to the value that was just blanked.
+            let after = l.split_once(" = ").map(|x| x.1).unwrap_or("");
+            if after.starts_with("\"\"\"") && !after[3..].contains("\"\"\"") {
+                in_blanked_block = true;
+            }
+        } else if l.starts_with("order = ") {
+            // THE SIBLING'S PLACE IS TAKEN. `order` is globally contiguous and
+            // one row per place is an assembly check, so copying the sibling's
+            // number guarantees a collision — the tool wrote a tree its own
+            // gate refused, every time, and the person then renumbered 32 rows
+            // by hand. The new row goes immediately after the sibling and
+            // everything at or beyond that place moves up one, below.
+            out.push_str(&format!("order = {}\n", src_order + 1));
         } else {
             out.push_str(line);
             out.push('\n');
@@ -1845,6 +1879,35 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
     }
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     fs::write(dir.join("node.toml"), out).map_err(|e| e.to_string())?;
+    // Make room. Every sheet already at or beyond the new row's place moves up
+    // one, so the tree stays contiguous and the assembly check stays quiet.
+    // `order` is outside the sheet hash, so this rewrites no generated artefact.
+    let mut shifted = 0usize;
+    for sh in tree.ordered() {
+        if sh.id.as_str() == *id || sh.order <= src_order {
+            continue;
+        }
+        let f = sh.dir.join("node.toml");
+        let t = fs::read_to_string(&f).map_err(|e| e.to_string())?;
+        let mut w = String::new();
+        for line in t.lines() {
+            if line.trim_start().starts_with("order = ") {
+                w.push_str(&format!("order = {}\n", sh.order + 1));
+            } else {
+                w.push_str(line);
+                w.push('\n');
+            }
+        }
+        fs::write(&f, w).map_err(|e| e.to_string())?;
+        shifted += 1;
+    }
+    if shifted > 0 {
+        println!(
+            "made room at {}: {} row(s) moved up one",
+            src_order + 1,
+            shifted
+        );
+    }
     fs::write(
         dir.join("fixtures.toml"),
         "# Known-good values, and where each came from. An expected value may\n# never be produced by the code under test.\n",
@@ -2077,7 +2140,16 @@ fn cmd_variables(root: &Path) -> Result<(), String> {
             let consumers: Vec<String> = tree
                 .sheets
                 .values()
-                .filter(|c| c.inputs.iter().any(|i| i.var == sh.id))
+                .filter(|c| {
+                    // A node reading `<this row>.<member>` reads this row. The
+                    // register's whole purpose is saying what reads what, so
+                    // matching input names against node ids alone would leave
+                    // a set row's readers out of its own entry.
+                    c.inputs.iter().any(|i| {
+                        i.var == sh.id
+                            || i.var.split_once('.').is_some_and(|(node, _)| node == sh.id)
+                    })
+                })
                 .map(|c| format!("`{}`", c.id))
                 .collect();
             o.push_str(&format!(
@@ -2109,6 +2181,60 @@ fn cmd_variables(root: &Path) -> Result<(), String> {
             }
             if !sh.note.is_empty() {
                 o.push_str(&format!("\n{}\n", sh.note));
+            }
+            if !sh.publishes.is_empty() {
+                // This file claims to hold every variable in the tree, and a
+                // set row answers with more than one. Each member carries its
+                // own type, unit and range, decided separately and defended
+                // separately, so each gets its own entry rather than a name in
+                // a list under the row's range.
+                o.push_str(&format!(
+                    "- **publishes a set of {}** — this row's own answer, above, and the members below. Each is read as `{}.<member>`.\n",
+                    1 + sh.publishes.len(),
+                    sh.id
+                ));
+                for pb in &sh.publishes {
+                    let pu = vleo_units::Unit::from_name(&pb.unit)
+                        .map(|u| u.symbol())
+                        .unwrap_or("?");
+                    let readers: Vec<String> = tree
+                        .sheets
+                        .values()
+                        .filter(|c| {
+                            c.inputs
+                                .iter()
+                                .any(|i| i.var == format!("{}.{}", sh.id, pb.id))
+                        })
+                        .map(|c| format!("`{}`", c.id))
+                        .collect();
+                    o.push_str(&format!(
+                        "\n#### `{id}.{m}` — {label}\n\n\
+                         | | |\n|---|---|\n\
+                         | symbol | `{sym}` |\n\
+                         | type | `{ty}` |\n\
+                         | unit | {pu} |\n\
+                         | valid over | {lo} … {hi} {pu} |\n\n\
+                         - **lower bound** — {rl}\n\
+                         - **upper bound** — {ru}\n\
+                         - **read by** — {by}\n",
+                        id = sh.id,
+                        m = pb.id,
+                        label = pb.label,
+                        sym = pb.symbol,
+                        ty = pb.ty,
+                        pu = pu,
+                        lo = pb.lower,
+                        hi = pb.upper,
+                        rl = pb.reason_lower,
+                        ru = pb.reason_upper,
+                        by = if readers.is_empty() {
+                            "nothing yet. A member nothing reads is a member the set does not need, or an oversight.".to_string()
+                        } else {
+                            readers.join(", ")
+                        }
+                    ));
+                }
+                o.push('\n');
             }
             o.push('\n');
         }

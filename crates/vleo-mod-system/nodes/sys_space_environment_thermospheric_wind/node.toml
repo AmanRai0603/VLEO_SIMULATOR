@@ -15,7 +15,7 @@ layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
 # is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
 # reverses the order the source put them in, and the order is part of
 # what the source said.
-order = 310
+order = 312
 state = "empty"
 
 # SEEDED — the folder exists and nothing has been specified in it.
@@ -23,6 +23,24 @@ state = "empty"
 # open field blocks generation, which is the mechanism: ambiguity
 # becomes a blocking item on an engineer's screen rather than
 # something an implementer resolves silently.
+#
+# STILL SEEDED AFTER §20 STEP 6, ON PURPOSE.
+#
+# No subsystem computes thermospheric wind. The solar-weather group publishes
+# solar and geomagnetic drivers and nothing else; there is no horizontal wind
+# model anywhere in this repository, and filling a row from nothing is the defect
+# this heading's empty rows exist to point at rather than hide.
+#
+# sys_mass_and_aero_relative_velocity reads this row and is waiting on it. The
+# wind matters there because drag goes as the square of the velocity RELATIVE to
+# the atmosphere, and at VLEO altitudes the corotating atmosphere plus its winds
+# is a few hundred metres per second against an orbital speed near 7800 — a sub-
+# per-cent velocity error, but squared and integrated over a mission.
+#
+# What writing it would need: a horizontal wind model (HWM14 is the usual
+# choice), which takes the same solar and geomagnetic drivers this heading now
+# receives plus latitude, longitude and local time. The drivers are here; the
+# model is not, and it is a subsystem's worth of work rather than a row's.
 
 [question]
 text = ""

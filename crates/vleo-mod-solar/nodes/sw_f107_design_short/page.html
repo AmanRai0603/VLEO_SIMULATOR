@@ -1,0 +1,183 @@
+<article class="node" data-node="sw_f107_design_short" data-sheet-hash="55d9bb" data-impl-hash="21ee9a">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Single-day F10.7 to design to</h2>
+  <p class="ident"><code>sw_f107_design_short</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">What F10.7 must the design survive on a single day inside the mission window?</p>
+<p class="maths"><code>F107_short = F107_long + dF107_day</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The SHORT TERM of the pair. sw_f107_design_long says what the mission sits at
+for months; this says what one day in twenty reaches while sitting there. A
+thermal case and a drag transient are sized on this one, an array and a
+propellant budget on its long sibling, and giving a design only one of the two
+decides for the reader which problem they have.
+</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>The two spreads stack, and stacking two percentiles is not a percentile</dt><dd>fails when the published number is read as the 95th percentile of a day. It is not: it is the 90th percentile of the rotation level plus the 95th percentile of the daily departure, which for independent normals lands near the 99th. The bound is conservative, the label is not, and the honest statistic would be the percentile of the daily value itself rather than a sum of two</dd>
+<dt>The rotation error and the daily departure are independent</dt><dd>fails when they are not. Both widen with activity, so a window the pattern gets wrong on the high side is also a window whose days scatter most, and the true joint tail is fatter than the sum of two marginals suggests in one direction and thinner in the other</dd>
+<dt>One day in twenty is the day worth designing to</dt><dd>fails when the mission is long. Over a 365-day window a one-in-twenty day happens about eighteen times, so this is not a rare event but a routine one; the rare day a design might actually care about is further out and this row does not publish it</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">The two spreads are of different things and they stack rather than combine. sw_mean_band_spread is how wrong the pattern is about the LEVEL a rotation sits at — a forecast error. sw_daily_band_spread is how far a day departs from the rotation it belongs to — the sun's own variability, measured on days that already happened. A day is high because its rotation is high AND because it is a high day within that rotation, so the design level for a day is the sustained level with the daily departure added on top.</p>
+<p class="why">That is a deliberately conservative construction and the sheet says so. Adding two one-sided percentiles gives a bound further out than either — roughly the 99th rather than the 95th if the two were independent and normal — so the published day is rarer than the confidence attached to it suggests. The study does the same thing and the port follows it.</p>
+<div class="theory-walk" data-steps="3">
+<ol class="derive">
+<li><span class="dt">Take the sustained level the window is designed to.</span><code class="dm">F107_long = sw_f107_design_long</code></li>
+<li><span class="dt">Take how far above its rotation a day reaches, one day in twenty, AT THE LEVEL THAT ROTATION SITS AT. sw_daily_band_spread is a table rather than a number: the same question answered at 104 sfu and at 210 gives 20.07 and 46.93, a factor of two and a bit.</span><code class="dm">dF107_day = sw_daily_band_spread(F107_long) = 20.0723 sfu at a sustained 104.07</code></li>
+<li><span class="dt">Add them. A high day on a high rotation is both, and the design must survive the pair.</span><code class="dm">F107_short = F107_long + dF107_day</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">Fed the study's own two numbers the arithmetic is exact: 175.6064196495 plus 34.1481481481 is 209.7545677976, which is the hotday scenario it published, to the last digit. That is what the parity grid beside this sheet checks, and it is a check on the RELATION.</p>
+<p class="reading">What this row publishes is 124.14, not 209.75, and both terms moved to get there. The sustained level is 104.07 rather than 175.61 because sw_central_expectation reads the cycle analogue instead of holding the last rotation forecast forward. And the daily term is 20.07 rather than 34.23 because sw_daily_band_spread is now conditioned on the rotation level: the old single number was measured over days whose rotations averaged 136.63 sfu and applied unchanged at 104.07, which over-stated it by 71 per cent.</p>
+<p class="reading">The cold side is not this row — sw_f107_cold_short is, and it is the case a design checks for a cold, thin atmosphere. It is NOT this row mirrored: the two daily tails differ at every level.</p>
+<p class="maths concl">which is the relation this node states: <code>F107_short = F107_long + dF107_day</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>sustained</code></td><td><a class="xref" data-goto="sw_f107_design_long">sw_f107_design_long</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>daily</code></td><td><a class="xref" data-goto="sw_daily_band_spread">sw_daily_band_spread</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>F107_short</code></td><td>sw_f107_design_short</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>2</b> nodes read this: <a class="xref" data-goto="l3_solar_ach_02">l3_solar_ach_02</a>, <a class="xref" data-goto="l3_solar_interface">l3_solar_interface</a></p>
+</section>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">add the within-rotation daily departure to the sustained level</span> <span class="binds">→ <code>single_day: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_f107_design_short(sustained: Ratio, daily: Ratio) -> Ratio
+    given sustained from sw_f107_design_long
+    given daily from sw_daily_band_spread
+    // add the within-rotation daily departure to the sustained level
+    single_day ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require F107_short ≥ 60
+    require F107_short ≤ 400
+    require F107_short is finite
+
+    return F107_short
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>F107_short &ge; 60</code> — below 60 sfu has never been observed and every relation reading F10.7 has no support there; a single-day design level below it means a spread has been subtracted rather than added</li>
+<li><code>F107_short &le; 400</code> — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value — and this row, being the sustained level plus a daily excursion, is the one most likely to reach it, which is exactly why the guard is here</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sw_f107_design_short" data-lo="60" data-hi="400" data-symbol="F107_short">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What F10.7 must the design survive on a single day inside the mission window?
+///
+/// `F107_short = F107_long + dF107_day`
+///
+/// Source: `noaa_swpc`
+///
+/// The SHORT TERM of the pair. sw_f107_design_long says what the mission sits
+/// at for months; this says what one day in twenty reaches while sitting
+/// there. A thermal case and a drag transient are sized on this one, an array
+/// and a propellant budget on its long sibling, and giving a design only one
+/// of the two decides for the reader which problem they have.
+///
+/// # Assumptions
+///
+/// * The two spreads stack, and stacking two percentiles is not a percentile — fails when the published number is read as the 95th percentile of a day. It is not: it is the 90th percentile of the rotation level plus the 95th percentile of the daily departure, which for independent normals lands near the 99th. The bound is conservative, the label is not, and the honest statistic would be the percentile of the daily value itself rather than a sum of two
+/// * The rotation error and the daily departure are independent — fails when they are not. Both widen with activity, so a window the pattern gets wrong on the high side is also a window whose days scatter most, and the true joint tail is fatter than the sum of two marginals suggests in one direction and thinner in the other
+/// * One day in twenty is the day worth designing to — fails when the mission is long. Over a 365-day window a one-in-twenty day happens about eighteen times, so this is not a rare event but a routine one; the rare day a design might actually care about is further out and this row does not publish it
+pub const NODE_ID: &amp;str = &quot;sw_f107_design_short&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x300aed7d4b55d9bb;
+
+pub fn evaluate(sustained: Ratio, daily: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : add the within-rotation daily departure to the sustained level -&gt; Ratio
+    // The two spreads are of different things — a forecast error about the
+    // rotation's level, and the sun's own variability within it — so they add
+    // rather than combine in quadrature. The sheet's first assumption says what
+    // that costs: the sum of two one-sided percentiles is not a percentile.
+    let single_day: Ratio = sustained + daily;
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = single_day;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_short&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_short&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;below 60 sfu has never been observed and every relation reading F10.7 has no support there; a single-day design level below it means a spread has been subtracted rather than added&quot; });
+    }
+    if answer.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_short&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value — and this row, being the sustained level plus a daily excursion, is the one most likely to reach it, which is exactly why the guard is here&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="the sustained level from sw_f107_design_long's first fixture plus the daily departure this row USED to be handed, before sw_daily_band_spread was conditioned on level. Kept as an arithmetic case: the pair no longer occurs in this tree, and what it still checks is that the relation is that addition"><td>the sustained level from sw_f107_design_long's first fixture plus the daily departure this row USED to be handed, before sw_daily_band_spread was conditioned on level. Kept as an arithmetic case: the pair no longer occurs in this tree, and what it still checks is that the relation is that addition</td><td class="num">211.4530904415</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="round numbers, so the arithmetic is checkable without a calculator"><td>round numbers, so the arithmetic is checkable without a calculator</td><td class="num">230</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="a quieter sustained level with a wider daily departure — the two terms are independent and the row must not assume otherwise"><td>a quieter sustained level with a wider daily departure — the two terms are independent and the row must not assume otherwise</td><td class="num">190</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 60 — below 60 sfu has never been observed and every relation reading F10.7 has no support there; a single-day design level below it means a spread has been subtracted rather than added</li>
+<li><code>OutOfDomain</code> above 400 — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value — and this row, being the sustained level plus a daily excursion, is the one most likely to reach it, which is exactly why the guard is here</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_f107_design_short"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>60 &hellip; 400</code> -.</p>
+<ul class="guards"><li>lower — below 60 sfu has never been observed and every relation reading F10.7 has no support there; a single-day design level below it means a spread has been subtracted rather than added</li><li>upper — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value — and this row, being the sustained level plus a daily excursion, is the one most likely to reach it, which is exactly why the guard is here</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

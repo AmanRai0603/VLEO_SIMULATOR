@@ -22,7 +22,7 @@
 # Everywhere else in this tree a target is something the subsystem must deliver
 # and the closure asks whether it delivered enough. The environment is not
 # delivered. Nobody builds the Sun, and the design does not get to ask it for
-# less — so these three pairs are a CONSTRAINT rather than a promise:
+# less — so these five pairs are a CONSTRAINT rather than a promise:
 #
 #   required   the worst sky this design can sustain — a limit the spacecraft
 #              sets, and the one number a system reader actually needs
@@ -34,10 +34,65 @@
 # same number and opposite requirements, and a closure read the wrong way
 # reports a comfortable margin for a spacecraft that is about to be destroyed.
 #
-# THE HORIZON IS A PROPERTY OF THE ROW, NOT A ROW OF ITS OWN. A long-term and a
-# short-term prediction of F10.7 are the same quantity known to different
-# precision, so they are one row carrying a lead and a confidence, not two rows
-# that would have to be kept in step by hand.
+# THE HORIZON IS A PROPERTY OF THE ROW, NOT A ROW OF ITS OWN. A prediction of
+# F10.7 at a six-month lead and at a five-year lead is the same quantity known
+# to different precision, so it is one row carrying a lead and a confidence,
+# not two rows that would have to be kept in step by hand.
+#
+# THAT IS ABOUT PREDICTION LEAD AND NOT ABOUT §20's LONG AND SHORT TERM, which
+# use the same two words for a different axis and are two rows on purpose. §20's
+# split is between the level the mission SITS AT for months and the level one
+# day inside it reaches: a window mean and a day within that window are not one
+# quantity at two precisions, they are two quantities, and a design uses them
+# for different things. An array is sized on the sustained level and a thermal
+# transient on the day. Both distinctions are live in this group and they are
+# orthogonal.
+#
+# FIVE PAIRS, NOT THREE, AND WHY EACH IS A SEPARATE QUESTION.
+#
+#   req_01 / ach_01   F10.7, sustained     260 sfu   vs  104.07
+#   req_02 / ach_02   F10.7, single day    350 sfu   vs  124.14
+#   req_04 / ach_04   Ap, sustained         48       vs   26.70
+#   req_05 / ach_05   Ap, single day        80       vs   90.55   ← DOES NOT CLOSE
+#   req_03 / ach_03   Ap, the one storm    150       vs  158.38   ← DOES NOT CLOSE
+#
+# TWO OF THE FIVE DO NOT CLOSE, and both are on Ap. The storm one has failed
+# since it was written. The single-day one started failing when the within-
+# rotation bands were conditioned on the rotation level: at a sustained Ap of
+# 26.70 the record says a one-in-twenty day departs by 63.85, not by the 15.00 a
+# level-mixed percentile gave, so the achieved side more than doubled from 41.70
+# to 90.55. The requirement was not moved to make it pass. Ap 91 is a G3-G4 day,
+# so either the single-day commitment belongs at G3 — 132, which would keep the
+# ladder ordered under the storm ceiling of 150 — or this window is outside what
+# the design was built for.
+#
+# Both F10.7 ceilings are now anchored in the record rather than above the chain:
+# 260 is the largest 27-day mean (252.67, centred 2024-08-13) rounded up, and 350
+# is the largest single day (343, on 2023-02-17) rounded up. A ceiling set above
+# whatever the chain currently gives moves with the design instead of the sky,
+# and req_01 spent two revisions drifting from 9.6 per cent of headroom to 140
+# before it was re-anchored.
+#
+# req_01 and req_02 used to be one commitment written twice, at one number,
+# because layer 2 held sys_space_environment_solar_flux and
+# sys_space_environment_f10_7 as separate rows and each needed a partner. §20.5
+# gives those two layer-2 rows different content — the first receives the whole
+# driver set, the second the design value — so the duplication that forced the
+# second pair into existence is gone, and the pair now answers the single-day
+# question instead.
+#
+# The Ap ladder is three rungs because a transient is easier to survive than a
+# permanent condition and a storm is a different question again: 48 is the G1
+# threshold and the commitment is continuous OPERATION; 80 is G2 and the
+# commitment is one-day SURVIVAL; 150 is G3 with 14 per cent on it and the
+# commitment is that one storm in the mission does not destroy the vehicle. A
+# design whose three numbers were equal would not have been thought about.
+#
+# NOTHING IN THE TREE EVALUATES A CLOSURE. `sense` is declared on each
+# requirement row and the gate checks only that it is present; the pairing is a
+# convention the matrix draws. So req_03 failing at 158.38 against 150 is
+# visible to a reader of the matrix and to nothing else, and has been since it
+# was written.
 
 [[group]]
 id = "l3_solar"

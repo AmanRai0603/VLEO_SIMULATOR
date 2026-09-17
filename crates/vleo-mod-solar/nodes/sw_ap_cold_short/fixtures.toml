@@ -1,0 +1,32 @@
+# Known-good values, and where each came from. An expected value may
+# never be produced by the code under test.
+#
+# A difference of two numbers this node does not compute. The sustained cold
+# level comes from sw_ap_cold_long and the drop from sw_ap_daily_band_drop.
+#
+# The study's own pair is NOT used: its difference is the prior implementation's
+# published coldday Ap, and that may not be a fixture. It is in parity.csv.
+
+[[fixture]]
+label = "17.4955 minus 10.5889 — the pair this row was handed before sw_ap_daily_band_drop was conditioned on level. The conditioned drop at Ap 17.50 is 12.56, so the published answer is 4.93 rather than 6.91"
+expect = 6.9065794711
+tolerance = 1e-10
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { sustained = 17.49546836, daily = 10.5888888889 }
+
+[[fixture]]
+label = "round numbers, checkable without a calculator — 50 - 10"
+expect = 40.0
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { sustained = 50.0, daily = 10.0 }
+
+[[fixture]]
+label = "a sustained level of 11, four tenths above the floor — the narrowest case this row can publish, and the reason the guard at zero is load-bearing here rather than decorative"
+expect = 0.4111111111
+tolerance = 1e-10
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { sustained = 11.0, daily = 10.5888888889 }

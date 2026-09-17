@@ -1,0 +1,33 @@
+# The prior implementation, over the record it was fitted on.
+#
+# NOT A FIXTURE. An expected value may never come from the implementation under
+# test, and this file is the OTHER implementation's answer — a second opinion.
+# A disagreement here is a finding about one of the two, and the answer is never
+# to widen parity_tolerance or to edit this file until it agrees.
+#
+# WHERE THIS NUMBER COMES FROM. prf_rebuild.m publishes it directly:
+#
+#   prf_rebuild.m:403   res = R.fc27.pred - R.fc27.truth;
+#   prf_rebuild.m:404   R.sigma.total = std(res);
+#
+# The value below is not read from a MATLAB run — there is no MATLAB in this
+# environment. It is back-solved from the driver sets that run did publish, in
+# matlab/reference/mission_drivers.csv, where designWindow_ formed the mean band
+# as centre +/- 1.28*sigma:
+#
+#   (hotmean.f107 - nominal.f107) / 1.28
+#     = (175.60641964945182 - 158.3304112313161) / 1.28
+#     = 13.496881576668528
+#
+# THE TWO AGREE TO 0.31 PER CENT. Two implementations of one documented method,
+# in different languages, over one record. The residual is unexplained and the
+# candidates are named rather than chosen: the 273-day 2017 hole each fills by
+# interpolation, the least-squares solver's conditioning on a near-collinear
+# AR(2) design matrix, and the exact warm-up rotation each begins scoring at.
+#
+# The Ap side, by the same route, is (26.683328217449382 - 22.092538390203554)
+# / 1.28 = 3.5865545525358034 against 3.593688 derived here — 0.20 per cent. It
+# is recorded here although no row publishes it yet.
+variable,matlab_sigma_total
+f107,13.496881576668528
+ap,3.5865545525358034

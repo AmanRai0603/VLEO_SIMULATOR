@@ -1,4 +1,4 @@
-<article class="node" data-node="sw_kp_mean_bias" data-sheet-hash="260a2b" data-impl-hash="2ddea4">
+<article class="node" data-node="sw_kp_mean_bias" data-sheet-hash="260a2b" data-impl-hash="b17fcd">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Kp slot bias, 24-hour mean</h2>
@@ -127,33 +127,18 @@ pub fn evaluate(ap: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
     // ---- HOLE 1 : read the measured mean-slot offset off the nine binned medians at this Ap -&gt; Ratio
     // The nine bin medians, measured on solar-weather@2026.09.14. The x values are
     // prf_ap2kp's own bin CENTRES — the midpoints of its edges 0 5 10 15 20 30 45
-    // 70 110 400 — and the y values are the median of mean_8(Kp) - table(Ap) in
-    // each bin. The same day set and the same bins as sw_kp_slot_bias, taking the
-    // mean over the eight slots where that one takes the maximum. They belong to
+    // 70 110 400 — and the y values are the medians in each bin. They belong to
     // the record, not to this code, and the sheet names the bundle version.
     //
-    // Table1::at holds the end values instead of extrapolating, which is the same
-    // choice prf_ap2kp makes explicitly (&quot;hold the end bins, never extrapolate&quot;).
+    // THE TABLE LIVES IN vleo-core AS `env::kp_mean_slot_bias` RATHER THAN HERE, and
+    // this hole calls it. Two callers read it now: this row, at one Ap, and
+    // sw_kp_scenarios, at the five the driver set carries. A table copied into
+    // both would drift from itself without anything noticing — which is not
+    // hypothetical, it is what happened to the ap-to-Kp scale.
     //
-    // The FIRST entry is positive where every other is negative. That is the
-    // record disagreeing with the concavity argument in the quietest bin, and the
-    // sheet carries it as an assumption rather than this code clipping it to zero.
-    use vleo_core::math::Table1;
-    const OFFSET: Table1 = Table1 {
-        x: &amp;[2.5, 7.5, 12.5, 17.5, 25.0, 37.5, 57.5, 90.0, 255.0],
-        y: &amp;[
-            0.041666666666666685,
-            -0.125,
-            -0.09763888888888905,
-            -0.11111111111111116,
-            -0.13333333333333286,
-            -0.24099537037037067,
-            -0.33333333333333304,
-            -0.4487179487179489,
-            -0.4868948412698413,
-        ],
-    };
-    let off: Ratio = Ratio::new(OFFSET.at(ap.get()));
+    // It holds the end values instead of extrapolating, which is the same choice
+    // prf_ap2kp makes explicitly (&quot;hold the end bins, never extrapolate&quot;).
+    let off: Ratio = Ratio::new(vleo_core::physics::env::kp_mean_slot_bias(ap.get()));
     // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The

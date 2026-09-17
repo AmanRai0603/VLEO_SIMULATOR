@@ -26,22 +26,22 @@ be the defect, and it is the one this spec exists to fix in place."""
 # did not carry; it was put back in front of a person and agreed again. That
 # second look is the whole reason this row may go to main, and it is the step
 # no check can perform.
-confirmed_by = "A. Rai / 2026-09-15"
+confirmed_by = "A. Rai / 2026-09-15 (against the pre-move picture; content unchanged, canvas resized 2026-09-16, not yet re-looked)"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.
 settle_ms = 8000
 
-# The solar view is not where the page opens, and each tab is a separate
-# panel sharing one canvas. This drives to the view and selects this tab;
-# panel_check re-runs it after every input to restore the starting state.
+# A figure lives on the row it argues about, so driving it means opening that
+# row. There is no solar view any more: it was a sixth item in a navigation
+# whose subtitle says four layers, and it showed solar weather in a second
+# place that disagreed with layer 3. panel_check re-runs this after every
+# input to restore the starting state.
 ready = """(async () => {
-  S.view = 'solar';
-  draw();
-  await new Promise(r => setTimeout(r, 150));
-  const tab = document.querySelector('.sw-tab[data-panel=density]');
-  if (!tab) throw new Error('no tab for the density panel');
-  tab.click();
+  await window.openNode('sys_space_environment_atmospheric_density');
+  await new Promise(r => setTimeout(r, 200));
+  const cv = document.querySelector('.row-figure canvas.sw-panel');
+  if (!cv) throw new Error('no figure on sys_space_environment_atmospheric_density for the density panel');
 })()"""
 
 # NO INPUTS, AND THAT IS A REAL GAP RATHER THAN AN OVERSIGHT. This panel

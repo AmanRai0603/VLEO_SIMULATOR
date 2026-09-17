@@ -35,16 +35,25 @@ pub mod tables {
     include!(concat!(env!("OUT_DIR"), "/tables.rs"));
 }
 
-pub use tables::{CaseDef, CycleDef, GroupDef, CASES, GROUPS, NODES, NODE_COUNT, RELATIONS, VARS};
+pub use tables::{
+    CaseDef, CycleDef, GroupDef, CASES, GROUPS, MAX_INPUTS, MAX_OUTPUTS, NODES, NODE_COUNT,
+    RELATIONS, VARS, VAR_COUNT,
+};
 
 /// Re-exported so a face has one name to import.
 pub use vleo_bus as bus;
 pub use vleo_core as core_engine;
 pub use vleo_units as units;
 
-/// The largest number of inputs any node declares. Fixed at build time so the
-/// adapter needs no allocator — the kernel runs where there is not one.
-const MAX_INPUTS: usize = 16;
+// MAX_INPUTS and MAX_OUTPUTS come from `tables`, measured off the tree by the
+// generator rather than written here by hand. Both were hand-written once — 16
+// and 4 — and both were outgrown. The output cap panicked on the first row whose
+// answer was a set, which is a loud failure and an acceptable one. The INPUT cap
+// did not: `eval` sliced to it, so a row declaring more inputs than the cap
+// silently received fewer, and what surfaced was the generated length guard
+// refusing the short slice — reported as a node blocked on "an input that has
+// never run", which is not what had happened. A constant that can be outgrown
+// by a sheet belongs to the sheet, so it is generated.
 
 /// The engine, holding the resolved data handle for one run.
 ///
@@ -152,7 +161,7 @@ impl NodeTable for Vleo {
             }
         }
 
-        let mut outputs = [0.0f64; 4];
+        let mut outputs = [0.0f64; MAX_OUTPUTS];
         (tables::DISPATCH[node as usize])(&inputs[..n_in], &mut outputs[..def.outputs.len()])?;
 
         // The evidence executes on the run, using the same function the test
@@ -185,11 +194,13 @@ fn check_fixtures(node: NodeIdx) -> (bool, bool) {
     let mut ran = false;
     let mut passed = true;
     for f in def.fixtures {
-        let mut out = [0.0f64; 4];
+        let mut out = [0.0f64; MAX_OUTPUTS];
         match (tables::DISPATCH[node as usize])(f.inputs, &mut out[..def.outputs.len()]) {
             Ok(()) => {
                 ran = true;
-                if !f.check(out[0]).passed() {
+                // The slot the fixture named. A set row's fixture checks the
+                // member it is about; a row with one answer has slot 0.
+                if !f.check(out[f.slot]).passed() {
                     passed = false;
                 }
             }
@@ -211,16 +222,17 @@ pub fn fixture_verdicts(node: NodeIdx) -> Vec<vleo_bus::VerdictOut> {
     let def = &NODES[node as usize];
     let mut out = Vec::new();
     for f in def.fixtures {
-        let mut o = [0.0f64; 4];
+        let mut o = [0.0f64; MAX_OUTPUTS];
         let (got, passed, err) =
             match (tables::DISPATCH[node as usize])(f.inputs, &mut o[..def.outputs.len()]) {
                 Ok(()) => {
-                    let e = match f.check(o[0]) {
+                    let got = o[f.slot];
+                    let e = match f.check(got) {
                         Verdict::Pass { relative_error } => relative_error,
                         Verdict::Fail { relative_error, .. } => relative_error,
                         _ => f64::NAN,
                     };
-                    (o[0], f.check(o[0]).passed(), e)
+                    (got, f.check(got).passed(), e)
                 }
                 Err(_) => (f64::NAN, false, f64::NAN),
             };
@@ -242,9 +254,12 @@ pub fn fixture_verdicts(node: NodeIdx) -> Vec<vleo_bus::VerdictOut> {
 /// One fixture, executed against the live engine.
 pub fn run_fixture(node: NodeIdx, inputs: &[f64]) -> Result<(f64, Verdict), Fault> {
     let def = &NODES[node as usize];
-    let mut outputs = [0.0f64; 4];
+    let mut outputs = [0.0f64; MAX_OUTPUTS];
     (tables::DISPATCH[node as usize])(inputs, &mut outputs[..def.outputs.len()])?;
-    let got = outputs[0];
+    // The first fixture's own slot, so a set row's ad-hoc run reports the member
+    // its first expected value is about rather than whichever came first.
+    let slot = def.fixtures.first().map(|f| f.slot).unwrap_or(0);
+    let got = outputs[slot];
     let verdict = def
         .fixtures
         .first()
@@ -274,7 +289,13 @@ impl Default for Scratch {
 impl Scratch {
     pub fn new() -> Scratch {
         Scratch {
-            slots: alloc::vec![Slot::EMPTY; NODE_COUNT],
+            // VAR_COUNT, not NODE_COUNT. A slot is one VARIABLE, and a row
+            // whose conclusion is a set publishes several — so the two counts
+            // are only equal while every row publishes one. Sized at NODE_COUNT
+            // this panicked on the first set row rather than returning a wrong
+            // answer, which is the right failure, but it is not a failure worth
+            // having: the array is indexed by a variable index everywhere.
+            slots: alloc::vec![Slot::EMPTY; VAR_COUNT],
             order: alloc::vec![0; NODE_COUNT + 1],
             mark: alloc::vec![0; NODE_COUNT + 1],
             stack: alloc::vec![0; NODE_COUNT + 2],
@@ -304,11 +325,17 @@ pub fn evaluate(case: &vleo_bus::Case, scratch: &mut Scratch) -> Result<vleo_bus
     // here.
     for (i, def) in NODES.iter().enumerate() {
         if def.kind == Kind::Declared {
-            let mut out = [0.0f64; 4];
-            if (tables::DISPATCH[i])(&[], &mut out[..1]).is_ok() {
-                store.supply(def.outputs[0], out[0], VARS[def.outputs[0] as usize].unit);
-                store.slots[def.outputs[0] as usize].cred =
-                    credibility::score(def, false, false, true, CredVec([4; 8]));
+            let mut out = [0.0f64; MAX_OUTPUTS];
+            // Every slot the row declares, not the first. A declared row has one
+            // today and the gate refuses a second, but this loop is the same
+            // shape as the one in `eval` and costs nothing: a hard-coded 1 here
+            // would be a silent truncation the day that gate rule is relaxed.
+            if (tables::DISPATCH[i])(&[], &mut out[..def.outputs.len()]).is_ok() {
+                for (k, &o) in def.outputs.iter().enumerate() {
+                    store.supply(o, out[k], VARS[o as usize].unit);
+                    store.slots[o as usize].cred =
+                        credibility::score(def, false, false, true, CredVec([4; 8]));
+                }
             }
         }
     }

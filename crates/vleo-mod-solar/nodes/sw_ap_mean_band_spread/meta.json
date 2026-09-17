@@ -1,0 +1,17 @@
+{
+  "id": "sw_ap_mean_band_spread",
+  "state": "published",
+  "sheet_hash": "a1795e",
+  "impl_hash": "222325",
+  "owner": "environment",
+  "tier": "A",
+  "fixtures": 0,
+  "criticality": "minor",
+  "reviewers": 1,
+  "differential_fill": false,
+  "migrated_from": "prf_rebuild.m:404 (01_kernel/sw_study/03_analysis, R.sigma.total for ap)",
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": []
+}

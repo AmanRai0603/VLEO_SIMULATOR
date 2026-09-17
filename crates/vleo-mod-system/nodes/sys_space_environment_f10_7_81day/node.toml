@@ -1,0 +1,144 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sys_space_environment_f10_7_81day"
+label = "F10.7, 81-day mean"
+folder = "sys_space_environment_f10_7_81day"   # frozen at seed
+subsystem = "sys"
+parent = "sys_space_environment"
+kind = "computed"
+owner = "environment"
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
+layer = 2   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 308
+state = "published"
+
+# ADDED AFTER §20 STEP 6, TO CLOSE A GAP STEP 6 FOUND.
+#
+# The seeded tree gave this heading six rows and none of them was an 81-day mean.
+# Every thermospheric density model in use takes the PAIR — the daily F10.7 and
+# the 81-day mean beneath it — because the two carry different physics: the daily
+# value drives the EUV heating of that day and the 81-day mean the background
+# state the atmosphere has settled into. A density row written from the daily
+# value alone is missing an argument, and
+# sys_space_environment_atmospheric_density is the row three other layer-2 rows
+# are waiting on.
+#
+# The crossing already publishes it. l3_solar_interface carries f107bar for all
+# five scenarios; nothing at layer 2 received it until this row. So this is one
+# row rather than a redesign, which is what its absence was recorded as.
+
+
+# THE DEFAULT AT LAYER 2 IS THE SUSTAINED SCENARIO, decided 2026-09-16.
+#
+# The crossing carries five scenarios. Every row under this heading takes the
+# SUSTAINED one — the level the mission sits in for months — because that is
+# what the system designs to by default. The two *day scenarios are SPIKES: real
+# cases, carried by the crossing, and not what a default reads.
+#
+# A consequence worth seeing rather than hiding: on a sustained scenario the
+# daily value and its 81-day mean ARE THE SAME NUMBER, by construction — a
+# *mean scenario is its own 81-day mean, which is why the study's own driver set
+# has f107 == f107bar on exactly those three rows. So sys_space_environment
+# _solar_flux, _f10_7 and _f10_7_81day all read 104.07 at the declared window.
+# Three rows, one number, and that is the physics rather than a duplication:
+# they diverge the moment a spike scenario is read, where the day is 124.14 and
+# the mean beneath it is still 104.07.
+#
+# A row that wants a spike names the member: f107_hotday, ap_hotday,
+# kp_peak_hotday. None exists yet, because nothing at layer 2 has asked for one.
+
+[question]
+text = "What 81-day mean F10.7 does the single-day design value ride on?"
+note = """
+The companion to sys_space_environment_f10_7, and NOT the same number. A hot day
+rides on the sustained hot level beneath it, so the pair for the design case is
+124.14 daily on 104.07 background, not 124.14 on 124.14.
+
+That distinction is the study's own and it is why its driver set has separate
+f107 and f107bar columns: the three *mean scenarios have the two equal, because
+they ARE the window mean, and the two *day scenarios do not.
+"""
+
+[maths]
+# A person has NOT read this relation against its source yet.
+confirmed_by = ""
+expression = "F107bar_sys = l3_solar_interface"
+source = "noaa_swpc"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "crossing"
+var = "l3_solar_interface"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "receive the 81-day mean the design day rides on across the seam"
+binds = "received"
+type = "Ratio"
+
+[theory]
+why = """
+A layer-2 row states what the SYSTEM works with and computes nothing. This one
+receives the member of the crossing's set that a density model needs alongside
+the daily value.
+
+Which member is the content of the row, and getting it wrong here is easy in a
+specific way. The crossing's f107bar column has five values and one of them,
+f107bar_hotday, is NOT the hot day's own flux — it is the hot MEAN, 104.07,
+because a day rides on the level beneath it. A reader who assumed f107bar_hotday
+meant "the 81-day mean of the hot day" and reached for 124.14 would have the
+atmosphere's background state twenty sfu too warm.
+"""
+reading = """
+104.07 sfu at the declared window, against a daily value of 124.14 on the same
+scenario — the same number sys_space_environment_solar_flux carries, because the
+hot day's 81-day companion IS the hot sustained level. The design case a density
+model sees is a day twenty sfu above the background it sits on, which is what a
+within-rotation excursion looks like.
+
+It is 104.07 and not the 175.55 the study publishes for its own hotday's
+f107bar, because this tree's centre is the cycle analogue at the mission's own
+epoch rather than a held-forward rotation forecast. The parity fixture beside
+this sheet carries the study's number so the two are visible together.
+
+The other driver a density model needs, Kp, still does not cross. §20.8 names the
+three ways out and none has been chosen.
+"""
+
+[[theory.step]]
+text = "The system layer states what it works with and does not compute the environment. So the row receives."
+
+[[theory.step]]
+text = "It receives the member of the set a density model needs beside the daily value: the 81-day mean the design day rides on."
+math = "F107bar_sys = l3_solar_interface — identity, deliberately"
+
+[[assumption]]
+text = "f107bar_hotday is the hot MEAN, not the 81-day mean of the hot day, and the two are different numbers"
+fails_when = "a reader assumes the name means the latter. It is 104.07 where the hot day is 124.14. A *day scenario is a single day riding on the sustained level beneath it, so its 81-day companion is that sustained level; only the three *mean scenarios have the daily value and the 81-day mean equal. Taking the wrong one puts the atmosphere's background state twenty sfu out"
+
+[[assumption]]
+text = "It pairs with the SINGLE-DAY flux row and not the sustained one"
+fails_when = "somebody pairs it with sys_space_environment_solar_flux and thinks they have two numbers. That row carries 104.07 and so does this one, because the hot day's 81-day companion IS the hot sustained level — the two rows are the same value seen from two roles. The pair a density model wants is (124.14 daily, 104.07 background); the pair (104.07, 104.07) is the sustained scenario, which is a different case and not wrong, only different"
+
+[[assumption]]
+text = "It receives and does not compute, and a reader here sees none of the subsystem's limitations"
+fails_when = "a margin is taken against this number. It is a 1.28-sigma band edge — the 90th percentile, while the run is labelled 95 per cent — on a centre that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles whose peaks differ by 41 per cent"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "F107bar_sys"
+type = "Ratio"
+unit = "One"
+lower = 60.0
+upper = 400.0
+reason_lower = "the crossing's own floor, restated: an 81-day mean cannot sit below a floor every day of it respects"
+reason_upper = "the crossing's own ceiling, restated: above 400 sfu every consumer of F10.7 is extrapolating"
+
+[view]
+kind = "number"

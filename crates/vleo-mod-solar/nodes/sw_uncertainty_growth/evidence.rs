@@ -248,8 +248,8 @@ fn answers_near_the_known_good_point() {
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
         if let Ok(v) = model::evaluate(Time::new(15811200.0 * scale)) {
-            assert!(v.get().is_finite(), "sw_uncertainty_growth produced a value that is not a number");
-            assert!(v.get() >= 0.0 && v.get() <= 120.0, "sw_uncertainty_growth answered {}, outside its declared domain 0 … 120 — the guard did not stop it", v.get());
+            assert!(v.get().is_finite(), "sw_uncertainty_growth produced a value that is not a number for dF107_p95");
+            assert!(v.get() >= 0.0 && v.get() <= 120.0, "sw_uncertainty_growth answered {} for dF107_p95, outside its declared domain 0 … 120 — the guard did not stop it", v.get());
         }
     }
 }
@@ -264,7 +264,9 @@ fn the_same_inputs_give_the_same_answer() {
     let a = model::evaluate(Time::new(15811200.0));
     let b = model::evaluate(Time::new(15811200.0));
     match (a, b) {
-        (Ok(x), Ok(y)) => assert!(x.get().to_bits() == y.get().to_bits(), "sw_uncertainty_growth is not deterministic: {} then {}", x.get(), y.get()),
+        (Ok(x), Ok(y)) => {
+            assert!(x.get().to_bits() == y.get().to_bits(), "sw_uncertainty_growth is not deterministic for dF107_p95: {} then {}", x.get(), y.get());
+        }
         (Err(_), Err(_)) => {}
         _ => panic!("sw_uncertainty_growth refused on one call and answered on the other"),
     }

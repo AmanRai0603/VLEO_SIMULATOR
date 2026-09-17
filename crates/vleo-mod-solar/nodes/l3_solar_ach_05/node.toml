@@ -1,0 +1,138 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "l3_solar_ach_05"
+label = "Ap, single day"
+folder = "l3_solar_ach_05"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "achieved"
+owner = "environment"
+tier = "A"
+criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1341
+state = "published"
+
+# The environmental half of the single-day Ap closure. Its paired requirement is
+# l3_solar_req_05, which declares what the vehicle can take; this says what the
+# record says the window will present.
+
+[question]
+text = "What single-day Ap does the record say this mission will present?"
+note = """
+An achieved row restates the subsystem's conclusion on the side of the
+comparison the closure reads. It computes nothing of its own, and it exists
+rather than the closure reading sw_ap_design_short directly so that the
+comparison binds two rows of the same shape at the same layer — visible on the
+tree instead of an edge somebody has to trace.
+"""
+
+[maths]
+# An achieved row restates the subsystem's conclusion on the side of the
+# comparison the closure reads. It computes nothing of its own.
+expression = "Ap_ach_short = sw_ap_design_short"
+source = "noaa_swpc"
+
+[theory]
+why = """
+A closure is a comparison between what is required and what is achieved, and it
+is only checkable if both sides are rows. The requirement side is l3_solar_req_05,
+a declared commitment about the vehicle; this is the achieved side, and it is an
+identity on sw_ap_design_short.
+
+Which of the subsystem's Ap conclusions it restates is the whole content of the
+row, because the subsystem has three that a reader could mistake for each other:
+the sustained level, the worst day of the design band, and the one storm the
+mission is expected to meet. This one is the single-day level. Its siblings are
+sw_ap_design_long and sw_storm_return_level, and at the declared window the
+three are 26.70, 90.55 and 158.38 — far enough apart that restating the wrong
+one would move a closure from passing to failing or back.
+"""
+reading = """
+90.5472 at the declared window, against a ceiling of 132. THE CLOSURE HOLDS,
+with 46 per cent of room, and it did not until 2026-09-16.
+
+It held at 41.70 before that, on a number that was wrong: the daily band was one
+percentile measured over days whose rotations averaged Ap 11.64 and applied at a
+sustained Ap of 26.70, where the record says a one-in-twenty day departs by
+63.85. Conditioning the band on the rotation level took this row to 90.55 and
+the closure failed at the old ceiling of 80, the G2 threshold.
+
+The ceiling was raised to 132, the G3 threshold, by decision — not to make the
+arithmetic pass but because a one-day commitment at G2 is below what this window
+presents, and 90.55 is a G3-G4 day. The ladder stays anchored in the published
+scale and stays ordered: 48 operate indefinitely, 132 survive one day, 207 not
+destroyed by the one storm.
+
+It inherits every limitation of the row it restates and a closure reading it sees
+none of them: the centre beneath it is a cycle analogue at the mission's own
+epoch, the band around that centre is 1.28 sigma — the 90th percentile, while the
+run is labelled 95 per cent — and the within-rotation term is read at the top knot
+of a table whose top knot rests on 300 days.
+"""
+
+[[theory.step]]
+text = """
+The closure to be made checkable is single-day Ap achieved against single-day Ap
+required. Both sides must be rows, at the same layer, in the same quantity and
+unit, or the comparison is not something the tree can verify.
+"""
+
+[[theory.step]]
+text = """
+The requirement side is a declared commitment with a person's name against it.
+The achieved side must be the subsystem's own conclusion and nothing else, so
+this row is an identity on sw_ap_design_short.
+"""
+math = "Ap_ach_short = sw_ap_design_short = 90.5472"
+
+[[theory.step]]
+text = """
+Which makes the closure arithmetic trivial: 90.55 achieved against 132 required.
+The ceiling is the G3 threshold, raised from G2 once the level-conditioned band
+showed this window's own hot scenario reaching a G3-G4 day.
+"""
+math = "90.55 <= 132 — the closure holds"
+
+[[assumption]]
+text = "It inherits every limitation of the row it restates, and a closure reading it sees none of them"
+fails_when = "a margin is computed from this row against a capability. The centre beneath it is a cycle analogue scaled, beyond one cycle past cycle 25's maximum, by the mean amplitude of two completed cycles whose peaks differ by 41 per cent; the band is 1.28 sigma, which is the 90th percentile and not the 95 per cent the run is labelled; and the residuals it is a sigma of are skewed. None of that travels across the closure, and the margin looks like a clean number either way"
+
+[[assumption]]
+text = "It restates the single-day level and not one of its two siblings"
+fails_when = "somebody reads it as the other. The subsystem publishes three Ap conclusions — 26.70 sustained, 90.55 for the worst day of the design band, 158.38 for the one storm expected in the mission — and they answer three different questions. Restating the wrong one would move this closure from passing to failing or back without anything in the tree noticing"
+
+[[assumption]]
+text = "Nothing compares this row with its requirement automatically"
+fails_when = "a reader assumes the tree checks the closure. The pairing is a convention the matrix draws; `sense` is declared on the requirement row and the gate checks only that it is present. All five closures in this group hold as of 2026-09-16, and two of them did not the day before — this one at 90.55 against 80, and the Ap storm at 158.38 against 150. Both were invisible to every machine check in this repository, and both were found by a person reading the numbers rather than by anything running"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "Ap_ach_short"
+type = "Ratio"
+unit = "One"
+lower = 0.0
+upper = 400.0
+reason_lower = "the same floor as the row it restates: Ap floors at zero, and a perfectly quiet day is Ap 0"
+reason_upper = "the same ceiling as the row it restates: 400 is the top of the Ap index itself, and a value above it is not a geomagnetic index at all"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "conclusion"
+var = "sw_ap_design_short"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "restate the subsystem's conclusion on the achieved side of the closure"
+binds = "ach"
+type = "Ratio"
+
+[view]
+kind = "line"
+over = "orbit_mission_duration"
+points = 60

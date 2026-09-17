@@ -1,0 +1,16 @@
+# The prior implementation, for the record and window it was exported on.
+#
+# NOT A FIXTURE. An expected value may never come from the implementation under
+# test, and this file is the OTHER implementation's answer — a second opinion.
+# A disagreement here is a finding about one of the two, and the answer is never
+# to widen parity_tolerance or to edit this file until it agrees.
+#
+# designWindow_ holds B.fc27.pred(end) forward for a window beyond the record
+# and publishes it as the `nominal` scenario, in
+# matlab/reference/mission_drivers.csv:
+#
+#   nominal.ap = 22.092538390203554
+#
+# THE TWO AGREE TO 0.013 PER CENT.
+variable,matlab_Ap_central
+ap,22.092538390203554

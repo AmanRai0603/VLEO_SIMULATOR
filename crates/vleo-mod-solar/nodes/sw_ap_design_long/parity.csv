@@ -1,0 +1,13 @@
+# The prior implementation, at the one window it was exported for.
+#
+# NOT A FIXTURE. An expected value may never come from the implementation under
+# test, and this file is the OTHER implementation's answer — a second opinion.
+#
+# designWindow_ forms the mean band as centre +/- 1.28*sigma and publishes the
+# upper edge as the `hotmean` scenario, in matlab/reference/mission_drivers.csv:
+#
+#   nominal.ap + 1.28 * sigma_ap
+#     = 22.092538390203554 + 1.28 * 3.5865545525358034
+#     = 26.683328217449382 = hotmean.ap      exactly, to the last digit
+central,spread,matlab_Ap_long
+22.092538390203554,3.5865545525358034,26.683328217449382

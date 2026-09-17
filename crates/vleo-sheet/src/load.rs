@@ -174,6 +174,27 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
         sh.reason_lower = s(o.get("reason_lower"));
         sh.reason_upper = s(o.get("reason_upper"));
     }
+    for pb in t
+        .get("publishes")
+        .and_then(|p| p.as_array())
+        .unwrap_or(&vec![])
+    {
+        let pb = match pb.as_table() {
+            Some(x) => x,
+            None => continue,
+        };
+        sh.publishes.push(crate::model::Publish {
+            id: s(pb.get("id")),
+            symbol: s(pb.get("symbol")),
+            label: s(pb.get("label")),
+            ty: s(pb.get("type")),
+            unit: s(pb.get("unit")),
+            lower: f(pb.get("lower")),
+            upper: f(pb.get("upper")),
+            reason_lower: s(pb.get("reason_lower")),
+            reason_upper: s(pb.get("reason_upper")),
+        });
+    }
     if let Some(val) = t.get("value").and_then(|v| v.as_table()) {
         sh.value = Some(f(val.get("number")));
         sh.confirmed_by = s(val.get("confirmed_by"));
@@ -257,6 +278,7 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
                 provenance: s(r.get("provenance")),
                 source: s(r.get("source")),
                 inputs,
+                variable: s(r.get("variable")),
             });
         }
     }
@@ -283,6 +305,19 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
         canon.push_str(&st.text);
         canon.push_str(&st.binds);
         canon.push_str(&st.ty);
+    }
+    // The extra variables a set row publishes are part of its meaning, and the
+    // ORDER of them is part of its interface: `OUTPUT_VARS` and the slots the
+    // bus writes are positional. A row that added, removed or reordered one
+    // while keeping its hash would hand a face a page that names one variable
+    // and a run that filled another. Every row with one answer publishes none
+    // of these, so no existing hash moves.
+    for pb in &sh.publishes {
+        canon.push_str(&pb.id);
+        canon.push_str(&pb.symbol);
+        canon.push_str(&pb.ty);
+        canon.push_str(&pb.unit);
+        canon.push_str(&format!("{:?}{:?}", pb.lower, pb.upper));
     }
     sh.sheet_hash = fnv1a(&canon);
     sh.impl_hash = fnv1a(&read_holes_raw(dir));

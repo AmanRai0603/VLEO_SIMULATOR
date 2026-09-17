@@ -1,0 +1,190 @@
+<article class="node" data-node="sw_ap_cold_long" data-sheet-hash="2f2ef2" data-impl-hash="4cfe8d">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Sustained cold Ap to design to</h2>
+  <p class="ident"><code>sw_ap_cold_long</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">What Ap must the design still work at as a sustained level over the mission window, on the low side?</p>
+<p class="maths"><code>Ap_cold_long = Ap_central - 1.28 * sigma_ap</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The lower edge of the Ap mean band, and the Ap column of the scenario the study
+calls coldmean. Its hot twin, sw_ap_design_long, is the disturbed sky the design
+must survive; this is the quiet sky it must still work in.
+
+A quiet geomagnetic field is the case where the thermosphere is coolest and
+thinnest, and on the Ap side it also sets the floor of what a magnetometer sees
+and what a magnetorquer has to push against. Quiet is not the absence of a
+design case.
+</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent</dt><dd>fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997, so this edge is the 10th percentile and not the 5th. A one-sided 95 per cent bound is 1.645 sigma, a further 1.3 down at this sigma. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it</dd>
+<dt>A symmetric band on a quantity truncated at zero</dt><dd>fails when the centre is small. Ap cannot be negative, so the true low edge of any band is bounded by the centre itself, and a symmetric subtraction of 1.28 sigma ignores that. With this sigma the crossing is at a centre near 4.6, which is a deep-minimum window rather than an impossible one. The guard catches it; the arithmetic does not know about it</dd>
+<dt>One sigma covers the whole window</dt><dd>fails when sigma is not flat across the cycle, and Ap's is least flat of all — geomagnetic activity peaks in the DECLINING phase rather than at maximum, when coronal holes are largest and high-speed streams recur. A window spanning that transition is given one width where it needs two</dd>
+<dt>The quiet edge is a design case and not a nuisance</dt><dd>fails when it is read as the harmless side. A quiet field is the coolest, thinnest thermosphere, the weakest signal a magnetometer has to work with and the least torque a magnetorquer can generate. The last of those sizes an actuator</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">sw_ap_design_long with the sign of one term reversed, and a separate row for the same reason its F10.7 counterpart is: the two edges are read in different places by different consumers, and a single row with a sign flag would be a row whose meaning depends on a value somebody has to go and look up.</p>
+<p class="why">The mean band is symmetric because sigma is a standard deviation and a standard deviation has no sides. On Ap that symmetry is in tension with the quantity itself, which is bounded below at zero and unbounded above, and the tension is visible in the numbers: the DAILY Ap band reaches 15.00 up and only 10.59 down, forty-two per cent apart, while this mean band is exactly as far down as up. One of the two is describing the sky's shape and the other is describing a spread, and only the first can be asymmetric.</p>
+<p class="why">That is not a defect to be fixed here. A standard deviation of a residual is what sw_ap_mean_band_spread measures and 1.28 of it is what the study subtracts; reproducing the port means reproducing both. It IS a reason to read this row's assumptions rather than only its number, because at a low enough centre the symmetric subtraction reaches below zero and the guard, not the arithmetic, is what stops it.</p>
+<div class="theory-walk" data-steps="3">
+<ol class="derive">
+<li><span class="dt">Take the centre the cycle analogue gives for Ap over the window.</span><code class="dm">Ap_central = sw_ap_central_expectation</code></li>
+<li><span class="dt">Take the spread the pattern has historically missed a rotation's Ap by. The same number the hot edge uses, because it is one spread and not two.</span><code class="dm">sigma_ap = sw_ap_mean_band_spread = 3.5937</code></li>
+<li><span class="dt">Subtract 1.28 of them. Symmetric with the hot edge, unlike the daily band two rows down, where the two tails are forty-two per cent apart because Ap floors at zero.</span><code class="dm">Ap_cold_long = Ap_central - 1.28 * sigma_ap</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">At the study's own window the arithmetic is exact: its nominal 22.0925383902 minus 1.28 * 3.5865545525 is 17.5017485630, which is the coldmean Ap it published to the last digit. This repository's own chain gives 17.4955, 0.04 per cent away, because its centre and its sigma are its own measurements.</p>
+<p class="reading">Ap 17.5 is an ordinary quiet-to-unsettled field. The guard at zero has three and a half units of room at this centre — a centre below about 4.6 with this sigma would reach it — so for the declared window it is a check rather than a constraint. A window at deep solar minimum is where it earns its place.</p>
+<p class="maths concl">which is the relation this node states: <code>Ap_cold_long = Ap_central - 1.28 * sigma_ap</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>central</code></td><td><a class="xref" data-goto="sw_ap_central_expectation">sw_ap_central_expectation</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>spread</code></td><td><a class="xref" data-goto="sw_ap_mean_band_spread">sw_ap_mean_band_spread</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>Ap_cold_long</code></td><td>sw_ap_cold_long</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>4</b> nodes read this: <a class="xref" data-goto="l3_solar_interface">l3_solar_interface</a>, <a class="xref" data-goto="sw_ap_cold_short">sw_ap_cold_short</a>, <a class="xref" data-goto="sw_ap_daily_band_drop">sw_ap_daily_band_drop</a>, <a class="xref" data-goto="sw_kp_scenarios">sw_kp_scenarios</a></p>
+</section>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">subtract 1.28 standard deviations of the rotation-forecast residual from the central Ap expectation</span> <span class="binds">→ <code>sustained: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_ap_cold_long(central: Ratio, spread: Ratio) -> Ratio
+    given central from sw_ap_central_expectation
+    given spread from sw_ap_mean_band_spread
+    // subtract 1.28 standard deviations of the rotation-forecast residual from the central Ap expectation
+    sustained ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require Ap_cold_long ≥ 0
+    require Ap_cold_long ≤ 300
+    require Ap_cold_long is finite
+
+    return Ap_cold_long
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>Ap_cold_long &ge; 0</code> — Ap floors at zero — a perfectly quiet day is Ap 0 and there is nothing below it. On this row the guard is load-bearing rather than decorative: a symmetric band subtracted from a small centre reaches below zero, and what comes out then is arithmetic rather than sky</li>
+<li><code>Ap_cold_long &le; 300</code> — above 300 the level exceeds the largest daily Ap in the record, 273. A COLD level there means the spread has been added rather than subtracted, which is the one failure this row has that its twin does not</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sw_ap_cold_long" data-lo="0" data-hi="300" data-symbol="Ap_cold_long">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// What Ap must the design still work at as a sustained level over the mission window, on the low side?
+///
+/// `Ap_cold_long = Ap_central - 1.28 * sigma_ap`
+///
+/// Source: `noaa_swpc`
+///
+/// The lower edge of the Ap mean band, and the Ap column of the scenario the
+/// study calls coldmean. Its hot twin, sw_ap_design_long, is the disturbed
+/// sky the design must survive; this is the quiet sky it must still work in.
+/// A quiet geomagnetic field is the case where the thermosphere is coolest
+/// and thinnest, and on the Ap side it also sets the floor of what a
+/// magnetometer sees and what a magnetorquer has to push against. Quiet is
+/// not the absence of a design case.
+///
+/// # Assumptions
+///
+/// * 1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent — fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997, so this edge is the 10th percentile and not the 5th. A one-sided 95 per cent bound is 1.645 sigma, a further 1.3 down at this sigma. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it
+/// * A symmetric band on a quantity truncated at zero — fails when the centre is small. Ap cannot be negative, so the true low edge of any band is bounded by the centre itself, and a symmetric subtraction of 1.28 sigma ignores that. With this sigma the crossing is at a centre near 4.6, which is a deep-minimum window rather than an impossible one. The guard catches it; the arithmetic does not know about it
+/// * One sigma covers the whole window — fails when sigma is not flat across the cycle, and Ap's is least flat of all — geomagnetic activity peaks in the DECLINING phase rather than at maximum, when coronal holes are largest and high-speed streams recur. A window spanning that transition is given one width where it needs two
+/// * The quiet edge is a design case and not a nuisance — fails when it is read as the harmless side. A quiet field is the coolest, thinnest thermosphere, the weakest signal a magnetometer has to work with and the least torque a magnetorquer can generate. The last of those sizes an actuator
+pub const NODE_ID: &amp;str = &quot;sw_ap_cold_long&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x46b9cc8ade2f2ef2;
+
+pub fn evaluate(central: Ratio, spread: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : subtract 1.28 standard deviations of the rotation-forecast residual from the central Ap expectation -&gt; Ratio
+    // The same 1.28 the hot edge adds, declared in the sheet rather than chosen
+    // here: one band with two edges. The subtraction is symmetric although Ap is
+    // not — Ap floors at zero and a standard deviation has no sides — which the
+    // sheet argues about and the guard below catches.
+    let sustained: Ratio = central - spread * 1.28;
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = sustained;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_cold_long&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_cold_long&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Ap floors at zero — a perfectly quiet day is Ap 0 and there is nothing below it. On this row the guard is load-bearing rather than decorative: a symmetric band subtracted from a small centre reaches below zero, and what comes out then is arithmetic rather than sky&quot; });
+    }
+    if answer.get() &gt; 300.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_cold_long&quot;, value: answer.get(), bound: 300.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;above 300 the level exceeds the largest daily Ap in the record, 273. A COLD level there means the spread has been added rather than subtracted, which is the one failure this row has that its twin does not&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="this repository's own chain — the Ap centre with its measured spread"><td>this repository's own chain — the Ap centre with its measured spread</td><td class="num">17.49546836</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="round numbers, checkable without a calculator — 20 - 1.28 × 4"><td>round numbers, checkable without a calculator — 20 - 1.28 × 4</td><td class="num">14.88</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="a quiet centre of 16, closer to the floor the sheet argues about — the guard fires below a centre of 4.6"><td>a quiet centre of 16, closer to the floor the sheet argues about — the guard fires below a centre of 4.6</td><td class="num">11.40007936</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0 — Ap floors at zero — a perfectly quiet day is Ap 0 and there is nothing below it. On this row the guard is load-bearing rather than decorative: a symmetric band subtracted from a small centre reaches below zero, and what comes out then is arithmetic rather than sky</li>
+<li><code>OutOfDomain</code> above 300 — above 300 the level exceeds the largest daily Ap in the record, 273. A COLD level there means the spread has been added rather than subtracted, which is the one failure this row has that its twin does not</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_ap_cold_long"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>0 &hellip; 300</code> -.</p>
+<ul class="guards"><li>lower — Ap floors at zero — a perfectly quiet day is Ap 0 and there is nothing below it. On this row the guard is load-bearing rather than decorative: a symmetric band subtracted from a small centre reaches below zero, and what comes out then is arithmetic rather than sky</li><li>upper — above 300 the level exceeds the largest daily Ap in the record, 273. A COLD level there means the spread has been added rather than subtracted, which is the one failure this row has that its twin does not</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

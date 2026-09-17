@@ -16,7 +16,6 @@ import { drawFigure, drawCaptions, drawStepper, drawStatus, drawFoot } from './f
 import { openNode } from './node.js';
 import { renderRun } from './run.js';
 import { drawArchitecture } from './architecture.js';
-import { drawSolar } from './solar.js';
 
 // ---------------------------------------------------------------------------
 // boot
@@ -53,17 +52,15 @@ export function draw() {
   $('#nodeview').hidden = v !== 'node';
   $('#runview').hidden  = v !== 'run';
   $('#archview').hidden = v !== 'arch';
-  $('#solarview').hidden = v !== 'solar';
-  $('#caption-a').hidden = $('#caption-b').hidden = (v === 'node' || v === 'arch' || v === 'solar');
+  $('#caption-a').hidden = $('#caption-b').hidden = (v === 'node' || v === 'arch');
   $('#controls').style.display = v === 'layer' && S.layer !== 4 ? '' : 'none';
-  $('#caserow').style.display = v === 'arch' || v === 'solar' || S.layer === 4 ? 'none' : '';
+  $('#caserow').style.display = v === 'arch' || S.layer === 4 ? 'none' : '';
   $('#subsys-grp').style.display = S.layer === 3 ? '' : 'none';
   $('#concept-grp').style.display = S.layer === 1 ? '' : 'none';
 
   $('#arch-tab').classList.toggle('sel', v === 'arch');
-  $('#solar-tab').classList.toggle('sel', v === 'solar');
   $$('.tab[data-layer]').forEach(b =>
-    b.classList.toggle('sel', v !== 'arch' && v !== 'solar' && +b.dataset.layer === S.layer));
+    b.classList.toggle('sel', v !== 'arch' && +b.dataset.layer === S.layer));
   $$('.ctl.sz').forEach(b => b.classList.toggle('sel', b.dataset.size === S.size));
   $$('.ctl.case').forEach(b => b.classList.toggle('sel', b.dataset.case === S.caseSel));
   $$('.ctl.cpt').forEach(b => b.classList.toggle('sel', b.dataset.concept === S.concept));
@@ -74,7 +71,6 @@ export function draw() {
   drawFoot();
 
   if (v === 'arch') { drawArchitecture(); drawStatus([]); return; }
-  if (v === 'solar') { drawSolar(); drawStatus([]); return; }
   if (v === 'run')  { drawRunView(); drawStatus([]); return; }
   if (v === 'node') { drawStatus(S.disp); return; }
   drawStatus(drawFigure());
@@ -176,7 +172,6 @@ async function open(id) {
 
 function wire() {
   $('#arch-tab').onclick = () => setArch();
-  $('#solar-tab').onclick = () => { S.view = 'solar'; resetScroll(); draw(); };
   $$('.tab[data-layer]').forEach(b => b.onclick = () => setLayer(+b.dataset.layer));
   $('#prev').onclick = () => setLayer(Math.max(1, S.layer - 1));
   $('#next').onclick = () => setLayer(Math.min(4, S.layer + 1));

@@ -1,0 +1,195 @@
+<article class="node" data-node="sw_ap_cold_short" data-sheet-hash="785339" data-impl-hash="704d01">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Single-day cold Ap to design to</h2>
+  <p class="ident"><code>sw_ap_cold_short</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How quiet can a single day of Ap be inside the mission window?</p>
+<p class="maths"><code>Ap_cold_short = Ap_cold_long - dAp_day_low</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The quietest of the five scenarios, and the one that comes nearest a declared
+bound anywhere in this subsystem: at the declared window it lands at Ap 6.9,
+seven units above a floor of zero.
+
+That closeness is the point of reading this row rather than only its number. Ap
+is bounded below and unbounded above, its mean band is symmetric anyway because
+a standard deviation has no sides, and its daily tails are forty-two per cent
+apart because percentiles of a truncated sample are. Three facts that disagree
+about shape meet in one subtraction here.
+</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>The result stays above zero, and nothing in the arithmetic ensures it</dt><dd>fails when the sustained quiet level is small. With this subsystem's level-conditioned drop the crossing is at a sustained Ap near 15.6, and the declared window's 17.50 clears it by under two units of level. The guard refuses rather than publishing a negative index, which is right, but it means this row is the one most likely in the subsystem to fire on an ordinary input rather than on a mistake</dd>
+<dt>The two spreads stack rather than combine</dt><dd>fails when a reader takes the result as a 95 per cent day. Stacking a 10th-percentile rotation level with a 5th-percentile day inside it is nearer a 1-in-100 day than a 1-in-20 one, assuming independence — and a quiet rotation is made of quiet days, so they are not independent. The study does this and the port reproduces it; the number is conservative and its label is wrong</dd>
+<dt>The quiet day is not the disturbed day mirrored</dt><dd>fails when somebody builds it by negating sw_ap_design_short's daily term. Two things make that wrong. The tails differ by a factor of two to three at every level; and the two rows read the table at DIFFERENT LEVELS, Ap 17.50 here against 26.70 there, so the terms are 12.56 and 63.85 — a factor of five. Mirroring would put this scenario at Ap -46, which is not a sky</dd>
+<dt>The daily drop measured before the window applies inside it</dt><dd>fails when the window spans a different part of the cycle. Ap's within-rotation variability peaks in the DECLINING phase, when coronal holes are largest and high-speed streams recur, rather than at maximum. A drop measured on one phase is the wrong depth for another</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">The two spreads are of different things and they stack rather than combine. sw_ap_mean_band_spread is how wrong the pattern is about the LEVEL a rotation's Ap sits at — a forecast error. sw_ap_daily_band_drop is how far a day falls below the rotation it belongs to — the field's own variability, measured on days that already happened. A day is quiet because its rotation is quiet AND because it is a quiet day within that rotation, so the design level for a quiet day is the sustained quiet level with the daily drop taken off.</p>
+<p class="why">Two things about this row are specific to Ap rather than inherited from its F10.7 counterpart.</p>
+<p class="why">The first is how much of the answer the daily term is. From 17.50 down to 4.93 is a drop of twelve and a half units on a level of seventeen and a half — seventy-two per cent of the level. On F10.7 the same construction moves 69.63 to 65.24, six per cent. For the quiet Ap case the within-rotation term is not a correction to the rotation level, it is most of the answer.</p>
+<p class="why">The second is the floor. Ap cannot be negative. A symmetric band already ignores that, and stacking a daily drop on top of it makes the crossing close: with this subsystem's measured spread and its level-conditioned drop, a sustained quiet level below about 15.6 puts this row at or under zero. The declared window's 17.50 clears it by under two units of LEVEL, which is under five units of ANSWER. That is the narrowest margin to a declared bound anywhere in this subsystem, and a deep-minimum window would fail the guard here — correctly, because what the arithmetic would otherwise publish is not a geomagnetic index.</p>
+<div class="theory-walk" data-steps="3">
+<ol class="derive">
+<li><span class="dt">Take the sustained cold Ap level: the centre less 1.28 standard deviations of the rotation-forecast residual.</span><code class="dm">Ap_cold_long = sw_ap_cold_long</code></li>
+<li><span class="dt">Take how far a day falls below its own rotation, at the declared confidence AND AT THE LEVEL THAT ROTATION SITS AT. The LOW tail read at the QUIET level: 12.56 at Ap 17.50, against the high tail's 63.85 read at Ap 26.70.</span><code class="dm">dAp_day_low = sw_ap_daily_band_drop(Ap_cold_long) = 12.5635 at a sustained 17.50</code></li>
+<li><span class="dt">Subtract it. On Ap this term is seventy-two per cent of the level it is taken from, against six per cent on F10.7: for the quiet Ap case it is most of the answer rather than a correction to it.</span><code class="dm">Ap_cold_short = Ap_cold_long - dAp_day_low</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">Fed the study's own two numbers the arithmetic is exact: its coldmean 17.5017485630 minus its own daily drop of 10.6296296296 is 6.8721189333, which is the coldday Ap it published to the last digit. That is what the parity grid beside this sheet checks, and it is a check on the RELATION.</p>
+<p class="reading">What this row publishes is 4.93. It was 6.91 until sw_ap_daily_band_drop was conditioned on the rotation level: the drop at a sustained Ap of 17.50 is 12.56 rather than the single 10.59 measured over rotations averaging Ap 11.64.</p>
+<p class="reading">Ap 4.93 is a quiet but wholly ordinary day; the record holds long stretches below it. The guard at zero has under five units of room, which is the narrowest margin any row in this subsystem carries — and narrower than before the correction, because the drop grew faster than the level it is taken from.</p>
+<p class="maths concl">which is the relation this node states: <code>Ap_cold_short = Ap_cold_long - dAp_day_low</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>sustained</code></td><td><a class="xref" data-goto="sw_ap_cold_long">sw_ap_cold_long</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>daily</code></td><td><a class="xref" data-goto="sw_ap_daily_band_drop">sw_ap_daily_band_drop</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>Ap_cold_short</code></td><td>sw_ap_cold_short</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>2</b> nodes read this: <a class="xref" data-goto="l3_solar_interface">l3_solar_interface</a>, <a class="xref" data-goto="sw_kp_scenarios">sw_kp_scenarios</a></p>
+</section>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">subtract the within-rotation daily Ap drop from the sustained cold level</span> <span class="binds">→ <code>single_day: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_ap_cold_short(sustained: Ratio, daily: Ratio) -> Ratio
+    given sustained from sw_ap_cold_long
+    given daily from sw_ap_daily_band_drop
+    // subtract the within-rotation daily Ap drop from the sustained cold level
+    single_day ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require Ap_cold_short ≥ 0
+    require Ap_cold_short ≤ 400
+    require Ap_cold_short is finite
+
+    return Ap_cold_short
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>Ap_cold_short &ge; 0</code> — Ap floors at zero — a perfectly quiet day is Ap 0 and there is nothing below it. This is the row in the subsystem closest to its own floor, seven units clear at the declared window, and the only one where the guard is likely to fire on an ordinary input rather than on a mistake</li>
+<li><code>Ap_cold_short &le; 400</code> — 400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all. On the QUIETEST of the five scenarios a value anywhere near it means a sign is wrong somewhere in the chain above</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sw_ap_cold_short" data-lo="0" data-hi="400" data-symbol="Ap_cold_short">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How quiet can a single day of Ap be inside the mission window?
+///
+/// `Ap_cold_short = Ap_cold_long - dAp_day_low`
+///
+/// Source: `noaa_swpc`
+///
+/// The quietest of the five scenarios, and the one that comes nearest a
+/// declared bound anywhere in this subsystem: at the declared window it lands
+/// at Ap 6.9, seven units above a floor of zero. That closeness is the point
+/// of reading this row rather than only its number. Ap is bounded below and
+/// unbounded above, its mean band is symmetric anyway because a standard
+/// deviation has no sides, and its daily tails are forty-two per cent apart
+/// because percentiles of a truncated sample are. Three facts that disagree
+/// about shape meet in one subtraction here.
+///
+/// # Assumptions
+///
+/// * The result stays above zero, and nothing in the arithmetic ensures it — fails when the sustained quiet level is small. With this subsystem's level-conditioned drop the crossing is at a sustained Ap near 15.6, and the declared window's 17.50 clears it by under two units of level. The guard refuses rather than publishing a negative index, which is right, but it means this row is the one most likely in the subsystem to fire on an ordinary input rather than on a mistake
+/// * The two spreads stack rather than combine — fails when a reader takes the result as a 95 per cent day. Stacking a 10th-percentile rotation level with a 5th-percentile day inside it is nearer a 1-in-100 day than a 1-in-20 one, assuming independence — and a quiet rotation is made of quiet days, so they are not independent. The study does this and the port reproduces it; the number is conservative and its label is wrong
+/// * The quiet day is not the disturbed day mirrored — fails when somebody builds it by negating sw_ap_design_short's daily term. Two things make that wrong. The tails differ by a factor of two to three at every level; and the two rows read the table at DIFFERENT LEVELS, Ap 17.50 here against 26.70 there, so the terms are 12.56 and 63.85 — a factor of five. Mirroring would put this scenario at Ap -46, which is not a sky
+/// * The daily drop measured before the window applies inside it — fails when the window spans a different part of the cycle. Ap's within-rotation variability peaks in the DECLINING phase, when coronal holes are largest and high-speed streams recur, rather than at maximum. A drop measured on one phase is the wrong depth for another
+pub const NODE_ID: &amp;str = &quot;sw_ap_cold_short&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0xf41e49bc70785339;
+
+pub fn evaluate(sustained: Ratio, daily: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : subtract the within-rotation daily Ap drop from the sustained cold level -&gt; Ratio
+    // The daily term is a MAGNITUDE, so the sign lives here rather than in
+    // sw_ap_daily_band_drop's value. It is the low tail's own number, 10.59, not
+    // the high tail's 15.00 negated — forty-two per cent apart, because Ap is
+    // truncated at zero. The guard below is the one most likely in this
+    // subsystem to fire on an ordinary input.
+    let single_day: Ratio = sustained - daily;
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = single_day;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_cold_short&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_cold_short&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;Ap floors at zero — a perfectly quiet day is Ap 0 and there is nothing below it. This is the row in the subsystem closest to its own floor, seven units clear at the declared window, and the only one where the guard is likely to fire on an ordinary input rather than on a mistake&quot; });
+    }
+    if answer.get() &gt; 400.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_cold_short&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all. On the QUIETEST of the five scenarios a value anywhere near it means a sign is wrong somewhere in the chain above&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="17.4955 minus 10.5889 — the pair this row was handed before sw_ap_daily_band_drop was conditioned on level. The conditioned drop at Ap 17.50 is 12.56, so the published answer is 4.93 rather than 6.91"><td>17.4955 minus 10.5889 — the pair this row was handed before sw_ap_daily_band_drop was conditioned on level. The conditioned drop at Ap 17.50 is 12.56, so the published answer is 4.93 rather than 6.91</td><td class="num">6.9065794711</td><td class="num">0.0000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="round numbers, checkable without a calculator — 50 - 10"><td>round numbers, checkable without a calculator — 50 - 10</td><td class="num">40</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="a sustained level of 11, four tenths above the floor — the narrowest case this row can publish, and the reason the guard at zero is load-bearing here rather than decorative"><td>a sustained level of 11, four tenths above the floor — the narrowest case this row can publish, and the reason the guard at zero is load-bearing here rather than decorative</td><td class="num">0.4111111111</td><td class="num">0.0000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0 — Ap floors at zero — a perfectly quiet day is Ap 0 and there is nothing below it. This is the row in the subsystem closest to its own floor, seven units clear at the declared window, and the only one where the guard is likely to fire on an ordinary input rather than on a mistake</li>
+<li><code>OutOfDomain</code> above 400 — 400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all. On the QUIETEST of the five scenarios a value anywhere near it means a sign is wrong somewhere in the chain above</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_ap_cold_short"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>0 &hellip; 400</code> -.</p>
+<ul class="guards"><li>lower — Ap floors at zero — a perfectly quiet day is Ap 0 and there is nothing below it. This is the row in the subsystem closest to its own floor, seven units clear at the declared window, and the only one where the guard is likely to fire on an ordinary input rather than on a mistake</li><li>upper — 400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all. On the QUIETEST of the five scenarios a value anywhere near it means a sign is wrong somewhere in the chain above</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

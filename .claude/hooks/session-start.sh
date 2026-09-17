@@ -25,6 +25,7 @@ else
 fi
 echo
 echo "one command that must be green:  cargo run -p xtask -- gate && cargo test"
+echo "the visual layer is NOT in it:    python3 tools/panel_check.py"
 echo "the working tool:                cargo run --release -p vleo-daemon"
 echo "─────────────────────────────────────────────────────────────────────"
 exit 0

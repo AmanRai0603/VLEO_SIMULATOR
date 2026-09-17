@@ -1,0 +1,19 @@
+# The prior implementation, at the one window it was exported for.
+#
+# NOT A FIXTURE. An expected value may never come from the implementation under
+# test, and this file is the OTHER implementation's answer — a second opinion.
+#
+# designWindow_ line 227 forms the daily bound as the rotation band minus the
+# within-rotation drop and publishes it as `coldday`:
+#
+#   coldmean.ap - qLo = 17.50174856295763 - 10.629629629629612
+#                     = 6.872118933328018 = coldday.ap      exactly
+#
+# This row's own chain gives 6.9066 for the declared window, 0.50 per cent from
+# the grid's number. That is the largest relative disagreement of the ten
+# scenario values, and expected rather than alarming: it is the smallest of the
+# ten, reached by subtracting two quantities each about as large as the answer,
+# so two sub-one-per-cent input differences arrive as one half-per-cent output
+# difference.
+sustained,daily,matlab_Ap_cold_short
+17.50174856295763,10.629629629629612,6.872118933328018

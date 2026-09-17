@@ -1,0 +1,214 @@
+<article class="node" data-node="sw_daily_band_drop" data-sheet-hash="70aebe" data-impl-hash="ba6164">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Within-rotation daily drop</h2>
+  <p class="ident"><code>sw_daily_band_drop</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How far below its own rotation does a single day of F10.7 fall, at the declared confidence, at the level that rotation sits at?</p>
+<p class="maths"><code>dF107_day_low(L) = -pctl(F107 - movmean(F107, 27 d), 0.05) over days whose rotation sits within 15% of L</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">The other tail of sw_daily_band_spread's sample, and a separate row because it
+is a separate number at every level: the departures are not symmetric. The sun
+has a floor and no ceiling, so a day can rise further above its rotation than it
+can fall below it, and a design that mirrors one tail onto the other is assuming
+a shape the record does not have.
+
+It is the cold side, which sounds like the side nobody sizes against. It is not:
+a cold day is the low-drag case, and the low-drag case is what a propellant
+budget's LOWER bound and an aerodynamic control authority's worst case are made
+of. The hot day and the cold day both bound something.
+</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>The departure scales with the level, and the old single number was seven times too large at this window</dt><dd>fails when this is read as a refinement. 31.27 subtracted from 69.63 is 38.36 sfu, which has never been observed and which sw_f107_cold_short's guard refused. Conditioned on the level the drop is 4.39. A factor of seven is not a correction to a margin, it is a different answer</dd>
+<dt>The declared window sits at the clamp, so this row is reading the end of its own table</dt><dd>fails when the sustained cold level falls below 70 sfu, as it does here at 69.63. The answer is held at the lowest knot's 4.39 rather than extrapolated, which is the right choice — below 70 the record has few rotations and a line drawn onward would be invention — but it does mean this window's answer is the table's endpoint and not an interpolation. A colder window gets the same 4.39</dd>
+<dt>The departures are asymmetric, and this row exists because of it</dt><dd>fails when it is treated as the negation of sw_daily_band_spread. The gap runs from six per cent at a rotation of 70 to fifteen per cent at 210, because F10.7 has a floor near 65 and no ceiling, and the room below a rotation shrinks as the rotation approaches that floor. Mirroring the high tail onto the low one is asserting a symmetry the record refuses at every level</dd>
+<dt>A 15 per cent bin half-width, which trades resolution against sample size</dt><dd>fails when either matters more than the other. Narrower bins resolve the level dependence better and hold fewer days, so the percentile gets noisier; wider bins are the defect this row exists to fix, in miniature</dd>
+<dt>The 27-day moving mean is the rotation</dt><dd>fails when the solar rotation is 27.27 days at the equator and slower at the poles, and the active longitudes that drive F10.7 are not at one latitude. A 27-day window is the conventional round number rather than a measured period, and the departures it leaves carry whatever the mismatch contributes</dd>
+<dt>It is the record's own daily scatter, not a forecast error</dt><dd>fails when this is read as an uncertainty. It is not: it says how far below its rotation the sun has gone, measured on days that already happened. What a forecast of a future day would get wrong is sw_uncertainty_growth's question and a larger number</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">sw_daily_band_spread takes the daily record, subtracts its own centred 27-day moving mean, bins every day by the level of the rotation it sits in, and reads the 95th percentile inside each bin. This reads the 5th percentile of the same bins, and publishes its magnitude. Same sample, same moving mean, same ladder of knots, same 15 per cent bins, same rule for where the ladder stops — one measurement, read from both ends.</p>
+<p class="why">That it is a second row rather than the same row negated holds at every level. At a rotation of 70 the two tails are 4.63 up and 4.39 down, six per cent apart; at 145 they are 34.61 and 32.39; at 210, 46.93 and 40.78, fifteen per cent apart. The reason is physical rather than statistical: F10.7 has a floor near 65 sfu that the quiet sun sits on, so there is less room below a rotation than above it, and the gap widens as the rotation rises above the floor.</p>
+<p class="why">The magnitude is published rather than the signed percentile so that the row reads as a distance, its declared floor is zero, and the sign lives in the relation that consumes it. A row whose value is negative and whose consumers must remember to add rather than subtract is a row waiting to be used the wrong way round once.</p>
+<div class="theory-walk" data-steps="4">
+<ol class="derive">
+<li><span class="dt">Take the daily record up to the day the window opens and subtract the centred 27-day moving mean. The sample is identical to sw_daily_band_spread's — the same days, the same moving mean, one measurement.</span><code class="dm">dev(t) = F107(t) - movmean(F107, 27)(t)</code></li>
+<li><span class="dt">Bin every day by the level of its own rotation, within 15 per cent of each knot, exactly as the high tail does.</span><code class="dm">bin(L) = { dev(t) : |movmean(F107,27)(t) - L| &lt;= 0.15 L }</code></li>
+<li><span class="dt">Read the 5th percentile instead of the 95th. One call on one sorted bin gives both tails; this row is the lower one.</span><code class="dm">lo(L) = pctl(bin(L), 0.05)</code></li>
+<li><span class="dt">Publish its magnitude, interpolated between knots and clamped beyond the ends, so the row is a distance with a floor of zero and the sign travels with the relation that uses it.</span><code class="dm">dF107_day_low(L) = -interp(L; knots) = 4.39 at L = 69.63, which is the clamp</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">4.39 sfu at the declared window, where sw_f107_cold_long puts the sustained cold level at 69.63 — just under the table's lowest knot, so the answer is the clamp. The old single-number version of this row gave 31.27 for the same window, seven times as much, because it was measured over days whose rotations averaged 136.63 and applied unchanged at 69.63.</p>
+<p class="reading">That seven-fold error is what made sw_f107_cold_short refuse. It now publishes 65.24 sfu, which clears the floor of 60 by five and is a genuinely quiet day rather than an impossible one.</p>
+<p class="maths concl">which is the relation this node states: <code>dF107_day_low(L) = -pctl(F107 - movmean(F107, 27 d), 0.05) over days whose rotation sits within 15% of L</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr><td>in</td><td><code>level</code></td><td><a class="xref" data-goto="sw_f107_cold_long">sw_f107_cold_long</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>dF107_day_low</code></td><td>sw_daily_band_drop</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="sw_f107_cold_short">sw_f107_cold_short</a></p>
+</section>
+<section class="panel" data-panel="3">
+<ol class="algo">
+<li><span class="step">read the 5th-percentile within-rotation departure off the measured table at this rotation level, as a magnitude</span> <span class="binds">→ <code>band: Ratio</code></span></li>
+</ol>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_daily_band_drop(level: Ratio) -> Ratio
+    given level from sw_f107_cold_long
+    // read the 5th-percentile within-rotation departure off the measured table at this rotation level, as a magnitude
+    band ← step 1
+
+    // a guard whose reason is not written down gets deleted
+    require dF107_day_low ≥ 0
+    require dF107_day_low ≤ 120
+    require dF107_day_low is finite
+
+    return dF107_day_low
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>dF107_day_low &ge; 0</code> — a drop of zero would mean no day ever falls below its rotation mean, which the record contradicts on about half the days it holds; below zero is not a distance, and a negative value here means the tail has been read from the wrong end</li>
+<li><code>dF107_day_low &le; 120</code> — above 120 sfu the departure exceeds the largest single-day excursion in the record in either direction, so a value there is an arithmetic error rather than a quiet sun</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sw_daily_band_drop" data-lo="0" data-hi="120" data-symbol="dF107_day_low">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How far below its own rotation does a single day of F10.7 fall, at the declared confidence, at the level that rotation sits at?
+///
+/// `dF107_day_low(L) = -pctl(F107 - movmean(F107, 27 d), 0.05) over days whose rotation sits within 15% of L`
+///
+/// Source: `noaa_swpc`
+///
+/// The other tail of sw_daily_band_spread's sample, and a separate row
+/// because it is a separate number at every level: the departures are not
+/// symmetric. The sun has a floor and no ceiling, so a day can rise further
+/// above its rotation than it can fall below it, and a design that mirrors
+/// one tail onto the other is assuming a shape the record does not have. It
+/// is the cold side, which sounds like the side nobody sizes against. It is
+/// not: a cold day is the low-drag case, and the low-drag case is what a
+/// propellant budget's LOWER bound and an aerodynamic control authority's
+/// worst case are made of. The hot day and the cold day both bound something.
+///
+/// # Assumptions
+///
+/// * The departure scales with the level, and the old single number was seven times too large at this window — fails when this is read as a refinement. 31.27 subtracted from 69.63 is 38.36 sfu, which has never been observed and which sw_f107_cold_short's guard refused. Conditioned on the level the drop is 4.39. A factor of seven is not a correction to a margin, it is a different answer
+/// * The declared window sits at the clamp, so this row is reading the end of its own table — fails when the sustained cold level falls below 70 sfu, as it does here at 69.63. The answer is held at the lowest knot's 4.39 rather than extrapolated, which is the right choice — below 70 the record has few rotations and a line drawn onward would be invention — but it does mean this window's answer is the table's endpoint and not an interpolation. A colder window gets the same 4.39
+/// * The departures are asymmetric, and this row exists because of it — fails when it is treated as the negation of sw_daily_band_spread. The gap runs from six per cent at a rotation of 70 to fifteen per cent at 210, because F10.7 has a floor near 65 and no ceiling, and the room below a rotation shrinks as the rotation approaches that floor. Mirroring the high tail onto the low one is asserting a symmetry the record refuses at every level
+/// * A 15 per cent bin half-width, which trades resolution against sample size — fails when either matters more than the other. Narrower bins resolve the level dependence better and hold fewer days, so the percentile gets noisier; wider bins are the defect this row exists to fix, in miniature
+/// * The 27-day moving mean is the rotation — fails when the solar rotation is 27.27 days at the equator and slower at the poles, and the active longitudes that drive F10.7 are not at one latitude. A 27-day window is the conventional round number rather than a measured period, and the departures it leaves carry whatever the mismatch contributes
+/// * It is the record's own daily scatter, not a forecast error — fails when this is read as an uncertainty. It is not: it says how far below its rotation the sun has gone, measured on days that already happened. What a forecast of a future day would get wrong is sw_uncertainty_growth's question and a larger number
+pub const NODE_ID: &amp;str = &quot;sw_daily_band_drop&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x63c3c88e7870aebe;
+
+pub fn evaluate(level: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : read the 5th-percentile within-rotation departure off the measured table at this rotation level, as a magnitude -&gt; Ratio
+    // The table is MEASURED DATA, not a published relation, and it is declared
+    // here rather than in the sheet because a sheet holds one number and this is
+    // a curve. Every knot is a percentile of the record conditioned on rotation
+    // level, derived by the method the theory tab sets out — bins of 15 per
+    // cent, at least 200 days each, monotone in both tails, the ladder stopping
+    // at the last knot that passes both rules.
+    //
+    // Table1::at CLAMPS at both ends rather than extrapolating, which is the
+    // clamp the sheet declares rather than a convenience: past the ends the
+    // record does not continue, and a straight line drawn onward would be this
+    // node inventing sky the record never showed.
+    use vleo_core::math::Table1;
+    const LO: Table1 = Table1 {
+        // rotation level, sfu
+        x: &amp;[70.0, 85.0, 100.0, 120.0, 145.0, 175.0, 210.0],
+        // 5th-percentile departure below that rotation, sfu, as a MAGNITUDE.
+        // The sign belongs to sw_f107_cold_short, which subtracts it.
+        y: &amp;[4.3870, 10.2000, 16.7407, 23.2593, 32.3852, 37.2556, 40.7778],
+    };
+    let band: Ratio = Ratio::new(LO.at(level.get()));
+    // ---- end HOLE 1
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = band;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;dF107_day_low&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;dF107_day_low&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;a drop of zero would mean no day ever falls below its rotation mean, which the record contradicts on about half the days it holds; below zero is not a distance, and a negative value here means the tail has been read from the wrong end&quot; });
+    }
+    if answer.get() &gt; 120.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;dF107_day_low&quot;, value: answer.get(), bound: 120.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;above 120 sfu the departure exceeds the largest single-day excursion in the record in either direction, so a value there is an arithmetic error rather than a quiet sun&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
+<tr data-fixture="at the declared window's own sustained cold level, 69.63 — just under the bottom knot, so this is the clamp and it is the case that unblocked the chain"><td>at the declared window's own sustained cold level, 69.63 — just under the bottom knot, so this is the clamp and it is the case that unblocked the chain</td><td class="num">4.387</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the 70 sfu knot, exactly — a transcription check, and the value the clamp holds"><td>the 70 sfu knot, exactly — a transcription check, and the value the clamp holds</td><td class="num">4.387</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the 120 sfu knot, exactly — a transcription check on a middle pair"><td>the 120 sfu knot, exactly — a transcription check on a middle pair</td><td class="num">23.2593</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="halfway between the 120 and 145 knots — the interpolation, on round numbers"><td>halfway between the 120 and 145 knots — the interpolation, on round numbers</td><td class="num">27.82225</td><td class="num">0.000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="far above the top of the table — the clamp"><td>far above the top of the table — the clamp</td><td class="num">40.7778</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+</tbody></table>
+<p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0 — a drop of zero would mean no day ever falls below its rotation mean, which the record contradicts on about half the days it holds; below zero is not a distance, and a negative value here means the tail has been read from the wrong end</li>
+<li><code>OutOfDomain</code> above 120 — above 120 sfu the departure exceeds the largest single-day excursion in the record in either direction, so a value there is an arithmetic error rather than a quiet sun</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+<li><code>Blocked</code> when any declared input has never run — and it names which</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_daily_band_drop"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>0 &hellip; 120</code> -.</p>
+<ul class="guards"><li>lower — a drop of zero would mean no day ever falls below its rotation mean, which the record contradicts on about half the days it holds; below zero is not a distance, and a negative value here means the tail has been read from the wrong end</li><li>upper — above 120 sfu the departure exceeds the largest single-day excursion in the record in either direction, so a value there is an arithmetic error rather than a quiet sun</li></ul>
+<div class="sweep" data-over="sw_f107_cold_long" data-points="60" data-y="sw_daily_band_drop"><p class="muted">Sweeps against <a class="xref" data-goto="sw_f107_cold_long">sw_f107_cold_long</a> over 60 points. Run the branch to draw it.</p></div>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
+</article>

@@ -199,9 +199,120 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         },
     );
 
+    // 3b — a row that publishes a set declares each member as fully as it
+    // declares its own answer.
+    //
+    // The exception to one row, one answer exists for one shape of thing and it
+    // is not a licence to publish a bag of numbers. A member with no bounds is a
+    // member with no guard, and a member with no reason for its bounds is a
+    // guard the next person deletes; a member with no symbol has no field to
+    // assign in a hole body and no name on a page.
+    let mut pub_bad = Vec::new();
+    if sh.is_declared() && !sh.publishes.is_empty() {
+        pub_bad.push(
+            "a declared row states one measured number; a set is computed from the rows that \
+             measured its members"
+                .to_string(),
+        );
+    }
+    let mut seen: BTreeSet<&str> = BTreeSet::new();
+    for pb in &sh.publishes {
+        if pb.id.trim().is_empty() {
+            pub_bad.push("a publishes block with no id".into());
+            continue;
+        }
+        if pb.id.contains('.') {
+            pub_bad.push(format!(
+                "'{}' contains a dot, and a dot is what separates a node from its member",
+                pb.id
+            ));
+        }
+        if !seen.insert(pb.id.as_str()) {
+            pub_bad.push(format!("'{}' is published twice", pb.id));
+        }
+        for (what, v) in [
+            ("symbol", &pb.symbol),
+            ("label", &pb.label),
+            ("type", &pb.ty),
+            ("unit", &pb.unit),
+            ("reason_lower", &pb.reason_lower),
+            ("reason_upper", &pb.reason_upper),
+        ] {
+            if v.trim().is_empty() {
+                pub_bad.push(format!("'{}' has no {}", pb.id, what));
+            }
+        }
+        if pb.lower >= pb.upper {
+            pub_bad.push(format!(
+                "'{}' declares a lower bound of {} at or above its upper bound of {}",
+                pb.id, pb.lower, pb.upper
+            ));
+        }
+    }
+    // A fixture on a set row has to say which member it is about, and the name
+    // has to be one of them. Defaulting silently to the primary would make a
+    // typo into a test that passes against the wrong variable.
+    for f in &sh.fixtures {
+        if f.variable.is_empty() {
+            if !sh.publishes.is_empty() {
+                pub_bad.push(format!(
+                    "the fixture '{}' names no variable, and this row publishes {} of them",
+                    f.label,
+                    sh.publishes.len() + 1
+                ));
+            }
+        } else if f.variable != sh.symbol && !sh.publishes.iter().any(|pb| pb.id == f.variable) {
+            pub_bad.push(format!(
+                "the fixture '{}' names '{}', which this row does not publish",
+                f.label, f.variable
+            ));
+        }
+    }
+    out.push(if pub_bad.is_empty() {
+        Check::pass("publishes")
+    } else {
+        Check::fail("publishes", pub_bad.join("; "))
+    });
+
     // 4 — every input resolves, and the declared type agrees with the producer.
+    //
+    // An input may name a node — the ordinary case — or one member of a set a
+    // node publishes, as `<node id>.<publish id>`. A node id never contains a
+    // dot, so the two cannot be confused, and the member is type-checked against
+    // the publish block rather than against the producing row's own answer.
     let mut bad = Vec::new();
     for i in &sh.inputs {
+        if let Some((node, member)) = i.var.split_once('.') {
+            match tree.sheets.get(node) {
+                None => bad.push(format!("'{}' names no node", node)),
+                Some(p) => match p.publishes.iter().find(|pb| pb.id == member) {
+                    None => bad.push(format!(
+                        "'{}' names no variable {} publishes — it publishes {}",
+                        i.var,
+                        p.id,
+                        if p.publishes.is_empty() {
+                            "only its own answer".to_string()
+                        } else {
+                            p.publishes
+                                .iter()
+                                .map(|pb| pb.id.as_str())
+                                .collect::<Vec<_>>()
+                                .join(", ")
+                        }
+                    )),
+                    Some(pb) if pb.ty != i.ty => bad.push(format!(
+                        "'{}' expects {} but {}.{} publishes {}",
+                        i.binding, i.ty, p.id, pb.id, pb.ty
+                    )),
+                    Some(_) if p.state == "deprecated" => bad.push(format!(
+                        "'{}' is deprecated and may not be a new dependency",
+                        p.id
+                    )),
+                    Some(_) => {}
+                },
+            }
+            continue;
+        }
         match tree.sheets.get(&i.var) {
             None => bad.push(format!("'{}' names no node", i.var)),
             Some(p) if p.ty != i.ty => bad.push(format!(
@@ -370,7 +481,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         if i.binding != "req" {
             continue;
         }
-        let Some(req) = tree.sheets.get(&i.var) else {
+        let Some(req) = tree.sheets.get(producer_of(&i.var)) else {
             continue;
         };
         let want = match req.sense.trim() {
@@ -473,7 +584,7 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
     let mut dangling = Vec::new();
     for sh in tree.ordered() {
         for i in &sh.inputs {
-            if !tree.sheets.contains_key(&i.var) {
+            if !var_resolves(tree, &i.var) {
                 dangling.push(format!("{} -> {}", sh.id, i.var));
             }
         }
@@ -882,7 +993,13 @@ fn find_cycles(tree: &Tree, declared: &BTreeSet<String>) -> Vec<String> {
         stack.push(node);
         if let Some(sh) = tree.sheets.get(node) {
             for i in &sh.inputs {
-                let p = match tree.sheets.get(&i.var) {
+                // An edge may name a node or one member of a set a node
+                // publishes, and the PRODUCER is the node either way. Resolving
+                // only the first form made an edge through a member invisible
+                // here, so a cycle that ran through one would not be detected —
+                // and a cycle the resolver cannot see is a run that does not
+                // terminate rather than a gate failure.
+                let p = match tree.sheets.get(producer_of(&i.var)) {
                     Some(p) => p.id.as_str(),
                     None => continue,
                 };
@@ -921,4 +1038,35 @@ fn find_cycles(tree: &Tree, declared: &BTreeSet<String>) -> Vec<String> {
         }
     }
     Vec::new()
+}
+
+/// Whether an input's variable id names something the tree publishes.
+///
+/// A node id, the ordinary case — or `<node id>.<publish id>`, one member of a
+/// set a node publishes. A node id never contains a dot, so the two cannot be
+/// confused. This lives beside the assembly checks because the node-level
+/// contract check resolves the same two forms and the two must agree: a variable
+/// that one accepts and the other calls dangling would fail the gate on a graph
+/// that assembles perfectly well.
+fn var_resolves(tree: &Tree, var: &str) -> bool {
+    match var.split_once('.') {
+        Some((node, member)) => tree
+            .sheets
+            .get(node)
+            .is_some_and(|p| p.publishes.iter().any(|pb| pb.id == member)),
+        None => tree.sheets.contains_key(var),
+    }
+}
+
+/// The node that produces a variable, whichever form the id takes.
+///
+/// `"sw_f107_design_long"` produces itself; `"l3_solar_interface.ap_hotday"` is
+/// produced by `l3_solar_interface`. Anything walking the graph by EDGES rather
+/// than by variables wants this — the cycle detector above all, because an edge
+/// it cannot follow is a loop it cannot find.
+fn producer_of(var: &str) -> &str {
+    match var.split_once('.') {
+        Some((node, _)) => node,
+        None => var,
+    }
 }

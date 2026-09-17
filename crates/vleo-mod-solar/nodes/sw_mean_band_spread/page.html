@@ -1,0 +1,171 @@
+<article class="node" data-node="sw_mean_band_spread" data-sheet-hash="d71ac0" data-impl-hash="222325">
+<header class="node-head">
+  <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
+  <h2>Rotation-forecast residual spread</h2>
+  <p class="ident"><code>sw_mean_band_spread</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
+</header>
+<div class="tabs" role="tablist">
+  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab" data-tab="1">theory</button>
+  <button role="tab" class="tab" data-tab="2">interface</button>
+  <button role="tab" class="tab" data-tab="3">algorithm</button>
+  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="5">generated code</button>
+  <button role="tab" class="tab" data-tab="6">evidence</button>
+  <button role="tab" class="tab" data-tab="7">flags</button>
+  <button role="tab" class="tab" data-tab="8">credibility</button>
+  <button role="tab" class="tab" data-tab="9">design space</button>
+</div>
+<section class="panel sel" data-panel="0">
+<p class="question">How much of the next rotation's level does the pattern fail to explain?</p>
+<p class="maths"><code>sigma_total = std(pred - truth) over 361 walk-forward next-rotation forecasts = 13.4544 sfu</code></p>
+<p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="note">sw_mean_cycle_level and sw_cycle_phase say where in the cycle the mission sits
+and what that phase usually brings. This says how wrong that has been, measured
+on the record, one rotation at a time, never using a rotation to predict itself.
+It is the number a design carries as margin: the central expectation without it
+is a line with no width.
+</p>
+<h4>Assumptions</h4>
+<dl class="asm">
+<dt>One sigma holds across the whole cycle</dt><dd>fails when it does not, and the source this was rebuilt from says so about its own number: 'sigma is NOT flat across the cycle; a design that uses one number is too tight somewhere and too loose somewhere else.' prf_rebuild reports sigma split into five phase bins for that reason. This row publishes the pooled number, so a design near solar maximum is given a band that is too narrow and one near minimum a band too wide</dd>
+<dt>The cycle table ends before the record does, and the phase past it is an extrapolation</dt><dd>fails when it is read as measured. Cycle 25 is tabulated to 2025-12-15 and the record runs to 2025-12-31, so the last sixteen days carry a phase computed from the MEAN length of the three cycles the table holds — one of which is itself incomplete. Every day the window is held forward from inherits that extrapolation</dd>
+<dt>The 273-day hole in 2017 is filled by straight-line interpolation before the rotations are cut</dt><dd>fails when those interpolated days are counted as observations. Nine months of invented flux sit inside about ten rotations, and they are smoother than the sun, so every one of those rotations is easier to predict than a real one and the pooled spread is a little narrower than the record can support</dd>
+<dt>It is the residual of a pattern, not of a forecast</dt><dd>fails when this is read as what a forecaster would get wrong. There is no forecast in it: no flare watch, no active-region count, no observation later than the rotation before. A real 27-day outlook does better, which is what sw_forecast_skill measures</dd>
+</dl>
+</section>
+<section class="panel" data-panel="1">
+<p class="why">A central expectation is only usable in a design if the part it CANNOT explain travels with it. The way to measure that part is to make the forecast the tool would have made, at every rotation of the record, using only what was known before that rotation, and look at how far it landed from the truth.</p>
+<p class="why">The forecast is a pattern and not a model of the sun. In each step the training slice is everything before the rotation being predicted. A phase-conditioned baseline is fitted in twenty bins of cycle phase, each bin pulled toward the global mean in proportion to how thin it is — a bin with four rotations in it is a noisy estimate and shrinkage is the standard remedy. That baseline is scaled to the level of the last thirteen rotations, so a cycle larger than average is not predicted down to the average. What is left after the baseline is an anomaly, and an AR(2) fitted on the training anomalies carries the rotation-to- rotation memory. The mean of the residuals ALREADY OBSERVED is subtracted as a causal debias.</p>
+<p class="why">The spread of what remains is this row. It is the honest width of the central expectation, and it is deliberately NOT a forecast error in the usual sense: there is no forecast in it, only the cycle and the memory of the last two rotations.</p>
+<div class="theory-walk" data-steps="5">
+<ol class="derive">
+<li><span class="dt">Cut the record into 27-day rotations and take the mean of each. The question is about the level a rotation sits at, not about the days inside it — those are sw_daily_band_spread's question.</span><code class="dm">rm(b) = mean(F107 over days 27b .. 27b+26)</code></li>
+<li><span class="dt">For each rotation in turn, fit only on the rotations before it. A baseline in twenty phase bins, each shrunk toward the global mean by n/(n+5), then scaled by the level of the last thirteen rotations and clamped so a thin stretch cannot swing the scale.</span><code class="dm">base(p) = w*mean_bin + (1-w)*mean_all, w = n/(n+5); sc = mean(rm[-13:]) / mean(base[-13:]), clamped to [0.4, 2.5]</code></li>
+<li><span class="dt">Fit an AR(2) on the training anomalies and predict the next one, then subtract the mean of the residuals already seen. Both halves are causal: nothing after the predicted rotation is used.</span><code class="dm">pred = base(p_next)*sc + a1*an[-1] + a2*an[-2] - mean(residuals so far)</code></li>
+<li><span class="dt">The spread of what is left, over every rotation the walk-forward scored.</span><code class="dm">sigma_total = std(pred - truth) = 13.4544 sfu over 361 rotations</code></li>
+<li><span class="dt">Phase past the end of the cycle table WRAPS on the mean cycle length rather than stopping at 1. Sixteen days of the record sit past cycle 25's tabulated end, and clamping them to phase 1 puts them at the cycle minimum: it moved the held-forward centre from 158.37 to 138.74, fourteen per cent, while barely touching this pooled number.</span><code class="dm">u = mod((t - start_last) / mean_cycle_length, 1), clamped to 0.999</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">13.4544 sfu, against rotation means that run from about 70 to 240 over the record. The pattern explains most of where a rotation sits and misses by about fourteen units of flux, and a design band of centre +/- 1.28*sigma is roughly +/- 17 sfu.</p>
+<p class="reading">The same method on Ap gives 3.5937. It is measured and recorded here but not published, for the same reason as the daily row: sw_ap_design_long does not exist yet, and a published number nothing reads is a number nobody checks.</p>
+<p class="maths concl">which is the relation this node states: <code>sigma_total = std(pred - truth) over 361 walk-forward next-rotation forecasts = 13.4544 sfu</code></p>
+</section>
+<section class="panel" data-panel="2">
+<p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
+<table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
+<tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
+<tr class="out"><td>out</td><td><code>sigma_total</code></td><td>sw_mean_band_spread</td><td>Ratio</td><td>-</td></tr>
+</tbody></table>
+<p class="consumers"><b>2</b> nodes read this: <a class="xref" data-goto="sw_f107_cold_long">sw_f107_cold_long</a>, <a class="xref" data-goto="sw_f107_design_long">sw_f107_design_long</a></p>
+</section>
+<section class="panel" data-panel="3">
+<p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
+<p>This is a declared value: <b>13.454382</b> -, confirmed by <b>A. Rai / 2026-09-16</b>.</p>
+<h4>Pseudocode</h4>
+<pre class="pseudo"><code>function sw_mean_band_spread() -> Ratio
+    sigma_total ← 13.454382          // declared, confirmed by A. Rai / 2026-09-16
+
+    // a guard whose reason is not written down gets deleted
+    require sigma_total ≥ 0
+    require sigma_total ≤ 60
+    require sigma_total is finite
+
+    return sigma_total
+</code></pre>
+<p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>Guards</h4>
+<ul class="guards">
+<li><code>sigma_total &ge; 0</code> — a spread of zero would mean the pattern predicts every rotation exactly, which the record contradicts at every rotation it scores; below zero is not a spread</li>
+<li><code>sigma_total &le; 60</code> — above 60 sfu the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean and the band would be arithmetic rather than physics</li>
+</ul>
+<p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
+</section>
+<section class="panel" data-panel="4">
+<div class="relation-host" data-node="sw_mean_band_spread" data-lo="0" data-hi="60" data-symbol="sigma_total">
+<p class="muted">asking the engine…</p>
+</div>
+</section>
+<section class="panel" data-panel="5">
+<p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
+<pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
+// numbered HOLE block: a hand edit anywhere else is discarded by the next
+// regeneration and fails the regeneration diff in the gate.
+#![allow(unused_imports, unused_variables, unused_parens, clippy::let_and_return, clippy::approx_constant, clippy::too_many_arguments)]
+
+use vleo_core::fault::{Edge, Fault};
+use vleo_core::physics::*;
+use vleo_core::units::pmath;
+use vleo_core::units::*;
+
+/// How much of the next rotation's level does the pattern fail to explain?
+///
+/// `sigma_total = std(pred - truth) over 361 walk-forward next-rotation forecasts = 13.4544 sfu`
+///
+/// Source: `noaa_swpc`
+///
+/// sw_mean_cycle_level and sw_cycle_phase say where in the cycle the mission
+/// sits and what that phase usually brings. This says how wrong that has
+/// been, measured on the record, one rotation at a time, never using a
+/// rotation to predict itself. It is the number a design carries as margin:
+/// the central expectation without it is a line with no width.
+///
+/// # Assumptions
+///
+/// * One sigma holds across the whole cycle — fails when it does not, and the source this was rebuilt from says so about its own number: 'sigma is NOT flat across the cycle; a design that uses one number is too tight somewhere and too loose somewhere else.' prf_rebuild reports sigma split into five phase bins for that reason. This row publishes the pooled number, so a design near solar maximum is given a band that is too narrow and one near minimum a band too wide
+/// * The cycle table ends before the record does, and the phase past it is an extrapolation — fails when it is read as measured. Cycle 25 is tabulated to 2025-12-15 and the record runs to 2025-12-31, so the last sixteen days carry a phase computed from the MEAN length of the three cycles the table holds — one of which is itself incomplete. Every day the window is held forward from inherits that extrapolation
+/// * The 273-day hole in 2017 is filled by straight-line interpolation before the rotations are cut — fails when those interpolated days are counted as observations. Nine months of invented flux sit inside about ten rotations, and they are smoother than the sun, so every one of those rotations is easier to predict than a real one and the pooled spread is a little narrower than the record can support
+/// * It is the residual of a pattern, not of a forecast — fails when this is read as what a forecaster would get wrong. There is no forecast in it: no flare watch, no active-region count, no observation later than the rotation before. A real 27-day outlook does better, which is what sw_forecast_skill measures
+pub const NODE_ID: &amp;str = &quot;sw_mean_band_spread&quot;;
+/// Hash of the sheet this file was generated from. A face carrying a
+/// different one refuses to run rather than showing a stale page.
+pub const SHEET_HASH: u64 = 0x2b0e59409ed71ac0;
+
+pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
+    // generated · a declared value, converted from the unit it was written in
+    let declared: Ratio = match Ratio::from_unit(13.454382, Unit::One) {
+        Some(q) =&gt; q,
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;sigma_total&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+    };
+
+    // generated · the declared domain of this node's own answer. The
+    // reason travels with the guard, because a guard whose reason is not
+    // written down gets deleted by the next person who finds it awkward.
+    let answer: Ratio = declared;
+    if !answer.is_finite() {
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;sigma_total&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+    }
+    if answer.get() &lt; 0.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;sigma_total&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;a spread of zero would mean the pattern predicts every rotation exactly, which the record contradicts at every rotation it scores; below zero is not a spread&quot; });
+    }
+    if answer.get() &gt; 60.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;sigma_total&quot;, value: answer.get(), bound: 60.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;above 60 sfu the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean and the band would be arithmetic rather than physics&quot; });
+    }
+    Ok(answer)
+}
+</code></pre>
+</section>
+<section class="panel" data-panel="6">
+<p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
+</section>
+<section class="panel" data-panel="7">
+<p class="muted">What this node refuses, and what it returns when it refuses.</p>
+<ul class="flags">
+<li><code>OutOfDomain</code> below 0 — a spread of zero would mean the pattern predicts every rotation exactly, which the record contradicts at every rotation it scores; below zero is not a spread</li>
+<li><code>OutOfDomain</code> above 60 — above 60 sfu the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean and the band would be arithmetic rather than physics</li>
+<li><code>Degenerate</code> when the computation produces a value that is not a number</li>
+</ul>
+<p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
+</section>
+<section class="panel" data-panel="8">
+<p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
+<div class="cred" data-cred-for="sw_mean_band_spread"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
+</section>
+<section class="panel" data-panel="9">
+<p>Valid over <code>0 &hellip; 60</code> -.</p>
+<ul class="guards"><li>lower — a spread of zero would mean the pattern predicts every rotation exactly, which the record contradicts at every rotation it scores; below zero is not a spread</li><li>upper — above 60 sfu the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean and the band would be arithmetic rather than physics</li></ul>
+<p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
+<p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
+</section>
+</article>

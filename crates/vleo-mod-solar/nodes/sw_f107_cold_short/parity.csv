@@ -1,0 +1,18 @@
+# The prior implementation, at the one window it was exported for.
+#
+# NOT A FIXTURE. An expected value may never come from the implementation under
+# test, and this file is the OTHER implementation's answer — a second opinion.
+#
+# designWindow_ line 227 forms the daily bound as the rotation band minus the
+# within-rotation drop and publishes it as `coldday`:
+#
+#   coldmean.f107 - qLo = 141.05440281317954 - 31.333333333333314
+#                       = 109.7210694798465 = coldday.f107      exactly
+#
+# Both inputs below are the STUDY'S, for the reason the sibling grid gives: the
+# grid checks the relation. This row REFUSES at the declared window when fed its
+# own chain — sw_central_expectation's 97.0 sfu carries down to 48.5, below the
+# guard at 60 — and the sheet argues about why that refusal is correct. A grid
+# cannot check a refusal, so it checks the arithmetic instead.
+sustained,daily,matlab_F107_cold_short
+141.05440281317954,31.333333333333314,109.7210694798465

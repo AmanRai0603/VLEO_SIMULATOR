@@ -14,11 +14,29 @@ use vleo_core::units::*;
 ///
 /// Source: `noaa_swpc`
 ///
-/// One of the two numbers the subsystem exists to produce. The centre comes
-/// from sw_central_expectation, the spread from sw_uncertainty_growth, and
-/// the confidence is the 95th percentile that sw_uncertainty_growth publishes
-/// — so this is a value the mission should not exceed in 95% of histories,
-/// not a value it will see.
+/// The centre comes from sw_central_expectation, the spread from
+/// sw_uncertainty_growth, and the confidence is the 95th percentile that
+/// sw_uncertainty_growth publishes — so this is a value the mission should
+/// not exceed in 95 per cent of histories, not a value it will see. NOTHING
+/// READS THIS ROW ANY MORE, AND THAT IS A DECISION SOMEBODY SHOULD MAKE. It
+/// used to be the subsystem's headline: l3_solar_ach_01, l3_solar_ach_02 and
+/// l3_solar_interface all restated it. §20 step 5 re-pointed the two
+/// closures at sw_f107_design_long and sw_f107_design_short, and §20 step 4
+/// gave the interface the whole driver set, so this row now has no consumers
+/// at all. It is not wrong and it was not replaced — it answers a DIFFERENT
+/// question from the design rows. This is a one-sided 95th-percentile
+/// PERSISTENCE growth: how far might the flux drift from today's value over
+/// the mission. sw_f107_design_long is a band width: how wrong has the
+/// pattern historically been about the level a rotation sits at. Both are
+/// defensible and they are not the same question, which sw_f107_design_long's
+/// own question note says in as many words. A published number nothing reads
+/// is a number nobody checks, which is the standard this subsystem holds
+/// itself to elsewhere. THE ROW IS THEREFORE DEPRECATED, decided 2026-09-16.
+/// It stays readable with its whole history, the gate stops treating it as
+/// live, and the contract check refuses it as a NEW dependency — so nothing
+/// can pick it up again without that being a deliberate act. What it answers
+/// is still a real question, and if a design wants the persistence reading
+/// back it should be revived on purpose rather than found by accident.
 ///
 /// # Assumptions
 ///

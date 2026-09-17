@@ -650,7 +650,12 @@ const PANELS = [
 
   {
     id: 'density',
-    rows: [],
+    // The one figure with no row that ANSWERS it, hung on the row that should.
+    // sys_space_environment_atmospheric_density is seeded: declared at layer 2,
+    // computed by nothing. Opening it and finding the two drivers and no
+    // density curve is the point stated where it bites, instead of on a tab of
+    // its own where it read as a gap in the tool rather than a gap in the tree.
+    rows: ['sys_space_environment_atmospheric_density'],
     label: 'Density',
     draws: 'Nothing yet, and the reason is worth a panel.',
     asks: 'What are these drivers worth as atmospheric density?',
@@ -673,7 +678,7 @@ const PANELS = [
           y: { label: 'daily Ap  [-]', min: 0 },
           series: [{ name: '', kind: 'dots', x: withBoth.map(d => d.f107), y: withBoth.map(d => d.ap), width: 1.1, alpha: 0.18 }],
         },
-        note: 'THIS TAB HAS NO ROWS AND THIS IS NOT ONE. The study’s density tab — profile, ' +
+        note: 'NOTHING COMPUTES THIS ROW AND THIS FIGURE IS NOT IT. The study’s density tab — profile, ' +
           'spread, sensitivity, by driver, by altitude — needs an atmosphere model, and that ' +
           'belongs to a different subsystem which has nothing written in it. Drawing a density ' +
           'curve here would mean this face carrying a model no row owns and no reviewer signed.\n\n' +
@@ -1129,21 +1134,31 @@ function optsFor(p) {
   return state.opts[p.id];
 }
 
-export function drawSolar() {
-  const host = $('#solarview');
-  if (!host) return;
-  const p = PANELS.find(x => x.id === state.panel) || PANELS[0];
-  const o = optsFor(p);
+/**
+ * Which figures argue about a row.
+ *
+ * The map already existed, one way round: every panel declares the rows it is
+ * an argument about. Inverting it is what lets a figure live on the row it
+ * argues about instead of in a place of its own — which is where the port
+ * plan's §18 put it: "a figure is not a row, and this repository already has
+ * the better home for one".
+ */
+export function figuresForRow(id) {
+  return PANELS.filter(p => (p.rows || []).includes(id));
+}
 
-  host.innerHTML =
-    '<div class="node-head"><h2>Solar weather</h2>' +
-    '<p class="ident">eight tabs, drawn from <code>' + esc(bundleVersion('solar-weather')) +
-    '</code> — the same bytes the engine reads</p></div>' +
-    '<div class="tabrow sub sw-tabs">' +
-    PANELS.map(x => '<button class="ctl sw-tab' + (x.id === p.id ? ' sel' : '') +
-      '" data-panel="' + x.id + '">' + esc(x.label) + '</button>').join('') +
-    '</div>' +
-    '<p class="caption"><b>' + esc(p.asks) + '</b></p>' +
+/** One figure, drawn into whatever host is given. */
+export function drawRowFigure(host, panelId) {
+  const p = PANELS.find(x => x.id === panelId);
+  if (!host || !p) return;
+  const o = optsFor(p);
+  host.innerHTML = panelBody(p, o);
+  wirePanel(host, p, o, () => drawRowFigure(host, panelId));
+}
+
+/** The caption, the controls and the surface. Shared by both callers. */
+function panelBody(p, o) {
+  return '<p class="caption"><b>' + esc(p.asks) + '</b></p>' +
     '<p class="caption muted">' + esc(p.draws) + '</p>' +
     // Which rows this picture is an argument about. A panel that illustrates a
     // claim and does not say which claim leaves the reader to guess, and the
@@ -1162,12 +1177,20 @@ export function drawSolar() {
       : '') +
     '<canvas class="plot sw-panel" width="980" height="420" title="point at the chart to read a value"></canvas>' +
     '<div class="sw-panel-note muted">reading the record…</div>';
+}
 
-  host.querySelectorAll('.sw-tab').forEach(b => {
-    b.onclick = () => { state.panel = b.dataset.panel; drawSolar(); };
-  });
+/**
+ * The controls, the sizing and the draw.
+ *
+ * `redraw` rather than a hard call to one view: a figure now lives wherever the
+ * row it argues about is open, so the thing to redraw on a control change is
+ * whichever host asked, not a view that may not be on screen.
+ */
+const LIVE = new Set();
+
+function wirePanel(host, p, o, redraw) {
   host.querySelectorAll('.sw-opt').forEach(sel => {
-    sel.onchange = () => { o[sel.dataset.k] = sel.value; drawSolar(); };
+    sel.onchange = () => { o[sel.dataset.k] = sel.value; redraw(); };
   });
 
   // The canvas takes the width it is given rather than a width chosen once. The
@@ -1175,9 +1198,20 @@ export function drawSolar() {
   // score across 26 leads — are long and thin, and a third of the page left
   // blank is a third of the resolution thrown away.
   fitCanvas(host);
-  if (!drawSolar._resize) {
-    drawSolar._resize = () => { if (S.view === 'solar') drawSolar(); };
-    window.addEventListener('resize', debounce(drawSolar._resize, 180));
+
+  // Redraw on resize only while the host is still on the page. A figure opened
+  // on one row and then navigated away from must not keep redrawing, and must
+  // not keep the detached node alive by being referenced from a listener.
+  LIVE.add(redraw);
+  redraw._host = host;
+  if (!wirePanel._bound) {
+    wirePanel._bound = true;
+    window.addEventListener('resize', debounce(() => {
+      for (const fn of [...LIVE]) {
+        if (fn._host && fn._host.isConnected) fn();
+        else LIVE.delete(fn);
+      }
+    }, 180));
   }
 
   render(host, p, o);

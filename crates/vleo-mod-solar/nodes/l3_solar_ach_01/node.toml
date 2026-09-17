@@ -2,7 +2,7 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "l3_solar_ach_01"
-label = "Solar flux"
+label = "F10.7, sustained"
 folder = "l3_solar_ach_01"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
@@ -11,27 +11,36 @@ owner = "environment"
 tier = "A"
 criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1331
+order = 1333
 state = "published"
 
-# THE ACHIEVED SIDE ONLY. Its paired requirement row, l3_solar_req_01, is
-# still seeded and cannot be written here: layers/l3_solar.toml says a required
-# row in this group states THE WORST SKY THIS DESIGN CAN SUSTAIN, which is a
-# spacecraft capability and not something the solar record knows. That number is
-# a declared value somebody confirms, and an agent may not supply one.
+# THE ENVIRONMENTAL HALF OF THE SUSTAINED F10.7 CLOSURE. Its paired requirement,
+# l3_solar_req_01, declares what the vehicle can take; this says what the record
+# says the window will present.
 #
-# So the closure this pair exists to make does not close yet. What exists is the
-# environmental half, on a row, with its provenance — which is the half this
-# subsystem owes.
+# WHAT IT USED TO RESTATE. sw_f107_design — the central expectation plus a
+# one-sided 95th-percentile PERSISTENCE growth, which answers "how far might the
+# flux drift from today's value". §20 makes the subsystem publish a sustained
+# level and a single day instead, and this closure is about the sustained one,
+# so it now restates sw_f107_design_long: the centre plus 1.28 standard
+# deviations of the rotation-forecast residual, which is the width of the window
+# rather than the drift from today. The number fell from 200.14 to 104.07 with
+# the change, and that is a different question answered, not the same question
+# answered differently.
 
 [question]
-text = "What is the worst solar flux the record says this mission will present?"
-note = "The headline of the three. It is the same number the interface carries to sys_space_environment, restated on the achieved side of the closure so that the comparison against what the spacecraft can sustain happens on a row rather than in somebody's head."
+text = "What sustained F10.7 does the record say this mission will present?"
+note = """
+The headline of the five. It is the same number the interface carries to
+sys_space_environment as its primary member, restated on the achieved side of
+the closure so that the comparison against what the spacecraft can sustain
+happens on a row rather than in somebody's head.
+"""
 
 [maths]
 # An achieved row restates the subsystem's conclusion on the side of the
 # comparison the closure reads. It computes nothing of its own.
-expression = "F107_ach_flux = sw_f107_design"
+expression = "F107_ach_flux = sw_f107_design_long"
 source = "noaa_swpc"
 
 # WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
@@ -45,19 +54,33 @@ it is only checkable if both sides are rows. The requirement side is
 l3_solar_req_01, a declared commitment; this is the achieved side, and it
 computes nothing of its own — it restates the subsystem's conclusion on the
 side of the comparison the closure reads. The reason it exists rather than
-the closure reading sw_f107_design directly is that a closure should bind
+the closure reading sw_f107_design_long directly is that a closure should bind
 two rows of the same shape at the same layer, so that the comparison is
 visible on the tree instead of being an edge somebody has to trace.
+
+WHICH conclusion it restates is the content of this row, because the subsystem
+has three F10.7 conclusions a reader could mistake for each other:
+sw_f107_design_long at 104.07 (the sustained level), sw_f107_design_short at
+138.30 (a day inside it) and sw_f107_design at 200.14 (a persistence drift,
+which is now the achieved side of no closure at all). Restating the wrong one
+would move this closure without anything in the tree noticing.
 """
 reading = """
-It inherits every limitation of the row it restates, and a closure reading
-it sees none of them. The number is sized on the record's unconditional mean
-rather than on the mean cycle at the mission's epoch; it is a 95th
-percentile rather than a worst case; and its Ap partner's top end rests on
-two observations in 28.2 years. A margin computed from this row against a
-capability carries none of that and looks like a clean number either way —
-which is the standing hazard of a closure, and the reason the assumption is
-repeated on the row a closure actually binds.
+104.07 sfu at the declared window, against a ceiling of 260 — 150 per cent of
+room, and the room is now explained rather than accidental. l3_solar_req_01's
+260 is the record's largest 27-day mean, 252.67 sfu centred 2024-08-13, rounded
+up; it says the design operates through any rotation the record has shown. Its
+predecessor, 250, was the next round number above whatever the chain happened to
+give and therefore moved with the design instead of with the sky.
+
+It inherits every limitation of the row it restates and a closure reading it
+sees none of them. The centre beneath it is a cycle analogue at the mission's
+own epoch, scaled beyond one cycle past cycle 25's maximum by the mean amplitude
+of two completed cycles whose peaks differ by 41 per cent; and the band around
+it is 1.28 sigma, the 90th percentile, while the run is labelled 95 per cent. A
+margin computed from this row carries none of that and looks like a clean number
+either way — which is the standing hazard of a closure, and the reason the
+assumption is repeated on the row a closure actually binds.
 """
 
 [[theory.step]]
@@ -71,30 +94,37 @@ or the comparison is not something the tree can verify.
 text = """
 The requirement side is a declared commitment with a person's name against
 it. The achieved side must be the subsystem's own conclusion and nothing
-else, so this row is an identity on sw_f107_design.
+else, so this row is an identity on sw_f107_design_long.
 """
-math = "F107_ach_flux = F107_design = 228.14 sfu"
+math = "F107_ach_flux = F107_long = 104.07 sfu"
 
 [[theory.step]]
 text = """
-Which makes the closure arithmetic trivial and the closure itself
-informative: 228.14 achieved against 250 required, so the requirement holds
-with 9.6 per cent of room.
+Which makes the closure arithmetic trivial and the closure itself informative —
+though what it is informative ABOUT has changed. 104.07 achieved against 260
+required is 150 per cent of room, where it was 9.6 per cent when the pair was
+written — but the ceiling is now the record's hottest rotation rather than a
+number picked above the chain, so the room is a statement about this window
+being quiet rather than about the requirement being slack.
 """
-math = "228.14 <= 250 — the closure holds"
+math = "104.07 <= 260 — the closure holds"
 
 [[theory.step]]
 text = """
-Note what the pass does NOT establish. The requirement was chosen as a round
-number above the capability, so a passing closure here confirms that the two
-numbers are consistent with each other rather than that the design is
-adequate. The Ap closure on the same subsystem, built the same way, fails.
+Note what the pass does NOT establish. The requirement is a ceiling on an INDEX, so a passing closure confirms the sky
+is one the design says it can operate in, not that the design is adequate: what
+a spacecraft feels is the density that index produces at its altitude, through
+a model this subsystem does not own.
+TWO closures in this group do not hold — the Ap single day at 90.55 against 80
+and the Ap storm at 158.38 against 150 — and nothing in the tree says so about
+either, because the pairing is a convention the matrix draws rather than
+something the kernel evaluates.
 """
 
 
 [[assumption]]
 text = "It inherits every limitation of the row it restates, and a closure reading it sees none of them"
-fails_when = "the same cost as the interface, and worth repeating on the row a closure actually binds. The number is sized on the cycle analogue at the mission's own epoch rather than on the record's unconditional mean, which this chain now reads the epoch to do — it was an open decision on sw_central_expectation and it has been made, moving this row by 28.0 sfu; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way."
+fails_when = "the same cost as the interface, and worth repeating on the row a closure actually binds. The number is sized on the cycle analogue at the mission's own epoch rather than on the record's unconditional mean, which this chain now reads the epoch to do; where it is a band it is 1.28 sigma, the 90th percentile, and not the 95 per cent the run is labelled; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way."
 
 [output]
 # The node's one answer. The variable id is the node id: one small
@@ -104,15 +134,15 @@ type = "Ratio"
 unit = "One"
 lower = 60.0
 upper = 400.0
-reason_lower = "the same floor as env_f107 and sw_f107_design: below 60 sfu has never been observed and no relation reading F10.7 has support there"
-reason_upper = "the same ceiling as env_f107 and sw_f107_design: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value"
+reason_lower = "the same floor as env_f107 and sw_f107_design_long: below 60 sfu has never been observed and no relation reading F10.7 has support there"
+reason_upper = "the same ceiling as env_f107 and sw_f107_design_long: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value"
 
 [[input]]
 # The consumer declares what it expects. Assembly refuses a mismatch
 # against what the producer publishes — which is the only place the
 # whole graph is visible and therefore the only place to ask.
 binding = "conclusion"
-var = "sw_f107_design"
+var = "sw_f107_design_long"
 type = "Ratio"
 
 [[algorithm.step]]
