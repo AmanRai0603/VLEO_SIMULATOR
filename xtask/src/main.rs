@@ -2140,7 +2140,18 @@ fn cmd_variables(root: &Path) -> Result<(), String> {
             let consumers: Vec<String> = tree
                 .sheets
                 .values()
-                .filter(|c| c.inputs.iter().any(|i| i.var == sh.id))
+                .filter(|c| {
+                    // A node reading `<this row>.<member>` reads this row. The
+                    // register's whole purpose is saying what reads what, so
+                    // matching input names against node ids alone would leave
+                    // a set row's readers out of its own entry.
+                    c.inputs.iter().any(|i| {
+                        i.var == sh.id
+                            || i.var
+                                .split_once('.')
+                                .is_some_and(|(node, _)| node == sh.id)
+                    })
+                })
                 .map(|c| format!("`{}`", c.id))
                 .collect();
             o.push_str(&format!(
@@ -2172,6 +2183,60 @@ fn cmd_variables(root: &Path) -> Result<(), String> {
             }
             if !sh.note.is_empty() {
                 o.push_str(&format!("\n{}\n", sh.note));
+            }
+            if !sh.publishes.is_empty() {
+                // This file claims to hold every variable in the tree, and a
+                // set row answers with more than one. Each member carries its
+                // own type, unit and range, decided separately and defended
+                // separately, so each gets its own entry rather than a name in
+                // a list under the row's range.
+                o.push_str(&format!(
+                    "- **publishes a set of {}** — this row's own answer, above, and the members below. Each is read as `{}.<member>`.\n",
+                    1 + sh.publishes.len(),
+                    sh.id
+                ));
+                for pb in &sh.publishes {
+                    let pu = vleo_units::Unit::from_name(&pb.unit)
+                        .map(|u| u.symbol())
+                        .unwrap_or("?");
+                    let readers: Vec<String> = tree
+                        .sheets
+                        .values()
+                        .filter(|c| {
+                            c.inputs
+                                .iter()
+                                .any(|i| i.var == format!("{}.{}", sh.id, pb.id))
+                        })
+                        .map(|c| format!("`{}`", c.id))
+                        .collect();
+                    o.push_str(&format!(
+                        "\n#### `{id}.{m}` — {label}\n\n\
+                         | | |\n|---|---|\n\
+                         | symbol | `{sym}` |\n\
+                         | type | `{ty}` |\n\
+                         | unit | {pu} |\n\
+                         | valid over | {lo} … {hi} {pu} |\n\n\
+                         - **lower bound** — {rl}\n\
+                         - **upper bound** — {ru}\n\
+                         - **read by** — {by}\n",
+                        id = sh.id,
+                        m = pb.id,
+                        label = pb.label,
+                        sym = pb.symbol,
+                        ty = pb.ty,
+                        pu = pu,
+                        lo = pb.lower,
+                        hi = pb.upper,
+                        rl = pb.reason_lower,
+                        ru = pb.reason_upper,
+                        by = if readers.is_empty() {
+                            "nothing yet. A member nothing reads is a member the set does not need, or an oversight.".to_string()
+                        } else {
+                            readers.join(", ")
+                        }
+                    ));
+                }
+                o.push('\n');
             }
             o.push('\n');
         }

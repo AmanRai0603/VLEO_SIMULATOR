@@ -19121,7 +19121,7 @@ tree instead of an edge somebody has to trace.
 - **lower bound** — the same floor as env_f107 and every design row beneath this one: below 60 sfu has never been observed and every relation reading F10.7 has no support there. A crossing that narrowed or widened the range it carries would be changing the answer, so it declares the producer's own bounds
 - **upper bound** — the same ceiling as env_f107 and every design row beneath this one: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. Restating it here means a system reader sees the limit without opening the subsystem
 - **reads** — `sw_central_expectation`, `sw_f107_design_long`, `sw_f107_cold_long`, `sw_f107_design_short`, `sw_f107_cold_short`, `sw_ap_central_expectation`, `sw_ap_design_long`, `sw_ap_cold_long`, `sw_ap_design_short`, `sw_ap_cold_short`, `sw_kp_scenarios.kp_mean_nominal`, `sw_kp_scenarios.kp_mean_hotmean`, `sw_kp_scenarios.kp_mean_coldmean`, `sw_kp_scenarios.kp_mean_hotday`, `sw_kp_scenarios.kp_mean_coldday`, `sw_kp_scenarios.kp_peak_nominal`, `sw_kp_scenarios.kp_peak_hotmean`, `sw_kp_scenarios.kp_peak_coldmean`, `sw_kp_scenarios`, `sw_kp_scenarios.kp_peak_coldday`
-- **read by** — `sys_space_environment_f10_7`, `sys_space_environment_f10_7_81day`, `sys_space_environment_solar_flux`
+- **read by** — `sys_space_environment_ap`, `sys_space_environment_f10_7`, `sys_space_environment_f10_7_81day`, `sys_space_environment_kp`, `sys_space_environment_solar_flux`
 - **assumes** The Kp columns do not cross, and the study's driver set has two of them — fails when a consumer needs Kp. The study publishes kp_mean and kp_peak per scenario, formed from that scenario's Ap by the published ap-to-Kp scale plus a measured slot bias. This tree has all three relations — sw_kp_from_ap, sw_kp_mean_bias, sw_kp_slot_bias — and cannot use them here, because the bus passes a node's VALUE and not its RELATION: each of those rows answers at one Ap, and a driver set needs them at five. Three ways out, none of them free: those three rows each publish a set of five, keyed to the scenarios; or the ap-to-Kp scale and both bias tables move into vleo-core as named functions this hole can call, at the cost of putting measured data in the kernel; or ten more rows exist, one per scenario per slot. Until one is chosen the Ap column crosses and the Kp columns do not, and a consumer that needs Kp must convert it itself — which is the duplication this row exists to prevent
 - **assumes** It relays and does not compute, and the f107bar column is the edge of that claim — fails when somebody calls the f107bar mapping a calculation. No value is combined with another and no constant appears; what happens is that one input is published under two names, because the study's hotday scenario carries hotmean's 81-day mean beneath it. If that is computation then a crossing cannot carry a set at all, and §20.3's decision needs revisiting rather than this hole
 - **assumes** Every member inherits every limitation of the row beneath it, and a system reader sees none of them — fails when this is the ordinary cost of a seam and it is worth stating where the seam is. The two *mean scenarios are 1.28-sigma bands, which is the 90th percentile and not the 95 per cent the run is labelled; the two *day scenarios stack a second one-sided percentile on top, which is nearer a 1-in-100 day than a 1-in-20; and the centre beneath all five is a cycle analogue that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles, whose peaks differ by 41 per cent. A reader at layer 2 sees fifteen numbers and a credibility vector, and would have to open five rows to learn any of that. The credibility travels; the assumptions do not
@@ -19163,6 +19163,320 @@ SUSTAINS for months, and the two *day scenarios are what one day inside that
 reaches. An array is sized on a sustained level and a thermal transient on a
 day. A tool that published one of the five would have decided for the reader
 which of those their problem is.
+
+- **publishes a set of 25** — this row's own answer, above, and the members below. Each is read as `l3_solar_interface.<member>`.
+
+#### `l3_solar_interface.f107_nominal` — F10.7 the mission is expected to sit at
+
+| | |
+|---|---|
+| symbol | `F107_nominal` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the producer's own floor, restated: below 60 sfu has never been observed
+- **upper bound** — the producer's own ceiling, restated: above 400 sfu the temperature relation is extrapolated past the record
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.f107_coldmean` — F10.7 sustained on the cold side
+
+| | |
+|---|---|
+| symbol | `F107_coldmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the producer's own floor, restated. On the cold scenarios it is load-bearing rather than decorative: a band wider than the sky reaches through it
+- **upper bound** — the producer's own ceiling, restated. A COLD level near it means a spread has been added rather than subtracted somewhere beneath this row
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.f107_hotday` — F10.7 on the worst single day
+
+| | |
+|---|---|
+| symbol | `F107_hotday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the producer's own floor, restated: below 60 sfu has never been observed
+- **upper bound** — the producer's own ceiling, restated. This is the member most likely to reach it — a sustained level with a daily excursion stacked on top — which is why the guard is on every member and not only the primary
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.f107_coldday` — F10.7 on the quietest single day
+
+| | |
+|---|---|
+| symbol | `F107_coldday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the producer's own floor, restated, and THIS IS THE MEMBER THAT REFUSES on the nominal case: sw_f107_cold_short reaches 38.36 sfu from a centre of 86.85, and 38 sfu has never been observed. The guard is beneath this row and fires there; this restates the same limit so a system reader sees it without opening the subsystem
+- **upper bound** — the producer's own ceiling, restated. On the QUIETEST of the five scenarios a value near it means a sign is wrong somewhere beneath this row
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.f107bar_nominal` — 81-day mean F10.7 beneath the nominal scenario
+
+| | |
+|---|---|
+| symbol | `F107bar_nominal` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the same floor as the daily value it equals. An 81-day mean cannot sit below a floor every day of it respects
+- **upper bound** — the same ceiling as the daily value it equals
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.f107bar_hotmean` — 81-day mean F10.7 beneath the hot sustained scenario
+
+| | |
+|---|---|
+| symbol | `F107bar_hotmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the same floor as the daily value it equals: a *mean scenario IS its own 81-day mean
+- **upper bound** — the same ceiling as the daily value it equals
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.f107bar_coldmean` — 81-day mean F10.7 beneath the cold sustained scenario
+
+| | |
+|---|---|
+| symbol | `F107bar_coldmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the same floor as the daily value it equals: a *mean scenario IS its own 81-day mean
+- **upper bound** — the same ceiling as the daily value it equals
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.f107bar_hotday` — 81-day mean F10.7 the hot day rides on
+
+| | |
+|---|---|
+| symbol | `F107bar_hotday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the hotmean level's own floor, because that is what this member is: a single day rides on the sustained level beneath it, and its 81-day mean is that level rather than the day's own value
+- **upper bound** — the hotmean level's own ceiling. A *day scenario whose f107bar equalled its f107 would be claiming eighty-one consecutive days of the worst one, which the record does not support and the study does not publish
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.f107bar_coldday` — 81-day mean F10.7 the cold day rides on
+
+| | |
+|---|---|
+| symbol | `F107bar_coldday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the coldmean level's own floor, because that is what this member is: the quietest day still rides on the sustained cold level beneath it
+- **upper bound** — the coldmean level's own ceiling
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.ap_nominal` — Ap the mission is expected to sit at
+
+| | |
+|---|---|
+| symbol | `Ap_nominal` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 400 - |
+
+- **lower bound** — Ap floors at zero — a perfectly quiet day is Ap 0 — and there is nothing below it
+- **upper bound** — 400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.ap_hotmean` — Ap sustained on the disturbed side
+
+| | |
+|---|---|
+| symbol | `Ap_hotmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 400 - |
+
+- **lower bound** — Ap floors at zero, so a sustained level below it means a spread has been subtracted rather than added beneath this row
+- **upper bound** — 400 is the top of the Ap index itself
+- **read by** — `sys_space_environment_ap`
+
+#### `l3_solar_interface.ap_coldmean` — Ap sustained on the quiet side
+
+| | |
+|---|---|
+| symbol | `Ap_coldmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 400 - |
+
+- **lower bound** — Ap floors at zero. On the quiet scenarios the floor is close: the producer's band subtracted from a centre below about 4.6 reaches through it
+- **upper bound** — 400 is the top of the Ap index itself
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.ap_hotday` — Ap on the most disturbed single day
+
+| | |
+|---|---|
+| symbol | `Ap_hotday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 400 - |
+
+- **lower bound** — Ap floors at zero
+- **upper bound** — 400 is the top of the Ap index itself, and this member — a sustained level with a daily excursion stacked on top — is the one in the set most likely to reach for it
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.ap_coldday` — Ap on the quietest single day
+
+| | |
+|---|---|
+| symbol | `Ap_coldday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 400 - |
+
+- **lower bound** — Ap floors at zero, and this is the member in the whole subsystem closest to a declared bound: at the declared window it crosses at 6.91, seven units clear. Its producer's own sheet says a centre below 15.2 would put it through the floor
+- **upper bound** — 400 is the top of the Ap index itself. On the QUIETEST scenario a value anywhere near it means a sign is wrong beneath this row
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_mean_nominal` — Kp, mean slot, nominal scenario
+
+| | |
+|---|---|
+| symbol | `Kp_mean_nominal` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_mean_hotmean` — Kp, mean slot, sustained disturbed scenario
+
+| | |
+|---|---|
+| symbol | `Kp_mean_hotmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_mean_coldmean` — Kp, mean slot, sustained quiet scenario
+
+| | |
+|---|---|
+| symbol | `Kp_mean_coldmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_mean_hotday` — Kp, mean slot, disturbed single day
+
+| | |
+|---|---|
+| symbol | `Kp_mean_hotday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_mean_coldday` — Kp, mean slot, quietest single day
+
+| | |
+|---|---|
+| symbol | `Kp_mean_coldday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_peak_nominal` — Kp, peak slot, nominal scenario
+
+| | |
+|---|---|
+| symbol | `Kp_peak_nominal` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_peak_hotmean` — Kp, peak slot, sustained disturbed scenario
+
+| | |
+|---|---|
+| symbol | `Kp_peak_hotmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — `sys_space_environment_kp`
+
+#### `l3_solar_interface.kp_peak_coldmean` — Kp, peak slot, sustained quiet scenario
+
+| | |
+|---|---|
+| symbol | `Kp_peak_coldmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_peak_hotday` — Kp, peak slot, disturbed single day
+
+| | |
+|---|---|
+| symbol | `Kp_peak_hotday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
+
+#### `l3_solar_interface.kp_peak_coldday` — Kp, peak slot, quietest single day
+
+| | |
+|---|---|
+| symbol | `Kp_peak_coldday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky
+- **upper bound** — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400
+- **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
 
 
 ### `l3_solar_req_01` — F10.7, sustained
@@ -20652,6 +20966,125 @@ is reported in eight three-hourly slots, and Kp(ap) is concave — so the publis
 conversion run on a daily mean lands ABOVE the mean of the eight slots and well
 BELOW the peak. A design sized on the conversion alone is sized on a sky quieter
 than the record's, and on exactly the days a drag design is sized by.
+
+- **publishes a set of 10** — this row's own answer, above, and the members below. Each is read as `sw_kp_scenarios.<member>`.
+
+#### `sw_kp_scenarios.kp_mean_nominal` — Kp, mean slot, nominal scenario
+
+| | |
+|---|---|
+| symbol | `Kp_mean_nominal` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9; a negative value is a sign error
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
+
+#### `sw_kp_scenarios.kp_mean_hotmean` — Kp, mean slot, sustained disturbed scenario
+
+| | |
+|---|---|
+| symbol | `Kp_mean_hotmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9; a negative value is a sign error
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
+
+#### `sw_kp_scenarios.kp_mean_coldmean` — Kp, mean slot, sustained quiet scenario
+
+| | |
+|---|---|
+| symbol | `Kp_mean_coldmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9; a negative value is a sign error, and the quiet scenarios are the ones that approach the floor
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
+
+#### `sw_kp_scenarios.kp_mean_hotday` — Kp, mean slot, disturbed single day
+
+| | |
+|---|---|
+| symbol | `Kp_mean_hotday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9; a negative value is a sign error
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
+
+#### `sw_kp_scenarios.kp_mean_coldday` — Kp, mean slot, quietest single day
+
+| | |
+|---|---|
+| symbol | `Kp_mean_coldday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9. This is the lowest of the ten and the one nearest the floor: at the declared window it is 1.27
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
+
+#### `sw_kp_scenarios.kp_peak_nominal` — Kp, peak slot, nominal scenario
+
+| | |
+|---|---|
+| symbol | `Kp_peak_nominal` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9; a negative value is a sign error
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
+
+#### `sw_kp_scenarios.kp_peak_hotmean` — Kp, peak slot, sustained disturbed scenario
+
+| | |
+|---|---|
+| symbol | `Kp_peak_hotmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9; a negative value is a sign error
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
+
+#### `sw_kp_scenarios.kp_peak_coldmean` — Kp, peak slot, sustained quiet scenario
+
+| | |
+|---|---|
+| symbol | `Kp_peak_coldmean` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9; a negative value is a sign error
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
+
+#### `sw_kp_scenarios.kp_peak_coldday` — Kp, peak slot, quietest single day
+
+| | |
+|---|---|
+| symbol | `Kp_peak_coldday` |
+| type | `Ratio` |
+| unit | - |
+| valid over | 0 … 9 - |
+
+- **lower bound** — Kp is defined on 0 to 9; a negative value is a sign error
+- **upper bound** — Kp is defined on 0 to 9
+- **read by** — `l3_solar_interface`
 
 
 ### `sw_kp_slot_bias` — Kp slot bias, daily peak
