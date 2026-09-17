@@ -189,14 +189,15 @@ pub fn fragment(
             o.push_str("<tr class=\"muted\"><td colspan=\"5\">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>\n");
         }
         for i in &sh.inputs {
-            let unit = tree
-                .sheets
-                .get(&i.var)
-                .map(|p| unit_symbol(&p.unit))
-                .unwrap_or_else(|| "?".into());
+            // A member of a published set is not a node, so its unit lives on
+            // the producing node's `[[publishes]]` entry and the page it opens
+            // is that node's. The variable keeps its full dotted name: that is
+            // what the reader has to match against the producer's table.
+            let unit = var_unit(tree, &i.var);
             o.push_str(&format!(
-                "<tr><td>in</td><td><code>{}</code></td><td><a class=\"xref\" data-goto=\"{v}\">{v}</a></td><td>{t}</td><td>{u}</td></tr>\n",
+                "<tr><td>in</td><td><code>{}</code></td><td><a class=\"xref\" data-goto=\"{g}\">{v}</a></td><td>{t}</td><td>{u}</td></tr>\n",
                 h(&i.binding),
+                g = h(producer_of(&i.var)),
                 v = h(&i.var),
                 t = h(&i.ty),
                 u = h(&unit)
@@ -209,11 +210,32 @@ pub fn fragment(
             t = h(&sh.ty),
             u = h(&unit_symbol(&sh.unit))
         ));
+        // A set row answers with more than one variable, and every one of them
+        // is an interface. Leaving them off this table would say the node
+        // publishes one thing when it publishes N — and the rule this table
+        // states is that what is not here is not an interface.
+        for pb in &sh.publishes {
+            o.push_str(&format!(
+                "<tr class=\"out member\"><td>out</td><td><code>{s}</code></td><td>{id}.{m}</td><td>{t}</td><td>{u}</td></tr>\n",
+                s = h(&pb.symbol),
+                id = h(&sh.id),
+                m = h(&pb.id),
+                t = h(&pb.ty),
+                u = h(&unit_symbol(&pb.unit))
+            ));
+        }
         o.push_str("</tbody></table>\n");
+        if !sh.publishes.is_empty() {
+            o.push_str(&format!(
+                "<p class=\"muted\">This node answers with a set: <b>{}</b> variable{} in all. The first is the answer the node is named for; the rest are read by name.</p>\n",
+                1 + sh.publishes.len(),
+                if sh.publishes.is_empty() { "" } else { "s" }
+            ));
+        }
         let consumers: Vec<&str> = tree
             .sheets
             .values()
-            .filter(|c| c.inputs.iter().any(|i| i.var == sh.id))
+            .filter(|c| c.inputs.iter().any(|i| producer_of(&i.var) == sh.id))
             .map(|c| c.id.as_str())
             .collect();
         o.push_str(&format!(
@@ -516,13 +538,24 @@ pub fn index_json(tree: &Tree) -> String {
                 .unwrap_or_else(|| "null".into()),
             gaps = gaps,
             sh_hash = short_hex(sh.sheet_hash),
-            ins = sh
-                .inputs
-                .iter()
-                .filter_map(|x| tree.index_of(&x.var))
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>()
-                .join(","),
+            // `in` is a list of ROW indices, and a set row's members are not
+            // rows: an input on `<node>.<member>` is an edge to `<node>`. A
+            // node reading twenty members of one interface is one edge, so the
+            // list is de-duplicated — twenty copies would draw twenty times.
+            ins = {
+                let mut seen: Vec<u16> = Vec::new();
+                for x in &sh.inputs {
+                    if let Some(r) = tree.index_of(producer_of(&x.var)) {
+                        if !seen.contains(&r) {
+                            seen.push(r);
+                        }
+                    }
+                }
+                seen.iter()
+                    .map(|x| x.to_string())
+                    .collect::<Vec<_>>()
+                    .join(",")
+            },
             kpis = sh
                 .kpis
                 .iter()
@@ -665,4 +698,31 @@ fn pseudocode(sh: &Sheet) -> String {
     ));
     o.push_str("</code></pre>\n<p class=\"muted\">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>\n");
     o
+}
+
+/// The node that answers a variable. For a member of a published set the
+/// variable is `<node id>.<publish id>` and the node is the part before the
+/// dot; a node id never contains one.
+fn producer_of(var: &str) -> &str {
+    match var.split_once('.') {
+        Some((node, _)) => node,
+        None => var,
+    }
+}
+
+/// The unit a variable is measured in, whether it is a node's primary answer
+/// or one member of a set that node publishes.
+fn var_unit(tree: &Tree, var: &str) -> String {
+    if let Some((node, member)) = var.split_once('.') {
+        return tree
+            .sheets
+            .get(node)
+            .and_then(|p| p.publishes.iter().find(|pb| pb.id == member))
+            .map(|pb| unit_symbol(&pb.unit))
+            .unwrap_or_else(|| "?".into());
+    }
+    tree.sheets
+        .get(var)
+        .map(|p| unit_symbol(&p.unit))
+        .unwrap_or_else(|| "?".into())
 }
