@@ -1335,3 +1335,55 @@ width rows across steps 4 and 5. The gate stops treating it as live and the
 contract check refuses it as a NEW dependency, so nothing picks it up by
 accident. What it answers — a one-sided persistence drift from today's value —
 is still a real question, and reviving it is now a deliberate act.
+
+### 20.17 · Three more places that assumed one row means one variable
+
+20.15 named three: `Scratch.slots`, `MAX_INPUTS`, and the daemon's index. That
+list was a description of the kernel, and the same assumption was in the FACE.
+A set row reached the run correctly and was then described wrongly by everything
+that reads the tree.
+
+**The interface table showed one output of twenty-five.** Its own opening line
+is *"Every input and output, typed, with its unit. If it is not here it is not
+an interface"* — so on `l3_solar_interface` that sentence was false about 24
+variables. The table now emits one row per published member, showing the full
+dotted variable, its symbol, type and unit, and says how many the set holds. A
+member sits indented behind the primary, so the table reads as one answer plus
+its set rather than twenty-five equal outputs: the first is the answer the node
+is NAMED for, and that distinction is what `kind` and the bus both act on.
+
+**An input on a member printed `?` for its unit.** The unit was looked up by the
+whole dotted name in the sheet map, which holds nodes. A member's unit is
+declared on the producing node's `[[publishes]]` entry and is read from there
+now; the cross-reference opens the producing node, because that is the page
+which answers it.
+
+**The dependency edges into both set rows did not exist.** The consumers line,
+and the `in` list in the index the shell loads, matched inputs against node ids.
+`sys_space_environment_ap` reads `l3_solar_interface.ap_hotmean`, so it was
+counted as reading nothing and the interface reported three readers where it has
+five. In the index this was the SAME mismatch as the matrix defect in `83ea5910`
+— variable names where row indices were meant — and silent for the same reason:
+`filter_map` drops what does not resolve. Both now map a variable to the node
+that answers it, and the edge list is de-duplicated, because a node reading
+twenty members of one interface is one edge and not twenty.
+
+**And `docs/VARIABLES.md` was wrong about 33 variables.** It says it holds every
+variable in the tree, its unit, its range, the reason for each bound, and what
+reads it; it held one of the interface's twenty-five and one of
+`sw_kp_scenarios`' ten. Each member now gets its own entry under the row that
+publishes it. That file is generated precisely so a register maintained by hand
+cannot drift, which is what makes being wrong in it worse than being wrong in
+prose: nobody was going to check it.
+
+The shape of all six is the same, and worth stating once for the next set row: a
+NODE and a VARIABLE stopped being the same thing when `[[publishes]]` was added,
+and every place that had conflated them was silent about it. Three failed in the
+kernel — one loudly, two quietly — and three in the face, where nothing fails at
+all; a page simply says something untrue. The generators are the defence, so
+what they emit is now derived from the variable list rather than the row list.
+Resolving a variable to the node that answers it is the operation that was
+missing everywhere, and it is now written four times — `producer_of` in
+`gate.rs` and in `page.rs`, the `producer` field on `VARS` in the daemon, and
+the reader test in the register generator. That is three too many, and worth
+collapsing into `vleo-sheet` the next time one of them needs a change.
