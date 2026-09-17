@@ -2147,9 +2147,7 @@ fn cmd_variables(root: &Path) -> Result<(), String> {
                     // a set row's readers out of its own entry.
                     c.inputs.iter().any(|i| {
                         i.var == sh.id
-                            || i.var
-                                .split_once('.')
-                                .is_some_and(|(node, _)| node == sh.id)
+                            || i.var.split_once('.').is_some_and(|(node, _)| node == sh.id)
                     })
                 })
                 .map(|c| format!("`{}`", c.id))
