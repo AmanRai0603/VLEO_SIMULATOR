@@ -2038,3 +2038,148 @@ the legacy method while the rows use a better one, and §21 that three of its
 constants are stale. Once that is repaired the panel should name the method on
 its face — the reader cannot otherwise tell a ported picture from a corrected
 one, and this tool's whole claim is that it knows the difference.
+
+## 26 · The work order
+
+This supersedes the step lists in §21.3, §23.5 and §25.4, which were each written
+about one part. Correctness first, then the chart layer, then the panels, then
+the two new ones. Nothing in Part B is worth doing before Part A is finished, and
+nothing in Part C or D is worth doing before Part B, because a panel built on a
+broken chart layer has to be redrawn and re-signed.
+
+### Three more findings from looking at the rest of the references
+
+**`pattern` has no significance band, and that is not cosmetic.** The
+autocorrelation shows five or six bumps and a reader has no way to tell a real
+harmonic from noise. An ACF is read against ±1.96/√n and this one is drawn
+against nothing. The legacy tab's own description includes "significance", so the
+band is not an invention. Until it is there the panel cannot answer the question
+it exists to answer.
+
+**`pattern` marks two peaks where three are computed.** `peakIn(72, 95)` runs at
+the default lag of 120 and there is a visible bump near 80 in the reference
+image, unmarked. Either the third mark is computed and dropped, or the peak
+search fails; either way the picture is not showing what the code found.
+
+**No zero line on the autocorrelation.** Zero is the reference for the whole
+quantity and the axis happens to label −0.197 and 0.0426 instead. The nice-ticks
+fix puts a tick on zero; it should also draw that one rule slightly stronger.
+
+### Part A — make it right. No drawing.
+
+**A1. Panels can read the engine.** An `engine` list on the panel definition and a
+helper fetching `/v1/run` and `/v1/sweep`. The bundle keeps supplying the record.
+*Blocks everything.*
+
+**A2. `panel_check` enforces it.** `engine = [...]` in `panels/*.toml`, and the
+move-check extends to it: a panel naming an engine row must move when that row's
+value moves. *This is the check that would have caught every stale literal below.
+Nothing after A2 is safe without it.*
+
+**A3. Delete the three stale literals in `design`.** `CENTRAL = 114.8437` →
+`sw_central_expectation`. The `150 / 132 / 200` requirement options →
+`l3_solar_req_01` through `_05`. `A = 92.515531, B = 40.926516` →
+`sw_storm_return_level`. Verified by A2, which fails if any of them is still a
+copy.
+
+**A4. Replace the method `design` draws.** It draws `prf_design`'s frozen
+persistence; the rows use the cycle analogue and the level-conditioned spread,
+and §22.2 measures the legacy method as 74% high. Re-cite the panel on the six
+design-window rows, and name on its face which method is drawn.
+
+**A5. Branch-aware controls.** A control the current branch does not read is not
+drawn. Removes all 35 repeats, audited in §25.1 as provably identical. Hides `g`
+on `design`'s F10.7 branch, which is correct rather than a workaround — F10.7 has
+no G scale.
+
+**A6. Re-run `tools/solar_rows.py`.** The row classification is now true again.
+
+*Part A changes no pixels deliberately. Every reference image will still move,
+because three numbers in `design` were wrong — which is the point.*
+
+### Part B — the chart layer, once, for all ten panels
+
+**B1. Nice ticks.** Choose the step from {1, 2, 2.5, 5} × 10^k, extend the domain
+to the nearest step, then label. Replaces the current pixel-space division. Draw
+a zero rule one step stronger where zero is in range. *Largest single visual gain
+available; every panel benefits.*
+
+**B2. The validated palette.** `#b5731a #2f6fa8 #2e7d55 #8f43e0 #c2185b #00918f`,
+all five checks passing in light and dark (§25.3). Assign in fixed order, never
+cycled. Dark mode gets its own steps from the same ramps, not an automatic flip.
+
+**B3. Mark specs.** Lines 2px with round join and cap; markers ≥8px with a 2px
+surface ring; area fills the series hue at ~10%; gridlines and axes hairline,
+solid, one step off the surface — never dashed. Dashes are reserved for a
+threshold, which is what `design`'s requirement line legitimately is.
+
+**B4. A legend component, outside the plot rectangle.** Present whenever a panel
+draws two or more series; absent for one, where the title already names it. Fixes
+`design`'s missing legend and `repeatability`'s overlapping one in one change.
+
+**B5. Direct labels, selectively.** The endpoint, the extreme, or the series the
+figure is about — never a number on every point. Not optional here: the palette's
+CVD separation is 8.2 against a floor of 8, and direct labels are what make that
+legal.
+
+**B6. Aspect.** 980×420 is too wide for curves that rise gently across it. Bank
+the principal slope toward 45° and let the container carry the axis band rather
+than cropping it.
+
+**B7. Crosshair and tooltip on the line panels**, with keyboard focus showing what
+hover shows, and a hit target no smaller than ~24px. Canvas needs explicit
+nearest-x hit testing.
+
+**B8. A table view per panel.** The same data as rows — the WCAG-clean twin, and
+what makes a value quotable in a document without screenshotting a chart.
+
+**B9. Thin the mark where the sample thins.** `predict`'s n falls away with lead
+and `sw_storm_return_level`'s top end rests on two observations in 28 years. Both
+draw constant weight throughout. Fade or thin, and put n on the axis.
+
+### Part C — the panels, on the repaired layer
+
+**C1. `pattern`** — the significance band, the third peak mark, three detrend
+windows as three lines with 365 heavy and the other two light, lag as an axis
+zoom. 36 combinations → 3 views.
+
+**C2. `predict`** — four percentiles as a fan with the highlight control, span as
+an axis zoom, sample thinning drawn. 48 → 4.
+
+**C3. `forecast`** — three metrics as three stacked panels sharing an x-axis
+(never one axis: the units differ), two baselines as two lines. 18 → 3.
+
+**C4. `repeatability`, `segmentation`, `climate`, `design`, `density`** — no
+structural change beyond Part A and Part B. 10, 5, 13, 11 and 1 views.
+
+**C5. Re-shoot every reference image and have a person sign each `correct`
+block**, listing the questions the old view set could answer, per §23.6.
+
+### Part D — the two new panels
+
+**D1. `drivers`**, 6 views. Five scenarios against f107, f107bar, ap, kp_mean and
+kp_peak, with the legacy run's own values from `mission_drivers.csv` beside each.
+Answers twelve rows that have no figure, and is a standing parity check a person
+sees.
+
+**D2. `closure`**, 5 views. One per required/achieved pair: the bound, the
+achieved value, the margin, swept over the decision `/v1/levers` reports as
+spending it fastest. Answers ten rows, and is the only picture of the question
+the tool exists to answer.
+
+**D3. Reference images and signatures for both**, as `panels/README.md` requires.
+
+**D4. Re-run `tools/solar_rows.py`.** "No figure" should be empty. What remains,
+if anything, is a real finding.
+
+### The gate, at every step
+
+`cargo run -p xtask -- gate && cargo test`, and — because the local gate does not
+cover the visual layer — `python3 tools/panel_check.py` and its `--selftest`. A
+step is not finished until all four are green and the reference image is signed.
+
+### Totals
+
+Ten panels, 61 views, every one moving when its controls move. 35 repeats gone,
+18 rows gaining a figure, three wrong numbers out of `design`, and a chart layer
+that places its own ticks.
