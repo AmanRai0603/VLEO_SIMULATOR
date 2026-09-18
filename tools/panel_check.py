@@ -588,8 +588,8 @@ def selftest():
         ("a panel that asks the engine and ignores the answer",
          lambda d: (d / "web" / "js" / "solar.js").write_text(
              (d / "web" / "js" / "solar.js").read_text().replace(
-                 "  const CENTRAL = c.si;",
-                 "  const CENTRAL = 114.8437;")),
+                 "      const req = rq.si;",
+                 "      const req = 150;")),
          "2b reads"),
         # And the hole 2b's failed-state probe closes: before it, a panel whose
         # render THREW passed check 2, because a failed render blanks the canvas
@@ -597,7 +597,7 @@ def selftest():
         ("a panel whose render throws",
          lambda d: (d / "web" / "js" / "solar.js").write_text(
              (d / "web" / "js" / "solar.js").read_text().replace(
-                 "engine: ['sw_central_expectation',",
+                 "engine: ['l3_solar_req_01',",
                  "engine: ['sw_no_such_row',")),
          "2 moves"),
     ]

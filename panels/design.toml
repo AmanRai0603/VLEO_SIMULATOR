@@ -59,12 +59,14 @@ why = """the requirement is a separate mark from the capability and must move on
 # the Ap branch, which is where the panel opens. Testing one on the other
 # branch would report a failure that belongs to the fixture.
 [[engine]]
-row = "sw_central_expectation"
-state = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'f107'; s.dispatchEvent(new Event('change')); })()"
-
-[[engine]]
 row = "l3_solar_req_01"
 state = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'f107'; s.dispatchEvent(new Event('change')); })()"
 
 [[engine]]
 row = "l3_solar_req_03"
+
+# One of the four rows that now build the F10.7 window. It arrives over
+# /v1/sweep rather than /v1/run, which is why 2b bends both.
+[[engine]]
+row = "sw_f107_design_short"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'f107'; s.dispatchEvent(new Event('change')); })()"

@@ -522,12 +522,19 @@ const PANELS = [
 
   {
     id: 'design',
-    rows: ['sw_storm_return_level', 'sw_storm_design_level', 'sw_ap_design', 'sw_design_safe_duration', 'sw_exceedance_rate', 'sw_exceedance_duration', 'sw_exceedance_phase', 'l3_solar_req_03', 'l3_solar_ach_03'],
+    rows: ['sw_storm_return_level', 'sw_storm_design_level', 'sw_ap_design',
+      'sw_design_safe_duration', 'sw_exceedance_rate', 'sw_exceedance_duration',
+      'sw_exceedance_phase', 'l3_solar_req_03', 'l3_solar_ach_03',
+      // The six §20 built for the F10.7 half. The panel's own label is "the
+      // design window for F10.7 and for Ap" and it cited none of them, because
+      // it was still drawing the method they replaced.
+      'sw_f107_design_long', 'sw_f107_design_short', 'sw_f107_cold_long',
+      'sw_f107_cold_short', 'l3_solar_req_01'],
     // WHAT THIS PANEL ASKS THE ENGINE FOR, rather than carrying a copy of.
     // `rows` says what the picture argues about; `engine` says what it reads,
     // and panel_check holds it to the second. The literals these replace had
     // gone stale by two revisions — §21.1 lists them.
-    engine: ['sw_central_expectation', 'l3_solar_req_01', 'l3_solar_req_03',
+    engine: ['l3_solar_req_01', 'l3_solar_req_03',
       'l3_solar_req_04', 'l3_solar_req_05', 'l3_solar_req_02'],
     label: 'Design',
     draws: 'The design window: what the record expects against what the vehicle is built for.',
@@ -564,15 +571,30 @@ const PANELS = [
     async data() {
       const dur = S.byId.get('sys_mission_requirements_mission_duration');
       const glv = S.byId.get('sw_storm_design_level');
-      const [ret, gmap] = await Promise.all([
+      // The F10.7 half is the four rows §20 built for it — hot and cold, each
+      // sustained and single-day. That IS the design window, and it is built
+      // with the within-rotation spread conditioned on the level it applies at.
+      // The panel used to compute `centre + p95` here, which is the relation of
+      // sw_f107_design — the row §20 DEPRECATED, and the method the record puts
+      // 74 per cent high. Drawing a retired method beside live rows is how a
+      // figure tells a reader something the tree has stopped believing.
+      const [ret, gmap, fl, fs, cl, cs] = await Promise.all([
         engineSweep('sw_storm_return_level', 'sys_mission_requirements_mission_duration',
           dur.lo, dur.hi, 120),
         engineSweep('sw_ap_design', 'sw_storm_design_level', glv.lo, glv.hi, 3),
+        engineSweep('sw_f107_design_long', 'sys_mission_requirements_mission_duration',
+          dur.lo, dur.hi, 60),
+        engineSweep('sw_f107_design_short', 'sys_mission_requirements_mission_duration',
+          dur.lo, dur.hi, 60),
+        engineSweep('sw_f107_cold_long', 'sys_mission_requirements_mission_duration',
+          dur.lo, dur.hi, 60),
+        engineSweep('sw_f107_cold_short', 'sys_mission_requirements_mission_duration',
+          dur.lo, dur.hi, 60),
       ]);
-      return { ret, gmap };
+      return { ret, gmap, win: { fl, fs, cl, cs } };
     },
     build(rec, o, extra, eng) {
-      if (o.v === 'f107') return f107Window(rec, o, eng);
+      if (o.v === 'f107') return f107Window(extra, o, eng);
       // The relation as the ENGINE computes it, swept from sw_storm_return_level
       // rather than re-stated from its constants. A figure that carries a row's
       // coefficients is a second copy of that row.
@@ -1024,64 +1046,71 @@ function issueAge(idx) {
   };
 }
 
-/** Design · the F10.7 window, which is the other half of what flows out. */
-function f107Window(rec, o, eng) {
-  const byDay = new Map();
-  for (const d of rec.days) if (d.f107 !== null) byDay.set(d.t, d.f107);
-  // THE CENTRE COMES FROM THE ROW THAT COMPUTES IT. It used to be the literal
-  // 114.8437, which was sw_central_expectation's answer before §20 re-specified
-  // that row on the cycle analogue. The row has said 86.85 since, its own sheet
-  // records the move, and this panel went on drawing the old number through
-  // every green check — because nothing connected the two. A refusal is drawn
-  // as a refusal rather than substituted, since a design window around a centre
-  // nobody computed is worse than no window.
-  const c = eng && eng.sw_central_expectation;
-  if (!c || c.si === undefined) {
-    throw new Error('sw_central_expectation did not answer: ' +
-      ((c && c.refused) || 'the engine was not asked'));
-  }
-  const CENTRAL = c.si;
-  // The requirement is a row too. This drew a line at a flat 250 and said 250
-  // in its own prose, and no F10.7 requirement in the tree has ever held that
-  // number — l3_solar_req_01 is 260 and _02 is 350. It was found by wiring the
-  // centre up, which is the argument for doing this to every literal.
+/** Design · the F10.7 window, which is the other half of what flows out.
+ *
+ * THE METHOD CHANGED HERE, AND THAT IS THE POINT OF THE PANEL.
+ *
+ * This used to compute `central expectation + 95th percentile growth` from the
+ * record. That is sw_f107_design's relation — the row §20 DEPRECATED — and it
+ * is `prf_design`'s method: the legacy tool freezes its last rotation forecast
+ * and holds it flat, giving 158.33 sfu for its own 2027 window. Measured
+ * against the two completed cycles scaled onto cycle 25's amplitude, the record
+ * puts that 74 per cent high.
+ *
+ * What replaced it is four rows, and they are what this draws now: the
+ * sustained and single-day levels on the hot side and on the cold side, each
+ * built from a within-rotation spread conditioned on the level it applies at
+ * rather than one spread used at every level. Together they ARE the design
+ * window, which is what this panel's own label has always claimed to draw.
+ */
+function f107Window(extra, o, eng) {
   const rq = eng && eng[o.reqf];
   if (!rq || rq.si === undefined) {
     throw new Error((o.reqf || 'the F10.7 requirement') + ' did not answer: ' +
       ((rq && rq.refused) || 'the engine was not asked'));
   }
   const REQ = rq.si;
-  const leads = [], design = [], growth = [];
-  for (let L = 183; L <= 5478; L = Math.round(L * 1.25)) {
-    const ch = [];
-    for (const [t, v] of byDay) { const w = byDay.get(t + L); if (w !== undefined) ch.push(w - v); }
-    ch.sort((a, b) => a - b);
-    const p95 = quantile(ch, 0.95);
-    leads.push(L / 365.25); growth.push(p95); design.push(CENTRAL + p95);
-  }
+  // sw_central_expectation is NOT read here any more, and the panel no longer
+  // declares it. The four design-window rows carry the centre inside
+  // themselves; guarding on a value this figure does not draw would be a
+  // declaration the panel cannot honour, and 2b says so — it caught exactly
+  // that within a minute of this rewrite.
+  const YR = 31557600;
+  const w = extra.win;
+  const xs = w.fl.x.map(v => v / YR);
+  const hot = w.fs.y, hotLong = w.fl.y, coldLong = w.cl.y, cold = w.cs.y;
+  const peak = Math.max(...hot);
   return {
     spec: {
-      x: { label: 'lead  [years]', min: 0 },
-      y: { label: 'F10.7  [sfu]' },
+      x: { label: 'mission length  [years]', min: xs[0], max: xs[xs.length - 1] },
+      y: { label: 'F10.7 the window is designed to  [sfu]' },
       series: [
-        { name: 'design value = central + 95th percentile growth', kind: 'line', x: leads, y: design },
-        { name: 'the 95th percentile growth alone', kind: 'line', x: leads, y: growth, colour: '#2a6f97' },
+        { name: 'sw_f107_design_short — hot, single day', kind: 'line', x: xs, y: hot },
+        { name: 'sw_f107_design_long — hot, sustained', kind: 'line', x: xs, y: hotLong,
+          colour: '#2f6fa8' },
+        { name: 'sw_f107_cold_long — cold, sustained', kind: 'line', x: xs, y: coldLong,
+          colour: '#2e7d55' },
+        { name: 'sw_f107_cold_short — cold, single day', kind: 'line', x: xs, y: cold,
+          colour: '#8f43e0' },
       ],
       marks: [
-        { axis: 'y', at: CENTRAL, label: 'central expectation = ' + CENTRAL, colour: '#4a4a4a' },
         { axis: 'y', at: REQ, label: 'required \u2264 ' + REQ.toFixed(0) + '  (' + o.reqf + ')',
-          colour: '#c1440e' },
+          colour: '#c2185b' },
       ],
     },
-    note: 'The F10.7 half of what crosses to the system, built the way sw_f107_design builds it: the ' +
-      'central expectation plus the 95th percentile of the change over the lead. At mission leads the ' +
-      'persistence term has decayed to nothing \u2014 w = exp(-L/27 d) is nil after a year \u2014 so ' +
-      'the central expectation is flat and the whole shape is the growth. It peaks near half a solar ' +
-      'cycle and dips near a full one, which is the cycle showing through a statistic that was never ' +
-      'told about it. ' + o.reqf + '\u2019s ' + REQ.toFixed(0) + ' sfu is ' +
-      (Math.max(...design) <= REQ ? 'met across the whole declared range, unlike the Ap '
-        : 'exceeded inside the declared range, as the Ap ') +
-      'one.',
+    note: 'The F10.7 half of what crosses to the system, as the four rows §20 built for it compute ' +
+      'it: the sustained and single-day levels on the hot side and the cold side. The band between ' +
+      'the outer two is the design window, and it is built from a within-rotation spread conditioned ' +
+      'on the level it applies at.\n\n' +
+      'This panel used to draw central expectation plus the 95th percentile growth, which is ' +
+      'sw_f107_design\u2019s relation and prf_design\u2019s method \u2014 the legacy tool freezes ' +
+      'its last rotation forecast flat and answers 158.33 sfu for its own window, and the record puts ' +
+      'that 74 per cent high. That row is deprecated and this figure no longer draws it.\n\n' +
+      'Every curve moves with mission length because the window mean rises and falls with where the ' +
+      'window ends in the cycle \u2014 the cycle showing through a statistic that was never told ' +
+      'about it. ' + o.reqf + '\u2019s ' + REQ.toFixed(0) + ' sfu is ' +
+      (peak <= REQ ? 'met across the whole declared range; the worst single day the window reaches is '
+        + peak.toFixed(1) + '.' : 'exceeded inside the declared range, at ' + peak.toFixed(1) + '.'),
   };
 }
 

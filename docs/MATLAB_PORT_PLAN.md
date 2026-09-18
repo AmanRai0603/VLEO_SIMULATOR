@@ -2136,10 +2136,41 @@ step reworded, which would have made the case a silent no-op: the selftest now
 refuses a break that changes nothing, because a case that proves nothing is
 worse than no case.
 
-**A4. Replace the method `design` draws.** It draws `prf_design`'s frozen
-persistence; the rows use the cycle analogue and the level-conditioned spread,
-and §22.2 measures the legacy method as 74% high. Re-cite the panel on the six
-design-window rows, and name on its face which method is drawn.
+**A4. Replace the method `design` draws.** Done. The F10.7 branch computed
+`central expectation + 95th percentile growth` from the record, which is
+`sw_f107_design`'s relation — the row §20 DEPRECATED — and `prf_design`'s method,
+the one §22.2 measures as 74% high. A figure drawing a retired method beside
+live rows tells a reader something the tree has stopped believing.
+
+It draws the four rows that replaced it: `sw_f107_design_long` and `_short` on
+the hot side, `sw_f107_cold_long` and `_short` on the cold, each swept over
+mission length. The band between the outer two IS the design window, which is
+what the panel's own label has always claimed to draw, and each is built from a
+within-rotation spread conditioned on the level it applies at. The note says
+which method was replaced and why. All six rows are cited now; the panel cited
+none of them before.
+
+*2b caught me inside a minute.* The rewrite kept a guard on
+`sw_central_expectation` and went on declaring it, while the four swept rows
+carry the centre internally and nothing drew it — "asked the engine for
+sw_central_expectation and drew the same picture when the answer changed". The
+declaration was a promise the panel could no longer keep, and the check said so
+before I noticed. Guard and declaration both removed.
+
+*And a gap in check 3 this exposed.* No reference image changed, because the
+reference is photographed at the panel's OPENING state and that is the Ap
+branch. `design` has eleven views and one picture stands for all of them, so the
+branch this step rewrote is not covered by a reference at all. Part C5 should be
+a reference per view that matters, not one per panel. Until then the F10.7 half
+rests on 2b and on a person looking at it.
+
+*One unreproduced failure, recorded rather than dismissed.* A run reported
+`climate 3 matches, 33.8% of pixels differ`; two further runs and a
+re-record showed no change, and the same run carried a thrown evaluate from the
+then-broken `design` panel. The likely mechanism is fallout in the shared
+browser session rather than anything in `climate`. "Flake" is not a root cause,
+so: it has not recurred, the mechanism is plausible but unproven, and it is
+written down here so a second occurrence is a pattern rather than a surprise.
 
 **A5. Branch-aware controls.** A control the current branch does not read is not
 drawn. Removes all 35 repeats, audited in §25.1 as provably identical. Hides `g`
