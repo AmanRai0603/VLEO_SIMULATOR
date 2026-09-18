@@ -3170,3 +3170,217 @@ In order, and none of it is large:
 
 Items 1 to 3 are decisions and cost almost nothing to implement once decided.
 Items 4 to 7 are work.
+
+
+---
+
+## 30 · The plan: exospheric temperature, and the three things not said clearly
+
+Two workstreams. **A** is the exospheric temperature row itself, which is where
+the solar drivers first become physics. **B** is §29's three statements. They
+overlap at exactly one point — which Kp — and that point is done once, in B1, and
+read by A.
+
+**What I cannot do, stated first.** Three of these steps need a number a person
+chooses. `AGENTS.md`: *an agent may never supply mathematics, and without an
+attribution nothing can tell whether one did*. Every declared value below is
+marked **[needs a person]** and the step stops there until it has one. Where there
+is evidence for what the number should be, the step carries the evidence and not a
+decision.
+
+### Workstream A · Exospheric temperature
+
+The row is `env_exospheric_temperature`, subsystem `env`, crate
+`vleo-mod-envorbit`. It computes
+`T_inf = 379 + 3.24·F10.7A + 1.3·(F10.7 − F10.7A) + 28·Kp + 0.03·exp(Kp)` from
+`vleo_core::physics::env::exospheric_temperature`, and it answers 949.603 K today.
+
+**A1 · The fixtures do not test the relation, and that is the first thing to fix.**
+
+All three fixtures set `f107 == f107a`:
+
+| fixture | F10.7 | F10.7A | Kp | expects |
+|---|---|---|---|---|
+| solar minimum, quiet | 70 | 70 | 1 | 633.9 |
+| moderate activity | 150 | 150 | 3 | 949.6 |
+| solar maximum, storm | 250 | 250 | 7 | 1417.9 |
+
+So `1.3·(F10.7 − F10.7A)` is multiplied by zero in **every** case. **The
+coefficient 1.3 could be any number at all and all three fixtures would still
+pass.** That term is what carries the daily departure from the 81-day mean — it is
+the whole of the short-term response — and nothing checks it.
+
+Worse, each expected value is the formula evaluated by hand: 379 + 3.24·70 + 28 +
+0.03·e¹ = 633.88. That is arithmetic verification of the implementation against
+the sheet, not evidence that the sheet matches Jacchia 1971. Their provenance says
+`published-source`, and what they are is a restatement.
+
+*The step:* add at least three fixtures whose expected values come from published
+Jacchia-71 worked examples or an independent implementation — **[needs a person]**
+for the source — and among them at least two with `F10.7 ≠ F10.7A` in both
+directions, and one that separates `28·Kp` from `0.03·exp(Kp)` (at Kp 7 the
+exponential is 32.9 K of 229 K, so it is separable there and invisible below Kp 4).
+
+*Green when:* `cargo run -p xtask -- gate env_exospheric_temperature && cargo
+test`. A fixture disagreement is a physics disagreement and goes to the owner.
+
+**A2 · The row has one assumption and needs five.**
+
+It declares *"Night-time minimum, with no diurnal or seasonal term"*, which is
+right and is worth up to 30 per cent at 14:00 local solar time. Unstated, and each
+of these changes what the number means:
+
+1. **Kp here is a 3-HOURLY index and it is being fed a daily statistic.** J71's
+   geomagnetic term takes the Kp of the interval. This tree hands it a daily mean
+   or a daily peak — §29.2 — and the choice is worth 27 K at the quiet end and
+   140.6 K on the worst day. Whatever B1 decides, this row must SAY which it takes.
+2. **No geomagnetic lag.** J71 applies its correction to Kp lagged by about 0.25
+   day; this applies it instantaneously, so a storm's heating arrives too early.
+3. **F10.7 is the previous day's value in J71**, because the EUV that heated the
+   thermosphere is yesterday's. This reads today's.
+4. **No semiannual term**, which the record's own `sw_semiannual_amplitude`
+   measures and this row does not take.
+5. **The coefficients are the global night-time form**; J71 has variants and
+   nothing here says which.
+
+*The step:* five `[[assumption]]` blocks with `fails_when` clauses. Prose only —
+no number moves. This is the cheapest step in the plan and probably the most
+valuable, because every one of these is a way the number is read as more than it
+is.
+
+**A3 · The relation has nobody's name against it.**
+
+`maths.confirmed_by` is absent and there is no `[theory]` block, so `xtask gap`
+reports it twice: *the relation is stated but not derived*, and *an agent may never
+supply mathematics*. **[needs a person]** to read the relation against Jacchia 1971
+and sign it. I can draft the `[theory]` derivation — why 379, why the two-part
+solar term, why the exponential in the geomagnetic one — for that person to check.
+
+**A4 · A figure, because this is the row you want to look at.**
+
+A `thermosphere` panel, 4 views, on `env_exospheric_temperature`:
+
+| view | what it draws |
+|---|---|
+| against F10.7 | T_inf swept over `env_f107`, with the five driver scenarios marked and the declared `env_f107 = 150` marked beside them |
+| against Kp | T_inf swept over `env_kp`, with **both** Kp readings of each scenario marked — this is §29.2 as a picture |
+| the two Kp readings | the five scenarios as paired bars or a slope chart, mean against peak, so the 27 K … 140.6 K spread is one glance |
+| the terms | the four terms of the relation stacked, so a reader sees that at Kp 3 the exponential is 0.6 K and at Kp 7 it is 32.9 K |
+
+Every sweep it needs already works. This is the panel that makes B1 a decision
+somebody can take by looking rather than by reading a table.
+
+**A5 · The drivers this row reads — NOT done in this plan.**
+
+It reads `env_f107 = 150`, `env_f107a = 150`, `env_kp = 3`, which are declared
+constants, while the solar subsystem computes 104.07 / 104.07 / 5.198 and is read
+by nothing (§28.2). Everything above is worth doing whichever way that goes, and
+none of it depends on it. It is listed here so that it is not forgotten, and it is
+yours to decide.
+
+### Workstream B · The three statements
+
+**B1 · Which Kp slot drives the design.**
+
+*The evidence:* the legacy run's own header says **`Kp slot 'mean'`**. So the study
+answered this for its own run and the answer was the daily mean. The tree
+publishes both columns and names neither, and `sw_kp_slot_bias` exists precisely
+because they differ.
+
+*The step:* one new declared row in `vleo-mod-solar`:
+
+```
+id      = sw_kp_driving_slot
+kind    = declared
+question: Which Kp slot is the design driven by — the day's mean, or its worst
+          three-hour interval?
+```
+
+**[needs a person]** for the value, and the choice is not obvious: the mean is what
+the legacy run used and what a daily-averaged density model wants; the peak is what
+a vehicle actually meets, and on the worst-day scenario it is 140.6 K hotter. A
+defensible third answer is *both, and the design closes against the peak while it
+is sized on the mean*, which would make this row a set rather than a switch.
+
+Then `env_exospheric_temperature` reads it, or — if A5 stays undecided — states in
+A2's first assumption which slot its declared `env_kp` is meant to be.
+
+*Green when:* gate, and `sw_kp_slot_bias`'s sheet cross-references the new row so
+the two cannot drift.
+
+**B2 · What confidence the band is at.**
+
+*The evidence, and it is worse than one wrong label.* The sustained rows use
+`1.28σ`, which is Φ(1.28) = 0.8997 — the one-sided 90th percentile. The daily rows
+use `0.95`. The run is labelled 95 per cent. **So the two halves of a single
+scenario are at different confidences**, and neither half is at the label's.
+
+*The step:* one new declared row, `sw_band_confidence`, that both halves read, so
+there is one number and one name for it. **[needs a person]** for the value, and
+the decision has a cost either way:
+
+| | what it does | what it costs |
+|---|---|---|
+| keep 0.8997 | the label becomes true, no number moves | the driver table stays at a 90 per cent bound while the study's prose says 95 |
+| move to 0.95 (z = 1.645) | one confidence throughout, matching the label | the sustained scenarios rise about 4.9 sfu and **parity with `mission_drivers.csv` is lost** — 14 rows hold the legacy run's own answers and four of them would stop matching |
+
+*My reading, offered and not taken:* this repository's discipline is to reproduce
+the study and say where it is wrong, not to repair it silently — so keeping 0.8997
+and making the label true is more in character, with B3 providing the correct
+number beside it rather than instead of it. But it is a design decision about a
+published bound and it is yours.
+
+**B3 · The empirical quantile, beside the z-multiplier rather than instead of it.**
+
+*Why this is the same problem as B2.* `centre + z·σ` assumes the residuals are
+normal. `sw_f107_design_long`'s own sheet says they are not: *"the residuals of a
+forecast that misses hardest when activity is highest are skewed, and a normal
+multiplier under-covers the high tail — which is the tail a design is sized
+against."* The 361 walk-forward residuals exist. One number is published from them.
+
+*A constraint that shapes this step:* the engine does not read the bundle at
+runtime — measurements become declared values or tables baked into holes. And the
+gate **refuses `[[publishes]]` on a declared row**: *"a declared row states one
+measured number; a set is computed from the rows that measured its members."* So
+this cannot be three members on `sw_mean_band_spread`. It is sibling rows.
+
+*The step, in three parts:*
+
+1. **`tools/rotation_residuals.py`** — reproduce the walk-forward that produced
+   σ = 13.4544 sfu, from `observed_daily.csv`, and print the 361 residuals' σ
+   alongside their empirical 90th, 95th and 99th. The first output that matters is
+   whether σ comes back at 13.4544: if it does not, the script is wrong and nothing
+   below it is trustworthy. Same for Ap against 3.5937.
+2. **Two new declared rows** — `sw_mean_band_p95` and `sw_ap_mean_band_p95` — the
+   empirical quantile of the same sample. **[needs a person]** to confirm each
+   value, exactly as σ was confirmed by A. Rai on 2026-09-16.
+3. **A view on the `spread` panel** (§27.4's panel, still unbuilt) drawing the 361
+   residuals with `z·σ` and the empirical quantile both marked on them. That
+   picture is the argument: if the two coincide the normal assumption was fine and
+   this was cheap; if they do not, the gap is the under-coverage, in sfu, visible.
+
+*What it does NOT do:* it does not change a design value. No design row reads the
+new quantiles until somebody decides they should, which is a fourth decision and
+is deliberately not in this plan.
+
+### The order, and what each step leaves green
+
+| # | step | needs a person | moves a number |
+|---|---|---|---|
+| 1 | **A2** five assumptions on `env_exospheric_temperature` | no | no |
+| 2 | **A1** fixtures that test the 1.3 term and the exponential | yes — the source | no |
+| 3 | **A3** `[theory]` and the relation's signature | yes — the signature | no |
+| 4 | **B3.1** the walk-forward script, checked against σ | no | no |
+| 5 | **B1** `sw_kp_driving_slot` | **yes — the value** | yes, downstream |
+| 6 | **B2** `sw_band_confidence` | **yes — the value** | yes, if 0.95 |
+| 7 | **B3.2** the two empirical-quantile rows | **yes — both values** | no |
+| 8 | **A4** the `thermosphere` panel, 4 views | signature on the reference | no |
+| 9 | **B3.3** the residual view on the `spread` panel | signature on the reference | no |
+
+Steps 1 to 4 need nothing from you and change no number — they are the evidence
+the rows are currently missing. Steps 5 to 7 are the three decisions. Steps 8 and 9
+are the pictures that make 5 and 6 answerable by looking.
+
+Every step ends green on `cargo run -p xtask -- gate && cargo test`, and steps 8
+and 9 additionally on `python3 tools/panel_check.py` and its `--selftest`. Steps 8
+and 9 produce reference images that **an agent may not sign**.
