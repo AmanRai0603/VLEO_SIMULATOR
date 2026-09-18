@@ -70,13 +70,21 @@ def main():
     #
     # Anything else this tree added, and says so.
     plan = open(os.path.join(ROOT, "docs/MATLAB_PORT_PLAN.md"), encoding="utf-8").read()
+    # THE SOURCE CELL IS TAKEN WHOLE AND THEN SEARCHED, not matched by shape.
+    #
+    # The first version required the cell to be exactly a backticked name, so
+    # "`prf_ap2kp` fit" and "`prf_ap2kp` table" matched NOTHING — the words after
+    # the closing backtick made the whole row fail to parse, and the row fell
+    # through to "added by this tree". sw_kp_from_ap survived that because it
+    # also holds a parity.csv; sw_kp_slot_bias did not, and was counted as an
+    # addition for as long as this script has existed. A pattern that is silent
+    # when it fails is the wrong shape for a classifier.
     mapped = {}
     for nid, _q, src in re.findall(
-            r"^\|\s*\**`([a-z0-9_]+)`\**\s*\|([^|]*)\|\s*\**`?([^|`*]+)`?\**\s*\|\s*$",
-            plan, re.M):
-        src = src.strip()
-        if re.match(r"^(prf_[a-z0-9_]+|[FCR]\.[a-z0-9_]+|Climate tab)", src):
-            mapped.setdefault(nid, src)
+            r"^\|\s*\**`([a-z0-9_]+)`\**\s*\|([^|]*)\|([^|]*)\|\s*$", plan, re.M):
+        m = re.search(r"(prf_[a-z0-9_]+|[FCR]\.[a-z0-9_]+|Climate tab)", src)
+        if m:
+            mapped.setdefault(nid, src.strip().strip("`* "))
 
     def origin(nid):
         if os.path.exists(os.path.join(ROOT, "crates/vleo-mod-solar/nodes/%s/parity.csv" % nid)):

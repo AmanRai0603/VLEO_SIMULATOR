@@ -2718,3 +2718,118 @@ free to remove.
   fit's support — ranks 2 and 3 of a 28.2-year sample — not a per-point count, so
   B9's fade has nothing to follow. Marking it means deciding where the fit stops
   being supported, which is a judgement about the row.
+
+
+---
+
+## 27 · The curve audit — "MATLAB was all curves; some of ours are numbers"
+
+The question this answers: the legacy study's 38 analysis methods produced ~57
+**figures**. This tree's 55 live rows each answer **one number**. So where did the
+curves go, and is anything lost?
+
+### 27.1 · A classifier bug, found first
+
+The ported/added split was **37 / 18** and is **38 / 17**. `tools/solar_rows.py`
+read the plan's mapping tables with a pattern that required the source cell to be
+exactly a backticked name, so two cells — `` `prf_ap2kp` table `` and
+`` `prf_ap2kp` fit `` — failed to parse at all and their rows fell through to
+"added by this tree". `sw_kp_from_ap` survived because it also holds a
+`parity.csv`; **`sw_kp_slot_bias` did not, and has been counted as an addition for
+as long as that script has existed.** The cell is now taken whole and searched.
+
+*A pattern that is silent when it fails is the wrong shape for a classifier.*
+
+### 27.2 · Two different questions were being run together
+
+"Curve or number" in `SOLAR_ROWS.md` does **not** mean "has a figure". It is
+measured through `/v1/levers` and means *does any declared decision upstream move
+this row's answer*. A row can be a number in that sense and still be read off a
+curve the face draws in full.
+
+Measured the way the node page draws it — sweep over every declared row reachable
+upstream that carries a range, take the widest:
+
+| | its own page draws a curve | its own page draws a number | total |
+|---|---|---|---|
+| **ported** from the legacy MATLAB | 27 | 11 | 38 |
+| **added** by this tree | 10 | 7 | 17 |
+| | **37** | **18** | **55** |
+
+**17 of the 18 "number" rows are `declared`** — a value a person chose and
+confirmed. There is nothing to sweep: the node page shows the declared-value view
+instead, which is where that number sits inside its own domain. The 18th is
+`sw_regime`, whose natural axis is daily Ap, and Ap is not a decision anybody
+makes — `segmentation` draws that curve instead.
+
+### 27.3 · Where each ported "number" row's curve actually is
+
+| row | legacy | the number | where its curve is drawn |
+|---|---|---|---|
+| `sw_recurrence_lag` | `C.rot_peak_lag` | 26 d | `pattern` — the whole autocorrelation, peak marked |
+| `sw_recurrence_strength` | `C.rot_peak_r` | 0.376 | same curve, the peak's height |
+| `sw_spike_threshold` | `prf_spikes` | — | `pattern` spike view, size against timing |
+| `sw_event_duration` | `prf_events` | — | same view |
+| `sw_cycle_repeatability` | `C.repeat` | 0.770 | `repeatability` — every cycle stacked on phase |
+| `sw_regime` | `parity.csv` | — | `segmentation` — the Ap histogram with the boundaries |
+| `sw_semiannual_amplitude` | Climate tab | — | `climate`, by day of year, with both equinoxes marked |
+| `sw_ap_central_expectation` | `parity.csv` | 22.095 | `climate` by year; `drivers` as the nominal scenario |
+| `sw_mean_band_spread` | `parity.csv` | 13.4544 sfu | **nowhere — see 27.4** |
+| `sw_ap_mean_band_spread` | `parity.csv` | 3.5937 | **nowhere — see 27.4** |
+| `sw_band_coverage` | `F.band_cov` | 0.9509 | **nowhere — see 27.4** |
+
+Seven of the eleven are read off a curve this face draws in full, at higher
+resolution than the study drew it. Four are not.
+
+### 27.4 · What IS lost — four figures, and they are the same family
+
+**The spread rows have no picture of their own spread.** Each of these is a
+number computed from a sample the face never shows:
+
+1. **`sw_mean_band_spread` = std(pred − truth) over 361 walk-forward
+   next-rotation forecasts = 13.4544 sfu.** Nothing draws the 361 residuals. This
+   σ sets the **entire design band** — every scenario is centre ± 1.28 σ — so the
+   one number the whole driver table's width rests on is the one with no figure
+   behind it. A reader cannot see whether those residuals are normal, which is
+   what the 1.28 multiplier assumes.
+2. **`sw_ap_mean_band_spread` = 3.5937**, the same construction on Ap, the same
+   gap.
+3. **`sw_f107a_ratio` = sd of F10.7 / F10.7A over the record = 0.1222.** The
+   daily-against-81-day scatter is never drawn. *(Counted as added, not ported.)*
+4. **`sw_band_coverage` = 0.9509** — "does the stated 95 per cent band actually
+   contain the truth 95 per cent of the time", pooled over seven leads. `predict`
+   draws the band's WIDTH as a four-percentile fan; nothing draws whether it
+   COVERS. This is the row that audits the band, and it is the one the picture
+   does not check.
+
+These are not repeats of anything drawn elsewhere and each was a figure in the
+study. **This is the honest answer to "are we losing anything": four, all of them
+distribution or coverage pictures behind numbers the design depends on.**
+
+A `spread` panel would close all four — three residual/scatter distributions and
+one coverage-against-lead curve, four views — and it is the one real figure gap
+left in the subsystem.
+
+### 27.5 · What the 17 added rows are doing
+
+| what | rows | why it is not in the legacy tool |
+|---|---|---|
+| **the five requirements** | `l3_solar_req_01` … `_05` | the study was an ANALYSIS tool. It measured the sky and never stated what the vehicle must survive, so it had nothing to close against |
+| **the five closures** | `l3_solar_ach_01` … `_05` | the signed margin, in the sense the requirement declares. The study computed no margins at all; these are the rows that turn a description of the sky into a design test |
+| **what happens past the design** | `sw_exceedance_rate`, `sw_exceedance_duration`, `sw_exceedance_phase`, `sw_design_safe_duration` | the study answered "what Ap do I design to". These answer "and when it is exceeded, how often, for how long, where in the cycle, and how long until that matters" — 0.284 days a year, in 1.14-day events, at cycle phase 0.60, safe for 2.62 years |
+| **the design decision itself** | `sw_storm_design_level` | G1/G2/G3 as a row rather than a constant, which is what makes `sw_ap_design` a curve instead of a number |
+| **the analogue's own ceiling** | `sw_window_peak_level` | the study used the window MEAN only. This is its maximum, and past 5.9 years it is above the hot single-day design value — see D4 |
+| **the daily scatter** | `sw_f107a_ratio` | measured here to size the daily band; the study carried a fixed multiplier |
+
+All seventeen earn their place, and the audit that says so is the one in §26 D4:
+every one of them is read by something or drawn by something, and none is free to
+remove.
+
+### 27.6 · What is NOT claimed here
+
+This audit checks that a curve EXISTS for each row, not that it is the same curve
+the study drew. The legacy figures themselves are not in the repository — only
+`mission_drivers.csv`, one run's twenty-five numbers — so "the same picture" is
+not a thing that can be checked by machine. What `drivers` does instead is put the
+study's numbers beside this tree's and let a reader see the two families of
+deliberate disagreement.
