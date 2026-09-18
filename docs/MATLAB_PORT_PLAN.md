@@ -2437,21 +2437,134 @@ of a different shape cannot be compared at all, so it is not a percentage.
 
 ### Part C — the panels, on the repaired layer
 
-**C1. `pattern`** — the significance band, the third peak mark, three detrend
-windows as three lines with 365 heavy and the other two light, lag as an axis
-zoom. 36 combinations → 3 views.
+**The move all three make.** A control shows one picture at a time, and every one
+of these three knobs was set over a quantity a reader wants to *compare*: three
+detrend windows, four percentiles, three metrics. So the knob made the comparison
+impossible and then charged a view count for it. Each becomes an encoding — a
+second line, a ramp step, a second frame — and 80 combinations become 10 views
+that each say more than the 80 did.
 
-**C2. `predict`** — four percentiles as a fan with the highlight control, span as
-an axis zoom, sample thinning drawn. 48 → 4.
+**C0. Stacked panes in the chart layer.** Done, and C3 could not exist without it.
+`spec.panes` is a list of frames sharing one x extent, each with its own y scale,
+y label, marks and legend; the x axis is drawn once at the bottom. A spec that
+names `y`/`series`/`marks` directly is normalised to one pane, so there is one
+path rather than two — two paths is how a chart layer comes to have a feature
+that works on one and silently does nothing on the other.
 
-**C3. `forecast`** — three metrics as three stacked panels sharing an x-axis
-(never one axis: the units differ), two baselines as two lines. 18 → 3.
+*The check that it changed nothing.* `panel_check` was run before re-recording
+anything, and **all eight unchanged panels still matched their existing reference
+images**. A refactor of the drawing routine that moves no pixel on the single-pane
+path is the only kind worth trusting, and the reference images are what proved it
+rather than a reading of the diff.
+
+The readout, the arrow-key ladder and the table all walk panes now, each value
+formatted by its own frame — three frames in different units is the reason the
+stack exists, and one formatter for all of them would print sfu to the precision
+a dimensionless ratio wants.
+
+**C1. `pattern`** — done. 19 combinations → **3 views**.
+
+The detrend window and the maximum lag were controls and are now the picture.
+Three windows are three lines, 365 heavy because that is the window
+`sw_recurrence_lag` and `sw_recurrence_strength` were measured under, and the axis
+simply runs to 200 — the longest the lag knob offered, so nothing is lost by
+removing it. The comparison the knob prevented is the finding: **731 sits above
+365 at 182 of the 200 lags**, because a longer window calls less of the record
+trend and leaves more low-frequency signal to correlate. The published number is a
+choice, and now a reader can see how much it moves.
+
+*The third peak was computed, quoted in the prose and never drawn.* It is the one
+that settles the period — furthest from the decay the first bump rides on — so the
+sentence claiming 27.0 days was asking a reader to take the most important of the
+three on trust. It is marked. The three read 26, 54 and 81: 26 for the first, and
+27.0 from each harmonic.
+
+*And a significance band, which is Bartlett's and not 2/√n.* The naive band tests
+whether the series is white noise. This one decays from 0.94 at lag 1, so that
+test is passed by everything and says nothing — ±0.0198, under every wiggle drawn.
+Bartlett's large-lag standard error asks the question a reader actually has: is
+this bump more than the decay below it already produces. It widens with lag, which
+is the honest shape. The 365 curve is outside it at 140 of the 200 lags.
+
+The band is drawn as `aside: true` — furniture, like a mark that happens to vary
+with x. Named in the legend so the dashes mean something; kept out of the end
+labels, the readout and the table, which are for the record.
+
+**C2. `predict`** — done. 48 → **4 views**.
+
+Four percentiles at once, and they are an ORDERED set, so they are an ordinal ramp
+in one hue and never four categorical ones — a rainbow across 50, 90, 95 and 99
+would say the four are unrelated things. `#86b6ef → #3987e5 → #1c5cab → #0d366b`,
+run through the validator as an ordinal ramp: monotone lightness, every adjacent
+gap clear, light end at 2.06:1 against the surface, hue spread 4°. The 95th is
+heavy because it is the one `sw_uncertainty_growth` publishes.
+
+What the knob was hiding is the cost of the choice: **at a lead of one year the
+four run from 2 to 102 sfu**. That is the entire argument for a band, and a panel
+showing one percentile at a time could not make it.
+
+The span knob was three truncations of one curve, which is not a comparison at all
+— it is the same picture with less of it. The axis runs the whole ladder, to 13.54
+years. The measured shape survives: the 95th rises to 116 sfu at 4.08 years, falls
+to 64 at 10.03, and rises again. The four never cross, because they are quantiles
+of one sorted sample at each lead — sorted once for all four, so there is no way
+for them to disagree about what the sample was.
+
+**C3. `forecast`** — done. 13 → **3 views**, and this is the panel the stacked
+frame was built for.
+
+Three metrics of one outlook against one lead, and they cannot share a y axis:
+skill is a dimensionless ratio, bias is signed sfu, RMS error is positive sfu on a
+different scale. **A second y axis would let whoever drew it choose where the
+curves cross**, which is the most reliable way to make a chart say something the
+data did not — so the answer had been a control, and a control made "is the
+outlook biased where its skill collapses" unanswerable. Three frames in a column
+on one lead axis answers it by looking.
+
+The baseline is two lines in the skill frame, which is better than the control
+was: strict and leaky are drawn together, so the size of the leak is visible
+rather than remembered. At lead 1 they read **0.069 strict against −1.314 leaky**.
+
+*And it found a real error in what the panel had been computing.* Bias and RMS
+error use no baseline — `sw_forecast_bias` is the mean of (forecast − observed) at
+a lead, full stop — but the panel dropped every row whose persistence lookup came
+back empty before computing them, so it quoted the row's quantity over a subset
+the row does not take. The note carried the claim that the baseline "changes
+nothing on this metric", which was very nearly true and not exactly, which is the
+worst kind. Each metric is now taken over the pairs its own definition covers.
+
+*One thing measured rather than assumed.* The first draft of that note illustrated
+the correction with lead 27 — the one lead where the two counts happen to be
+equal, so the sentence explained a fix using the case the fix does not touch. The
+note now finds the lead where they differ most and names it.
 
 **C4. `repeatability`, `segmentation`, `climate`, `design`, `density`** — no
-structural change beyond Part A and Part B. 10, 5, 13, 11 and 1 views.
+structural change beyond Part A and Part B, as planned. 10, 5, 13, 11 and 1 views,
+counted off their control lists: a control hidden by a `when` contributes nothing
+in the states that hide it.
+
+**The subsystem now stands at 50 views across eight panels** — 10 + 3 + 5 + 4 + 3
++ 11 + 13 + 1 — against 61 in §26's totals, the difference being the two Part D
+panels that do not exist yet (6 + 5).
 
 **C5. Re-shoot every reference image and have a person sign each `correct`
-block**, listing the questions the old view set could answer, per §23.6.
+block.** Half done, and the half that is not is not mine to do.
+
+The three changed references are re-recorded, and every `correct` block is
+rewritten to state what the new picture must show — including the defects to look
+for: three curves that do not cross, a band that WIDENS rather than sitting at
+constant width, a dashed leaky baseline BELOW the solid one at short lead, three
+frames registered on one x extent, and lines that break at a dropped year rather
+than stepping over it.
+
+**The three signatures are withdrawn.** They said "content unchanged, canvas
+resized", and the content is now emphatically changed. Carrying a signature
+forward across a chart that has been rebuilt would make check three prove only
+that a machine has not changed its mind, which is exactly the failure
+`panels/README.md` warns about. All three read `UNCONFIRMED` with what changed and
+why, and they need a person to look at the PNG and put their name there. **An
+agent cannot be that person**, and this is listed here so it does not pass for
+done.
 
 ### Part D — the two new panels
 

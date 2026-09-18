@@ -102,6 +102,45 @@ function shape(xs, ys, unit, xunit, xname) {
 // ---------------------------------------------------------------------------
 // the panels
 
+/**
+ * The autocorrelation of a series at every lag to `maxLag`, and the pair count
+ * behind each.
+ *
+ * Written out rather than calling corr() on two slices, and the reason is the
+ * COUNT rather than the speed. Bartlett's band needs n at each lag, and corr()
+ * returns a correlation and drops how many pairs it used — so the band would
+ * have had to guess at the very number that sets its width.
+ *
+ * Pairing is res[i] against res[i+L], over the i where both are present, which
+ * is what corr(res.slice(0, n-L), res.slice(L)) did. A null is skipped rather
+ * than treated as zero: the record is missing 273 days, and counting them as no
+ * departure from trend would pull every correlation toward the mean.
+ */
+function laggedCorr(res, maxLag) {
+  const lags = [], r = [], n = [];
+  for (let L = 1; L <= maxLag; L++) {
+    let sa = 0, sb = 0, k = 0;
+    for (let i = 0; i + L < res.length; i++) {
+      const a = res[i], b = res[i + L];
+      if (a === null || b === null) continue;
+      sa += a; sb += b; k++;
+    }
+    lags.push(L);
+    if (k < 3) { r.push(null); n.push(k); continue; }
+    const ma = sa / k, mb = sb / k;
+    let sab = 0, saa = 0, sbb = 0;
+    for (let i = 0; i + L < res.length; i++) {
+      const a = res[i], b = res[i + L];
+      if (a === null || b === null) continue;
+      const da = a - ma, db = b - mb;
+      sab += da * db; saa += da * da; sbb += db * db;
+    }
+    r.push(saa && sbb ? sab / Math.sqrt(saa * sbb) : null);
+    n.push(k);
+  }
+  return { lags, r, n };
+}
+
 const PANELS = [
   {
     id: 'repeatability',
@@ -186,36 +225,71 @@ const PANELS = [
     label: 'Pattern',
     draws: 'The autocorrelation of the detrended record against lag, and its harmonics.',
     asks: 'At what lag does the solar rotation come back, and how strongly?',
+    // THE DETREND WINDOW AND THE MAXIMUM LAG WERE CONTROLS AND ARE NOW THE
+    // PICTURE. Nine settings of two knobs drew nine curves that differ in
+    // exactly the way a reader wants to compare, and a control is the one
+    // presentation that makes comparison impossible: it shows one at a time.
+    // The three windows are three lines, 365 heavy because that is the window
+    // sw_recurrence_lag and sw_recurrence_strength were measured under, and the
+    // axis simply runs to the longest lag that was on offer. 19 combinations
+    // become 3 views, and every one of them says more than the nine did.
     controls: [
       { k: 'view', label: 'view', opts: [['acf', 'recurrence and decay'], ['spikes', 'spikes: size and timing']] },
-      // The spike view is spikes(rec) and reads none of these — 17 of this
-      // panel's 36 combinations drew one picture.
+      // The spike view is spikes(rec) and reads nothing below it.
       { k: 'v', label: 'variable', when: o => o.view === 'acf',
         opts: [['f107', 'F10.7'], ['ap', 'Ap']] },
-      { k: 'w', label: 'detrend window', when: o => o.view === 'acf',
-        opts: [['365', '365 d'], ['181', '181 d'], ['731', '731 d']] },
-      { k: 'lag', label: 'max lag', when: o => o.view === 'acf',
-        opts: [['120', '120 d'], ['60', '60 d'], ['200', '200 d']] },
     ],
     build(rec, o) {
       if (o.view === 'spikes') return spikes(rec);
-      const key = o.v, W = +o.w, maxLag = +o.lag;
+      const key = o.v;
+      const MAXLAG = 200;
       const v = rec.days.map(d => d[key]);
       // 0.6, the same completeness rule sw_recurrence_lag and
       // sw_recurrence_strength were measured under. A panel that illustrates a
       // row and quotes a different number for it is worse than no panel.
-      const trend = centredMean(v, W, 0.6);
-      const res = v.map((x, i) => (x === null || trend[i] === null ? null : x - trend[i]));
-      const xs = [], ys = [];
-      for (let L = 1; L <= maxLag; L++) {
-        xs.push(L);
-        ys.push(corr(res.slice(0, res.length - L), res.slice(L)));
+      const acfFor = (W) => {
+        const trend = centredMean(v, W, 0.6);
+        const res = v.map((x, i) => (x === null || trend[i] === null ? null : x - trend[i]));
+        return laggedCorr(res, MAXLAG);
+      };
+      // 365 FIRST, so it takes the first hue — the one that means "the record"
+      // everywhere in this tool — and so the peaks below are read off the curve
+      // the rows were measured on.
+      const A = acfFor(365), Ashort = acfFor(181), Along = acfFor(731);
+      const xs = A.lags;
+
+      // THE BAND, AND WHY IT IS BARTLETT'S AND NOT 2/sqrt(n).
+      //
+      // The naive band tests each correlation against the hypothesis that the
+      // whole series is white noise. This series is emphatically not white — it
+      // decays from 0.94 at lag 1 — so that test is passed by everything and
+      // says nothing. The question a reader actually has at lag 26 is whether
+      // that bump is more than the decay below it would already produce, and
+      // Bartlett's large-lag standard error is the one that asks it: the
+      // variance of r_k grows with the correlations at every shorter lag.
+      //
+      //   se(r_k) = sqrt( (1 + 2 * sum_{j<k} r_j^2) / n )
+      //
+      // So the band WIDENS with lag, which is the honest shape: a correlation
+      // far out has to be bigger to mean the same thing. Computed on the 365
+      // curve, because that is the one it is drawn against.
+      const band = [];
+      let acc = 0, outside = 0;
+      for (let k = 0; k < xs.length; k++) {
+        const n = A.n[k];
+        const b = n > 2 ? 1.96 * Math.sqrt((1 + 2 * acc) / n) : null;
+        band.push(b);
+        const r = A.r[k];
+        if (r !== null && b !== null && Math.abs(r) > b) outside++;
+        if (r !== null) acc += r * r;
       }
-      // The first bump's peak, and the harmonics that say what the period is.
+
+      // The first bump's peak and its harmonics, which are what say what the
+      // period is. Measured on the 365 curve for the same reason the band is.
       const peakIn = (lo, hi) => {
         let best = null, at = null;
-        for (let L = lo; L <= hi && L <= maxLag; L++) {
-          const r = ys[L - 1];
+        for (let L = lo; L <= hi && L <= MAXLAG; L++) {
+          const r = A.r[L - 1];
           if (r !== null && (best === null || r > best)) { best = r; at = L; }
         }
         return { at, r: best };
@@ -223,12 +297,26 @@ const PANELS = [
       const p1 = peakIn(18, 36), p2 = peakIn(45, 65), p3 = peakIn(72, 95);
       const marks = [];
       if (p1.at) marks.push({ axis: 'x', at: p1.at, label: 'first peak, lag ' + p1.at });
-      if (p2.at && maxLag >= 65) marks.push({ axis: 'x', at: p2.at, label: 'second, ' + p2.at, colour: '#2f6fa8' });
+      if (p2.at) marks.push({ axis: 'x', at: p2.at, label: 'second, ' + p2.at, colour: '#2f6fa8' });
+      // THE THIRD PEAK WAS COMPUTED, QUOTED IN THE PROSE AND NEVER DRAWN. It is
+      // the one that settles the period — it is furthest from the decay the
+      // first bump rides on — so the sentence claiming it was asking the reader
+      // to take the most important of the three on trust.
+      if (p3.at) marks.push({ axis: 'x', at: p3.at, label: 'third, ' + p3.at, colour: '#2e7d55' });
+
       return {
         spec: {
-          x: { label: 'lag  [days]', min: 1, max: maxLag },
+          x: { label: 'lag  [days]', min: 1, max: MAXLAG },
           y: { label: 'autocorrelation of the detrended series  [-]' },
-          series: [{ name: '', kind: 'line', x: xs, y: ys }],
+          series: [
+            { name: 'detrended over 365 d', kind: 'line', x: xs, y: A.r, width: 2.2 },
+            { name: '181 d', kind: 'line', x: xs, y: Ashort.r, width: 1.3 },
+            { name: '731 d', kind: 'line', x: xs, y: Along.r, width: 1.3 },
+            { name: '95 % band, Bartlett', kind: 'line', x: xs, y: band,
+              colour: INK.muted, width: 1, dash: [3, 3], aside: true },
+            { name: '', kind: 'line', x: xs, y: band.map(b => (b === null ? null : -b)),
+              colour: INK.muted, width: 1, dash: [3, 3], aside: true },
+          ],
           marks,
         },
         note: p1.at
@@ -238,12 +326,26 @@ const PANELS = [
                 ' and the third at ' + p3.at + ' imply ' + (p2.at / 2).toFixed(1) + ' and ' +
                 (p3.at / 3).toFixed(1) + ' days per cycle. The first bump rides on the tail of the ' +
                 'steep decay from lag 1, which pulls its apparent peak toward zero; the far ' +
-                'harmonics are clear of it.'
-              : '. Raise the max lag to see the harmonics, which are what settle the period.') +
-            ' Drawn out to lag ' + maxLag + ', where the correlation is ' +
-            (ys[maxLag - 1] === null ? 'undefined' : ys[maxLag - 1].toFixed(4)) + '. ' +
-            'Shorten the detrend window toward the rotation itself and the signal disappears, ' +
-            'because the window removes what it is meant to leave.'
+                'harmonics are clear of it — which is why the third is marked and not merely ' +
+                'mentioned.'
+              : '.') +
+            '\n\nThe three lines are three detrend windows, and the comparison is the point: ' +
+            'the window sets what counts as the trend and therefore what is left to correlate. ' +
+            'At 731 days more low-frequency signal survives, so the whole curve sits higher and ' +
+            'the rotation bump is a smaller share of it. At 181 days the window is approaching ' +
+            'the rotation itself and starts removing what it is meant to leave. 365 is drawn ' +
+            'heavy because it is the window sw_recurrence_lag and sw_recurrence_strength were ' +
+            'measured under; the other two are here so a reader can see that the published ' +
+            'number is a choice and how much it moves.' +
+            '\n\nThe dashed band is the 95 per cent interval under Bartlett\u2019s large-lag ' +
+            'standard error, which widens with lag because the variance of a correlation grows ' +
+            'with every correlation below it. The naive \u00b12/\u221an band — ' +
+            (A.n[0] ? '\u00b1' + (2 / Math.sqrt(A.n[0])).toFixed(4) : 'a flat line') +
+            ' — tests whether the series is white noise, which it obviously is not, and would ' +
+            'pass everything drawn here. Bartlett\u2019s asks the question a reader actually ' +
+            'has: is this bump more than the decay beneath it already produces. The 365 curve ' +
+            'is outside the band at ' + outside + ' of the ' + MAXLAG + ' lags; where it is ' +
+            'inside, the wiggle is shape rather than finding.'
           : 'No peak in the rotation band at this setting.',
       };
     },
@@ -326,71 +428,102 @@ const PANELS = [
     label: 'Predict',
     draws: 'How far the flux moves over a lead, at a percentile.',
     asks: 'How far ahead is F10.7 knowable, and what does the band cost?',
+    // THE PERCENTILE AND THE SPAN WERE CONTROLS AND ARE NOW THE PICTURE.
+    //
+    // Four percentiles behind a knob is four pictures of one quantity that
+    // nobody can see at once, and the question the knob was standing in for —
+    // how much does this answer depend on which percentile you take — is
+    // answerable only by seeing them together. They are an ORDERED set, so they
+    // are drawn as an ordinal ramp in one hue rather than in four categorical
+    // ones: a rainbow across 50, 90, 95, 99 would say they are four unrelated
+    // things. The 95th is drawn heavy because it is the percentile
+    // sw_uncertainty_growth publishes.
+    //
+    // The span was three truncations of one curve, which is not a comparison at
+    // all — it is the same picture with less of it. The axis simply runs to the
+    // longest of them. 48 combinations become 4 views.
     controls: [
       { k: 'v', label: 'variable', opts: [['f107', 'F10.7'], ['ap', 'Ap']] },
-      { k: 'q', label: 'percentile', opts: [['0.95', '95th'], ['0.5', '50th'], ['0.9', '90th'], ['0.99', '99th']] },
-      { k: 'span', label: 'lead out to', opts: [['1826', '5 years'], ['365', '1 year'], ['5478', '15 years']] },
       { k: 'by', label: 'split', opts: [['all', 'the whole record'], ['cycle', 'by cycle']] },
     ],
     build(rec, o) {
-      const q = +o.q, maxL = +o.span, key = o.v;
-      if (o.by === 'cycle') return growthByCycle(rec, key, q, maxL);
+      const key = o.v, maxL = 5478;
+      // The percentiles, lightest to darkest, and the one the row publishes.
+      // Validated as an ordinal ramp: monotone lightness, every adjacent gap
+      // clear, and the light end at 2.06:1 against the surface. Never the
+      // categorical hues — those say "unrelated", and these are a ladder.
+      const QS = [
+        { q: 0.50, name: '50th', colour: '#86b6ef', width: 1.4 },
+        { q: 0.90, name: '90th', colour: '#3987e5', width: 1.4 },
+        { q: 0.95, name: '95th — the published one', colour: '#1c5cab', width: 2.4 },
+        { q: 0.99, name: '99th', colour: '#0d366b', width: 1.4 },
+      ];
+      if (o.by === 'cycle') return growthByCycle(rec, key, 0.95, maxL);
       const byDay = new Map();
       for (const d of rec.days) if (d[key] !== null) byDay.set(d.t, d[key]);
       const leads = [];
       for (let L = 30; L <= maxL; L = Math.round(L * 1.35)) leads.push(L);
-      const xs = [], ys = [], ns = [];
+      const xs = [], ns = [], ys = QS.map(() => []);
       for (const L of leads) {
         const ch = [];
         for (const [t, v] of byDay) {
           const w = byDay.get(t + L);
           if (w !== undefined) ch.push(w - v);
         }
+        // SORTED ONCE FOR ALL FOUR. The percentiles differ only in where they
+        // read the same sorted sample, and sorting it four times would be four
+        // chances for them to disagree about what the sample was.
         ch.sort((a, b) => a - b);
-        xs.push(L / 365.25); ys.push(quantile(ch, q)); ns.push(ch.length);
+        xs.push(L / 365.25); ns.push(ch.length);
+        QS.forEach((Q, i) => ys[i].push(quantile(ch, Q.q)));
       }
       const name = key === 'f107' ? 'F10.7' : 'Ap';
       const unit = key === 'f107' ? 'sfu' : '';
-      const pct = (q * 100).toFixed(q * 100 % 1 ? 1 : 0);
-      // Whether the eleven-year cycle is visible depends on how far out the lead
-      // goes, so the sentence about it is earned by the picture rather than
-      // attached to every one of them.
-      // Keyed on what the reader SELECTED, not on where the geometric lead ladder
-      // happened to stop: choosing five years lands the last lead at 4.08, so a
-      // test on the curve told a reader who had already extended it to extend it.
-      const far = maxL > 400;
-      const drawn = ys.filter(y => y !== null && isFinite(y));
-      const flat = drawn.length > 1 && Math.max(...drawn) - Math.min(...drawn) <= 1e-9;
-      const mid = ys.filter((y, i) => y !== null && xs[i] >= 3 && xs[i] <= 6);
-      const late = ys.filter((y, i) => y !== null && xs[i] >= 9 && xs[i] <= 12);
-      const humped = far && mid.length && late.length &&
-        Math.max(...mid) > Math.max(...late);
+      const P95 = 2;
+      const y95 = ys[P95];
+      // Whether the eleven-year cycle is visible is a property of the curve
+      // rather than of a setting, now that the axis always runs the whole way.
+      const mid = y95.filter((y, i) => y !== null && xs[i] >= 3 && xs[i] <= 6);
+      const late = y95.filter((y, i) => y !== null && xs[i] >= 9 && xs[i] <= 12);
+      const humped = mid.length && late.length && Math.max(...mid) > Math.max(...late);
+      // How much the answer depends on which percentile is taken, at the lead
+      // the row itself is read at. Measured rather than asserted.
+      const atYear = xs.reduce((b, x, i) => (Math.abs(x - 1) < Math.abs(xs[b] - 1) ? i : b), 0);
+      const spread = QS.map((Q, i) => ys[i][atYear]).filter(v => v !== null && isFinite(v));
       return {
         spec: {
           x: { label: 'lead  [years]', min: 0 },
-          y: { label: 'change in ' + name + ' at the ' + pct + 'th percentile  [' + (unit || '-') + ']' },
+          y: { label: 'change in ' + name + ' at a percentile  [' + (unit || '-') + ']' },
           // `ns` was counted here and thrown away. Handing it to the chart is what
-          // makes the far end of this curve look as thin as it is.
-          series: [{ name: '', kind: 'line', x: xs, y: ys, n: ns }],
+          // makes the far end of these curves look as thin as they are — and it
+          // goes on ALL FOUR, because the thinning is a property of the lead and
+          // fading only the published one would say the others rest on more.
+          series: QS.map((Q, i) => ({
+            name: Q.name, kind: 'line', x: xs, y: ys[i], n: ns,
+            colour: Q.colour, width: Q.width,
+          })),
         },
-        note: 'The ' + pct + 'th percentile of the SIGNED change in ' + name + ' over a lead — not the ' +
-          'absolute change, because the unsafe direction for a drag design is the driver arriving ' +
-          'higher than planned. ' + shape(xs, ys, unit, 'yr', 'lead') +
-          (q <= 0.5
-            ? ' At the median there is no tail to speak of: half of all changes are above this line ' +
-              'and half below, so a value near zero says the driver has no trend over these leads, ' +
-              'which is what a cyclic quantity looks like when the lead is not tied to its phase.'
-            : '') +
+        note: 'The SIGNED change in ' + name + ' over a lead — not the absolute change, because ' +
+          'the unsafe direction for a drag design is the driver arriving higher than planned. ' +
+          'Four percentiles at once, because the choice of percentile is a design decision and ' +
+          'a picture of one of them hides its cost: at a lead of one year they run from ' +
+          (spread.length ? sig(Math.min(...spread)) + ' to ' + sig(Math.max(...spread)) +
+            (unit ? ' ' + unit : '') : 'nothing drawn') +
+          '. sw_uncertainty_growth publishes the 95th, drawn heavy.\n\n' +
+          shape(xs, y95, unit, 'yr', 'lead') +
+          ' At the median there is almost no tail: half of all changes are above that line and ' +
+          'half below, so a value near zero says the driver has no trend over these leads, which ' +
+          'is what a cyclic quantity looks like when the lead is not tied to its phase. The gap ' +
+          'between the 50th and the 99th is the whole of what a band buys and costs.' +
           (humped
             ? ' The hump and the dip are the eleven-year cycle rather than noise: a lead of about ' +
               'half a cycle is the lead most likely to land on the opposite phase, and a lead of ' +
               'about a full cycle returns to a similar one.'
-            : far || flat
-              ? ''
-              : ' At a lead of a year the cycle is invisible: extend it to five or fifteen years to ' +
-                'see what the solar cycle does to this curve.') +
-          ' Pairs at a given lead overlap almost completely, so the ' + ns[0] + ' to ' +
-          ns[ns.length - 1] + ' counted here are nothing like that many independent observations.',
+            : '') +
+          '\n\nEvery line fades as its sample thins — the far end of a fifteen-year curve rests ' +
+          'on ' + ns[ns.length - 1] + ' pairs against ' + ns[0] + ' at the near end. And pairs at ' +
+          'a given lead overlap almost completely, so even ' + ns[0] + ' is nothing like that many ' +
+          'independent observations.',
       };
     },
   },
@@ -410,12 +543,23 @@ const PANELS = [
       // rather than left advertised. It is now built, and its [[input]] in
       // panels/forecast.toml is what keeps it built.
       { k: 'view', label: 'view', opts: [['lead', 'against lead'], ['year', 'by calendar year'], ['age', 'issue age']] },
-      // issueAge(idx) is the issue-age view and reads neither metric nor
-      // baseline — 5 of this panel's 18 combinations were one picture.
-      { k: 'm', label: 'metric', when: o => o.view !== 'age',
-        opts: [['skill', 'skill vs persistence'], ['bias', 'bias'], ['rmse', 'RMS error']] },
-      { k: 'base', label: 'persistence baseline', when: o => o.view !== 'age',
-        opts: [['strict', 'last obs BEFORE issue'], ['leaky', 'obs ON the issue date']] },
+      // THE METRIC AND THE BASELINE WERE CONTROLS AND ARE NOW THE PICTURE, and
+      // this is the panel the stacked frame was built for.
+      //
+      // Three metrics of one forecast against one lead, and they cannot share a
+      // y axis: skill is a dimensionless ratio, bias is signed sfu and RMS error
+      // is positive sfu on a different scale. A second y axis would let whoever
+      // drew it choose where the curves cross, which is the most reliable way to
+      // make a chart say something the data did not. So the answer was a control
+      // — and a control shows one at a time, which is exactly what makes "is the
+      // outlook biased where its skill collapses" unanswerable. Three frames in a
+      // column on one lead axis answers it by looking.
+      //
+      // The baseline is two lines in the skill frame, which is better than a
+      // control was: the strict and the leaky score are now computed over their
+      // own pairs and drawn together, so the reader sees the size of the leak
+      // rather than having to remember the other picture. 13 combinations
+      // become 3 views.
     ],
     async data() {
       const [fc, idx] = await Promise.all([
@@ -431,112 +575,118 @@ const PANELS = [
       for (const d of rec.days) if (d.f107 !== null) byDay.set(d.t, d.f107);
       const tOf = new Map();
       for (const d of rec.days) tOf.set(d.date, d.t);
-      const persist = (issue) => {
+      // BOTH BASELINES, BUILT ONCE. `leaky` is allowed to use the issue date
+      // itself; `strict` is what a forecaster actually had. Two lookups from one
+      // function rather than two functions, because two functions is two places
+      // for the one-day difference between them to stop being one day.
+      const persistFrom = (issue, first) => {
         const t = tOf.get(issue);
         if (t === undefined) return null;
-        for (let b = o.base === 'leaky' ? 0 : 1; b <= 15; b++) {
+        for (let b = first; b <= 15; b++) {
           const v = byDay.get(t - b);
           if (v !== undefined) return v;
         }
         return null;
       };
-      // The year view needs the same observations and the same baseline, so it
-      // is dispatched here rather than at the top: a second copy of `persist`
-      // is a second place for the leaky/strict choice to stop agreeing.
-      if (o.view === 'year') {
-        const y = byIssueYear(fc, byDay, tOf, persist, o.m);
-        const marks = scoreBaseline(o.m);
-        const worst = y.kept.length ? y.kept[y.keptYs.indexOf(Math.min(...y.keptYs))] : null;
-        const best = y.kept.length ? y.kept[y.keptYs.indexOf(Math.max(...y.keptYs))] : null;
-        return {
-          spec: {
-            x: { label: 'the calendar year the outlook was issued in' },
-            y: { label: o.m === 'skill' ? 'skill against persistence  [-]'
-              : o.m === 'bias' ? 'mean signed error, forecast − observed  [sfu]' : 'RMS error  [sfu]' },
-            series: [{ name: '', kind: 'line', x: y.years, y: y.ys }],
-            marks,
-          },
-          note: 'One point per calendar year, scored on leads ' + y.LO + ' to ' + y.HI + ' ONLY. ' +
-            'That restriction is what makes the years comparable and it is not cosmetic: the archive ' +
-            'is not uniform, and 2004 and 2007 carry no row past lead 14 at all while 2011 onward ' +
-            'carry a balanced mix. Scoring every lead together would draw the history of the archive ' +
-            'and label it the skill of the forecaster. The year is the year of ISSUE, so a December ' +
-            'outlook is counted against December even where it verifies into January.\n\n' +
-            (y.thin.length
-              ? y.thin.length + ' year(s) are dropped for holding fewer than ' + y.MIN + ' usable ' +
-                'pairs — ' + y.thin.join(', ') + '. They are not quiet years, they are thin ones, and ' +
-                'the arithmetic on them is violent: 2010 holds 25 pairs and scores -11.8. '
-              : '') +
-            (o.m === 'skill' && worst !== null
-              ? 'Skill is worst in ' + worst + ' and best in ' + best + '. A year at solar minimum ' +
-                'is the hard case for a forecaster and the easy one for persistence — when the flux ' +
-                'is flat, assuming nothing changes is very nearly right — so 2008 scoring below the ' +
-                'red line is the record behaving, not the outlook failing. Its RMS error that year ' +
-                'is about 3.5 sfu, the smallest in the series.'
-              : o.m === 'bias'
-                ? 'Bias runs strongly negative through 2022 to 2024, the rise of cycle 25: the ' +
-                  'outlook came in LOW by 7 to 9 sfu a year while activity was climbing. A design ' +
-                  'reading it there gets a thinner atmosphere than it will fly, which is the ' +
-                  'direction that costs propellant rather than the one that wastes it.'
-                : 'RMS error tracks the level rather than the difficulty — it is smallest at the ' +
-                  '2008 and 2018 minima and largest through solar maximum, because a bigger number ' +
-                  'has bigger errors. It says nothing about beating a baseline; the skill metric ' +
-                  'does.') +
-            ' ' + shape(y.kept, y.keptYs, o.m === 'skill' ? '' : 'sfu', '', 'year'),
-        };
-      }
+      const pcS = new Map(), pcL = new Map();
+      const strict = i => { if (!pcS.has(i)) pcS.set(i, persistFrom(i, 1)); return pcS.get(i); };
+      const leaky = i => { if (!pcL.has(i)) pcL.set(i, persistFrom(i, 0)); return pcL.get(i); };
 
-      const pc = new Map();
-      const xs = [], ys = [], ns = [];
+      if (o.view === 'year') return byIssueYear(fc, byDay, tOf, strict, leaky);
+
+      // EACH METRIC OVER THE PAIRS ITS OWN DEFINITION COVERS, and that is a
+      // correction rather than a nicety. Bias and RMS error use no baseline —
+      // sw_forecast_bias is the mean of (forecast − observed) at a lead, full
+      // stop — but this panel used to drop every row whose persistence lookup
+      // came back empty before computing them, so it quoted the row's quantity
+      // over a subset the row does not take. The note carried the claim that the
+      // baseline "changes nothing on this metric", which was very nearly true
+      // and not exactly, which is the worst kind.
+      const xs = [], nObs = [], nStr = [], nLk = [];
+      const skS = [], skL = [], bias = [], rmse = [];
       for (let L = 1; L <= 27; L++) {
-        let e2 = 0, p2 = 0, se = 0, n = 0;
+        let e2 = 0, se = 0, n = 0;
+        let e2s = 0, p2s = 0, ns = 0, e2l = 0, p2l = 0, nl = 0;
         for (const r of fc) {
           if (+r.lead_days !== L || r.f107 === null) continue;
           const tt = tOf.get(r.target_date);
           const obs = tt === undefined ? undefined : byDay.get(tt);
           if (obs === undefined) continue;
-          if (!pc.has(r.issue_date)) pc.set(r.issue_date, persist(r.issue_date));
-          const p = pc.get(r.issue_date);
-          if (p === null) continue;
           const e = +r.f107 - obs;
-          e2 += e * e; p2 += (p - obs) * (p - obs); se += e; n++;
+          e2 += e * e; se += e; n++;
+          const ps = strict(r.issue_date);
+          if (ps !== null) { e2s += e * e; p2s += (ps - obs) * (ps - obs); ns++; }
+          const pl = leaky(r.issue_date);
+          if (pl !== null) { e2l += e * e; p2l += (pl - obs) * (pl - obs); nl++; }
         }
         if (!n) continue;
-        xs.push(L); ns.push(n);
-        ys.push(o.m === 'skill' ? 1 - (e2 / n) / (p2 / n) : o.m === 'bias' ? se / n : Math.sqrt(e2 / n));
+        xs.push(L); nObs.push(n); nStr.push(ns); nLk.push(nl);
+        bias.push(se / n); rmse.push(Math.sqrt(e2 / n));
+        skS.push(ns && p2s ? 1 - (e2s / ns) / (p2s / ns) : null);
+        skL.push(nl && p2l ? 1 - (e2l / nl) / (p2l / nl) : null);
       }
-      const marks = scoreBaseline(o.m);
       const last = xs[xs.length - 1];
+      const at = (arr, L) => { const k = xs.indexOf(L); return k < 0 ? null : arr[k]; };
+      // WHERE THE TWO SAMPLES ACTUALLY DIFFER, named rather than assumed. The
+      // first example this note reached for was lead 27, where they happen to be
+      // equal — a sentence about a correction, illustrated with the one case the
+      // correction does not touch.
+      let gapAt = -1, gapBy = 0;
+      for (let k = 0; k < xs.length; k++) {
+        if (nObs[k] - nStr[k] > gapBy) { gapBy = nObs[k] - nStr[k]; gapAt = xs[k]; }
+      }
+      const sig2 = v => (v === null ? '—' : v.toFixed(3));
       return {
         spec: {
           x: { label: 'lead  [days]', min: 1, max: 27 },
-          y: { label: o.m === 'skill' ? 'skill against persistence  [-]' : o.m === 'bias' ? 'mean signed error, forecast − observed  [sfu]' : 'RMS error  [sfu]' },
-          // `ns` was counted here and thrown away. Handing it to the chart is what
-          // makes the far end of this curve look as thin as it is.
-          series: [{ name: '', kind: 'line', x: xs, y: ys, n: ns }],
-          marks,
+          panes: [
+            {
+              y: { label: 'skill against persistence  [-]' },
+              series: [
+                { name: 'vs. last obs BEFORE issue', kind: 'line', x: xs, y: skS, n: nStr },
+                { name: 'vs. obs ON the issue date (leaks)', kind: 'line', x: xs, y: skL,
+                  n: nLk, colour: INK.series[1], dash: [5, 3] },
+              ],
+              marks: scoreBaseline('skill'),
+            },
+            {
+              y: { label: 'mean signed error, forecast − observed  [sfu]' },
+              series: [{ name: '', kind: 'line', x: xs, y: bias, n: nObs }],
+              marks: scoreBaseline('bias'),
+            },
+            {
+              y: { label: 'RMS error  [sfu]' },
+              series: [{ name: '', kind: 'line', x: xs, y: rmse, n: nObs }],
+              marks: scoreBaseline('rmse'),
+            },
+          ],
         },
-        note: (o.m === 'skill'
-          ? 'Skill is one minus the ratio of mean squared errors, so zero is the red line — no ' +
-            'better than assuming nothing changes — and negative is worse than not bothering. '
-          : o.m === 'bias'
-            ? 'Signed error, forecast minus observed, so a negative value means the outlook came in ' +
-              'LOW and a design reading it gets a thinner atmosphere than it will fly. '
-            : 'Root mean square error in sfu, which is accuracy rather than skill: it says nothing ' +
-              'about whether the outlook beats a baseline, only how far it misses. ') +
-          shape(xs, ys, o.m === 'skill' ? '' : 'sfu', 'd', 'lead') + ' ' +
-          (o.base === 'leaky'
-            ? 'THIS BASELINE LEAKS. 719 of the 1281 issues index their rows from lead 0, so the issue ' +
-              'date is itself a forecast target for most of the record, and handing it to persistence ' +
-              'gives the baseline a number the forecaster did not have. Switch to the strict baseline ' +
-              'and the sign of the short-lead answer changes.' +
-              (o.m !== 'skill' ? ' It changes nothing on this metric, which does not use a baseline.' : '')
-            : 'Persistence is the last observation strictly BEFORE the issue date — what a ' +
-              'forecaster actually had.' +
-              (o.m === 'skill' ? ' On this baseline the outlook beats it from lead 1.' : '')) +
-          ' Lead ' + last + ' draws on ' + ns[ns.length - 1] + ' pairs against ' + ns[0] + ' at lead 1: ' +
-          'lead_days is indexed two ways in one column, and only the 1-based minority reaches 27, ' +
-          'which is why sw_outlook_lead declares 26.',
+        note: 'Three scores of one outlook against one lead axis, stacked rather than offered as a ' +
+          'control, because the question is how they move TOGETHER: skill collapses toward the far ' +
+          'leads while RMS error grows, and the bias frame says which direction the misses go. They ' +
+          'cannot share a y axis — a ratio, signed sfu and positive sfu on a different scale — and ' +
+          'a second y axis would let whoever drew it choose where the curves cross.\n\n' +
+          'Skill is one minus the ratio of mean squared errors, so zero is the red line: no better ' +
+          'than assuming nothing changes, and negative is worse than not bothering. THE DASHED LINE ' +
+          'IS A BASELINE THAT LEAKS. 719 of the 1281 issues index their rows from lead 0, so the ' +
+          'issue date is itself a forecast target for most of the record, and handing it to ' +
+          'persistence gives the baseline a number the forecaster did not have. At lead 1 the two ' +
+          'read ' + sig2(at(skS, 1)) + ' strict against ' + sig2(at(skL, 1)) + ' leaky; the gap is ' +
+          'the leak, and on the strict baseline the outlook beats persistence from lead 1.\n\n' +
+          'Bias is signed, forecast minus observed, so below the line means the outlook came in LOW ' +
+          'and a design reading it gets a thinner atmosphere than it will fly. RMS error is accuracy ' +
+          'rather than skill: it says nothing about beating a baseline, only how far the outlook ' +
+          'misses, and it grows with the lead whatever the skill does. Neither uses a baseline, so ' +
+          'neither has a second line — and both are now computed over every pair with an ' +
+          'observation rather than over the pairs the baseline happened to cover. The two samples ' +
+          'are not the same: they differ most at lead ' + gapAt + ', where ' + at(nObs, gapAt) +
+          ' pairs have an observation and the strict baseline reaches ' + at(nStr, gapAt) +
+          ' of them. Tying a baseline-free metric to a baseline is a small error and it was a ' +
+          'real one.\n\n' +
+          'Every line fades as its sample thins. Lead ' + last + ' draws on ' +
+          nObs[nObs.length - 1] + ' pairs against ' + nObs[0] + ' at lead 1: lead_days is indexed ' +
+          'two ways in one column, and only the 1-based minority reaches 27, which is why ' +
+          'sw_outlook_lead declares 26.',
       };
     },
   },
@@ -981,45 +1131,105 @@ function growthByCycle(rec, key, q, maxL) {
  * at fourteen days that is about 4 per cent of a year's rows landing one year
  * late, which moves nothing and is stated rather than corrected for.
  */
-function byIssueYear(fc, byDay, tOf, persist, metric) {
+function byIssueYear(fc, byDay, tOf, strict, leaky) {
   const LO = 1, HI = 14;
   //: A year with few pairs produces a skill that is arithmetic rather than
   //: evidence — 2010 has 25 of them and scores -11.8. Dropped, and counted in
   //: the note, on the same principle the Repeatability panel drops thin bins.
   const MIN = 200;
   const acc = new Map();
-  const pc = new Map();
   for (const r of fc) {
     const L = +r.lead_days;
     if (!(L >= LO && L <= HI) || r.f107 === null) continue;
     const tt = tOf.get(r.target_date);
     const obs = tt === undefined ? undefined : byDay.get(tt);
     if (obs === undefined) continue;
-    if (!pc.has(r.issue_date)) pc.set(r.issue_date, persist(r.issue_date));
-    const p = pc.get(r.issue_date);
-    if (p === null) continue;
     const y = +String(r.issue_date).slice(0, 4);
     if (!isFinite(y)) continue;
-    if (!acc.has(y)) acc.set(y, { e2: 0, p2: 0, se: 0, n: 0 });
+    if (!acc.has(y)) acc.set(y, { e2: 0, se: 0, n: 0, e2s: 0, p2s: 0, ns: 0, e2l: 0, p2l: 0, nl: 0 });
     const a = acc.get(y), e = +r.f107 - obs;
-    a.e2 += e * e; a.p2 += (p - obs) * (p - obs); a.se += e; a.n++;
+    // Bias and RMS error over every pair; each skill over the pairs its own
+    // baseline reaches. Same rule as the by-lead view, for the same reason.
+    a.e2 += e * e; a.se += e; a.n++;
+    const ps = strict(r.issue_date);
+    if (ps !== null) { a.e2s += e * e; a.p2s += (ps - obs) * (ps - obs); a.ns++; }
+    const pl = leaky(r.issue_date);
+    if (pl !== null) { a.e2l += e * e; a.p2l += (pl - obs) * (pl - obs); a.nl++; }
   }
   const years = [...acc.keys()].sort((a, b) => a - b);
   const thin = years.filter(y => acc.get(y).n < MIN);
-  const score = (y) => {
-    const a = acc.get(y);
-    return metric === 'skill' ? 1 - (a.e2 / a.n) / (a.p2 / a.n)
-      : metric === 'bias' ? a.se / a.n : Math.sqrt(a.e2 / a.n);
-  };
   //: A dropped year is a HOLE, not an absence. Filtering the thin years out of
   //: the series entirely leaves the line joining 2008 straight to 2011, and
   //: that segment reads as two years of evidence rather than as the gap it is.
   //: A null breaks the line here the same way it does everywhere else.
   const span = [];
   for (let y = years[0]; y <= years[years.length - 1]; y++) span.push(y);
-  const ys = span.map(y => (acc.has(y) && acc.get(y).n >= MIN ? score(y) : null));
-  const kept = span.filter((y, i) => ys[i] !== null);
-  return { years: span, ys, kept, keptYs: kept.map(score), thin, acc, LO, HI, MIN };
+  const ok = y => acc.has(y) && acc.get(y).n >= MIN;
+  const col = f => span.map(y => (ok(y) ? f(acc.get(y)) : null));
+  const skS = col(a => (a.ns && a.p2s ? 1 - (a.e2s / a.ns) / (a.p2s / a.ns) : null));
+  const skL = col(a => (a.nl && a.p2l ? 1 - (a.e2l / a.nl) / (a.p2l / a.nl) : null));
+  const bias = col(a => a.se / a.n);
+  const rmse = col(a => Math.sqrt(a.e2 / a.n));
+  const nObs = col(a => a.n), nStr = col(a => a.ns), nLk = col(a => a.nl);
+  const kept = span.filter((y, i) => skS[i] !== null);
+  const keptS = kept.map(y => {
+    const a = acc.get(y);
+    return a.ns && a.p2s ? 1 - (a.e2s / a.ns) / (a.p2s / a.ns) : null;
+  });
+  const worst = kept.length ? kept[keptS.indexOf(Math.min(...keptS))] : null;
+  const best = kept.length ? kept[keptS.indexOf(Math.max(...keptS))] : null;
+  return {
+    spec: {
+      x: { label: 'the calendar year the outlook was issued in', fmt: v => String(Math.round(v)) },
+      panes: [
+        {
+          y: { label: 'skill against persistence  [-]' },
+          series: [
+            { name: 'vs. last obs BEFORE issue', kind: 'line', x: span, y: skS, n: nStr },
+            { name: 'vs. obs ON the issue date (leaks)', kind: 'line', x: span, y: skL,
+              n: nLk, colour: INK.series[1], dash: [5, 3] },
+          ],
+          marks: scoreBaseline('skill'),
+        },
+        {
+          y: { label: 'mean signed error, forecast − observed  [sfu]' },
+          series: [{ name: '', kind: 'line', x: span, y: bias, n: nObs }],
+          marks: scoreBaseline('bias'),
+        },
+        {
+          y: { label: 'RMS error  [sfu]' },
+          series: [{ name: '', kind: 'line', x: span, y: rmse, n: nObs }],
+          marks: scoreBaseline('rmse'),
+        },
+      ],
+    },
+    note: 'One point per calendar year, scored on leads ' + LO + ' to ' + HI + ' ONLY. That ' +
+      'restriction is what makes the years comparable and it is not cosmetic: the archive is not ' +
+      'uniform, and 2004 and 2007 carry no row past lead 14 at all while 2011 onward carry a ' +
+      'balanced mix. Scoring every lead together would draw the history of the archive and label ' +
+      'it the skill of the forecaster. The year is the year of ISSUE, so a December outlook is ' +
+      'counted against December even where it verifies into January.\n\n' +
+      (thin.length
+        ? thin.length + ' year(s) are dropped for holding fewer than ' + MIN + ' usable pairs — ' +
+          thin.join(', ') + '. They are not quiet years, they are thin ones, and the arithmetic on ' +
+          'them is violent: 2010 holds 25 pairs and scores -11.8. The line BREAKS at a dropped ' +
+          'year rather than stepping over it.\n\n'
+        : '') +
+      (worst !== null
+        ? 'Skill is worst in ' + worst + ' and best in ' + best + '. A year at solar minimum is the ' +
+          'hard case for a forecaster and the easy one for persistence — when the flux is flat, ' +
+          'assuming nothing changes is very nearly right — so 2008 scoring below the red line is ' +
+          'the record behaving, not the outlook failing. Read it against the frame below: its RMS ' +
+          'error that year is about 3.5 sfu, the smallest in the series, which is the whole point ' +
+          'of stacking them.\n\n'
+        : '') +
+      'Bias runs strongly negative through 2022 to 2024, the rise of cycle 25: the outlook came in ' +
+      'LOW by 7 to 9 sfu a year while activity was climbing. A design reading it there gets a ' +
+      'thinner atmosphere than it will fly, which is the direction that costs propellant rather ' +
+      'than the one that wastes it. RMS error tracks the LEVEL rather than the difficulty — ' +
+      'smallest at the 2008 and 2018 minima, largest through solar maximum — because a bigger ' +
+      'number has bigger errors.',
+  };
 }
 
 /**
@@ -1412,7 +1622,12 @@ function fitCanvas(host) {
   if (!cv) return;
   const w = Math.round(host.getBoundingClientRect().width);
   if (w > 320) cv.width = Math.min(1180, w);
-  cv.height = Math.round(Math.max(340, Math.min(560, cv.width / 2.2)));
+  cv.height = fitHeight(cv.width);
+}
+
+/** One picture's height at a given width. A stack asks for more; see render. */
+function fitHeight(w) {
+  return Math.round(Math.max(340, Math.min(560, w / 2.2)));
 }
 
 function debounce(fn, ms) {
@@ -1435,6 +1650,15 @@ async function render(host, p, o) {
     ]);
     const out = p.build(rec, o, extra, eng);
     const cv = $('.sw-panel', host);
+    // A STACK NEEDS THE ROOM ITS FRAMES NEED, and the picture is the only thing
+    // that knows how many there are — fitCanvas runs before the build and sizes
+    // for one. Three frames squeezed into one picture's height would give each a
+    // third of the vertical resolution a slope is read from, which is the aspect
+    // argument from B6 applied three times over and in the wrong direction.
+    const nPanes = (out.spec.panes || []).length;
+    cv.height = nPanes > 1
+      ? Math.round(fitHeight(cv.width) * (1 + 0.42 * (nPanes - 1)))
+      : fitHeight(cv.width);
     drawChart(cv, out.spec);
     attachHover(cv);
     // From the same spec the chart was drawn from, so the two cannot disagree.

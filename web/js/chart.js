@@ -104,38 +104,79 @@ const nice = v => {
 /**
  * @param spec {
  *   x: {label, min, max, ticks?, fmt?},
- *   y: {label, min, max, ticks?, fmt?},
+ *
+ *   // ONE PANE, the ordinary case:
+ *   y: {label, min, max, ticks?, fmt?, log?},
  *   series: [{ name, kind: 'line'|'dots'|'bars'|'step', x:[], y:[], colour?, width?, dash?,
  *              n?: [] — the sample behind each point; where given, the line fades
- *              as the count falls, so a thin far end does not read as a firm one }],
+ *              as the count falls, so a thin far end does not read as a firm one,
+ *              aside?: true — FURNITURE, not data. A significance band is a
+ *              reference the curve is read against, the same job a mark does, and
+ *              it happens to vary with x rather than sit at one value. Drawn, and
+ *              named in the legend so the dashes mean something; kept out of the
+ *              end labels, the readout and the table, which are for the record }],
  *   marks: [{ axis:'y'|'x', at, label, colour? }],
+ *
+ *   // OR SEVERAL, STACKED, SHARING ONE X AXIS:
+ *   panes: [{ y, series, marks }, …],
+ *
  *   note: string
  * }
+ *
+ * STACKED PANES ARE THE ANSWER TO THE DUAL-AXIS TEMPTATION, and that is the whole
+ * reason they exist. `forecast` scores the published outlook three ways — skill, a
+ * dimensionless ratio; bias, in sfu; RMS error, in sfu but on a different scale —
+ * and all three are read against the same lead. Putting two of them on one frame
+ * needs two y scales, which lets the author choose where the curves cross and is
+ * the most reliable way to make a chart say something the data did not. Offering
+ * them as three settings of a control instead is honest and costs the comparison:
+ * the reader has to hold one picture in their head while looking at the next.
+ *
+ * Three frames in a column, one x axis at the bottom, each with its own y scale
+ * and its own label, is the standard answer to exactly this and it keeps the
+ * comparison the control was destroying.
+ *
+ * A pane carries its own y, its own series, its own marks and its own legend. The
+ * x extent is computed across every pane, so the frames are registered and a
+ * vertical read across them lands on the same lead in all three.
  */
 export function drawChart(canvas, spec) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const L = 74, B = 42;
+
+  // One shape for both cases: everything below works over `panes`, and a spec
+  // that names y/series/marks directly is one pane. Written this way rather than
+  // as two branches because two branches is how a chart layer comes to have a
+  // feature that works on one path and silently does nothing on the other.
+  const panes = (spec.panes && spec.panes.length
+    ? spec.panes
+    : [{ y: spec.y, series: spec.series, marks: spec.marks }]).map(p => ({
+      y: p.y || {}, series: p.series || [], marks: p.marks || [],
+    }));
+
   // A GUTTER FOR THE END LABELS, so a direct label sits BESIDE its line rather
   // than on top of it and off the edge. The texts are known before the scale is:
   // each is the last finite value of a named series, which is data and not
   // geometry. Measured first, then the right margin is whatever holds the widest
   // of them — the same move the legend band makes vertically.
+  ctx.font = '10px ui-monospace, monospace';
   const endTexts = [];
-  if (spec.series.filter(q => q.name).length > 1) {
-    const f = spec.y.fmt || nice;
-    for (const q of spec.series) {
-      if (!q.name || q.kind === 'bars' || q.kind === 'dots') continue;
+  for (const pn of panes) {
+    if (pn.series.filter(q => q.name).length <= 1) continue;
+    const f = pn.y.fmt || nice;
+    for (const q of pn.series) {
+      if (!q.name || q.aside || q.kind === 'bars' || q.kind === 'dots') continue;
       for (let k = q.y.length - 1; k >= 0; k--) {
         const v = q.y[k];
         if (v !== null && isFinite(v)) { endTexts.push(f(v)); break; }
       }
     }
   }
-  ctx.font = '10px ui-monospace, monospace';
   const endW = endTexts.reduce((m, t) => Math.max(m, ctx.measureText(t).width), 0);
   const R = 18 + (endW ? endW + 8 : 0);
-  // THE LEGEND GETS ITS OWN BAND, ABOVE THE PLOT.
+
+  // THE LEGEND GETS ITS OWN BAND, ABOVE ITS PANE.
   //
   // It used to be drawn inside the frame at the top left, over whatever the
   // data was doing there — on Repeatability that is exactly where cycles 23 and
@@ -145,73 +186,163 @@ export function drawChart(canvas, spec) {
   // Laid out in rows across the width rather than one per line, because the
   // vertical space it takes is stolen from the picture. A single series gets no
   // legend at all: there is one colour, and the axis title already names it.
-  const legend = spec.series.filter(s => s.name);
+  //
+  // PER PANE, not shared, and that is not a detail. On `forecast` the skill pane
+  // carries two baselines and the other two carry one line each; a single legend
+  // above the stack would be read as naming series in all three frames, and the
+  // one line in the bias pane would appear to be whichever entry shares its hue.
   const LEG_H = 13;
-  const legRows = legend.length > 1 ? _legendRows(ctx, legend, W - L - R) : [];
-  const T = 18 + legRows.length * LEG_H;
+  const legs = panes.map(pn => {
+    const named = pn.series.filter(s => s.name);
+    return { named, rows: named.length > 1 ? _legendRows(ctx, named, W - L - R) : [] };
+  });
+  // Each pane's own header: the y label, plus however many legend rows it needs.
+  const bands = legs.map(g => 18 + g.rows.length * LEG_H);
+
   ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, W, H);
 
-  const all = spec.series.filter(s => s.x.length);
+  // THE X EXTENT IS COMPUTED ACROSS EVERY PANE, which is what registers them: a
+  // vertical read down a stack has to land on the same lead in all three, and a
+  // pane scaled to its own x would look right and be a different picture.
+  const allS = panes.flatMap(p => p.series).filter(s => s.x.length);
+  const xsAll = allS.flatMap(s => s.x.filter(v => v !== null && isFinite(v)));
+  let x0 = xsAll.length ? Math.min(...xsAll) : 0;
+  let x1 = xsAll.length ? Math.max(...xsAll) : 1;
+  for (const pn of panes) {
+    for (const m of pn.marks) {
+      if (m.axis === 'x') { x0 = Math.min(x0, m.at); x1 = Math.max(x1, m.at); }
+    }
+  }
+  const given = v => v !== undefined && v !== null && isFinite(v);
+  if (given(spec.x.min)) x0 = spec.x.min;
+  if (given(spec.x.max)) x1 = spec.x.max;
+  if (x0 === x1) { x0 -= 1; x1 += 1; }
+  const px = v => L + (v - x0) / (x1 - x0) * (W - L - R);
+  const fx = spec.x.fmt || nice;
+  const xt = niceTicks(x0, x1, spec.x.ticks || 6);
+
+  // The stack: every pane the same height, each under its own header. With one
+  // pane this is the single frame from T to H - B that it has always been, to
+  // the pixel — which is the check that this refactor changed no picture.
+  const GAP = panes.length > 1 ? 6 : 0;
+  const bodyH = (H - B - bands.reduce((a, b) => a + b, 0) - (panes.length - 1) * GAP)
+    / panes.length;
+  const geom = [];
+  let cursor = 0;
+  for (let i = 0; i < panes.length; i++) {
+    const top = cursor + bands[i];
+    const bot = top + bodyH;
+    geom.push({ head: cursor, top, bot });
+    cursor = bot + GAP;
+  }
+
+  const drawn = panes.map((pn, pi) => _pane(ctx, {
+    pn, W, H, L, R, B, px, x0, x1, xt, top: geom[pi].top, bot: geom[pi].bot,
+    head: geom[pi].head, leg: legs[pi], LEG_H, given,
+  }));
+
+  // THE X AXIS ONCE, AT THE BOTTOM, because it is the axis the stack shares. A
+  // tick strip under every frame would say the three are three charts.
+  ctx.fillStyle = INK.axis; ctx.font = '10px ui-monospace, monospace';
+  ctx.textAlign = 'center';
+  for (const at of xt) {
+    const x = Math.round(px(at)) + 0.5;
+    if (x < L - 0.5 || x > W - R + 0.5) continue;
+    ctx.fillText(fx(at), x, H - B + 15);
+  }
+  ctx.textAlign = 'right';
+  ctx.fillStyle = INK.text; ctx.font = '11px ui-monospace, monospace';
+  ctx.fillText(spec.x.label, W - R, H - 6);
+  ctx.textAlign = 'left';
+
+  // Everything a hover needs to answer "what is the value here", kept on the
+  // canvas so the readout cannot drift from the picture it is drawn over.
+  canvas._chart = {
+    spec, x0, x1, L, R, B, px, fx,
+    T: geom[0].top, bot: geom[geom.length - 1].bot,
+    panes: drawn,
+  };
+
+  // WHAT THE FIGURE IS, before anybody points at it or steps into it. The canvas
+  // carries role="img", and an img with no label is announced as "image" and
+  // nothing else — so every panel was, to a reader who cannot see it, an
+  // unnamed picture until the first arrow key. Set here rather than in the
+  // hover wiring because it is a property of what was drawn; stepping through
+  // the points then replaces it with the value under the cursor and blurring
+  // restores it.
+  const named = panes.flatMap((pn, i) => legs[i].named);
+  const what = panes.map(pn => _plain(pn.y.label)).join(', then ')
+    + ' by ' + _plain(spec.x.label)
+    + (panes.length > 1 ? ', ' + panes.length + ' frames on one axis' : '')
+    + (named.length > 1 ? ', ' + named.length + ' series: '
+        + named.map(s => s.name).join(', ') : '')
+    + (spec.note ? '. ' + spec.note : '');
+  canvas._said = what;
+  canvas.setAttribute('aria-label', what);
+}
+
+/**
+ * One frame: its own y scale, its own grid, its own series, marks and legend.
+ *
+ * Returns what a readout needs to answer inside this frame — the y mapping is
+ * the pane's, and a crosshair that used the stack's would report every value in
+ * the wrong frame.
+ */
+function _pane(ctx, o) {
+  const { pn, W, H, L, R, B, px, x0, x1, xt, top, bot, head, leg, LEG_H, given } = o;
+  const T = top, BOT = bot;
+
   // THE EXTENT IS ALWAYS COMPUTED, AND A DECLARED BOUND THEN OVERRIDES ITS OWN
   // END. This used to be two either-or branches keyed on the MINIMUM: a spec
   // that supplied `min` and left `max` open skipped the branch entirely and left
   // the far end undefined, so every tick came out NaN and the chart drew nothing
   // but gridlines. The Segmentation histogram declares `min: 0` on both axes and
   // had been rendering blank.
-  const xsAll = all.flatMap(s => s.x.filter(v => v !== null && isFinite(v)));
+  const all = pn.series.filter(s => s.x.length);
   const ysAll = all.flatMap(s => s.y.filter(v => v !== null && isFinite(v)));
-  let x0 = xsAll.length ? Math.min(...xsAll) : 0;
-  let x1 = xsAll.length ? Math.max(...xsAll) : 1;
   let y0 = ysAll.length ? Math.min(...ysAll) : 0;
   let y1 = ysAll.length ? Math.max(...ysAll) : 1;
   // A mark outside the data is still a fact about the data, so the frame
   // grows to hold it. Clipping a bound off the top draws a picture in which
   // the bound is always met.
-  for (const m of spec.marks || []) {
-    if (m.axis === 'x') { x0 = Math.min(x0, m.at); x1 = Math.max(x1, m.at); }
-    else { y0 = Math.min(y0, m.at); y1 = Math.max(y1, m.at); }
+  for (const m of pn.marks) {
+    if (m.axis !== 'x') { y0 = Math.min(y0, m.at); y1 = Math.max(y1, m.at); }
   }
-  const given = v => v !== undefined && v !== null && isFinite(v);
-  if (!given(spec.y.min) || !given(spec.y.max)) {
+  if (!given(pn.y.min) || !given(pn.y.max)) {
     const pad = (y1 - y0) * 0.06 || 1;
-    if (!given(spec.y.min)) y0 -= pad;
-    if (!given(spec.y.max)) y1 += pad;
+    if (!given(pn.y.min)) y0 -= pad;
+    if (!given(pn.y.max)) y1 += pad;
   }
-  if (given(spec.x.min)) x0 = spec.x.min;
-  if (given(spec.x.max)) x1 = spec.x.max;
-  if (given(spec.y.min)) y0 = spec.y.min;
-  if (given(spec.y.max)) y1 = spec.y.max;
+  if (given(pn.y.min)) y0 = pn.y.min;
+  if (given(pn.y.max)) y1 = pn.y.max;
   if (y0 === y1) { y0 -= 1; y1 += 1; }
-  if (x0 === x1) { x0 -= 1; x1 += 1; }
 
   // A log y axis where the quantity is geometric. ap runs 0 to 400 across the
   // Kp scale in roughly equal ratios, so a linear axis spends nine tenths of
   // its height on the top two points and buries everything a design reads.
   // Zero and negatives have no place on it and are dropped to null rather than
   // clamped to the floor, which would draw them as the smallest real value.
-  const lg = !!spec.y.log;
+  const lg = !!pn.y.log;
   const tl = v => (v === null || !isFinite(v) || v <= 0 ? null : Math.log10(v));
   if (lg) { y0 = Math.max(y0, 0.5); }
   const ly0 = lg ? Math.log10(y0) : y0, ly1 = lg ? Math.log10(y1) : y1;
-  const px = v => L + (v - x0) / (x1 - x0) * (W - L - R);
   const py = v => {
     const t = lg ? tl(v) : v;
-    if (t === null) return H - B;
-    return H - B - (t - ly0) / (ly1 - ly0) * (H - B - T);
+    if (t === null) return BOT;
+    return BOT - (t - ly0) / (ly1 - ly0) * (BOT - T);
   };
-  const fx = spec.x.fmt || nice, fy = spec.y.fmt || nice;
+  const fy = pn.y.fmt || nice;
 
   ctx.strokeStyle = INK.grid; ctx.lineWidth = 1;
   ctx.fillStyle = INK.axis; ctx.font = '10px ui-monospace, monospace';
   // Round tick VALUES, placed where the data puts them — not even pixels
   // labelled with whatever fell there. See niceTicks.
-  const yt = lg ? niceLogTicks(y0, y1) : niceTicks(y0, y1, spec.y.ticks || 5);
-  const xt = niceTicks(x0, x1, spec.x.ticks || 6);
+  const yt = lg ? niceLogTicks(y0, y1) : niceTicks(y0, y1, pn.y.ticks || 5);
   for (const at of yt) {
     const y = Math.round(py(at)) + 0.5;
-    if (y < T - 0.5 || y > H - B + 0.5) continue;
+    if (y < T - 0.5 || y > BOT + 0.5) continue;
     // Zero is the reference for anything that can be negative, and an axis
     // that labels -0.197 and 0.0426 instead of 0 hides it. Drawn one step
     // stronger where it is in range — an autocorrelation is read against it.
@@ -228,9 +359,8 @@ export function drawChart(canvas, spec) {
     if (x < L - 0.5 || x > W - R + 0.5) continue;
     const isZero = Math.abs(at) < 1e-12;
     ctx.strokeStyle = isZero ? INK.axis : INK.grid;
-    ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, H - B); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, BOT); ctx.stroke();
     ctx.strokeStyle = INK.grid;
-    ctx.fillText(fx(at), x, H - B + 15);
   }
   ctx.textAlign = 'left';
 
@@ -241,7 +371,7 @@ export function drawChart(canvas, spec) {
   // dots. The ring is the separator; a stroke around a mark would be ink that
   // is not data.
   const ends = [];
-  spec.series.forEach((s, i) => {
+  pn.series.forEach((s, i) => {
     const col = s.colour || INK.series[i % INK.series.length];
     ctx.save();
     ctx.strokeStyle = col; ctx.fillStyle = col;
@@ -331,7 +461,7 @@ export function drawChart(canvas, spec) {
       // Selective by construction — the END of each line and nowhere else. A
       // number beside every point is chaos and goes unread, and the axis, the
       // legend and the hover carry the rest.
-      if (s.name && spec.series.filter(q => q.name).length > 1) {
+      if (s.name && !s.aside && pn.series.filter(q => q.name).length > 1) {
         let lastK = -1;
         for (let k = s.x.length - 1; k >= 0; k--) {
           const v = s.y[k];
@@ -339,7 +469,7 @@ export function drawChart(canvas, spec) {
         }
         if (lastK >= 0) {
           const X = px(s.x[lastK]), Y = py(s.y[lastK]);
-          if (X >= L && X <= W - R && Y >= T && Y <= H - B) {
+          if (X >= L && X <= W - R && Y >= T && Y <= BOT) {
             ends.push({ x: X, y: Y, col, text: fy(s.y[lastK]) });
           }
         }
@@ -374,20 +504,20 @@ export function drawChart(canvas, spec) {
   /** The first row in which this label does not overlap one already drawn. */
   const slotFor = (at, w) => {
     for (let row = 0; row < 8; row++) {
-      if (!taken.x.some(o => o.row === row && at < o.end && at + w > o.start)) {
+      if (!taken.x.some(t => t.row === row && at < t.end && at + w > t.start)) {
         taken.x.push({ row, start: at, end: at + w });
         return row;
       }
     }
     return 0;
   };
-  for (const m of spec.marks || []) {
+  for (const m of pn.marks) {
     const col = m.colour || INK.mark;
     ctx.save();
     ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1.2;
     ctx.setLineDash([5, 4]);
     ctx.beginPath();
-    if (m.axis === 'x') { ctx.moveTo(px(m.at), T); ctx.lineTo(px(m.at), H - B); }
+    if (m.axis === 'x') { ctx.moveTo(px(m.at), T); ctx.lineTo(px(m.at), BOT); }
     else { ctx.moveTo(L, py(m.at)); ctx.lineTo(W - R, py(m.at)); }
     ctx.stroke();
     ctx.restore();
@@ -400,44 +530,26 @@ export function drawChart(canvas, spec) {
       // A y label is nudged DOWN rather than sideways: sideways would put it
       // over the data it is annotating.
       let y = Math.max(T + 10, py(m.at) - 4);
-      while (taken.y.some(o => Math.abs(o.at - y) < 11) && y < H - B - 2) y += 11;
+      while (taken.y.some(t => Math.abs(t.at - y) < 11) && y < BOT - 2) y += 11;
       taken.y.push({ at: y });
       ctx.fillText(m.label, L + 4, y);
     }
   }
 
+  // THE PANE'S OWN HEADER: its y label, and its legend under it. Positioned from
+  // the pane's header top rather than from the canvas, which is what lets three
+  // frames each name their own quantity.
   ctx.fillStyle = INK.text; ctx.font = '11px ui-monospace, monospace';
-  ctx.fillText(spec.y.label, L, 12);
-  ctx.textAlign = 'right';
-  ctx.fillText(spec.x.label, W - R, H - 6);
-  ctx.textAlign = 'left';
+  ctx.fillText(pn.y.label, L, head + 12);
 
-  // Everything a hover needs to answer "what is the value here", kept on the
-  // canvas so the readout cannot drift from the picture it is drawn over.
-  canvas._chart = { spec, x0, x1, y0, y1, L, R, T, B, px, py, fx, fy, log: lg };
-
-  // WHAT THE FIGURE IS, before anybody points at it or steps into it. The canvas
-  // carries role="img", and an img with no label is announced as "image" and
-  // nothing else — so every panel was, to a reader who cannot see it, an
-  // unnamed picture until the first arrow key. Set here rather than in the
-  // hover wiring because it is a property of what was drawn; stepping through
-  // the points then replaces it with the value under the cursor and blurring
-  // restores it.
-  const what = _plain(spec.y.label) + ' by ' + _plain(spec.x.label)
-    + (legend.length > 1 ? ', ' + legend.length + ' series: '
-        + legend.map(s => s.name).join(', ') : '')
-    + (spec.note ? '. ' + spec.note : '');
-  canvas._said = what;
-  canvas.setAttribute('aria-label', what);
-
-  if (legRows.length) {
+  if (leg.rows.length) {
     ctx.font = '10px ui-monospace, monospace';
     ctx.textAlign = 'left';
-    legRows.forEach((row, r) => {
+    leg.rows.forEach((row, r) => {
       let lx = L;
-      const ly = 12 + (r + 1) * LEG_H;
+      const ly = head + 12 + (r + 1) * LEG_H;
       for (const s of row) {
-        const col = s.colour || INK.series[spec.series.indexOf(s) % INK.series.length];
+        const col = s.colour || INK.series[pn.series.indexOf(s) % INK.series.length];
         ctx.fillStyle = col;
         ctx.fillRect(lx, ly - 5, 14, 3);
         ctx.fillStyle = INK.text;
@@ -446,6 +558,8 @@ export function drawChart(canvas, spec) {
       }
     });
   }
+
+  return { y: pn.y, series: pn.series, py, fy, y0, y1, top: T, bot: BOT, log: lg };
 }
 
 /** Pack the legend into rows that fit the plot width. */
@@ -519,14 +633,18 @@ function drawReadout(canvas, xv, focused) {
   const mx = c.px(xv);
   ctx.save();
   ctx.strokeStyle = INK.axis; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
-  ctx.beginPath(); ctx.moveTo(mx, c.T); ctx.lineTo(mx, canvas.height - c.B); ctx.stroke();
+  // THROUGH THE WHOLE STACK, gaps included. On a stacked spec the crosshair is
+  // the thing that makes the three frames one picture: it says "this lead" once
+  // and every frame answers for it. Stopping it at each frame's edge would leave
+  // three unrelated crosshairs that happen to line up.
+  ctx.beginPath(); ctx.moveTo(mx, c.T); ctx.lineTo(mx, c.bot); ctx.stroke();
   ctx.restore();
   // The nearest actual point of each series, never an interpolation: a readout
   // that invents a value between two measurements is reporting the chart's
   // arithmetic rather than the record.
   const hits = [];
-  c.spec.series.forEach((s, i) => {
-    if (!s.x.length) return;
+  for (const pane of c.panes) pane.series.forEach((s, i) => {
+    if (!s.x.length || s.aside) return;
     // A SERIES ANSWERS ONLY WHERE SOMETHING IS DRAWN.
     //
     // Taking the nearest point unconditionally reported whatever the series had,
@@ -555,19 +673,23 @@ function drawReadout(canvas, xv, focused) {
     // number: "F10.7 64. 5". The y axis says what 5 is, which a sighted reader
     // has and a reader hearing the aria-label does not, so the axis title
     // stands in — one path, so the tooltip and the announcement say the same.
-    hits.push({ col, name: s.name || _plain(c.spec.y.label), x: s.x[bi], y: s.y[bi] });
+    hits.push({ col, name: s.name || _plain(pane.y.label), x: s.x[bi], y: s.y[bi],
+      f: pane.fy });
     // A 2px ring in the surface colour, so the highlighted point stays legible
     // where it sits on its own line.
     ctx.save();
     ctx.strokeStyle = INK.surface; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(c.px(s.x[bi]), c.py(s.y[bi]), 4, 0, 6.284); ctx.stroke();
+    ctx.beginPath(); ctx.arc(c.px(s.x[bi]), pane.py(s.y[bi]), 4, 0, 6.284); ctx.stroke();
     ctx.restore();
     ctx.fillStyle = col;
-    ctx.beginPath(); ctx.arc(c.px(s.x[bi]), c.py(s.y[bi]), 4, 0, 6.284); ctx.fill();
+    ctx.beginPath(); ctx.arc(c.px(s.x[bi]), pane.py(s.y[bi]), 4, 0, 6.284); ctx.fill();
   });
   if (!hits.length) return null;
+  // Each value formatted by ITS OWN pane. Three frames in different units is the
+  // reason the stack exists, and one formatter for all of them would print sfu
+  // to the precision a dimensionless ratio wants.
   const lines = [_plain(c.spec.x.label) + ' ' + c.fx(hits[0].x)]
-    .concat(hits.map(h => (h.name ? h.name + ': ' : '') + c.fy(h.y)));
+    .concat(hits.map(h => (h.name ? h.name + ': ' : '') + h.f(h.y)));
   ctx.font = '10px ui-monospace, monospace';
   const w = Math.max(...lines.map(t => ctx.measureText(t).width)) + 12;
   const h = lines.length * 13 + 8;
@@ -604,9 +726,12 @@ export function attachHover(canvas, onLeave) {
     const c = canvas._chart;
     if (!c) return [];
     const all = [];
-    for (const s of c.spec.series) {
-      for (let k = 0; k < s.x.length; k++) {
-        if (s.y[k] !== null && isFinite(s.y[k])) all.push(s.x[k]);
+    for (const pane of c.panes) {
+      for (const s of pane.series) {
+        if (s.aside) continue;
+        for (let k = 0; k < s.x.length; k++) {
+          if (s.y[k] !== null && isFinite(s.y[k])) all.push(s.x[k]);
+        }
       }
     }
     return [...new Set(all)].sort((a, b) => a - b);
@@ -670,19 +795,34 @@ export function attachHover(canvas, onLeave) {
  * argument that put the record's parser next to the engine's.
  */
 export function tableFor(spec) {
-  const named = spec.series.filter(s => s.x && s.x.length);
-  if (!named.length) return '<p class="muted">nothing plotted.</p>';
-  const xs = [...new Set(named.flatMap(s => s.x))].sort((a, b) => a - b);
-  const fx = spec.x.fmt || nice, fy = spec.y.fmt || nice;
+  // Every series in every pane, in one table, because the stack shares an x and
+  // a reader comparing frames is comparing rows. Each column carries its own
+  // pane's formatter and, where the series has no name of its own, its pane's y
+  // label — which on a stacked spec is the only thing telling the three columns
+  // apart.
+  const panes = spec.panes && spec.panes.length
+    ? spec.panes
+    : [{ y: spec.y, series: spec.series }];
+  const cols = [];
+  for (const pn of panes) {
+    for (const s of (pn.series || [])) {
+      if (s.x && s.x.length && !s.aside) {
+        cols.push({ s, name: s.name || pn.y.label, fy: pn.y.fmt || nice });
+      }
+    }
+  }
+  if (!cols.length) return '<p class="muted">nothing plotted.</p>';
+  const xs = [...new Set(cols.flatMap(c => c.s.x))].sort((a, b) => a - b);
+  const fx = spec.x.fmt || nice;
   const head = ['<tr><th>' + esc(spec.x.label) + '</th>'].concat(
-    named.map(s => '<th>' + esc(s.name || spec.y.label) + '</th>')).join('') + '</tr>';
-  const at = (s, x) => {
-    const k = s.x.indexOf(x);
-    return k < 0 || s.y[k] === null || !isFinite(s.y[k]) ? '' : fy(s.y[k]);
+    cols.map(c => '<th>' + esc(c.name) + '</th>')).join('') + '</tr>';
+  const at = (c, x) => {
+    const k = c.s.x.indexOf(x);
+    return k < 0 || c.s.y[k] === null || !isFinite(c.s.y[k]) ? '' : c.fy(c.s.y[k]);
   };
   const rows = xs.map(x =>
     '<tr><td>' + esc(fx(x)) + '</td>' +
-    named.map(s => '<td>' + esc(at(s, x)) + '</td>').join('') + '</tr>').join('');
+    cols.map(c => '<td>' + esc(at(c, x)) + '</td>').join('') + '</tr>').join('');
   return '<table class="fx chart-table"><thead>' + head + '</thead><tbody>' +
     rows + '</tbody></table>';
 }
