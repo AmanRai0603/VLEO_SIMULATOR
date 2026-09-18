@@ -2988,3 +2988,185 @@ the design does not consult.
 
 Step 1 is the one that changes what the tool can do. Steps 2 and 3 are what make
 it legible.
+
+
+---
+
+## 29 · Is the solar-weather study sufficient, on its own terms
+
+Density and everything downstream set aside. This asks only: as a piece of solar
+weather work, is what is here enough, and if not what is needed. Everything below
+is measured, and where a number is quoted the command that produced it is in the
+paragraph.
+
+### 29.1 · What is sufficient, and one of these is better news than it looks
+
+**The driver set matches the atmosphere model's input set exactly.** The tree's
+exospheric temperature is Jacchia-71:
+
+    T_inf = 379 + 3.24*F10.7A + 1.3*(F10.7 - F10.7A) + 28*Kp + 0.03*exp(Kp)
+
+Its drivers are F10.7A, F10.7 and Kp, and those are precisely the three the
+subsystem computes, at five scenarios each. There is no missing quantity for the
+model this repository actually uses. A worry worth naming and dismissing: MSIS
+would want the 3-hourly ap history and JB2008 would want S10.7, M10.7, Y10.7 and
+Dst, none of which is in the bundle — but neither model is in this tree, so
+neither is a gap in the study.
+
+Six of the eight legacy tabs are reproduced or exceeded (§28.1). All 55 live rows
+answer; nothing refuses. 14 rows carry the legacy run's own answer as `parity.csv`
+and 263 fixtures stand behind the subsystem.
+
+### 29.2 · WHICH Kp FEEDS THE MODEL IS UNDECIDED, and it is worth more than any figure
+
+The study publishes **two** Kp columns per scenario — `kp_mean` and `kp_peak` —
+because `sw_kp_slot_bias` established that the published ap-to-Kp table under-reads
+the daily peak. Jacchia-71 takes **one** Kp. Nothing in the tree says which, and
+the difference is not small:
+
+| scenario | Kp mean | Kp peak | T_inf(mean) | T_inf(peak) | ΔT |
+|---|---|---|---|---|---|
+| quietest day | 1.271 | 2.230 | 634.6 K | 661.6 K | **27.0 K** |
+| cold sustained | 3.166 | 4.277 | 694.0 K | 726.5 K | **32.6 K** |
+| nominal | 3.548 | 4.796 | 760.8 K | 798.3 K | **37.5 K** |
+| hot sustained | 3.832 | 5.198 | 824.9 K | 867.2 K | **42.3 K** |
+| worst day | 5.802 | 7.997 | 914.7 K | 1055.3 K | **140.6 K** |
+
+On the worst day the two readings of the same scenario are **15 per cent apart in
+exospheric temperature**, and density at a fixed altitude goes as roughly
+exp(−h/H) with H proportional to T, so the spread in density is larger again.
+
+This is the largest open question in the subsystem and it is a **solar-weather**
+question, not a plumbing one: is the driver the day's mean disturbance or the
+disturbance at its worst three-hour slot. Both are defensible and they are
+different designs. What cannot be defended is publishing both and naming neither.
+
+*What is needed:* one declared row — which slot the design is driven by, and why —
+that the interface reads, so the choice is a decision somebody signed rather than
+whichever column a consumer happens to pick up.
+
+### 29.3 · The published band is not at the confidence it is labelled, and its two halves disagree
+
+`sw_f107_design_long`'s own hole says it plainly:
+
+> 1.28 is the confidence, and it is the 90th percentile while the run is called 95
+> per cent. Phi(1.28) = 0.8997. A one-sided 95 per cent bound is 1.645 sigma, which
+> at this sigma is a further 4.9 sfu. **The daily half of the same band DOES use
+> 0.95**, so the two halves are not at one confidence, and this row reproduces that
+> rather than silently repairing it.
+
+So within a single scenario the **sustained** level is a one-sided 90 per cent
+bound and the **daily** level a one-sided 95 per cent one, and the run is labelled
+95 per cent throughout. Eight rows carry this. Reproducing the legacy faithfully
+was the right call at port time — a port that silently repairs its source is a port
+nobody can check — but it is now a published driver table whose header does not
+describe it.
+
+*What is needed:* a declared `sw_band_confidence` row that both halves read, set
+to whatever a person decides, so the two cannot drift apart again and the label
+and the multiplier are one fact. Moving it to 1.645 raises the sustained F10.7
+scenarios by about 4.9 sfu; leaving it at 1.28 is fine too, as long as the number
+and the word agree.
+
+### 29.4 · A z-multiplier is used where an empirical percentile is available
+
+Three rows assume the residual spread is normal enough for a z multiplier to mean
+a percentile. `sw_f107_design_long`'s second assumption states the cost:
+
+> The residuals of a forecast that misses hardest when activity is highest are
+> skewed, and a normal multiplier under-covers the high tail — which is the tail a
+> design is sized against. The empirical percentile of the residuals would be the
+> honest statistic, and `sw_mean_band_spread` publishes only their standard
+> deviation.
+
+The 361 walk-forward residuals exist. What is published from them is one number,
+σ = 13.4544 sfu, and §27.4 already found that nothing draws them either. So the
+same sample is under-used twice: no picture, and no empirical quantile.
+
+*What is needed:* `sw_mean_band_spread` publishes a set — σ and the empirical
+90th/95th/99th of the same residuals — the way `l3_solar_interface` publishes a
+set. Then a design can be sized on the record's own tail rather than on a normal
+assumption about it, and the figure §27.4 asks for draws the sample both are read
+from.
+
+### 29.5 · Eight columns of the record are read by nothing
+
+`observed_daily.csv` carries nineteen columns. The tree reads four — `f107`,
+`ap_planetary`, `kp_max`, `ssn_sesc`. Unread anywhere, by any row or any figure:
+
+| unread column | what it is | why it is or is not a gap |
+|---|---|---|
+| `kp_00z` … `kp_21z` | all eight 3-hour Kp slots | **the strongest case.** `sw_kp_slot_bias` exists to say the daily peak differs from the table, and it does it from a tabulated fit. The slots are the measurement it is a fit OF, and they also carry the diurnal profile — which is what 29.2 is really asking about |
+| `a_college` | the auroral-zone A index (College, Alaska) | **a real physical gap.** Storm energy enters the thermosphere at high latitude; `ap_planetary` is a planetary average. A VLEO mission in a high-inclination or sun-synchronous orbit spends much of each pass in the auroral oval, and the record holds the index for it |
+| `a_fredericksburg` | the mid-latitude A index | the low-latitude counterpart; together with College it gives the latitude contrast the planetary index averages away |
+| `flares_c`, `flares_m`, `flares_x` | daily flare counts by class | a different hazard entirely — dose, single-event upsets, HF and GNSS scintillation — and this tool has `payload`, `com`, `navsense` and `fsw` subsystems that would read it. Not a density question, which is why it is last, but it is solar weather and the data is here |
+| `sunspot_area` | a second EUV proxy | lowest priority; `ssn_sesc` is already read |
+
+`alerts.csv` — 17,987 issued alerts with their trigger thresholds — is read only by
+`sw_alert_threshold`, which is **deprecated for a stated and defensible reason**
+("operations is not a subsystem this tool has"). That one is a decision, not an
+oversight.
+
+### 29.6 · Three numbers for one quantity
+
+The cycle-amplitude ratio the analogue is scaled by appears three times and does
+not agree with itself:
+
+- `solar_cycles.csv`: peaks 196.4 and 146.1 — a ratio of **1.344**
+- the `repeatability` panel, phase-stacked from the daily record: 207 against 149
+  — a ratio of **1.389**
+- three sheets' assumptions: *"two completed cycles whose peaks differ by **41 per
+  cent**"* — a ratio of 1.41
+
+Small in effect and exactly the drift this tool exists to prevent: the same
+quantity, stated by hand in three places, already disagreeing. *What is needed:* it
+becomes a row, and the three places read it.
+
+### 29.7 · The standing statistical caveats, already declared
+
+These are on the sheets already and are listed so the answer is complete rather
+than because they are new:
+
+- the return level's top end **rests on two observations in 28.2 years**
+- **overlapping pairs are counted as independent** in the recurrence significance
+- the daily scenarios **stack two one-sided percentiles**, giving something nearer
+  a 1-in-100 day than the 1-in-20 the name suggests
+- eight rows are **pooled over leads or levels rather than conditioned** on them
+- `daily_regime.csv` **disagrees with the record on 171 of 10,299 days**, all at Ap
+  0 or 1, understood and documented
+- beyond one cycle past cycle 25's maximum the analogue is **scaled by a mean
+  amplitude**, which does not bite at the declared 5-year duration from a 2027
+  epoch but does across most of the declared 15-year upper bound
+
+### 29.8 · The answer
+
+**As a solar-weather study, it is sufficient in coverage and not yet sufficient in
+statement.** Nothing is missing from what it measures for the model it drives. What
+is missing is that three things it measured are not yet said clearly enough to
+design against:
+
+1. **which Kp is the driver** — worth up to 141 K of exospheric temperature, and
+   undecided;
+2. **what confidence the band is at** — currently 90 per cent on one half, 95 on
+   the other, and 95 in the label;
+3. **the tail of the residual sample** — published as a standard deviation and a
+   normal assumption where the empirical quantiles are sitting right there.
+
+Then the data gap: **eight columns of the record are read by nothing**, and of
+those the eight Kp slots and the auroral index are the two that would change
+answers rather than add views.
+
+In order, and none of it is large:
+
+| | what | why first |
+|---|---|---|
+| 1 | a declared row naming **which Kp slot drives the design** | the largest unstated number in the subsystem |
+| 2 | a declared `sw_band_confidence` both halves of the band read | the published table does not match its own label |
+| 3 | `sw_mean_band_spread` publishes **empirical quantiles** beside σ | the sample is there and the normal assumption is not free |
+| 4 | the **eight Kp slots** read, so the slot bias is measured rather than tabulated | it is the measurement behind item 1 |
+| 5 | **`a_college`** read, as the auroral-zone counterpart to planetary Ap | the only unread column that is a different physical quantity rather than a finer view of one already read |
+| 6 | the cycle-amplitude ratio becomes **a row** | three hand-written copies, already disagreeing |
+| 7 | the flare counts, if the radiation and comms subsystems are ever wanted | real solar weather, real data, no consumer yet |
+
+Items 1 to 3 are decisions and cost almost nothing to implement once decided.
+Items 4 to 7 are work.
