@@ -1830,3 +1830,106 @@ the collapses were sound. What changed is that each keeps its control as an
 emphasis rather than a filter, `pattern` weights one window over two, `predict`
 shows where its sample runs out, and `forecast` stacks rather than overlays. The
 total stands at 68 live views.
+
+## 24 · The complete figure set, and where all 162 went
+
+Two questions, answered in full: what will exist, and what happened to everything
+that will not.
+
+### 24.1 · A correction to §23 first
+
+§23.2 said `design` would go from 18 combinations to 18 live views by giving its
+`f107` branch its own G level and requirement, so that the eight repeats became
+real instead of hidden. Half of that is wrong. `g` is the **NOAA G storm scale**
+— G1 minor, G3 strong — and it is geomagnetic. F10.7 has no G scale and
+inventing one would be putting a number on the page that nothing in the record
+supports. On the `f107` branch `g` genuinely does not apply and hiding it is the
+correct answer, not a workaround.
+
+The `requirement` control does apply to both: F10.7 has `l3_solar_req_01`
+(sustained, 260 sfu) and `l3_solar_req_02` (single day, 350 sfu). So `design`
+becomes Ap at 3 G levels × 3 requirements = 9, plus F10.7 at its 2 requirements
+= 2. **Eleven views, not eighteen.** The total falls from 68 to 61.
+
+### 24.2 · The ten figures
+
+| # | panel | views | what it contains |
+|---|---|---|---|
+| 1 | `climate` | 13 | the record by year, by day of year, by month, the 13-month smoother, Kp against ap |
+| 2 | `repeatability` | 10 | every cycle stacked on phase with the mean of the complete ones; the storm scale |
+| 3 | `pattern` | 3 | the autocorrelation with three detrend windows as three lines and the rotation peak marked; the spike classification |
+| 4 | `segmentation` | 5 | the histogram with the band edges drawn on it; the regimes by cycle phase |
+| 5 | `predict` | 4 | growth against lead as a four-percentile fan, all-cycles or by-cycle, with the sample thinning shown |
+| 6 | `forecast` | 3 | verification by lead, by year, and issue age — each as three stacked metrics against two baselines |
+| 7 | `design` | 11 | the design window: Ap at 3 G levels × 3 requirements, F10.7 at its 2 |
+| 8 | `density` | 1 | nothing, and why — the gap stated where it bites |
+| 9 | **`drivers`** | 6 | five scenarios against the five driver quantities, with the legacy run's own values beside each |
+| 10 | **`closure`** | 5 | one per required/achieved pair: the bound, the achieved value, the margin, swept over what spends it |
+| | **total** | **61** | |
+
+### 24.3 · Where all 162 went, and whether anything mattered
+
+Every one of the 162 combinations falls into exactly one of five fates. Only the
+first is a removal.
+
+**(a) An exact repeat — 35 combinations, removed.** A branch ignored a control
+that stayed on screen, so the same picture was reachable several ways.
+`pattern`'s spike view ignored variable, window and lag: seventeen of them.
+`repeatability`'s storm view ignored variable and bins: eight. `forecast`'s issue
+age: five. `segmentation`'s phase view: three. `climate`'s Kp-against-ap: two.
+**Nothing is lost.** The picture each reached still exists; only the extra routes
+to it go, and a control that changes nothing is worse than no control.
+
+**(b) Became a layer in a richer picture — 26 combinations.** `predict`'s four
+percentiles become four bands of one fan. `pattern`'s three detrend windows
+become three lines. `forecast`'s two baselines become two lines and its three
+metrics three stacked panels. **Nothing is lost and something is gained**: the
+relationship between the four percentiles was the one thing four separate views
+could not show.
+
+**(c) Became an axis zoom — 32 combinations.** `predict`'s three lead spans and
+`pattern`'s three maximum lags. Verified against the code in §23.6: both are loop
+bounds, and the longer curve contains the shorter one at the same points.
+**Nothing is lost**, and `pattern` gains a harmonic mark that two of its three
+settings were suppressing.
+
+**(d) Correctly hidden — 8 combinations.** `design`'s `g` control on the F10.7
+branch. A storm scale has no F10.7 meaning, so these eight were never distinct
+pictures and cannot be made into any. §24.1.
+
+**(e) Survives as its own view — 61 combinations,** which is the table above
+minus the eleven that are new.
+
+35 + 26 + 32 + 8 + 61 = 162. Plus eleven new views in the two new panels.
+
+### 24.4 · What I would keep an eye on, rather than assert is fine
+
+Three things where the collapse is defensible and I would still want a person to
+look at the result before signing the reference image.
+
+**A single-percentile `predict`.** A fan is right on screen and wrong in a
+report, where one clean curve with its number is what goes in the document. The
+highlight control gives emphasis but still draws the other three. If exporting
+one band matters, that is a fourth option on the highlight control — "this one
+only" — and it costs almost nothing to add. I have not put it in the plan because
+nobody has asked for an export yet; it is the first thing to add if they do.
+
+**Three lines in `pattern` may be crowded.** Weighting 365 heavy and the other
+two light is the mitigation, and it may not be enough if the three curves sit on
+top of each other for the first twenty lags, which they probably do. If the
+reference image is unreadable the fallback is small multiples, as `forecast` is
+already using for a different reason — three short panels rather than three
+lines.
+
+**`design` at eleven views is the one I am least sure is enough.** It is the
+panel that carries the two numbers leaving the subsystem, and its requirement
+control currently offers three hard-coded Ap values that do not include the real
+one. After §21 it reads the rows — but it will then offer exactly the
+requirements that exist, which is right for checking the design and may be too
+rigid for exploring one. A free-entry requirement, or a slider across the
+declared range, is the obvious extension and I would rather add it after a person
+has used the fixed version than guess now.
+
+Nothing in §24.3 is a judgement call — those are repeats, layers, zooms and one
+scale that does not apply. These three are judgement calls, and they are the only
+three.
