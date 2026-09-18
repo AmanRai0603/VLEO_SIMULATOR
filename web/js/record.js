@@ -19,6 +19,70 @@
 
 const cache = new Map();
 
+/**
+ * What the ENGINE says a row answers, for a figure that needs it.
+ *
+ * A panel draws the record, which is what `bundleFile` is for. Where it also
+ * needs a number this tree COMPUTES — a design bound, a requirement, the centre
+ * of a window — it has until now carried that number as a literal copied in when
+ * the panel was written. Three of those copies went stale without anything
+ * noticing, because a panel declared the bundle as what it reads and the check
+ * that a panel moves when its inputs move therefore never asked the engine
+ * anything. §21 of docs/MATLAB_PORT_PLAN.md has the three.
+ *
+ * So: one call, every row a panel names, values in SI as everything crossing
+ * this boundary is. Refusals are kept rather than dropped — a panel drawing a
+ * line for a row that refused would be drawing a number nobody computed.
+ */
+export async function engineValues(ids) {
+  const want = [...new Set(ids)].filter(Boolean);
+  if (!want.length) return {};
+  const out = {};
+  await Promise.all(want.map(async (id) => {
+    try {
+      const r = await fetch('/v1/run?node=' + encodeURIComponent(id));
+      const d = await r.json();
+      if (!d.ok) { out[id] = { refused: d.message || d.fault || 'refused' }; return; }
+      // A run returns every value on the path, including the members of a set
+      // row. The one asked for is matched by id; the rest are carried so a
+      // panel naming an interface can reach its published members by name.
+      for (const v of d.values || []) {
+        out[v.id] = { si: v.si, shown: v.shown, unit: v.unit, symbol: v.symbol, label: v.label };
+      }
+      if (!out[id]) out[id] = { refused: 'the run did not return this row' };
+    } catch (e) {
+      out[id] = { refused: String(e) };
+    }
+  }));
+  return out;
+}
+
+/**
+ * One row swept across another's declared range, for a figure that draws a
+ * relation rather than a point. Same boundary rule: SI in, SI out, refusals
+ * recorded with their reason.
+ */
+export async function engineSweep(node, over, from, to, points = 80) {
+  const q = new URLSearchParams({ node, over, from: String(from), to: String(to),
+    points: String(points) });
+  const r = await fetch('/v1/sweep?' + q.toString());
+  const d = await r.json();
+  if (!d.ok) throw new Error(d.message || 'the sweep was refused');
+  return d;
+}
+
+/**
+ * Which declared decisions actually move a row's answer, most first. The engine
+ * measures it; see the levers endpoint. A figure uses this to choose what to put
+ * on an axis rather than guessing, which is how the sweep control came to offer
+ * a decision worth exactly nothing.
+ */
+export async function engineLevers(node) {
+  const r = await fetch('/v1/levers?node=' + encodeURIComponent(node));
+  const d = await r.json();
+  return d.ok ? (d.levers || []) : [];
+}
+
 export async function bundleFile(name, file) {
   const key = name + '/' + file;
   if (cache.has(key)) return cache.get(key);

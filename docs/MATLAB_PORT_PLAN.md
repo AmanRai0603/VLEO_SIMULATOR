@@ -2076,7 +2076,11 @@ move-check extends to it: a panel naming an engine row must move when that row's
 value moves. *This is the check that would have caught every stale literal below.
 Nothing after A2 is safe without it.*
 
-**A3. Delete the three stale literals in `design`.** `CENTRAL = 114.8437` →
+**A3. Delete the four stale literals in `design`.** (§21.1 found three by
+reading; wiring A1 up found a fourth — the F10.7 branch draws a line at
+`at: 250, label: 'required ≤ 250'`, and `l3_solar_req_01` is 260 while `_02` is
+350, so it matches neither. It is in the note text as well as the mark. Finding
+it by connecting one value is the argument for A2 in miniature.) `CENTRAL = 114.8437` →
 `sw_central_expectation`. The `150 / 132 / 200` requirement options →
 `l3_solar_req_01` through `_05`. `A = 92.515531, B = 40.926516` →
 `sw_storm_return_level`. Verified by A2, which fails if any of them is still a

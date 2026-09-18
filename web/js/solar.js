@@ -20,7 +20,7 @@
 
 import { $, esc } from './dom.js';
 import { S } from './state.js';
-import { solarRecord, bundleFile, centredMean, corr, quantile, num, daysSince2000 } from './record.js';
+import { solarRecord, bundleFile, engineValues, centredMean, corr, quantile, num, daysSince2000 } from './record.js';
 import { drawChart, attachHover, INK } from './chart.js';
 
 // ---------------------------------------------------------------------------
@@ -523,6 +523,11 @@ const PANELS = [
   {
     id: 'design',
     rows: ['sw_storm_return_level', 'sw_storm_design_level', 'sw_ap_design', 'sw_design_safe_duration', 'sw_exceedance_rate', 'sw_exceedance_duration', 'sw_exceedance_phase', 'l3_solar_req_03', 'l3_solar_ach_03'],
+    // WHAT THIS PANEL ASKS THE ENGINE FOR, rather than carrying a copy of.
+    // `rows` says what the picture argues about; `engine` says what it reads,
+    // and panel_check holds it to the second. The literals these replace had
+    // gone stale by two revisions — §21.1 lists them.
+    engine: ['sw_central_expectation', 'l3_solar_req_03'],
     label: 'Design',
     draws: 'The design window: what the record expects against what the vehicle is built for.',
     asks: 'Will the design be exceeded, and if so beyond what mission length?',
@@ -531,8 +536,8 @@ const PANELS = [
       { k: 'g', label: 'designed for', opts: [['3', 'G3 strong'], ['2', 'G2 moderate'], ['1', 'G1 minor']] },
       { k: 'req', label: 'requirement', opts: [['150', 'Ap 150'], ['132', 'Ap 132'], ['200', 'Ap 200']] },
     ],
-    build(rec, o) {
-      if (o.v === 'f107') return f107Window(rec);
+    build(rec, o, _extra, eng) {
+      if (o.v === 'f107') return f107Window(rec, eng);
       // The fitted return relation, as sw_storm_return_level publishes it. The
       // constants are that row's; this panel does not re-fit, because a figure
       // that fits its own line is drawing a second opinion and calling it the
@@ -962,10 +967,22 @@ function issueAge(idx) {
 }
 
 /** Design · the F10.7 window, which is the other half of what flows out. */
-function f107Window(rec) {
+function f107Window(rec, eng) {
   const byDay = new Map();
   for (const d of rec.days) if (d.f107 !== null) byDay.set(d.t, d.f107);
-  const CENTRAL = 114.8437;
+  // THE CENTRE COMES FROM THE ROW THAT COMPUTES IT. It used to be the literal
+  // 114.8437, which was sw_central_expectation's answer before §20 re-specified
+  // that row on the cycle analogue. The row has said 86.85 since, its own sheet
+  // records the move, and this panel went on drawing the old number through
+  // every green check — because nothing connected the two. A refusal is drawn
+  // as a refusal rather than substituted, since a design window around a centre
+  // nobody computed is worse than no window.
+  const c = eng && eng.sw_central_expectation;
+  if (!c || c.si === undefined) {
+    throw new Error('sw_central_expectation did not answer: ' +
+      ((c && c.refused) || 'the engine was not asked'));
+  }
+  const CENTRAL = c.si;
   const leads = [], design = [], growth = [];
   for (let L = 183; L <= 5478; L = Math.round(L * 1.25)) {
     const ch = [];
@@ -1234,9 +1251,17 @@ function debounce(fn, ms) {
 async function render(host, p, o) {
   const note = $('.sw-panel-note', host);
   try {
-    const rec = await solarRecord();
-    const extra = p.data ? await p.data() : null;
-    const out = p.build(rec, o, extra);
+    // THE RECORD AND THE ENGINE ARE TWO DIFFERENT SOURCES AND A PANEL MAY NEED
+    // BOTH. `rec` and `data()` are the reference bundle — what was observed.
+    // `eng` is what this tree COMPUTES, fetched for exactly the rows the panel
+    // declares in `engine`. Before this a panel needing a computed number
+    // carried a copy of it, and three of those copies were stale; see §21.
+    const [rec, extra, eng] = await Promise.all([
+      solarRecord(),
+      p.data ? p.data() : null,
+      engineValues(p.engine || []),
+    ]);
+    const out = p.build(rec, o, extra, eng);
     const cv = $('.sw-panel', host);
     drawChart(cv, out.spec);
     attachHover(cv);
