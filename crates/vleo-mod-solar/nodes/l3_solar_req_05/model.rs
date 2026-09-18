@@ -8,7 +8,7 @@ use vleo_core::physics::*;
 use vleo_core::units::pmath;
 use vleo_core::units::*;
 
-/// What Ap must this design survive on a single day inside the mission window?
+/// What Ap must this design keep operating through on a single day?
 ///
 /// `Ap_req_short = ap(G3) = 132`
 ///
@@ -30,7 +30,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "l3_solar_req_05";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x5362e9efd37d6504;
+pub const SHEET_HASH: u64 = 0x7dfa906f73335508;
 
 pub fn evaluate() -> Result<Ratio, Fault> {
     // generated · a declared value, converted from the unit it was written in

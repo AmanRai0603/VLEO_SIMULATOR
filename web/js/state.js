@@ -182,3 +182,7 @@ export const isSeeded = r => r && r.state === 'empty';
 // deprecated row that looks live is worse than one that is gone, because it
 // invites being used.
 export const isDeprecated = r => r && r.state === 'deprecated';
+
+// Whether the tree lists retired rows. Off by default: a reader opening a
+// subsystem should see the work that is live in it.
+S.showRetired = false;

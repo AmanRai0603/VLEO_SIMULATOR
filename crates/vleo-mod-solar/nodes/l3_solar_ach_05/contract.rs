@@ -6,9 +6,9 @@
 use vleo_core::fault::Fault;
 use vleo_core::units::*;
 
-/// What this node publishes: `Ap_ach_short` (Achieved — Ap, single day), in `-`.
+/// What this node publishes: `Ap_ach_short` (Achieved — Ap, worst day of the hot scenario), in `-`.
 pub const NODE_ID: &str = "l3_solar_ach_05";
-pub const SHEET_HASH: u64 = 0x4f467829c475f841;
+pub const SHEET_HASH: u64 = 0x64488505a91b91f1;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_ap_design_short",

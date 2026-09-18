@@ -12,7 +12,12 @@ tier = "A"
 criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1367
-state = "published"
+# RETIRED. Its content moved into the kernel when the Kp columns were crossed:
+# sw_kp_scenarios calls env::kp_mean_slot_bias directly, because the bus passes
+# a node's VALUE and not its RELATION and a driver set needs the bias at five
+# Ap values rather than one. The measured table is in vleo-core with this row's
+# derivation behind it. Nothing reads this row and no figure draws it.
+state = "deprecated"
 
 # NO migrated_from AND NO PARITY GRID, FOR THE SAME REASON AS sw_kp_slot_bias.
 #

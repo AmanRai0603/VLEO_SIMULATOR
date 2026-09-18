@@ -1,7 +1,7 @@
-<article class="node" data-node="l3_solar_ach_05" data-sheet-hash="75f841" data-impl-hash="7ffc3c">
+<article class="node" data-node="l3_solar_ach_05" data-sheet-hash="1b91f1" data-impl-hash="7ffc3c">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>Achieved — Ap, single day</h2>
+  <h2>Achieved — Ap, worst day of the hot scenario</h2>
   <p class="ident"><code>l3_solar_ach_05</code> · <span class="kind kind-achieved">achieved</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
@@ -17,7 +17,7 @@
   <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="question">What single-day Ap does the record say this mission will present?</p>
+<p class="question">What Ap does the hot sustained scenario reach on its worst single day?</p>
 <p class="maths"><code>Ap_ach_short = sw_ap_design_short</code></p>
 <p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
 <p class="note">An achieved row restates the subsystem's conclusion on the side of the
@@ -100,7 +100,7 @@ use vleo_core::physics::*;
 use vleo_core::units::pmath;
 use vleo_core::units::*;
 
-/// What single-day Ap does the record say this mission will present?
+/// What Ap does the hot sustained scenario reach on its worst single day?
 ///
 /// `Ap_ach_short = sw_ap_design_short`
 ///
@@ -120,7 +120,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &amp;str = &quot;l3_solar_ach_05&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x4f467829c475f841;
+pub const SHEET_HASH: u64 = 0x64488505a91b91f1;
 
 pub fn evaluate(conclusion: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
     // ---- HOLE 1 : restate the subsystem's conclusion on the achieved side of the closure -&gt; Ratio

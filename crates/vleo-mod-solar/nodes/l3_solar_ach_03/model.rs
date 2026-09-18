@@ -8,7 +8,7 @@ use vleo_core::physics::*;
 use vleo_core::units::pmath;
 use vleo_core::units::*;
 
-/// What daily planetary Ap does the record say this mission will present?
+/// What daily Ap recurs once over a mission of this length?
 ///
 /// `Ap_ach = sw_storm_return_level`
 ///
@@ -25,7 +25,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "l3_solar_ach_03";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xc3f5fe862655aa6d;
+pub const SHEET_HASH: u64 = 0x3e9e3a1ff73fb79b;
 
 pub fn evaluate(conclusion: Ratio) -> Result<Ratio, Fault> {
     // ---- HOLE 1 : restate the subsystem's conclusion on the achieved side of the closure -> Ratio

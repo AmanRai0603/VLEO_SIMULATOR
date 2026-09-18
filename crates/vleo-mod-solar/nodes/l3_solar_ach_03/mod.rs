@@ -1,9 +1,9 @@
 // GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
 // regeneration and fails the regeneration diff in the gate.
-//! `l3_solar_ach_03` — Achieved — Ap, mission return level
+//! `l3_solar_ach_03` — Achieved — Ap, once-per-mission return level
 //!
-//! What daily planetary Ap does the record say this mission will present?
+//! What daily Ap recurs once over a mission of this length?
 
 #[path = "model.rs"]
 pub mod model;

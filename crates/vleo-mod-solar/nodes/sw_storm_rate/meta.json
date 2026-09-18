@@ -1,6 +1,6 @@
 {
   "id": "sw_storm_rate",
-  "state": "published",
+  "state": "deprecated",
   "sheet_hash": "490e21",
   "impl_hash": "490bfd",
   "owner": "environment",

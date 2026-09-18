@@ -1,4 +1,4 @@
-<article class="node" data-node="l3_solar_req_05" data-sheet-hash="7d6504" data-impl-hash="222325">
+<article class="node" data-node="l3_solar_req_05" data-sheet-hash="335508" data-impl-hash="222325">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Required — Ap, single day</h2>
@@ -17,7 +17,7 @@
   <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="question">What Ap must this design survive on a single day inside the mission window?</p>
+<p class="question">What Ap must this design keep operating through on a single day?</p>
 <p class="maths"><code>Ap_req_short = ap(G3) = 132</code></p>
 <p class="src">Source <b>orbitt_case_c1</b> — Orbitt Space — VLEO multipayload reference case C1 <span class="where">internal, 2026-09-01</span></p>
 <p class="note">Survive, not operate in. A day at this level may cost a safe mode, a missed
@@ -99,7 +99,7 @@ use vleo_core::physics::*;
 use vleo_core::units::pmath;
 use vleo_core::units::*;
 
-/// What Ap must this design survive on a single day inside the mission window?
+/// What Ap must this design keep operating through on a single day?
 ///
 /// `Ap_req_short = ap(G3) = 132`
 ///
@@ -121,7 +121,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &amp;str = &quot;l3_solar_req_05&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x5362e9efd37d6504;
+pub const SHEET_HASH: u64 = 0x7dfa906f73335508;
 
 pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
     // generated · a declared value, converted from the unit it was written in

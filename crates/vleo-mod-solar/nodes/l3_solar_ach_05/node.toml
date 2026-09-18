@@ -2,7 +2,7 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "l3_solar_ach_05"
-label = "Achieved — Ap, single day"
+label = "Achieved — Ap, worst day of the hot scenario"
 folder = "l3_solar_ach_05"   # frozen at seed
 subsystem = "solar"
 parent = "l3_solar"
@@ -18,8 +18,16 @@ state = "published"
 # l3_solar_req_05, which declares what the vehicle can take; this says what the
 # record says the window will present.
 
+# THE PAIR WITH ach_03, AND WHY BOTH EXIST. This is the driver set's own
+# answer: the sustained hot Ap with the within-rotation daily spread measured
+# at that level added to it, so it stays consistent with the F10.7 columns
+# beside it and moves when the scenario moves. ach_03 asks a different
+# question of the same quantity -- what recurs once per mission life across
+# the whole record -- and answers 158.4. Neither supersedes the other: this
+# one belongs to the scenario, that one to the record.
+
 [question]
-text = "What single-day Ap does the record say this mission will present?"
+text = "What Ap does the hot sustained scenario reach on its worst single day?"
 note = """
 An achieved row restates the subsystem's conclusion on the side of the
 comparison the closure reads. It computes nothing of its own, and it exists

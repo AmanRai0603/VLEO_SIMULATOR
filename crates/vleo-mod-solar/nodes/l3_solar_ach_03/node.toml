@@ -2,7 +2,7 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "l3_solar_ach_03"
-label = "Achieved — Ap, mission return level"
+label = "Achieved — Ap, once-per-mission return level"
 folder = "l3_solar_ach_03"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
@@ -24,8 +24,20 @@ state = "published"
 # environmental half, on a row, with its provenance — which is the half this
 # subsystem owes.
 
+# THE PAIR WITH ach_05, AND WHY BOTH EXIST. Two rows here answer what looks
+# like one question -- the worst daily Ap the mission meets -- and they
+# disagree by a factor of 1.75, 158.4 against 90.5. They are not rivals and
+# neither is wrong. This one is a RETURN LEVEL: fit the record's daily Ap
+# tail, ask what recurs once in five years, and get 158.4 regardless of which
+# solar scenario the mission actually flies. ach_05 is a SCENARIO value: take
+# the hot sustained level the driver set carries, add the within-rotation
+# daily spread measured AT that level, and get 90.5 for that scenario's worst
+# day. One is the tail of the whole record, the other is one column of the
+# driver product. A design needs both, and the gap between them is the cost of
+# designing to a scenario rather than to the record.
+
 [question]
-text = "What daily planetary Ap does the record say this mission will present?"
+text = "What daily Ap recurs once over a mission of this length?"
 note = "The geomagnetic driver on the achieved side: the storm that recurs once per mission lifetime. Unlike the F10.7 pair this has no confidence attached, because geomagnetic activity has no usable long-term forecast and the study designs to a return period instead."
 
 [maths]

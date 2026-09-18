@@ -3,7 +3,7 @@
 // regeneration and fails the regeneration diff in the gate.
 //! `l3_solar_req_05` — Required — Ap, single day
 //!
-//! What Ap must this design survive on a single day inside the mission window?
+//! What Ap must this design keep operating through on a single day?
 
 #[path = "model.rs"]
 pub mod model;

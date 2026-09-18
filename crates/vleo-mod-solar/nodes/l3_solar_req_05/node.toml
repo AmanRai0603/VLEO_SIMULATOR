@@ -39,8 +39,17 @@ sense = "<="
 #
 # 132 is the published ap equivalent amplitude at Kp 7, the G3 threshold.
 
+# OPERATING, NOT SURVIVAL, AND THE QUESTION USED TO SAY OTHERWISE. This row
+# asked what the design must SURVIVE on a single day, and was then settled at
+# the G3 threshold of 132 as the level the vehicle operates THROUGH -- with
+# req_03 carrying survival at G4. The text and the decision disagreed, and a
+# reader taking the question at its word would have read 132 as a survival
+# bound and concluded the design was committed two G levels below what req_03
+# says. The question now says what the number means. The number, its reasoning
+# and its confirmation are unchanged.
+
 [question]
-text = "What Ap must this design survive on a single day inside the mission window?"
+text = "What Ap must this design keep operating through on a single day?"
 note = """
 Survive, not operate in. A day at this level may cost a safe mode, a missed
 downlink and some propellant; what it may not cost is the vehicle. That is a

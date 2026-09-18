@@ -8,7 +8,7 @@ use vleo_core::physics::*;
 use vleo_core::units::pmath;
 use vleo_core::units::*;
 
-/// What single-day Ap does the record say this mission will present?
+/// What Ap does the hot sustained scenario reach on its worst single day?
 ///
 /// `Ap_ach_short = sw_ap_design_short`
 ///
@@ -28,7 +28,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "l3_solar_ach_05";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x4f467829c475f841;
+pub const SHEET_HASH: u64 = 0x64488505a91b91f1;
 
 pub fn evaluate(conclusion: Ratio) -> Result<Ratio, Fault> {
     // ---- HOLE 1 : restate the subsystem's conclusion on the achieved side of the closure -> Ratio
