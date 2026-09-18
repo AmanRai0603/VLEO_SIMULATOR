@@ -223,7 +223,7 @@ const PANELS = [
       const p1 = peakIn(18, 36), p2 = peakIn(45, 65), p3 = peakIn(72, 95);
       const marks = [];
       if (p1.at) marks.push({ axis: 'x', at: p1.at, label: 'first peak, lag ' + p1.at });
-      if (p2.at && maxLag >= 65) marks.push({ axis: 'x', at: p2.at, label: 'second, ' + p2.at, colour: '#2a6f97' });
+      if (p2.at && maxLag >= 65) marks.push({ axis: 'x', at: p2.at, label: 'second, ' + p2.at, colour: '#2f6fa8' });
       return {
         spec: {
           x: { label: 'lag  [days]', min: 1, max: maxLag },
@@ -665,7 +665,7 @@ const PANELS = [
             { axis: 'y', at: bound, label: 'designed for G' + o.g + ' = Ap ' + bound.toFixed(0) +
               '  (sw_ap_design)' },
             { axis: 'y', at: req, label: 'required ≤ ' + req.toFixed(0) + '  (' + o.req + ')',
-              colour: '#c1440e' },
+              colour: '#c2185b' },
             { axis: 'x', at: cross(bound), label: 'exceeds the design at ' + cross(bound).toFixed(2) + ' yr' },
           ],
         },
@@ -717,8 +717,8 @@ const PANELS = [
       const marks = [{ axis: 'y', at: overall,
         label: 'mean over the record’s ' + allDays.length + ' days = ' + overall.toFixed(2) }];
       if (o.by === 'doy') {
-        marks.push({ axis: 'x', at: 80, label: 'March equinox', colour: '#2a6f97' });
-        marks.push({ axis: 'x', at: 266, label: 'September equinox', colour: '#2a6f97' });
+        marks.push({ axis: 'x', at: 80, label: 'March equinox', colour: '#2f6fa8' });
+        marks.push({ axis: 'x', at: 266, label: 'September equinox', colour: '#2f6fa8' });
       }
       return {
         spec: {
@@ -892,8 +892,8 @@ function regimeByPhase(rec) {
       x: { label: 'cycle phase', min: 0, max: 1 },
       y: { label: 'share of days at that phase  [%]', min: 0 },
       series: [
-        { name: 'storm (Ap \u2265 26)', kind: 'line', x: xs, y: st.map((c, i) => (tot[i] ? 100 * c / tot[i] : null)), colour: '#c1440e' },
-        { name: 'quiet (Ap \u2264 6)', kind: 'line', x: xs, y: qt.map((c, i) => (tot[i] ? 100 * c / tot[i] : null)), colour: '#2a6f97' },
+        { name: 'storm (Ap \u2265 26)', kind: 'line', x: xs, y: st.map((c, i) => (tot[i] ? 100 * c / tot[i] : null)), colour: '#c2185b' },
+        { name: 'quiet (Ap \u2264 6)', kind: 'line', x: xs, y: qt.map((c, i) => (tot[i] ? 100 * c / tot[i] : null)), colour: '#2f6fa8' },
       ],
       marks: [{ axis: 'x', at: 0.6193669438, label: 'the declared epoch, phase 0.619' }],
     },
@@ -1037,10 +1037,10 @@ function byIssueYear(fc, byDay, tOf, persist, metric) {
  */
 function scoreBaseline(metric) {
   if (metric === 'skill') {
-    return [{ axis: 'y', at: 0, label: 'no better than persistence', colour: '#c1440e' }];
+    return [{ axis: 'y', at: 0, label: 'no better than persistence', colour: '#c2185b' }];
   }
   if (metric === 'bias') {
-    return [{ axis: 'y', at: 0, label: 'unbiased — above is high, below is LOW', colour: '#c1440e' }];
+    return [{ axis: 'y', at: 0, label: 'unbiased — above is high, below is LOW', colour: '#c2185b' }];
   }
   return [];
 }
@@ -1218,7 +1218,7 @@ function kpAgainstAp(rec) {
         { name: 'median daily Ap', kind: 'line', x: ks, y: med },
         { name: '10th and 90th percentile', kind: 'line', x: ks, y: p10, colour: '#8a8880', width: 1 },
         { name: '', kind: 'line', x: ks, y: p90, colour: '#8a8880', width: 1 },
-        { name: 'published ap at that Kp', kind: 'line', x: ks, y: ks.map(tableAt), colour: '#c1440e', dash: [5, 4] },
+        { name: 'published ap at that Kp', kind: 'line', x: ks, y: ks.map(tableAt), colour: '#c2185b', dash: [5, 4] },
       ],
     },
     note: 'The published table converts a THREE-HOURLY Kp to a three-hourly ap; the record\u2019s daily ' +

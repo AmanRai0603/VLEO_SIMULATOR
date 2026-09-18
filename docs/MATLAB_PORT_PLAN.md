@@ -2246,18 +2246,47 @@ on the way. Every reference is re-recorded and **all eight need a person's eye
 before `panels/README.md` is satisfied** — a re-record is a claim that the new
 picture is right, and only a person can make it.
 
-**B2. The validated palette.** `#b5731a #2f6fa8 #2e7d55 #8f43e0 #c2185b #00918f`,
-all five checks passing in light and dark (§25.3). Assign in fixed order, never
-cycled. Dark mode gets its own steps from the same ramps, not an automatic flip.
+**B2. The validated palette.** Done. `#b5731a #2f6fa8 #2e7d55 #8f43e0 #c2185b
+#00918f`, all five checks passing in light and in dark against each mode's own
+surface. Slot 1 is unchanged, so the orange that means "the record" keeps meaning
+it.
+
+The retired hues were not confined to `chart.js`: sixteen occurrences of
+`#2a6f97`, `#8a3ffc`, `#c1440e`, `#7a9e3f` and `#4a4a4a` were written into
+`solar.js`, `run.js` and `relation.js` as mark colours. All are re-pointed to the
+same slot in the validated set, so a threshold drawn in one file and a series
+drawn in another still agree.
+
+Worth keeping in view: the worst adjacent CVD separation is 8.2 against a floor
+of 8. That is a pass and not a comfortable one, which is why B4's legend and B5's
+direct labels are what make the palette legal rather than what makes it pretty.
+
+*Dark mode is still outstanding.* `INK` is one set of light-mode values and the
+face has no dark steps at all; the skill's rule is that dark is selected from the
+same ramps against the dark surface, never an automatic flip. That is a B2
+remainder, not a thing B2 delivered.
 
 **B3. Mark specs.** Lines 2px with round join and cap; markers ≥8px with a 2px
 surface ring; area fills the series hue at ~10%; gridlines and axes hairline,
 solid, one step off the surface — never dashed. Dashes are reserved for a
 threshold, which is what `design`'s requirement line legitimately is.
 
-**B4. A legend component, outside the plot rectangle.** Present whenever a panel
-draws two or more series; absent for one, where the title already names it. Fixes
-`design`'s missing legend and `repeatability`'s overlapping one in one change.
+**B4. A legend, in its own band above the plot.** Done. It was drawn inside the
+frame at the top left — on `repeatability` exactly where cycles 23 and 25 run, so
+four entries sat on top of the thing they identify. It now has a band of its own,
+the plot starts below it, and the entries pack into rows across the width rather
+than one per line, because vertical space spent on a legend is stolen from the
+picture.
+
+A single series still gets none: there is one colour and the axis title already
+names it, so a box with one swatch would restate the title and cost space.
+
+Only `repeatability` moved — 8.7% of its pixels. Every other canvas panel draws
+one named series at its reference state, which is also why `design`'s "missing
+legend" was never visible in a reference: its four-series branch is the F10.7 one,
+and no reference photographs it. That is the §A4 gap again, and it is now the
+main thing standing between Part B and a figure set anyone can trust: **eight of
+the eleven panels have exactly one view under test.**
 
 **B5. Direct labels, selectively.** The endpoint, the extreme, or the series the
 figure is about — never a number on every point. Not optional here: the palette's

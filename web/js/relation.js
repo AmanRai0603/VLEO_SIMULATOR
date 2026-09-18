@@ -169,8 +169,8 @@ function guardMarks(host, res) {
   const span = (y1 - y0) || Math.abs(y1) || 1;
   const near = v => v >= y0 - 2 * span && v <= y1 + 2 * span;
   const out = [];
-  if (near(lo)) out.push({ axis: 'y', at: lo, label: 'refuses below ' + fmt(lo), colour: '#c1440e' });
-  if (near(hi)) out.push({ axis: 'y', at: hi, label: 'refuses above ' + fmt(hi), colour: '#c1440e' });
+  if (near(lo)) out.push({ axis: 'y', at: lo, label: 'refuses below ' + fmt(lo), colour: '#c2185b' });
+  if (near(hi)) out.push({ axis: 'y', at: hi, label: 'refuses above ' + fmt(hi), colour: '#c2185b' });
   return out;
 }
 
@@ -220,8 +220,8 @@ async function declaredValue(host, r) {
       { name: '', kind: 'dots', x: [v], y: [0], width: 7, alpha: 1 },
     ],
     marks: [
-      { axis: 'x', at: lo, label: 'refuses below ' + fmt(lo), colour: '#c1440e' },
-      { axis: 'x', at: hi, label: 'refuses above ' + fmt(hi), colour: '#c1440e' },
+      { axis: 'x', at: lo, label: 'refuses below ' + fmt(lo), colour: '#c2185b' },
+      { axis: 'x', at: hi, label: 'refuses above ' + fmt(hi), colour: '#c2185b' },
       { axis: 'x', at: v, label: r.symbol + ' = ' + fmt(v) },
     ],
   });

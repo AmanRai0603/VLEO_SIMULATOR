@@ -387,10 +387,10 @@ function plot(host, res) {
   if (markY !== null) {
     const y = py(markY);
     ctx.save();
-    ctx.strokeStyle = '#8a3ffc'; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = '#8f43e0'; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]);
     ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(W - R, y); ctx.stroke();
     ctx.restore();
-    ctx.fillStyle = '#8a3ffc'; ctx.font = '10px ui-monospace, monospace';
+    ctx.fillStyle = '#8f43e0'; ctx.font = '10px ui-monospace, monospace';
     ctx.fillText(markRow.id + ' = ' + fmt(markY), L + 4, y - 4);
     for (let i = 1; i < ys.length; i++) {
       const a = ys[i - 1], b = ys[i];
@@ -399,7 +399,7 @@ function plot(host, res) {
         crossing = xs[i - 1] + t * (xs[i] - xs[i - 1]);
         const cx = px(crossing);
         ctx.save();
-        ctx.strokeStyle = '#8a3ffc'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
+        ctx.strokeStyle = '#8f43e0'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
         ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(cx, H - B); ctx.stroke();
         ctx.restore();
         break;
