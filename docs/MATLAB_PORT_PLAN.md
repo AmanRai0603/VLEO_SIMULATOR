@@ -1479,3 +1479,104 @@ finding rather than an artefact of never having connected the two halves.
 Steps 1 and 2 are the load-bearing ones. Everything after them is drawing, and
 drawing without the check is how three wrong numbers sat in a panel through
 green runs.
+
+## 22 · The views, counted — what to cut, what to replace, what to draw
+
+§21 established that no panel reads the engine. This is the other half: what the
+panels actually offer, how much of it is the same picture twice, and which of
+this tree's own analyses have overtaken the legacy method they were ported from.
+
+### 22.1 · View-wise — 162 combinations, 119 pictures
+
+Eight panels, and the product of each one's controls:
+
+| panel | combinations | distinct pictures | repeats | why |
+|---|---|---|---|---|
+| `pattern` | 36 | 19 | **17** | `view=spikes` ignores `v`, `w` and `lag` |
+| `predict` | 48 | 48 | 0 | every control reaches every branch |
+| `repeatability` | 18 | 10 | **8** | `view=storm` ignores `v` and `bins` |
+| `design` | 18 | 10 | **8** | `v=f107` ignores `g` and `req` |
+| `forecast` | 18 | 13 | **5** | `view=age` ignores `m` and `base` |
+| `segmentation` | 8 | 5 | **3** | `view=phase` ignores `v` and `scale` |
+| `climate` | 15 | 13 | **2** | `by=kpap` ignores `v` |
+| `density` | 1 | 1 | 0 | no controls; it draws the gap on purpose |
+| | **162** | **119** | **43** | |
+
+**43 of the 162 are the same picture reached twice.** Not a rendering bug — the
+control stays on screen offering a choice that changes nothing, which is the
+same defect as the sweep offering `env_f107`: a reader turns the knob, sees no
+change, and stops trusting the knob. The fix is per-branch control visibility,
+one rule in `panelBody`: a control whose branch does not read it is not drawn.
+That is a dozen lines and it removes all 43 at once.
+
+`predict` at 48 combinations is the other end and worth a second look: four
+controls multiply faster than a reader can hold, and 48 pictures of one analysis
+is not obviously more useful than twelve.
+
+### 22.2 · Where this tree's analysis has overtaken the legacy method
+
+Two of them, and both are already the row's answer while the panel still draws
+the legacy way. These are replacements, not additions:
+
+**The centre of the design window.** `prf_design` freezes the last 27-day
+rotation forecast and holds it flat, giving 158.33 sfu for its own 2027 window.
+`sw_central_expectation` runs the amplitude-scaled cycle analogue over the window
+and gives 86.85. Over the same span past maximum, the two completed cycles ran at
+91 sfu scaled onto cycle 25's amplitude — so the record puts the legacy method
+**74% high**, and this row within a few per cent of it. The row's own sheet
+records the disagreement and `tools/mat_parity.py` keeps measuring it. The design
+panel still hard-codes the legacy centre.
+
+**The within-rotation spread.** `designWindow_` applies one spread at every
+level. §20 conditioned it on the rotation level it applies at, which moved
+`sw_ap_design_short` from 41.70 to 90.55 — the previous value was less than half
+what the record supports for the subsystem's own hot scenario. The design panel
+draws neither.
+
+So the design panel is not merely stale (§21.1); it draws a method this tree has
+measured as wrong. Step 3 of §21.3 is therefore a replacement rather than a
+refresh, and the panel should say on its face which method it is drawing.
+
+### 22.3 · Node-wise — what each row without a view needs
+
+Eighteen rows carry no figure. They are three groups, not one, and each wants a
+different kind of picture.
+
+**Group A — the driver set, 12 rows.** `sw_f107_design_long`, `_short`,
+`sw_f107_cold_long`, `_short`, the four Ap equivalents, `sw_kp_scenarios`,
+`sw_mean_band_spread`, `sw_ap_mean_band_spread`, `sw_ap_central_expectation`.
+One figure serves all twelve: **five scenarios against f107, f107bar, ap, kp_mean
+and kp_peak**, with the legacy run's own values from
+`matlab/reference/mission_drivers.csv` drawn beside each. That is the picture the
+legacy tool never had — it printed the table — and it is a standing parity check
+in the same frame. One new panel, `drivers`.
+
+**Group B — the closures, 10 rows.** Five required and five achieved. One figure
+per pair: the bound as a line, the achieved value as a point, the margin as the
+distance, and the whole thing swept over the decision `/v1/levers` names as
+moving it most. The legacy tool had no closures, so there is no view to port;
+this is the one genuinely new picture the port owes. One new panel, `closure`,
+with the pair as a control — five views, not five panels.
+
+**Group C — the seam and the odd one, 2 rows.** `l3_solar_interface` is answered
+by Group A's figure, since the driver set is what it publishes.
+`sw_window_peak_level` belongs on the `design` panel as the window maximum
+against the window mean — the gap `sw_central_expectation`'s own sheet names.
+
+Eighteen rows, **two new panels and one addition to an existing one.**
+
+### 22.4 · The order
+
+1. §21 steps 1–2 — panels can read the engine, and `panel_check` enforces it.
+   Nothing below is safe before this.
+2. Per-branch control visibility. Removes the 43 repeats; no new drawing.
+3. §21 step 3 — replace the design panel's three literals, and say on the panel
+   which method it draws (22.2).
+4. The `drivers` panel — Group A, with the legacy values beside this tree's.
+5. The `closure` panel — Group B.
+6. `sw_window_peak_level` onto `design` — Group C.
+7. Re-run `tools/solar_rows.py`. "No figure" should then be empty, and if it is
+   not, what remains is a real finding.
+
+Steps 2 and 3 are subtraction and correction; 4 to 6 are the only new pictures,
+and there are three of them rather than eighteen.
