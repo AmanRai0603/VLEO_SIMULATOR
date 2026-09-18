@@ -6,7 +6,7 @@
 use vleo_core::fault::Fault;
 use vleo_core::units::*;
 
-/// What this node publishes: `Ap_req` (Ap), in `-`.
+/// What this node publishes: `Ap_req_survive` (Required — Ap, survival), in `-`.
 pub const NODE_ID: &str = "l3_solar_req_03";
 pub const SHEET_HASH: u64 = 0xd3d28334dd6938b2;
 /// The variables this node reads, in the order `call` expects them.

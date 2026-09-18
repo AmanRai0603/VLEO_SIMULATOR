@@ -39,13 +39,13 @@ pub fn evaluate(conclusion: Ratio) -> Result<Ratio, Fault> {
     // written down gets deleted by the next person who finds it awkward.
     let answer: Ratio = ach;
     if !answer.is_finite() {
-        return Err(Fault::Degenerate { node: NODE_ID, field: "F107_ach", reason: "the computation produced a value that is not a number" });
+        return Err(Fault::Degenerate { node: NODE_ID, field: "F107_ach_short", reason: "the computation produced a value that is not a number" });
     }
     if answer.get() < 60.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_ach", value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "the same floor as env_f107: below 60 sfu has never been observed" });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_ach_short", value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "the same floor as env_f107: below 60 sfu has never been observed" });
     }
     if answer.get() > 400.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_ach", value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating. This is the achieved row most likely to reach it, being a sustained level with a daily excursion on top" });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_ach_short", value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating. This is the achieved row most likely to reach it, being a sustained level with a daily excursion on top" });
     }
     Ok(answer)
 }

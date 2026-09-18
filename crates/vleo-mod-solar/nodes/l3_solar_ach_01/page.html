@@ -1,7 +1,7 @@
 <article class="node" data-node="l3_solar_ach_01" data-sheet-hash="bb0a27" data-impl-hash="6f6f4a">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>F10.7, sustained</h2>
+  <h2>Achieved — F10.7, sustained</h2>
   <p class="ident"><code>l3_solar_ach_01</code> · <span class="kind kind-achieved">achieved</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
@@ -50,7 +50,7 @@ happens on a row rather than in somebody's head.
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr><td>in</td><td><code>conclusion</code></td><td><a class="xref" data-goto="sw_f107_design_long">sw_f107_design_long</a></td><td>Ratio</td><td>-</td></tr>
-<tr class="out"><td>out</td><td><code>F107_ach_flux</code></td><td>l3_solar_ach_01</td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>F107_ach_long</code></td><td>l3_solar_ach_01</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
@@ -65,22 +65,22 @@ happens on a row rather than in somebody's head.
     ach ← step 1
 
     // a guard whose reason is not written down gets deleted
-    require F107_ach_flux ≥ 60
-    require F107_ach_flux ≤ 400
-    require F107_ach_flux is finite
+    require F107_ach_long ≥ 60
+    require F107_ach_long ≤ 400
+    require F107_ach_long is finite
 
-    return F107_ach_flux
+    return F107_ach_long
 </code></pre>
 <p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code>F107_ach_flux &ge; 60</code> — the same floor as env_f107 and sw_f107_design_long: below 60 sfu has never been observed and no relation reading F10.7 has support there</li>
-<li><code>F107_ach_flux &le; 400</code> — the same ceiling as env_f107 and sw_f107_design_long: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value</li>
+<li><code>F107_ach_long &ge; 60</code> — the same floor as env_f107 and sw_f107_design_long: below 60 sfu has never been observed and no relation reading F10.7 has support there</li>
+<li><code>F107_ach_long &le; 400</code> — the same ceiling as env_f107 and sw_f107_design_long: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="4">
-<div class="relation-host" data-node="l3_solar_ach_01" data-lo="60" data-hi="400" data-symbol="F107_ach_flux">
+<div class="relation-host" data-node="l3_solar_ach_01" data-lo="60" data-hi="400" data-symbol="F107_ach_long">
 <p class="muted">asking the engine…</p>
 </div>
 </section>
@@ -125,13 +125,13 @@ pub fn evaluate(conclusion: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
     // written down gets deleted by the next person who finds it awkward.
     let answer: Ratio = ach;
     if !answer.is_finite() {
-        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_ach_flux&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_ach_long&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
     }
     if answer.get() &lt; 60.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_ach_flux&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the same floor as env_f107 and sw_f107_design_long: below 60 sfu has never been observed and no relation reading F10.7 has support there&quot; });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_ach_long&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the same floor as env_f107 and sw_f107_design_long: below 60 sfu has never been observed and no relation reading F10.7 has support there&quot; });
     }
     if answer.get() &gt; 400.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_ach_flux&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the same ceiling as env_f107 and sw_f107_design_long: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value&quot; });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_ach_long&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the same ceiling as env_f107 and sw_f107_design_long: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value&quot; });
     }
     Ok(answer)
 }

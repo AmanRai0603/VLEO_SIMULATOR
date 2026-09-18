@@ -1,7 +1,7 @@
 // GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
 // regeneration and fails the regeneration diff in the gate.
-//! `l3_solar_ach_05` — Ap, single day
+//! `l3_solar_ach_05` — Achieved — Ap, single day
 //!
 //! What single-day Ap does the record say this mission will present?
 

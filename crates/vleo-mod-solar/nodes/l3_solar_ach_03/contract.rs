@@ -6,7 +6,7 @@
 use vleo_core::fault::Fault;
 use vleo_core::units::*;
 
-/// What this node publishes: `Ap_ach` (Ap), in `-`.
+/// What this node publishes: `Ap_ach_return` (Achieved — Ap, mission return level), in `-`.
 pub const NODE_ID: &str = "l3_solar_ach_03";
 pub const SHEET_HASH: u64 = 0xc3f5fe862655aa6d;
 /// The variables this node reads, in the order `call` expects them.

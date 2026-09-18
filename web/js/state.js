@@ -176,3 +176,9 @@ export function reachFrom(seed, edges) {
 }
 
 export const isSeeded = r => r && r.state === 'empty';
+// A row whose question is still real but whose answer nothing should read any
+// more. The face drew it exactly like a live row, so a reader had no way to
+// tell a retired relation from a current one without opening it — and a
+// deprecated row that looks live is worse than one that is gone, because it
+// invites being used.
+export const isDeprecated = r => r && r.state === 'deprecated';

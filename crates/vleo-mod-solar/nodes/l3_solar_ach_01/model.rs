@@ -37,13 +37,13 @@ pub fn evaluate(conclusion: Ratio) -> Result<Ratio, Fault> {
     // written down gets deleted by the next person who finds it awkward.
     let answer: Ratio = ach;
     if !answer.is_finite() {
-        return Err(Fault::Degenerate { node: NODE_ID, field: "F107_ach_flux", reason: "the computation produced a value that is not a number" });
+        return Err(Fault::Degenerate { node: NODE_ID, field: "F107_ach_long", reason: "the computation produced a value that is not a number" });
     }
     if answer.get() < 60.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_ach_flux", value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "the same floor as env_f107 and sw_f107_design_long: below 60 sfu has never been observed and no relation reading F10.7 has support there" });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_ach_long", value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "the same floor as env_f107 and sw_f107_design_long: below 60 sfu has never been observed and no relation reading F10.7 has support there" });
     }
     if answer.get() > 400.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_ach_flux", value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "the same ceiling as env_f107 and sw_f107_design_long: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value" });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_ach_long", value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "the same ceiling as env_f107 and sw_f107_design_long: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value" });
     }
     Ok(answer)
 }

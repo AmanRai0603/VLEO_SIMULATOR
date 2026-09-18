@@ -1,7 +1,7 @@
 <article class="node" data-node="l3_solar_ach_03" data-sheet-hash="55aa6d" data-impl-hash="6f6f4a">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>Ap</h2>
+  <h2>Achieved — Ap, mission return level</h2>
   <p class="ident"><code>l3_solar_ach_03</code> · <span class="kind kind-achieved">achieved</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
@@ -45,7 +45,7 @@
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr><td>in</td><td><code>conclusion</code></td><td><a class="xref" data-goto="sw_storm_return_level">sw_storm_return_level</a></td><td>Ratio</td><td>-</td></tr>
-<tr class="out"><td>out</td><td><code>Ap_ach</code></td><td>l3_solar_ach_03</td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>Ap_ach_return</code></td><td>l3_solar_ach_03</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
@@ -60,22 +60,22 @@
     ach ← step 1
 
     // a guard whose reason is not written down gets deleted
-    require Ap_ach ≥ 20
-    require Ap_ach ≤ 230
-    require Ap_ach is finite
+    require Ap_ach_return ≥ 20
+    require Ap_ach_return ≤ 230
+    require Ap_ach_return is finite
 
-    return Ap_ach
+    return Ap_ach_return
 </code></pre>
 <p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code>Ap_ach &ge; 20</code> — the same floor as sw_storm_return_level: below 20 the answer is not a storm at all, and the record's median day is 7</li>
-<li><code>Ap_ach &le; 230</code> — the same ceiling as sw_storm_return_level: the fit's own reach at a return period equal to the record, 28.1971 years, which is Ap 229.18</li>
+<li><code>Ap_ach_return &ge; 20</code> — the same floor as sw_storm_return_level: below 20 the answer is not a storm at all, and the record's median day is 7</li>
+<li><code>Ap_ach_return &le; 230</code> — the same ceiling as sw_storm_return_level: the fit's own reach at a return period equal to the record, 28.1971 years, which is Ap 229.18</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="4">
-<div class="relation-host" data-node="l3_solar_ach_03" data-lo="20" data-hi="230" data-symbol="Ap_ach">
+<div class="relation-host" data-node="l3_solar_ach_03" data-lo="20" data-hi="230" data-symbol="Ap_ach_return">
 <p class="muted">asking the engine…</p>
 </div>
 </section>
@@ -120,13 +120,13 @@ pub fn evaluate(conclusion: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
     // written down gets deleted by the next person who finds it awkward.
     let answer: Ratio = ach;
     if !answer.is_finite() {
-        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_ach&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_ach_return&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
     }
     if answer.get() &lt; 20.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_ach&quot;, value: answer.get(), bound: 20.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the same floor as sw_storm_return_level: below 20 the answer is not a storm at all, and the record's median day is 7&quot; });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_ach_return&quot;, value: answer.get(), bound: 20.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the same floor as sw_storm_return_level: below 20 the answer is not a storm at all, and the record's median day is 7&quot; });
     }
     if answer.get() &gt; 230.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_ach&quot;, value: answer.get(), bound: 230.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the same ceiling as sw_storm_return_level: the fit's own reach at a return period equal to the record, 28.1971 years, which is Ap 229.18&quot; });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_ach_return&quot;, value: answer.get(), bound: 230.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the same ceiling as sw_storm_return_level: the fit's own reach at a return period equal to the record, 28.1971 years, which is Ap 229.18&quot; });
     }
     Ok(answer)
 }

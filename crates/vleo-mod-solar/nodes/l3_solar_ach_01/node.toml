@@ -2,7 +2,7 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "l3_solar_ach_01"
-label = "F10.7, sustained"
+label = "Achieved — F10.7, sustained"
 folder = "l3_solar_ach_01"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
@@ -129,7 +129,7 @@ fails_when = "the same cost as the interface, and worth repeating on the row a c
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.
-symbol = "F107_ach_flux"
+symbol = "F107_ach_long"
 type = "Ratio"
 unit = "One"
 lower = 60.0

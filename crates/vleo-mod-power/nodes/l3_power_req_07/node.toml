@@ -2,7 +2,7 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "l3_power_req_07"
-label = "Harness loss"
+label = "Required — Harness loss"
 folder = "l3_power_req_07"   # frozen at seed; renaming the label never moves the directory
 subsystem = "power"
 parent = "l3_power"

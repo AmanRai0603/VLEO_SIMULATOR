@@ -2,7 +2,7 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "l3_solar_req_02"
-label = "F10.7, single day"
+label = "Required — F10.7, single day"
 folder = "l3_solar_req_02"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
@@ -151,7 +151,7 @@ fails_when = "the mission slips. The requirement does not move with the epoch an
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.
-symbol = "F107_req_day"
+symbol = "F107_req_short"
 type = "Ratio"
 unit = "One"
 lower = 60.0

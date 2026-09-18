@@ -284,6 +284,7 @@ fn route(
         }
         ("POST", "/v1/run") | ("GET", "/v1/run") => ok_json(run_json(params, ctx)),
         ("GET", "/v1/sweep") => ok_json(sweep_json(params, ctx)),
+        ("GET", "/v1/levers") => ok_json(levers_json(params, ctx)),
         // The reference data itself, so a face can draw the record rather than
         // only the answers computed from it.
         ("GET", p) if p.starts_with("/v1/bundle/") => {
@@ -900,6 +901,181 @@ fn sweep_json(params: &str, ctx: &Ctx) -> String {
         j.raw("{");
         j.num_field("x", *x);
         j.str_field("why", why);
+        j.close_obj();
+    }
+    j.close_arr();
+    j.raw("}");
+    j.0
+}
+
+/// Which declared decisions actually move this node's answer.
+///
+/// The sweep control has to offer the reader a decision, and every declared
+/// row anywhere upstream is a candidate. That list is useless on its own: a
+/// term can be in the relation, be correct, and still be inert — the
+/// persistence weight in sw_central_expectation is exp(-L/27) and contributes
+/// 0.0001 per cent at any mission lead, so a reader handed it as the default
+/// sweeps it, sees a flat line, and concludes the tool is broken. It is not
+/// broken; it is answering a question nobody would have asked had they known
+/// the answer.
+///
+/// So this measures rather than guesses. Each candidate is evaluated at both
+/// ends of its own declared range with everything else held at the case, and
+/// the answer's span is reported. A face can then lead with the decision that
+/// moves the answer most, and say plainly of the others that they do not.
+///
+/// A candidate whose ends both refuse is reported with its reason, not
+/// dropped: a decision that cannot be swept is a different fact from one that
+/// changes nothing, and collapsing the two would hide a broken bound.
+fn levers_json(params: &str, ctx: &Ctx) -> String {
+    let node = param(params, "node").map(decode).unwrap_or_default();
+    let mut j = Json::new();
+    j.raw("{");
+    let ni = match Vleo::find(&node) {
+        Some(a) => a,
+        None => {
+            j.bool_field("ok", false);
+            j.str_field("message", "the levers name a node that does not exist");
+            j.raw("}");
+            return j.0;
+        }
+    };
+    j.bool_field("ok", true);
+    j.str_field("node", &node);
+
+    // Every declared row upstream, however far: a decision three rows away is
+    // still a decision, and the reason a reader opens this row may be a choice
+    // taken well before it.
+    // The walk is over NODES, because `inputs` is a node's declaration of what
+    // it reads. A candidate is a VARIABLE, because that is what a sweep
+    // supplies: the two indices are different spaces and conflating them is
+    // the defect this file has already shipped once.
+    let start = VARS[ni as usize].producer;
+    let mut seen = vec![false; NODES.len()];
+    let mut stack = vec![start];
+    seen[start as usize] = true;
+    let mut cands: Vec<u16> = Vec::new();
+    while let Some(n) = stack.pop() {
+        for x in NODES[n as usize].inputs {
+            let pv = &VARS[*x as usize];
+            let pn = pv.producer;
+            if !seen[pn as usize] {
+                seen[pn as usize] = true;
+                stack.push(pn);
+            }
+            if *x != ni
+                && NODES[pn as usize].kind == vleo_core::graph::Kind::Declared
+                && pv.limit.upper > pv.limit.lower
+                && !cands.contains(x)
+            {
+                cands.push(*x);
+            }
+        }
+    }
+
+    let mut scratch = Scratch::new();
+    let base = {
+        let mut case = build_case(params, ctx);
+        case.target = node.clone();
+        vleo_modules::evaluate(&case, &mut scratch)
+            .ok()
+            .and_then(|r| r.values.iter().find(|v| v.id == node).map(|v| v.value))
+    };
+    match base {
+        Some(b) => j.num_field("base", b),
+        None => j.key("base").raw("null"),
+    };
+
+    /// One decision and what moving it across its own declared range does to
+    /// the answer. `span` is negative where an end could not be evaluated at
+    /// all, which is a different fact from a span of zero.
+    struct Lever {
+        span: f64,
+        var: u16,
+        at_lower: Option<f64>,
+        at_upper: Option<f64>,
+        why: String,
+    }
+    let mut out: Vec<Lever> = Vec::new();
+    for v in cands {
+        let d = &VARS[v as usize];
+        let mut ends: [Option<f64>; 2] = [None, None];
+        let mut why = String::new();
+        for (k, x) in [d.limit.lower, d.limit.upper].iter().enumerate() {
+            let mut case = build_case(params, ctx);
+            case.target = node.clone();
+            case.supply.push((d.id.to_string(), *x));
+            match vleo_modules::evaluate(&case, &mut scratch) {
+                Ok(r) => {
+                    ends[k] = r.values.iter().find(|q| q.id == node).map(|q| q.value);
+                    if ends[k].is_none() && why.is_empty() {
+                        why = "blocked".to_string();
+                    }
+                }
+                Err(f) => {
+                    if why.is_empty() {
+                        why = format!("{f}");
+                    }
+                }
+            }
+        }
+        // The span is relative to the base where there is one, so decisions on
+        // rows of different size can be ranked against each other at all.
+        let span = match (ends[0], ends[1]) {
+            (Some(a), Some(b)) => {
+                let d = (b - a).abs();
+                match base {
+                    Some(z) if z != 0.0 => d / z.abs(),
+                    _ => d,
+                }
+            }
+            _ => -1.0,
+        };
+        out.push(Lever {
+            span,
+            var: v,
+            at_lower: ends[0],
+            at_upper: ends[1],
+            why,
+        });
+    }
+    // Most movement first, so the face's default is the decision worth asking
+    // about. Ties keep a stable order by id for a page that does not reshuffle.
+    out.sort_by(|a, b| {
+        b.span
+            .partial_cmp(&a.span)
+            .unwrap_or(core::cmp::Ordering::Equal)
+            .then_with(|| VARS[a.var as usize].id.cmp(VARS[b.var as usize].id))
+    });
+
+    j.key("levers").open_arr();
+    for (i, lev) in out.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        let d = &VARS[lev.var as usize];
+        j.raw("{");
+        j.str_field("id", d.id);
+        j.str_field("symbol", d.symbol);
+        j.str_field("label", d.label);
+        j.str_field("unit", d.unit.symbol());
+        j.num_field("factor", d.unit.si_factor());
+        j.num_field("lower", d.limit.lower);
+        j.num_field("upper", d.limit.upper);
+        match lev.at_lower {
+            Some(x) => j.num_field("at_lower", x),
+            None => j.key("at_lower").raw("null"),
+        };
+        match lev.at_upper {
+            Some(x) => j.num_field("at_upper", x),
+            None => j.key("at_upper").raw("null"),
+        };
+        if lev.span < 0.0 {
+            j.key("span").raw("null");
+        } else {
+            j.num_field("span", lev.span);
+        }
+        j.str_field("why", &lev.why);
         j.close_obj();
     }
     j.close_arr();

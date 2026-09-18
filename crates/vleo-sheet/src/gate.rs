@@ -852,6 +852,35 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
         Check::fail("V14 one row per place", clashes.join(", "))
     });
 
+    // V15 — no two rows in one layer group carry the same label.
+    //
+    // The tree draws the label and nothing else. Two rows sharing one are two
+    // identical lines a reader has to click to tell apart, and the required and
+    // achieved halves of a closure are exactly the pair most likely to collide:
+    // they ask about the same quantity on purpose. Five such pairs sat in the
+    // solar layer — "Ap, sustained" twice, "F10.7, single day" twice — and the
+    // only way to know which was the requirement was to open both.
+    //
+    // Scoped to the group rather than the whole tree, because the same short
+    // label under two different subsystems is read with its parent and is not
+    // ambiguous; within one list it is.
+    let mut lbl: BTreeMap<(&str, &str), Vec<&str>> = BTreeMap::new();
+    for sh in tree.ordered() {
+        lbl.entry((sh.parent.as_str(), sh.label.as_str()))
+            .or_default()
+            .push(sh.id.as_str());
+    }
+    let twins: Vec<String> = lbl
+        .iter()
+        .filter(|(_, ids)| ids.len() > 1)
+        .map(|((p, l), ids)| format!("{p} has \"{l}\" on {}", ids.join(" and ")))
+        .collect();
+    out.push(if twins.is_empty() {
+        Check::pass("V15 one label per row in a group")
+    } else {
+        Check::fail("V15 one label per row in a group", twins.join(", "))
+    });
+
     // V13 — the browser face offers only rows it can actually answer.
     //
     // The demonstration subset is a hand-written list in a crate outside the

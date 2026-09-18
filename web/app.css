@@ -176,6 +176,10 @@ main { padding: 1.1rem 2.5rem 3rem; }
 .pill .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 .pill .tri { color: inherit; opacity: .55; font-size: 9px; flex: none; }
 .pill .seeded { opacity: .55; font-style: italic; }
+/* Retired, not absent. A deprecated row is struck through rather than hidden:
+   its question was real and the decision to stop reading it is a fact worth
+   seeing, but nothing should mistake it for a live answer. */
+.pill .retired { opacity: .5; text-decoration: line-through; text-decoration-thickness: 1px; }
 
 /* Relation to the selection, carried in the fill. Solid = one hop, pale =
    further down the chain. */

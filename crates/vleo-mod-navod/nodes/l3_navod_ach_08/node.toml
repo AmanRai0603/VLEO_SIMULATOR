@@ -2,7 +2,7 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "l3_navod_ach_08"
-label = "Ephemeris upload cadence"
+label = "Achieved — Ephemeris upload cadence"
 folder = "l3_navod_ach_08"   # frozen at seed; renaming the label never moves the directory
 subsystem = "navod"
 parent = "l3_navod"

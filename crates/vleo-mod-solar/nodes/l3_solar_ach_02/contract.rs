@@ -6,7 +6,7 @@
 use vleo_core::fault::Fault;
 use vleo_core::units::*;
 
-/// What this node publishes: `F107_ach` (F10.7, single day), in `-`.
+/// What this node publishes: `F107_ach_short` (Achieved — F10.7, single day), in `-`.
 pub const NODE_ID: &str = "l3_solar_ach_02";
 pub const SHEET_HASH: u64 = 0x1a9dfda8f33ebb6b;
 /// The variables this node reads, in the order `call` expects them.

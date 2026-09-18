@@ -1,7 +1,7 @@
 // GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
 // regeneration and fails the regeneration diff in the gate.
-//! `l3_solar_req_03` — Ap
+//! `l3_solar_req_03` — Required — Ap, survival
 //!
 //! What daily planetary Ap must this design survive?
 
