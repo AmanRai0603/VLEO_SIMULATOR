@@ -1756,3 +1756,77 @@ more of the record on screen at once rather than less.
 8. Reference images and a person's name against each new panel, as
    `panels/README.md` requires.
 9. Re-run `tools/solar_rows.py`; "no figure" should be empty.
+
+### 23.6 · The reductions, verified against the code — and what the check changed
+
+48 to 4 is a large claim and it was made from the outside. Read from the inside,
+three of the four collapses are lossless and one needed correcting. The evidence
+is in `web/js/solar.js` and it is short enough to state.
+
+**`predict`: `span` is an axis bound and nothing else.**
+`build` computes `for (let L = 30; L <= maxL; L = Math.round(L * 1.35))` and the
+value at each `L` is a quantile of changes over that lead, computed from the
+record alone. `maxL` does not appear in it. So the curve drawn to fifteen years
+CONTAINS the curve drawn to one, at the same lead points, and an axis zoom shows
+exactly what `span = 365` showed. Lossless.
+
+**`predict`: `q` as a fan is strictly more than `q` as a view.**
+Four separate quantiles of one sorted array. Drawn together they are four bands
+of one picture, and the relationship between them — the thing four tabs cannot
+show — becomes the first thing visible.
+
+**`pattern`: `lag` is an axis bound, and cutting it was hiding a result.**
+The autocorrelation loop is `for (let L = 1; L <= maxLag; L++)` and each value is
+independent of `maxLag`. But the panel also marks three harmonic peaks, and the
+third is found by `peakIn(72, 95)` — so at `lag = 60` that mark silently does not
+exist. Always drawing to 200 with a zoom does not merely lose nothing; it
+restores a mark two of the three settings were suppressing.
+
+**`forecast`: `m` cannot be a fan, and the first draft of this plan was wrong to
+imply it could.** The three metrics carry three different units — skill is `[-]`,
+bias and RMS error are `[sfu]`. Series in different units on one axis is the
+error the whole repository is built to prevent. They become three stacked panels
+sharing an x-axis, which is the small-multiple device, not three lines.
+
+#### What the check changed in the plan
+
+**Nothing is filtered; things are highlighted.** The first draft collapsed a
+control away. A control that picked one of four percentiles becomes a control
+that EMPHASISES one of four bands always drawn — the complete picture every time,
+with a reading aid for the band you came for. The same for `pattern`'s detrend
+window and `forecast`'s baseline. Nothing is lost in focus either, and the count
+of distinct PICTURES is still four rather than forty-eight.
+
+**`pattern` weights the canonical window.** `w = 365` is the window
+`sw_recurrence_lag` and `sw_recurrence_strength` were measured under — the panel
+says so itself, and quoting a different number for a row it illustrates would be
+worse than having no panel. So 365 is drawn heavy and carries the peak marks;
+181 and 731 are drawn light as the sensitivity they are. Three lines, one claim.
+
+**`predict` must draw its sample count.** `ns` shrinks as the lead grows, and the
+old one-year view hid that. A fan drawn to fifteen years looks equally
+trustworthy at both ends and is not, so the thin end is drawn thin — faded, or
+with n on the axis. Exposing this is a gain, but only if it is exposed.
+
+**`predict`'s caption keys on the visible range, not on a control.** The code
+already notes that whether the eleven-year cycle is visible depends on how far
+the lead goes, and earns that sentence per picture. With the span a zoom, the
+sentence has to follow the zoom.
+
+#### The acceptance test, per collapsed panel
+
+Not "does it render" — the panels have always rendered. For each of `pattern`,
+`predict` and `forecast`, every question its old view set could answer must be
+answerable from the new one, and the check is written as a list of those
+questions in the panel's `correct` block, which `panels/README.md` already
+requires a person to sign. A collapse that cannot state its old questions has
+not been verified; it has been asserted, which is what the first draft of §23.2
+did.
+
+#### The corrected count
+
+`predict` 4 pictures, `pattern` 3, `forecast` 3 — unchanged as PICTURES, because
+the collapses were sound. What changed is that each keeps its control as an
+emphasis rather than a filter, `pattern` weights one window over two, `predict`
+shows where its sample runs out, and `forecast` stacks rather than overlays. The
+total stands at 68 live views.
