@@ -37,23 +37,49 @@ const cache = new Map();
 export async function engineValues(ids) {
   const want = [...new Set(ids)].filter(Boolean);
   if (!want.length) return {};
-  const out = {};
-  await Promise.all(want.map(async (id) => {
+  const take = v => ({ si: v.si, shown: v.shown, unit: v.unit, symbol: v.symbol, label: v.label });
+  const runs = await Promise.all(want.map(async (id) => {
     try {
       const r = await fetch('/v1/run?node=' + encodeURIComponent(id));
       const d = await r.json();
-      if (!d.ok) { out[id] = { refused: d.message || d.fault || 'refused' }; return; }
-      // A run returns every value on the path, including the members of a set
-      // row. The one asked for is matched by id; the rest are carried so a
-      // panel naming an interface can reach its published members by name.
-      for (const v of d.values || []) {
-        out[v.id] = { si: v.si, shown: v.shown, unit: v.unit, symbol: v.symbol, label: v.label };
-      }
-      if (!out[id]) out[id] = { refused: 'the run did not return this row' };
+      if (!d.ok) return { id, refused: d.message || d.fault || 'refused' };
+      return { id, values: d.values || [] };
     } catch (e) {
-      out[id] = { refused: String(e) };
+      return { id, refused: String(e) };
     }
   }));
+
+  // WHICH RUN'S ANSWER WINS, DECIDED RATHER THAN RACED.
+  //
+  // A run returns every value on the path, not only the row asked for — which is
+  // what lets a panel naming an interface reach its published members by name.
+  // But a row asked for directly is also usually ON another asked-for row's path:
+  // `closure` asks for l3_solar_ach_04 and l3_solar_req_04, and the requirement
+  // rides inside the achieved row's run.
+  //
+  // This used to write every value of every response into one object as each
+  // arrived, so a row reached both ways took whichever request resolved LAST.
+  // panel_check found it, intermittently, which is the worst way to find
+  // anything: check 2b serves one row a different answer by bending the reply to
+  // `node=<that row>`, and whether the bend survived depended on promise
+  // ordering. The same race would let two runs under different cases disagree
+  // and hand the panel whichever landed second, with nothing to show for it.
+  //
+  // So: a row that was asked for takes its OWN run's answer, always. Everything
+  // else on a path fills in only where nothing asked for it, and the first run to
+  // carry it wins rather than the last — an order that is the caller's list
+  // rather than the network's.
+  const out = {};
+  for (const r of runs) {
+    for (const v of (r.values || [])) {
+      if (v.id !== r.id && !out[v.id]) out[v.id] = take(v);
+    }
+  }
+  for (const r of runs) {
+    if (r.refused) { out[r.id] = { refused: r.refused }; continue; }
+    const own = r.values.find(v => v.id === r.id);
+    out[r.id] = own ? take(own) : { refused: 'the run did not return this row' };
+  }
   return out;
 }
 
@@ -81,6 +107,28 @@ export async function engineLevers(node) {
   const r = await fetch('/v1/levers?node=' + encodeURIComponent(node));
   const d = await r.json();
   return d.ok ? (d.levers || []) : [];
+}
+
+/**
+ * Another implementation's saved answers, for a figure that checks this one.
+ *
+ * Kept apart from `bundleFile` on purpose, and the separation is the point. A
+ * bundle is verified reference data — what was OBSERVED, with a provenance and a
+ * licence. `matlab/reference/mission_drivers.csv` is what a DIFFERENT PROGRAM
+ * computed, saved by its author. Drawing the two with one function would be the
+ * first step toward a figure that presents a second implementation's output as
+ * evidence about the sky.
+ */
+export async function parityFile(file) {
+  const key = 'parity/' + file;
+  if (cache.has(key)) return cache.get(key);
+  const p = (async () => {
+    const r = await fetch('/v1/parity/' + file);
+    if (!r.ok) throw new Error(await r.text());
+    return parseCsv(await r.text());
+  })();
+  cache.set(key, p);
+  return p;
 }
 
 export async function bundleFile(name, file) {

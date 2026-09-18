@@ -2568,20 +2568,119 @@ done.
 
 ### Part D — the two new panels
 
-**D1. `drivers`**, 6 views. Five scenarios against f107, f107bar, ap, kp_mean and
-kp_peak, with the legacy run's own values from `mission_drivers.csv` beside each.
-Answers twelve rows that have no figure, and is a standing parity check a person
-sees.
+**D1. `drivers`**, 6 views. Done, and it is the only figure in the subsystem
+whose subject is the port itself.
 
-**D2. `closure`**, 5 views. One per required/achieved pair: the bound, the
-achieved value, the margin, swept over the decision `/v1/levers` reports as
-spending it fastest. Answers ten rows, and is the only picture of the question
-the tool exists to answer.
+Five scenarios, five quantities, and the legacy run's own answers as dots beside
+each. §23 was right that the missing figure was not an omission — the study
+published the driver set as a TABLE, so there was never a picture to port — but
+"the legacy tool had no figure" is a reason not to have ported one, not a reason
+not to have one. **What makes it worth drawing is that the two tools disagree**,
+and a table of fifty numbers makes that invisible where a picture makes it the
+first thing anybody sees.
 
-**D3. Reference images and signatures for both**, as `panels/README.md` requires.
+*The scenarios are ordered cold to hot* — quietest day, cold sustained, nominal,
+hot sustained, worst day — and in that order every quantity is monotone, so a
+reader checks the picture by whether it rises. In the order the CSV happens to
+list them it is a zigzag that says nothing.
 
-**D4. Re-run `tools/solar_rows.py`.** "No figure" should be empty. What remains,
-if anything, is a real finding.
+*The parity view is a ratio on a log axis*, because agreement is 1 and the two
+kinds of disagreement here are about a factor of two in each direction; on a
+linear axis "twice" and "half" are 1.0 and 0.5 from the line and look like
+different sizes of error. Nine of the twenty-five cells agree to within a tenth
+of a per cent, and they are a block rather than a scatter: Ap, Kp mean and Kp
+peak at each of the three SUSTAINED scenarios. *I wrote "three" into the
+`correct` block before measuring it, while the panel's own note — computed at
+build time — said nine. That disagreement between a generated number and a
+hand-written one is exactly what having both is for.* Both families of
+disagreement are deliberate and explained: F10.7 because the two tools centre the
+window differently (158.33 held flat against 86.85 from the cycle analogue), and
+every single-day value because the within-rotation departure is level-conditioned
+here and a fixed-window percentile there.
+
+**D2. `closure`**, 5 views. Done, and it draws the question the tool exists to
+answer.
+
+Two frames: the achieved quantity swept against the requirement as a flat dashed
+line, and the same fact below as a signed margin with zero drawn. **The
+horizontal axis is not chosen here.** `/v1/levers` measures every declared
+decision upstream at both ends of its own range and reports which moves the
+margin most; the panel takes that one, skipping the requirement — not because it
+is small (it is usually the largest) but because a margin is a fraction OF the
+bound, so moving the bound moves it by construction and says nothing about the
+sky. The five axes come out as the mean band spread, the mean band spread,
+mission duration, expected Ap, expected Ap.
+
+*Verified rather than asserted, across all five pairs*: the requirement line is
+flat; the crossing in the top frame and the margin's zero in the bottom agree to
+the float; and the margin falls as the achieved value rises, which is the `<=`
+sense every one of these five declares. Pairs 01 to 03 never reach zero inside
+their lever's range and 04 and 05 cross at 43.40 and 63.55.
+
+**A figure now opens on the row it was reached from.** `closure` lives on all ten
+of its rows and draws one pair at a time, so a reader arriving at
+`l3_solar_ach_03` — having clicked it precisely because they want the survival
+closure — met a picture of the F10.7 one. The page knows which row it is and the
+panel knows which of its views belongs to which row; neither knew alone. This was
+found by check 2b rather than by reading: the panel declared it read
+`l3_solar_ach_04` and did not move when that row's answer changed, because it was
+drawing pair 01.
+
+**AND 2b FOUND A RACE IN `engineValues`, WHICH IS THE BETTER FIND.** A run returns
+every value on its path, not only the row asked for, and a row asked for directly
+is often also on another asked-for row's path — `closure` asks for both sides of a
+pair, and the requirement rides inside the achieved row's run. The results were
+written into one object as each arrived, so **a row reached both ways took
+whichever request resolved last**. 2b failed intermittently, which is the worst
+way to find anything. A row that was asked for now takes its own run's answer,
+always; everything else fills in only where nothing asked for it. Three
+consecutive clean runs after the fix.
+
+**D3. Reference images and signatures for both.** Images recorded; **both marked
+`UNCONFIRMED`**. An agent may not be the person who has looked: the whole value of
+check three rests on a human having agreed the picture is right, and a machine
+recording its own output and signing for it proves nothing at all. Both `correct`
+blocks are written to be checkable by that person, and both name the defect to
+look for — an axis labelled "Required — …" on `closure` means the lever question
+is not being asked, and twenty-five cells all sitting on 1 in `drivers` means the
+panel is dividing a number by itself.
+
+**D4. Re-run `tools/solar_rows.py`.** Done, and it comes out exactly as this step
+predicted it should:
+
+```
+  ported 37 (37 with a figure, 0 without)
+  added  18 (18 with a figure, 0 without)
+  free to remove: 0
+```
+
+**Every one of the 55 live solar rows now has a figure, and none is free to
+remove.** The thirteen "ported, no figure" rows are the driver set and `drivers`
+draws them; seven of the eight "added, no figure" rows are the closure pairs and
+`closure` draws them.
+
+*The eighth was the real finding this step was told to expect.*
+`sw_window_peak_level` — the maximum of the cycle analogue inside the mission
+window — was read by nothing and cited by nothing, and the standing rule is that a
+row of no use should not be kept. It is kept, and the reason is only visible once
+it is drawn: put beside the four F10.7 design rows on their own axis, it **rises
+monotonically in steps** while every one of them wanders, because a longer window
+can only contain more of the cycle while a window MEAN depends on where the window
+ends. The two cross at about 5.9 years, and past there the analogue's own peak is
+above the hot single-day design value — a design sized on a mean sitting under the
+thing it averages. That is worth a reviewer's attention, and a row that produces
+it is not a row of no use.
+
+It is a fifth, dashed line on `design`'s F10.7 branch. That branch is not covered
+by the reference image, because the reference is shot at the state the panel opens
+in — so the claim is written into `design`'s `correct` block instead, where the
+person who signs it will read it. Which is the eight-of-eleven gap below, showing
+up in practice.
+
+*And one sentence in the generated `SOLAR_ROWS.md` is now wrong and corrected:*
+"nothing plots a row's answer anywhere yet" was true until these two panels.
+`drivers` plots the twenty-five variables the crossing publishes and `closure`
+plots the margins.
 
 ### The gate, at every step
 
@@ -2594,3 +2693,28 @@ step is not finished until all four are green and the reference image is signed.
 Ten panels, 61 views, every one moving when its controls move. 35 repeats gone,
 18 rows gaining a figure, three wrong numbers out of `design`, and a chart layer
 that places its own ticks.
+
+**Reached.** Ten solar panels and 61 views: 10 repeatability + 3 pattern +
+5 segmentation + 4 predict + 3 forecast + 11 design + 13 climate + 1 density +
+6 drivers + 5 closure. Every one of the 55 live rows carries a figure and none is
+free to remove.
+
+**What is still open, and none of it is bookkeeping.**
+
+- **Five reference images are UNCONFIRMED** — `pattern`, `predict`, `forecast`
+  from Part C and `drivers`, `closure` from Part D. Each needs a person to look
+  at the PNG and put their name in `confirmed_by`. An agent cannot be that
+  person, and a signature carried forward across a changed chart would make check
+  three prove only that a machine has not changed its mind.
+- **Dark mode has no steps at all.** `INK` is one light-mode set, and the skill's
+  position is that a dark palette is selected and validated against its own
+  surface rather than flipped.
+- **Eight of eleven panels have exactly one view under test.** The reference is
+  shot at the state the panel opens in, so `design`'s whole F10.7 branch — five
+  curves, including the one Part D added — is covered by prose in `correct` and
+  by nothing automatic. `panel_check` already takes a per-row `state`; the same
+  mechanism would let a spec record several.
+- **`sw_storm_return_level`'s support is still unmarked.** Its thinness is a
+  fit's support — ranks 2 and 3 of a 28.2-year sample — not a per-point count, so
+  B9's fade has nothing to follow. Marking it means deciding where the fit stops
+  being supported, which is a judgement about the row.

@@ -189,9 +189,12 @@ def main():
     out.append("**Does a figure go with it?** The eight legacy tabs were ported as *panels*, not "
                "as rows — §12 of the plan, on the grounds that a wrong number crashes a test "
                "while a wrong chart looks beautiful, so a panel carries a reference image and an "
-               "automated check instead. A panel plots the NOAA record and names the rows it "
-               "argues about. So 'has a figure' means **a panel cites it**, not that anything "
-               "plots its answer — nothing plots a row's answer anywhere yet.\n\n")
+               "automated check instead. Most panels plot the NOAA record and name the rows they "
+               "argue about, so for those 'has a figure' means **a panel cites it**. The two Part D "
+               "panels are the exception and plot ROW ANSWERS directly: `drivers` draws the "
+               "twenty-five variables `l3_solar_interface` publishes against the legacy run's own, "
+               "and `closure` draws each required/achieved pair and the margin between them, swept "
+               "over whichever decision `/v1/levers` reports as spending that margin fastest.\n\n")
     out.append("**No row here duplicates another.** All %d were swept over seven drivers across "
                "their declared ranges and fingerprinted; every fingerprint is distinct. Nothing "
                "is removable for being a repeat.\n\n" % len(solar))

@@ -1,0 +1,69 @@
+id = "drivers"
+label = "Drivers — the five scenarios, against the legacy run"
+module = "web/js/solar.js"
+mount = "canvas.sw-panel"
+draws = """The five design scenarios this subsystem publishes — cold day, cold sustained,
+nominal, hot sustained, hot day — for one of five quantities at a time, with the
+legacy MATLAB tool's own answers for the same cells drawn as dots beside them.
+The second view divides all twenty-five by their legacy counterparts on a
+logarithmic axis, so agreement is one line and the two directions of
+disagreement are the same distance from it."""
+correct = """In the by-quantity view: a rising line of five points, because the scenarios are
+ordered cold to hot and every quantity here is monotone in that order. A line
+that zigzags means the scenarios have been drawn in the order the CSV lists them
+rather than in the order a design reads them. Five DOTS from the legacy run sit
+on the same five x positions; where the two agree the dot sits on the line.
+
+On Ap and on both Kp quantities the dot sits ON the line at the three SUSTAINED
+scenarios — nominal, cold sustained, hot sustained — and well off it at the two
+single-day scenarios, high at the worst day and low at the quietest. That
+asymmetry is the finding, not a defect: the study applies one within-rotation
+percentile everywhere and this port conditions it on the level it applies at, so
+the two diverge in opposite directions at the two ends. A picture where the
+single-day dots also sit on the line means the level-conditioned table is not
+being read.
+
+On F10.7 and on the 81-day mean the legacy dots sit ABOVE the line at every
+scenario, by roughly a factor of two. The two tools centre the window
+differently — the study holds its last rotation forecast flat at 158.33 sfu and
+this port reads the cycle analogue at the declared epoch and gets 86.85 — and
+that is a decision §20 took, not an error to reconcile.
+
+In the parity view: five lines on a LOGARITHMIC axis with a red line at one.
+NINE of the twenty-five points must sit on that line to within a tenth of a per
+cent, and they are a block rather than a scatter: daily Ap, Kp mean and Kp peak
+at each of the three SUSTAINED scenarios. The worst departure is daily Ap at the
+worst day, a factor of 2.18. If all twenty-five sit on the line the panel is
+dividing a number by itself and not reading the legacy file at all; if none do,
+it is not reading the engine. The axis must be logarithmic — on a linear one a
+ratio of 2 and a ratio of 0.5 are different distances from agreement, which is
+the wrong claim about two errors of the same size."""
+# NOT CONFIRMED. This panel is new on 2026-09-18 and nobody has looked at
+# panels/reference/drivers.png yet. An agent cannot be the person who has:
+# the whole value of check three rests on a human having agreed the picture is
+# right, and a machine recording its own output and signing for it proves
+# nothing at all.
+confirmed_by = "UNCONFIRMED / new 2026-09-18, Part D; awaiting a look"
+tolerance = 0.02
+settle_ms = 8000
+
+ready = """(async () => {
+  await window.openNode('l3_solar_interface');
+  await new Promise(r => setTimeout(r, 200));
+  const cv = document.querySelector('.row-figure canvas.sw-panel');
+  if (!cv) throw new Error('no figure on l3_solar_interface for the drivers panel');
+})()"""
+
+[[input]]
+name = "view"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=view]'); if (!s) throw new Error('no view control'); s.value = 'parity'; s.dispatchEvent(new Event('change')); })()"
+why = """the parity view is a ratio on a log axis and the set view is five values in their own unit; one picture for both means the control is ignored"""
+
+[[input]]
+name = "q"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=q]'); if (!s) throw new Error('no q control'); s.value = 'ap'; s.dispatchEvent(new Event('change')); })()"
+why = """F10.7 runs 65 to 124 and Ap runs 5 to 91 — an identical picture for both is a chart drawing one quantity twice"""
+
+[[engine]]
+row = "l3_solar_interface"
+why = """the whole table is this crossing's published set, so a panel that draws the driver scenarios and does not move when the crossing's answer moves is drawing literals"""

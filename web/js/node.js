@@ -58,12 +58,14 @@ export async function openNode(id) {
 
   if (figs.length) {
     const hostFig = $('.row-figure', body);
-    drawRowFigure(hostFig, figs[0].id);
+    // The row is passed so a panel with one view per row can open on this one.
+    // See optsFor: a figure reached from a row should be about that row.
+    drawRowFigure(hostFig, figs[0].id, r.id);
     $$('.sw-tabs .sw-tab', body).forEach(b => {
       b.onclick = () => {
         $$('.sw-tabs .sw-tab', body).forEach(x => x.classList.remove('sel'));
         b.classList.add('sel');
-        drawRowFigure(hostFig, b.dataset.fig);
+        drawRowFigure(hostFig, b.dataset.fig, r.id);
       };
     });
   }

@@ -11,7 +11,24 @@ axis — at G3 the capability is Ap 132, and the requirement mark moves when the
 requirement control does. Where the expectation crosses the capability is the
 number sw_design_safe_duration publishes, so the crossing must be visible on
 the picture rather than only in the note. Both marks carry labels naming what
-they are; two unlabelled horizontal lines are the defect this catches."""
+they are; two unlabelled horizontal lines are the defect this catches.
+
+ON THE F10.7 BRANCH, which the reference image does not cover because it is
+shot at the state the panel opens in: FIVE curves against mission length. Four
+solid ones are the design rows — hot and cold, sustained and single day — and
+they are nested in that order and never cross, because each cold value is below
+its hot counterpart by construction. All four WANDER up and down with mission
+length; a monotone set here means they are being read off something other than
+the window mean.
+
+The fifth is DASHED and is not a design value: sw_window_peak_level is the
+maximum of the same cycle analogue the other four are built on a mean of. It
+must rise MONOTONICALLY and in steps — a longer window can only contain more of
+the cycle, and the peak jumps when the window swallows another cycle maximum, so
+a smooth or falling dashed line is the defect. It crosses ABOVE the hot
+single-day curve at about 5.9 years, and that crossing is the point of drawing
+it: past there the design is sized on a mean that sits under the thing it
+averages."""
 # A person looked at panels/reference/design.png and agreed the picture
 # is right. That is what makes check three mean anything: the reference is the
 # claim, and without a name against it the check only proves the chart has not

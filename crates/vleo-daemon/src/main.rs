@@ -290,6 +290,17 @@ fn route(
         ("GET", p) if p.starts_with("/v1/bundle/") => {
             bundle_file(ctx, p.trim_start_matches("/v1/bundle/"))
         }
+        // ANOTHER IMPLEMENTATION'S ANSWERS, which are evidence and not data.
+        //
+        // Deliberately not folded into a bundle. A bundle is verified reference
+        // data with a provenance and a licence — what was OBSERVED — and the
+        // legacy tool's saved output is neither: it is a record of what a
+        // different program computed, kept so this one can be checked against
+        // it. Serving it under its own name keeps the two apart in the one place
+        // a reader might otherwise conflate them, which is the face.
+        ("GET", p) if p.starts_with("/v1/parity/") => {
+            parity_file(ctx, p.trim_start_matches("/v1/parity/"))
+        }
         _ => (
             "404 Not Found",
             "text/plain; charset=utf-8",
@@ -309,6 +320,35 @@ fn file(ctx: &Ctx, name: &str, ctype: &'static str) -> (&'static str, &'static s
             "404 Not Found",
             "text/plain; charset=utf-8",
             format!("web/{name} is not on disk").into_bytes(),
+        ),
+    }
+}
+
+/// One parity file from `matlab/reference`, by name.
+///
+/// Same traversal guard as `module`: anything that is not a plain file name with
+/// a `.csv` suffix is refused before it reaches the filesystem. The directory is
+/// fixed here rather than taken from the request, so there is no path to
+/// construct and therefore no path to escape.
+fn parity_file(ctx: &Ctx, name: &str) -> (&'static str, &'static str, Vec<u8>) {
+    let stem = name.strip_suffix(".csv").unwrap_or("");
+    let ok = !stem.is_empty()
+        && stem
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
+    if !ok {
+        return (
+            "400 Bad Request",
+            "text/plain; charset=utf-8",
+            b"a parity file is a plain .csv name under matlab/reference".to_vec(),
+        );
+    }
+    match std::fs::read(ctx.root.join("matlab").join("reference").join(name)) {
+        Ok(b) => ("200 OK", "text/csv; charset=utf-8", b),
+        Err(_) => (
+            "404 Not Found",
+            "text/plain; charset=utf-8",
+            format!("matlab/reference/{name} is not on disk").into_bytes(),
         ),
     }
 }

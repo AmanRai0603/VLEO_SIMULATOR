@@ -20,7 +20,8 @@
 
 import { $, esc } from './dom.js';
 import { S } from './state.js';
-import { solarRecord, bundleFile, engineValues, engineSweep, centredMean, corr, quantile, num, daysSince2000 } from './record.js';
+import { solarRecord, bundleFile, parityFile, engineValues, engineSweep, engineLevers,
+  centredMean, corr, quantile, num, daysSince2000 } from './record.js';
 import { drawChart, attachHover, tableFor, INK } from './chart.js';
 
 // ---------------------------------------------------------------------------
@@ -140,6 +141,53 @@ function laggedCorr(res, maxLag) {
   }
   return { lags, r, n };
 }
+
+/**
+ * The five closures, as the panel beneath needs to name them.
+ *
+ * `q` is the ACHIEVED QUANTITY's row, which is not the closure row: since §20 an
+ * achieved row publishes the signed margin and reads the quantity as an input, so
+ * a picture of "what the record gives" has to sweep the input rather than the row
+ * that is named for it. Written out once here because getting that wrong would
+ * draw a margin on an axis labelled sfu and look entirely plausible.
+ */
+const QUANTITY_OF = {
+  '01': 'sw_f107_design_long',
+  '02': 'sw_f107_design_short',
+  '03': 'sw_storm_return_level',
+  '04': 'sw_ap_design_long',
+  '05': 'sw_ap_design_short',
+};
+
+const PAIR_LABEL = {
+  '01': { q: 'sustained F10.7 to design to', u: 'sfu', text:
+    'The F10.7 level the mission must sustain, against the level the record gives it. Both sides ' +
+    'are built the same way — a central expectation with a band on it — so this closure is closer ' +
+    'to a consistency check than to a test, and it passing means less than the Ap pairs passing.' },
+  '02': { q: 'single-day F10.7 to design to', u: 'sfu', text:
+    'The worst single day of F10.7, against the requirement for one. The daily side rides on the ' +
+    'sustained side with a level-conditioned within-rotation spread on top, which is the ' +
+    'construction §20 replaced a fixed-window percentile with.' },
+  '03': { q: 'daily Ap the record expects once in that time', u: '-', text:
+    'The storm that recurs once in a mission of this length, against the G4 threshold the vehicle ' +
+    'must survive. THIS IS THE ONE REAL TEST of the five: the requirement is a published threshold ' +
+    'on the G scale and the achieved value is a tail quantile of a 28-year record, so nothing ties ' +
+    'them and there is no reason for them to agree. Its top end rests on two observations in 28.2 ' +
+    'years, and a margin computed from it carries none of that.' },
+  '04': { q: 'sustained Ap to design to', u: '-', text:
+    'The Ap level the mission must operate through, against the level the record gives it. The ' +
+    'requirement is a published G-scale threshold and the achieved value comes from the record, so ' +
+    'like the survival pair the two are independent.' },
+  '05': { q: 'single-day Ap to design to', u: '-', text:
+    'The worst single day of Ap, against the requirement for one. The daily spread is measured AT ' +
+    'the sustained level it applies to, which is why this number and the return level in the ' +
+    'survival pair disagree by a factor of 1.75 without either being wrong.' },
+};
+
+// One sweep per pair, kept for as long as the page is open. The five pairs do not
+// change while a reader clicks between them, and re-asking the engine for a sweep
+// it has already answered is four questions nobody is looking at.
+const CLOSURE_CACHE = {};
 
 const PANELS = [
   {
@@ -691,6 +739,183 @@ const PANELS = [
     },
   },
 
+  // -------------------------------------------------------------------------
+  // THE DRIVER SET, AND THE LEGACY RUN BESIDE IT.
+  //
+  // Thirteen rows had no figure, and §23 was right that this was not an
+  // omission: the legacy tool published the driver set as a TABLE, not a plot,
+  // so there was never a picture here to port. But "the legacy tool had no
+  // figure" is a reason not to have ported one, not a reason not to have one.
+  //
+  // What makes it worth drawing is that this port and the study DISAGREE, and
+  // the disagreement is the finding. Five quantities, five scenarios, twenty-five
+  // numbers — and they agree to a hundredth of a per cent on the sustained Ap and
+  // Kp, and diverge by a factor of two on F10.7 and on every single-day value.
+  // Both differences are deliberate and both are explained in §20; a table of
+  // fifty numbers makes that invisible and a picture makes it the first thing
+  // anybody sees.
+  //
+  // So this is a standing parity check a person looks at rather than one buried
+  // in a test, and it is the only figure in the subsystem whose subject is the
+  // port itself.
+  {
+    id: 'drivers',
+    rows: ['l3_solar_interface',
+      'sw_ap_central_expectation', 'sw_ap_cold_long', 'sw_ap_cold_short',
+      'sw_ap_daily_band_drop', 'sw_ap_daily_band_spread',
+      'sw_ap_design_long', 'sw_ap_design_short', 'sw_ap_mean_band_spread',
+      'sw_daily_band_drop', 'sw_daily_band_spread', 'sw_kp_scenarios',
+      'sw_mean_band_spread'],
+    // One run returns the crossing and all twenty-four of its members, so the
+    // whole table costs one question.
+    engine: ['l3_solar_interface'],
+    label: 'Drivers',
+    draws: 'The five design scenarios this subsystem publishes, against the legacy run’s own.',
+    asks: 'What does this subsystem hand upward, and does it agree with the study it ports?',
+    controls: [
+      { k: 'view', label: 'view', opts: [['set', 'one quantity across the scenarios'],
+        ['parity', 'all twenty-five, against the legacy run']] },
+      { k: 'q', label: 'quantity', when: o => o.view === 'set', opts: [
+        ['f107', 'F10.7'], ['f107bar', '81-day mean F10.7'], ['ap', 'daily Ap'],
+        ['kp_mean', 'Kp, mean slot'], ['kp_peak', 'Kp, peak slot'],
+      ] },
+    ],
+    async data() {
+      return { legacy: await parityFile('mission_drivers.csv') };
+    },
+    build(rec, o, extra, eng) {
+      // COLD TO HOT, which is an ordering and not an alphabet. The five
+      // scenarios are a ladder — the quietest single day, the cold sustained
+      // level, where the mission sits, the hot sustained level, the worst single
+      // day — and drawn in that order every quantity here is monotone, so a
+      // reader checks the picture by whether it rises. In the order the legacy
+      // CSV happens to list them it is a zigzag that says nothing.
+      const ORDER = ['coldday', 'coldmean', 'nominal', 'hotmean', 'hotday'];
+      const SHOWN = ['quietest day', 'cold sustained', 'nominal', 'hot sustained', 'worst day'];
+      const QS = [
+        { k: 'f107', label: 'F10.7', unit: 'sfu' },
+        { k: 'f107bar', label: '81-day mean F10.7', unit: 'sfu' },
+        { k: 'ap', label: 'daily Ap', unit: '-' },
+        { k: 'kp_mean', label: 'Kp, mean slot', unit: '-' },
+        { k: 'kp_peak', label: 'Kp, peak slot', unit: '-' },
+      ];
+      // OURS, FROM THE ENGINE, THROUGH THE DOT. The crossing publishes a set and
+      // a member is `<node>.<member>`; the node's own answer is f107_hotmean,
+      // which is the one cell that is not a member, so it is reached by the node
+      // id. Written as a lookup rather than a table of literals for the reason
+      // §21 gives: three copied numbers in `design` went stale without anything
+      // noticing.
+      const ours = (q, sc) => {
+        const id = q === 'f107' && sc === 'hotmean'
+          ? 'l3_solar_interface'
+          : 'l3_solar_interface.' + q + '_' + sc;
+        const v = eng[id];
+        return v && v.si !== undefined && isFinite(v.si) ? v.si : null;
+      };
+      const legacyRows = new Map((extra.legacy.rows || []).map(r => [r.scenario, r]));
+      const theirs = (q, sc) => {
+        const r = legacyRows.get(sc);
+        const v = r ? num(r[q]) : null;
+        return v === null || !isFinite(v) ? null : v;
+      };
+      const xs = ORDER.map((_, i) => i);
+      const fmtX = v => SHOWN[Math.round(v)] || '';
+      // A LITTLE ROOM AT BOTH ENDS. With the extent exactly 0 to 4 the first and
+      // last scenarios sit on the frame's own edges: the quietest day's marker is
+      // half outside the axis and the worst day's tick label is centred on the
+      // right margin and gets cut by the canvas. A categorical axis is not a
+      // range that happens to run 0 to 4 — the outer categories need the same
+      // room as the inner ones.
+      const XPAD = { min: -0.3, max: 4.3, ticks: 5, fmt: fmtX };
+
+      if (o.view === 'parity') {
+        // THE RATIO, ON A LOG AXIS, because agreement is 1 and the two kinds of
+        // disagreement here are a factor of about two in each direction. On a
+        // linear axis "twice" and "half" are 1 and 0.5 and look nothing like the
+        // same size of error; in log space they are the same distance from the
+        // line, which is what they are.
+        const series = QS.map((Q, i) => ({
+          name: Q.label, kind: 'line', x: xs,
+          y: ORDER.map(sc => {
+            const a = ours(Q.k, sc), b = theirs(Q.k, sc);
+            return a === null || b === null || b === 0 ? null : a / b;
+          }),
+          colour: INK.series[i % INK.series.length],
+        }));
+        const all = series.flatMap(s => s.y).filter(v => v !== null);
+        const worst = all.length
+          ? all.reduce((m, v) => (Math.abs(Math.log(v)) > Math.abs(Math.log(m)) ? v : m), 1)
+          : null;
+        const near = all.filter(v => Math.abs(v - 1) < 0.001).length;
+        return {
+          spec: {
+            x: { label: 'scenario', ...XPAD },
+            y: { label: 'this tree ÷ the legacy run  [-]', log: true },
+            series,
+            marks: [{ axis: 'y', at: 1, label: 'exact agreement', colour: '#c2185b' }],
+          },
+          note: 'Every one of the twenty-five numbers this subsystem publishes, divided by what the ' +
+            'legacy tool wrote for the same cell. One is agreement, and the axis is logarithmic so ' +
+            'that twice and half sit the same distance from it — on a linear axis they are 1.0 and ' +
+            '0.5 apart, which makes the two directions of error look like different sizes.\n\n' +
+            near + ' of ' + all.length + ' cells agree to within a tenth of a per cent, and they are ' +
+            'the SUSTAINED Ap and Kp scenarios. The rest disagree, the furthest by a factor of ' +
+            (worst === null ? '—' : (worst > 1 ? worst.toFixed(2) : (1 / worst).toFixed(2))) +
+            ', and BOTH families of disagreement are deliberate.\n\n' +
+            'F10.7 is low across every scenario because the two tools centre the window differently. ' +
+            'The study holds its last 27-day rotation forecast flat and gets 158.33 sfu for its own ' +
+            '2027 window; sw_central_expectation reads the cycle analogue at the declared epoch and ' +
+            'gets 86.85. Neither is arithmetic — it is a choice about what a window beyond the ' +
+            'record should be centred on, and §20 took the second.\n\n' +
+            'The SINGLE-DAY scenarios disagree because the within-rotation departure is not one ' +
+            'number. The study reads one percentile of it over the 2001 days before the window and ' +
+            'applies it everywhere; measured against the level each day sits in, the 95th runs from ' +
+            '4.63 sfu at a rotation of 70 to 46.93 at 210, a factor of ten. A fixed-window ' +
+            'percentile is that statistic mixed over whatever levels fell in its own sample, right ' +
+            'near their mean and wrong at both ends. The four daily rows are level-conditioned here, ' +
+            'which is why the worst day and the quietest day move in opposite directions from the ' +
+            'study’s.',
+        };
+      }
+
+      const Q = QS.find(x => x.k === o.q) || QS[0];
+      const mine = ORDER.map(sc => ours(Q.k, sc));
+      const theirsY = ORDER.map(sc => theirs(Q.k, sc));
+      const gap = mine.map((v, i) => (v === null || theirsY[i] === null ? null : v - theirsY[i]));
+      const worstI = gap.reduce((b, v, i) =>
+        (v !== null && (b < 0 || Math.abs(v) > Math.abs(gap[b])) ? i : b), -1);
+      const u = Q.unit === '-' ? '' : ' ' + Q.unit;
+      return {
+        spec: {
+          x: { label: 'scenario', ...XPAD },
+          y: { label: Q.label + '  [' + Q.unit + ']' },
+          series: [
+            { name: 'this tree', kind: 'line', x: xs, y: mine, width: 2.2 },
+            // Dots rather than a second line: the legacy run is five separate
+            // answers and joining them would claim it interpolates between
+            // scenarios, which is not a thing a scenario set does.
+            { name: 'the legacy run', kind: 'dots', x: xs, y: theirsY,
+              colour: INK.series[1], width: 5, alpha: 1 },
+          ],
+        },
+        note: 'The five scenarios this subsystem hands to sys_space_environment, in the order a ' +
+          'design reads them: the quietest single day, the cold sustained level, where the mission ' +
+          'is expected to sit, the hot sustained level, and the worst single day. An array is sized ' +
+          'on a sustained level and a thermal transient on a day, which is why the tool publishes ' +
+          'all five rather than choosing one and calling it governing.\n\n' +
+          'The dots are the legacy tool’s own answers for the same five cells, from ' +
+          'matlab/reference/mission_drivers.csv — a record of what a DIFFERENT PROGRAM computed, ' +
+          'not a measurement, which is exactly what makes it usable as a second opinion. ' +
+          (worstI < 0
+            ? 'Nothing to compare at this setting.'
+            : 'The two differ most at the ' + SHOWN[worstI] + ' scenario: ' +
+              sig(mine[worstI]) + u + ' here against ' + sig(theirsY[worstI]) + u +
+              ', a gap of ' + sig(Math.abs(gap[worstI])) + u + '.') +
+          ' Switch to the parity view for all twenty-five at once and why they differ.',
+      };
+    },
+  },
+
   {
     id: 'design',
     rows: ['sw_storm_return_level', 'sw_storm_design_level', 'sw_ap_design',
@@ -700,7 +925,9 @@ const PANELS = [
       // design window for F10.7 and for Ap" and it cited none of them, because
       // it was still drawing the method they replaced.
       'sw_f107_design_long', 'sw_f107_design_short', 'sw_f107_cold_long',
-      'sw_f107_cold_short', 'l3_solar_req_01'],
+      'sw_f107_cold_short', 'l3_solar_req_01',
+      // §26 D4's leftover: the one row in the subsystem that no figure cited.
+      'sw_window_peak_level'],
     // WHAT THIS PANEL ASKS THE ENGINE FOR, rather than carrying a copy of.
     // `rows` says what the picture argues about; `engine` says what it reads,
     // and panel_check holds it to the second. The literals these replace had
@@ -753,7 +980,7 @@ const PANELS = [
       // sw_f107_design — the row §20 DEPRECATED, and the method the record puts
       // 74 per cent high. Drawing a retired method beside live rows is how a
       // figure tells a reader something the tree has stopped believing.
-      const [ret, gmap, fl, fs, cl, cs] = await Promise.all([
+      const [ret, gmap, fl, fs, cl, cs, pk] = await Promise.all([
         engineSweep('sw_storm_return_level', 'sys_mission_requirements_mission_duration',
           dur.lo, dur.hi, 120),
         engineSweep('sw_ap_design', 'sw_storm_design_level', glv.lo, glv.hi, 3),
@@ -765,8 +992,22 @@ const PANELS = [
           dur.lo, dur.hi, 60),
         engineSweep('sw_f107_cold_short', 'sys_mission_requirements_mission_duration',
           dur.lo, dur.hi, 60),
+        // THE LAST ROW IN THE SUBSYSTEM WITH NO FIGURE, and it belongs here.
+        //
+        // sw_window_peak_level is the maximum of the same cycle analogue the four
+        // design rows are built on a MEAN of, over the same window, against the
+        // same axis. It was the one row §26's D4 left over — nothing read it and
+        // no panel cited it — and the reason it was worth keeping rather than
+        // removing is visible only when it is drawn beside them: it rises
+        // monotonically with mission length, because a longer window can only
+        // contain more of the cycle, while every design curve follows the window
+        // MEAN and wanders with where the window ends. Past about eight years the
+        // analogue's own peak is above the hot single-day design value, which is
+        // a design sized on a mean sitting under the thing it averages.
+        engineSweep('sw_window_peak_level', 'sys_mission_requirements_mission_duration',
+          dur.lo, dur.hi, 60),
       ]);
-      return { ret, gmap, win: { fl, fs, cl, cs } };
+      return { ret, gmap, win: { fl, fs, cl, cs, pk } };
     },
     build(rec, o, extra, eng) {
       if (o.v === 'f107') return f107Window(extra, o, eng);
@@ -830,6 +1071,182 @@ const PANELS = [
           ' separate events — ' + above.length + ' days in ' + runs + ' events across ' +
           years.toFixed(2) + ' years of record. That the exceedance is brief and rare is what makes ' +
           'the bound acceptable rather than failed, and it is only knowable because it is counted.',
+      };
+    },
+  },
+
+
+  // -------------------------------------------------------------------------
+  // THE ONLY PICTURE OF THE QUESTION THE TOOL EXISTS TO ANSWER.
+  //
+  // Ten rows — five requirements and the five closures against them — had no
+  // figure, and until §20 they had no closure either: the achieved rows read one
+  // input and returned it unchanged, and nothing in the tree compared a
+  // requirement against anything. l3_solar_req_03's own sheet said so.
+  //
+  // Now each pair publishes a signed fractional margin, and this draws the thing
+  // a designer actually acts on: where the margin is, which decision spends it,
+  // and how far that decision can move before it is gone. The sweep axis is NOT
+  // chosen here — it is whatever /v1/levers reports as spending this margin
+  // fastest, which is why that endpoint exists. A panel that picked its own axis
+  // would be the author guessing, and the sweep control on the old face offered
+  // a decision worth exactly zero because somebody did.
+  //
+  // Two frames, because the bound and the achieved value share a unit and the
+  // margin does not. The top frame is where the two cross; the bottom is the
+  // same fact as a number, signed, with zero drawn.
+  {
+    id: 'closure',
+    rows: ['l3_solar_req_01', 'l3_solar_req_02', 'l3_solar_req_03',
+      'l3_solar_req_04', 'l3_solar_req_05',
+      'l3_solar_ach_01', 'l3_solar_ach_02', 'l3_solar_ach_03',
+      'l3_solar_ach_04', 'l3_solar_ach_05'],
+    // Both sides of all five, so the panel never computes a margin itself: the
+    // achieved rows ARE the margins and the requirement rows are the bounds.
+    engine: ['l3_solar_ach_01', 'l3_solar_ach_02', 'l3_solar_ach_03',
+      'l3_solar_ach_04', 'l3_solar_ach_05',
+      'l3_solar_req_01', 'l3_solar_req_02', 'l3_solar_req_03',
+      'l3_solar_req_04', 'l3_solar_req_05'],
+    label: 'Closure',
+    draws: 'Each requirement against what the record gives it, and the margin between them.',
+    asks: 'Does the design close against the sky, and what spends the margin fastest?',
+    controls: [
+      { k: 'pair', label: 'closure', opts: [
+        ['01', 'F10.7 — sustained'],
+        ['02', 'F10.7 — single day'],
+        ['03', 'Ap — survival'],
+        ['04', 'Ap — sustained'],
+        ['05', 'Ap — single day'],
+      ] },
+    ],
+    // Opened from l3_solar_ach_03 or l3_solar_req_03, show the survival pair.
+    // The ten rows this panel lives on are five pairs, and each row belongs to
+    // exactly one of them.
+    openAt(rowId, o) {
+      const m = /^l3_solar_(?:ach|req)_(0[1-5])$/.exec(rowId);
+      if (m) o.pair = m[1];
+    },
+    async data(o) {
+      const n = (o && o.pair) || '01';
+      const ach = 'l3_solar_ach_' + n, req = 'l3_solar_req_' + n;
+      const key = ach;
+      CLOSURE_CACHE.want = CLOSURE_CACHE.want || new Map();
+      if (CLOSURE_CACHE.want.has(key)) return CLOSURE_CACHE.want.get(key);
+      const pr = (async () => {
+        // THE AXIS IS THE ENGINE'S ANSWER, NOT THE AUTHOR'S. Levers come back
+        // ordered by how much they move this row, and the requirement is always
+        // near the top of that list because a margin is a fraction OF it —
+        // moving the bound moves the margin by construction and says nothing
+        // about the sky. What a designer wants is the decision that spends the
+        // margin they have, so the bound is skipped and the next one taken.
+        const levers = await engineLevers(ach);
+        const lv = levers.find(l => l.id !== req && l.span > 0) || null;
+        if (!lv) return { lv: null };
+        const quantity = QUANTITY_OF[n];
+        const [mar, qty] = await Promise.all([
+          engineSweep(ach, lv.id, lv.lower, lv.upper, 90),
+          engineSweep(quantity, lv.id, lv.lower, lv.upper, 90),
+        ]);
+        return { lv, quantity, mar, qty };
+      })();
+      CLOSURE_CACHE.want.set(key, pr);
+      return pr;
+    },
+    build(rec, o, extra, eng) {
+      const n = o.pair || '01';
+      const ach = 'l3_solar_ach_' + n, req = 'l3_solar_req_' + n;
+      const title = PAIR_LABEL[n];
+      if (!extra || !extra.lv) {
+        throw new Error('no decision upstream of ' + ach + ' moves its margin, so there is ' +
+          'nothing to sweep it over — which is itself worth knowing and not worth drawing');
+      }
+      const { lv, quantity, mar, qty } = extra;
+      // SI out of the engine, divided back by the factor the sweep reports, the
+      // same boundary rule every other panel here obeys.
+      const x = mar.x.map(v => v / mar.x_factor);
+      const margin = mar.y.map(v => v / mar.y_factor);
+      const value = qty.y.map(v => v / qty.y_factor);
+      // The requirement is a declared number: it does not move when an
+      // environmental decision does, and drawing it as a flat line is the whole
+      // point — it is what the achieved curve has to stay under. Divided by the
+      // sweep's own factor rather than read off `shown`, which is a formatted
+      // string for a person.
+      const rq = eng[req];
+      const reqV = rq && isFinite(rq.si) ? rq.si / (qty.y_factor || 1) : null;
+      // Where the two cross, which is where the margin goes through zero.
+      let cross = null;
+      for (let k = 1; k < margin.length; k++) {
+        const a = margin[k - 1], b = margin[k];
+        if (a === null || b === null || !isFinite(a) || !isFinite(b)) continue;
+        if ((a > 0) !== (b > 0)) { cross = x[k - 1] + (x[k] - x[k - 1]) * a / (a - b); break; }
+      }
+      const now = eng[ach] && isFinite(eng[ach].si) ? eng[ach].si : null;
+      const marks = cross === null ? [] : [{ axis: 'x', at: cross,
+        label: 'the margin runs out here' }];
+      return {
+        spec: {
+          x: { label: lv.label + '  [' + lv.unit + ']' },
+          panes: [
+            {
+              // THE UNIT IS THE FACE'S, NOT THE ENGINE'S, and only here. F10.7 is
+              // modelled as a dimensionless Ratio throughout this tree — sfu is
+              // not in the unit system — so the sweep reports '-' for it, and a
+              // frame labelled "sustained F10.7 to design to [-]" is true and
+              // unreadable. Every other panel in this subsystem writes sfu in
+              // its axis title for the same reason; this one now does too, and
+              // says so rather than looking like an oversight.
+              y: { label: title.q + '  [' + title.u + ']' },
+              series: [
+                { name: 'what the record gives — ' + quantity, kind: 'line',
+                  x, y: value, width: 2.2 },
+                // THE SAME COLOUR THE ZERO RULE BELOW IS DRAWN IN, deliberately.
+                // It is not a series competing with the curve — it is the line
+                // the curve is measured against, which is the job every mark in
+                // this face uses this colour for. The two frames then say the
+                // same thing in the same ink: crossing the pink line above is
+                // crossing the pink line below.
+                { name: 'the requirement — ' + req, kind: 'line',
+                  x, y: x.map(() => reqV), colour: '#c2185b', dash: [6, 4] },
+              ],
+              marks,
+            },
+            {
+              y: { label: 'margin, signed fraction of the requirement  [-]' },
+              series: [{ name: '', kind: 'line', x, y: margin, colour: INK.series[2] }],
+              marks: [{ axis: 'y', at: 0, label: 'the requirement is exactly met',
+                colour: '#c2185b' }].concat(marks),
+            },
+          ],
+        },
+        note: title.text + '\n\n' +
+          'The horizontal axis is not a choice made here. /v1/levers measures every declared ' +
+          'decision upstream of this closure at both ends of its own range and reports which moves ' +
+          'the margin most; ' + lv.label + ' is that decision, and it spans ' +
+          sig(lv.span) + ' of margin across its declared range. The requirement itself is skipped, ' +
+          'and not because it is small — it is usually the largest — but because a margin is a ' +
+          'fraction OF the bound, so moving the bound moves it by construction and says nothing ' +
+          'about the sky.\n\n' +
+          // Fixed places rather than sig(), which rounded 0.604 to "0.6" and
+          // 60.4 per cent to "60". A margin is the number a review argues over
+          // and it is read to the decimal.
+          (now === null
+            ? 'The engine did not return a margin for this pair.'
+            : 'As the tree stands the margin is ' + now.toFixed(4) + ' — ' +
+              (now < 0
+                ? 'NEGATIVE, so this requirement is exceeded by ' +
+                  (-now * 100).toFixed(1) + ' per cent of its own value.'
+                : (now * 100).toFixed(1) + ' per cent of the requirement is unspent.')) +
+          ' ' +
+          (cross === null
+            ? 'The margin does not reach zero anywhere in ' + lv.label + '’s declared range, so ' +
+              'this decision cannot spend it on its own.'
+            : 'It runs out at ' + sig(cross) + ' ' + (lv.unit === '-' ? '' : lv.unit) +
+              ', which is where the two lines above cross. That is the number to carry into a ' +
+              'review: past it the design is outside what it was built for.') +
+          '\n\nThe top frame and the bottom one are the same fact twice, and both are here ' +
+          'because they answer different questions. The crossing says WHERE; the signed fraction ' +
+          'says HOW MUCH, in a unit that compares across the five closures — the requirements are ' +
+          'in sfu and in Ap and cannot be set beside each other, and their margins can.',
       };
     },
   },
@@ -1316,7 +1733,14 @@ function f107Window(extra, o, eng) {
   const w = extra.win;
   const xs = w.fl.x.map(v => v / YR);
   const hot = w.fs.y, hotLong = w.fl.y, coldLong = w.cl.y, cold = w.cs.y;
+  const analogue = w.pk.y;
   const peak = Math.max(...hot);
+  // Where the analogue's own maximum climbs above the hot single-day design
+  // value, which is the finding this fifth line is here for.
+  let over = null;
+  for (let k = 0; k < xs.length; k++) {
+    if (analogue[k] !== null && hot[k] !== null && analogue[k] > hot[k]) { over = xs[k]; break; }
+  }
   return {
     spec: {
       x: { label: 'mission length  [years]', min: xs[0], max: xs[xs.length - 1] },
@@ -1329,6 +1753,10 @@ function f107Window(extra, o, eng) {
           colour: '#2e7d55' },
         { name: 'sw_f107_cold_short — cold, single day', kind: 'line', x: xs, y: cold,
           colour: '#8f43e0' },
+        // Dashed, because it is not a design value: it is the analogue's own
+        // ceiling, the thing the four solid curves are built from a mean of.
+        { name: 'sw_window_peak_level — the analogue’s own peak', kind: 'line',
+          x: xs, y: analogue, colour: '#00918f', dash: [7, 4] },
       ],
       marks: [
         { axis: 'y', at: REQ, label: 'required \u2264 ' + REQ.toFixed(0) + '  (' + o.reqf + ')',
@@ -1347,7 +1775,17 @@ function f107Window(extra, o, eng) {
       'window ends in the cycle \u2014 the cycle showing through a statistic that was never told ' +
       'about it. ' + o.reqf + '\u2019s ' + REQ.toFixed(0) + ' sfu is ' +
       (peak <= REQ ? 'met across the whole declared range; the worst single day the window reaches is '
-        + peak.toFixed(1) + '.' : 'exceeded inside the declared range, at ' + peak.toFixed(1) + '.'),
+        + peak.toFixed(1) + '.' : 'exceeded inside the declared range, at ' + peak.toFixed(1) + '.') +
+      '\n\nThe dashed line is not a design value. sw_window_peak_level is the MAXIMUM of the same ' +
+      'cycle analogue these four are built on a mean of, over the same window, and it rises ' +
+      'monotonically because a longer window can only contain more of the cycle. The design curves ' +
+      'wander instead, because a window mean depends on where the window ends. ' +
+      (over === null
+        ? 'It stays under the hot single-day value across the whole declared range.'
+        : 'They cross at about ' + over.toFixed(1) + ' years: past there the analogue\u2019s own ' +
+          'peak is ABOVE the hot single-day design value, which is a design sized on a mean sitting ' +
+          'under the thing it averages. That is worth a reviewer\u2019s attention and it is the ' +
+          'reason this row is kept rather than removed.'),
   };
 }
 
@@ -1486,10 +1924,23 @@ function visibleControls(p, o) {
   return p.controls.filter(c => !c.when || c.when(o));
 }
 
-function optsFor(p) {
+function optsFor(p, rowId) {
   if (!state.opts[p.id]) {
     state.opts[p.id] = Object.fromEntries(p.controls.map(c => [c.k, c.opts[0][0]]));
   }
+  // A FIGURE OPENED FROM A ROW SHOWS THAT ROW.
+  //
+  // `closure` draws one required/achieved pair at a time and lives on all ten of
+  // their rows, so without this a reader arriving at l3_solar_ach_03 — having
+  // clicked it precisely because they want the survival closure — met a picture
+  // of the F10.7 one and had to find the control. The panel says which of its
+  // views belongs to which row and the page says which row it is; neither knows
+  // alone.
+  //
+  // Only on a call that names a row. `redraw` passes none, so a reader's own
+  // choice of control survives every redraw and is overridden only by their
+  // navigating to a different row — which is them asking for that row.
+  if (rowId && p.openAt) p.openAt(rowId, state.opts[p.id]);
   return state.opts[p.id];
 }
 
@@ -1507,10 +1958,10 @@ export function figuresForRow(id) {
 }
 
 /** One figure, drawn into whatever host is given. */
-export function drawRowFigure(host, panelId) {
+export function drawRowFigure(host, panelId, rowId) {
   const p = PANELS.find(x => x.id === panelId);
   if (!host || !p) return;
-  const o = optsFor(p);
+  const o = optsFor(p, rowId);
   host.innerHTML = panelBody(p, o);
   wirePanel(host, p, o, () => drawRowFigure(host, panelId));
 }
@@ -1645,7 +2096,10 @@ async function render(host, p, o) {
     // carried a copy of it, and three of those copies were stale; see §21.
     const [rec, extra, eng] = await Promise.all([
       solarRecord(),
-      p.data ? p.data() : null,
+      // `o` because the closure panel's sweep axis is chosen per pair, and a
+      // panel that fetched all five pairs to draw one would ask the engine for
+      // four answers nobody is looking at. Every other panel ignores it.
+      p.data ? p.data(o) : null,
       engineValues(p.engine || []),
     ]);
     const out = p.build(rec, o, extra, eng);

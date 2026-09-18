@@ -1,0 +1,64 @@
+id = "closure"
+label = "Closure — each requirement against what the record gives it"
+module = "web/js/solar.js"
+mount = "canvas.sw-panel"
+draws = """One required/achieved pair at a time, in two stacked frames on one axis. The
+top frame holds what the record gives — the achieved quantity, swept — against
+the requirement as a flat dashed line. The bottom frame holds the same fact as
+a signed margin, a fraction of the requirement, with zero drawn. The horizontal
+axis is whichever declared decision /v1/levers reports as spending this margin
+fastest, excluding the requirement itself."""
+correct = """TWO FRAMES on one shared x axis, its ticks and title drawn once at the bottom.
+The top frame carries two lines in the same unit: a swept curve and a flat
+dashed one. THE REQUIREMENT LINE MUST BE FLAT — it is a declared number a
+person chose, and a requirement that slopes means the panel is sweeping the
+bound instead of the environment. The bottom frame carries one line with a red
+zero rule on it.
+
+The two frames must agree: wherever the swept curve crosses the requirement in
+the top frame, the margin crosses zero in the bottom one, at the same x. They
+are the same fact twice and a picture where the crossings are at different
+places has computed the margin from something other than the two lines above
+it.
+
+The margin is POSITIVE where the achieved curve is BELOW the requirement,
+because every one of these five declares sense "<=" — the requirement is a
+ceiling and room is what is left under it. A margin that rises as the achieved
+curve rises has the sense backwards.
+
+The horizontal axis must NOT be the pair's own requirement. A margin is a
+fraction of its bound, so sweeping the bound moves the margin by construction
+and says nothing about the sky; /v1/levers reports the requirement at or near
+the top of every one of these five, and the panel is required to skip it. An
+axis labelled "Required — ..." is that defect.
+
+Switching the closure control must change the axis as well as the curves: the
+two F10.7 pairs are spent fastest by the mean band spread, the survival pair by
+mission duration, and the two sustained/daily Ap pairs by the expected Ap over
+the window. An axis that stays the same across all five means the lever
+question is not being asked."""
+# NOT CONFIRMED. This panel is new on 2026-09-18 and nobody has looked at
+# panels/reference/closure.png yet, and an agent may not be that person.
+confirmed_by = "UNCONFIRMED / new 2026-09-18, Part D; awaiting a look"
+tolerance = 0.02
+settle_ms = 10000
+
+ready = """(async () => {
+  await window.openNode('l3_solar_ach_04');
+  await new Promise(r => setTimeout(r, 200));
+  const cv = document.querySelector('.row-figure canvas.sw-panel');
+  if (!cv) throw new Error('no figure on l3_solar_ach_04 for the closure panel');
+})()"""
+
+[[input]]
+name = "pair"
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=pair]'); if (!s) throw new Error('no pair control'); s.value = '03'; s.dispatchEvent(new Event('change')); })()"
+why = """each pair is a different requirement, a different achieved quantity and a different sweep axis; one picture for two of them means the control is ignored"""
+
+[[engine]]
+row = "l3_solar_ach_04"
+why = """the bottom frame IS this row — a panel drawing a margin that does not move when the engine's margin moves is drawing a literal"""
+
+[[engine]]
+row = "l3_solar_req_04"
+why = """the dashed line is this row's declared value, and it was the requirement literals in the design panel that went two revisions stale before anything noticed"""
