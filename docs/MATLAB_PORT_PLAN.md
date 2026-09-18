@@ -2098,15 +2098,43 @@ is worth the second it costs.
 Both are covered by `--selftest`, which now breaks `design` in the two ways only
 these checks can see.
 
-**A3. Delete the four stale literals in `design`.** (§21.1 found three by
-reading; wiring A1 up found a fourth — the F10.7 branch draws a line at
-`at: 250, label: 'required ≤ 250'`, and `l3_solar_req_01` is 260 while `_02` is
-350, so it matches neither. It is in the note text as well as the mark. Finding
-it by connecting one value is the argument for A2 in miniature.) `CENTRAL = 114.8437` →
-`sw_central_expectation`. The `150 / 132 / 200` requirement options →
-`l3_solar_req_01` through `_05`. `A = 92.515531, B = 40.926516` →
-`sw_storm_return_level`. Verified by A2, which fails if any of them is still a
-copy.
+**A3. Delete the stale literals in `design`.** Done, and there were **five**,
+not the three §21.1 found by reading. Each one was found by wiring up the one
+before it.
+
+| literal | what it was a copy of | what it is now |
+|---|---|---|
+| `CENTRAL = 114.8437` | `sw_central_expectation`, two revisions stale | read from the row (86.85) |
+| `A = 92.515531, B = 40.926516` | `sw_storm_return_level`'s fit constants | the row, swept over mission duration |
+| `AP_AT_G = {1: 48, 2: 80, 3: 132}` | `sw_ap_design`'s G-to-Ap conversion | the row, swept over the G level |
+| `req` options `150 / 132 / 200` | nothing — no row has ever held 150 or 200 | the rows themselves, by id |
+| `at: 250, 'required ≤ 250'` | nothing — `req_01` is 260, `_02` is 350 | the selected row |
+
+Both sweeps reproduce the constants they replace to every digit printed, so the
+picture did not move for that reason; the requirement line moved from a
+hard-coded 150 to `l3_solar_req_03`'s 207, which is the number a person settled
+on. Both marks now name the row they came from, so a reader can see the source
+without opening the file.
+
+The requirement is two controls rather than one, because an Ap bound has no
+business on an F10.7 axis: `req` offers `l3_solar_req_03/04/05` and `reqf`
+offers `_01/_02`. A5 hides whichever the current branch does not read.
+
+*And a regression in A2, found by the selftest rather than by me.* Check 2's
+failed-state probe had stopped biting. `wait_for_function` returns the instant
+the canvas differs, and it differs as soon as the redraw CLEARS it — before the
+render has finished and had the chance to record a failure. The probe was
+reading the flag in that window, finding nothing, and check 2 had quietly gone
+back to being the check it replaced. It settles before reading now. The lesson
+is the selftest's: a check that has stopped working looks exactly like a check
+with nothing to find.
+
+*Two more things this turned up.* 2b was blind to a row a panel draws as a SHAPE — it
+rewrote `/v1/run` only, and the return curve arrives over `/v1/sweep`. The
+interception now bends both. And one selftest case patched a source string this
+step reworded, which would have made the case a silent no-op: the selftest now
+refuses a break that changes nothing, because a case that proves nothing is
+worse than no case.
 
 **A4. Replace the method `design` draws.** It draws `prf_design`'s frozen
 persistence; the rows use the cycle analogue and the level-conditioned spread,

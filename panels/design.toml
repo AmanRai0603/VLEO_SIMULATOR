@@ -32,12 +32,6 @@ settle_ms = 8000
 # picture to move, which is the only way to tell reading a row from declaring
 # one — four of this panel's numbers were literals copied in when it was
 # written, and one of them was two revisions stale.
-engine = ["sw_central_expectation"]
-
-# The F10.7 view is where sw_central_expectation is read; the default Ap view
-# does not touch it, so 2b would be testing a branch that never asks.
-engine_state = """(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'f107'; s.dispatchEvent(new Event('change')); })()"""
-
 ready = """(async () => {
   await window.openNode('sw_storm_return_level');
   await new Promise(r => setTimeout(r, 200));
@@ -57,5 +51,20 @@ why = """the G band sets the capability line; moving G3 to G1 must move that lin
 
 [[input]]
 name = "req"
-drive = "(() => { const s = document.querySelector('.sw-opt[data-k=req]'); if (!s) throw new Error('no req control'); s.value = '200'; s.dispatchEvent(new Event('change')); })()"
-why = """the requirement is a separate mark from the capability and must move on its own"""
+drive = "(() => { const s = document.querySelector('.sw-opt[data-k=req]'); if (!s) throw new Error('no req control'); s.value = 'l3_solar_req_04'; s.dispatchEvent(new Event('change')); })()"
+why = """the requirement is a separate mark from the capability and must move on its own — and it is now a ROW rather than a number typed into the panel"""
+
+# Each row carries the view that reads it. sw_central_expectation and the F10.7
+# requirement are only touched on the F10.7 branch; the Ap requirement only on
+# the Ap branch, which is where the panel opens. Testing one on the other
+# branch would report a failure that belongs to the fixture.
+[[engine]]
+row = "sw_central_expectation"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'f107'; s.dispatchEvent(new Event('change')); })()"
+
+[[engine]]
+row = "l3_solar_req_01"
+state = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'f107'; s.dispatchEvent(new Event('change')); })()"
+
+[[engine]]
+row = "l3_solar_req_03"

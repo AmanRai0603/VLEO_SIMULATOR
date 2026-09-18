@@ -195,6 +195,11 @@ def _intercept_run(page, row_id):
     """
     state = {"hit": False}
 
+    def bend(x):
+        # Big enough that no axis rounding absorbs it, and away from zero so a
+        # bound near zero is not crossed by accident.
+        return x * 1.75 + 13.0
+
     def handler(route):
         req = route.request
         if ("node=" + row_id) not in req.url:
@@ -207,15 +212,20 @@ def _intercept_run(page, row_id):
         except Exception:
             route.continue_()
             return
+        # A run carries the value; a sweep carries the whole relation. A panel
+        # can read a row either way — `design` sweeps sw_storm_return_level for
+        # its curve and runs l3_solar_req_03 for its line — so both are bent,
+        # or 2b would be blind to exactly the rows a figure draws as a shape.
         for v in body.get("values", []):
             if v.get("id") == row_id and isinstance(v.get("si"), (int, float)):
-                # Big enough that no axis rounding absorbs it, and away from
-                # zero so a bound near zero is not crossed by accident.
-                v["si"] = v["si"] * 1.75 + 13.0
+                v["si"] = bend(v["si"])
                 v["shown"] = "%g" % v["si"]
+        if body.get("y_id") == row_id and isinstance(body.get("y"), list):
+            body["y"] = [bend(v) if isinstance(v, (int, float)) else v for v in body["y"]]
         route.fulfill(status=200, content_type="application/json", body=json.dumps(body))
 
     page.route("**/v1/run**", handler)
+    page.route("**/v1/sweep**", handler)
     return state
 
 
@@ -323,6 +333,13 @@ def check_all(ids=None, record=False):
                 # different signature from a drawn one — so the wait above is
                 # satisfied by the panel breaking. Changed is not the same as
                 # moved, and this is where the two are told apart.
+                #
+                # SETTLE FIRST. The wait returns the instant the canvas differs,
+                # and it differs as soon as the redraw CLEARS it — before the
+                # render has finished and had the chance to record a failure.
+                # Reading the flag there caught nothing and the check silently
+                # went back to being the one it replaced.
+                _settle(page, mount)
                 fail = _failed(page, mount)
                 if fail:
                     found.append((
@@ -354,7 +371,7 @@ def check_all(ids=None, record=False):
             # The interception is the checker's. Nothing in the product knows
             # this is happening, which is the point: a test hook in the page
             # would be a thing to keep working rather than a thing that checks.
-            def _open(settle_ms):
+            def _open(settle_ms, state=None):
                 page.goto(url, wait_until="networkidle")
                 if d.get("ready"):
                     try:
@@ -366,14 +383,23 @@ def check_all(ids=None, record=False):
                     page.wait_for_function(_NONBLANK, arg=mount, timeout=settle_ms)
                 except Exception:
                     return None
-                if d.get("engine_state"):
+                if state:
                     try:
-                        page.evaluate(d["engine_state"])
+                        page.evaluate(state)
                     except Exception:
                         return None
                 return _settle(page, mount)
 
-            for rid in d.get("engine", []):
+            # A row may only be read on one branch of the panel, so each entry
+            # may carry the state that reaches it. A bare string uses the
+            # panel's own `engine_state`; a table names its own. Without this,
+            # testing an Ap requirement while the panel is on its F10.7 branch
+            # reports a failure that is the fixture's, not the panel's.
+            for _e in d.get("engine", []):
+                if isinstance(_e, dict):
+                    rid, _state = _e["row"], _e.get("state", d.get("engine_state"))
+                else:
+                    rid, _state = _e, d.get("engine_state")
                 # TWO FULL RENDERS DOWN THE SAME PATH, differing only in what the
                 # engine answered. An earlier form of this called a global redraw
                 # hook on the open panel, which after check 2's reloads could
@@ -381,15 +407,16 @@ def check_all(ids=None, record=False):
                 # the signature changed, and 2b passed a panel that ignores the
                 # value. Rebuilding the page each time costs a second and cannot
                 # go stale, and it leaves no test hook in the product.
-                clean = _open(settle)
+                clean = _open(settle, _state)
                 if clean is None:
                     found.append((d["id"], "2b reads",
                                   "the panel never drew, so %s could not be tested" % rid))
                     continue
                 asked = _intercept_run(page, rid)
-                moved = _open(settle)
+                moved = _open(settle, _state)
                 fail = _failed(page, mount)
                 page.unroute("**/v1/run**")
+                page.unroute("**/v1/sweep**")
                 if fail:
                     found.append((d["id"], "2b reads",
                                   "the panel FAILED when %s was perturbed: %s" % (rid, fail)))
@@ -489,6 +516,20 @@ def _differ(a, b):
     return n / float(w * h)
 
 
+def _tree_sig(root):
+    """A cheap signature of the working tree's web sources.
+
+    The selftest breaks a panel by string replacement, and a replacement whose
+    target has been reworded silently does nothing — the case then passes for
+    the wrong reason and stops protecting anything. Comparing before and after
+    turns that into a loud failure.
+    """
+    h = 0
+    for f in sorted((root / "web" / "js").glob("*.js")):
+        h = (h * 1000003 + hash(f.read_text())) & 0xFFFFFFFFFFFF
+    return h
+
+
 def selftest():
     """A panel wired to nothing must fail check two, and a blank one check one.
 
@@ -556,8 +597,8 @@ def selftest():
         ("a panel whose render throws",
          lambda d: (d / "web" / "js" / "solar.js").write_text(
              (d / "web" / "js" / "solar.js").read_text().replace(
-                 "engine: ['sw_central_expectation', 'l3_solar_req_03'],",
-                 "engine: ['sw_no_such_row', 'l3_solar_req_03'],")),
+                 "engine: ['sw_central_expectation',",
+                 "engine: ['sw_no_such_row',")),
          "2 moves"),
     ]
     for label, break_it, want in cases:
@@ -574,7 +615,13 @@ def selftest():
             if "canvas" in label:
                 shutil.copy(real_root / "tools" / "selftest_panels" / "sweep.toml",
                             work / "panels" / "sweep.toml")
+            before_tree = _tree_sig(work)
             break_it(work)
+            if _tree_sig(work) == before_tree:
+                bad += 1
+                print("  FAIL %s changed nothing — the patch has drifted from the "
+                      "source it edits, so the case proves nothing" % label)
+                continue
             ROOT, PANELS, REFERENCE = work, work / "panels", work / "panels" / "reference"
             try:
                 which = ("sweep" if "canvas" in label

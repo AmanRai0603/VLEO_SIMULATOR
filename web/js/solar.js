@@ -20,7 +20,7 @@
 
 import { $, esc } from './dom.js';
 import { S } from './state.js';
-import { solarRecord, bundleFile, engineValues, centredMean, corr, quantile, num, daysSince2000 } from './record.js';
+import { solarRecord, bundleFile, engineValues, engineSweep, centredMean, corr, quantile, num, daysSince2000 } from './record.js';
 import { drawChart, attachHover, INK } from './chart.js';
 
 // ---------------------------------------------------------------------------
@@ -527,28 +527,83 @@ const PANELS = [
     // `rows` says what the picture argues about; `engine` says what it reads,
     // and panel_check holds it to the second. The literals these replace had
     // gone stale by two revisions — §21.1 lists them.
-    engine: ['sw_central_expectation', 'l3_solar_req_03'],
+    engine: ['sw_central_expectation', 'l3_solar_req_01', 'l3_solar_req_03',
+      'l3_solar_req_04', 'l3_solar_req_05', 'l3_solar_req_02'],
     label: 'Design',
     draws: 'The design window: what the record expects against what the vehicle is built for.',
     asks: 'Will the design be exceeded, and if so beyond what mission length?',
     controls: [
       { k: 'v', label: 'driver', opts: [['ap', 'Ap — return period'], ['f107', 'F10.7 — lead and confidence']] },
       { k: 'g', label: 'designed for', opts: [['3', 'G3 strong'], ['2', 'G2 moderate'], ['1', 'G1 minor']] },
-      { k: 'req', label: 'requirement', opts: [['150', 'Ap 150'], ['132', 'Ap 132'], ['200', 'Ap 200']] },
+      // THE REQUIREMENTS ARE ROWS, NOT NUMBERS TYPED HERE. This offered Ap 150,
+      // 132 and 200; no row has ever held 150 or 200, and the requirement a
+      // person settled on 2026-09-16 is 207. The options name rows and the
+      // values come from the engine, so the list cannot drift from the tree
+      // again — and an Ap bound can no longer be drawn on an F10.7 axis,
+      // because the two drivers carry their own control.
+      { k: 'req', label: 'Ap requirement', opts: [
+        ['l3_solar_req_03', 'survival — req_03'],
+        ['l3_solar_req_04', 'sustained — req_04'],
+        ['l3_solar_req_05', 'single day — req_05'],
+      ] },
+      { k: 'reqf', label: 'F10.7 requirement', opts: [
+        ['l3_solar_req_01', 'sustained — req_01'],
+        ['l3_solar_req_02', 'single day — req_02'],
+      ] },
     ],
-    build(rec, o, _extra, eng) {
-      if (o.v === 'f107') return f107Window(rec, eng);
-      // The fitted return relation, as sw_storm_return_level publishes it. The
-      // constants are that row's; this panel does not re-fit, because a figure
-      // that fits its own line is drawing a second opinion and calling it the
-      // answer.
-      const A = 92.515531, B = 40.926516;
-      const apAt = T => A + B * Math.log(T);
-      const AP_AT_G = { 1: 48, 2: 80, 3: 132 };
-      const bound = AP_AT_G[o.g], req = +o.req;
-      const xs = [], ys = [];
-      for (let t = 0.5; t <= 15.0001; t += 0.1) { xs.push(t); ys.push(apAt(t)); }
-      const cross = ap => Math.exp((ap - A) / B);
+    // THE TWO RELATIONS THIS PANEL DRAWS, ASKED OF THE ENGINE RATHER THAN
+    // COPIED. `A = 92.515531, B = 40.926516` were sw_storm_return_level's fit
+    // constants written out here, and `{1: 48, 2: 80, 3: 132}` was sw_ap_design's
+    // G-to-Ap conversion written out here. A figure carrying a row's constants
+    // is a second copy of that row, and it goes stale silently: the centre this
+    // panel drew was two revisions old before anything noticed. Both are swept
+    // from the rows now, so the picture is the relation the engine computes.
+    //
+    // Neither sweep depends on a control, so both are fetched once here rather
+    // than on every redraw.
+    async data() {
+      const dur = S.byId.get('sys_mission_requirements_mission_duration');
+      const glv = S.byId.get('sw_storm_design_level');
+      const [ret, gmap] = await Promise.all([
+        engineSweep('sw_storm_return_level', 'sys_mission_requirements_mission_duration',
+          dur.lo, dur.hi, 120),
+        engineSweep('sw_ap_design', 'sw_storm_design_level', glv.lo, glv.hi, 3),
+      ]);
+      return { ret, gmap };
+    },
+    build(rec, o, extra, eng) {
+      if (o.v === 'f107') return f107Window(rec, o, eng);
+      // The relation as the ENGINE computes it, swept from sw_storm_return_level
+      // rather than re-stated from its constants. A figure that carries a row's
+      // coefficients is a second copy of that row.
+      const YR = 31557600;
+      const xs = extra.ret.x.map(v => v / YR);
+      const ys = extra.ret.y.slice();
+      // sw_ap_design's own G-to-Ap conversion, swept over the G level. The
+      // sweep returns the three points in the order of the level, so the bound
+      // is read off by index rather than from a table written out here.
+      const gi = extra.gmap.x.indexOf(+o.g);
+      if (gi < 0 || extra.gmap.y[gi] === undefined) {
+        throw new Error('sw_ap_design did not answer at G' + o.g);
+      }
+      const bound = extra.gmap.y[gi];
+      const rq = eng[o.req];
+      if (!rq || rq.si === undefined) {
+        throw new Error(o.req + ' did not answer: ' + ((rq && rq.refused) || 'not asked'));
+      }
+      const req = rq.si;
+      // Where the curve crosses a level, read off the swept points by
+      // interpolation. The closed form needed the fit constants; this needs
+      // only the curve, which is the thing actually drawn.
+      const cross = (ap) => {
+        for (let i = 1; i < ys.length; i++) {
+          if ((ys[i - 1] - ap) * (ys[i] - ap) <= 0 && ys[i] !== ys[i - 1]) {
+            const f = (ap - ys[i - 1]) / (ys[i] - ys[i - 1]);
+            return xs[i - 1] + f * (xs[i] - xs[i - 1]);
+          }
+        }
+        return ap <= ys[0] ? xs[0] : NaN;
+      };
       // What the record actually did above the bound, counted here from the
       // record rather than taken from the rows, because the panel must be able
       // to answer for a level the rows are not set to.
@@ -560,18 +615,21 @@ const PANELS = [
       const rate = above.length / years;
       return {
         spec: {
-          x: { label: 'mission length  [years]', min: 0.5, max: 15 },
+          x: { label: 'mission length  [years]', min: xs[0], max: xs[xs.length - 1] },
           y: { label: 'daily Ap the record expects once in that time  [-]' },
           series: [{ name: 'sw_storm_return_level', kind: 'line', x: xs, y: ys }],
           marks: [
-            { axis: 'y', at: bound, label: 'designed for G' + o.g + ' = Ap ' + bound },
-            { axis: 'y', at: req, label: 'required ≤ ' + req, colour: '#c1440e' },
+            { axis: 'y', at: bound, label: 'designed for G' + o.g + ' = Ap ' + bound.toFixed(0) +
+              '  (sw_ap_design)' },
+            { axis: 'y', at: req, label: 'required ≤ ' + req.toFixed(0) + '  (' + o.req + ')',
+              colour: '#c1440e' },
             { axis: 'x', at: cross(bound), label: 'exceeds the design at ' + cross(bound).toFixed(2) + ' yr' },
           ],
         },
         note: 'The design bound is exceeded beyond a ' + cross(bound).toFixed(2) + '-year mission and the ' +
-          'requirement beyond ' + cross(req).toFixed(2) + '. Over a 5-year mission the record holds ' +
-          (5 * rate).toFixed(2) + ' days above Ap ' + bound + ', in about ' + (5 * runs / years).toFixed(2) +
+          o.req + '\u2019s ' + req.toFixed(0) + ' beyond ' + cross(req).toFixed(2) +
+          '. Over a 5-year mission the record holds ' +
+          (5 * rate).toFixed(2) + ' days above Ap ' + bound.toFixed(0) + ', in about ' + (5 * runs / years).toFixed(2) +
           ' separate events — ' + above.length + ' days in ' + runs + ' events across ' +
           years.toFixed(2) + ' years of record. That the exceedance is brief and rare is what makes ' +
           'the bound acceptable rather than failed, and it is only knowable because it is counted.',
@@ -967,7 +1025,7 @@ function issueAge(idx) {
 }
 
 /** Design · the F10.7 window, which is the other half of what flows out. */
-function f107Window(rec, eng) {
+function f107Window(rec, o, eng) {
   const byDay = new Map();
   for (const d of rec.days) if (d.f107 !== null) byDay.set(d.t, d.f107);
   // THE CENTRE COMES FROM THE ROW THAT COMPUTES IT. It used to be the literal
@@ -983,6 +1041,16 @@ function f107Window(rec, eng) {
       ((c && c.refused) || 'the engine was not asked'));
   }
   const CENTRAL = c.si;
+  // The requirement is a row too. This drew a line at a flat 250 and said 250
+  // in its own prose, and no F10.7 requirement in the tree has ever held that
+  // number — l3_solar_req_01 is 260 and _02 is 350. It was found by wiring the
+  // centre up, which is the argument for doing this to every literal.
+  const rq = eng && eng[o.reqf];
+  if (!rq || rq.si === undefined) {
+    throw new Error((o.reqf || 'the F10.7 requirement') + ' did not answer: ' +
+      ((rq && rq.refused) || 'the engine was not asked'));
+  }
+  const REQ = rq.si;
   const leads = [], design = [], growth = [];
   for (let L = 183; L <= 5478; L = Math.round(L * 1.25)) {
     const ch = [];
@@ -1001,7 +1069,8 @@ function f107Window(rec, eng) {
       ],
       marks: [
         { axis: 'y', at: CENTRAL, label: 'central expectation = ' + CENTRAL, colour: '#4a4a4a' },
-        { axis: 'y', at: 250, label: 'required \u2264 250', colour: '#c1440e' },
+        { axis: 'y', at: REQ, label: 'required \u2264 ' + REQ.toFixed(0) + '  (' + o.reqf + ')',
+          colour: '#c1440e' },
       ],
     },
     note: 'The F10.7 half of what crosses to the system, built the way sw_f107_design builds it: the ' +
@@ -1009,7 +1078,9 @@ function f107Window(rec, eng) {
       'persistence term has decayed to nothing \u2014 w = exp(-L/27 d) is nil after a year \u2014 so ' +
       'the central expectation is flat and the whole shape is the growth. It peaks near half a solar ' +
       'cycle and dips near a full one, which is the cycle showing through a statistic that was never ' +
-      'told about it. The requirement of 250 sfu is met across the whole declared range, unlike the Ap ' +
+      'told about it. ' + o.reqf + '\u2019s ' + REQ.toFixed(0) + ' sfu is ' +
+      (Math.max(...design) <= REQ ? 'met across the whole declared range, unlike the Ap '
+        : 'exceeded inside the declared range, as the Ap ') +
       'one.',
   };
 }
