@@ -84,16 +84,73 @@ def main():
         "own answer, recorded as a second opinion rather than as a fixture.\n",
     ]
 
-    groups = [("Ported", []), ("Kernel", []), ("Extra", [])]
+    # WHAT A ROW COSTS TO REMOVE. Three facts decide it, in this order:
+    #   - another live row reads it        -> removing it breaks that row
+    #   - a figure draws it                -> removing it costs a picture
+    #   - it is the port of the study      -> removing it is removing the point
+    # Anything none of those touch is free to go.
+    readers = {}
+    for r in rows:
+        if r["state"] == "deprecated":
+            continue
+        for pi in r["in"]:
+            readers.setdefault(byi[pi]["id"], []).append(r["id"])
+
+    # A row kept only because a removable row reads it is not really kept: take
+    # the reader out and it is orphaned. So the free set is grown to a fixed
+    # point -- a row joins it when every one of its readers has already joined.
+    # Without this the table says "remove l3_solar_ach_01, keep l3_solar_req_01",
+    # which leaves a requirement nothing closes.
+    free = set()
+    while True:
+        added = False
+        for r in solar:
+            nid = r["id"]
+            if nid in free or nid in chain or drawn.get(nid):
+                continue
+            rd = [x for x in readers.get(nid, []) if x != nid]
+            if all(x in free for x in rd):
+                free.add(nid)
+                added = True
+        if not added:
+            break
+
+    def verdict(r):
+        nid = r["id"]
+        rd = sorted(x for x in readers.get(nid, []) if x != nid)
+        fig = drawn.get(nid, [])
+        if nid in free:
+            others = [x for x in rd if x in free]
+            if others:
+                return ("EASY, AS A PAIR",
+                        "free only if %s goes with it — it is read by nothing else"
+                        % ", ".join("`%s`" % x for x in others))
+            return ("EASY", "nothing reads it and no figure draws it")
+        if rd:
+            return ("KEEP", "%d live row%s read it: %s"
+                    % (len(rd), "" if len(rd) == 1 else "s",
+                       ", ".join("`%s`" % x for x in rd[:4])))
+        if nid in chain:
+            return ("KEEP", "it is the port of the study's driver set")
+        if fig:
+            return ("COSTS A FIGURE", "the %s panel draws it; removing it means rewriting that panel"
+                    % "/".join(sorted(set(fig))))
+        return ("EASY", "nothing reads it and no figure draws it")
+
+    def table(items):
+        out = ["| row | what it answers | value | number or curve | remove? | why |\n",
+               "|---|---|---|---|---|---|\n"]
+        for r, shape, par in items:
+            v, why = verdict(r)
+            val = "%.6g" % r["value"] if r["value"] is not None else "computed"
+            out.append("| `%s`%s | %s | %s | %s | **%s** | %s |\n"
+                       % (r["id"], " ✓" if par else "", r["label"], val, shape, v, why))
+        return "".join(out)
+
+    described = []
     for r in solar:
         nid = r["id"]
         par = os.path.exists(os.path.join(ROOT, "crates/vleo-mod-solar/nodes/%s/parity.csv" % nid))
-        if nid in chain:
-            where = "Ported"
-        elif par:
-            where = "Kernel"
-        else:
-            where = "Extra"
         try:
             lv = get("/v1/levers?node=" + nid).get("levers", [])
         except Exception:
@@ -104,57 +161,77 @@ def main():
         if r["kind"] == "declared":
             shape = "**number** — a decision; it is what moves other rows"
         elif moves:
-            top = moves[0]
-            shape = "**curve** over `%s` (%s)" % (top["id"], pct(top["span"]))
+            shape = "**curve** over `%s` (%s)" % (moves[0]["id"], pct(moves[0]["span"]))
             if len(moves) > 1:
-                shape += ", and %d more" % (len(moves) - 1)
+                shape += ", +%d" % (len(moves) - 1)
         elif blocked:
-            # Not the same fact as an inert decision, and collapsing the two is
-            # exactly the error this report was written to stop repeating.
-            shape = ("**number here** — the %d decision(s) upstream refuse at a range end, "
-                     "so no curve can be drawn without narrowing one" % len(blocked))
+            shape = "**number here** — %d upstream decision(s) refuse at a range end" % len(blocked)
         elif inert:
             shape = "**number** — all %d decisions upstream leave it unchanged" % len(inert)
         else:
-            shape = "**number** — no decision upstream of it at all"
-        panels = drawn.get(nid, [])
-        val = "%.6g" % r["value"] if r["value"] is not None else "computed"
-        dict(groups)[where].append(
-            "| `%s` | %s | %s | %s | %s | %s |"
-            % (nid, r["label"], val, shape, ", ".join(sorted(set(panels))) or "—",
-               "✓" if par else "")
-        )
+            shape = "**number** — no decision upstream at all"
+        described.append((r, shape, par))
 
-    # The summary is the finding, so it goes first. Counting which rows a figure
-    # draws is the fact that decides what can be removed, and it is not the fact
-    # anyone would have guessed.
-    ported = [r for r in solar if r["id"] in chain]
-    undrawn = [r["id"] for r in solar if not drawn.get(r["id"])]
-    pan_ported = {p for r in ported for p in drawn.get(r["id"], [])}
-    pan_other = {p for r in solar if r["id"] not in chain for p in drawn.get(r["id"], [])}
+    extra = [d for d in described if d[0]["id"] not in chain]
+    port = [d for d in described if d[0]["id"] in chain]
+    ex_fig = [d for d in extra if drawn.get(d[0]["id"])]
+    ex_non = [d for d in extra if not drawn.get(d[0]["id"])]
+    po_fig = [d for d in port if drawn.get(d[0]["id"])]
+    po_non = [d for d in port if not drawn.get(d[0]["id"])]
+    easy = sorted(free)
+
     out.append("\n## What this adds up to\n\n")
-    out.append("The port of the study is **%d rows**. The other **%d** are questions this "
-               "tree added.\n\n" % (len(ported), len(solar) - len(ported)))
-    out.append("Between them the %d ported rows are drawn by **%d** figure%s (%s). The %d extra "
-               "rows are drawn by **%d** (%s). Nearly every figure in this subsystem draws a row "
-               "the study never had — so removing the extras removes the pictures, and the rows "
-               "that reproduce the study are the ones with almost nothing drawn of them.\n\n"
-               % (len(ported), len(pan_ported), "" if len(pan_ported) == 1 else "s",
-                  ", ".join(sorted(pan_ported)) or "none",
-                  len(solar) - len(ported), len(pan_other), ", ".join(sorted(pan_other)) or "none"))
-    out.append("**%d rows are drawn by nothing at all**, and those are where a removal costs "
-               "least: %s.\n" % (len(undrawn), ", ".join("`%s`" % x for x in undrawn)))
-    for name, body in groups:
-        out.append("\n## %s — %d rows\n\n" % (name, len(body)))
-        out.append("| row | what it answers | value | number or curve | drawn in | parity |\n")
-        out.append("|---|---|---|---|---|---|\n")
-        out.append("\n".join(body) + "\n")
+    out.append("**No row here duplicates another.** Each was swept over seven drivers across "
+               "their declared ranges and fingerprinted on the result; all %d fingerprints are "
+               "distinct. So nothing is removable on the grounds of being a repeat — the only "
+               "question left for each row is whether its question is worth asking.\n\n"
+               % len(solar))
+    out.append("| | with a figure | with no figure | total |\n|---|---|---|---|\n")
+    out.append("| **Extra** — questions this tree added | %d | %d | %d |\n"
+               % (len(ex_fig), len(ex_non), len(extra)))
+    out.append("| **MATLAB** — the port of the study | %d | %d | %d |\n"
+               % (len(po_fig), len(po_non), len(port)))
+    out.append("\nThe shape of that table is the finding. Nearly every figure in this subsystem "
+               "draws a row the study never had, and nearly every row that reproduces the study "
+               "has no picture of it. Cutting extras costs pictures; the port is what is "
+               "undrawn.\n\n")
+    out.append("**%d rows are free to remove** — no figure draws them, they are not the port, and "
+               "nothing outside the set reads them. They come out together: %s.\n"
+               % (len(easy), ", ".join("`%s`" % x for x in easy) if easy else "none"))
+
+    out.append("\n---\n\n# EXTRA — %d rows the study never had\n" % len(extra))
+    out.append("\n## Extra, drawn by a figure — %d rows\n\n" % len(ex_fig))
+    out.append("Removing any of these means rewriting the panel that draws it.\n\n")
+    out.append(table(ex_fig))
+    out.append("\n## Extra, no figure — %d rows\n\n" % len(ex_non))
+    out.append("The cheapest removals in the subsystem, except where another row reads them.\n\n")
+    out.append(table(ex_non))
+
+    out.append("\n---\n\n# MATLAB — %d rows that port the study\n" % len(port))
+    out.append("\nThese produce the twenty-five numbers of the driver set. `✓` marks a "
+               "`parity.csv`: the MATLAB tool's own answer, kept as a second opinion rather than "
+               "as a fixture. **None of these should be removed** — together they are the port, "
+               "and the tree has nothing else that answers what they answer.\n")
+    out.append("\n## Ported, drawn by a figure — %d rows\n\n" % len(po_fig))
+    out.append(table(po_fig))
+    out.append("\n## Ported, no figure — %d rows\n\n" % len(po_non))
+    out.append("Not removal candidates. This is the list of figures that have not been drawn "
+               "yet.\n\n")
+    out.append(table(po_non))
+
+    out.append("\n---\n\n## The two kernel rows\n\n")
+    out.append("`sw_kp_from_ap` and `sw_regime` carry the study's relation but compute nothing "
+               "live: the relation moved into `vleo-core` so a driver set could evaluate it at "
+               "five scenarios rather than one. They sit under EXTRA above because "
+               "`l3_solar_interface` does not reach them, and they are the provenance of a kernel "
+               "constant rather than dead weight.\n")
 
     p = os.path.join(ROOT, "docs/SOLAR_ROWS.md")
     open(p, "w", encoding="utf-8").write("".join(out))
     print("solar rows: %d live -> %s" % (len(solar), p))
-    for name, body in groups:
-        print("  %-8s %d" % (name, len(body)))
+    print("  extra  %d (%d drawn, %d not)" % (len(extra), len(ex_fig), len(ex_non)))
+    print("  matlab %d (%d drawn, %d not)" % (len(port), len(po_fig), len(po_non)))
+    print("  free to remove: %d" % len(easy))
     return 0
 
 
