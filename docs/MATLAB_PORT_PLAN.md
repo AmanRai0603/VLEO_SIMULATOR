@@ -1933,3 +1933,108 @@ has used the fixed version than guess now.
 Nothing in §24.3 is a judgement call — those are repeats, layers, zooms and one
 scale that does not apply. These three are judgement calls, and they are the only
 three.
+
+## 25 · The removals audited, and the figures made worth looking at
+
+### 25.1 · The audit: all 35 removals are provably the same picture
+
+§24.3 claimed 35 combinations were exact repeats. That was argued from which
+controls a branch reads; here it is settled from what the branch returns.
+
+Each repeat branch ends in a call that takes the record and nothing else —
+`spikes(rec)`, `stormScale(rec)`, `regimeByPhase(rec)`, `issueAge(idx)`,
+`kpAgainstAp(rec)`, `f107Window(rec)`. None takes the options object. And
+`p.data()` is invoked with no arguments at all, so `extra` cannot vary with a
+control either. Same function, same inputs, same output — and the output object
+carries the labels, marks and note as well as the data, so nothing visible
+differs, not just nothing plotted.
+
+**All 35 are genuine repeats. Nothing is added back.** The audit was worth doing:
+had any of those functions taken `o`, the repeat count would have been wrong and
+a real view would have been deleted.
+
+### 25.2 · What is wrong with the figures, measured rather than felt
+
+**The axis ticks are placed in pixel space.** `chart.js` divides the plot height
+into `ny` equal parts and labels whichever data value lands there:
+`const at = y1 - i * (y1 - y0) / ny`. `nice()` only formats what it is handed. So
+`repeatability` is labelled 58.8, 90.3, 121.9, 153.4, 184.9, 216.5 and `design`
+55.8, 87.0, 118.2, 149.3, 180.5, 211.7. A reader cannot use an axis whose ticks
+are not round numbers — every value has to be interpolated by eye between two
+arbitrary ones. **This one defect disfigures all ten panels**, and it is a
+twenty-line fix: choose the step from {1, 2, 2.5, 5} × 10^k, extend the domain to
+the nearest step, then label.
+
+**The series palette fails two of the five colour checks**, measured with the
+validator rather than judged:
+
+```
+#b5731a,#2a6f97,#7a9e3f,#8a3ffc,#c1440e,#4a4a4a   → FAILED
+  [FAIL] Lightness band   #4a4a4a at 0.409, outside the band
+  [FAIL] Chroma floor     #2a6f97 at 0.093 and #4a4a4a at 0 — read as gray
+```
+
+**`design` draws three series and has no legend.** Requirement, design bound and
+the record's curve are distinguished by three inline labels and three colours. A
+legend is required from two series up; direct labels are the supplement, not the
+substitute.
+
+**`repeatability` puts its legend inside the plot, over the data.** Four entries
+sitting on the top-left corner where cycles 23 and 25 run.
+
+**Nothing has a hover layer and nothing has a table view.** The panels are canvas
+and read-only: no crosshair, no tooltip, no keyboard path to a value, and no
+WCAG-clean twin. Every number in every figure is available only by eye against an
+axis that, per the first defect, cannot be read precisely anyway.
+
+**Two smaller ones.** `design`'s y axis is labelled `[-]` beside "daily Ap",
+which reads as a missing unit rather than a dimensionless index. And cycle 25 in
+`repeatability` ends in a flat horizontal segment where its bins run out, which
+reads as data rather than as the end of the record.
+
+### 25.3 · The palette, re-stepped and validated
+
+```
+#b5731a  #2f6fa8  #2e7d55  #8f43e0  #c2185b  #00918f
+```
+
+All five checks pass in light mode and in dark, against each mode's own surface.
+Slot 1 is unchanged, so the orange that means "the record" everywhere in this
+tool keeps meaning it. The CVD separation is 8.2 — above the floor of 8 but not
+far above it, so direct labelling is not optional here; it is what makes the
+palette legal.
+
+### 25.4 · The work, in order of how much each fixes
+
+1. **Nice ticks in `chart.js`.** One function, every panel, the largest visible
+   improvement available. Do it first and re-shoot every reference image.
+2. **The palette swap**, and the dark-mode steps from the same list.
+3. **A legend component**, present whenever a panel draws two or more series,
+   placed outside the plot rectangle. This removes `design`'s absent legend and
+   `repeatability`'s overlapping one together.
+4. **A crosshair and tooltip on the line panels**, with keyboard focus showing
+   what hover shows. Canvas needs explicit hit-testing; a nearest-x lookup on the
+   drawn series is enough for every panel here.
+5. **A table view per panel** — the same data as rows, which is also what makes
+   the values quotable in a document without screenshotting a chart.
+6. **The two small ones**: unit labels that say what they are, and a drawn series
+   that stops where its data stops.
+
+Only after 1 to 3 is it worth drawing `drivers` and `closure` (§23.5 steps 6–7):
+a new panel built on the current chart layer inherits every defect above, and
+would then have to be redrawn and re-signed.
+
+### 25.5 · Two things the figures should show and do not
+
+**Where the data runs thin.** `sw_storm_return_level`'s own sheet says its top
+end rests on ranks 2 and 3 of a 28.2-year sample, and `predict`'s sample count
+falls away with lead. Both draw a line of constant weight from end to end. The
+fix is the same in both: fade or thin the mark where n is small, and say n on the
+axis. A curve that looks equally confident everywhere is the one way a figure
+lies without containing a wrong number.
+
+**Which method is being drawn.** §22.2 establishes that the design panel draws
+the legacy method while the rows use a better one, and §21 that three of its
+constants are stale. Once that is repaired the panel should name the method on
+its face — the reader cannot otherwise tell a ported picture from a corrected
+one, and this tool's whole claim is that it knows the difference.
