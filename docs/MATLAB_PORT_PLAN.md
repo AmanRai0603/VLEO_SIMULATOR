@@ -2266,10 +2266,19 @@ face has no dark steps at all; the skill's rule is that dark is selected from th
 same ramps against the dark surface, never an automatic flip. That is a B2
 remainder, not a thing B2 delivered.
 
-**B3. Mark specs.** Lines 2px with round join and cap; markers ≥8px with a 2px
-surface ring; area fills the series hue at ~10%; gridlines and axes hairline,
-solid, one step off the surface — never dashed. Dashes are reserved for a
-threshold, which is what `design`'s requirement line legitimately is.
+**B3. Mark specs.** Done. Lines 2px with round join and cap, so a curve does not
+go spiky at a corner and a one-point run still draws. Dots at radius 4 — eight
+pixels is the smallest mark a person can point at — each with a 2px ring in the
+SURFACE colour, which is what lets two dots overlap and stay two dots. Bars get a
+2px surface gap rather than a 1px shave: white does the separating, and a border
+drawn round a mark is ink that is not data.
+
+The ring is skipped above 120 points. A scatter of thousands is a field rather
+than a set of markers; there the alpha is doing the work and a ring per dot would
+cost more than it buys.
+
+Gridlines were already solid hairlines after B1. Dashes stay reserved for a
+threshold, which is what `design`'s requirement rule legitimately is.
 
 **B4. A legend, in its own band above the plot.** Done. It was drawn inside the
 frame at the top left — on `repeatability` exactly where cycles 23 and 25 run, so
@@ -2288,10 +2297,28 @@ and no reference photographs it. That is the §A4 gap again, and it is now the
 main thing standing between Part B and a figure set anyone can trust: **eight of
 the eleven panels have exactly one view under test.**
 
-**B5. Direct labels, selectively.** The endpoint, the extreme, or the series the
-figure is about — never a number on every point. Not optional here: the palette's
-CVD separation is 8.2 against a floor of 8, and direct labels are what make that
-legal.
+**B5. Direct labels, selectively.** Done. Each named series carries its final
+value at the end of its line, and nothing else is labelled — the axis, the legend
+and the hover carry the rest, and a number beside every point is chaos that goes
+unread. Only where a panel draws two or more named series; one series needs no
+disambiguation.
+
+Not optional: the palette's worst adjacent CVD separation is 8.2 against a floor
+of 8, and a separation in that band is legal only with a second encoding. The
+legend is one. A label riding the line is the one that works when a reader is
+looking at the data rather than at the key.
+
+*They needed a gutter, which the first attempt did not give them.* Written at the
+line's end they sat ON the curve and ran off the right edge, clipped mid-digit.
+The texts are known before the scale is — each is the last finite value of a
+named series, which is data and not geometry — so they are measured first and the
+right margin becomes whatever holds the widest. The same move the legend band
+makes vertically. They now form a column just outside the plot that a reader can
+scan, instead of four numbers scattered wherever their lines happened to finish.
+
+Three panels moved: `climate`, `repeatability`, `segmentation`. The single-line
+panels changed by less than the 2% tolerance, which is 1.6px to 2px on one thin
+curve and is the honest amount.
 
 **B6. Aspect.** 980×420 is too wide for curves that rise gently across it. Bank
 the principal slope toward 45° and let the container carry the axis band rather

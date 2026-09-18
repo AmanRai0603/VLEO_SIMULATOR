@@ -113,7 +113,26 @@ const nice = v => {
 export function drawChart(canvas, spec) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
-  const L = 74, R = 18, B = 42;
+  const L = 74, B = 42;
+  // A GUTTER FOR THE END LABELS, so a direct label sits BESIDE its line rather
+  // than on top of it and off the edge. The texts are known before the scale is:
+  // each is the last finite value of a named series, which is data and not
+  // geometry. Measured first, then the right margin is whatever holds the widest
+  // of them — the same move the legend band makes vertically.
+  const endTexts = [];
+  if (spec.series.filter(q => q.name).length > 1) {
+    const f = spec.y.fmt || nice;
+    for (const q of spec.series) {
+      if (!q.name || q.kind === 'bars' || q.kind === 'dots') continue;
+      for (let k = q.y.length - 1; k >= 0; k--) {
+        const v = q.y[k];
+        if (v !== null && isFinite(v)) { endTexts.push(f(v)); break; }
+      }
+    }
+  }
+  ctx.font = '10px ui-monospace, monospace';
+  const endW = endTexts.reduce((m, t) => Math.max(m, ctx.measureText(t).width), 0);
+  const R = 18 + (endW ? endW + 8 : 0);
   // THE LEGEND GETS ITS OWN BAND, ABOVE THE PLOT.
   //
   // It used to be drawn inside the frame at the top left, over whatever the
@@ -213,21 +232,42 @@ export function drawChart(canvas, spec) {
   }
   ctx.textAlign = 'left';
 
+  // MARK SPECS. Lines 2px with round joins and caps, so a curve does not go
+  // spiky at a corner and a one-point run still draws. Dots at radius 4 — an
+  // 8px mark is the smallest a person can point at — each carrying a 2px ring
+  // in the SURFACE colour, which is what lets two dots overlap and stay two
+  // dots. The ring is the separator; a stroke around a mark would be ink that
+  // is not data.
+  const ends = [];
   spec.series.forEach((s, i) => {
     const col = s.colour || INK.series[i % INK.series.length];
     ctx.save();
     ctx.strokeStyle = col; ctx.fillStyle = col;
-    ctx.lineWidth = s.width || 1.6;
+    ctx.lineWidth = s.width || 2;
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     if (s.dash) ctx.setLineDash(s.dash);
     if (s.kind === 'dots') {
-      const r = s.width || 1.6;
+      const r = s.width || 4;
       for (let k = 0; k < s.x.length; k++) {
         if (s.y[k] === null) continue;
         ctx.globalAlpha = s.alpha === undefined ? 0.5 : s.alpha;
-        ctx.beginPath(); ctx.arc(px(s.x[k]), py(s.y[k]), r, 0, 6.284); ctx.fill();
+        const X = px(s.x[k]), Y = py(s.y[k]);
+        // A scatter of thousands is a field, not a set of markers: the ring
+        // would cost more than it buys and the alpha is doing the work. Rung it
+        // only where the dots are countable.
+        if (s.x.length <= 120) {
+          ctx.save();
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = INK.surface; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(X, Y, r, 0, 6.284); ctx.stroke();
+          ctx.restore();
+        }
+        ctx.beginPath(); ctx.arc(X, Y, r, 0, 6.284); ctx.fill();
       }
     } else if (s.kind === 'bars') {
-      const w = Math.max(1, (W - L - R) / s.x.length - 1);
+      // A 2px gap in the surface colour is what separates touching bars —
+      // white doing the separating, rather than a border drawn round each one.
+      const w = Math.max(1, (W - L - R) / s.x.length - 2);
       ctx.globalAlpha = s.alpha === undefined ? 0.75 : s.alpha;
       for (let k = 0; k < s.x.length; k++) {
         if (s.y[k] === null) continue;
@@ -247,9 +287,50 @@ export function drawChart(canvas, spec) {
         else ctx.lineTo(X, Y);
       }
       ctx.stroke();
+      // DIRECT LABEL AT THE END OF THE LINE.
+      //
+      // Not decoration: the palette's worst adjacent CVD separation is 8.2
+      // against a floor of 8, and a separation in that band is legal only with a
+      // second encoding. The legend is one; a label riding the line itself is
+      // the one that works when a reader is looking at the data rather than at
+      // the key.
+      //
+      // Selective by construction — the END of each line and nowhere else. A
+      // number beside every point is chaos and goes unread, and the axis, the
+      // legend and the hover carry the rest.
+      if (s.name && spec.series.filter(q => q.name).length > 1) {
+        let lastK = -1;
+        for (let k = s.x.length - 1; k >= 0; k--) {
+          const v = s.y[k];
+          if (v !== null && isFinite(v) && !(lg && v <= 0)) { lastK = k; break; }
+        }
+        if (lastK >= 0) {
+          const X = px(s.x[lastK]), Y = py(s.y[lastK]);
+          if (X >= L && X <= W - R && Y >= T && Y <= H - B) {
+            ends.push({ x: X, y: Y, col, text: fy(s.y[lastK]) });
+          }
+        }
+      }
     }
     ctx.restore();
   });
+
+  // The end labels last, over every line, and nudged apart where two series
+  // finish at the same height — two numbers printed on top of each other are
+  // worth less than one.
+  ctx.font = '10px ui-monospace, monospace';
+  ctx.textAlign = 'left';
+  ends.sort((a, b) => a.y - b.y);
+  let prevY = -1e9;
+  for (const e of ends) {
+    const y = Math.max(e.y + 3, prevY + 11);
+    prevY = y;
+    // In the gutter, always — left-aligned just outside the plot, so the
+    // labels form a column a reader can scan instead of four numbers scattered
+    // wherever their lines happened to finish.
+    ctx.fillStyle = e.col;
+    ctx.fillText(e.text, W - R + 6, y);
+  }
 
   // Marks, and their labels stacked so two nearby marks do not print on top of
   // each other. Two boundaries four Ap apart on a 275-wide axis are four pixels
