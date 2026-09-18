@@ -2833,3 +2833,158 @@ the study drew. The legacy figures themselves are not in the repository — only
 not a thing that can be checked by machine. What `drivers` does instead is put the
 study's numbers beside this tree's and let a reader see the two families of
 deliberate disagreement.
+
+
+---
+
+## 28 · The capability audit — tab by tab, against §12's own table
+
+§27 asked "does every row have a curve" and answered it. That was the wrong
+question to stop on. This one asks what the legacy study COULD DO that this tree
+cannot, and what a designer cannot get here, working from §12's table of the eight
+tabs and what each of them drew.
+
+### 28.1 · The eight tabs
+
+| legacy tab | what §12 says it drew | here | state |
+|---|---|---|---|
+| `sw_repeatability` | mean cycle against every cycle, Ap by cycle, storm scale | `repeatability`, 10 views | **complete** — all three, and any of F10.7 / Ap / SSN |
+| `sw_pattern` | 27-day recurrence lag and decay, spike classification and timing | `pattern`, 3 views | **complete and beyond** — three detrend windows at once, a Bartlett band, three harmonics marked |
+| `sw_segmentation` | cycle phases, activity bands | `segmentation`, 5 views | **complete** — the Ap regime and the F10.7 band, plus regime against phase |
+| `sw_predict` | 27-day prediction for F10.7 and Ap, significance, by cycle | `predict`, 4 views | **prediction and by-cycle complete; SIGNIFICANCE MISSING** — see 28.4 |
+| `sw_forecast` | issued-window verification, rolling windows, daily skill, issue age | `forecast`, 3 views | **verification and issue age complete; ROLLING WINDOWS AND DAILY SKILL MISSING** — the by-year view is calendar-year aggregation, not a moving window |
+| `sw_design` | the design window for F10.7 and for Ap | `design`, 11 views | **complete and beyond** — four design rows against two requirements, the G scale, the exceedance family, the analogue's peak |
+| `sw_density` | profile, spread, sensitivity, by driver, by altitude | `density`, **1 view** | **NOT PORTED — see 28.3, and the reason recorded in the panel is wrong** |
+| `sw_climate` | yearly F10.7 and Ap, Kp–ap, F10.7A, semiannual | `climate`, 13 views | **yearly, Kp–ap and semiannual complete; F10.7A MISSING** — nothing draws daily F10.7 against its own 81-day mean |
+
+Six tabs of eight are reproduced or exceeded. One is missing three views across
+`predict`, `forecast` and `climate`. **One — `density` — is not ported at all, and
+it is the one that matters most.**
+
+### 28.2 · The finding that outranks every figure: THE STUDY DRIVES NOTHING
+
+This is not about pictures.
+
+```
+sys_space_environment_f10_7          104.071    read by NOTHING
+sys_space_environment_f10_7_81day    104.071    read by NOTHING
+sys_space_environment_ap              26.6953   read by NOTHING
+sys_space_environment_kp               5.19777  read by NOTHING
+sys_space_environment_solar_flux     104.071    read by NOTHING
+```
+
+Every one of the five rows this subsystem crosses to layer 2 is read by nothing at
+all. Meanwhile the chain that turns the sky into drag is complete and live:
+
+```
+env_f107  = 150   (declared)  ┐
+env_f107a = 150   (declared)  ├─→ env_exospheric_temperature = 949.603 K
+env_kp    =   3   (declared)  ┘      ├─→ env_mass_density        = 6.63073e-11 kg/m^3
+                                     ├─→ env_number_density, env_scale_height,
+                                     │   env_local_temperature, env_mean_free_path,
+                                     │   env_mean_molar_mass, env_atomic_oxygen_density
+                                     └─→ aero_dynamic_pressure = 0.00199378 Pa
+                                         orbit_decay_rate      = -0.0141250 m/s
+                                         prop_collected_flow, prop_incident_flux,
+                                         thm_aero_heating
+```
+
+**`env_f107`, `env_f107a` and `env_kp` are declared constants with no inputs**, and
+they are what sizes the drag, the decay, the propellant and the aero heating. The
+solar subsystem's 55 rows, 38 of them ported from the study, arrive beside them and
+are not consulted.
+
+| | the declared sky | the study's own hot sustained scenario |
+|---|---|---|
+| F10.7 | **150** | **104.07** |
+| F10.7A | **150** | **104.07** |
+| Kp | **3** | **5.198** |
+
+Both differ, and in opposite directions: the declared flux is 44 per cent above
+what the study computes, and the declared disturbance is 42 per cent below it. A
+design sized on 150 / 3 is being told a denser quiet sky than the record supports
+and a calmer storm sky than the record supports, at once.
+
+§13 made this deliberately — *"`env_f107`, `env_f107a` and `env_kp` are not
+touched — the window-derived sky becomes available beside the design point, not
+instead of it"* — and at the time the subsystem had five rows. It now has
+fifty-five and a crossing that publishes twenty-five variables, and "available
+beside" has become "computed and ignored".
+
+**This is the answer to "what am I missing from a design-capability
+perspective."** It is not a figure. The study is complete as a study and connected
+to nothing as a design input.
+
+Closing it is a decision, not a task, and the decision is which of three:
+`env_f107`/`_f107a`/`_kp` become `computed` and read the crossing; or the density
+chain reads `sys_space_environment_*` directly and the three constants are
+retired; or they stay declared as a deliberate override and something states, on a
+row, that the study's answer was considered and not used. All three are cheap. The
+present state — two skies, one computed and one typed, neither aware of the
+other — is the only one that cannot be defended.
+
+### 28.3 · The density tab, and a wrong reason recorded in the product
+
+`panels/density.toml` draws one scatter and its note says:
+
+> the study's density tab — profile, spread, sensitivity, by driver, by
+> altitude — needs an atmosphere model, and that belongs to a different subsystem
+> which has nothing written in it
+
+**That is not true, and it was probably true once.** The `env` subsystem holds
+sixteen rows, and the atmosphere model is published and answering right now. Every
+sweep the five legacy views need already works:
+
+| legacy view | the sweep that draws it | measured |
+|---|---|---|
+| profile | `env_mass_density` over `orbit_altitude` | 1.19e-12 … 2.28e-09 kg/m³ across 150–450 km |
+| by altitude | `orbit_decay_rate` over `orbit_altitude` | −0.383 … −0.0003 m/s |
+| sensitivity | `env_mass_density` over `env_f107` | 5.02e-11 … 1.15e-10 kg/m³ across F10.7 60–400 |
+| sensitivity | `env_mass_density` over `env_kp` | 5.45e-11 … 1.29e-10 kg/m³ across Kp 0–9 |
+| spread | `env_density_uncertainty` = 0.240 as a band on the profile | a row, live |
+| by driver | the same profile at each of the five driver scenarios | the crossing publishes all five |
+
+So the density tab is five views away, not a subsystem away. And the "sensitivity"
+and "by driver" views are the ones that would put 28.2 on a screen: sweep density
+over F10.7 and mark both 150 and 104.07 on it, and the gap stops being a paragraph
+in a plan.
+
+### 28.4 · The three legacy views inside otherwise-complete tabs
+
+1. **`predict` · significance.** `sw_band_coverage` = 0.9509 answers "does the
+   stated 95 per cent band actually contain the truth". `predict` draws the band's
+   WIDTH as a four-percentile fan and nothing draws whether it COVERS. The row
+   that audits the band is the one the picture does not check.
+2. **`forecast` · rolling windows and daily skill.** The by-year view aggregates
+   by calendar year of issue, which is not a moving window. A rolling skill series
+   answers "is the outlook getting better", and a calendar-year one answers it
+   only at twelve-month resolution with a hard boundary every December.
+3. **`climate` · F10.7A.** Nothing draws daily F10.7 against its own 81-day
+   centred mean. The 81-day mean is computed inside `spikes()` as a baseline and
+   never shown, `sw_f107_81day` is deprecated, and `sw_f107a_ratio` = 0.1222 —
+   the scatter about it — has no figure either (§27.4).
+
+### 28.5 · So: is it sufficient
+
+**As a solar-weather study — yes, with four figures and three views outstanding.**
+Six of eight tabs are reproduced or exceeded. What is missing is listed in 28.4
+and §27.4 and is seven pictures, every one of them a distribution, a coverage or
+a moving-window view behind a number that already exists and is already checked.
+
+**As a design capability — no, and the gap is not where the figures are.** The
+subsystem computes a sky nothing reads, while the drag, decay, propellant and
+heating chains are sized by three typed constants that disagree with it in both
+directions. Until 28.2 is decided, every figure added here improves a study that
+the design does not consult.
+
+**The order that follows from this, and it is not the order the figures suggest:**
+
+1. **Decide 28.2.** One of the three readings. It is a decision about the tree,
+   not work on the face.
+2. **Build the `density` panel**, five views, from rows that already answer. It is
+   the missing tab, and two of its views make 28.2 visible.
+3. **Build the `spread` panel**, four views (§27.4), and add `predict`'s coverage
+   view, `forecast`'s rolling window and `climate`'s F10.7A overlay.
+
+Step 1 is the one that changes what the tool can do. Steps 2 and 3 are what make
+it legible.

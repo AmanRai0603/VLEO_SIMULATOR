@@ -1357,10 +1357,13 @@ const PANELS = [
           y: { label: 'daily Ap  [-]', min: 0 },
           series: [{ name: '', kind: 'dots', x: withBoth.map(d => d.f107), y: withBoth.map(d => d.ap), width: 1.1, alpha: 0.18 }],
         },
-        note: 'NOTHING COMPUTES THIS ROW AND THIS FIGURE IS NOT IT. The study’s density tab — profile, ' +
-          'spread, sensitivity, by driver, by altitude — needs an atmosphere model, and that ' +
-          'belongs to a different subsystem which has nothing written in it. Drawing a density ' +
-          'curve here would mean this face carrying a model no row owns and no reviewer signed.\n\n' +
+        note: 'NOTHING COMPUTES THIS ROW AND THIS FIGURE IS NOT IT — but the reason written here ' +
+          'was wrong, and §28.3 of docs/MATLAB_PORT_PLAN.md corrects it. This note said the ' +
+          'study’s density tab needs an atmosphere model belonging to a subsystem with nothing ' +
+          'written in it. That was true once and is not now: env_mass_density is published and ' +
+          'answers 6.63e-11 kg/m³, off env_exospheric_temperature, and every sweep the five legacy ' +
+          'views need already works. What is still empty is THIS row — the layer-2 one, which ' +
+          'nothing computes and three rows read — so the honest gap is a seam, not a model.\n\n' +
           'What is drawn instead is the honest precondition: the two drivers a density model takes, ' +
           'against each other, over ' + withBoth.length + ' days. They correlate at ' +
           (r === null ? '—' : r.toFixed(4)) + ', which is ' +
