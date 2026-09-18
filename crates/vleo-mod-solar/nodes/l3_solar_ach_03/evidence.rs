@@ -16,34 +16,34 @@ fn relative_error(got: f64, expected: f64) -> f64 {
     if expected == 0.0 { pmath::abs(got) } else { pmath::abs((got - expected) / expected) }
 }
 
-/// the five-year conclusion, restated unchanged
+/// the once-per-mission storm against the G4 survival bound
 ///
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_0() {
-    let got = model::evaluate(Ratio::new(158.3838)).expect("the fixture case must not be refused");
-    let err = relative_error(got.get(), 158.3838);
-    assert!(err <= 1e-12, "the five-year conclusion, restated unchanged: got {} want 158.3838, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    let got = model::evaluate(Ratio::new(158.3842172), Ratio::new(207.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 0.23485885410628);
+    assert!(err <= 1e-12, "the once-per-mission storm against the G4 survival bound: got {} want 0.23485885410628, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
-/// the half-year conclusion, restated unchanged
+/// exactly on the bound, where the margin must be zero and the closure still closed
 ///
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_1() {
-    let got = model::evaluate(Ratio::new(64.1474)).expect("the fixture case must not be refused");
-    let err = relative_error(got.get(), 64.1474);
-    assert!(err <= 1e-12, "the half-year conclusion, restated unchanged: got {} want 64.1474, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    let got = model::evaluate(Ratio::new(207.0), Ratio::new(207.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 0.0);
+    assert!(err <= 1e-12, "exactly on the bound, where the margin must be zero and the closure still closed: got {} want 0.0, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
-/// the fifteen-year conclusion, restated unchanged
+/// twice the bound, where the margin must be -1 and the closure must fail
 ///
 /// Provenance: `independent-derivation`, source `noaa_swpc`.
 #[test]
 fn fixture_2() {
-    let got = model::evaluate(Ratio::new(203.3466)).expect("the fixture case must not be refused");
-    let err = relative_error(got.get(), 203.3466);
-    assert!(err <= 1e-12, "the fifteen-year conclusion, restated unchanged: got {} want 203.3466, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+    let got = model::evaluate(Ratio::new(414.0), Ratio::new(207.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), -1.0);
+    assert!(err <= 1e-12, "twice the bound, where the margin must be -1 and the closure must fail: got {} want -1.0, relative error {} exceeds the declared tolerance 1e-12. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
 // ---- properties, generated from the declared domain ---------------------
@@ -55,7 +55,7 @@ fn fixture_2() {
 
 /// One per cent either side of the known-good point, this node still answers.
 ///
-/// Derived from `the five-year conclusion, restated unchanged` and the declared domain 20 … 230.
+/// Derived from `the once-per-mission storm against the G4 survival bound` and the declared domain -10 … 1.
 ///
 /// One per cent, not a decade. These domains are design bands — an altitude
 /// range somebody chose, not a range over which the mathematics holds — so a
@@ -68,13 +68,18 @@ fn fixture_2() {
 fn answers_near_the_known_good_point() {
     let mut refused: Vec<String> = Vec::new();
     for scale in [0.99_f64, 1.01] {
-        if let Err(f) = model::evaluate(Ratio::new(158.3838 * scale)) {
-            refused.push(format!("conclusion x{scale} -> {f}"));
+        if let Err(f) = model::evaluate(Ratio::new(158.3842172 * scale), Ratio::new(207.0)) {
+            refused.push(format!("ach x{scale} -> {f}"));
+        }
+    }
+    for scale in [0.99_f64, 1.01] {
+        if let Err(f) = model::evaluate(Ratio::new(158.3842172), Ratio::new(207.0 * scale)) {
+            refused.push(format!("req x{scale} -> {f}"));
         }
     }
     assert!(
         refused.is_empty(),
-        "l3_solar_ach_03 refuses near its own known-good point: {:?}. Either the relation is wrong in shape, or the declared domain 20 … 230 is narrower than the physics. Both are sheet questions for the node owner, not tolerances to widen.",
+        "l3_solar_ach_03 refuses near its own known-good point: {:?}. Either the relation is wrong in shape, or the declared domain -10 … 1 is narrower than the physics. Both are sheet questions for the node owner, not tolerances to widen.",
         refused
     );
 }
@@ -87,9 +92,15 @@ fn answers_near_the_known_good_point() {
 #[test]
 fn every_answer_is_inside_the_declared_domain() {
     for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
-        if let Ok(v) = model::evaluate(Ratio::new(158.3838 * scale)) {
-            assert!(v.get().is_finite(), "l3_solar_ach_03 produced a value that is not a number for Ap_ach_return");
-            assert!(v.get() >= 20.0 && v.get() <= 230.0, "l3_solar_ach_03 answered {} for Ap_ach_return, outside its declared domain 20 … 230 — the guard did not stop it", v.get());
+        if let Ok(v) = model::evaluate(Ratio::new(158.3842172 * scale), Ratio::new(207.0)) {
+            assert!(v.get().is_finite(), "l3_solar_ach_03 produced a value that is not a number for M_ap_survive");
+            assert!(v.get() >= -10.0 && v.get() <= 1.0, "l3_solar_ach_03 answered {} for M_ap_survive, outside its declared domain -10 … 1 — the guard did not stop it", v.get());
+        }
+    }
+    for scale in [0.001_f64, 0.1, 1.0, 10.0, 1000.0] {
+        if let Ok(v) = model::evaluate(Ratio::new(158.3842172), Ratio::new(207.0 * scale)) {
+            assert!(v.get().is_finite(), "l3_solar_ach_03 produced a value that is not a number for M_ap_survive");
+            assert!(v.get() >= -10.0 && v.get() <= 1.0, "l3_solar_ach_03 answered {} for M_ap_survive, outside its declared domain -10 … 1 — the guard did not stop it", v.get());
         }
     }
 }
@@ -101,11 +112,11 @@ fn every_answer_is_inside_the_declared_domain() {
 /// agreement across the faces impossible rather than merely hard.
 #[test]
 fn the_same_inputs_give_the_same_answer() {
-    let a = model::evaluate(Ratio::new(158.3838));
-    let b = model::evaluate(Ratio::new(158.3838));
+    let a = model::evaluate(Ratio::new(158.3842172), Ratio::new(207.0));
+    let b = model::evaluate(Ratio::new(158.3842172), Ratio::new(207.0));
     match (a, b) {
         (Ok(x), Ok(y)) => {
-            assert!(x.get().to_bits() == y.get().to_bits(), "l3_solar_ach_03 is not deterministic for Ap_ach_return: {} then {}", x.get(), y.get());
+            assert!(x.get().to_bits() == y.get().to_bits(), "l3_solar_ach_03 is not deterministic for M_ap_survive: {} then {}", x.get(), y.get());
         }
         (Err(_), Err(_)) => {}
         _ => panic!("l3_solar_ach_03 refused on one call and answered on the other"),

@@ -28,7 +28,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_forecast_skill";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xc01c5a9b411febb2;
+pub const SHEET_HASH: u64 = 0x46cfbf45e52bb3cd;
 
 pub fn evaluate(lead: Time) -> Result<Ratio, Fault> {
     // ---- HOLE 1 : read the measured skill of the issued outlook against persistence at this lead -> Ratio

@@ -1,7 +1,7 @@
-<article class="node" data-node="l3_solar_ach_01" data-sheet-hash="bb0a27" data-impl-hash="6f6f4a">
+<article class="node" data-node="l3_solar_ach_01" data-sheet-hash="ef9709" data-impl-hash="494405">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>Achieved — F10.7, sustained</h2>
+  <h2>Closure — F10.7, sustained</h2>
   <p class="ident"><code>l3_solar_ach_01</code> · <span class="kind kind-achieved">achieved</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
@@ -17,8 +17,8 @@
   <button role="tab" class="tab" data-tab="9">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
-<p class="question">What sustained F10.7 does the record say this mission will present?</p>
-<p class="maths"><code>F107_ach_flux = sw_f107_design_long</code></p>
+<p class="question">How much room does the sustained F10.7 requirement have left?</p>
+<p class="maths"><code>M_f107_long = closure(F107_req_long, F107_long, AtMost).margin</code></p>
 <p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
 <p class="note">The headline of the five. It is the same number the interface carries to
 sys_space_environment as its primary member, restated on the achieved side of
@@ -44,43 +44,45 @@ happens on a row rather than in somebody's head.
 <h4>Reading the answer</h4>
 <p class="reading">104.07 sfu at the declared window, against a ceiling of 260 — 150 per cent of room, and the room is now explained rather than accidental. l3_solar_req_01's 260 is the record's largest 27-day mean, 252.67 sfu centred 2024-08-13, rounded up; it says the design operates through any rotation the record has shown. Its predecessor, 250, was the next round number above whatever the chain happened to give and therefore moved with the design instead of with the sky.</p>
 <p class="reading">It inherits every limitation of the row it restates and a closure reading it sees none of them. The centre beneath it is a cycle analogue at the mission's own epoch, scaled beyond one cycle past cycle 25's maximum by the mean amplitude of two completed cycles whose peaks differ by 41 per cent; and the band around it is 1.28 sigma, the 90th percentile, while the run is labelled 95 per cent. A margin computed from this row carries none of that and looks like a clean number either way — which is the standing hazard of a closure, and the reason the assumption is repeated on the row a closure actually binds.</p>
-<p class="maths concl">which is the relation this node states: <code>F107_ach_flux = sw_f107_design_long</code></p>
+<p class="maths concl">which is the relation this node states: <code>M_f107_long = closure(F107_req_long, F107_long, AtMost).margin</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr><td>in</td><td><code>conclusion</code></td><td><a class="xref" data-goto="sw_f107_design_long">sw_f107_design_long</a></td><td>Ratio</td><td>-</td></tr>
-<tr class="out"><td>out</td><td><code>F107_ach_long</code></td><td>l3_solar_ach_01</td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>ach</code></td><td><a class="xref" data-goto="sw_f107_design_long">sw_f107_design_long</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>req</code></td><td><a class="xref" data-goto="l3_solar_req_01">l3_solar_req_01</a></td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>M_f107_long</code></td><td>l3_solar_ach_01</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
 <section class="panel" data-panel="3">
 <ol class="algo">
-<li><span class="step">restate the subsystem's conclusion on the achieved side of the closure</span> <span class="binds">→ <code>ach: Ratio</code></span></li>
+<li><span class="step">compare achieved against required in the declared sense and return the signed fractional margin</span> <span class="binds">→ <code>m: Ratio</code></span></li>
 </ol>
 <h4>Pseudocode</h4>
-<pre class="pseudo"><code>function l3_solar_ach_01(conclusion: Ratio) -> Ratio
-    given conclusion from sw_f107_design_long
-    // restate the subsystem's conclusion on the achieved side of the closure
-    ach ← step 1
+<pre class="pseudo"><code>function l3_solar_ach_01(ach: Ratio, req: Ratio) -> Ratio
+    given ach from sw_f107_design_long
+    given req from l3_solar_req_01
+    // compare achieved against required in the declared sense and return the signed fractional margin
+    m ← step 1
 
     // a guard whose reason is not written down gets deleted
-    require F107_ach_long ≥ 60
-    require F107_ach_long ≤ 400
-    require F107_ach_long is finite
+    require M_f107_long ≥ -10
+    require M_f107_long ≤ 1
+    require M_f107_long is finite
 
-    return F107_ach_long
+    return M_f107_long
 </code></pre>
 <p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code>F107_ach_long &ge; 60</code> — the same floor as env_f107 and sw_f107_design_long: below 60 sfu has never been observed and no relation reading F10.7 has support there</li>
-<li><code>F107_ach_long &le; 400</code> — the same ceiling as env_f107 and sw_f107_design_long: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value</li>
+<li><code>M_f107_long &ge; -10</code> — a margin of -10 is a requirement exceeded by eleven times its own value. Below that the comparison has stopped being a design margin and become a sign that one side is in the wrong unit, and it should refuse rather than report a number nobody will read as a fraction</li>
+<li><code>M_f107_long &le; 1</code> — 1 is the whole of the requirement: an achieved value of zero against a positive bound. A margin above 1 under this sense would mean the achieved value is negative, which none of these drivers can be</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="4">
-<div class="relation-host" data-node="l3_solar_ach_01" data-lo="60" data-hi="400" data-symbol="F107_ach_long">
+<div class="relation-host" data-node="l3_solar_ach_01" data-lo="-10" data-hi="1" data-symbol="M_f107_long">
 <p class="muted">asking the engine…</p>
 </div>
 </section>
@@ -96,9 +98,9 @@ use vleo_core::physics::*;
 use vleo_core::units::pmath;
 use vleo_core::units::*;
 
-/// What sustained F10.7 does the record say this mission will present?
+/// How much room does the sustained F10.7 requirement have left?
 ///
-/// `F107_ach_flux = sw_f107_design_long`
+/// `M_f107_long = closure(F107_req_long, F107_long, AtMost).margin`
 ///
 /// Source: `noaa_swpc`
 ///
@@ -113,25 +115,31 @@ use vleo_core::units::*;
 pub const NODE_ID: &amp;str = &quot;l3_solar_ach_01&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xddeb61e35dbb0a27;
+pub const SHEET_HASH: u64 = 0x906ef3769bef9709;
 
-pub fn evaluate(conclusion: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
-    // ---- HOLE 1 : restate the subsystem's conclusion on the achieved side of the closure -&gt; Ratio
-    let ach: Ratio = conclusion;
+pub fn evaluate(ach: Ratio, req: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
+    // ---- HOLE 1 : compare achieved against required in the declared sense and return the signed fractional margin -&gt; Ratio
+    // The requirement declares sense &quot;&lt;=&quot;, so the achieved value must stay UNDER
+    // the bound and the margin is (required - achieved) / required. Positive is
+    // room; negative is a violation and its size. mission::closure is the twelve
+    // KPI closures' own function rather than the arithmetic written out again,
+    // because a second way of computing a margin is a second way of getting its
+    // sign wrong -- and a sign error here still produces a plausible number.
+    let m: Ratio = Ratio::new(mission::closure(req.get(), ach.get(), mission::Sense::AtMost).margin);
     // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = ach;
+    let answer: Ratio = m;
     if !answer.is_finite() {
-        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_ach_long&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;M_f107_long&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
     }
-    if answer.get() &lt; 60.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_ach_long&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the same floor as env_f107 and sw_f107_design_long: below 60 sfu has never been observed and no relation reading F10.7 has support there&quot; });
+    if answer.get() &lt; -10.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;M_f107_long&quot;, value: answer.get(), bound: -10.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;a margin of -10 is a requirement exceeded by eleven times its own value. Below that the comparison has stopped being a design margin and become a sign that one side is in the wrong unit, and it should refuse rather than report a number nobody will read as a fraction&quot; });
     }
-    if answer.get() &gt; 400.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_ach_long&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the same ceiling as env_f107 and sw_f107_design_long: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value&quot; });
+    if answer.get() &gt; 1.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;M_f107_long&quot;, value: answer.get(), bound: 1.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;1 is the whole of the requirement: an achieved value of zero against a positive bound. A margin above 1 under this sense would mean the achieved value is negative, which none of these drivers can be&quot; });
     }
     Ok(answer)
 }
@@ -139,17 +147,17 @@ pub fn evaluate(conclusion: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="panel" data-panel="6">
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
-<tr data-fixture="the five-year conclusion, restated unchanged"><td>the five-year conclusion, restated unchanged</td><td class="num">228.1374378829</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
-<tr data-fixture="the half-year conclusion, restated unchanged"><td>the half-year conclusion, restated unchanged</td><td class="num">171.8843338669</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
-<tr data-fixture="the fifteen-year conclusion, restated unchanged"><td>the fifteen-year conclusion, restated unchanged</td><td class="num">229.8437378829</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="the sustained F10.7 the record presents against the 260 sfu commitment"><td>the sustained F10.7 the record presents against the 260 sfu commitment</td><td class="num">0.599725639035</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="exactly on the bound, where the margin must be zero and the closure still closed"><td>exactly on the bound, where the margin must be zero and the closure still closed</td><td class="num">0</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
+<tr data-fixture="twice the bound, where the margin must be -1 and the closure must fail"><td>twice the bound, where the margin must be -1 and the closure must fail</td><td class="num">-1</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
 <section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 60 — the same floor as env_f107 and sw_f107_design_long: below 60 sfu has never been observed and no relation reading F10.7 has support there</li>
-<li><code>OutOfDomain</code> above 400 — the same ceiling as env_f107 and sw_f107_design_long: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value</li>
+<li><code>OutOfDomain</code> below -10 — a margin of -10 is a requirement exceeded by eleven times its own value. Below that the comparison has stopped being a design margin and become a sign that one side is in the wrong unit, and it should refuse rather than report a number nobody will read as a fraction</li>
+<li><code>OutOfDomain</code> above 1 — 1 is the whole of the requirement: an achieved value of zero against a positive bound. A margin above 1 under this sense would mean the achieved value is negative, which none of these drivers can be</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
 <li><code>Blocked</code> when any declared input has never run — and it names which</li>
 </ul>
@@ -160,8 +168,8 @@ pub fn evaluate(conclusion: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 <div class="cred" data-cred-for="l3_solar_ach_01"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
 <section class="panel" data-panel="9">
-<p>Valid over <code>60 &hellip; 400</code> -.</p>
-<ul class="guards"><li>lower — the same floor as env_f107 and sw_f107_design_long: below 60 sfu has never been observed and no relation reading F10.7 has support there</li><li>upper — the same ceiling as env_f107 and sw_f107_design_long: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value</li></ul>
+<p>Valid over <code>-10 &hellip; 1</code> -.</p>
+<ul class="guards"><li>lower — a margin of -10 is a requirement exceeded by eleven times its own value. Below that the comparison has stopped being a design margin and become a sign that one side is in the wrong unit, and it should refuse rather than report a number nobody will read as a fraction</li><li>upper — 1 is the whole of the requirement: an achieved value of zero against a positive bound. A margin above 1 under this sense would mean the achieved value is negative, which none of these drivers can be</li></ul>
 <div class="sweep" data-over="orbit_mission_duration" data-points="60" data-y="l3_solar_ach_01"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a> over 60 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>

@@ -29,7 +29,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_forecast_bias";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xfdb3c6344d7e038d;
+pub const SHEET_HASH: u64 = 0xc8d2f17093979bae;
 
 pub fn evaluate(lead: Time) -> Result<Ratio, Fault> {
     // ---- HOLE 1 : read the measured mean signed F10.7 error of the issued outlook at this lead -> Ratio

@@ -1,4 +1,4 @@
-<article class="node" data-node="sw_forecast_skill" data-sheet-hash="1febb2" data-impl-hash="996a64">
+<article class="node" data-node="sw_forecast_skill" data-sheet-hash="2bb3cd" data-impl-hash="996a64">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Issued-outlook skill against persistence</h2>
@@ -49,7 +49,7 @@
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr><td>in</td><td><code>lead</code></td><td><a class="xref" data-goto="sw_outlook_lead">sw_outlook_lead</a></td><td>Time</td><td>d</td></tr>
+<tr><td>in</td><td><code>lead</code></td><td><a class="xref" data-goto="sw_recurrence_lag">sw_recurrence_lag</a></td><td>Time</td><td>d</td></tr>
 <tr class="out"><td>out</td><td><code>S_f107</code></td><td>sw_forecast_skill</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
@@ -60,7 +60,7 @@
 </ol>
 <h4>Pseudocode</h4>
 <pre class="pseudo"><code>function sw_forecast_skill(lead: Time) -> Ratio
-    given lead from sw_outlook_lead
+    given lead from sw_recurrence_lag
     // read the measured skill of the issued outlook against persistence at this lead
     S_f107 ← step 1
 
@@ -116,7 +116,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &amp;str = &quot;sw_forecast_skill&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xc01c5a9b411febb2;
+pub const SHEET_HASH: u64 = 0x46cfbf45e52bb3cd;
 
 pub fn evaluate(lead: Time) -&gt; Result&lt;Ratio, Fault&gt; {
     // ---- HOLE 1 : read the measured skill of the issued outlook against persistence at this lead -&gt; Ratio

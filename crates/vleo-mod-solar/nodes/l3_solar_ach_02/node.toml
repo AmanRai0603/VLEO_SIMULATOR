@@ -2,7 +2,7 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "l3_solar_ach_02"
-label = "Achieved — F10.7, single day"
+label = "Closure — F10.7, single day"
 folder = "l3_solar_ach_02"   # frozen at seed; renaming the label never moves the directory
 subsystem = "solar"
 parent = "l3_solar"
@@ -32,8 +32,30 @@ state = "published"
 # within-rotation daily excursion of 20.07 on top — that excursion read at the
 # level the rotation sits at, which is what moved this row from 138.30.
 
+# WHY THIS ROW STOPPED BEING A RESTATEMENT.
+#
+# It used to read one input and return it unchanged: its whole body was
+# `let ach = conclusion;`. Measured against the row beneath it, it produced the
+# same number under every perturbation -- it WAS that row, under a second name,
+# and a tree with two names for one number is a tree nobody can read.
+#
+# Worse, the closure it was supposed to be half of did not exist. Nothing read
+# the requirement at all. l3_solar_req_03's own sheet says so in as many words:
+# "Nothing in the tree compares 158.4 against 132 automatically; the three
+# exceedance rows measure it and a person reads them." A design tool that
+# cannot close its own requirement is not closing anything.
+#
+# So it now reads BOTH sides and publishes what neither of them holds: the
+# signed fractional margin, in the sense the requirement declares. Positive is
+# room, negative is a violation and its size. That is a third number, it is the
+# one a designer actually acts on, and it moves when either side moves.
+#
+# The shape is the twelve KPI closures' -- mission::closure(req, ach, sense) --
+# because a second way of computing a margin is a second way of getting its
+# sign wrong.
+
 [question]
-text = "What F10.7 does the record say a single day inside this mission window will reach?"
+text = "How much room does the single-day F10.7 requirement have left?"
 note = """
 The single-day half of the F10.7 closure. Its partner, l3_solar_req_02, commits
 the design to surviving 350 sfu — above the largest daily value in the record —
@@ -43,7 +65,7 @@ and this says what the window's own band actually reaches.
 [maths]
 # An achieved row restates the subsystem's conclusion on the side of the
 # comparison the closure reads. It computes nothing of its own.
-expression = "F107_ach = sw_f107_design_short"
+expression = "M_f107_short = closure(F107_req_short, F107_short, AtMost).margin"
 source = "noaa_swpc"
 
 # WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
@@ -131,26 +153,34 @@ fails_when = "a reader assumes the tree checks the closure. The pairing is a con
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.
-symbol = "F107_ach_short"
+symbol = "M_f107_short"
 type = "Ratio"
 unit = "One"
-lower = 60.0
-upper = 400.0
-reason_lower = "the same floor as env_f107: below 60 sfu has never been observed"
-reason_upper = "the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating. This is the achieved row most likely to reach it, being a sustained level with a daily excursion on top"
+lower = -10.0
+upper = 1.0
+reason_lower = "a margin of -10 is a requirement exceeded by eleven times its own value. Below that the comparison has stopped being a design margin and become a sign that one side is in the wrong unit, and it should refuse rather than report a number nobody will read as a fraction"
+reason_upper = "1 is the whole of the requirement: an achieved value of zero against a positive bound. A margin above 1 under this sense would mean the achieved value is negative, which none of these drivers can be"
 
 [[input]]
 # The consumer declares what it expects. Assembly refuses a mismatch
 # against what the producer publishes — which is the only place the
 # whole graph is visible and therefore the only place to ask.
-binding = "conclusion"
+binding = "ach"
 var = "sw_f107_design_short"
+type = "Ratio"
+
+[[input]]
+# The requirement this closes against. `req` is not decoration: the gate reads
+# this binding to decide the row IS a closure, and check 7e then requires the
+# hole to apply the sense the requirement declares.
+binding = "req"
+var = "l3_solar_req_02"
 type = "Ratio"
 
 [[algorithm.step]]
 number = 1
-text = "restate the subsystem's conclusion on the achieved side of the closure"
-binds = "ach"
+text = "compare achieved against required in the declared sense and return the signed fractional margin"
+binds = "m"
 type = "Ratio"
 
 [view]

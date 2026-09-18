@@ -1,7 +1,7 @@
 {
   "id": "sw_forecast_bias",
   "state": "published",
-  "sheet_hash": "7e038d",
+  "sheet_hash": "979bae",
   "impl_hash": "d8e4d4",
   "owner": "environment",
   "tier": "A",
@@ -11,7 +11,7 @@
   "differential_fill": false,
   "migrated_from": "",
   "holes": 1,
-  "inputs": ["sw_outlook_lead"],
+  "inputs": ["sw_recurrence_lag"],
   "contributes": [],
   "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did"]
 }

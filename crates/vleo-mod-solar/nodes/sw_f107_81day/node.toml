@@ -12,7 +12,17 @@ tier = "A"
 criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1370
-state = "published"
+# RETIRED, BECAUSE IT WAS A SECOND NAME FOR ONE NUMBER. Its whole relation is
+# F107A(epoch) = F107_cyc(phase(epoch)), and sw_mean_cycle_level already reads
+# sw_cycle_phase -- so it is already the mean-cycle level AT the mission epoch.
+# This row read it and returned it unchanged. Measured against it across every
+# perturbation the tree allows, the two never differed anywhere.
+#
+# The question was real: a density model wants F10.7A, and it wants it under
+# that name. But naming is not a reason for a row. When the density subsystem
+# lands it reads sw_mean_cycle_level, whose own sheet says what it is; a
+# consumer that needs the name gives its input the binding `f107a`.
+state = "deprecated"
 
 # WHY THIS ROW IS A PASS-THROUGH, AND WHY IT IS STILL A ROW.
 #

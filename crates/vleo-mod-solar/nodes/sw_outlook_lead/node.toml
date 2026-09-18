@@ -15,7 +15,18 @@ layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 # rows that read it. Twelve rows were shifted by one to open the slot, because
 # an argument printed after the functions that take it reads backwards.
 order = 1359
-state = "published"
+# RETIRED, BECAUSE IT RESTATED A MEASUREMENT AS A DECISION. This declared 26
+# days as the lead the published outlook is verified at, and sw_recurrence_lag
+# MEASURES 26 days as the lag where the rotation signal in F10.7 peaks. The
+# verification lead was chosen to be one solar rotation, so the two carried one
+# number under two names and would have drifted apart the first time either was
+# re-measured or re-decided -- silently, because nothing linked them.
+#
+# sw_forecast_bias and sw_forecast_skill now read sw_recurrence_lag directly and
+# each says on its own sheet that verifying at one rotation is the choice being
+# made. Verifying at some other lead means changing those rows, which is the
+# point: it is a decision, and it should cost a decision.
+state = "deprecated"
 
 # WHY THIS IS A SUBSYSTEM ROW AND NOT A SYSTEM-LAYER ONE.
 #

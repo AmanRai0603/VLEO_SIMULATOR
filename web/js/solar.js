@@ -576,7 +576,7 @@ const PANELS = [
 
   {
     id: 'climate',
-    rows: ['sw_central_expectation', 'sw_semiannual_amplitude', 'sw_f107a_ratio', 'sw_f107_81day', 'sw_kp_from_ap', 'sw_kp_slot_bias'],
+    rows: ['sw_central_expectation', 'sw_semiannual_amplitude', 'sw_f107a_ratio', 'sw_mean_cycle_level', 'sw_kp_from_ap', 'sw_kp_slot_bias'],
     label: 'Climate',
     draws: 'The long run: the record by year, and the season inside the year.',
     asks: 'What is the context a single mission sits inside?',

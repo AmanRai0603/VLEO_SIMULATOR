@@ -1,6 +1,6 @@
 {
   "id": "sw_outlook_lead",
-  "state": "published",
+  "state": "deprecated",
   "sheet_hash": "0d48b3",
   "impl_hash": "222325",
   "owner": "environment",
