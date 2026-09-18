@@ -308,6 +308,26 @@ dl.asm { font-size: 11.5px; }
 dl.asm dt { font-weight: 600; margin-top: .45rem; }
 dl.asm dd { margin: 0 0 0 1rem; color: var(--ink-2); }
 table.iface, table.fx { border-collapse: collapse; width: 100%; font-size: 11px; margin: .5rem 0; }
+/* The numbers behind a figure. Closed by default — the picture is the point —
+   and scrollable, because a panel with two hundred lead points should not push
+   the next figure off the page to prove it has them. */
+.sw-table { margin: .35rem 0 .1rem; }
+.sw-table > summary { font-size: 10.5px; color: var(--ink-3); cursor: pointer; }
+.sw-table > summary:hover { color: var(--ink-2); }
+.sw-table-body { max-height: 260px; overflow: auto; }
+/* COLUMNS THAT HUG THEIR NUMBERS. Inheriting width:100% from table.fx spread
+   two columns across the whole panel, so "days in bin" sat halfway across the
+   page from the value under it and the eye had to travel a foot to pair them —
+   the same distance problem a legend off to the side has. At width:auto the
+   columns are as wide as their contents and the reader compares adjacent
+   numbers; the body scrolls in both directions if a wide one needs it. */
+table.chart-table { width: auto; min-width: 0; }
+table.chart-table td, table.chart-table th { font-variant-numeric: tabular-nums;
+  text-align: right; white-space: nowrap; }
+table.chart-table td:first-child, table.chart-table th:first-child { text-align: left;
+  padding-right: 1.25rem; }
+/* A focused chart says so, for a reader arriving by keyboard. */
+canvas.plot:focus { outline: 2px solid var(--ink-3); outline-offset: 2px; }
 table.iface th, table.fx th { text-align: left; font-size: 9.5px; text-transform: uppercase;
   letter-spacing: .07em; color: var(--ink-3); border-bottom: 1px solid var(--rule); padding: .3rem .5rem; }
 table.iface td, table.fx td { padding: .25rem .5rem; border-bottom: 1px solid var(--rule-2); }

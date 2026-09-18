@@ -21,7 +21,7 @@
 import { $, esc } from './dom.js';
 import { S } from './state.js';
 import { solarRecord, bundleFile, engineValues, engineSweep, centredMean, corr, quantile, num, daysSince2000 } from './record.js';
-import { drawChart, attachHover, INK } from './chart.js';
+import { drawChart, attachHover, tableFor, INK } from './chart.js';
 
 // ---------------------------------------------------------------------------
 // describing the picture that was actually drawn
@@ -1340,7 +1340,14 @@ function panelBody(p, o) {
           c.opts.map(([v, t]) => '<option value="' + esc(v) + '"' + (o[c.k] === v ? ' selected' : '') +
             '>' + esc(t) + '</option>').join('') + '</select>').join(' ') + '</div>'
       : '') +
-    '<canvas class="plot sw-panel" width="980" height="420" title="point at the chart to read a value"></canvas>' +
+    '<canvas class="plot sw-panel" width="980" height="420" ' +
+      'title="point at it, or focus it and use the arrow keys"></canvas>' +
+    // Every value, for anyone who wants them all — or wants to copy one into a
+    // document without screenshotting a picture of it. Closed by default
+    // because the figure is the point; present always because a tooltip that is
+    // the only way to reach a number gates the data behind a mouse.
+    '<details class="sw-table"><summary>the numbers behind this picture</summary>' +
+    '<div class="sw-table-body"></div></details>' +
     '<div class="sw-panel-note muted">reading the record…</div>';
 }
 
@@ -1430,6 +1437,9 @@ async function render(host, p, o) {
     const cv = $('.sw-panel', host);
     drawChart(cv, out.spec);
     attachHover(cv);
+    // From the same spec the chart was drawn from, so the two cannot disagree.
+    const tb = $('.sw-table-body', host);
+    if (tb) tb.innerHTML = tableFor(out.spec);
     note.innerHTML = linkRows(esc(out.note).replace(/\n\n/g, '<br><br>'));
     // SAY SO WHEN IT WORKED, so that a checker can tell a redraw from a
     // collapse. A failed render blanks the canvas, and a blank canvas has a

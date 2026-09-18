@@ -2333,11 +2333,83 @@ the classical answer and needs each panel's own data; capping the aspect is most
 of the benefit and needs none of it.
 
 **B7. Crosshair and tooltip on the line panels**, with keyboard focus showing what
-hover shows, and a hit target no smaller than ~24px. Canvas needs explicit
-nearest-x hit testing.
+hover shows. Done, and the interesting part was not the crosshair.
 
-**B8. A table view per panel.** The same data as rows — the WCAG-clean twin, and
-what makes a value quotable in a document without screenshotting a chart.
+The crosshair and the tooltip were already there and were **mouse-only**. So every
+number in these figures was reachable by pointing at it and by no other means: an
+axis cannot be read to better than a tick, and the panels carry between fourteen
+and two hundred and twenty-three points each. That is the whole dataset behind a
+pointing device.
+
+The fix was not to write a second readout for the keyboard. It was to notice that
+writing them as two is *how* the keyboard came to have none — so there is now one
+`drawReadout(canvas, xv, focused)` and both paths call it. The canvas takes
+`tabindex="0"`, arrow keys step through the drawn points, Shift steps a tenth of
+the series, Home and End jump to the ends, Escape clears, and the readout is
+identical because it is the same function. The canvas carries `role="img"` and an
+`aria-label` that becomes the value under the cursor as the reader steps.
+
+*Hit target.* The step above asked for one no smaller than 24px, and the honest
+answer is that this chart has no per-point target to size: the crosshair follows
+the pointer continuously in x and reports the nearest drawn mark, so the target is
+the plot area. The keyboard path is what removes the precision requirement, which
+is the accessibility outcome the 24px was standing in for.
+
+**AND IT FOUND TWO DEFECTS IN THE READOUT ITSELF, both by measurement rather than
+by reading the code.** A probe walked every point of every panel with the arrow
+keys and demanded that the readout name exactly the series the table fills at that
+x. It disagreed in two places, and both were the readout inventing a number:
+
+- **Beyond a series' own end.** Repeatability's cycle 25 stops at phase 0.532
+  because it is still running. The readout took the nearest point unconditionally,
+  so at phase 0.975 it answered *cycle 25: 153.4* — a value from less than half
+  the phase the crosshair stood on.
+- **Across a gap.** At phase 0.775 cycle 24 is missing, and the readout reported
+  the neighbour on the far side of the hole. This module's first rule is that a
+  line is never drawn across a null, on the grounds that it would be a claim
+  nobody made. A readout across one is the same claim in text.
+
+Both are now the same test — *is there a mark drawn at xv* — which is exactly what
+the table under the panel shows, so the picture and the table agree by
+construction. Eight panels, 691 rows, zero disagreements.
+
+*And a third, smaller.* A single series carries no name, so its readout was a bare
+number: **"F10.7 64. 5"**. Sighted readers have the y axis; a reader hearing the
+`aria-label` did not. The axis title now stands in for the missing name, in the
+tooltip as well as in the announcement, because one path is the point. Separately,
+a canvas with `role="img"` and no label is announced as "image" and nothing else —
+so until the first arrow key every panel was an unnamed picture. It is now labelled
+at draw time from what was drawn: *"F10.7 by cycle phase, 4 series: mean of the
+complete cycles, cycle 23, …"*.
+
+**B8. A table view per panel.** Done. A `<details>` under every figure, closed by
+default because the picture is the point, present always because a tooltip that is
+the only way to reach a number gates the data behind a pointing device. Between 14
+and 223 rows per panel, built in under half a millisecond.
+
+**Built from the spec the chart was drawn from**, not from the panel's own arrays.
+A table assembled separately is a second description of the data, and the first
+time it disagrees with the chart the disagreement is invisible — the same argument
+that put the record's CSV parser next to the engine's rather than shipping a shaped
+summary. It is also what made the B7 probe possible at all: the table could only be
+used as the reference for what the readout should say because it is not an
+independent transcription.
+
+*The node page's relation view got one too*, on the same grounds — it is the figure
+a reader arrives at from a row, and its 120 swept points were reachable only by
+hovering. It tables the relation once rather than the three series the canvas
+draws, because the faint whole, the walked prefix and the head dot are one dataset
+shown three ways and tabling all three would print the same column three times.
+**The declared-value view deliberately has none**: its picture is a bar of 101
+identical zeros with one mark on it, and the three numbers it actually shows — the
+value and both bounds — are already in the note below in words. That is the
+equivalent a reader needs; a table there would be the form of one without the
+content.
+
+*One thing measured after the fact.* The table inherited `width: 100%`, which
+spread two columns across the whole panel: the header sat a foot from the value
+under it. Columns now hug their contents. Found by rendering it and looking at it,
+which is step seven and not step zero.
 
 **B9. Thin the mark where the sample thins.** Done for the two panels that have
 the count, and honestly refused for the third.

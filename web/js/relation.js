@@ -23,7 +23,7 @@
 
 import { $, $$, esc, fmt } from './dom.js';
 import { S, reachFrom, isSeeded } from './state.js';
-import { drawChart, attachHover, INK } from './chart.js';
+import { drawChart, attachHover, tableFor, INK } from './chart.js';
 
 export async function mountRelation(host) {
   const id = host.dataset.node;
@@ -62,6 +62,11 @@ export async function mountRelation(host) {
     ' <input class="rel-scrub" type="range" min="0" max="100" value="100" step="1">' +
     ' <span class="muted rel-read"></span></div>' +
     '<canvas class="plot rel-plot" width="900" height="320"></canvas>' +
+    // The relation as numbers. Same argument as the panels: the readout is
+    // reached by pointing or by stepping, and a number somebody wants to quote
+    // should be selectable rather than screenshotted.
+    '<details class="sw-table"><summary>the numbers behind this picture</summary>' +
+    '<div class="sw-table-body"></div></details>' +
     '<div class="rel-note muted">asking the engine…</div>';
 
   const over = $('.rel-over', host);
@@ -114,6 +119,18 @@ export async function mountRelation(host) {
     }
     scrub.value = 100;
     redraw();
+    // The WHOLE relation, once, and not the walk. The three series the chart
+    // draws are one dataset shown three ways — faint behind, solid up to the
+    // scrub, a dot at the head — so tabling all three would print the same
+    // column three times. And it is built here rather than in redraw() because
+    // the numbers do not change while the walk runs, only how much of them is
+    // painted.
+    $('.sw-table-body', host).innerHTML = tableFor({
+      x: { label: res.x_id + '  [' + res.x_unit + ']' },
+      y: { label: res.y_id + '  [' + res.y_unit + ']' },
+      series: [{ name: '', kind: 'line',
+        x: res.x.map(v => v / res.x_factor), y: res.y.map(v => v / res.y_factor) }],
+    });
     const lo = +host.dataset.lo, hi = +host.dataset.hi;
     const ys = res.y.map(v => v / res.y_factor);
     const span = Math.max(...ys) - Math.min(...ys);
@@ -207,6 +224,11 @@ async function declaredValue(host, r) {
   }
   const lo = r.lo, hi = r.hi;
   const frac = (v - lo) / (hi - lo);
+  // NO TABLE UNDER THIS ONE, deliberately. The picture is a bar of 101 identical
+  // zeros with one mark on it, so a table of it would be 101 rows saying nothing
+  // — and the three numbers it actually shows, the value and both bounds, are in
+  // the note below in words. That is the equivalent a reader needs; a table here
+  // would be the form of one without the content.
   host.innerHTML =
     '<canvas class="plot rel-plot" width="900" height="200"></canvas>' +
     '<div class="rel-note muted"></div>';

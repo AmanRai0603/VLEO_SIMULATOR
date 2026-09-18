@@ -416,6 +416,20 @@ export function drawChart(canvas, spec) {
   // canvas so the readout cannot drift from the picture it is drawn over.
   canvas._chart = { spec, x0, x1, y0, y1, L, R, T, B, px, py, fx, fy, log: lg };
 
+  // WHAT THE FIGURE IS, before anybody points at it or steps into it. The canvas
+  // carries role="img", and an img with no label is announced as "image" and
+  // nothing else — so every panel was, to a reader who cannot see it, an
+  // unnamed picture until the first arrow key. Set here rather than in the
+  // hover wiring because it is a property of what was drawn; stepping through
+  // the points then replaces it with the value under the cursor and blurring
+  // restores it.
+  const what = _plain(spec.y.label) + ' by ' + _plain(spec.x.label)
+    + (legend.length > 1 ? ', ' + legend.length + ' series: '
+        + legend.map(s => s.name).join(', ') : '')
+    + (spec.note ? '. ' + spec.note : '');
+  canvas._said = what;
+  canvas.setAttribute('aria-label', what);
+
   if (legRows.length) {
     ctx.font = '10px ui-monospace, monospace';
     ctx.textAlign = 'left';
@@ -458,7 +472,146 @@ function _legendRows(ctx, named, width) {
  * buffer: one drawing path means the crosshair cannot end up describing a
  * picture that has since changed.
  */
+// An axis title without its unit, for a line of running text. The unit is on
+// the axis where a reader can see it once, rather than on every value.
+const _plain = t => String(t || '').split('  [')[0].trim();
+
+/**
+ * Is there a mark under xv, on the series' own terms?
+ *
+ * In ARRAY ORDER rather than in x order, because that is the order the segments
+ * are drawn in — a series whose x does not ascend is drawn as it was given, and a
+ * readout that reasoned about a sorted copy would describe a different picture.
+ *
+ * A joined series needs a segment whose two ends are both present and which
+ * straddles xv. A series of separate marks — bars, dots — needs xv inside the
+ * mark's own slot, which is half the distance to its nearest neighbour.
+ */
+function _drawnAt(s, bi, xv) {
+  const has = k => k >= 0 && k < s.x.length && s.y[k] !== null && isFinite(s.y[k]);
+  if (s.kind === 'bars' || s.kind === 'dots') {
+    let sp = Infinity;
+    for (const k of [bi - 1, bi + 1]) {
+      if (k >= 0 && k < s.x.length) sp = Math.min(sp, Math.abs(s.x[k] - s.x[bi]));
+    }
+    return !isFinite(sp) || Math.abs(s.x[bi] - xv) <= sp / 2;
+  }
+  for (const k of [bi - 1, bi]) {
+    if (!has(k) || !has(k + 1)) continue;
+    const a = Math.min(s.x[k], s.x[k + 1]), b = Math.max(s.x[k], s.x[k + 1]);
+    if (xv >= a && xv <= b) return true;
+  }
+  return false;
+}
+
+/**
+ * The readout at one position on the x axis, drawn over a fresh chart.
+ *
+ * One path, used by the pointer AND by the keyboard. Written as two was how the
+ * keyboard came to have no readout at all: a chart is read by pointing at it,
+ * and a reader who cannot point had the axis and nothing else.
+ */
+function drawReadout(canvas, xv, focused) {
+  const c = canvas._chart;
+  if (!c) return null;
+  drawChart(canvas, c.spec);
+  const ctx = canvas.getContext('2d');
+  const mx = c.px(xv);
+  ctx.save();
+  ctx.strokeStyle = INK.axis; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
+  ctx.beginPath(); ctx.moveTo(mx, c.T); ctx.lineTo(mx, canvas.height - c.B); ctx.stroke();
+  ctx.restore();
+  // The nearest actual point of each series, never an interpolation: a readout
+  // that invents a value between two measurements is reporting the chart's
+  // arithmetic rather than the record.
+  const hits = [];
+  c.spec.series.forEach((s, i) => {
+    if (!s.x.length) return;
+    // A SERIES ANSWERS ONLY WHERE SOMETHING IS DRAWN.
+    //
+    // Taking the nearest point unconditionally reported whatever the series had,
+    // however far away it was, and it was wrong in two ways that both showed up
+    // on Repeatability. The running cycle stops at phase 0.532, and the readout
+    // answered "cycle 25: 153.4" at phase 0.975 — a value from less than half the
+    // phase the crosshair stood on. And at phase 0.775 cycle 24 is missing, so it
+    // reported the neighbour across the gap: a line is never drawn across a null
+    // here, on the grounds that it would be a claim nobody made, and a readout
+    // across one is the same claim in text.
+    //
+    // Both are found by the same test — is there a drawn mark at xv — and that is
+    // what the table under the panel shows, so the two now agree by construction
+    // rather than by coincidence. The disagreement was measured, not guessed: the
+    // table's cell for cycle 24 at 0.775 was empty while the tooltip held 71.61.
+    let bi = -1, bd = Infinity;
+    for (let k = 0; k < s.x.length; k++) {
+      if (s.y[k] === null || !isFinite(s.y[k])) continue;
+      const d = Math.abs(s.x[k] - xv);
+      if (d < bd) { bd = d; bi = k; }
+    }
+    if (bi < 0) return;
+    if (bd > 0 && !_drawnAt(s, bi, xv)) return;
+    const col = s.colour || INK.series[i % INK.series.length];
+    // A single series carries no name, and the readout was therefore a bare
+    // number: "F10.7 64. 5". The y axis says what 5 is, which a sighted reader
+    // has and a reader hearing the aria-label does not, so the axis title
+    // stands in — one path, so the tooltip and the announcement say the same.
+    hits.push({ col, name: s.name || _plain(c.spec.y.label), x: s.x[bi], y: s.y[bi] });
+    // A 2px ring in the surface colour, so the highlighted point stays legible
+    // where it sits on its own line.
+    ctx.save();
+    ctx.strokeStyle = INK.surface; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(c.px(s.x[bi]), c.py(s.y[bi]), 4, 0, 6.284); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(c.px(s.x[bi]), c.py(s.y[bi]), 4, 0, 6.284); ctx.fill();
+  });
+  if (!hits.length) return null;
+  const lines = [_plain(c.spec.x.label) + ' ' + c.fx(hits[0].x)]
+    .concat(hits.map(h => (h.name ? h.name + ': ' : '') + c.fy(h.y)));
+  ctx.font = '10px ui-monospace, monospace';
+  const w = Math.max(...lines.map(t => ctx.measureText(t).width)) + 12;
+  const h = lines.length * 13 + 8;
+  const bx = Math.min(mx + 10, canvas.width - c.R - w);
+  const by = c.T + 6;
+  ctx.fillStyle = 'rgba(255,255,255,0.94)';
+  ctx.strokeStyle = INK.grid;
+  ctx.fillRect(bx, by, w, h); ctx.strokeRect(bx, by, w, h);
+  ctx.fillStyle = INK.text;
+  lines.forEach((t, k) => {
+    if (k > 0) { ctx.fillStyle = hits[k - 1].col; }
+    ctx.fillText(t, bx + 6, by + 14 + k * 13);
+  });
+  if (focused) {
+    ctx.save();
+    ctx.strokeStyle = INK.axis; ctx.lineWidth = 2;
+    ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+    ctx.restore();
+  }
+  return lines.join('. ');
+}
+
+/**
+ * Pointer and keyboard, reading the same chart the same way.
+ *
+ * The keyboard path is not a courtesy. A tooltip that is the only way to reach a
+ * value gates the data behind a mouse, and every number in these panels was
+ * reachable only by hovering — the axis cannot be read to better than a tick.
+ * Arrow keys step through the drawn points, Home and End jump to the ends, and
+ * the readout is identical because it is the same function.
+ */
 export function attachHover(canvas, onLeave) {
+  const xsOf = () => {
+    const c = canvas._chart;
+    if (!c) return [];
+    const all = [];
+    for (const s of c.spec.series) {
+      for (let k = 0; k < s.x.length; k++) {
+        if (s.y[k] !== null && isFinite(s.y[k])) all.push(s.x[k]);
+      }
+    }
+    return [...new Set(all)].sort((a, b) => a - b);
+  };
+
   canvas.onmousemove = ev => {
     const c = canvas._chart;
     if (!c) return;
@@ -466,49 +619,75 @@ export function attachHover(canvas, onLeave) {
     const mx = (ev.clientX - r.left) * (canvas.width / r.width);
     if (mx < c.L || mx > canvas.width - c.R) return;
     const xv = c.x0 + (mx - c.L) / (canvas.width - c.L - c.R) * (c.x1 - c.x0);
-    drawChart(canvas, c.spec);
-    const ctx = canvas.getContext('2d');
-    ctx.save();
-    ctx.strokeStyle = INK.axis; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
-    ctx.beginPath(); ctx.moveTo(mx, c.T); ctx.lineTo(mx, canvas.height - c.B); ctx.stroke();
-    ctx.restore();
-    // The nearest actual point of each series, never an interpolation: a
-    // readout that invents a value between two measurements is reporting the
-    // chart's arithmetic rather than the record.
-    const hits = [];
-    c.spec.series.forEach((s, i) => {
-      if (!s.x.length) return;
-      let bi = -1, bd = Infinity;
-      for (let k = 0; k < s.x.length; k++) {
-        if (s.y[k] === null || !isFinite(s.y[k])) continue;
-        const d = Math.abs(s.x[k] - xv);
-        if (d < bd) { bd = d; bi = k; }
-      }
-      if (bi < 0) return;
-      const col = s.colour || INK.series[i % INK.series.length];
-      hits.push({ col, name: s.name, x: s.x[bi], y: s.y[bi] });
-      ctx.fillStyle = col;
-      ctx.beginPath(); ctx.arc(c.px(s.x[bi]), c.py(s.y[bi]), 3.2, 0, 6.284); ctx.fill();
-    });
-    if (!hits.length) return;
-    const lines = [c.spec.x.label.split('  [')[0] + ' ' + c.fx(hits[0].x)]
-      .concat(hits.map(h => (h.name ? h.name + ': ' : '') + c.fy(h.y)));
-    ctx.font = '10px ui-monospace, monospace';
-    const w = Math.max(...lines.map(t => ctx.measureText(t).width)) + 12;
-    const h = lines.length * 13 + 8;
-    const bx = Math.min(mx + 10, canvas.width - c.R - w);
-    const by = c.T + 6;
-    ctx.fillStyle = 'rgba(255,255,255,0.94)';
-    ctx.strokeStyle = INK.grid;
-    ctx.fillRect(bx, by, w, h); ctx.strokeRect(bx, by, w, h);
-    ctx.fillStyle = INK.text;
-    lines.forEach((t, k) => {
-      if (k > 0) { ctx.fillStyle = hits[k - 1].col; }
-      ctx.fillText(t, bx + 6, by + 14 + k * 13);
-    });
+    drawReadout(canvas, xv, false);
   };
   canvas.onmouseleave = () => {
-    if (canvas._chart) drawChart(canvas, canvas._chart.spec);
+    if (canvas._chart && document.activeElement !== canvas) drawChart(canvas, canvas._chart.spec);
     if (onLeave) onLeave();
   };
+
+  // Reachable, and announced. The canvas carries the readout as its aria-label
+  // so a screen reader is told what a sighted reader sees, and the table view
+  // under the panel carries every value for anyone who wants them all.
+  canvas.tabIndex = 0;
+  canvas.setAttribute('role', 'img');
+  let ki = -1;
+  canvas.onkeydown = ev => {
+    const xs = xsOf();
+    if (!xs.length) return;
+    const step = ev.shiftKey ? Math.max(1, Math.round(xs.length / 10)) : 1;
+    if (ev.key === 'ArrowRight') ki = ki < 0 ? 0 : Math.min(xs.length - 1, ki + step);
+    else if (ev.key === 'ArrowLeft') ki = ki < 0 ? xs.length - 1 : Math.max(0, ki - step);
+    else if (ev.key === 'Home') ki = 0;
+    else if (ev.key === 'End') ki = xs.length - 1;
+    else if (ev.key === 'Escape') { ki = -1; drawChart(canvas, canvas._chart.spec); return; }
+    else return;
+    ev.preventDefault();
+    const said = drawReadout(canvas, xs[ki], true);
+    if (said) canvas.setAttribute('aria-label', said);
+  };
+  canvas.onblur = () => {
+    ki = -1;
+    if (canvas._chart) drawChart(canvas, canvas._chart.spec);
+  };
+  canvas.onfocus = () => {
+    if (canvas._said) canvas.setAttribute('aria-label', canvas._said);
+  };
+}
+
+/**
+ * The same numbers as a table, built from the spec the chart was drawn from.
+ *
+ * Two reasons, and the second is the one that matters. A tooltip that is the
+ * only way to reach a value gates the data behind pointing at it, and the WCAG
+ * position is that a chart needs an equivalent anyone can read. And a value a
+ * person wants to quote in a document should not have to be read off a picture
+ * or screenshotted: here it can be selected and copied.
+ *
+ * Built from `spec` rather than from the panel's own arrays on purpose. A table
+ * assembled separately is a second description of the data, and the first time
+ * it disagrees with the chart the disagreement is invisible — which is the same
+ * argument that put the record's parser next to the engine's.
+ */
+export function tableFor(spec) {
+  const named = spec.series.filter(s => s.x && s.x.length);
+  if (!named.length) return '<p class="muted">nothing plotted.</p>';
+  const xs = [...new Set(named.flatMap(s => s.x))].sort((a, b) => a - b);
+  const fx = spec.x.fmt || nice, fy = spec.y.fmt || nice;
+  const head = ['<tr><th>' + esc(spec.x.label) + '</th>'].concat(
+    named.map(s => '<th>' + esc(s.name || spec.y.label) + '</th>')).join('') + '</tr>';
+  const at = (s, x) => {
+    const k = s.x.indexOf(x);
+    return k < 0 || s.y[k] === null || !isFinite(s.y[k]) ? '' : fy(s.y[k]);
+  };
+  const rows = xs.map(x =>
+    '<tr><td>' + esc(fx(x)) + '</td>' +
+    named.map(s => '<td>' + esc(at(s, x)) + '</td>').join('') + '</tr>').join('');
+  return '<table class="fx chart-table"><thead>' + head + '</thead><tbody>' +
+    rows + '</tbody></table>';
+}
+
+function esc(v) {
+  return String(v).replace(/[&<>"]/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
