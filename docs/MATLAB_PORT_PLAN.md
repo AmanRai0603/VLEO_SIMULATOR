@@ -3384,3 +3384,112 @@ are the pictures that make 5 and 6 answerable by looking.
 Every step ends green on `cargo run -p xtask -- gate && cargo test`, and steps 8
 and 9 additionally on `python3 tools/panel_check.py` and its `--selftest`. Steps 8
 and 9 produce reference images that **an agent may not sign**.
+
+
+---
+
+## 31 · Steps 1 to 4, done — and what they found
+
+### 31.1 · A2, the five assumptions — done, no number moved
+
+`env_exospheric_temperature` now declares six assumptions instead of one. The five
+added are in §30 A2 and they are all about what this tree HANDS the relation
+rather than about Jacchia 1971: the Kp is a three-hourly index fed a daily
+statistic, there is no geomagnetic lag, J71's F10.7 is the previous day's and this
+reads today's, there is no semiannual term on a record that measures one, and
+nothing records which coefficient variant these four are.
+
+### 31.2 · A3, the theory — drafted, and deliberately unsigned
+
+A `[theory]` block with a four-step derivation: the intercept, the slow solar term
+on the 81-day mean, the fast term as a DEPARTURE from that mean and why its
+coefficient is smaller, and the geomagnetic term in two parts because Kp is
+quasi-logarithmic. `reading` says what the answer is and is not — a night-time
+minimum in a global average, and a fit against 1960s and 70s drag data.
+
+`maths.confirmed_by = ""`, with a comment saying why. **A person has to read that
+derivation against Jacchia 1971 and sign it.** An agent may not, and an unsigned
+relation is indistinguishable from one an agent supplied.
+
+### 31.3 · A1, the fixtures — done, and the gap was worse than stated
+
+The three fixtures all set `f107 == f107a`. §30 predicted that the `1.3` coefficient
+was therefore untested. **Measured by breaking the kernel, not by reading it:**
+
+| break | what it does | old three | the five added |
+|---|---|---|---|
+| `1.3` → `9.9` | a seven-fold error in the fast term | **all pass** | 2 fail |
+| exponential deleted | the storm tail removed entirely | Kp 7 catches it | 5 fail |
+| `0.03` → `0.0305` | a 1.7 per cent error in the exponential | **all pass** | **all 5 fail** |
+
+So the old set was weaker in two ways, not one. It does not test the fast term at
+all — and a seven-fold error in it passes — and its tolerance of 0.002 relative is
+±2.19 K at Kp 7 where the exponential contributes 32.9 K, so it admits a 1.7 per
+cent error in that coefficient too. It covers whether the storm term is present,
+not what size it is.
+
+The five added are pairs that differ in exactly one thing, so each pins a
+coefficient by a difference: flux 50 above and 50 below its own mean straddle the
+equal case by ±65 K, which is 1.3 × 50; and Kp 7 against Kp 8 differ by 84.529745 K
+where without the exponential they would differ by exactly 28. Their provenance is
+`independent-derivation` and not `published-source`, and the fixtures file says
+why: they are the published relation evaluated at chosen points, which proves the
+implementation computes what the sheet states and **not** that the sheet states
+Jacchia's relation. Nothing in that folder proves the second, which is what 31.2 is
+waiting on.
+
+### 31.4 · B3.1, the walk-forward — written, and IT DOES NOT REPRODUCE THE NUMBER
+
+`tools/rotation_residuals.py` implements `sw_mean_band_spread`'s five theory steps.
+The plan said the first output that matters is whether σ comes back at 13.4544.
+**It does not:**
+
+| | rotations | σ here | σ published | |
+|---|---|---|---|---|
+| F10.7, Yule-Walker | 376 | 14.3139 | 13.4544 | **+6.39 %** |
+| F10.7, least squares | 376 | 14.3844 | 13.4544 | **+6.91 %** |
+| Ap, Yule-Walker | 376 | 3.5264 | 3.5937 | −1.87 % |
+| Ap, least squares | 376 | 3.5791 | 3.5937 | −0.41 % |
+
+**Two differences, and they are the work left.** The rotation COUNT is 376 against
+361. The record is 10,592 days on a dense grid, which is 392 rotations of 27, and
+this scores every one past a warm-up of 16; reaching 361 needs a warm-up of 31 and
+the sheet states none. Dropping the 13 rotations that contain an interpolated day
+would give 379, and the sheet's own third assumption says those days **were**
+counted, so that is not the route either.
+
+The estimator is the other candidate and is not enough alone: the sheet says "an
+AR(2) fitted on the training anomalies" without naming one, and least squares moves
+Ap to −0.41 % while moving F10.7 the wrong way to +6.91 %. **That Ap nearly lands
+and F10.7 does not says the difference is not one systematic choice.**
+
+**What was NOT done, on purpose.** The free parameters were not tuned until the
+number matched. A walk-forward whose warm-up and estimator were chosen to reproduce
+13.4544 agrees with it by construction and is evidence for nothing — and the
+quantiles taken off it would be the thing §30 B3.2 asks a person to sign.
+
+**So the script refuses to print them.** It gates on both σ and the rotation count,
+and prints the reason instead. The count is the stricter of the two and it is
+there because of a near miss: Ap under least squares lands within half a per cent
+while its sample is 376 rotations rather than 361, and printing quantiles off that
+because one of the two agreed would be reporting a coincidence in the right units.
+
+*This is the honest state of step 4: the tool exists, its disagreement is recorded,
+and the two open differences are named. B3.2 stays blocked until one of them
+closes, which is correct — it was blocked before and nothing knew.*
+
+### 31.5 · Where this leaves §30
+
+| step | state |
+|---|---|
+| 1 · A2 five assumptions | **done** |
+| 2 · A1 fixtures | **done**, and the gap measured rather than asserted |
+| 3 · A3 theory | **drafted**, unsigned — needs a person |
+| 4 · B3.1 walk-forward | **written and failing its own test**, which is the finding |
+| 5 · B1 which Kp slot | needs a person |
+| 6 · B2 band confidence | needs a person |
+| 7 · B3.2 empirical quantiles | **blocked on 31.4**, not on a person |
+| 8 · A4 thermosphere panel | ready to build |
+| 9 · B3.3 residual view | blocked with 7 |
+
+Step 8 is the next one that can be done without a decision.

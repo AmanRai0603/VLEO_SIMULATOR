@@ -29,3 +29,82 @@ provenance = "published-source"
 source = "jacchia1971"
 inputs = { f107 = 250.0, f107a = 250.0, kp = 7.0 }
 
+# WHAT THE THREE ABOVE DO NOT TEST, AND WHY FIVE MORE ARE HERE.
+#
+# All three set f107 equal to f107a. So `1.3 * (F10.7 - F10.7A)` is multiplied by
+# ZERO in every one of them, and the coefficient 1.3 could be any number at all —
+# it could be missing — and all three would still pass. That term is the whole of
+# the thermosphere's response to a single day's flux, and nothing checked it.
+#
+# The five below are built in PAIRS that differ in exactly one thing, so each one
+# pins a coefficient by a difference a person can check in their head rather than
+# by a value they have to trust:
+#
+#   * flux above and below its own mean, everything else held: the two straddle
+#     the f107 == f107a case by exactly +-65 K, which is 1.3 * 50. A relation with
+#     the wrong coefficient there misses both, and by different amounts.
+#   * Kp 7 and Kp 8, everything else held: they differ by 84.529745 K. WITHOUT the
+#     exponential that difference would be exactly 28. So the pair separates
+#     `28 * Kp` from `0.03 * exp(Kp)`, which at Kp 3 are 84 K and 0.6 K and are
+#     not separable at all.
+#   * the intercept, at the lowest activity the 400 K guard admits.
+#
+# MEASURED RATHER THAN ASSERTED. Each claim above was checked by breaking the
+# kernel relation and watching which fixtures went red:
+#
+#   * `1.3` -> `9.9`, a seven-fold error in the fast term: the three fixtures above
+#     ALL STILL PASS. Only the two new flux-departure ones fail. That is the gap
+#     this file existed with.
+#   * the exponential deleted entirely: the Kp 7 fixture above catches it, so a
+#     MISSING term was already covered.
+#   * `0.03` -> `0.0305`, a 1.7 per cent error in the exponential's coefficient:
+#     the three above ALL STILL PASS and all five below fail. Their tolerance of
+#     0.002 relative is +-2.19 K at Kp 7, and the error is 0.55 K. So the old set
+#     covers whether the term is there and not what size it is.
+#
+# Their provenance is `independent-derivation` and not `published-source`, and the
+# difference is worth stating: these are the published relation evaluated at chosen
+# points, which is arithmetic anybody can repeat, and NOT values read out of
+# Jacchia 1971. They prove the implementation computes the relation the sheet
+# states. They do not prove the sheet states Jacchia's relation — nothing in this
+# folder does, and `maths.confirmed_by` is empty for exactly that reason.
+
+[[fixture]]
+label = "the intercept, at the lowest activity the guard admits"
+expect = 411.43
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "jacchia1971"
+inputs = { f107 = 10.0, f107a = 10.0, kp = 0.0 }
+
+[[fixture]]
+label = "the fast term, flux 50 above its own 81-day mean"
+expect = 1014.6025661077
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "jacchia1971"
+inputs = { f107 = 200.0, f107a = 150.0, kp = 3.0 }
+
+[[fixture]]
+label = "the fast term, flux 50 below its own 81-day mean"
+expect = 884.6025661077
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "jacchia1971"
+inputs = { f107 = 100.0, f107a = 150.0, kp = 3.0 }
+
+[[fixture]]
+label = "the storm tail at Kp 7, where the exponential is 32.9 K of 228.9"
+expect = 1093.8989947529
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "jacchia1971"
+inputs = { f107 = 150.0, f107a = 150.0, kp = 7.0 }
+
+[[fixture]]
+label = "the storm tail at Kp 8, one step up and 84.5 K rather than 28"
+expect = 1178.4287396113
+tolerance = 1e-9
+provenance = "independent-derivation"
+source = "jacchia1971"
+inputs = { f107 = 150.0, f107a = 150.0, kp = 8.0 }
