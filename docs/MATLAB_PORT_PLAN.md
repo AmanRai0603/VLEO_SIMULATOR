@@ -1387,3 +1387,95 @@ missing everywhere, and it is now written four times — `producer_of` in
 `gate.rs` and in `page.rs`, the `producer` field on `VARS` in the daemon, and
 the reader test in the register generator. That is three too many, and worth
 collapsing into `vleo-sheet` the next time one of them needs a change.
+
+## 21 · The figures do not read the engine, and that is why rows have none
+
+A question worth asking, asked by the tool's owner: the legacy study is 38
+analysis methods and about 57 views — *every analysis had a picture*. So a
+ported analysis row with no figure does not mean there was nothing to draw. It
+means the view was not brought across. And the required/achieved pairs, which
+are this tree's own idea rather than the study's, are exactly the kind of thing
+a design tool draws: a bound, a value, and the distance between them.
+
+Checking that turned up something larger than a missing picture.
+
+### 21.1 · What is actually wrong
+
+**No panel reads the engine. Not one.** `grep -c 'v1/run\|v1/sweep' web/js/solar.js`
+returns zero. Every panel fetches a reference bundle — the NOAA record — and
+plots it. Where a panel needs a number this tree computes, the number was copied
+into the panel as a literal at the time the panel was written.
+
+Three of those literals are now wrong:
+
+| panel | literal | what the row says now |
+|---|---|---|
+| `design` → `f107Window` | `CENTRAL = 114.8437` | `sw_central_expectation` = **86.85** |
+| `design` | requirement options `150 / 132 / 200` | `l3_solar_req_03` = **207** |
+| `design` | `A = 92.515531, B = 40.926516` | `sw_storm_return_level`'s fit constants, copied |
+
+The first is two revisions stale: §20 re-specified `sw_central_expectation` on the
+cycle analogue and its own sheet records the move — "this row now answers 97.0
+sfu for the same window and used to answer 114.8". The design panel still draws
+the F10.7 design window around 114.8. The second offers the reader a requirement
+of 150 or 200, when the requirement a person settled on 2026-09-16 is 207.
+
+**And every check stayed green throughout.** `panel_check`'s second check is the
+good one — a panel must MOVE when each input it claims to read is changed — but a
+panel declares the *bundle* as what it reads. Change a row and nothing moves,
+because nothing was ever connected. The check is sound; it was verifying a
+contract that does not mention the engine.
+
+**The design panel also does not cite the rows that now do its job.** Its own
+label is "the design window for F10.7 and for Ap". §20 built exactly that as
+`sw_f107_design_long`, `sw_f107_design_short`, `sw_ap_design_long`,
+`sw_ap_design_short` and the two cold rows. None of the six is in the panel's
+row list. It cites `l3_solar_ach_03`, which since the closure rework publishes a
+margin rather than an Ap — so that citation is stale in meaning as well.
+
+### 21.2 · Where the classification went wrong
+
+`docs/SOLAR_ROWS.md` reported seventeen ported rows with no figure and said of
+them that there was never a figure to port, the driver set having been a table
+in the legacy tool too. That is right about the *table* and wrong about the rest:
+the design window is a legacy view, its panel is here, and the rows that compute
+it are in that seventeen. The report described a symptom as though it were a
+design decision, because it measured which rows a panel *cites* and took citation
+for the whole relationship. The relationship it should have measured — does a
+figure read this row — does not exist anywhere in the tool.
+
+### 21.3 · The plan, in order
+
+**Step 1 — let a panel read a row.** A `engine` list on the panel definition, and
+a helper that fetches `/v1/run` and `/v1/sweep` for it. Panels keep reading the
+bundle for the record; the engine supplies the numbers this tree computes.
+
+**Step 2 — make the check bite.** `panels/*.toml` gains `engine = [...]` beside
+`reads`, and `panel_check`'s second check extends to it: a panel naming an engine
+row must move when that row's value moves. This is what would have caught all
+three stale literals, and it is the step that makes every later one safe.
+
+**Step 3 — delete the three literals.** `CENTRAL` from `sw_central_expectation`,
+the fit constants from `sw_storm_return_level`, the requirement options from
+`l3_solar_req_03`. Re-cite the design panel on the six design-window rows.
+
+**Step 4 — draw the driver set.** `l3_solar_interface` publishes twenty-five
+numbers and nothing shows them. Five scenarios against f107, f107bar, ap, kp_mean
+and kp_peak, with the legacy run's own values from
+`matlab/reference/mission_drivers.csv` drawn alongside. That is the missing
+picture and a standing parity check in one figure, and it is the honest answer to
+"the driver set was a table" — it was a table because nobody drew it.
+
+**Step 5 — draw the closures.** One figure per required/achieved pair: the bound,
+the achieved value, the margin, and how the margin moves across the decision that
+drives it. The study had no closures, so it had no such view; the port introduced
+them and therefore owes them one. `/v1/levers` already names the decision worth
+putting on the x axis.
+
+**Step 6 — re-run the classification.** After 4 and 5, "no figure" should survive
+only where a row genuinely has nothing to show, and that list is then a real
+finding rather than an artefact of never having connected the two halves.
+
+Steps 1 and 2 are the load-bearing ones. Everything after them is drawing, and
+drawing without the check is how three wrong numbers sat in a panel through
+green runs.
