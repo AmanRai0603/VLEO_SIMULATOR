@@ -1266,7 +1266,17 @@ async function render(host, p, o) {
     drawChart(cv, out.spec);
     attachHover(cv);
     note.innerHTML = linkRows(esc(out.note).replace(/\n\n/g, '<br><br>'));
+    // SAY SO WHEN IT WORKED, so that a checker can tell a redraw from a
+    // collapse. A failed render blanks the canvas, and a blank canvas has a
+    // different signature from a drawn one — so "did the pixels change" is
+    // satisfied by the panel BREAKING, and panel_check's second check passed a
+    // deliberately broken panel until this existed. The state goes on the mount
+    // rather than in the note, because the note is prose for a reader and this
+    // is a fact for a machine.
+    delete cv.dataset.failed;
   } catch (e) {
+    const cv = $('.sw-panel', host);
+    if (cv) cv.dataset.failed = String(e && e.message ? e.message : e);
     note.textContent = 'the record could not be read: ' + e;
   }
 }

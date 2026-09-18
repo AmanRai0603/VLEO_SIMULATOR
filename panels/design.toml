@@ -27,6 +27,17 @@ settle_ms = 8000
 # whose subtitle says four layers, and it showed solar weather in a second
 # place that disagreed with layer 3. panel_check re-runs this after every
 # input to restore the starting state.
+# The rows this panel takes VALUES from, as opposed to the rows it argues
+# about. Check 2b serves each of these a different answer and requires the
+# picture to move, which is the only way to tell reading a row from declaring
+# one — four of this panel's numbers were literals copied in when it was
+# written, and one of them was two revisions stale.
+engine = ["sw_central_expectation"]
+
+# The F10.7 view is where sw_central_expectation is read; the default Ap view
+# does not touch it, so 2b would be testing a branch that never asks.
+engine_state = """(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'f107'; s.dispatchEvent(new Event('change')); })()"""
+
 ready = """(async () => {
   await window.openNode('sw_storm_return_level');
   await new Promise(r => setTimeout(r, 200));

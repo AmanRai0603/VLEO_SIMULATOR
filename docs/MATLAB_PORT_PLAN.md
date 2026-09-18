@@ -2071,10 +2071,32 @@ fix puts a tick on zero; it should also draw that one rule slightly stronger.
 helper fetching `/v1/run` and `/v1/sweep`. The bundle keeps supplying the record.
 *Blocks everything.*
 
-**A2. `panel_check` enforces it.** `engine = [...]` in `panels/*.toml`, and the
-move-check extends to it: a panel naming an engine row must move when that row's
-value moves. *This is the check that would have caught every stale literal below.
-Nothing after A2 is safe without it.*
+**A2. `panel_check` enforces it.** Done, and it needed two mechanisms rather
+than one.
+
+*The failed-state probe.* The face marks its mount `data-failed` when a render
+throws and clears it on a good draw, and every check refuses a mount carrying it.
+Without this, check 2 could not tell a redraw from a collapse: a failed render
+blanks the canvas, a blank canvas has a different signature from a drawn one, and
+"it moved" was satisfied by the panel BREAKING. A deliberately broken panel
+passed.
+
+*Check 2b.* For every row a panel declares in `engine`, the engine's reply is
+rewritten in the browser and the picture must change. Declaring a row is not
+reading it — a panel can fetch a value and go on drawing a literal, which is
+where four of `design`'s numbers were, and no other check can see it: such a
+panel renders, moves when its controls move, and matches yesterday's reference,
+because it draws a perfectly steady picture of a number nobody computed.
+
+2b renders the same path TWICE, differing only in what the engine answered. A
+first version called a global redraw hook on the open panel, and after check 2's
+reloads that hook could point at a DETACHED host — the redraw drew into nothing,
+the signature changed, and 2b passed a panel that ignores the value. Rebuilding
+the page each time cannot go stale and leaves no test hook in the product, which
+is worth the second it costs.
+
+Both are covered by `--selftest`, which now breaks `design` in the two ways only
+these checks can see.
 
 **A3. Delete the four stale literals in `design`.** (§21.1 found three by
 reading; wiring A1 up found a fourth — the F10.7 branch draws a line at

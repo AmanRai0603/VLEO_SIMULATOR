@@ -13,16 +13,32 @@ and a reviewer, which is backwards relative to the evidence.
 
 So a panel gets a spec like a node does, and three checks that need no person:
 
-  1 · it renders   the mount is not empty and not zero-sized
+  1 · it renders   the mount is not empty, not zero-sized, and not in a failed
+                   state
   2 · it moves     change each input it declares it reads, and its content must
-                   change. A panel wired to nothing passes every other check,
-                   including a screenshot comparison, because it draws the same
-                   correct picture whatever the data says
+                   change — WITHOUT failing. A panel wired to nothing passes
+                   every other check, including a screenshot comparison, because
+                   it draws the same correct picture whatever the data says
+  2b · it reads    for every row the panel declares in `engine`, serve that row
+                   a different answer and the picture must change. A panel that
+                   asks the engine and then ignores the reply fails here
   3 · it matches   against a stored reference, within tolerance
 
 Check two is the one worth having. "Three correct power numbers on one screen,
 correct at three different times" is a panel that renders, matches yesterday's
 reference, and is reading state nobody refreshed.
+
+AND CHECK TWO HAD A HOLE, WHICH 2b AND THE FAILED-STATE TEST CLOSE. It asked
+whether the canvas changed. A failed render blanks the canvas, so the signature
+changes and "it moves" was satisfied by the panel BREAKING — a deliberately
+broken panel passed. The face now marks its mount `data-failed` when a render
+throws, and every check here refuses a mount carrying it.
+
+2b exists because declaring a row is not reading it. The panel can fetch the
+value and draw a literal anyway, which is exactly the state four of `design`'s
+numbers were in. Rewriting the engine's reply in the browser and demanding the
+picture move is the only way to tell the two apart, and it needs no backdoor in
+the product: the interception is the checker's, not the page's.
 
 This drives the real page in a real browser against the real daemon. A check
 that runs against a mock proves the mock works.
@@ -30,6 +46,7 @@ that runs against a mock proves the mock works.
 
 import argparse
 import io
+import json
 import os
 import socket
 import subprocess
@@ -135,6 +152,80 @@ sel => { const e = document.querySelector(sel); if (!e) return null;
          return e.tagName === 'CANVAS' ? e.toDataURL() : e.innerHTML; }
 """
 
+# Did the panel's own render throw?
+#
+# The face marks its mount `data-failed` when build() raises, and clears it on a
+# good draw. Without this, check 2 cannot tell a redraw from a collapse: both
+# change the canvas signature, and a deliberately broken panel passed.
+_FAILED = """
+sel => { const e = document.querySelector(sel); return e ? (e.dataset.failed || '') : ''; }
+"""
+
+
+def _settle(page, mount, tries=20, gap=250):
+    """Wait until the mount stops changing, then return its signature.
+
+    A fixed pause before capturing the "before" picture is how 2b first failed
+    to bite: the F10.7 view fetches the engine, was still settling at 600ms, and
+    the completion of that first render then counted as "it changed when the
+    answer moved". Two successive identical reads is the condition actually
+    wanted, and it is quick when the panel is quick.
+    """
+    last = None
+    for _ in range(tries):
+        now = page.evaluate(_SIG, mount)
+        if now is not None and now == last:
+            return now
+        last = now
+        page.wait_for_timeout(gap)
+    return last
+
+
+def _intercept_run(page, row_id):
+    """Serve one row a different answer, and report whether it was ever asked.
+
+    The engine's reply is passed through untouched except for the one row, whose
+    SI value is moved far enough that no rounding could hide it. Everything else
+    on the path is left alone, so a panel reading several rows only sees the one
+    it is being tested on move.
+
+    `hit` separates the two ways a panel can fail 2b: it never asked, or it asked
+    and ignored the answer. Those are different defects and the message says
+    which.
+    """
+    state = {"hit": False}
+
+    def handler(route):
+        req = route.request
+        if ("node=" + row_id) not in req.url:
+            route.continue_()
+            return
+        state["hit"] = True
+        try:
+            resp = route.fetch()
+            body = resp.json()
+        except Exception:
+            route.continue_()
+            return
+        for v in body.get("values", []):
+            if v.get("id") == row_id and isinstance(v.get("si"), (int, float)):
+                # Big enough that no axis rounding absorbs it, and away from
+                # zero so a bound near zero is not crossed by accident.
+                v["si"] = v["si"] * 1.75 + 13.0
+                v["shown"] = "%g" % v["si"]
+        route.fulfill(status=200, content_type="application/json", body=json.dumps(body))
+
+    page.route("**/v1/run**", handler)
+    return state
+
+
+def _failed(page, mount):
+    try:
+        return page.evaluate(_FAILED, mount)
+    except Exception:
+        return ""
+
+
 # Non-empty, for either kind. A blank canvas is not "empty" in any DOM sense,
 # so it is compared against a fresh canvas of the same size: equal means
 # nothing has been drawn. Exact, and it needs no threshold.
@@ -195,6 +286,9 @@ def check_all(ids=None, record=False):
                 found.append((d["id"], "1 renders", "%s occupies no space" % mount))
             if errors:
                 found.append((d["id"], "1 renders", "the page threw: %s" % errors[0]))
+            fail = _failed(page, mount)
+            if fail:
+                found.append((d["id"], "1 renders", "the panel reports a failed render: %s" % fail))
 
             # 2 · it moves
             settle = d.get("settle_ms", 3000)
@@ -225,6 +319,17 @@ def check_all(ids=None, record=False):
                         "%s did not change when %r moved — %s"
                         % (mount, inp["name"], inp.get("why", "the panel claims to read it")),
                     ))
+                # A render that threw blanks the canvas, and a blank canvas has a
+                # different signature from a drawn one — so the wait above is
+                # satisfied by the panel breaking. Changed is not the same as
+                # moved, and this is where the two are told apart.
+                fail = _failed(page, mount)
+                if fail:
+                    found.append((
+                        d["id"], "2 moves",
+                        "%s FAILED when %r moved rather than redrawing: %s"
+                        % (mount, inp["name"], fail),
+                    ))
                 page.goto(url, wait_until="networkidle")
                 if d.get("ready"):
                     try:
@@ -233,6 +338,88 @@ def check_all(ids=None, record=False):
                         pass
                 page.wait_for_selector(mount, state="attached")
                 try:
+                    page.wait_for_function(_NONBLANK, arg=mount, timeout=settle)
+                except Exception:
+                    pass
+
+            # 2b · it reads what it says it reads
+            #
+            # A panel declares `engine = [...]`: the rows it takes values from
+            # rather than the rows it argues about. Declaring is not reading —
+            # a panel can fetch a value and go on drawing a literal, which is
+            # exactly where four of `design`'s numbers were. So the engine's
+            # reply is rewritten in the browser, the panel redrawn, and the
+            # picture must move.
+            #
+            # The interception is the checker's. Nothing in the product knows
+            # this is happening, which is the point: a test hook in the page
+            # would be a thing to keep working rather than a thing that checks.
+            def _open(settle_ms):
+                page.goto(url, wait_until="networkidle")
+                if d.get("ready"):
+                    try:
+                        page.evaluate(d["ready"])
+                    except Exception:
+                        return None
+                try:
+                    page.wait_for_selector(mount, state="attached")
+                    page.wait_for_function(_NONBLANK, arg=mount, timeout=settle_ms)
+                except Exception:
+                    return None
+                if d.get("engine_state"):
+                    try:
+                        page.evaluate(d["engine_state"])
+                    except Exception:
+                        return None
+                return _settle(page, mount)
+
+            for rid in d.get("engine", []):
+                # TWO FULL RENDERS DOWN THE SAME PATH, differing only in what the
+                # engine answered. An earlier form of this called a global redraw
+                # hook on the open panel, which after check 2's reloads could
+                # point at a DETACHED host — the redraw then drew into nothing,
+                # the signature changed, and 2b passed a panel that ignores the
+                # value. Rebuilding the page each time costs a second and cannot
+                # go stale, and it leaves no test hook in the product.
+                clean = _open(settle)
+                if clean is None:
+                    found.append((d["id"], "2b reads",
+                                  "the panel never drew, so %s could not be tested" % rid))
+                    continue
+                asked = _intercept_run(page, rid)
+                moved = _open(settle)
+                fail = _failed(page, mount)
+                page.unroute("**/v1/run**")
+                if fail:
+                    found.append((d["id"], "2b reads",
+                                  "the panel FAILED when %s was perturbed: %s" % (rid, fail)))
+                    continue
+                if moved is None:
+                    found.append((d["id"], "2b reads",
+                                  "the panel stopped drawing when %s was perturbed" % rid))
+                elif not asked["hit"]:
+                    found.append((d["id"], "2b reads",
+                                  "the panel never asked the engine for %s, though it "
+                                  "declares it" % rid))
+                elif moved == clean:
+                    found.append((d["id"], "2b reads",
+                                  "%s asked the engine for %s and drew the same picture when "
+                                  "the answer changed — it is not using the value"
+                                  % (mount, rid)))
+
+            # 2b leaves the page wherever `engine_state` put it, and check 3
+            # photographs whatever is on screen. Reload, so the reference is
+            # taken from the panel's own opening state and not from the branch
+            # 2b happened to need.
+            if d.get("engine"):
+                page.goto(url, wait_until="networkidle")
+                if d.get("ready"):
+                    try:
+                        page.evaluate(d["ready"])
+                    except Exception:
+                        pass
+                try:
+                    page.wait_for_selector(mount, state="attached")
                     page.wait_for_function(_NONBLANK, arg=mount, timeout=settle)
                 except Exception:
                     pass
@@ -305,7 +492,8 @@ def _differ(a, b):
 def selftest():
     """A panel wired to nothing must fail check two, and a blank one check one.
 
-    Four cases: both failures on a DOM panel and both on a canvas panel. All
+    Six cases: both failures on a DOM panel, both on a canvas panel, and the two
+    only 2b and its failed-state probe can see. All
     four are built by breaking a real panel, because a checker demonstrated on a
     fixture is a checker demonstrated on a fixture — and the canvas pair exists
     because the DOM pair passed happily while a canvas panel could not be
@@ -350,6 +538,27 @@ def selftest():
              .replace("const ys = res.y.map(v => v / res.y_factor);",
                       "const ys = [0, 1, 0, 1];")),
          "2 moves"),
+        # THE DEFECT 2b EXISTS FOR, and the one the other four cannot see: a
+        # panel that asks the engine for a row it declares and then draws a
+        # literal anyway. It renders, it moves when its controls move, and it
+        # matches yesterday's reference — because it is drawing a perfectly
+        # steady picture of a number nobody computed. Four of `design`'s numbers
+        # were in exactly this state, one of them two revisions stale.
+        ("a panel that asks the engine and ignores the answer",
+         lambda d: (d / "web" / "js" / "solar.js").write_text(
+             (d / "web" / "js" / "solar.js").read_text().replace(
+                 "  const CENTRAL = c.si;",
+                 "  const CENTRAL = 114.8437;")),
+         "2b reads"),
+        # And the hole 2b's failed-state probe closes: before it, a panel whose
+        # render THREW passed check 2, because a failed render blanks the canvas
+        # and a blank canvas has a different signature from a drawn one.
+        ("a panel whose render throws",
+         lambda d: (d / "web" / "js" / "solar.js").write_text(
+             (d / "web" / "js" / "solar.js").read_text().replace(
+                 "engine: ['sw_central_expectation', 'l3_solar_req_03'],",
+                 "engine: ['sw_no_such_row', 'l3_solar_req_03'],")),
+         "2 moves"),
     ]
     for label, break_it, want in cases:
         with tempfile.TemporaryDirectory() as tmp:
@@ -368,7 +577,10 @@ def selftest():
             break_it(work)
             ROOT, PANELS, REFERENCE = work, work / "panels", work / "panels" / "reference"
             try:
-                found = check_all(ids={"sweep"} if "canvas" in label else {"tree"})
+                which = ("sweep" if "canvas" in label
+                         else "design" if "engine" in label or "throws" in label
+                         else "tree")
+                found = check_all(ids={which})
             finally:
                 ROOT, PANELS, REFERENCE = real_root, real_panels, real_ref
             if not any(stage == want for _, stage, _ in found):
