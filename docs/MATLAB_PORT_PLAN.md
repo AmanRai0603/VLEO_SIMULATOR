@@ -2172,10 +2172,36 @@ browser session rather than anything in `climate`. "Flake" is not a root cause,
 so: it has not recurred, the mechanism is plausible but unproven, and it is
 written down here so a second occurrence is a pattern rather than a surprise.
 
-**A5. Branch-aware controls.** A control the current branch does not read is not
-drawn. Removes all 35 repeats, audited in §25.1 as provably identical. Hides `g`
-on `design`'s F10.7 branch, which is correct rather than a workaround — F10.7 has
-no G scale.
+**A5. Branch-aware controls.** Done. Each control that a branch ignores carries
+a `when(o)`, declared rather than inferred, because a branch that stops reading a
+control should have to say so. Eight predicates across six panels.
+
+| panel | combinations before | reachable after |
+|---|---|---|
+| `pattern` | 36 | 19 |
+| `predict` | 48 | 48 |
+| `repeatability` | 18 | 10 |
+| `forecast` | 18 | 13 |
+| `climate` | 15 | 13 |
+| `segmentation` | 8 | 5 |
+| `design` | 18 | **11** |
+| `density` | 1 | 1 |
+| | **162** | **120** |
+
+35 repeats gone and 8 correctly hidden, which is 43 — and `design` gains **one
+genuinely new view**, so 162 − 43 + 1 = 120. The new one is real: its F10.7
+branch had a single picture that ignored both the G scale and the requirement,
+and now has two, one per F10.7 requirement. The G scale is gone from that branch
+entirely, which §24.1 established was never a repeat to merge but a control that
+could not have meant anything.
+
+Verified in the DOM rather than inferred from the count: on `design` the Ap
+branch shows `v, g, req` and the F10.7 branch shows `v, reqf`; on `pattern` the
+autocorrelation shows `view, v, w, lag` and the spike view shows `view` alone.
+
+The remaining reductions — `pattern` 19 → 3, `predict` 48 → 4, `forecast`
+13 → 3 — are Part C, where a control becomes an encoding rather than
+disappearing.
 
 **A6. Re-run `tools/solar_rows.py`.** The row classification is now true again.
 

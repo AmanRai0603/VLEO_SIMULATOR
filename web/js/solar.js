@@ -111,8 +111,13 @@ const PANELS = [
     asks: 'How much of F10.7 does the cycle explain — and does one cycle repeat the last?',
     controls: [
       { k: 'view', label: 'view', opts: [['stack', 'the mean cycle'], ['storm', 'storm scale by cycle']] },
-      { k: 'v', label: 'variable', opts: [['f107', 'F10.7'], ['ap', 'Ap'], ['ssn', 'sunspot number']] },
-      { k: 'bins', label: 'phase bins', opts: [['20', '20'], ['10', '10'], ['40', '40']] },
+      // The storm-scale view is stormScale(rec): it takes the record and
+      // nothing else, so neither of these reaches it. 8 of this panel's 18
+      // combinations were the same picture.
+      { k: 'v', label: 'variable', when: o => o.view === 'stack',
+        opts: [['f107', 'F10.7'], ['ap', 'Ap'], ['ssn', 'sunspot number']] },
+      { k: 'bins', label: 'phase bins', when: o => o.view === 'stack',
+        opts: [['20', '20'], ['10', '10'], ['40', '40']] },
     ],
     build(rec, o) {
       if (o.view === 'storm') return stormScale(rec);
@@ -183,9 +188,14 @@ const PANELS = [
     asks: 'At what lag does the solar rotation come back, and how strongly?',
     controls: [
       { k: 'view', label: 'view', opts: [['acf', 'recurrence and decay'], ['spikes', 'spikes: size and timing']] },
-      { k: 'v', label: 'variable', opts: [['f107', 'F10.7'], ['ap', 'Ap']] },
-      { k: 'w', label: 'detrend window', opts: [['365', '365 d'], ['181', '181 d'], ['731', '731 d']] },
-      { k: 'lag', label: 'max lag', opts: [['120', '120 d'], ['60', '60 d'], ['200', '200 d']] },
+      // The spike view is spikes(rec) and reads none of these — 17 of this
+      // panel's 36 combinations drew one picture.
+      { k: 'v', label: 'variable', when: o => o.view === 'acf',
+        opts: [['f107', 'F10.7'], ['ap', 'Ap']] },
+      { k: 'w', label: 'detrend window', when: o => o.view === 'acf',
+        opts: [['365', '365 d'], ['181', '181 d'], ['731', '731 d']] },
+      { k: 'lag', label: 'max lag', when: o => o.view === 'acf',
+        opts: [['120', '120 d'], ['60', '60 d'], ['200', '200 d']] },
     ],
     build(rec, o) {
       if (o.view === 'spikes') return spikes(rec);
@@ -247,8 +257,11 @@ const PANELS = [
     asks: 'Quiet, active or storm — and how much of the record is each?',
     controls: [
       { k: 'view', label: 'view', opts: [['hist', 'where the record sits'], ['phase', 'regime against cycle phase']] },
-      { k: 'v', label: 'variable', opts: [['ap', 'Ap — regime'], ['f107', 'F10.7 — activity band']] },
-      { k: 'scale', label: 'count axis', opts: [['log', 'log'], ['lin', 'linear']] },
+      // regimeByPhase(rec) reads neither of these.
+      { k: 'v', label: 'variable', when: o => o.view === 'hist',
+        opts: [['ap', 'Ap — regime'], ['f107', 'F10.7 — activity band']] },
+      { k: 'scale', label: 'count axis', when: o => o.view === 'hist',
+        opts: [['log', 'log'], ['lin', 'linear']] },
     ],
     build(rec, o) {
       if (o.view === 'phase') return regimeByPhase(rec);
@@ -395,8 +408,12 @@ const PANELS = [
       // rather than left advertised. It is now built, and its [[input]] in
       // panels/forecast.toml is what keeps it built.
       { k: 'view', label: 'view', opts: [['lead', 'against lead'], ['year', 'by calendar year'], ['age', 'issue age']] },
-      { k: 'm', label: 'metric', opts: [['skill', 'skill vs persistence'], ['bias', 'bias'], ['rmse', 'RMS error']] },
-      { k: 'base', label: 'persistence baseline', opts: [['strict', 'last obs BEFORE issue'], ['leaky', 'obs ON the issue date']] },
+      // issueAge(idx) is the issue-age view and reads neither metric nor
+      // baseline — 5 of this panel's 18 combinations were one picture.
+      { k: 'm', label: 'metric', when: o => o.view !== 'age',
+        opts: [['skill', 'skill vs persistence'], ['bias', 'bias'], ['rmse', 'RMS error']] },
+      { k: 'base', label: 'persistence baseline', when: o => o.view !== 'age',
+        opts: [['strict', 'last obs BEFORE issue'], ['leaky', 'obs ON the issue date']] },
     ],
     async data() {
       const [fc, idx] = await Promise.all([
@@ -541,19 +558,23 @@ const PANELS = [
     asks: 'Will the design be exceeded, and if so beyond what mission length?',
     controls: [
       { k: 'v', label: 'driver', opts: [['ap', 'Ap — return period'], ['f107', 'F10.7 — lead and confidence']] },
-      { k: 'g', label: 'designed for', opts: [['3', 'G3 strong'], ['2', 'G2 moderate'], ['1', 'G1 minor']] },
+      // THE G SCALE IS GEOMAGNETIC. G1 to G3 is a storm scale and F10.7 has no
+      // place on it; offering it there was not a repeat to be merged but a
+      // control that could never have meant anything. §24.1.
+      { k: 'g', label: 'designed for', when: o => o.v === 'ap',
+        opts: [['3', 'G3 strong'], ['2', 'G2 moderate'], ['1', 'G1 minor']] },
       // THE REQUIREMENTS ARE ROWS, NOT NUMBERS TYPED HERE. This offered Ap 150,
       // 132 and 200; no row has ever held 150 or 200, and the requirement a
       // person settled on 2026-09-16 is 207. The options name rows and the
       // values come from the engine, so the list cannot drift from the tree
       // again — and an Ap bound can no longer be drawn on an F10.7 axis,
       // because the two drivers carry their own control.
-      { k: 'req', label: 'Ap requirement', opts: [
+      { k: 'req', label: 'Ap requirement', when: o => o.v === 'ap', opts: [
         ['l3_solar_req_03', 'survival — req_03'],
         ['l3_solar_req_04', 'sustained — req_04'],
         ['l3_solar_req_05', 'single day — req_05'],
       ] },
-      { k: 'reqf', label: 'F10.7 requirement', opts: [
+      { k: 'reqf', label: 'F10.7 requirement', when: o => o.v === 'f107', opts: [
         ['l3_solar_req_01', 'sustained — req_01'],
         ['l3_solar_req_02', 'single day — req_02'],
       ] },
@@ -666,7 +687,9 @@ const PANELS = [
     draws: 'The long run: the record by year, and the season inside the year.',
     asks: 'What is the context a single mission sits inside?',
     controls: [
-      { k: 'v', label: 'variable', opts: [['f107', 'F10.7'], ['ap', 'Ap'], ['ssn', 'sunspot number']] },
+      // kpAgainstAp(rec) plots Kp against ap and has no variable to pick.
+      { k: 'v', label: 'variable', when: o => o.by !== 'kpap',
+        opts: [['f107', 'F10.7'], ['ap', 'Ap'], ['ssn', 'sunspot number']] },
       { k: 'by', label: 'aggregate', opts: [['year', 'by year'], ['doy', 'by day of year'], ['month', 'by month'], ['smooth', 'the 13-month smoother'], ['kpap', 'Kp against ap']] },
     ],
     async data() { return bundleFile('solar-weather', 'monthly_means.csv'); },
@@ -1244,6 +1267,11 @@ function linkRows(html) {
     (S.byId && S.byId.has(m)) ? '<a class="xref" data-goto="' + m + '">' + m + '</a>' : m);
 }
 
+/** The controls this branch reads. A control with no `when` always applies. */
+function visibleControls(p, o) {
+  return p.controls.filter(c => !c.when || c.when(o));
+}
+
 function optsFor(p) {
   if (!state.opts[p.id]) {
     state.opts[p.id] = Object.fromEntries(p.controls.map(c => [c.k, c.opts[0][0]]));
@@ -1286,8 +1314,24 @@ function panelBody(p, o) {
         '</p>'
       : '<p class="caption rows muted">no row in this tree answers this tab, which is the panel’s ' +
         'whole point.</p>') +
-    (p.controls.length
-      ? '<div class="sweepctl">' + p.controls.map(c =>
+    // ONLY THE CONTROLS THE CURRENT BRANCH ACTUALLY READS.
+    //
+    // Every panel's build() has branches, and a branch routinely ignores a
+    // control that stayed on screen offering a choice. pattern's spike view
+    // ignores the variable, the detrend window and the maximum lag; design's
+    // F10.7 view ignores the G scale, which is geomagnetic and has no F10.7
+    // meaning at all. Across the eight panels that was 35 of 162 combinations
+    // reaching a picture already reachable another way.
+    //
+    // A knob that changes nothing is worse than no knob: the reader turns it,
+    // sees no change, and stops trusting every other knob on the page. That is
+    // the same defect the behaviour sweep had when it offered a decision worth
+    // exactly zero.
+    //
+    // `when` is declared rather than inferred, because a branch that stops
+    // reading a control should have to say so.
+    (visibleControls(p, o).length
+      ? '<div class="sweepctl">' + visibleControls(p, o).map(c =>
           '<span class="lbl">' + esc(c.label) + '</span><select class="ctl sw-opt" data-k="' + c.k + '">' +
           c.opts.map(([v, t]) => '<option value="' + esc(v) + '"' + (o[c.k] === v ? ' selected' : '') +
             '>' + esc(t) + '</option>').join('') + '</select>').join(' ') + '</div>'
