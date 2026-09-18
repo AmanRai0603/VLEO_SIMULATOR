@@ -1580,3 +1580,179 @@ Eighteen rows, **two new panels and one addition to an existing one.**
 
 Steps 2 and 3 are subtraction and correction; 4 to 6 are the only new pictures,
 and there are three of them rather than eighteen.
+
+## 23 · The figure set, specified — 162 combinations down to 68 live views
+
+§22 counted what is there. This is what to build, panel by panel, with what each
+one contains, what it reads from the engine, and why it earns its place.
+
+### 23.1 · The two rules everything below follows
+
+**A control that picks between things a reader wants to COMPARE is not a
+control. It is an encoding.** `predict` offers four percentiles as four separate
+views; a reader wanting to know how the 50th relates to the 99th has to hold two
+pictures in their head and cannot. Drawn as a fan they are one picture and the
+relationship is the thing you see first. The same is true of `pattern`'s three
+detrend windows and `forecast`'s two persistence baselines. This is where most
+of the reduction comes from, and it ADDS information rather than removing it.
+
+**A control that picks between things a DESIGNER decides between stays a
+control.** `design`'s G level and requirement are choices a person makes and
+must be able to turn. Those stay, and after §21 they read the rows rather than
+carrying copies.
+
+A third rule falls out of §22.1 and needs no argument: a control the current
+branch does not read is not drawn. That removes the 43 repeats on its own.
+
+### 23.2 · The eight existing panels
+
+**`climate` — 15 combinations, 13 after, 13 live.**
+Contains the record by year, by day of year, by month, the 13-month smoother,
+and Kp against ap. Nothing collapses: these are five genuinely different
+aggregations of one record, and the variable picks a different quantity rather
+than a comparable series. `v` is hidden on the `kpap` branch, which is the only
+repeat.
+*Reads from the engine:* `sw_semiannual_amplitude` as the amplitude drawn on the
+day-of-year view, `sw_f107a_ratio` as the scatter band on the smoother,
+`sw_kp_from_ap` as the fitted line on `kpap`, `sw_mean_cycle_level` as the mean
+cycle.
+*Why it matters:* it is the context every other number sits inside. A design
+value with no sense of the long run is a number nobody can sanity-check.
+
+**`repeatability` — 18 → 10 live.**
+Every cycle stacked on phase with the mean of the complete ones over them, and
+the storm scale. `view=storm` hides `v` and `bins`; that is all eight repeats.
+*Reads:* `sw_cycle_repeatability` as the stated r against the spread actually
+drawn, `sw_mean_cycle_level` as the mean line — which the panel currently
+recomputes, and recomputing a row's answer in a figure is how the two quietly
+stop agreeing.
+*Why:* this is the evidence for the cycle analogue, and the cycle analogue is
+what replaced the legacy centre (§22.2). The picture has to carry its own case.
+
+**`pattern` — 36 → 3 live, and better for it.**
+The autocorrelation with the rotation peak marked, and the spike classification.
+`w` becomes three lines in one picture instead of three views: comparing detrend
+windows IS the question, and no reader can do it across three tabs. `lag` becomes
+an axis zoom rather than a view, because it changes what you see and not what is
+drawn. `view=spikes` hides the rest.
+*Reads:* `sw_recurrence_lag` marking the peak, `sw_recurrence_strength` as its
+height, `sw_spike_threshold` as the cut, `sw_event_duration` as the mean width.
+*Why:* the rotation term in `sw_central_expectation` rests on this, and the row
+that used to restate the lag was retired for duplicating it — the picture is now
+the only place the lag is argued.
+
+**`segmentation` — 8 → 5 live.**
+The histogram with the band edges, and the regimes by phase. `view=phase` hides
+`v` and `scale`.
+*Reads:* `sw_regime`'s boundaries and `sw_activity_band`'s edges, drawn on the
+histogram rather than written into it.
+*Why:* both those rows are classifiers whose whole content is where the cuts
+fall. A classifier with no picture of its cuts cannot be reviewed.
+
+**`predict` — 48 → 4 live, and far better.**
+Growth against lead, all four percentiles as a fan, split all-cycles or
+by-cycle. `q` stops being a view and becomes the fan; `span` becomes an axis
+zoom. Four controls multiplying to 48 is more than a reader can hold, and the
+one relationship a designer needs — how much worse the 99th is than the 95th —
+was the one the old form could not show.
+*Reads:* `sw_uncertainty_growth` as the 95th line, `sw_horizon_climatology` and
+`sw_horizon_persistence` as marked crossings, `sw_band_coverage` as whether the
+stated band contains the truth.
+*Why:* this is where the design window's spread comes from. It is the panel that
+says how far ahead anything is knowable at all.
+
+**`forecast` — 18 → 3 live.**
+Verification by lead, by year, and issue age. `base` becomes two lines rather
+than two views — strict against leaky persistence is a comparison, not a choice.
+`m` becomes three small multiples in one frame for the same reason.
+*Reads:* `sw_forecast_skill`, `sw_forecast_bias`, and `sw_recurrence_lag` as the
+verification lead, which is the row those two now read after `sw_outlook_lead`
+was retired for restating it.
+*Why:* it is the evidence that persistence is worth nothing at mission leads,
+which is why `sw_central_expectation` carries that term and calls it inert.
+
+**`design` — 18 combinations, 18 live after the repair, and the most changed.**
+Three things happen here. The three literals go (§21.1). The method it draws is
+replaced with the one the rows use (§22.2) and the panel says which it is
+drawing. And the `f107` branch gains its own G-equivalent and requirement so it
+stops ignoring two controls — which removes the eight repeats by making them
+mean something rather than by hiding them.
+*Reads:* `sw_central_expectation`, `sw_storm_return_level`, `sw_ap_design`,
+the four design-window rows, the two cold rows, `l3_solar_req_01` through `_05`,
+and `sw_window_peak_level` as the window maximum against the window mean.
+*Why:* it draws the two numbers that leave the subsystem. It is also the panel
+that has been wrong the longest, and the only one where being wrong changes a
+design decision rather than an impression.
+
+**`density` — 1 view, unchanged.**
+It draws nothing and says why: `sys_space_environment_atmospheric_density` is
+seeded and no row answers it. Keep exactly as it is. A gap stated where it bites
+is worth more than a gap nobody has written down.
+
+### 23.3 · The two new panels
+
+**`drivers` — new, 6 views.**
+*Contains:* the five scenarios on one axis against f107, f107bar, ap, kp_mean and
+kp_peak — one view per quantity and one showing all five together. Beside every
+value, the legacy run's own from `matlab/reference/mission_drivers.csv`.
+*Reads:* `l3_solar_interface`, all twenty-five published members.
+*Why it matters, and it matters most:* twelve rows have no figure and this one
+answers all of them. It is the subsystem's entire output in a single frame — the
+thing that crosses to the system — and it is the picture the legacy tool never
+had, because it printed the table instead. Drawing this tree's values against
+the legacy run's in the same frame makes it a standing parity check that a
+person sees rather than a script reports. Where the two disagree, §22.2 says the
+disagreement is deliberate and which method is better; a reader should meet that
+claim as a picture, not as a paragraph.
+
+**`closure` — new, 5 views.**
+*Contains:* one view per required/achieved pair. The requirement as a horizontal
+line, the achieved value as a point on it, the margin as the labelled distance
+between them, and the whole thing swept over the decision `/v1/levers` reports
+as moving the margin most — so the reader sees not just whether it closes but
+how much room there is and what would spend it.
+*Reads:* `l3_solar_req_01`–`_05` and `l3_solar_ach_01`–`_05`.
+*Why:* ten rows have no figure and this answers all ten. More than that, it is
+the only picture in the tool of the question the tool exists to answer — is the
+design met. The legacy study had no closures, so there is no view to port; this
+is the port's own contribution and it should look like one. Until §20 nothing in
+the tree even compared the two sides.
+
+### 23.4 · What it comes to
+
+| | views now | views after |
+|---|---|---|
+| `climate` | 15 → 13 distinct | 13 |
+| `repeatability` | 18 → 10 | 10 |
+| `pattern` | 36 → 19 | 3 |
+| `segmentation` | 8 → 5 | 5 |
+| `predict` | 48 → 48 | 4 |
+| `forecast` | 18 → 13 | 3 |
+| `design` | 18 → 10 | 18 |
+| `density` | 1 | 1 |
+| `drivers` | — | 6 |
+| `closure` | — | 5 |
+| **total** | **162 combinations, 119 pictures** | **68 views** |
+
+Sixty-eight live views against a hundred and nineteen, and **every one of the
+sixty-eight moves when its controls move**. Eighteen rows gain a figure. Three
+wrong numbers leave the design panel, and the method it draws becomes the method
+the rows use. Nothing that was distinct is lost: the reductions are percentiles
+and windows becoming layers of one picture instead of separate ones, which is
+more of the record on screen at once rather than less.
+
+### 23.5 · Order of work
+
+1. §21 step 1 — a panel can read a row.
+2. §21 step 2 — `panel_check` fails a panel that names an engine row and does
+   not move when it moves. Everything after this is protected; nothing before
+   it is.
+3. Branch-aware controls — the 43 repeats, one rule.
+4. `design` — literals out, method replaced, `f107` branch given its own
+   requirement.
+5. `pattern`, `predict`, `forecast` — controls collapsed into encodings.
+6. `drivers`.
+7. `closure`.
+8. Reference images and a person's name against each new panel, as
+   `panels/README.md` requires.
+9. Re-run `tools/solar_rows.py`; "no figure" should be empty.
