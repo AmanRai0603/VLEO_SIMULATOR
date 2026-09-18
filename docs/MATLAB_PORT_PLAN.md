@@ -2320,9 +2320,17 @@ Three panels moved: `climate`, `repeatability`, `segmentation`. The single-line
 panels changed by less than the 2% tolerance, which is 1.6px to 2px on one thin
 curve and is the honest amount.
 
-**B6. Aspect.** 980×420 is too wide for curves that rise gently across it. Bank
-the principal slope toward 45° and let the container carry the axis band rather
-than cropping it.
+**B6. Aspect.** Done, in the part that can be done without the data. The canvas
+took the full host width at a fixed 0.40 of it, which on a wide screen is nearly
+three to one: a gentle rise across three units of width and one of height is a
+slope of about 18°, and a reader compares slopes by their ANGLE. Flattened like
+that, the difference between two curves stops being visible before it stops being
+real.
+
+Now 2.2 : 1, with the width capped at 1180 so a very wide window adds height
+rather than stretching the picture further. Banking the principal slope to 45° is
+the classical answer and needs each panel's own data; capping the aspect is most
+of the benefit and needs none of it.
 
 **B7. Crosshair and tooltip on the line panels**, with keyboard focus showing what
 hover shows, and a hit target no smaller than ~24px. Canvas needs explicit
@@ -2331,9 +2339,29 @@ nearest-x hit testing.
 **B8. A table view per panel.** The same data as rows — the WCAG-clean twin, and
 what makes a value quotable in a document without screenshotting a chart.
 
-**B9. Thin the mark where the sample thins.** `predict`'s n falls away with lead
-and `sw_storm_return_level`'s top end rests on two observations in 28 years. Both
-draw constant weight throughout. Fade or thin, and put n on the axis.
+**B9. Thin the mark where the sample thins.** Done for the two panels that have
+the count, and honestly refused for the third.
+
+`predict` and `forecast` were both already counting `n` per point and throwing it
+away. A series may now carry `n` alongside `x` and `y`, and where it does each
+segment is drawn at an opacity following its own count against the best in the
+series, floored at a fifth so a thin stretch fades rather than vanishes. On
+`predict` at a fifteen-year span the far end is now visibly lighter than the
+near, which is the honest picture: a growth curve at long lead rests on a
+fraction of the pairs the short lead has.
+
+**Not done for `sw_storm_return_level`, and the reason is not laziness.** Its
+thinness is not a per-point count — the curve is a fit whose top end rests on
+ranks 2 and 3 of a 28.2-year sample, and the fade above has no count to follow.
+Marking it means deciding *where* the fit stops being supported, which is a
+judgement about the row rather than a property the chart can read. It wants a
+decision, and it is listed here so it does not pass for done.
+
+*And a message the check was getting wrong.* Capping the aspect changed every
+canvas's shape, and all eight panels reported "100.0% of pixels differ" — true,
+useless, and indistinguishable from eight panels breaking at once. `_differ` now
+returns the two shapes when they disagree, and the finding says so: a reference
+of a different shape cannot be compared at all, so it is not a percentage.
 
 ### Part C — the panels, on the repaired layer
 

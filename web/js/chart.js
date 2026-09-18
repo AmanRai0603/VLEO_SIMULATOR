@@ -105,7 +105,9 @@ const nice = v => {
  * @param spec {
  *   x: {label, min, max, ticks?, fmt?},
  *   y: {label, min, max, ticks?, fmt?},
- *   series: [{ name, kind: 'line'|'dots'|'bars'|'step', x:[], y:[], colour?, width?, dash? }],
+ *   series: [{ name, kind: 'line'|'dots'|'bars'|'step', x:[], y:[], colour?, width?, dash?,
+ *              n?: [] — the sample behind each point; where given, the line fades
+ *              as the count falls, so a thin far end does not read as a firm one }],
  *   marks: [{ axis:'y'|'x', at, label, colour? }],
  *   note: string
  * }
@@ -275,18 +277,49 @@ export function drawChart(canvas, spec) {
         ctx.fillRect(px(s.x[k]) - w / 2, py(s.y[k]), w, Math.max(1, h));
       }
     } else {
-      // A null breaks the line rather than being skipped over.
-      let open = false;
-      ctx.beginPath();
-      for (let k = 0; k < s.x.length; k++) {
-        const v = s.y[k];
-        if (v === null || !isFinite(v) || (lg && v <= 0)) { open = false; continue; }
-        const X = px(s.x[k]), Y = py(v);
-        if (!open) { ctx.moveTo(X, Y); open = true; }
-        else if (s.kind === 'step') { ctx.lineTo(X, py(s.y[k - 1] === null ? v : s.y[k - 1])); ctx.lineTo(X, Y); }
-        else ctx.lineTo(X, Y);
+      // WHERE THE SAMPLE THINS, SO DOES THE LINE.
+      //
+      // A curve of constant weight from end to end says it is equally well
+      // known at both. predict's n falls away with lead — the far end of a
+      // fifteen-year growth curve rests on a fraction of the pairs the near end
+      // has — and the picture said nothing about it. A figure that looks
+      // equally confident everywhere is the one way it can lie without
+      // containing a wrong number.
+      //
+      // `n` is per point and optional. Where it is given, each segment is drawn
+      // at an opacity following its own count against the best count in the
+      // series, floored at a fifth so a thin stretch fades rather than vanishes.
+      const N = s.n && s.n.length === s.x.length ? s.n : null;
+      const nMax = N ? Math.max(...N.filter(v => isFinite(v))) : 0;
+      const wt = k => (!N || !nMax ? 1 : Math.max(0.2, Math.min(1, (N[k] || 0) / nMax)));
+      const segment = (a, b) => {
+        ctx.beginPath();
+        ctx.moveTo(px(s.x[a]), py(s.y[a]));
+        if (s.kind === 'step') { ctx.lineTo(px(s.x[b]), py(s.y[a])); }
+        ctx.lineTo(px(s.x[b]), py(s.y[b]));
+        ctx.stroke();
+      };
+      const live = k => { const v = s.y[k]; return v !== null && isFinite(v) && !(lg && v <= 0); };
+      if (N) {
+        for (let k = 1; k < s.x.length; k++) {
+          if (!live(k) || !live(k - 1)) continue;
+          ctx.globalAlpha = Math.min(wt(k), wt(k - 1));
+          segment(k - 1, k);
+        }
+        ctx.globalAlpha = 1;
+      } else {
+        // A null breaks the line rather than being skipped over.
+        let open = false;
+        ctx.beginPath();
+        for (let k = 0; k < s.x.length; k++) {
+          if (!live(k)) { open = false; continue; }
+          const X = px(s.x[k]), Y = py(s.y[k]);
+          if (!open) { ctx.moveTo(X, Y); open = true; }
+          else if (s.kind === 'step') { ctx.lineTo(X, py(s.y[k - 1] === null ? s.y[k] : s.y[k - 1])); ctx.lineTo(X, Y); }
+          else ctx.lineTo(X, Y);
+        }
+        ctx.stroke();
       }
-      ctx.stroke();
       // DIRECT LABEL AT THE END OF THE LINE.
       //
       // Not decoration: the palette's worst adjacent CVD separation is 8.2

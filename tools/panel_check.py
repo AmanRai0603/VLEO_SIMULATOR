@@ -477,7 +477,15 @@ def check_all(ids=None, record=False):
                 ))
             else:
                 diff = _differ(ref.read_bytes(), shot)
-                if diff > d.get("tolerance", 0.02):
+                if isinstance(diff, tuple):
+                    found.append((
+                        d["id"], "3 matches",
+                        "the canvas changed shape, %dx%d to %dx%d — a reference of a different "
+                        "shape cannot be compared at all, so this is not a percentage: re-record "
+                        "and look at the new picture"
+                        % (diff[1][0], diff[1][1], diff[2][0], diff[2][1]),
+                    ))
+                elif diff > d.get("tolerance", 0.02):
                     found.append((
                         d["id"], "3 matches",
                         "%.1f%% of pixels differ from the reference; %.1f%% is the tolerance"
@@ -504,7 +512,12 @@ def _differ(a, b):
     ia = Image.open(io.BytesIO(a)).convert("RGB")
     ib = Image.open(io.BytesIO(b)).convert("RGB")
     if ia.size != ib.size:
-        return 1.0
+        # A SIZE CHANGE IS ITS OWN FACT, and reporting it as "100% of pixels
+        # differ" tells a reader the picture is unrecognisable when it may be
+        # identical and merely taller. Every panel said 100% when the canvas
+        # aspect was capped, which is true, useless, and indistinguishable from
+        # eight panels having broken at once.
+        return ("size", ia.size, ib.size)
     pa, pb = ia.load(), ib.load()
     w, h = ia.size
     n = 0

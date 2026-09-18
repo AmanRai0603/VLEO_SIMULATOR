@@ -369,7 +369,9 @@ const PANELS = [
         spec: {
           x: { label: 'lead  [years]', min: 0 },
           y: { label: 'change in ' + name + ' at the ' + pct + 'th percentile  [' + (unit || '-') + ']' },
-          series: [{ name: '', kind: 'line', x: xs, y: ys }],
+          // `ns` was counted here and thrown away. Handing it to the chart is what
+          // makes the far end of this curve look as thin as it is.
+          series: [{ name: '', kind: 'line', x: xs, y: ys, n: ns }],
         },
         note: 'The ' + pct + 'th percentile of the SIGNED change in ' + name + ' over a lead — not the ' +
           'absolute change, because the unsafe direction for a drag design is the driver arriving ' +
@@ -509,7 +511,9 @@ const PANELS = [
         spec: {
           x: { label: 'lead  [days]', min: 1, max: 27 },
           y: { label: o.m === 'skill' ? 'skill against persistence  [-]' : o.m === 'bias' ? 'mean signed error, forecast − observed  [sfu]' : 'RMS error  [sfu]' },
-          series: [{ name: '', kind: 'line', x: xs, y: ys }],
+          // `ns` was counted here and thrown away. Handing it to the chart is what
+          // makes the far end of this curve look as thin as it is.
+          series: [{ name: '', kind: 'line', x: xs, y: ys, n: ns }],
           marks,
         },
         note: (o.m === 'skill'
@@ -1379,12 +1383,29 @@ function wirePanel(host, p, o, redraw) {
 }
 
 /** The drawing surface, sized to the space there actually is. */
+/**
+ * The drawing surface, sized to the space there actually is — and no wider
+ * than the picture can use.
+ *
+ * The canvas took the full host width at a fixed 0.40 of it, which on a wide
+ * screen is nearly three to one. A gentle rise across three units of width and
+ * one of height is a slope of about 18 degrees, and a reader compares slopes by
+ * their ANGLE: flattened like that, the difference between two curves stops
+ * being visible before it stops being real. Banking the principal slope toward
+ * 45 degrees is the classical answer and needs the data; capping the aspect is
+ * the part that can be done without it, and it is most of the benefit.
+ *
+ * 2.2 : 1 rather than 2.8 : 1, with the width capped so a very wide window adds
+ * height instead of stretching the picture further. The panels that genuinely
+ * want length — a skill score across 26 leads — still get it; what they stop
+ * getting is a third of the angle thrown away.
+ */
 function fitCanvas(host) {
   const cv = $('.sw-panel', host);
   if (!cv) return;
   const w = Math.round(host.getBoundingClientRect().width);
-  if (w > 320) cv.width = Math.min(1600, w);
-  cv.height = Math.round(Math.max(340, Math.min(520, cv.width * 0.40)));
+  if (w > 320) cv.width = Math.min(1180, w);
+  cv.height = Math.round(Math.max(340, Math.min(560, cv.width / 2.2)));
 }
 
 function debounce(fn, ms) {
