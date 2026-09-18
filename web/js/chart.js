@@ -20,13 +20,66 @@ export const INK = {
   mark: '#8a3ffc',
 };
 
+/**
+ * Tick VALUES on round numbers, rather than whatever lands on an even pixel.
+ *
+ * The axes here used to be laid out by dividing the plot's HEIGHT into n equal
+ * parts and labelling whichever data value fell at each one, with `nice` only
+ * formatting what it was handed. So a panel would be labelled 58.8, 90.3,
+ * 121.9, 153.4, 184.9, 216.5 — six numbers nobody can use. Reading a value off
+ * such an axis means interpolating by eye between two arbitrary ones, every
+ * time, on every panel: this single defect disfigured all ten.
+ *
+ * The step comes from the 1 / 2 / 2.5 / 5 ladder, which is the set of
+ * multipliers whose decimal multiples people read without thinking. `target` is
+ * a hint rather than a count — the number of ticks that actually fit a round
+ * step is whatever it is, and forcing exactly six is what produced the problem.
+ */
+function niceTicks(lo, hi, target) {
+  if (!(isFinite(lo) && isFinite(hi)) || hi <= lo) return [lo];
+  const raw = (hi - lo) / Math.max(1, target);
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  // The NEAREST rung, in log space, not the next one up. Rounding up always
+  // overshoots: a range of 160 asking for five ticks gives raw 32, and taking
+  // the next rung above 3.2 is 5, so a step of 50 and three ticks for a range
+  // that wanted six. The nearest rung is 2.5, a step of 25, and six ticks.
+  // Log space because the rungs are multiplicative — 2.5 is as far from 2 as 5
+  // is from 2.5, which is not true of their differences.
+  let step = 10 * mag, best = Infinity;
+  for (const r of [1, 2, 2.5, 5, 10]) {
+    const d = Math.abs(Math.log(norm / r));
+    if (d < best) { best = d; step = r * mag; }
+  }
+  const out = [];
+  // The half-step of slack absorbs binary floating point at the ends: a tick
+  // that lands on the limit to fifteen digits should be drawn, and 0.1 + 0.2
+  // says it might not.
+  for (let i = Math.ceil(lo / step - 1e-9); i * step <= hi + step * 1e-9; i++) {
+    out.push(+(i * step).toPrecision(12));
+  }
+  return out.length ? out : [lo, hi];
+}
+
+/** Powers of ten for a log axis — the only nice step a log scale has. */
+function niceLogTicks(lo, hi) {
+  const out = [];
+  for (let e = Math.ceil(Math.log10(lo) - 1e-9); Math.pow(10, e) <= hi * (1 + 1e-9); e++) {
+    out.push(Math.pow(10, e));
+  }
+  return out.length ? out : [lo, hi];
+}
+
+// Now that the ticks ARE round, the formatter's job is to stop adding decimals
+// they do not have: 150 rather than 150.0, 0.2 rather than 0.200. It still has
+// to cope with a value handed to it by a caller's own `fmt`, so it keeps a
+// sensible precision and then drops what the trailing zeros claim.
 const nice = v => {
   const a = Math.abs(v);
   if (a === 0) return '0';
-  if (a >= 1000) return v.toFixed(0);
-  if (a >= 10) return v.toFixed(1);
-  if (a >= 1) return v.toFixed(2);
-  return v.toPrecision(3);
+  if (a >= 1e6 || a < 1e-4) return v.toExponential(1).replace('e+', 'e');
+  const dp = a >= 100 ? 1 : a >= 1 ? 2 : 4;
+  return v.toFixed(dp).replace(/\.?0+$/, '');
 };
 
 /**
@@ -98,19 +151,32 @@ export function drawChart(canvas, spec) {
 
   ctx.strokeStyle = INK.grid; ctx.lineWidth = 1;
   ctx.fillStyle = INK.axis; ctx.font = '10px ui-monospace, monospace';
-  const ny = spec.y.ticks || 5, nx = spec.x.ticks || 6;
-  for (let i = 0; i <= ny; i++) {
-    const y = T + i * (H - B - T) / ny;
+  // Round tick VALUES, placed where the data puts them — not even pixels
+  // labelled with whatever fell there. See niceTicks.
+  const yt = lg ? niceLogTicks(y0, y1) : niceTicks(y0, y1, spec.y.ticks || 5);
+  const xt = niceTicks(x0, x1, spec.x.ticks || 6);
+  for (const at of yt) {
+    const y = Math.round(py(at)) + 0.5;
+    if (y < T - 0.5 || y > H - B + 0.5) continue;
+    // Zero is the reference for anything that can be negative, and an axis
+    // that labels -0.197 and 0.0426 instead of 0 hides it. Drawn one step
+    // stronger where it is in range — an autocorrelation is read against it.
+    const isZero = Math.abs(at) < 1e-12;
+    ctx.strokeStyle = isZero ? INK.axis : INK.grid;
     ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(W - R, y); ctx.stroke();
+    ctx.strokeStyle = INK.grid;
     ctx.textAlign = 'right';
-    const at = lg ? Math.pow(10, ly1 - i * (ly1 - ly0) / ny) : y1 - i * (y1 - y0) / ny;
     ctx.fillText(fy(at), L - 6, y + 3);
   }
   ctx.textAlign = 'center';
-  for (let i = 0; i <= nx; i++) {
-    const x = L + i * (W - L - R) / nx;
+  for (const at of xt) {
+    const x = Math.round(px(at)) + 0.5;
+    if (x < L - 0.5 || x > W - R + 0.5) continue;
+    const isZero = Math.abs(at) < 1e-12;
+    ctx.strokeStyle = isZero ? INK.axis : INK.grid;
     ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, H - B); ctx.stroke();
-    ctx.fillText(fx(x0 + i * (x1 - x0) / nx), x, H - B + 15);
+    ctx.strokeStyle = INK.grid;
+    ctx.fillText(fx(at), x, H - B + 15);
   }
   ctx.textAlign = 'left';
 

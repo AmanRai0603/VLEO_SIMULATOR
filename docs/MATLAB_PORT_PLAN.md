@@ -2203,17 +2203,48 @@ The remaining reductions — `pattern` 19 → 3, `predict` 48 → 4, `forecast`
 13 → 3 — are Part C, where a control becomes an encoding rather than
 disappearing.
 
-**A6. Re-run `tools/solar_rows.py`.** The row classification is now true again.
+**A6. Re-run `tools/solar_rows.py`.** Done. A4's re-citation moves four rows out
+of "ported, no figure": 20 → 24 with a figure, 17 → 13 without. `l3_solar_req_01`
+leaves the free set, which drops from 9 to 8, because the `design` panel now
+draws it as the F10.7 requirement. `l3_solar_ach_01` stays free — nothing reads
+it and no figure cites it, and its requirement being kept does not rescue it.
 
 *Part A changes no pixels deliberately. Every reference image will still move,
 because three numbers in `design` were wrong — which is the point.*
 
 ### Part B — the chart layer, once, for all ten panels
 
-**B1. Nice ticks.** Choose the step from {1, 2, 2.5, 5} × 10^k, extend the domain
-to the nearest step, then label. Replaces the current pixel-space division. Draw
-a zero rule one step stronger where zero is in range. *Largest single visual gain
-available; every panel benefits.*
+**B1. Nice ticks.** Done, and it is the largest single change in the visual
+layer so far.
+
+The step comes from the 1 / 2 / 2.5 / 5 ladder, and it is taken at the NEAREST
+rung in log space rather than the next one up. Rounding up overshoots: a range of
+160 asking for five ticks gives a raw step of 32, the next rung above 3.2 is 5,
+and that is a step of 50 and three ticks for a range that wanted six. The nearest
+rung is 2.5, a step of 25, and six ticks. Log space because the rungs are
+multiplicative.
+
+| panel | axis before | after |
+|---|---|---|
+| `repeatability` | 58.8, 90.3, 121.9, 153.4, 184.9, 216.5 | 75, 100, 125, 150, 175, 200 |
+| `design` (Ap) | 55.8, 87.0, 118.2, 149.3, 180.5, 211.7 | 100, 150, 200 → 75…200 at step 25 |
+| `pattern` | −0.197, 0.0426, 0.282, 0.522, 0.761, 1.00 | 0, 0.25, 0.5, 0.75, 1 |
+| `predict` | 36.5, 53.3, 70.1, 86.9, 103.7, 120.5 | 40, 60, 80, 100, 120 |
+
+**The zero rule is drawn one step stronger where zero is in range**, and on
+`pattern` that is not cosmetic: an autocorrelation is read against zero, the old
+axis labelled −0.197 and 0.0426 instead of it, and where the curve crosses was
+not visible at all. It is now.
+
+The formatter stopped adding decimals the ticks do not have — 150 rather than
+150.0, 0.2 rather than 0.200 — since a round tick printed to two places is only
+half the fix.
+
+All eight canvas panels moved by 4 to 6 per cent of their pixels, which is the
+ticks and nothing else: checks 1, 2 and 2b passed throughout, so no panel broke
+on the way. Every reference is re-recorded and **all eight need a person's eye
+before `panels/README.md` is satisfied** — a re-record is a claim that the new
+picture is right, and only a person can make it.
 
 **B2. The validated palette.** `#b5731a #2f6fa8 #2e7d55 #8f43e0 #c2185b #00918f`,
 all five checks passing in light and dark (§25.3). Assign in fixed order, never
