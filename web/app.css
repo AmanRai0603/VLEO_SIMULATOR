@@ -308,6 +308,23 @@ dl.asm { font-size: 11.5px; }
 dl.asm dt { font-weight: 600; margin-top: .45rem; }
 dl.asm dd { margin: 0 0 0 1rem; color: var(--ink-2); }
 table.iface, table.fx { border-collapse: collapse; width: 100%; font-size: 11px; margin: .5rem 0; }
+/* THE ANSWER, BESIDE THE QUESTION. Large enough to be read before the chart is,
+   and the qualifier beside it in running weight so the number is what carries.
+   Empty where a panel has no single number, and it collapses rather than
+   leaving a gap. */
+/* AN EMPTY BLOCK IS NOT A FREE BLOCK, even at display:none. Adding a bare <p>
+   to panelBody moved three panels this change does not touch — predict by a
+   whole CSS pixel of canvas height, repeatability and segmentation by 5.3 and
+   2.5 per cent of their pixels — because the extra node shifts the layout the
+   canvas is measured against by a sub-pixel, and the canvas height is a
+   function of its measured width. Carrying `caption`, which the siblings
+   already carry, makes the empty case identical to having no node at all. */
+.sw-answer:empty { display: none; margin: 0; padding: 0; }
+.sw-answer { margin: .1rem 0 .35rem; line-height: 1.35; }
+.sw-answer b { font-size: 21px; font-weight: 600; color: var(--ink);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.sw-answer span { font-size: 11.5px; color: var(--ink-3); margin-left: .45rem; }
+
 /* The numbers behind a figure. Closed by default — the picture is the point —
    and scrollable, because a panel with two hundred lead points should not push
    the next figure off the page to prove it has them. */

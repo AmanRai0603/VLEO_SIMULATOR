@@ -280,6 +280,14 @@ const PANELS = [
       const p23 = pk(23), p24 = pk(24);
       const vname = key === 'f107' ? 'F10.7' : key === 'ap' ? 'Ap' : 'the sunspot number';
       return {
+        // THE CORRELATION IS THE ANSWER AND THE RATIO IS WHY IT IS NOT ENOUGH.
+        // Both, in one line, because quoting the correlation alone beside a
+        // question about repeatability is the reading this panel exists to stop.
+        answer: r === null
+          ? { value: '\u2014', of: 'no phase bin both complete cycles populate' }
+          : { value: r.toFixed(3),
+              of: 'how well cycle 24 repeats 23\u2019s ' + vname + ' SHAPE \u2014 while its peak is '
+                + (p24 / p23).toFixed(2) + ' of 23\u2019s' },
         spec: {
           x: { label: 'cycle phase  [0 = minimum, 1 = the next]', min: 0, max: 1 },
           y: { label: key === 'f107' ? 'F10.7  [sfu]' : key === 'ap' ? 'Ap  [-]' : 'sunspot number  [-]' },
@@ -389,9 +397,15 @@ const PANELS = [
           x: { label: 'lag  [days]', min: 1, max: MAXLAG },
           y: { label: 'autocorrelation of the detrended series  [-]' },
           series: [
+            { kind: 'band', x: xs, y: band,
+              y0: band.map(b => (b === null ? null : -b)), colour: INK.muted, alpha: 0.16 },
             { name: 'detrended over 365 d', kind: 'line', x: xs, y: A.r, width: 2.2 },
             { name: '181 d', kind: 'line', x: xs, y: Ashort.r, width: 1.3 },
             { name: '731 d', kind: 'line', x: xs, y: Along.r, width: 1.3 },
+            // INSIDE THE BAND IS "SHAPE, NOT FINDING", which is a region and was
+            // drawn as its two edges. The edges stay — they are where the band
+            // ends and a reader reads a value off them — and the wash between
+            // them is what makes "is this peak real" answerable by looking.
             { name: '95 % band, Bartlett', kind: 'line', x: xs, y: band,
               colour: INK.muted, width: 1, dash: [3, 3], aside: true },
             { name: '', kind: 'line', x: xs, y: band.map(b => (b === null ? null : -b)),
@@ -399,6 +413,10 @@ const PANELS = [
           ],
           marks,
         },
+        answer: p1.at
+          ? { value: p1.at + ' d', of: 'the lag the rotation signal peaks at, r = ' +
+              p1.r.toFixed(3) + ' — outside the band at ' + outside + ' of ' + MAXLAG + ' lags' }
+          : { value: 'none', of: 'no peak in the rotation band at this setting' },
         note: p1.at
           ? 'The first peak is at lag ' + p1.at + ' with r = ' + p1.r.toFixed(6) +
             (p2.at && p3.at
@@ -473,11 +491,23 @@ const PANELS = [
         let k = 0; while (k < cuts.length && x >= cuts[k]) k++;
         share[k]++;
       }
+      const pc = i => (100 * share[i] / vals.length);
+      const TOP = names.length - 1;
       return {
+        answer: { value: pc(TOP).toFixed(1) + '%',
+          of: 'of the record is ' + names[TOP] + ' \u2014 the tail a drag design is sized by; '
+            + names[0] + ' holds ' + pc(0).toFixed(1) + '%' },
         spec: {
           x: { label: (key === 'ap' ? 'daily Ap' : 'F10.7  [sfu]') + '  [bin ' + bw + ']', min: 0 },
           y: { label: o.scale === 'log' ? 'days in bin  [log10]' : 'days in bin', min: 0 },
           series: [{ name: '', kind: 'bars', x: xs, y: ys, colour: '#b5731a' }],
+          // NO REGION HERE, AND THAT IS A MEASUREMENT RATHER THAN A PREFERENCE.
+          // Shading the top band is the obvious move and it is wrong on this
+          // axis: storm is Ap 26 and above, the axis runs to 400, so the band
+          // holding 2.3 per cent of the DAYS is 94 per cent of the WIDTH. It
+          // washed 69.5 per cent of the frame's pixels and told a reader the
+          // opposite of the share it was drawn to show. The share is in the
+          // answer line instead, where it is a number and not an area.
           marks: cuts.map((c, i) => ({ axis: 'x', at: c, label: names[i] + ' | ' + names[i + 1] })),
         },
         note: 'Over ' + vals.length + ' days: ' +
@@ -570,7 +600,13 @@ const PANELS = [
       // the row itself is read at. Measured rather than asserted.
       const atYear = xs.reduce((b, x, i) => (Math.abs(x - 1) < Math.abs(xs[b] - 1) ? i : b), 0);
       const spread = QS.map((Q, i) => ys[i][atYear]).filter(v => v !== null && isFinite(v));
+      const at1 = y95[atYear];
       return {
+        answer: at1 === null || !isFinite(at1)
+          ? { value: '\u2014', of: 'no lead near a year has enough pairs to read' }
+          : { value: (at1 > 0 ? '+' : '') + sig(at1) + (unit ? ' ' + unit : ''),
+              of: 'the 95th-percentile change in ' + name + ' over a lead of '
+                + xs[atYear].toFixed(2) + ' yr \u2014 the percentile sw_uncertainty_growth publishes' },
         spec: {
           x: { label: 'lead  [years]', min: 0 },
           y: { label: 'change in ' + name + ' at a percentile  [' + (unit || '-') + ']' },
@@ -578,10 +614,21 @@ const PANELS = [
           // makes the far end of these curves look as thin as they are — and it
           // goes on ALL FOUR, because the thinning is a property of the lead and
           // fading only the published one would say the others rest on more.
-          series: QS.map((Q, i) => ({
+          series: [
+            // THE FAN, FILLED, AND THE FOUR LINES STILL ON IT. The note says the
+            // gap between the 50th and the 99th is the whole of what a band buys
+            // and costs — and it said it about four curves that sit inside two
+            // pixels of each other at a short lead, so the thing described was
+            // thinner than the ink describing it. Filled, the cost of choosing a
+            // percentile is an area that visibly opens with the lead. It goes
+            // FIRST so the lines sit on top, carries no name so the legend stays
+            // four entries, and wears the published percentile's own hue: it is
+            // that family's spread and not a fifth quantity.
+            { kind: 'band', x: xs, y: ys[3], y0: ys[0], colour: QS[P95].colour, alpha: 0.07 },
+          ].concat(QS.map((Q, i) => ({
             name: Q.name, kind: 'line', x: xs, y: ys[i], n: ns,
             colour: Q.colour, width: Q.width,
-          })),
+          }))),
         },
         note: 'The SIGNED change in ' + name + ' over a lead — not the absolute change, because ' +
           'the unsafe direction for a drag design is the driver arriving higher than planned. ' +
@@ -716,7 +763,13 @@ const PANELS = [
         if (nObs[k] - nStr[k] > gapBy) { gapBy = nObs[k] - nStr[k]; gapAt = xs[k]; }
       }
       const sig2 = v => (v === null ? '—' : v.toFixed(3));
+      const best = skS.reduce((b, v, i) => (v !== null && (b < 0 || v > skS[b]) ? i : b), -1);
       return {
+        answer: best < 0
+          ? { value: '—', of: 'no lead scored' }
+          : { value: (skS[best] >= 0 ? '+' : '') + skS[best].toFixed(3),
+              of: 'peak skill against persistence, at lead ' + xs[best] +
+                ' — above zero the outlook beats assuming nothing changes' },
         spec: {
           x: { label: 'lead  [days]', min: 1, max: 27 },
           panes: [
@@ -879,7 +932,12 @@ const PANELS = [
           ? all.reduce((m, v) => (Math.abs(Math.log(v)) > Math.abs(Math.log(m)) ? v : m), 1)
           : null;
         const near = all.filter(v => Math.abs(v - 1) < 0.001).length;
+        const off = worst === null ? null : (worst > 1 ? worst : 1 / worst);
         return {
+          answer: { value: near + ' of ' + all.length,
+            of: 'cells agree with the legacy run to a tenth of a per cent'
+              + (off === null ? '' : '; the furthest is out by a factor of ' + off.toFixed(2))
+              + ', and both families of disagreement are deliberate' },
           spec: {
             x: { label: 'scenario', ...XPAD },
             y: { label: 'this tree ÷ the legacy run  [-]', log: true },
@@ -918,6 +976,11 @@ const PANELS = [
         (v !== null && (b < 0 || Math.abs(v) > Math.abs(gap[b])) ? i : b), -1);
       const u = Q.unit === '-' ? '' : ' ' + Q.unit;
       return {
+        answer: worstI < 0
+          ? { value: '\u2014', of: 'nothing to compare at this setting' }
+          : { value: sig(Math.abs(gap[worstI])) + u,
+              of: 'the widest gap to the legacy run, at the ' + SHOWN[worstI] + ' scenario \u2014 '
+                + sig(mine[worstI]) + u + ' here against ' + sig(theirsY[worstI]) + u },
         spec: {
           x: { label: 'scenario', ...XPAD },
           y: { label: Q.label + '  [' + Q.unit + ']' },
@@ -1083,12 +1146,27 @@ const PANELS = [
       let runs = 0, prev = -99;
       for (const d of above) { if (d.t !== prev + 1) runs++; prev = d.t; }
       const rate = above.length / years;
+      const hitsAt = cross(bound);
       return {
+        answer: !isFinite(hitsAt)
+          ? { value: 'never', of: 'the design level is not reached inside the declared range' }
+          : { value: sig(hitsAt) + ' yr', of: 'before the record expects a storm above the ' +
+              'G' + o.g + ' design level of Ap ' + bound.toFixed(0) },
         spec: {
           x: { label: 'mission length  [years]', min: xs[0], max: xs[xs.length - 1] },
           y: { label: 'daily Ap the record expects once in that time  [-]' },
           series: [{ name: 'sw_storm_return_level', kind: 'line', x: xs, y: ys }],
           marks: [
+            // THE REGION, NOT ITS EDGE. Everything above the design level is
+            // outside what the vehicle was built for, and a wash says that where
+            // a dashed rule asked the reader to work out which side they were on.
+            //
+            // IN THE DESIGN LEVEL'S OWN INK, not the requirement's. It was drawn
+            // in the pink this face uses for a bound a value is measured against
+            // — which is the colour of the OTHER rule in this frame, the one at
+            // Ap 207 — so the wash started at one line and was coloured like the
+            // other. A region belongs to the edge it opens at.
+            { axis: 'y', from: bound, label: '', colour: INK.mark, alpha: 0.05 },
             { axis: 'y', at: bound, label: 'designed for G' + o.g + ' = Ap ' + bound.toFixed(0) +
               '  (sw_ap_design)' },
             { axis: 'y', at: req, label: 'required ≤ ' + req.toFixed(0) + '  (' + o.req + ')',
@@ -1215,7 +1293,32 @@ const PANELS = [
       const now = eng[ach] && isFinite(eng[ach].si) ? eng[ach].si : null;
       const marks = cross === null ? [] : [{ axis: 'x', at: cross,
         label: 'the margin runs out here' }];
+      // The achieved curve on one side of zero margin, cut exactly where the
+      // margin changes sign. `want` true is the side with margin left.
+      const bandSide = want => {
+        const xx = [], yy = [];
+        const sgn = k => (margin[k] === null || !isFinite(margin[k]) ? null : margin[k] >= 0);
+        for (let k = 0; k < x.length; k++) {
+          const sk = sgn(k), pk = k > 0 ? sgn(k - 1) : null;
+          if (pk !== null && sk !== null && pk !== sk) {
+            const a = margin[k - 1], b = margin[k], f = a / (a - b);
+            const xc = x[k - 1] + (x[k] - x[k - 1]) * f;
+            const vc = value[k - 1] + (value[k] - value[k - 1]) * f;
+            xx.push(xc); yy.push(vc);
+            if (sk !== want) { xx.push(xc); yy.push(null); }
+          }
+          if (sk === want) { xx.push(x[k]); yy.push(value[k]); }
+        }
+        return { x: xx, y: yy };
+      };
       return {
+        answer: now === null
+          ? { value: 'no answer', of: 'the engine did not return a margin for this pair' }
+          : { value: (now >= 0 ? '+' : '') + now.toFixed(4),
+              of: now < 0
+                ? 'margin — NEGATIVE, the requirement is exceeded by ' +
+                  (-now * 100).toFixed(1) + ' per cent of its own value'
+                : 'margin — ' + (now * 100).toFixed(1) + ' per cent of ' + req + ' is unspent' },
         spec: {
           x: { label: lv.label + '  [' + lv.unit + ']' },
           panes: [
@@ -1229,6 +1332,25 @@ const PANELS = [
               // says so rather than looking like an oversight.
               y: { label: title.q + '  [' + title.u + ']' },
               series: [
+                // THE AREA BETWEEN THE TWO IS THE MARGIN. It is the one thing
+                // this panel is named for and it was the only thing not drawn:
+                // a reader had two lines and had to hold the distance between
+                // them in their head. First in the list, so both lines sit on
+                // top of it.
+                // AND SPLIT AT THE CROSSING, because the area left of it and the
+                // area right of it are opposite facts. One fill made "this much
+                // margin is unspent" and "this much requirement is exceeded" the
+                // same wedge in the same ink, which is the one distinction the
+                // panel exists to draw. Unspent wears the achieved curve's own
+                // hue; exceeded wears the pink every bound in this face is drawn
+                // in. Both end exactly at the interpolated crossing rather than
+                // at the nearest swept point, so neither claims a sample it does
+                // not have.
+                ...[[true, INK.series[0], 0.10], [false, '#c2185b', 0.13]].map(([w, c, a]) => {
+                  const b = bandSide(w);
+                  return { kind: 'band', x: b.x, y: b.y, y0: b.x.map(() => reqV),
+                    colour: c, alpha: a };
+                }),
                 { name: 'what the record gives — ' + quantity, kind: 'line',
                   x, y: value, width: 2.2 },
                 // THE SAME COLOUR THE ZERO RULE BELOW IS DRAWN IN, deliberately.
@@ -1245,8 +1367,14 @@ const PANELS = [
             {
               y: { label: 'margin, signed fraction of the requirement  [-]' },
               series: [{ name: '', kind: 'line', x, y: margin, colour: INK.series[2] }],
-              marks: [{ axis: 'y', at: 0, label: 'the requirement is exactly met',
-                colour: '#c2185b' }].concat(marks),
+              marks: [
+                // Below zero the requirement is not met, whichever way it binds:
+                // the margin is signed, so its sign is the verdict and the
+                // region is the verdict drawn.
+                { axis: 'y', to: 0, label: '', colour: '#c2185b', alpha: 0.05 },
+                { axis: 'y', at: 0, label: 'the requirement is exactly met',
+                  colour: '#c2185b' },
+              ].concat(marks),
             },
           ],
         },
@@ -1445,7 +1573,20 @@ const PANELS = [
         marks.push({ axis: 'x', at: 80, label: 'March equinox', colour: '#2f6fa8' });
         marks.push({ axis: 'x', at: 266, label: 'September equinox', colour: '#2f6fa8' });
       }
+      // HOISTED OUT OF THE NOTE, because the answer and the prose have to be the
+      // same measurement. They were one expression inside the caption's closure,
+      // which is fine until a second reader needs them and copies them.
+      const vname = key === 'f107' ? 'F10.7' : key === 'ap' ? 'Ap' : 'the sunspot number';
+      const unit = key === 'f107' ? 'sfu' : '';
+      const hi = Math.max(...ys), lo = Math.min(...ys);
+      const atHi = xs[ys.indexOf(hi)], atLo = xs[ys.indexOf(lo)];
+      const gname = o.by === 'doy' ? '5-day bin' : o.by === 'year' ? 'year' : 'month';
       return {
+        answer: !isFinite(hi / lo) || lo === 0
+          ? { value: '\u2014', of: 'the record holds nothing to compare at this setting' }
+          : { value: '\u00d7' + (hi / lo).toFixed(2),
+              of: 'between the quietest ' + gname + ' of the record and the busiest \u2014 a mission '
+                + 'is sized against wherever in that range it falls' },
         spec: {
           x: { label: o.by === 'year' ? 'year' : o.by === 'doy' ? 'day of year  [5-day bins]' : 'year' },
           y: { label: (key === 'f107' ? 'F10.7  [sfu]' : key === 'ap' ? 'Ap  [-]' : 'sunspot number  [-]') + ', mean' },
@@ -1453,10 +1594,6 @@ const PANELS = [
           marks,
         },
         note: (() => {
-          const vname = key === 'f107' ? 'F10.7' : key === 'ap' ? 'Ap' : 'the sunspot number';
-          const unit = key === 'f107' ? 'sfu' : '';
-          const hi = Math.max(...ys), lo = Math.min(...ys);
-          const atHi = xs[ys.indexOf(hi)], atLo = xs[ys.indexOf(lo)];
           const spread = 'The ' + (o.by === 'doy' ? '5-day bins' : o.by === 'year' ? 'yearly means' : 'monthly means') +
             ' run from ' + sig(lo) + (unit ? ' ' + unit : '') + ' at ' + sig(atLo) + ' to ' + sig(hi) +
             (unit ? ' ' + unit : '') + ' at ' + sig(atHi) + ', a ratio of ' + (hi / lo).toFixed(2) +
@@ -1500,6 +1637,13 @@ const PANELS = [
       // information a density model would not need both.
       const r = corr(withBoth.map(d => d.f107), withBoth.map(d => d.ap));
       return {
+        // THE ANSWER IS A REFUSAL, AND IT SAYS SO. Rule 5: a refusal is never a
+        // substitution. Putting the correlation in this slot would answer "what
+        // are these drivers worth as density" with a number about something
+        // else, which is precisely the reading the panel is here to prevent.
+        answer: { value: 'no answer',
+          of: 'nothing computes sys_space_environment_atmospheric_density \u2014 what is drawn is '
+            + 'the precondition, not the density' },
         spec: {
           x: { label: 'F10.7  [sfu]' },
           // Ap FLOORS AT ZERO and this is the one panel whose data reaches it:
@@ -1552,7 +1696,14 @@ function stormScale(rec) {
     colour: INK.series[i],
   }));
   const worst = per.map(p => ({ n: p.c.n, max: Math.max(...p.days.map(d => d.ap)) }));
+  // How uneven "unevenly" is, at the mildest level, measured off the bars drawn.
+  const g1 = (series[0].y || []).filter(v => v !== null && isFinite(v) && v > 0);
+  const evenness = g1.length > 1 ? Math.max(...g1) / Math.min(...g1) : null;
   return {
+    answer: evenness === null
+      ? { value: '\u2014', of: 'not enough cycles reach G1 to compare' }
+      : { value: '\u00d7' + evenness.toFixed(1),
+          of: 'between the busiest cycle and the quietest, in days a year at G1 or above' },
     spec: {
       x: { label: 'solar cycle', ticks: 2 },
       y: { label: 'days a year at or above the level', min: 0 },
@@ -1589,6 +1740,9 @@ function spikes(rec) {
   });
   const xs = byPhase.map((_, i) => (i + 0.5) / nb);
   return {
+    answer: { value: n + ' days',
+      of: 'F10.7 spikes over the record, in ' + runs + ' separate bursts \u2014 a spike being a day '
+        + 'above its own 81-day mean by 2.5 of the record\u2019s own scatter' },
     spec: {
       x: { label: 'cycle phase', min: 0, max: 1 },
       y: { label: 'spike days per 1000 days at that phase', min: 0 },
@@ -1615,13 +1769,24 @@ function regimeByPhase(rec) {
     else if (d.ap <= 6) qt[b]++;
   }
   const xs = tot.map((_, i) => (i + 0.5) / nb);
+  const stPc = st.map((c, i) => (tot[i] ? 100 * c / tot[i] : null));
+  const qtPc = qt.map((c, i) => (tot[i] ? 100 * c / tot[i] : null));
+  // Where the storm share peaks, off the curve rather than from the prose.
+  const drawn = stPc.filter(v => v !== null && isFinite(v));
+  const pk = drawn.length ? Math.max(...drawn) : null;
+  const atPk = pk === null ? null : xs[stPc.indexOf(pk)];
   return {
+    answer: pk === null
+      ? { value: '\u2014', of: 'no phase bin holds a day with an Ap' }
+      : { value: pk.toFixed(1) + '%',
+          of: 'the peak storm share, at phase ' + atPk.toFixed(2)
+            + ' \u2014 past maximum, on the declining side, and the declared epoch sits in it' },
     spec: {
       x: { label: 'cycle phase', min: 0, max: 1 },
       y: { label: 'share of days at that phase  [%]', min: 0 },
       series: [
-        { name: 'storm (Ap \u2265 26)', kind: 'line', x: xs, y: st.map((c, i) => (tot[i] ? 100 * c / tot[i] : null)), colour: '#c2185b' },
-        { name: 'quiet (Ap \u2264 6)', kind: 'line', x: xs, y: qt.map((c, i) => (tot[i] ? 100 * c / tot[i] : null)), colour: '#2f6fa8' },
+        { name: 'storm (Ap \u2265 26)', kind: 'line', x: xs, y: stPc, colour: '#c2185b' },
+        { name: 'quiet (Ap \u2264 6)', kind: 'line', x: xs, y: qtPc, colour: '#2f6fa8' },
       ],
       marks: [{ axis: 'x', at: 0.6193669438, label: 'the declared epoch, phase 0.619' }],
     },
@@ -1661,6 +1826,11 @@ function growthByCycle(rec, key, q, maxL) {
     }
   }
   return {
+    answer: !spread
+      ? { value: '\u2014', of: 'no lead is reached by all of the cycles \u2014 shorten it until they overlap' }
+      : { value: sig(spread[0]) + ' to ' + sig(spread[1]) + unit,
+          of: 'how far the cycles disagree at ' + shared.toFixed(2)
+            + ' yr, the longest lead all of them reach \u2014 sw_uncertainty_growth pools exactly this' },
     spec: {
       x: { label: 'lead  [years]', min: 0 },
       y: { label: 'change in ' + name + ' at the ' + (q * 100) + 'th percentile  [' + (unit.trim() || '-') + ']' },
@@ -1752,7 +1922,17 @@ function byIssueYear(fc, byDay, tOf, strict, leaky) {
   });
   const worst = kept.length ? kept[keptS.indexOf(Math.min(...keptS))] : null;
   const best = kept.length ? kept[keptS.indexOf(Math.max(...keptS))] : null;
+  // The worst annual bias, measured off the middle frame. Not the skill: the
+  // year-to-year skill swing is mostly the record's difficulty, and the bias is
+  // the one line here a design is read off wrongly.
+  const low = bias.reduce((b, v, i) =>
+    (v !== null && isFinite(v) && (b < 0 || v < bias[b]) ? i : b), -1);
   return {
+    answer: low < 0
+      ? { value: '\u2014', of: 'no year holds enough usable pairs to score' }
+      : { value: (bias[low] > 0 ? '+' : '') + bias[low].toFixed(1) + ' sfu',
+          of: 'the worst annual bias, in ' + span[low] + ' \u2014 the outlook came in LOW, which is '
+            + 'the direction that costs propellant' },
     spec: {
       x: { label: 'the calendar year the outlook was issued in', fmt: v => String(Math.round(v)) },
       panes: [
@@ -1819,16 +1999,32 @@ function byIssueYear(fc, byDay, tOf, strict, leaky) {
  * perfection rather than a baseline: a line along the floor of the axis would
  * be decoration that the other two have earned and this one has not.
  *
+ * SKILL GETS A SHADED SIDE AND BIAS DOES NOT, and the difference is what zero
+ * MEANS on each. On the skill frame zero is a verdict — below it the outlook is
+ * worse than not bothering — so the side is worth a wash that says so without
+ * being read, and the region came in on the by-lead view alone, which is
+ * exactly how the two views start to differ, so it lives here with its rule.
+ * On the bias frame zero is a direction rather than a verdict: an outlook that
+ * reads low is not a failing outlook, it is a fact a design has to carry.
+ * Shading it also fails the test every region here has to pass, which is that
+ * it be a REGION — the bias is negative at all 27 leads, so the wash covers the
+ * whole frame, and a frame that is entirely shaded has said nothing. The label
+ * on the rule carries the direction instead.
+ *
  * One function rather than one expression per view, because the by-lead and
  * by-year views ask the same question of the same metric and two copies is two
  * places for them to start answering it differently.
  */
 function scoreBaseline(metric) {
   if (metric === 'skill') {
-    return [{ axis: 'y', at: 0, label: 'no better than persistence', colour: '#c2185b' }];
+    return [
+      { axis: 'y', to: 0, label: '', colour: '#c2185b', alpha: 0.05 },
+      { axis: 'y', at: 0, label: 'no better than persistence', colour: '#c2185b' },
+    ];
   }
   if (metric === 'bias') {
-    return [{ axis: 'y', at: 0, label: 'unbiased — above is high, below is LOW', colour: '#c2185b' }];
+    return [{ axis: 'y', at: 0, label: 'unbiased — above is high, below is LOW',
+      colour: '#c2185b' }];
   }
   return [];
 }
@@ -1843,6 +2039,9 @@ function issueAge(idx) {
   const mean = gaps.reduce((p, c) => p + c, 0) / gaps.length;
   gaps.sort((a, b) => a - b);
   return {
+    answer: { value: quantile(gaps, 0.5) + ' days',
+      of: 'the median gap between one outlook and the next \u2014 how stale the newest one already '
+        + 'is on a typical day, which no lead_days column says' },
     spec: {
       x: { label: 'days between one issue and the next  [30 = 30 or more]', min: 0 },
       y: { label: 'number of gaps', min: 0 },
@@ -1899,10 +2098,19 @@ function f107Window(extra, o, eng) {
     if (analogue[k] !== null && hot[k] !== null && analogue[k] > hot[k]) { over = xs[k]; break; }
   }
   return {
+    answer: { value: (REQ - peak >= 0 ? '+' : '') + (REQ - peak).toFixed(1) + ' sfu',
+      of: 'margin against ' + o.reqf + '\u2019s ' + REQ.toFixed(0)
+        + ' \u2014 the worst single day any declared window reaches is ' + peak.toFixed(1) },
     spec: {
       x: { label: 'mission length  [years]', min: xs[0], max: xs[xs.length - 1] },
       y: { label: 'F10.7 the window is designed to  [sfu]' },
       series: [
+        // THE DESIGN WINDOW IS AN AREA AND THE NOTE ALREADY CALLED IT ONE: "the
+        // band between the outer two is the design window". It was four lines
+        // and a reader was asked to hold the outermost two in mind and subtract.
+        // Filled between the hot single day and the cold single day, the window
+        // is the thing on the canvas and the four rows are its edges.
+        { kind: 'band', x: xs, y: hot, y0: cold, colour: INK.series[0], alpha: 0.10 },
         { name: 'sw_f107_design_short — hot, single day', kind: 'line', x: xs, y: hot },
         { name: 'sw_f107_design_long — hot, sustained', kind: 'line', x: xs, y: hotLong,
           colour: '#2f6fa8' },
@@ -1916,6 +2124,9 @@ function f107Window(extra, o, eng) {
           x: xs, y: analogue, colour: '#00918f', dash: [7, 4] },
       ],
       marks: [
+        // Above the bound is the side that fails, and the bound binds one way:
+        // the requirement's sense is `<=`, so the region is everything over it.
+        { axis: 'y', from: REQ, label: '', colour: '#c2185b', alpha: 0.06 },
         { axis: 'y', at: REQ, label: 'required \u2264 ' + REQ.toFixed(0) + '  (' + o.reqf + ')',
           colour: '#c2185b' },
       ],
@@ -1985,7 +2196,16 @@ function thermoSolar(extra, eng, decF, decFa, decKp, now) {
     ? (sust[sust.length - 1].y - sust[0].y) / (sust[sust.length - 1].x - sust[0].x) : null;
   const mFast = slopeOf(extra.fast), mSlow = slopeOf(extra.slow);
   const k = n => (n === null ? '—' : n.toFixed(2));
+  const si = eng.l3_solar_interface && isFinite(eng.l3_solar_interface.si)
+    ? eng.l3_solar_interface.si : null;
   return {
+    answer: now === null
+      ? { value: '\u2014', of: 'env_exospheric_temperature did not answer' }
+      : { value: now.toFixed(0) + ' K',
+          of: 'the sky the tree currently declares, at env_f107 = '
+            + (decF === null ? '—' : decF.toFixed(0)) + ' \u2014 every density below it is downstream'
+            + (si === null ? '' : ', and the subsystem publishes ' + si.toFixed(1) + ' sfu, not '
+              + (decF === null ? '—' : decF.toFixed(0))) },
     spec: {
       x: { label: 'F10.7  [sfu]' },
       y: { label: 'exospheric temperature  [K]' },
@@ -2003,6 +2223,15 @@ function thermoSolar(extra, eng, decF, decFa, decKp, now) {
       // marks, and putting the second on the canvas rather than only in the prose
       // is also what lets check 2b see that this panel reads the crossing at all.
       marks: [
+        // §28.2 IS THE DISTANCE BETWEEN THE TWO MARKS, so it is drawn as the
+        // distance rather than left as two ticks a reader subtracts. Open on
+        // neither side: this region has two measured ends and both are named.
+        (decF === null || !(eng.l3_solar_interface && isFinite(eng.l3_solar_interface.si)))
+          ? null
+          : { axis: 'x',
+            from: Math.min(decF, eng.l3_solar_interface.si),
+            to: Math.max(decF, eng.l3_solar_interface.si),
+            label: '', colour: '#c2185b', alpha: 0.05 },
         decF === null ? null : { axis: 'x', at: decF,
           label: 'env_f107 = ' + decF.toFixed(0) + ', what the design is sized on',
           colour: '#c2185b' },
@@ -2080,6 +2309,12 @@ function thermoKp(extra, eng, decKp) {
     }
   }
   return {
+    answer: worst === null
+      ? { value: '\u2014', of: 'no scenario answered at both of its Kp' }
+      : { value: worst.d.toFixed(1) + ' K',
+          of: 'the widest gap between a scenario\u2019s two Kp readings, at the ' + worst.sc.shown
+            + ' \u2014 ' + (100 * worst.d / worst.tm).toFixed(1) + ' per cent of the temperature, '
+            + 'and nothing in this tree says which slot to take' },
     spec: {
       x: { label: 'Kp  [-]', min: 0, max: 9 },
       y: { label: 'exospheric temperature  [K]' },
@@ -2124,10 +2359,19 @@ function thermoSlot(extra, eng) {
   const ok = gaps.filter(g => g !== null);
   const wi = gaps.reduce((b, g, i) => (g !== null && (b < 0 || g > gaps[b]) ? i : b), -1);
   return {
+    answer: !ok.length
+      ? { value: '—', of: 'no scenario answered' }
+      : { value: Math.max(...ok).toFixed(1) + ' K',
+          of: 'the most the choice of Kp slot is worth — at the ' +
+            (wi < 0 ? 'worst scenario' : SCEN[wi].shown) + ', and nothing says which slot to use' },
     spec: {
       x: { label: 'scenario', ...SCEN_X },
       y: { label: 'exospheric temperature  [K]' },
       series: [
+        // THE GAP IS THE QUESTION. §29.2 asks which of the two Kp the design is
+        // driven by; the answer's size is the area between these lines, and it
+        // was the one thing the picture made the reader measure by eye.
+        { kind: 'band', x: xs, y: tp, y0: tm, colour: INK.series[3], alpha: 0.12 },
         { name: 'at the day\u2019s mean Kp', kind: 'line', x: xs, y: tm, width: 2.2 },
         // NOT INK.series[4]. That slot is #c2185b, which this face uses for the
         // line a value is MEASURED AGAINST — every zero rule, every requirement,
@@ -2181,6 +2425,11 @@ function thermoShape(extra, eng, decF, decFa, decKp) {
   const last = d.length - 1;
   const excess = d[last] === null ? null : d[last] - lin[last];
   return {
+    answer: excess === null
+      ? { value: '\u2014', of: 'the sweep returned nothing at the top of the Kp range' }
+      : { value: excess.toFixed(1) + ' K',
+          of: 'how far the measured curve stands above the straight line its own quiet end sets, '
+            + 'by Kp ' + xs[last].toFixed(0) + ' \u2014 that is the exponential, measured' },
     spec: {
       x: { label: 'Kp  [-]', min: 0, max: 9 },
       y: { label: 'temperature the geomagnetic term adds  [K]', min: 0 },
@@ -2230,6 +2479,9 @@ function smoothed(rows, key) {
   const vname = key === 'f107' ? 'F10.7' : key === 'ap' ? 'Ap' : 'the sunspot number';
   const unit = key === 'f107' ? ' sfu' : '';
   return {
+    answer: { value: sig(resid) + unit,
+      of: 'the rms a month keeps once the cycle is smoothed out of it \u2014 the part of '
+        + vname + ' a design cannot plan around' },
     spec: {
       x: { label: 'year' },
       y: { label: (key === 'f107' ? 'F10.7  [sfu]' : key === 'ap' ? 'Ap  [-]' : 'sunspot number  [-]') + ', monthly' },
@@ -2280,11 +2532,25 @@ function kpAgainstAp(rec) {
     const i = Math.round(kp * 3);
     return i >= 0 && i < AP_AT_KP.length ? AP_AT_KP[i] : null;
   };
+  const i7 = ks.indexOf(7);
+  const t7 = tableAt(7), m7 = i7 < 0 ? null : med[i7];
   return {
+    answer: m7 === null || !m7 || t7 === null
+      ? { value: '\u2014', of: 'the record holds no day whose worst slot reached Kp 7' }
+      : { value: '\u00d7' + (t7 / m7).toFixed(1),
+          of: 'the published table\u2019s ap over the median day\u2019s, at Kp 7 \u2014 the bias '
+            + 'sw_kp_slot_bias exists for, and why the table is read as a ceiling' },
     spec: {
       x: { label: 'Kp reached that day  [worst three-hourly slot]', min: 0, max: 9 },
       y: { label: 'daily Ap  [-], log scale', log: true },
       series: [
+        // THE SPREAD, FILLED. Two thin grey lines is two more curves to tell
+        // apart in a frame that already has three; the 10th to 90th is one
+        // quantity — how wide a day's Ap can be for a given worst slot — and
+        // filling it says so, and says it behind the median rather than beside
+        // it. The edges stay: an area with no boundary invites reading its top
+        // as a maximum, and the 90th is not one.
+        { kind: 'band', x: ks, y: p90, y0: p10, colour: '#8a8880', alpha: 0.13 },
         { name: 'median daily Ap', kind: 'line', x: ks, y: med },
         { name: '10th and 90th percentile', kind: 'line', x: ks, y: p10, colour: '#8a8880', width: 1 },
         { name: '', kind: 'line', x: ks, y: p90, colour: '#8a8880', width: 1 },
@@ -2387,6 +2653,17 @@ export function drawRowFigure(host, panelId, rowId) {
 /** The caption, the controls and the surface. Shared by both callers. */
 function panelBody(p, o) {
   return '<p class="caption"><b>' + esc(p.asks) + '</b></p>' +
+    // THE ANSWER, WHERE THE QUESTION IS.
+    //
+    // A panel has always shown its question twice — `asks` in bold and `draws`
+    // in grey — and never its answer. A reader met a question, a line, and then
+    // a paragraph, and the paragraph was where the work was: §34 measured the
+    // median view at 179 words of prose against 37 characters of text inside the
+    // frame. The number is not new; every build already computes it for that
+    // paragraph. Putting it here means a reader has the answer before they start
+    // decoding the picture, and the picture then shows WHY rather than having to
+    // be read first.
+    '<p class="caption sw-answer"></p>' +
     '<p class="caption muted">' + esc(p.draws) + '</p>' +
     // Which rows this picture is an argument about. A panel that illustrates a
     // claim and does not say which claim leaves the reader to guess, and the
@@ -2521,6 +2798,14 @@ async function render(host, p, o) {
       engineValues(p.engine || []),
     ]);
     const out = p.build(rec, o, extra, eng);
+    // `answer` is optional and a build that has no single number should not
+    // invent one — a headline that is a guess is worse than no headline.
+    const ans = $('.sw-answer', host);
+    if (ans) {
+      ans.innerHTML = out.answer
+        ? '<b>' + esc(out.answer.value) + '</b> <span>' + esc(out.answer.of) + '</span>'
+        : '';
+    }
     const cv = $('.sw-panel', host);
     // A STACK NEEDS THE ROOM ITS FRAMES NEED, and the picture is the only thing
     // that knows how many there are — fitCanvas runs before the build and sizes

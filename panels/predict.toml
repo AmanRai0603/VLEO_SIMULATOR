@@ -24,7 +24,14 @@ through. The four never cross: they are quantiles of one sorted sample at each
 lead, so a crossing is the sample having been rebuilt per percentile. A smooth monotone curve means something has
 been fitted. Every line FADES toward the long leads, because the pair count
 falls away and a line of constant weight would claim the far end is as well
-known as the near one. Splitting by cycle replaces the four with one curve per
+known as the near one. THE FAN IS FILLED between the 50th and the 99th, in the published
+percentile's own hue and under all four lines. That area is what choosing a
+percentile costs, and it must OPEN with the lead: a fill of roughly constant
+width means the percentiles are not spreading and something has been fitted.
+The fill carries no legend entry — it is the spread of the family the four
+lines are, not a fifth quantity.
+
+Splitting by cycle replaces the four with one curve per
 cycle, at the 95th."""
 # A person looked at panels/reference/predict.png and agreed the picture
 # is right. That is what makes check three mean anything: the reference is the
@@ -36,7 +43,7 @@ cycle, at the 95th."""
 # forward would make check three prove only that a machine has not
 # changed its mind. It needs a person to look at
 # panels/reference/predict.png and put their name here.
-confirmed_by = "UNCONFIRMED / re-recorded 2026-09-18 after Part C; awaiting a look (last signed A. Rai / 2026-09-15, against the previous chart)"
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19 after §34 moves 1 and 2; awaiting a look (last signed A. Rai / 2026-09-15, against the previous chart)"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.

@@ -107,7 +107,11 @@ const nice = v => {
  *
  *   // ONE PANE, the ordinary case:
  *   y: {label, min, max, ticks?, fmt?, log?},
- *   series: [{ name, kind: 'line'|'dots'|'bars'|'step', x:[], y:[], colour?, width?, dash?,
+ *   series: [{ name, kind: 'line'|'dots'|'bars'|'step'|'band', x:[], y:[], colour?, width?, dash?,
+ *              y0?: [] — with kind 'band', the OTHER edge. The area between y and
+ *              y0 is filled. Drawn in array order like everything else, so a band
+ *              goes FIRST in the list and the lines sit on top of it. A null in
+ *              either edge breaks the band, the same way it breaks a line,
  *              n?: [] — the sample behind each point; where given, the line fades
  *              as the count falls, so a thin far end does not read as a firm one,
  *              aside?: true — FURNITURE, not data. A significance band is a
@@ -115,7 +119,12 @@ const nice = v => {
  *              it happens to vary with x rather than sit at one value. Drawn, and
  *              named in the legend so the dashes mean something; kept out of the
  *              end labels, the readout and the table, which are for the record }],
- *   marks: [{ axis:'y'|'x', at, label, colour? }],
+ *   marks: [{ axis:'y'|'x', at, label, colour? }
+ *           | { axis:'y'|'x', from, to, label, colour? }  — a shaded REGION
+ *             rather than a rule. A dashed line at a bound asks the reader to
+ *             work out which side they are on; a wash tells them. "Above the
+ *             design level", "below zero skill", "the storm regime" are regions,
+ *             and each was drawn as its edge ],
  *
  *   // OR SEVERAL, STACKED, SHARING ONE X AXIS:
  *   panes: [{ y, series, marks }, …],
@@ -166,7 +175,8 @@ export function drawChart(canvas, spec) {
     if (pn.series.filter(q => q.name).length <= 1) continue;
     const f = pn.y.fmt || nice;
     for (const q of pn.series) {
-      if (!q.name || q.aside || q.kind === 'bars' || q.kind === 'dots') continue;
+      if (!q.name || q.aside || q.kind === 'bars' || q.kind === 'dots'
+          || q.kind === 'band') continue;
       for (let k = q.y.length - 1; k >= 0; k--) {
         const v = q.y[k];
         if (v !== null && isFinite(v)) { endTexts.push(f(v)); break; }
@@ -210,14 +220,38 @@ export function drawChart(canvas, spec) {
   const xsAll = allS.flatMap(s => s.x.filter(v => v !== null && isFinite(v)));
   let x0 = xsAll.length ? Math.min(...xsAll) : 0;
   let x1 = xsAll.length ? Math.max(...xsAll) : 1;
+  // A RULE HAS `at`; A REGION HAS `from`/`to`, AND AN OPEN END IS NOT A NUMBER.
+  // This read m.at only, so the first x region ever drawn — §28.2's gap in the
+  // thermosphere flux view — put `undefined` through Math.min and made the
+  // extent NaN. Every x position is then NaN, so the frame drew its axes, its
+  // ticks and not one mark of data: a blank picture that passed "the mount is
+  // not blank" because the axis labels are still on it, passed its reference at
+  // 2.4 per cent because three thin lines and some text ARE about 2.4 per cent
+  // of a white canvas, and failed 2b for the one honest reason — a chart that
+  // draws nothing draws the same nothing whatever the engine answers.
+  //
+  // The y extent below had always walked all three fields. The two loops did the
+  // same job and only one of them knew about regions.
   for (const pn of panes) {
     for (const m of pn.marks) {
-      if (m.axis === 'x') { x0 = Math.min(x0, m.at); x1 = Math.max(x1, m.at); }
+      if (m.axis !== 'x') continue;
+      for (const v of [m.at, m.from, m.to]) {
+        if (v === undefined || v === null || !isFinite(v)) continue;
+        x0 = Math.min(x0, v); x1 = Math.max(x1, v);
+      }
     }
   }
   const given = v => v !== undefined && v !== null && isFinite(v);
   if (given(spec.x.min)) x0 = spec.x.min;
   if (given(spec.x.max)) x1 = spec.x.max;
+  // AND IT IS NOT ALLOWED TO BE SILENT AGAIN. A non-finite extent cannot draw
+  // anything, and the failure mode is an empty frame that looks like a panel
+  // with no data rather than like a bug. Thrown, the face marks the mount
+  // `data-failed` and every check in tools/panel_check.py sees it at once.
+  if (!isFinite(x0) || !isFinite(x1)) {
+    throw new Error('the x extent is not a number: ' + x0 + ' to ' + x1 +
+      ' — a mark or a series is carrying something that is not a coordinate');
+  }
   if (x0 === x1) { x0 -= 1; x1 += 1; }
   const px = v => L + (v - x0) / (x1 - x0) * (W - L - R);
   const fx = spec.x.fmt || nice;
@@ -284,6 +318,26 @@ export function drawChart(canvas, spec) {
 }
 
 /**
+ * The hue of every series in one pane, resolved once and in one place.
+ *
+ * A series with no `colour` of its own takes the next hue in the fixed order —
+ * and "next" must not count the bands. A band is the area under or between the
+ * lines it belongs to rather than a series of its own, so inserting one pushed
+ * every unnamed series below it one hue along: the design-window fill moved the
+ * hot single-day curve onto the blue its sustained neighbour had already
+ * declared, and two curves in one frame came out the same colour. Nothing
+ * failed; the picture just started lying about which line was which.
+ *
+ * A band with no colour of its own borrows the hue of the series that follows
+ * it, which is what a band drawn under one line wants anyway.
+ */
+function _hues(series) {
+  let ci = 0;
+  return series.map(s => s.colour
+    || INK.series[(s.kind === 'band' ? ci : ci++) % INK.series.length]);
+}
+
+/**
  * One frame: its own y scale, its own grid, its own series, marks and legend.
  *
  * Returns what a readout needs to answer inside this frame — the y mapping is
@@ -301,14 +355,25 @@ function _pane(ctx, o) {
   // but gridlines. The Segmentation histogram declares `min: 0` on both axes and
   // had been rendering blank.
   const all = pn.series.filter(s => s.x.length);
-  const ysAll = all.flatMap(s => s.y.filter(v => v !== null && isFinite(v)));
+  // A band's far edge is data too. Without this the frame is scaled to one side
+  // of it and the fill runs off the top.
+  const ysAll = all.flatMap(s => (s.y || []).concat(s.y0 || [])
+    .filter(v => v !== null && isFinite(v)));
   let y0 = ysAll.length ? Math.min(...ysAll) : 0;
   let y1 = ysAll.length ? Math.max(...ysAll) : 1;
   // A mark outside the data is still a fact about the data, so the frame
   // grows to hold it. Clipping a bound off the top draws a picture in which
   // the bound is always met.
   for (const m of pn.marks) {
-    if (m.axis !== 'x') { y0 = Math.min(y0, m.at); y1 = Math.max(y1, m.at); }
+    if (m.axis === 'x') continue;
+    // A region is bounded by `from`/`to`; a rule by `at`. Either way a mark
+    // outside the data is still a fact about the data and the frame grows to
+    // hold it — except an open end, which is a region meaning "everything above
+    // this" and must not drag the axis to infinity.
+    for (const v of [m.at, m.from, m.to]) {
+      if (v === undefined || v === null || !isFinite(v)) continue;
+      y0 = Math.min(y0, v); y1 = Math.max(y1, v);
+    }
   }
   if (!given(pn.y.min) || !given(pn.y.max)) {
     const pad = (y1 - y0) * 0.06 || 1;
@@ -317,6 +382,10 @@ function _pane(ctx, o) {
   }
   if (given(pn.y.min)) y0 = pn.y.min;
   if (given(pn.y.max)) y1 = pn.y.max;
+  if (!isFinite(y0) || !isFinite(y1)) {
+    throw new Error('the y extent of "' + _plain(pn.y.label) + '" is not a number: ' +
+      y0 + ' to ' + y1 + ' — a mark or a series is carrying something that is not a coordinate');
+  }
   if (y0 === y1) { y0 -= 1; y1 += 1; }
 
   // A log y axis where the quantity is geometric. ap runs 0 to 400 across the
@@ -364,6 +433,32 @@ function _pane(ctx, o) {
   }
   ctx.textAlign = 'left';
 
+  // REGIONS, BEHIND EVERYTHING. A wash under the grid rather than over the data:
+  // it is context for the marks, not a mark itself, and a fill on top of a line
+  // would dim the line to say something about the space around it.
+  //
+  // An open end — `to` left off, or infinite — means "everything beyond this",
+  // and is clamped to the frame rather than growing it. That is what makes
+  // "above the design level" drawable without an upper bound to invent.
+  for (const m of pn.marks) {
+    if (m.from === undefined && m.to === undefined) continue;
+    const lo = (m.from === undefined || m.from === null || !isFinite(m.from))
+      ? -Infinity : m.from;
+    const hi = (m.to === undefined || m.to === null || !isFinite(m.to))
+      ? Infinity : m.to;
+    ctx.save();
+    ctx.fillStyle = m.colour || INK.mark;
+    ctx.globalAlpha = m.alpha === undefined ? 0.07 : m.alpha;
+    if (m.axis === 'x') {
+      const a = Math.max(L, px(Math.max(lo, x0))), b = Math.min(W - R, px(Math.min(hi, x1)));
+      if (b > a) ctx.fillRect(a, T, b - a, BOT - T);
+    } else {
+      const a = Math.min(BOT, py(Math.min(hi, y1))), b = Math.max(T, py(Math.max(lo, y0)));
+      if (b > a) ctx.fillRect(L, a, W - L - R, b - a);
+    }
+    ctx.restore();
+  }
+
   // MARK SPECS. Lines 2px with round joins and caps, so a curve does not go
   // spiky at a corner and a one-point run still draws. Dots at radius 4 — an
   // 8px mark is the smallest a person can point at — each carrying a 2px ring
@@ -371,14 +466,47 @@ function _pane(ctx, o) {
   // dots. The ring is the separator; a stroke around a mark would be ink that
   // is not data.
   const ends = [];
+  const hues = _hues(pn.series);
   pn.series.forEach((s, i) => {
-    const col = s.colour || INK.series[i % INK.series.length];
+    const col = hues[i];
     ctx.save();
     ctx.strokeStyle = col; ctx.fillStyle = col;
     ctx.lineWidth = s.width || 2;
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     if (s.dash) ctx.setLineDash(s.dash);
-    if (s.kind === 'dots') {
+    if (s.kind === 'band') {
+      // THE AREA BETWEEN TWO EDGES, and a null in either breaks it.
+      //
+      // Filled in one pass per unbroken run rather than as one polygon: a band
+      // that closed across a gap would fill a region neither edge was measured
+      // over, which is the area equivalent of drawing a line across a hole.
+      ctx.globalAlpha = s.alpha === undefined ? 0.14 : s.alpha;
+      const ok = k => {
+        const a = s.y[k], b = s.y0 ? s.y0[k] : null;
+        return a !== null && isFinite(a) && b !== null && isFinite(b)
+          && !(lg && (a <= 0 || b <= 0));
+      };
+      let run = [];
+      const flush = () => {
+        if (run.length > 1) {
+          ctx.beginPath();
+          ctx.moveTo(px(s.x[run[0]]), py(s.y[run[0]]));
+          for (const k of run) ctx.lineTo(px(s.x[k]), py(s.y[k]));
+          for (let j = run.length - 1; j >= 0; j--) {
+            ctx.lineTo(px(s.x[run[j]]), py(s.y0[run[j]]));
+          }
+          ctx.closePath();
+          ctx.fill();
+        }
+        run = [];
+      };
+      for (let k = 0; k < s.x.length; k++) {
+        if (ok(k)) run.push(k);
+        else flush();
+      }
+      flush();
+      ctx.globalAlpha = 1;
+    } else if (s.kind === 'dots') {
       const r = s.width || 4;
       for (let k = 0; k < s.x.length; k++) {
         if (s.y[k] === null) continue;
@@ -461,7 +589,8 @@ function _pane(ctx, o) {
       // Selective by construction — the END of each line and nowhere else. A
       // number beside every point is chaos and goes unread, and the axis, the
       // legend and the hover carry the rest.
-      if (s.name && !s.aside && pn.series.filter(q => q.name).length > 1) {
+      if (s.name && !s.aside && s.kind !== 'band'
+          && pn.series.filter(q => q.name).length > 1) {
         let lastK = -1;
         for (let k = s.x.length - 1; k >= 0; k--) {
           const v = s.y[k];
@@ -513,23 +642,35 @@ function _pane(ctx, o) {
   };
   for (const m of pn.marks) {
     const col = m.colour || INK.mark;
-    ctx.save();
-    ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1.2;
-    ctx.setLineDash([5, 4]);
-    ctx.beginPath();
-    if (m.axis === 'x') { ctx.moveTo(px(m.at), T); ctx.lineTo(px(m.at), BOT); }
-    else { ctx.moveTo(L, py(m.at)); ctx.lineTo(W - R, py(m.at)); }
-    ctx.stroke();
-    ctx.restore();
+    // A REGION IS ALREADY DRAWN, as the wash above; it needs no rule. Its label
+    // is placed at whichever edge the frame actually holds, so "everything above
+    // the design level" labels the bottom of its own shading rather than an
+    // infinity the axis does not reach.
+    const region = m.from !== undefined || m.to !== undefined;
+    const at = region
+      ? (m.from !== undefined && m.from !== null && isFinite(m.from) ? m.from : m.to)
+      : m.at;
+    if (at === undefined || at === null || !isFinite(at)) continue;
+    if (!region) {
+      ctx.save();
+      ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1.2;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      if (m.axis === 'x') { ctx.moveTo(px(at), T); ctx.lineTo(px(at), BOT); }
+      else { ctx.moveTo(L, py(at)); ctx.lineTo(W - R, py(at)); }
+      ctx.stroke();
+      ctx.restore();
+    }
+    if (!m.label) continue;
     ctx.fillStyle = col;
     const w = ctx.measureText(m.label).width + 8;
     if (m.axis === 'x') {
-      const x = Math.min(W - R - w, px(m.at) + 4);
+      const x = Math.min(W - R - w, px(at) + 4);
       ctx.fillText(m.label, x, T + 11 + 12 * slotFor(x, w));
     } else {
       // A y label is nudged DOWN rather than sideways: sideways would put it
       // over the data it is annotating.
-      let y = Math.max(T + 10, py(m.at) - 4);
+      let y = Math.max(T + 10, py(at) - 4);
       while (taken.y.some(t => Math.abs(t.at - y) < 11) && y < BOT - 2) y += 11;
       taken.y.push({ at: y });
       ctx.fillText(m.label, L + 4, y);
@@ -549,7 +690,7 @@ function _pane(ctx, o) {
       let lx = L;
       const ly = head + 12 + (r + 1) * LEG_H;
       for (const s of row) {
-        const col = s.colour || INK.series[pn.series.indexOf(s) % INK.series.length];
+        const col = hues[pn.series.indexOf(s)];
         ctx.fillStyle = col;
         ctx.fillRect(lx, ly - 5, 14, 3);
         ctx.fillStyle = INK.text;
@@ -559,7 +700,7 @@ function _pane(ctx, o) {
     });
   }
 
-  return { y: pn.y, series: pn.series, py, fy, y0, y1, top: T, bot: BOT, log: lg };
+  return { y: pn.y, series: pn.series, hues, py, fy, y0, y1, top: T, bot: BOT, log: lg };
 }
 
 /** Pack the legend into rows that fit the plot width. */
@@ -644,7 +785,7 @@ function drawReadout(canvas, xv, focused) {
   // arithmetic rather than the record.
   const hits = [];
   for (const pane of c.panes) pane.series.forEach((s, i) => {
-    if (!s.x.length || s.aside) return;
+    if (!s.x.length || s.aside || s.kind === 'band') return;
     // A SERIES ANSWERS ONLY WHERE SOMETHING IS DRAWN.
     //
     // Taking the nearest point unconditionally reported whatever the series had,
@@ -668,7 +809,7 @@ function drawReadout(canvas, xv, focused) {
     }
     if (bi < 0) return;
     if (bd > 0 && !_drawnAt(s, bi, xv)) return;
-    const col = s.colour || INK.series[i % INK.series.length];
+    const col = pane.hues[i];
     // A single series carries no name, and the readout was therefore a bare
     // number: "F10.7 64. 5". The y axis says what 5 is, which a sighted reader
     // has and a reader hearing the aria-label does not, so the axis title
@@ -728,7 +869,7 @@ export function attachHover(canvas, onLeave) {
     const all = [];
     for (const pane of c.panes) {
       for (const s of pane.series) {
-        if (s.aside) continue;
+        if (s.aside || s.kind === 'band') continue;
         for (let k = 0; k < s.x.length; k++) {
           if (s.y[k] !== null && isFinite(s.y[k])) all.push(s.x[k]);
         }
@@ -806,7 +947,7 @@ export function tableFor(spec) {
   const cols = [];
   for (const pn of panes) {
     for (const s of (pn.series || [])) {
-      if (s.x && s.x.length && !s.aside) {
+      if (s.x && s.x.length && !s.aside && s.kind !== 'band') {
         cols.push({ s, name: s.name || pn.y.label, fy: pn.y.fmt || nice });
       }
     }

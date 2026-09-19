@@ -13,6 +13,13 @@ number sw_design_safe_duration publishes, so the crossing must be visible on
 the picture rather than only in the note. Both marks carry labels naming what
 they are; two unlabelled horizontal lines are the defect this catches.
 
+EVERYTHING ABOVE THE CAPABILITY IS WASHED, in the capability mark's own colour
+and not the requirement's. The wash opens at the capability line and runs to
+the top of the frame, so which side of the line is the bad side is something a
+reader sees rather than works out. A wash drawn in the requirement's pink while
+opening at the capability is the defect to look for: a region belongs to the
+edge it opens at.
+
 ON THE F10.7 BRANCH, which the reference image does not cover because it is
 shot at the state the panel opens in: FIVE curves against mission length. Four
 solid ones are the design rows — hot and cold, sustained and single day — and
@@ -28,12 +35,25 @@ the cycle, and the peak jumps when the window swallows another cycle maximum, so
 a smooth or falling dashed line is the defect. It crosses ABOVE the hot
 single-day curve at about 5.9 years, and that crossing is the point of drawing
 it: past there the design is sized on a mean that sits under the thing it
-averages."""
+averages.
+
+The area between the hot single-day curve and the cold single-day curve is
+FILLED: that area is the design window, which the note has always called it and
+the picture used to leave as two edges a reader subtracted. The fill is bounded
+by the outer two curves and by nothing else — a fill reaching the sustained
+curves instead would be drawing the wrong window. The band above the
+requirement is washed in the same pink the requirement line is drawn in."""
 # A person looked at panels/reference/design.png and agreed the picture
 # is right. That is what makes check three mean anything: the reference is the
 # claim, and without a name against it the check only proves the chart has not
 # changed since a machine drew it.
-confirmed_by = "A. Rai / 2026-09-15 (against the pre-move picture; content unchanged, canvas resized 2026-09-16, not yet re-looked)"
+# NOT CONFIRMED ANY MORE. The reference was re-recorded on 2026-09-19: the Ap
+# view now washes the region above the design level, and the F10.7 view fills
+# the design window between its outer two curves. The CONTENT of the picture
+# changed, not its size, so the earlier signature was against a different chart
+# and carrying it forward would make check three prove only that a machine has
+# not changed its mind.
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19 after §34 moves 1 and 2; awaiting a look (last signed A. Rai / 2026-09-15, against the previous chart)"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.

@@ -25,6 +25,14 @@ rather than a baseline. The bias frame is the one to check hardest: with the
 line drawn, the by-lead series is visibly below it at EVERY lead, which is the
 outlook under-predicting F10.7 throughout.
 
+THE SKILL FRAME WASHES EVERYTHING BELOW ZERO AND THE BIAS FRAME DOES NOT, and
+that asymmetry is deliberate. On the skill frame zero is a verdict — below it
+the outlook is worse than not bothering — so the side is worth saying without
+being read. On the bias frame zero is a direction rather than a verdict, and
+the bias is negative at all 27 leads, so a wash there would cover the whole
+frame: a frame that is entirely shaded has said nothing. A bias frame washed
+below zero is the defect to look for.
+
 THE SKILL FRAME CARRIES TWO LINES and the dashed one must sit BELOW the solid
 one at short lead. Solid is the strict baseline — the last observation before
 the issue date, what a forecaster actually had — and the outlook beats it from
@@ -67,7 +75,7 @@ either."""
 # forward would make check three prove only that a machine has not
 # changed its mind. It needs a person to look at
 # panels/reference/forecast.png and put their name here.
-confirmed_by = "UNCONFIRMED / re-recorded 2026-09-18 after Part C; awaiting a look (last signed A. Rai / 2026-09-15, against the previous chart)"
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19 after §34 moves 1 and 2; awaiting a look (last signed A. Rai / 2026-09-15, against the previous chart)"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.

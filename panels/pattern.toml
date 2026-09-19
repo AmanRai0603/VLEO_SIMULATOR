@@ -21,7 +21,11 @@ discrepancy a reviewer should weigh rather than round away. A panel that marked
 27 here would be agreeing with the textbook instead of with the record. Every
 curve stays within -1 and 1, because they are correlations. A dashed grey band
 sits symmetrically about zero and WIDENS with lag; a band of constant width is
-the naive white-noise interval and not what is claimed. The horizontal axis
+the naive white-noise interval and not what is claimed. That band is FILLED
+between its two edges, not merely outlined, so "inside the band" is an area a
+curve is visibly in or out of rather than a pair of dashed lines a reader holds
+in mind; the edges stay, because an area with no boundary invites reading its
+top as a maximum. The horizontal axis
 ends at 200 and the curves reach it. In the spike view the picture is a scatter
 rather than a curve, and no autocorrelation axis remains."""
 # A person looked at panels/reference/pattern.png and agreed the picture
@@ -34,7 +38,7 @@ rather than a curve, and no autocorrelation axis remains."""
 # forward would make check three prove only that a machine has not
 # changed its mind. It needs a person to look at
 # panels/reference/pattern.png and put their name here.
-confirmed_by = "UNCONFIRMED / re-recorded 2026-09-18 after Part C; awaiting a look (last signed A. Rai / 2026-09-15, against the previous chart)"
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19 after §34 moves 1 and 2; awaiting a look (last signed A. Rai / 2026-09-15, against the previous chart)"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.

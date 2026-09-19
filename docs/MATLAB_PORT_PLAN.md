@@ -3871,3 +3871,141 @@ least urgent, because it changes how the figures look and not what they say.
 Moves 1, 3 and 8 together are perhaps a day's work and they change every figure in
 the set. Move 2 is the one that changes what the figures MEAN, because in seven
 panels the region is the finding and only its edge is currently drawn.
+
+
+## 35 · Moves 1 and 2, done — the answer beside the question, and the region shaded
+
+§34 ranked nine moves. The first two are now in the face. This section records
+what they turned out to be, the three defects they uncovered on the way, and the
+one place the move was wrong and was taken back out.
+
+### 35.1 · Move 1 — the answer beside the question
+
+A build may now return `answer: { value, of }`. The face draws it between the
+question the panel asks and the line describing what it draws: the number large
+and tabular, the clause after it small and grey. It is optional by design — a
+build with no single number must not invent one, and a headline that is a guess
+is worse than no headline.
+
+**Twenty-four views now carry one, which is every view in the solar subsystem.**
+Not one of the numbers is typed: each is measured off the same arrays the figure
+is drawn from, so an answer cannot drift from its own picture the way §21 found
+three copied constants drifting from their rows.
+
+Three of them are worth naming because they are not what a first pass would have
+put there:
+
+- `repeatability` answers **0.972 · how well cycle 24 repeats 23's shape — while
+  its peak is 0.79 of 23's**. The correlation alone is the reading the panel
+  exists to stop, so the ratio rides in the same line.
+- `density` answers **no answer · nothing computes
+  sys_space_environment_atmospheric_density**. Rule 5: a refusal is never a
+  substitution. The correlation the panel draws is about something else, and
+  putting it in this slot would answer the question with a number that is not an
+  answer to it.
+- `thermosphere`'s Kp-slot view answers **140.6 K · the most the choice of Kp
+  slot is worth — and nothing says which slot to use**. That is §29.2's open
+  question stated as a quantity at the top of the figure that raises it.
+
+**An empty `<p>` is not a free `<p>`.** Adding the element moved three panels
+this change does not touch — `predict` by a pixel of canvas height,
+`repeatability` and `segmentation` by 5.3 and 2.5 per cent of their pixels —
+because an extra block node shifts the layout the canvas is measured against by
+a sub-pixel, and the canvas height is a function of its measured width. A direct
+probe reported the canvas identical; `panel_check` reproduced the difference
+twice. Giving the element the `caption` class its siblings already carry, and
+zeroing its margin and padding when empty, makes the empty case identical to
+having no node at all.
+
+### 35.2 · Move 2 — shade the region that means something
+
+Two additions to the chart: a series `kind: 'band'`, which fills between `y` and
+a second edge `y0`, and a mark carrying `from`/`to` instead of `at`, which washes
+a region of an axis. Both are drawn behind the data. A band is filled per
+unbroken run, never closing across a gap — the area equivalent of the rule that a
+line is never drawn across a null. Neither appears in the legend, the readout,
+the table or the arrow-key ladder: they are furniture, and every value in them is
+carried by a line that is already there.
+
+Nine places took one:
+
+| panel · view | what is shaded | what it says |
+|---|---|---|
+| `design` · Ap | above the design level | outside what the vehicle was built for |
+| `design` · F10.7 | between the outer two curves | the design window, which the note already called it |
+| `closure` · top | achieved to requirement, **split at the crossing** | margin left, then requirement exceeded |
+| `closure` · margin | below zero | the requirement is not met |
+| `forecast` · skill | below zero | worse than not bothering |
+| `pattern` | inside the Bartlett band | wiggle rather than finding |
+| `predict` | 50th to 99th | what choosing a percentile costs |
+| `thermosphere` · flux | declared 150 to the subsystem's 104.1 | §28.2, drawn as a distance |
+| `climate` · Kp/ap | 10th to 90th percentile | how wide a day is, at one worst slot |
+
+The `closure` split is the one that changed what the picture MEANS. One fill drew
+"this much margin is unspent" and "this much requirement is exceeded" as the same
+wedge in the same ink — the single distinction the panel is named for. Two fills
+meeting at the interpolated crossing, the unspent side in the achieved curve's
+own hue and the exceeded side in the pink every bound in this face is drawn in,
+say it without a word.
+
+### 35.3 · Where the move was wrong, and was taken back out
+
+**`segmentation`'s top band.** Shading the storm band is the obvious move and it
+is wrong on that axis: storm is Ap 26 and above, the axis runs to 400, so the
+band holding 2.3 per cent of the DAYS is 94 per cent of the WIDTH. It washed 69.5
+per cent of the frame and told a reader the opposite of the share it was drawn to
+show. The share is in the answer line instead, where it is a number and not an
+area.
+
+**`forecast`'s bias frame.** Same test, same result: the bias is negative at all
+27 leads, so the wash covers the whole frame, and a frame that is entirely shaded
+has said nothing. It also fails on meaning — on the skill frame zero is a verdict,
+on the bias frame it is a direction, and an outlook that reads low is not a
+failing outlook but a fact a design has to carry.
+
+So the rule a region has to pass is not "is this side the bad side" but **"is
+this a region"** — if the data lives inside the wash, there is no region, only a
+tint.
+
+### 35.4 · Three defects the moves uncovered
+
+**A band shifted the palette.** A series with no colour takes the next hue in the
+fixed order, and "next" was counting the bands. The design-window fill moved the
+hot single-day curve onto the blue its sustained neighbour had already declared,
+and two curves in one frame came out the same colour. Nothing failed; the picture
+just started lying about which line was which. The hues of a pane are now
+resolved once, in one function, skipping the bands — and a band with no colour of
+its own borrows the hue of the series that follows it, which is what a band drawn
+under one line wants anyway.
+
+**An x region blanked a chart, silently, and `panel_check` caught it for the
+wrong reason.** The x extent walked `m.at` only, so the first x region ever drawn
+— §28.2's gap — put `undefined` through `Math.min` and made the extent NaN. Every
+x position is then NaN, so the frame drew its axes, its ticks and not one mark of
+data. It passed check 1, because the axis labels mean the mount is not blank. It
+passed check 3 at 2.4 per cent, because three thin lines and some text ARE about
+2.4 per cent of a white canvas. It failed 2b — *asked the engine for env_f107 and
+drew the same picture when the answer changed* — for the one honest reason
+available: a chart that draws nothing draws the same nothing whatever the engine
+answers. **2b found a blanked chart that the reference comparison rated a 2.4 per
+cent drift.** The y extent had always walked all three fields; the two loops did
+the same job and only one of them knew about regions.
+
+A non-finite extent now throws rather than drawing an empty frame, on both axes.
+The failure mode it had was the worst kind: a picture that looks like a panel with
+no data rather than like a bug.
+
+**A wash started at one line and was coloured like the other.** `design`'s region
+opened at the capability mark and was drawn in the pink of the requirement mark
+three inches above it. A region belongs to the edge it opens at, and this is the
+second time in this face that picking an ink without asking what else is wearing
+it has produced a mark that invites the wrong pairing.
+
+### 35.5 · What is still open
+
+- **Six references are UNCONFIRMED and one more just joined them.** `design` was
+  signed; its content has changed, so its signature is withdrawn rather than
+  carried forward. A machine may not sign for a picture it drew.
+- Moves 3 to 9 of §34 are untouched.
+- The `sw_outlook_lead` citation in `forecast` is still stale — reported in Part
+  D, deliberately not fixed, and it is a row question rather than a figure one.

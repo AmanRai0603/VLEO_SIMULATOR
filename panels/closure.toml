@@ -21,6 +21,15 @@ are the same fact twice and a picture where the crossings are at different
 places has computed the margin from something other than the two lines above
 it.
 
+THE AREA BETWEEN THE TWO LINES IS FILLED AND IT CHANGES COLOUR AT THE CROSSING.
+Left of the crossing the fill is the achieved curve's own hue and it is margin
+left; right of it the fill is the pink every bound in this face is drawn in and
+it is requirement exceeded. The two meet exactly at the crossing and nowhere
+else — one fill in one colour across the whole span is the defect, because it
+draws "this much is unspent" and "this much is overspent" as the same wedge.
+The bottom frame washes everything below zero in the same pink, and the wash
+must start at the same x the top frame's pink fill does.
+
 The margin is POSITIVE where the achieved curve is BELOW the requirement,
 because every one of these five declares sense "<=" — the requirement is a
 ceiling and room is what is left under it. A margin that rises as the achieved
@@ -39,7 +48,7 @@ the window. An axis that stays the same across all five means the lever
 question is not being asked."""
 # NOT CONFIRMED. This panel is new on 2026-09-18 and nobody has looked at
 # panels/reference/closure.png yet, and an agent may not be that person.
-confirmed_by = "UNCONFIRMED / new 2026-09-18, Part D; awaiting a look"
+confirmed_by = "UNCONFIRMED / new 2026-09-18, re-recorded 2026-09-19 after §34 moves 1 and 2; awaiting a look"
 tolerance = 0.02
 settle_ms = 10000
 
