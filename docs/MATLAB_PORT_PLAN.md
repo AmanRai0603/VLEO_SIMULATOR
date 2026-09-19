@@ -3493,3 +3493,98 @@ closes, which is correct — it was blocked before and nothing knew.*
 | 9 · B3.3 residual view | blocked with 7 |
 
 Step 8 is the next one that can be done without a decision.
+
+
+---
+
+## 32 · Step 8, the `thermosphere` panel — done
+
+Four views on `env_exospheric_temperature`, the row where the solar drivers first
+become a physical quantity. `panels/thermosphere.toml`, reference recorded,
+**UNCONFIRMED** — an agent may not sign one.
+
+### 32.1 · The rule this panel was built under
+
+**No coefficient of the relation appears anywhere in the panel's source.** §21
+found three of `design`'s numbers going stale because the figure carried a row's
+constants; here the temptation was worse, because Jacchia 1971 is four
+coefficients and a decomposition of them is the obvious figure to draw.
+
+So every shape is measured off the engine instead:
+
+- the three slopes in the flux view come from three sweeps, not from the sheet;
+- the straight line in the fourth view is drawn through the measured curve's own
+  quiet end, so the exponential's departure is measured against the measurement;
+- the two dots in the Kp view are runs at the exact Kp, not points read off a
+  sweep.
+
+**And it works as a check on the sheet.** The flux view recovers 3.24 K per sfu
+for a sustained rise, 1.30 for a single day departing from a fixed 81-day mean,
+and 1.94 for the mean moving under a fixed day — the sheet's own coefficients,
+arrived at from the other side. The `correct` block now requires those three
+numbers, which means the check fails if the panel ever starts carrying them as
+literals instead.
+
+### 32.2 · The four views
+
+| view | what it says |
+|---|---|
+| **against the flux** | three lines, because "raising the flux" is three different quantities and the relation answers differently for each. They cross at the declared 150 where there is no departure. Two marks: `env_f107 = 150`, what the density chain is sized on, and 104.07, what the solar subsystem computes — §28.2, on an axis |
+| **against Kp** | five curves, one per scenario at its own flux, as five steps of one hue because the scenarios are a ladder. Two dots on each: the day's mean slot and its worst slot |
+| **the two readings** | the same fact with the curves removed. The gap runs **27.0 K at the quietest day to 140.6 K at the worst day** |
+| **the geomagnetic shape** | the term's own contribution against the straight line its quiet end sets. By Kp 9 the measured curve is **242.2 K above** it |
+
+### 32.3 · Three things found by building it
+
+**Two views of one fact disagreed in the first decimal.** The Kp view read its
+dots off a 46-point sweep and put the worst-day gap at 141.1 K; the slot view ran
+the engine at the exact Kp and got 140.6. Both now run. The `correct` block
+requires the two notes to agree, so it cannot come back.
+
+**A data series was wearing the threshold colour.** `INK.series[4]` is `#c2185b`,
+which this face uses for every line a value is measured against — the zero rules,
+the requirement line, "exact agreement", and this panel's own `env_kp` mark one
+view earlier. I picked it by index without noticing. The worst-slot line is now
+`INK.series[3]`, and the `correct` block says so.
+
+*The same collision again, one view over.* The mark for the computed sky was
+drawn in `INK.series[2]`, which is the green the "81-day mean alone" line uses in
+the same frame — a mark wearing a series' colour invites the reader to pair the
+two. It is `INK.mark` now. Two colour mistakes of the same shape in one panel is
+worth recording: picking an ink by slot index does not ask what else is already
+wearing it.
+
+**Five unnamed series became five identical table columns.** The dots are marks on
+curves the table already carries, so they now set `aside: true` — the flag §27
+added for the Bartlett band. Without it the table grew five columns all headed
+"exospheric temperature [K]", which is what an unnamed series falls back to, and
+the readout announced every value twice.
+
+### 32.4 · Two helpers the engine boundary gained
+
+`engineSweep` takes an optional `sets`, and `engineAt(node, sets)` runs one row
+with declared values held elsewhere. Both pass the same `set=` the run endpoint
+takes, so a swept point and a run at the same place agree — which is what let the
+two views above be reconciled rather than explained.
+
+They are what makes a *scenario* drawable at all: a sweep with nothing held asks
+"what does this row do as X moves", and the five driver scenarios are five
+different places to stand.
+
+### 32.5 · Where §30 stands
+
+| step | state |
+|---|---|
+| 1 · A2 five assumptions | done |
+| 2 · A1 fixtures | done |
+| 3 · A3 theory | drafted, **unsigned — needs a person** |
+| 4 · B3.1 walk-forward | written, **failing its own test**, §31.4 |
+| 5 · B1 which Kp slot | **needs a person**, and the third view is now the picture to decide it from |
+| 6 · B2 band confidence | **needs a person** |
+| 7 · B3.2 empirical quantiles | blocked on step 4 |
+| 8 · A4 thermosphere panel | **done**, reference unsigned |
+| 9 · B3.3 residual view | blocked with 7 |
+
+Everything an agent can do without a decision is now done. Steps 5 and 6 are two
+numbers; step 3 is a signature; step 4 is the one piece of open work, and it is
+work rather than a decision.

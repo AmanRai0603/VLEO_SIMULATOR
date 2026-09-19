@@ -88,13 +88,47 @@ export async function engineValues(ids) {
  * relation rather than a point. Same boundary rule: SI in, SI out, refusals
  * recorded with their reason.
  */
-export async function engineSweep(node, over, from, to, points = 80) {
+export async function engineSweep(node, over, from, to, points = 80, sets = null) {
   const q = new URLSearchParams({ node, over, from: String(from), to: String(to),
     points: String(points) });
+  // OTHER DECLARED VALUES HELD SOMEWHERE ELSE, for the length of the sweep.
+  //
+  // A sweep moves one decision and leaves every other at what the tree declares,
+  // which answers "what does this row do as X moves" and not "what does it do at
+  // a scenario the tree does not sit at". The thermosphere panel needs the
+  // second: the five solar scenarios are five different places to stand, and a
+  // Kp sweep taken at the declared flux would draw one curve where there are
+  // five. `sets` is {id: value in SI}, and it is the same override the run
+  // endpoint takes, so a swept point and a run at the same place agree.
+  for (const [k, v] of Object.entries(sets || {})) q.append('set', k + ':' + v);
   const r = await fetch('/v1/sweep?' + q.toString());
   const d = await r.json();
   if (!d.ok) throw new Error(d.message || 'the sweep was refused');
   return d;
+}
+
+/**
+ * One row's answer with some declared values held elsewhere.
+ *
+ * `engineValues` asks what the tree says as it stands. This asks what it would
+ * say somewhere else, which is what a scenario IS — and it is a question the
+ * engine answers, so the face never has to evaluate a relation to find out.
+ *
+ * Returns the row's own SI value, or null with the reason, because a refusal at
+ * a scenario is a fact about that scenario rather than an error in the figure.
+ */
+export async function engineAt(node, sets) {
+  const q = new URLSearchParams({ node });
+  for (const [k, v] of Object.entries(sets || {})) q.append('set', k + ':' + v);
+  try {
+    const r = await fetch('/v1/run?' + q.toString());
+    const d = await r.json();
+    if (!d.ok) return { si: null, refused: d.message || d.fault || 'refused' };
+    const own = (d.values || []).find(v => v.id === node);
+    return own ? { si: own.si, unit: own.unit } : { si: null, refused: 'the run did not return it' };
+  } catch (e) {
+    return { si: null, refused: String(e) };
+  }
 }
 
 /**

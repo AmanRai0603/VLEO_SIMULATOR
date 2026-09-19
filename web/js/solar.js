@@ -20,8 +20,8 @@
 
 import { $, esc } from './dom.js';
 import { S } from './state.js';
-import { solarRecord, bundleFile, parityFile, engineValues, engineSweep, engineLevers,
-  centredMean, corr, quantile, num, daysSince2000 } from './record.js';
+import { solarRecord, bundleFile, parityFile, engineValues, engineSweep, engineAt,
+  engineLevers, centredMean, corr, quantile, num, daysSince2000 } from './record.js';
 import { drawChart, attachHover, tableFor, INK } from './chart.js';
 
 // ---------------------------------------------------------------------------
@@ -188,6 +188,38 @@ const PAIR_LABEL = {
 // change while a reader clicks between them, and re-asking the engine for a sweep
 // it has already answered is four questions nobody is looking at.
 const CLOSURE_CACHE = {};
+
+
+/**
+ * The five scenarios the solar subsystem publishes, cold to hot.
+ *
+ * The same ladder the `drivers` panel draws along, and for the same reason: in
+ * this order every solar quantity is monotone, so a picture is checked by whether
+ * it rises. `l3_solar_interface`'s own answer is f107_hotmean — the one cell that
+ * is not a published member — which is why that one is reached by the node id.
+ */
+const SCEN = [
+  { k: 'coldday',  shown: 'quietest day',   colour: '#86b6ef' },
+  { k: 'coldmean', shown: 'cold sustained', colour: '#5598e7' },
+  { k: 'nominal',  shown: 'nominal',        colour: '#2a78d6' },
+  { k: 'hotmean',  shown: 'hot sustained',  colour: '#1c5cab' },
+  { k: 'hotday',   shown: 'worst day',      colour: '#0d366b' },
+];
+
+/** One scenario's four drivers, in SI, out of one run of the crossing. */
+function driversOf(eng, k) {
+  const at = id => {
+    const v = eng['l3_solar_interface.' + id];
+    return v && isFinite(v.si) ? v.si : null;
+  };
+  const own = eng.l3_solar_interface;
+  return {
+    f107: k === 'hotmean' ? (own && isFinite(own.si) ? own.si : null) : at('f107_' + k),
+    f107a: at('f107bar_' + k),
+    kpMean: at('kp_mean_' + k),
+    kpPeak: at('kp_peak_' + k),
+  };
+}
 
 const PANELS = [
   {
@@ -1251,6 +1283,128 @@ const PANELS = [
     },
   },
 
+  // -------------------------------------------------------------------------
+  // WHERE THE SOLAR DRIVERS FIRST BECOME PHYSICS.
+  //
+  // env_exospheric_temperature is the first row downstream of the sky that is a
+  // quantity rather than a description of one, and everything this tree computes
+  // about density, drag, decay and aero heating is downstream of it in turn. It
+  // is also where §29.2's open question lands: the solar subsystem publishes a
+  // daily MEAN Kp and a daily PEAK Kp per scenario, Jacchia 1971 takes one Kp,
+  // and nothing in the tree says which. The third view is that question.
+  //
+  // EVERY NUMBER HERE COMES FROM THE ENGINE, including the shapes. No coefficient
+  // of the relation appears in this file: the slopes in the first view are
+  // MEASURED off three sweeps rather than read off the sheet, which is the defect
+  // §21 found in `design` — a figure carrying a row's constants is a second copy
+  // of that row and goes stale silently.
+  {
+    id: 'thermosphere',
+    rows: ['env_exospheric_temperature', 'env_f107', 'env_f107a', 'env_kp'],
+    engine: ['l3_solar_interface', 'env_f107', 'env_f107a', 'env_kp',
+      'env_exospheric_temperature'],
+    label: 'Thermosphere',
+    draws: 'The exospheric temperature the drivers produce, and what moves it.',
+    asks: 'How hot does the sky this subsystem publishes make the upper thermosphere?',
+    controls: [
+      { k: 'view', label: 'view', opts: [
+        ['solar', 'against the flux'],
+        ['kp', 'against Kp, one curve per scenario'],
+        ['slot', 'the two Kp readings, side by side'],
+        ['shape', 'where the geomagnetic term stops being linear'],
+      ] },
+    ],
+    async data(o) {
+      const v = (o && o.view) || 'solar';
+      if (THERMO_CACHE[v]) return THERMO_CACHE[v];
+      const pr = (async () => {
+        if (v === 'solar') {
+          // THREE WAYS TO RAISE THE FLUX, and they are different quantities.
+          // Moving F10.7 alone is a single day departing from its own 81-day
+          // mean; moving F10.7A alone is the mean moving under a fixed day;
+          // moving both together is a sustained level. The relation treats the
+          // three differently and the three slopes are what says so — measured
+          // here, never stated.
+          const N = 24;
+          const both = [];
+          for (let i = 0; i < N; i++) {
+            const x = 60 + (400 - 60) * i / (N - 1);
+            both.push(engineAt('env_exospheric_temperature',
+              { env_f107: x, env_f107a: x }).then(r => ({ x, y: r.si })));
+          }
+          const [fast, slow, sust] = await Promise.all([
+            engineSweep('env_exospheric_temperature', 'env_f107', 60, 400, 60),
+            engineSweep('env_exospheric_temperature', 'env_f107a', 60, 400, 60),
+            Promise.all(both),
+          ]);
+          return { fast, slow, sust };
+        }
+        // THE SCENARIO VIEWS ASK THE CROSSING THEMSELVES. `data` runs beside
+        // engineValues rather than after it, so it cannot see what the panel
+        // declared in `engine`; one more run of the crossing is cheaper than
+        // sequencing the two.
+        const set = await engineValues(['l3_solar_interface']);
+        if (v === 'kp') {
+          // One Kp sweep per scenario, each taken AT that scenario's own flux.
+          // A single sweep at the declared flux would draw one curve where the
+          // subsystem publishes five places to stand.
+          const curves = await Promise.all(SCEN.map(async sc => {
+            const d = driversOf(set, sc.k);
+            if (d.f107 === null || d.f107a === null) return { sc, d, sweep: null };
+            // THE TWO DOTS ARE RUNS, NOT SWEPT POINTS, and that is not fussiness.
+            // Reading them off the 46-point sweep put the worst-day gap at
+            // 141.1 K while the next view, which runs the engine at the exact Kp,
+            // put it at 140.6 — two views of one fact disagreeing in the first
+            // decimal because one of them had interpolated. Both now run.
+            const [sweep, m, k] = await Promise.all([
+              engineSweep('env_exospheric_temperature', 'env_kp', 0, 9, 46,
+                { env_f107: d.f107, env_f107a: d.f107a }),
+              engineAt('env_exospheric_temperature',
+                { env_f107: d.f107, env_f107a: d.f107a, env_kp: d.kpMean }),
+              engineAt('env_exospheric_temperature',
+                { env_f107: d.f107, env_f107a: d.f107a, env_kp: d.kpPeak }),
+            ]);
+            return { sc, d, sweep, tMean: m.si, tPeak: k.si };
+          }));
+          return { curves };
+        }
+        if (v === 'slot') {
+          // Ten runs: each scenario at the day's mean Kp and at its worst slot,
+          // with that scenario's own flux. The gap between them is the question.
+          const pts = await Promise.all(SCEN.map(async sc => {
+            const d = driversOf(set, sc.k);
+            if (d.f107 === null || d.kpMean === null || d.kpPeak === null) return { sc, d };
+            const [m, k] = await Promise.all([
+              engineAt('env_exospheric_temperature',
+                { env_f107: d.f107, env_f107a: d.f107a, env_kp: d.kpMean }),
+              engineAt('env_exospheric_temperature',
+                { env_f107: d.f107, env_f107a: d.f107a, env_kp: d.kpPeak }),
+            ]);
+            return { sc, d, tMean: m.si, tPeak: k.si };
+          }));
+          return { pts };
+        }
+        // shape: one sweep at the declared point is enough — the geomagnetic
+        // term does not depend on the flux, and showing that it does not is
+        // part of what this view says.
+        return { kp: await engineSweep('env_exospheric_temperature', 'env_kp', 0, 9, 46) };
+      })();
+      THERMO_CACHE[v] = pr;
+      return pr;
+    },
+    build(rec, o, extra, eng) {
+      const v = o.view || 'solar';
+      const dec = id => (eng[id] && isFinite(eng[id].si) ? eng[id].si : null);
+      const decF = dec('env_f107'), decFa = dec('env_f107a'), decKp = dec('env_kp');
+      const now = dec('env_exospheric_temperature');
+
+      if (v === 'solar') return thermoSolar(extra, eng, decF, decFa, decKp, now);
+      if (v === 'slot') return thermoSlot(extra, eng);
+      if (v === 'shape') return thermoShape(extra, eng, decF, decFa, decKp);
+      return thermoKp(extra, eng, decKp);
+    },
+  },
+
   {
     id: 'climate',
     rows: ['sw_central_expectation', 'sw_semiannual_amplitude', 'sw_f107a_ratio', 'sw_mean_cycle_level', 'sw_kp_from_ap', 'sw_kp_slot_bias'],
@@ -1789,6 +1943,267 @@ function f107Window(extra, o, eng) {
           'peak is ABOVE the hot single-day design value, which is a design sized on a mean sitting ' +
           'under the thing it averages. That is worth a reviewer\u2019s attention and it is the ' +
           'reason this row is kept rather than removed.'),
+  };
+}
+
+
+// ---------------------------------------------------------------------------
+// the thermosphere views
+
+const THERMO_CACHE = {};
+
+/** The x axis the two scenario views share: five categories, cold to hot. */
+const SCEN_X = {
+  min: -0.3, max: 4.3, ticks: 5,
+  fmt: v => (SCEN[Math.round(v)] || {}).shown || '',
+};
+
+/** The slope of a swept curve, measured off its own ends. */
+function slopeOf(sw) {
+  const xs = sw.x.map(v => v / sw.x_factor), ys = sw.y.map(v => v / sw.y_factor);
+  const ok = xs.map((x, i) => [x, ys[i]]).filter(p => p[1] !== null && isFinite(p[1]));
+  if (ok.length < 2) return null;
+  const a = ok[0], b = ok[ok.length - 1];
+  return b[0] === a[0] ? null : (b[1] - a[1]) / (b[0] - a[0]);
+}
+
+/**
+ * Thermosphere · against the flux, three ways, and the three slopes are the
+ * finding.
+ *
+ * Raising F10.7 alone is one day departing from its own 81-day mean. Raising
+ * F10.7A alone is the mean moving under a fixed day. Raising both together is a
+ * sustained level. The relation answers differently for each, and how
+ * differently is measured here off the three curves rather than read off the
+ * sheet — this file contains no coefficient of it.
+ */
+function thermoSolar(extra, eng, decF, decFa, decKp, now) {
+  const fx = sw => sw.x.map(v => v / sw.x_factor);
+  const fy = sw => sw.y.map(v => v / sw.y_factor);
+  const sust = extra.sust.filter(p => p.y !== null && isFinite(p.y));
+  const mSust = sust.length > 1
+    ? (sust[sust.length - 1].y - sust[0].y) / (sust[sust.length - 1].x - sust[0].x) : null;
+  const mFast = slopeOf(extra.fast), mSlow = slopeOf(extra.slow);
+  const k = n => (n === null ? '—' : n.toFixed(2));
+  return {
+    spec: {
+      x: { label: 'F10.7  [sfu]' },
+      y: { label: 'exospheric temperature  [K]' },
+      series: [
+        { name: 'sustained — the day and its 81-day mean together', kind: 'line',
+          x: sust.map(p => p.x), y: sust.map(p => p.y), width: 2.4 },
+        { name: 'one day alone, its 81-day mean held', kind: 'line',
+          x: fx(extra.fast), y: fy(extra.fast), colour: INK.series[1] },
+        { name: 'the 81-day mean alone, the day held', kind: 'line',
+          x: fx(extra.slow), y: fy(extra.slow), colour: INK.series[2] },
+      ],
+      // THE TWO SKIES, ON THE AXIS, BESIDE EACH OTHER. The declared constant the
+      // density chain is actually sized on, and what the solar subsystem computes
+      // for its hot sustained scenario. §28.2 is the distance between these two
+      // marks, and putting the second on the canvas rather than only in the prose
+      // is also what lets check 2b see that this panel reads the crossing at all.
+      marks: [
+        decF === null ? null : { axis: 'x', at: decF,
+          label: 'env_f107 = ' + decF.toFixed(0) + ', what the design is sized on',
+          colour: '#c2185b' },
+        !(eng.l3_solar_interface && isFinite(eng.l3_solar_interface.si)) ? null
+          // INK.mark, not a series slot. Slot 2 is the green the "81-day mean
+          // alone" line is drawn in three inches to the right, and a mark
+          // wearing a series' colour invites the reader to pair the two.
+          : { axis: 'x', at: eng.l3_solar_interface.si,
+            label: 'the solar subsystem says ' + eng.l3_solar_interface.si.toFixed(1),
+            colour: INK.mark },
+      ].filter(Boolean),
+    },
+    note: 'Three ways to raise the flux, and the relation answers differently for each — which ' +
+      'is the point of drawing all three rather than one. Every slope below is MEASURED off ' +
+      'these curves, not taken from the sheet: a figure carrying a row\u2019s constants is a ' +
+      'second copy of that row, and §21 found three of those going stale in the design panel.\n\n' +
+      'A SUSTAINED rise, where the day and its 81-day mean move together, is worth ' + k(mSust) +
+      ' K per sfu. A SINGLE DAY departing from a fixed mean is worth only ' + k(mFast) +
+      ' K per sfu, because the thermosphere cannot fully respond to one day. And the 81-day ' +
+      'MEAN moving under a fixed day is worth ' + k(mSlow) + ' — less than the sustained slope, ' +
+      'because raising the mean while holding the day shrinks the departure at the same time.\n\n' +
+      'The three cross where the tree declares itself to be: env_f107 and env_f107a are both ' +
+      (decF === null ? '—' : decF.toFixed(0)) + ', so there is no departure there and all three ' +
+      'agree. THAT NUMBER IS A DECLARED CONSTANT with nothing computing it, while the solar ' +
+      'subsystem two panels along publishes ' +
+      (eng.l3_solar_interface && isFinite(eng.l3_solar_interface.si)
+        ? eng.l3_solar_interface.si.toFixed(2) : '—') +
+      ' for its hot sustained scenario. §28.2 is that gap; this is where it is felt, because ' +
+      'every density in this tree is downstream of the temperature this curve gives.' +
+      (now === null ? '' : ' As the tree stands the answer is ' + now.toFixed(1) + ' K.'),
+  };
+}
+
+/**
+ * Thermosphere · against Kp, one curve per scenario, with both readings marked.
+ *
+ * This is §29.2 as a picture. Each curve is swept at its own scenario's flux, so
+ * the five are five places to stand rather than one curve relabelled; the two
+ * dots on each are the day's mean Kp and the day's worst slot, and the vertical
+ * distance between them is what choosing one over the other costs.
+ */
+function thermoKp(extra, eng, decKp) {
+  const series = [];
+  let worst = null;
+  const lines = [];
+  for (const c of extra.curves) {
+    if (!c.sweep) continue;
+    const xs = c.sweep.x.map(v => v / c.sweep.x_factor);
+    const ys = c.sweep.y.map(v => v / c.sweep.y_factor);
+    series.push({ name: c.sc.shown, kind: 'line', x: xs, y: ys, colour: c.sc.colour });
+    lines.push(ys);
+    const tm = (c.tMean === undefined || c.tMean === null) ? null : c.tMean;
+    const tp = (c.tPeak === undefined || c.tPeak === null) ? null : c.tPeak;
+    if (tm !== null && tp !== null) {
+      // The two readings as dots ON the curve they belong to. Unnamed so the
+      // legend stays five entries rather than ten, and `aside` because they are
+      // marks and not a sixth measurement: every value in them is a point the
+      // curve beneath already carries. Without it the table grew five columns
+      // all headed "exospheric temperature [K]", which is what an unnamed series
+      // falls back to, and the readout announced each value twice.
+      series.push({ name: '', kind: 'dots', x: [c.d.kpMean, c.d.kpPeak], y: [tm, tp],
+        colour: c.sc.colour, width: 5, alpha: 1, aside: true });
+      if (worst === null || tp - tm > worst.d) {
+        worst = { sc: c.sc, d: tp - tm, tm, tp, km: c.d.kpMean, kp: c.d.kpPeak };
+      }
+    }
+  }
+  // How far apart the two closest curves ever get, measured rather than eyeballed.
+  let close = null;
+  if (lines.length > 1) {
+    close = 0;
+    for (let i = 0; i < lines[0].length; i++) {
+      const a = lines[0][i], b = lines[1][i];
+      if (a !== null && b !== null) close = Math.max(close, Math.abs(b - a));
+    }
+  }
+  return {
+    spec: {
+      x: { label: 'Kp  [-]', min: 0, max: 9 },
+      y: { label: 'exospheric temperature  [K]' },
+      series,
+      marks: decKp === null ? [] : [{ axis: 'x', at: decKp,
+        label: 'env_kp = ' + decKp.toFixed(0), colour: '#c2185b' }],
+    },
+    note: 'One curve per scenario, each swept at that scenario\u2019s OWN flux — so these are ' +
+      'five places to stand and not one curve drawn five times. The two dots on each are the ' +
+      'two Kp the solar subsystem publishes for it: the day\u2019s MEAN slot and the day\u2019s ' +
+      'WORST three-hour slot.\n\n' +
+      'THE VERTICAL GAP BETWEEN A PAIR OF DOTS IS AN UNANSWERED QUESTION. Jacchia 1971 takes one ' +
+      'Kp and nothing in this tree says which of the two it should be. ' +
+      (worst === null ? '' :
+        'It costs most at the ' + worst.sc.shown + ' scenario: Kp ' + worst.km.toFixed(2) +
+        ' gives ' + worst.tm.toFixed(1) + ' K and Kp ' + worst.kp.toFixed(2) + ' gives ' +
+        worst.tp.toFixed(1) + ' K, a difference of ' + worst.d.toFixed(1) + ' K — ' +
+        (100 * worst.d / worst.tm).toFixed(1) + ' per cent of the temperature every density in ' +
+        'this tree is built from, and more than that in the density itself.') +
+      '\n\nTHE TWO LIGHTEST CURVES VERY NEARLY COINCIDE, and that is the data rather than the ' +
+      'drawing: the quietest day and the cold sustained level differ by ' +
+      (close === null ? '\u2014' : close.toFixed(1) + ' K') + ' across the whole Kp range, ' +
+      'because the cold day rides on the cold mean and barely departs from it. Five curves are ' +
+      'drawn and four are easy to separate.' +
+      '\n\nThe curves bend upward because Kp is a quasi-logarithmic index and the relation ' +
+      'carries an exponential to match it. The fourth view is that bend on its own.',
+  };
+}
+
+/**
+ * Thermosphere · the two Kp readings side by side.
+ *
+ * The same fact as the dots in the third view, with the curves taken away so the
+ * only thing left is the gap. Ten runs of the engine, each at a scenario's own
+ * three drivers.
+ */
+function thermoSlot(extra, eng) {
+  const xs = SCEN.map((_, i) => i);
+  const tm = extra.pts.map(p => (p.tMean === undefined ? null : p.tMean));
+  const tp = extra.pts.map(p => (p.tPeak === undefined ? null : p.tPeak));
+  const gaps = tm.map((v, i) => (v === null || tp[i] === null ? null : tp[i] - v));
+  const ok = gaps.filter(g => g !== null);
+  const wi = gaps.reduce((b, g, i) => (g !== null && (b < 0 || g > gaps[b]) ? i : b), -1);
+  return {
+    spec: {
+      x: { label: 'scenario', ...SCEN_X },
+      y: { label: 'exospheric temperature  [K]' },
+      series: [
+        { name: 'at the day\u2019s mean Kp', kind: 'line', x: xs, y: tm, width: 2.2 },
+        // NOT INK.series[4]. That slot is #c2185b, which this face uses for the
+        // line a value is MEASURED AGAINST — every zero rule, every requirement,
+        // every "exact agreement" mark, and the env_kp mark in this panel's own
+        // previous view. A data series wearing it would read as a threshold.
+        { name: 'at the day\u2019s worst three-hour slot', kind: 'line', x: xs, y: tp,
+          colour: INK.series[3], dash: [6, 4], width: 2.2 },
+      ],
+    },
+    note: 'The same fact as the dots in the previous view with the curves taken away, so that the ' +
+      'only thing left is the gap. Each point is a run of the engine at one scenario\u2019s own ' +
+      'three drivers — its F10.7, its 81-day mean, and one of its two Kp — so nothing here is ' +
+      'interpolated off a curve.\n\n' +
+      'The gap runs from ' + (ok.length ? Math.min(...ok).toFixed(1) : '—') + ' K at the quiet end ' +
+      'to ' + (ok.length ? Math.max(...ok).toFixed(1) : '—') + ' K' +
+      (wi < 0 ? '' : ' at the ' + SCEN[wi].shown) + '. It widens toward the hot end because the ' +
+      'two slots diverge there AND because the relation\u2019s geomagnetic term is exponential: ' +
+      'the same difference in Kp buys more temperature the higher up the scale it sits.\n\n' +
+      'NEITHER LINE IS MORE CORRECT THAN THE OTHER. The mean is what a daily-averaged density ' +
+      'model wants and what the legacy run used — its header says Kp slot \u2018mean\u2019. The ' +
+      'peak is what a vehicle actually meets on the worst pass of the day. Both are defensible ' +
+      'and they are different designs, which is why §30 B1 makes it a declared row somebody signs ' +
+      'rather than a column a consumer happens to pick up.',
+  };
+}
+
+/**
+ * Thermosphere · where the geomagnetic term stops being linear.
+ *
+ * Nothing here knows the relation. The curve is T(Kp) minus T(0) off one sweep,
+ * and the straight line is drawn through that curve's own first two usable
+ * points — so the departure is measured against the measurement rather than
+ * against a coefficient copied out of the sheet.
+ */
+function thermoShape(extra, eng, decF, decFa, decKp) {
+  const sw = extra.kp;
+  const xs = sw.x.map(v => v / sw.x_factor);
+  const ys = sw.y.map(v => v / sw.y_factor);
+  const i0 = ys.findIndex(v => v !== null && isFinite(v));
+  if (i0 < 0) throw new Error('the Kp sweep returned nothing to draw');
+  const base = ys[i0];
+  const d = ys.map(v => (v === null || !isFinite(v) ? null : v - base));
+  // The straight line the low end sets, through the first usable point and the
+  // one nearest Kp 2 — low enough that the exponential is still negligible.
+  let iRef = i0;
+  for (let i = 0; i < xs.length; i++) {
+    if (d[i] !== null && Math.abs(xs[i] - 2) < Math.abs(xs[iRef] - 2)) iRef = i;
+  }
+  const m = xs[iRef] === xs[i0] ? 0 : (d[iRef] - d[i0]) / (xs[iRef] - xs[i0]);
+  const lin = xs.map(x => m * (x - xs[i0]));
+  const last = d.length - 1;
+  const excess = d[last] === null ? null : d[last] - lin[last];
+  return {
+    spec: {
+      x: { label: 'Kp  [-]', min: 0, max: 9 },
+      y: { label: 'temperature the geomagnetic term adds  [K]', min: 0 },
+      series: [
+        { name: 'measured', kind: 'line', x: xs, y: d, width: 2.4 },
+        { name: 'the straight line the quiet end sets', kind: 'line', x: xs, y: lin,
+          colour: INK.muted, width: 1.2, dash: [5, 4] },
+      ],
+    },
+    note: 'How much of the exospheric temperature the geomagnetic term is responsible for, against ' +
+      'Kp, measured as the swept answer minus its own value at Kp 0. The dashed line is drawn ' +
+      'through this curve\u2019s own quiet end — the point nearest Kp 2, where the exponential is ' +
+      'still small — so the departure above is measured against the measurement and not against a ' +
+      'coefficient copied out of the sheet. Nothing in this file knows the relation.\n\n' +
+      'THE TWO AGREE AT THE QUIET END AND SEPARATE AT THE TOP. By Kp ' + xs[last].toFixed(0) +
+      ' the measured curve is ' + (excess === null ? '—' : excess.toFixed(1)) + ' K above the ' +
+      'straight line. That is the exponential, and it is why the relation has one: Kp is a ' +
+      'quasi-logarithmic index, so equal steps up the scale are not equal amounts of energy, and ' +
+      'a purely linear geomagnetic term would be right at quiet levels and would under-read ' +
+      'every storm.\n\n' +
+      'The sweep is taken at the declared flux, and that is not a simplification: the ' +
+      'geomagnetic term of this relation does not depend on the flux at all, so this curve is ' +
+      'the same shape at every scenario. The previous view is where the scenarios differ.',
   };
 }
 
