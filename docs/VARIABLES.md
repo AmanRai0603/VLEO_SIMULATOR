@@ -14,7 +14,7 @@ in the design is built out of them.
 
 ## `acs` — Attitude control sizing
 
-### `l3_acs_ach_01` — Attitude deadband
+### `l3_acs_ach_01` — Achieved — Attitude deadband
 
 > 
 
@@ -35,7 +35,7 @@ in the design is built out of them.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_acs_ach_02` — Slew rate capability
+### `l3_acs_ach_02` — Achieved — Slew rate capability
 
 > 
 
@@ -56,7 +56,7 @@ in the design is built out of them.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_acs_ach_03` — Magnetic dipole authority
+### `l3_acs_ach_03` — Achieved — Magnetic dipole authority
 
 > 
 
@@ -77,7 +77,7 @@ in the design is built out of them.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_acs_ach_04` — Control bandwidth
+### `l3_acs_ach_04` — Achieved — Control bandwidth
 
 > 
 
@@ -98,7 +98,7 @@ in the design is built out of them.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_acs_ach_05` — Settling time
+### `l3_acs_ach_05` — Achieved — Settling time
 
 > 
 
@@ -119,7 +119,7 @@ in the design is built out of them.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_acs_ach_06` — Control torque authority
+### `l3_acs_ach_06` — Achieved — Control torque authority
 
 > 
 
@@ -140,7 +140,7 @@ in the design is built out of them.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_acs_ach_07` — Momentum storage capacity
+### `l3_acs_ach_07` — Achieved — Momentum storage capacity
 
 > 
 
@@ -161,7 +161,7 @@ in the design is built out of them.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_acs_ach_08` — Momentum dumping frequency
+### `l3_acs_ach_08` — Achieved — Momentum dumping frequency
 
 > 
 
@@ -182,7 +182,7 @@ in the design is built out of them.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_acs_ach_09` — Aerodynamic trim angle
+### `l3_acs_ach_09` — Achieved — Aerodynamic trim angle
 
 > 
 
@@ -224,7 +224,7 @@ in the design is built out of them.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_acs_req_01` — Attitude deadband
+### `l3_acs_req_01` — Required — Attitude deadband
 
 > 
 
@@ -245,7 +245,7 @@ in the design is built out of them.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_acs_req_02` — Slew rate capability
+### `l3_acs_req_02` — Required — Slew rate capability
 
 > 
 
@@ -266,7 +266,7 @@ in the design is built out of them.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_acs_req_03` — Magnetic dipole authority
+### `l3_acs_req_03` — Required — Magnetic dipole authority
 
 > 
 
@@ -287,7 +287,7 @@ in the design is built out of them.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_acs_req_04` — Control bandwidth
+### `l3_acs_req_04` — Required — Control bandwidth
 
 > 
 
@@ -308,7 +308,7 @@ in the design is built out of them.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_acs_req_05` — Settling time
+### `l3_acs_req_05` — Required — Settling time
 
 > 
 
@@ -329,7 +329,7 @@ in the design is built out of them.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_acs_req_06` — Control torque authority
+### `l3_acs_req_06` — Required — Control torque authority
 
 > 
 
@@ -350,7 +350,7 @@ in the design is built out of them.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_acs_req_07` — Momentum storage capacity
+### `l3_acs_req_07` — Required — Momentum storage capacity
 
 > 
 
@@ -371,7 +371,7 @@ in the design is built out of them.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_acs_req_08` — Momentum dumping frequency
+### `l3_acs_req_08` — Required — Momentum dumping frequency
 
 > 
 
@@ -392,7 +392,7 @@ in the design is built out of them.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_acs_req_09` — Aerodynamic trim angle
+### `l3_acs_req_09` — Required — Aerodynamic trim angle
 
 > 
 
@@ -745,7 +745,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 
 ## `atthw` — Attitude hardware
 
-### `l3_atthw_ach_01` — Number of reaction wheels
+### `l3_atthw_ach_01` — Achieved — Number of reaction wheels
 
 > 
 
@@ -766,7 +766,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_atthw_ach_02` — Wheel speed limit
+### `l3_atthw_ach_02` — Achieved — Wheel speed limit
 
 > 
 
@@ -787,7 +787,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_atthw_ach_03` — Star tracker accuracy
+### `l3_atthw_ach_03` — Achieved — Star tracker accuracy
 
 > 
 
@@ -808,7 +808,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_atthw_ach_04` — Gyro drift
+### `l3_atthw_ach_04` — Achieved — Gyro drift
 
 > 
 
@@ -829,7 +829,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_atthw_ach_05` — Earth magnetic field
+### `l3_atthw_ach_05` — Achieved — Earth magnetic field
 
 > 
 
@@ -850,7 +850,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_atthw_ach_06` — Aerodynamic torque
+### `l3_atthw_ach_06` — Achieved — Aerodynamic torque
 
 > 
 
@@ -871,7 +871,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_atthw_ach_07` — Gravity gradient torque
+### `l3_atthw_ach_07` — Achieved — Gravity gradient torque
 
 > 
 
@@ -892,7 +892,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_atthw_ach_08` — Solar radiation torque
+### `l3_atthw_ach_08` — Achieved — Solar radiation torque
 
 > 
 
@@ -913,7 +913,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_atthw_ach_09` — First mode frequency
+### `l3_atthw_ach_09` — Achieved — First mode frequency
 
 > 
 
@@ -1415,7 +1415,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
-### `l3_atthw_req_01` — Number of reaction wheels
+### `l3_atthw_req_01` — Required — Number of reaction wheels
 
 > 
 
@@ -1436,7 +1436,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_atthw_req_02` — Wheel speed limit
+### `l3_atthw_req_02` — Required — Wheel speed limit
 
 > 
 
@@ -1457,7 +1457,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_atthw_req_03` — Star tracker accuracy
+### `l3_atthw_req_03` — Required — Star tracker accuracy
 
 > 
 
@@ -1478,7 +1478,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_atthw_req_04` — Gyro drift
+### `l3_atthw_req_04` — Required — Gyro drift
 
 > 
 
@@ -1499,7 +1499,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_atthw_req_05` — Earth magnetic field
+### `l3_atthw_req_05` — Required — Earth magnetic field
 
 > 
 
@@ -1520,7 +1520,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_atthw_req_06` — Aerodynamic torque
+### `l3_atthw_req_06` — Required — Aerodynamic torque
 
 > 
 
@@ -1541,7 +1541,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_atthw_req_07` — Gravity gradient torque
+### `l3_atthw_req_07` — Required — Gravity gradient torque
 
 > 
 
@@ -1562,7 +1562,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_atthw_req_08` — Solar radiation torque
+### `l3_atthw_req_08` — Required — Solar radiation torque
 
 > 
 
@@ -1583,7 +1583,7 @@ In VLEO this dominates gravity gradient and solar pressure by one to three order
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_atthw_req_09` — First mode frequency
+### `l3_atthw_req_09` — Required — First mode frequency
 
 > 
 
@@ -2555,9 +2555,19 @@ A node that consumes density and does not carry this forward is a node whose mar
 - **reads** — `env_f107`, `env_f107a`, `env_kp`
 - **read by** — `aero_accommodation`, `env_atomic_oxygen_density`, `env_local_temperature`, `env_mass_density`, `env_mean_molar_mass`, `env_number_density`, `env_scale_height`, `orbit_lifetime_uncontrolled`
 - **assumes** Night-time minimum, with no diurnal or seasonal term — fails when the diurnal bulge adds up to 30% at 14:00 local solar time; a design sized on this value alone is sized on the quiet side
+- **assumes** Kp is a THREE-HOURLY index and what reaches this row is a daily statistic — fails when the two are treated as the same quantity. Jacchia's geomagnetic correction takes the Kp of an interval; the solar subsystem publishes a daily MEAN slot and a daily PEAK slot per scenario and they are different numbers — 3.832 against 5.198 at the hot sustained scenario. Fed through this relation that is 824.9 K against 867.2 K, and on the worst-day scenario it is 914.7 K against 1055.3 K, a 15 per cent difference in the quantity every density in this tree is built from. Nothing in the tree yet says which slot the design is driven by; §30 B1 is the row that would
+- **assumes** The geomagnetic correction is applied with no lag — fails when the timing of a storm matters rather than only its size. Jacchia applies the correction to Kp lagged by about a quarter of a day, because the energy deposited in the auroral zone takes hours to reach the altitudes and latitudes this is a temperature for. Applied instantaneously, a storm's heating arrives too early and leaves too early, and the peak is placed about six hours before it happens
+- **assumes** F10.7 is the PREVIOUS day's flux in the source, and this reads the same day's — fails when the fast term is read as a same-day response. The EUV that heated the thermosphere is yesterday's, which is why the source lags it; taking today's makes the departure term lead the temperature it is meant to explain by one day. Small on a monthly mean and not small on a single design day, which is exactly where the fast term is doing the work
+- **assumes** No semiannual term, on a record that measures one — fails when the answer is read as the same in March as in June. The thermosphere has a well-known semiannual density variation with maxima near the equinoxes, and this subsystem MEASURES it — sw_semiannual_amplitude, off the record's own day-of-year means, and the climate panel draws it with both equinoxes marked. This relation has no term for it, so the measurement exists in the tree and does not reach the temperature
+- **assumes** These are the global night-time coefficients, and the source has variants — fails when this is compared against another implementation of 'Jacchia 1971' and they disagree. The 1971 model is a family — different coefficient sets for the static diffusion tables, for the exospheric temperature, and for the geomagnetic correction above and below 350 km. Nothing here records which set these four coefficients are, so a disagreement cannot be traced to a variant rather than to a defect
 - **evidence** solar minimum, quiet — expect 633.9 ± 0.002 relative, from `jacchia1971` (published-source)
 - **evidence** moderate activity — expect 949.6 ± 0.002 relative, from `jacchia1971` (published-source)
 - **evidence** solar maximum, storm — expect 1417.9 ± 0.002 relative, from `jacchia1971` (published-source)
+- **evidence** the intercept, at the lowest activity the guard admits — expect 411.43 ± 0.000000001 relative, from `jacchia1971` (independent-derivation)
+- **evidence** the fast term, flux 50 above its own 81-day mean — expect 1014.6025661077 ± 0.000000001 relative, from `jacchia1971` (independent-derivation)
+- **evidence** the fast term, flux 50 below its own 81-day mean — expect 884.6025661077 ± 0.000000001 relative, from `jacchia1971` (independent-derivation)
+- **evidence** the storm tail at Kp 7, where the exponential is 32.9 K of 228.9 — expect 1093.8989947529 ± 0.000000001 relative, from `jacchia1971` (independent-derivation)
+- **evidence** the storm tail at Kp 8, one step up and 84.5 K rather than 28 — expect 1178.4287396113 ± 0.000000001 relative, from `jacchia1971` (independent-derivation)
 
 ### `env_f107` — Solar radio flux F10.7, daily
 
@@ -2862,7 +2872,7 @@ Falls from 26 g/mol at 120 km to near 16 — pure atomic oxygen — by 350 km. E
 
 ## `fsw` — Flight software
 
-### `l3_fsw_ach_01` — Processor throughput
+### `l3_fsw_ach_01` — Achieved — Processor throughput
 
 > 
 
@@ -2883,7 +2893,7 @@ Falls from 26 g/mol at 120 km to near 16 — pure atomic oxygen — by 350 km. E
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_fsw_ach_02` — Memory size
+### `l3_fsw_ach_02` — Achieved — Memory size
 
 > 
 
@@ -2904,7 +2914,7 @@ Falls from 26 g/mol at 120 km to near 16 — pure atomic oxygen — by 350 km. E
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_fsw_ach_03` — Clock distribution accuracy
+### `l3_fsw_ach_03` — Achieved — Clock distribution accuracy
 
 > 
 
@@ -3846,7 +3856,7 @@ Falls from 26 g/mol at 120 km to near 16 — pure atomic oxygen — by 350 km. E
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
-### `l3_fsw_req_01` — Processor throughput
+### `l3_fsw_req_01` — Required — Processor throughput
 
 > 
 
@@ -3867,7 +3877,7 @@ Falls from 26 g/mol at 120 km to near 16 — pure atomic oxygen — by 350 km. E
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_fsw_req_02` — Memory size
+### `l3_fsw_req_02` — Required — Memory size
 
 > 
 
@@ -3888,7 +3898,7 @@ Falls from 26 g/mol at 120 km to near 16 — pure atomic oxygen — by 350 km. E
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_fsw_req_03` — Clock distribution accuracy
+### `l3_fsw_req_03` — Required — Clock distribution accuracy
 
 > 
 
@@ -5216,7 +5226,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 
 ## `massaero` — Mass and aero
 
-### `l3_massaero_ach_01` — Spacecraft dry mass
+### `l3_massaero_ach_01` — Achieved — Spacecraft dry mass
 
 > 
 
@@ -5237,7 +5247,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_02` — Body shape
+### `l3_massaero_ach_02` — Achieved — Body shape
 
 > 
 
@@ -5258,7 +5268,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_03` — Panel layout
+### `l3_massaero_ach_03` — Achieved — Panel layout
 
 > 
 
@@ -5279,7 +5289,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_04` — Panel stiffness
+### `l3_massaero_ach_04` — Achieved — Panel stiffness
 
 > 
 
@@ -5300,7 +5310,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_05` — Accommodation coefficient
+### `l3_massaero_ach_05` — Achieved — Accommodation coefficient
 
 > 
 
@@ -5321,7 +5331,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_06` — Erosion yield
+### `l3_massaero_ach_06` — Achieved — Erosion yield
 
 > 
 
@@ -5342,7 +5352,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_07` — Launch load factor
+### `l3_massaero_ach_07` — Achieved — Launch load factor
 
 > 
 
@@ -5363,7 +5373,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_08` — Mass margin
+### `l3_massaero_ach_08` — Achieved — Mass margin
 
 > 
 
@@ -5384,7 +5394,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_09` — Frontal area
+### `l3_massaero_ach_09` — Achieved — Frontal area
 
 > 
 
@@ -5405,7 +5415,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_10` — Drag coefficient
+### `l3_massaero_ach_10` — Achieved — Drag coefficient
 
 > 
 
@@ -5426,7 +5436,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_11` — Ballistic coefficient
+### `l3_massaero_ach_11` — Achieved — Ballistic coefficient
 
 > 
 
@@ -5447,7 +5457,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_12` — Relative velocity
+### `l3_massaero_ach_12` — Achieved — Relative velocity
 
 > 
 
@@ -5468,7 +5478,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_13` — Drag acceleration
+### `l3_massaero_ach_13` — Achieved — Drag acceleration
 
 > 
 
@@ -5489,7 +5499,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_14` — Centre of pressure offset
+### `l3_massaero_ach_14` — Achieved — Centre of pressure offset
 
 > 
 
@@ -5510,7 +5520,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_15` — Launch mass
+### `l3_massaero_ach_15` — Achieved — Launch mass
 
 > 
 
@@ -5531,7 +5541,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_16` — Centre of mass
+### `l3_massaero_ach_16` — Achieved — Centre of mass
 
 > 
 
@@ -5552,7 +5562,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_17` — Moments of inertia
+### `l3_massaero_ach_17` — Achieved — Moments of inertia
 
 > 
 
@@ -5573,7 +5583,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_18` — Structural mass fraction
+### `l3_massaero_ach_18` — Achieved — Structural mass fraction
 
 > 
 
@@ -5594,7 +5604,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_ach_19` — Erosion depth
+### `l3_massaero_ach_19` — Achieved — Erosion depth
 
 > 
 
@@ -5636,7 +5646,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_01` — Spacecraft dry mass
+### `l3_massaero_req_01` — Required — Spacecraft dry mass
 
 > 
 
@@ -5657,7 +5667,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_02` — Body shape
+### `l3_massaero_req_02` — Required — Body shape
 
 > 
 
@@ -5678,7 +5688,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_03` — Panel layout
+### `l3_massaero_req_03` — Required — Panel layout
 
 > 
 
@@ -5699,7 +5709,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_04` — Panel stiffness
+### `l3_massaero_req_04` — Required — Panel stiffness
 
 > 
 
@@ -5720,7 +5730,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_05` — Accommodation coefficient
+### `l3_massaero_req_05` — Required — Accommodation coefficient
 
 > 
 
@@ -5741,7 +5751,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_06` — Erosion yield
+### `l3_massaero_req_06` — Required — Erosion yield
 
 > 
 
@@ -5762,7 +5772,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_07` — Launch load factor
+### `l3_massaero_req_07` — Required — Launch load factor
 
 > 
 
@@ -5783,7 +5793,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_08` — Mass margin
+### `l3_massaero_req_08` — Required — Mass margin
 
 > 
 
@@ -5804,7 +5814,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_09` — Frontal area
+### `l3_massaero_req_09` — Required — Frontal area
 
 > 
 
@@ -5825,7 +5835,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_10` — Drag coefficient
+### `l3_massaero_req_10` — Required — Drag coefficient
 
 > 
 
@@ -5846,7 +5856,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_11` — Ballistic coefficient
+### `l3_massaero_req_11` — Required — Ballistic coefficient
 
 > 
 
@@ -5867,7 +5877,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_12` — Relative velocity
+### `l3_massaero_req_12` — Required — Relative velocity
 
 > 
 
@@ -5888,7 +5898,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_13` — Drag acceleration
+### `l3_massaero_req_13` — Required — Drag acceleration
 
 > 
 
@@ -5909,7 +5919,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_14` — Centre of pressure offset
+### `l3_massaero_req_14` — Required — Centre of pressure offset
 
 > 
 
@@ -5930,7 +5940,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_15` — Launch mass
+### `l3_massaero_req_15` — Required — Launch mass
 
 > 
 
@@ -5951,7 +5961,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_16` — Centre of mass
+### `l3_massaero_req_16` — Required — Centre of mass
 
 > 
 
@@ -5972,7 +5982,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_17` — Moments of inertia
+### `l3_massaero_req_17` — Required — Moments of inertia
 
 > 
 
@@ -5993,7 +6003,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_18` — Structural mass fraction
+### `l3_massaero_req_18` — Required — Structural mass fraction
 
 > 
 
@@ -6014,7 +6024,7 @@ Separate from and additional to the per-item maturity allowances. It covers what
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_massaero_req_19` — Erosion depth
+### `l3_massaero_req_19` — Required — Erosion depth
 
 > 
 
@@ -9797,7 +9807,7 @@ The inverse question, and the one a concept trade actually asks.
 
 ## `multipay` — Multi-payload
 
-### `l3_multipay_ach_01` — Number of payloads
+### `l3_multipay_ach_01` — Achieved — Number of payloads
 
 > 
 
@@ -9818,7 +9828,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_multipay_ach_02` — Boresight separation
+### `l3_multipay_ach_02` — Achieved — Boresight separation
 
 > 
 
@@ -9839,7 +9849,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_multipay_ach_03` — Payload mass fraction
+### `l3_multipay_ach_03` — Achieved — Payload mass fraction
 
 > 
 
@@ -9860,7 +9870,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_multipay_ach_04` — Accommodation area
+### `l3_multipay_ach_04` — Achieved — Accommodation area
 
 > 
 
@@ -9881,7 +9891,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_multipay_ach_05` — Shared power allocation
+### `l3_multipay_ach_05` — Achieved — Shared power allocation
 
 > 
 
@@ -9902,7 +9912,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_multipay_ach_06` — Shared downlink allocation
+### `l3_multipay_ach_06` — Achieved — Shared downlink allocation
 
 > 
 
@@ -9923,7 +9933,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_multipay_ach_07` — Thermal dissipation share
+### `l3_multipay_ach_07` — Achieved — Thermal dissipation share
 
 > 
 
@@ -9944,7 +9954,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_multipay_ach_08` — Simultaneity window
+### `l3_multipay_ach_08` — Achieved — Simultaneity window
 
 > 
 
@@ -9965,7 +9975,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_multipay_ach_09` — Operating conflict rate
+### `l3_multipay_ach_09` — Achieved — Operating conflict rate
 
 > 
 
@@ -10387,7 +10397,7 @@ The inverse question, and the one a concept trade actually asks.
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
-### `l3_multipay_req_01` — Number of payloads
+### `l3_multipay_req_01` — Required — Number of payloads
 
 > 
 
@@ -10408,7 +10418,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_multipay_req_02` — Boresight separation
+### `l3_multipay_req_02` — Required — Boresight separation
 
 > 
 
@@ -10429,7 +10439,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_multipay_req_03` — Payload mass fraction
+### `l3_multipay_req_03` — Required — Payload mass fraction
 
 > 
 
@@ -10450,7 +10460,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_multipay_req_04` — Accommodation area
+### `l3_multipay_req_04` — Required — Accommodation area
 
 > 
 
@@ -10471,7 +10481,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_multipay_req_05` — Shared power allocation
+### `l3_multipay_req_05` — Required — Shared power allocation
 
 > 
 
@@ -10492,7 +10502,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_multipay_req_06` — Shared downlink allocation
+### `l3_multipay_req_06` — Required — Shared downlink allocation
 
 > 
 
@@ -10513,7 +10523,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_multipay_req_07` — Thermal dissipation share
+### `l3_multipay_req_07` — Required — Thermal dissipation share
 
 > 
 
@@ -10534,7 +10544,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_multipay_req_08` — Simultaneity window
+### `l3_multipay_req_08` — Required — Simultaneity window
 
 > 
 
@@ -10555,7 +10565,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_multipay_req_09` — Operating conflict rate
+### `l3_multipay_req_09` — Required — Operating conflict rate
 
 > 
 
@@ -10579,7 +10589,7 @@ The inverse question, and the one a concept trade actually asks.
 
 ## `navod` — Navigation & OD
 
-### `l3_navod_ach_01` — Orbit determination accuracy
+### `l3_navod_ach_01` — Achieved — Orbit determination accuracy
 
 > 
 
@@ -10600,7 +10610,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navod_ach_02` — Navigation filter rate
+### `l3_navod_ach_02` — Achieved — Navigation filter rate
 
 > 
 
@@ -10621,7 +10631,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navod_ach_03` — Phasing tolerance
+### `l3_navod_ach_03` — Achieved — Phasing tolerance
 
 > 
 
@@ -10642,7 +10652,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navod_ach_04` — Along-track control tolerance
+### `l3_navod_ach_04` — Achieved — Along-track control tolerance
 
 > 
 
@@ -10663,7 +10673,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navod_ach_05` — Position error growth
+### `l3_navod_ach_05` — Achieved — Position error growth
 
 > 
 
@@ -10684,7 +10694,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navod_ach_06` — Ephemeris prediction accuracy
+### `l3_navod_ach_06` — Achieved — Ephemeris prediction accuracy
 
 > 
 
@@ -10705,7 +10715,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navod_ach_07` — Prediction horizon
+### `l3_navod_ach_07` — Achieved — Prediction horizon
 
 > 
 
@@ -10726,7 +10736,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navod_ach_08` — Ephemeris upload cadence
+### `l3_navod_ach_08` — Achieved — Ephemeris upload cadence
 
 > 
 
@@ -10747,7 +10757,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navod_ach_09` — Orbit determination cycle
+### `l3_navod_ach_09` — Achieved — Orbit determination cycle
 
 > 
 
@@ -11169,7 +11179,7 @@ The inverse question, and the one a concept trade actually asks.
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
-### `l3_navod_req_01` — Orbit determination accuracy
+### `l3_navod_req_01` — Required — Orbit determination accuracy
 
 > 
 
@@ -11190,7 +11200,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navod_req_02` — Navigation filter rate
+### `l3_navod_req_02` — Required — Navigation filter rate
 
 > 
 
@@ -11211,7 +11221,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navod_req_03` — Phasing tolerance
+### `l3_navod_req_03` — Required — Phasing tolerance
 
 > 
 
@@ -11232,7 +11242,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navod_req_04` — Along-track control tolerance
+### `l3_navod_req_04` — Required — Along-track control tolerance
 
 > 
 
@@ -11253,7 +11263,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navod_req_05` — Position error growth
+### `l3_navod_req_05` — Required — Position error growth
 
 > 
 
@@ -11274,7 +11284,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navod_req_06` — Ephemeris prediction accuracy
+### `l3_navod_req_06` — Required — Ephemeris prediction accuracy
 
 > 
 
@@ -11295,7 +11305,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navod_req_07` — Prediction horizon
+### `l3_navod_req_07` — Required — Prediction horizon
 
 > 
 
@@ -11316,7 +11326,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navod_req_08` — Ephemeris upload cadence
+### `l3_navod_req_08` — Required — Ephemeris upload cadence
 
 > 
 
@@ -11337,7 +11347,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navod_req_09` — Orbit determination cycle
+### `l3_navod_req_09` — Required — Orbit determination cycle
 
 > 
 
@@ -11361,7 +11371,7 @@ The inverse question, and the one a concept trade actually asks.
 
 ## `navsense` — Navigation sensing
 
-### `l3_navsense_ach_01` — GNSS solution
+### `l3_navsense_ach_01` — Achieved — GNSS solution
 
 > 
 
@@ -11382,7 +11392,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navsense_ach_02` — Accelerometer class
+### `l3_navsense_ach_02` — Achieved — Accelerometer class
 
 > 
 
@@ -11403,7 +11413,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navsense_ach_03` — Observed acceleration
+### `l3_navsense_ach_03` — Achieved — Observed acceleration
 
 > 
 
@@ -11424,7 +11434,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navsense_ach_04` — Density estimate
+### `l3_navsense_ach_04` — Achieved — Density estimate
 
 > 
 
@@ -11445,7 +11455,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navsense_ach_05` — Scale factor
+### `l3_navsense_ach_05` — Achieved — Scale factor
 
 > 
 
@@ -11466,7 +11476,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navsense_ach_06` — Unmodelled acceleration
+### `l3_navsense_ach_06` — Achieved — Unmodelled acceleration
 
 > 
 
@@ -11888,7 +11898,7 @@ The inverse question, and the one a concept trade actually asks.
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
-### `l3_navsense_req_01` — GNSS solution
+### `l3_navsense_req_01` — Required — GNSS solution
 
 > 
 
@@ -11909,7 +11919,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navsense_req_02` — Accelerometer class
+### `l3_navsense_req_02` — Required — Accelerometer class
 
 > 
 
@@ -11930,7 +11940,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navsense_req_03` — Observed acceleration
+### `l3_navsense_req_03` — Required — Observed acceleration
 
 > 
 
@@ -11951,7 +11961,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navsense_req_04` — Density estimate
+### `l3_navsense_req_04` — Required — Density estimate
 
 > 
 
@@ -11972,7 +11982,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navsense_req_05` — Scale factor
+### `l3_navsense_req_05` — Required — Scale factor
 
 > 
 
@@ -11993,7 +12003,7 @@ The inverse question, and the one a concept trade actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_navsense_req_06` — Unmodelled acceleration
+### `l3_navsense_req_06` — Required — Unmodelled acceleration
 
 > 
 
@@ -12479,7 +12489,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 
 ## `orbmaint` — Orbit maintenance
 
-### `l3_orbmaint_ach_01` — Thrust modulation resolution
+### `l3_orbmaint_ach_01` — Achieved — Thrust modulation resolution
 
 > 
 
@@ -12500,7 +12510,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_ach_02` — Propellant reserve
+### `l3_orbmaint_ach_02` — Achieved — Propellant reserve
 
 > 
 
@@ -12521,7 +12531,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_ach_03` — Collision avoidance delta-v
+### `l3_orbmaint_ach_03` — Achieved — Collision avoidance delta-v
 
 > 
 
@@ -12542,7 +12552,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_ach_04` — Station-keeping box
+### `l3_orbmaint_ach_04` — Achieved — Station-keeping box
 
 > 
 
@@ -12563,7 +12573,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_ach_05` — Station-keeping delta-v
+### `l3_orbmaint_ach_05` — Achieved — Station-keeping delta-v
 
 > 
 
@@ -12584,7 +12594,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_ach_06` — Manoeuvre frequency
+### `l3_orbmaint_ach_06` — Achieved — Manoeuvre frequency
 
 > 
 
@@ -12605,7 +12615,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_ach_07` — Manoeuvre duration
+### `l3_orbmaint_ach_07` — Achieved — Manoeuvre duration
 
 > 
 
@@ -12626,7 +12636,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_ach_08` — Thrust duty limit
+### `l3_orbmaint_ach_08` — Achieved — Thrust duty limit
 
 > 
 
@@ -12647,7 +12657,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_ach_09` — Deorbit delta-v
+### `l3_orbmaint_ach_09` — Achieved — Deorbit delta-v
 
 > 
 
@@ -12668,7 +12678,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_ach_10` — Abort altitude
+### `l3_orbmaint_ach_10` — Achieved — Abort altitude
 
 > 
 
@@ -13090,7 +13100,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
-### `l3_orbmaint_req_01` — Thrust modulation resolution
+### `l3_orbmaint_req_01` — Required — Thrust modulation resolution
 
 > 
 
@@ -13111,7 +13121,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_req_02` — Propellant reserve
+### `l3_orbmaint_req_02` — Required — Propellant reserve
 
 > 
 
@@ -13132,7 +13142,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_req_03` — Collision avoidance delta-v
+### `l3_orbmaint_req_03` — Required — Collision avoidance delta-v
 
 > 
 
@@ -13153,7 +13163,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_req_04` — Station-keeping box
+### `l3_orbmaint_req_04` — Required — Station-keeping box
 
 > 
 
@@ -13174,7 +13184,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_req_05` — Station-keeping delta-v
+### `l3_orbmaint_req_05` — Required — Station-keeping delta-v
 
 > 
 
@@ -13195,7 +13205,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_req_06` — Manoeuvre frequency
+### `l3_orbmaint_req_06` — Required — Manoeuvre frequency
 
 > 
 
@@ -13216,7 +13226,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_req_07` — Manoeuvre duration
+### `l3_orbmaint_req_07` — Required — Manoeuvre duration
 
 > 
 
@@ -13237,7 +13247,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_req_08` — Thrust duty limit
+### `l3_orbmaint_req_08` — Required — Thrust duty limit
 
 > 
 
@@ -13258,7 +13268,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_req_09` — Deorbit delta-v
+### `l3_orbmaint_req_09` — Required — Deorbit delta-v
 
 > 
 
@@ -13279,7 +13289,7 @@ This is the number an air-breathing system exists to make free. A stored-propell
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_orbmaint_req_10` — Abort altitude
+### `l3_orbmaint_req_10` — Required — Abort altitude
 
 > 
 
@@ -13891,7 +13901,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 
 ## `payload` — Payload
 
-### `l3_payload_ach_01` — Payload mass
+### `l3_payload_ach_01` — Achieved — Payload mass
 
 > 
 
@@ -13912,7 +13922,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_ach_02` — Peak payload power
+### `l3_payload_ach_02` — Achieved — Peak payload power
 
 > 
 
@@ -13933,7 +13943,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_ach_03` — Average payload power
+### `l3_payload_ach_03` — Achieved — Average payload power
 
 > 
 
@@ -13954,7 +13964,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_ach_04` — Payload data rate
+### `l3_payload_ach_04` — Achieved — Payload data rate
 
 > 
 
@@ -13975,7 +13985,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_ach_05` — Payload dissipation
+### `l3_payload_ach_05` — Achieved — Payload dissipation
 
 > 
 
@@ -13996,7 +14006,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_ach_06` — Payload envelope
+### `l3_payload_ach_06` — Achieved — Payload envelope
 
 > 
 
@@ -14017,7 +14027,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_ach_07` — Pointing requirement
+### `l3_payload_ach_07` — Achieved — Pointing requirement
 
 > 
 
@@ -14038,7 +14048,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_ach_08` — Pointing knowledge requirement
+### `l3_payload_ach_08` — Achieved — Pointing knowledge requirement
 
 > 
 
@@ -14059,7 +14069,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_ach_09` — Alignment stability
+### `l3_payload_ach_09` — Achieved — Alignment stability
 
 > 
 
@@ -14080,7 +14090,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_ach_10` — Operating temperature range
+### `l3_payload_ach_10` — Achieved — Operating temperature range
 
 > 
 
@@ -14101,7 +14111,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_ach_11` — Field of view keep-out
+### `l3_payload_ach_11` — Achieved — Field of view keep-out
 
 > 
 
@@ -14122,7 +14132,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_ach_12` — Payload duty cycle
+### `l3_payload_ach_12` — Achieved — Payload duty cycle
 
 > 
 
@@ -14504,7 +14514,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
-### `l3_payload_req_01` — Payload mass
+### `l3_payload_req_01` — Required — Payload mass
 
 > 
 
@@ -14525,7 +14535,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_req_02` — Peak payload power
+### `l3_payload_req_02` — Required — Peak payload power
 
 > 
 
@@ -14546,7 +14556,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_req_03` — Average payload power
+### `l3_payload_req_03` — Required — Average payload power
 
 > 
 
@@ -14567,7 +14577,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_req_04` — Payload data rate
+### `l3_payload_req_04` — Required — Payload data rate
 
 > 
 
@@ -14588,7 +14598,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_req_05` — Payload dissipation
+### `l3_payload_req_05` — Required — Payload dissipation
 
 > 
 
@@ -14609,7 +14619,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_req_06` — Payload envelope
+### `l3_payload_req_06` — Required — Payload envelope
 
 > 
 
@@ -14630,7 +14640,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_req_07` — Pointing requirement
+### `l3_payload_req_07` — Required — Pointing requirement
 
 > 
 
@@ -14651,7 +14661,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_req_08` — Pointing knowledge requirement
+### `l3_payload_req_08` — Required — Pointing knowledge requirement
 
 > 
 
@@ -14672,7 +14682,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_req_09` — Alignment stability
+### `l3_payload_req_09` — Required — Alignment stability
 
 > 
 
@@ -14693,7 +14703,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_req_10` — Operating temperature range
+### `l3_payload_req_10` — Required — Operating temperature range
 
 > 
 
@@ -14714,7 +14724,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_req_11` — Field of view keep-out
+### `l3_payload_req_11` — Required — Field of view keep-out
 
 > 
 
@@ -14735,7 +14745,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_payload_req_12` — Payload duty cycle
+### `l3_payload_req_12` — Required — Payload duty cycle
 
 > 
 
@@ -14759,7 +14769,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 
 ## `pointing` — Pointing error budget
 
-### `l3_pointing_ach_01` — Absolute performance error
+### `l3_pointing_ach_01` — Achieved — Absolute performance error
 
 > 
 
@@ -14780,7 +14790,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_pointing_ach_02` — Relative performance error
+### `l3_pointing_ach_02` — Achieved — Relative performance error
 
 > 
 
@@ -14801,7 +14811,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_pointing_ach_03` — Absolute knowledge error
+### `l3_pointing_ach_03` — Achieved — Absolute knowledge error
 
 > 
 
@@ -14822,7 +14832,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_pointing_ach_04` — Absolute measurement error
+### `l3_pointing_ach_04` — Achieved — Absolute measurement error
 
 > 
 
@@ -14843,7 +14853,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_pointing_ach_05` — Control error contribution
+### `l3_pointing_ach_05` — Achieved — Control error contribution
 
 > 
 
@@ -14864,7 +14874,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_pointing_ach_06` — Disturbance torque budget
+### `l3_pointing_ach_06` — Achieved — Disturbance torque budget
 
 > 
 
@@ -15286,7 +15296,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
-### `l3_pointing_req_01` — Absolute performance error
+### `l3_pointing_req_01` — Required — Absolute performance error
 
 > 
 
@@ -15307,7 +15317,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_pointing_req_02` — Relative performance error
+### `l3_pointing_req_02` — Required — Relative performance error
 
 > 
 
@@ -15328,7 +15338,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_pointing_req_03` — Absolute knowledge error
+### `l3_pointing_req_03` — Required — Absolute knowledge error
 
 > 
 
@@ -15349,7 +15359,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_pointing_req_04` — Absolute measurement error
+### `l3_pointing_req_04` — Required — Absolute measurement error
 
 > 
 
@@ -15370,7 +15380,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_pointing_req_05` — Control error contribution
+### `l3_pointing_req_05` — Required — Control error contribution
 
 > 
 
@@ -15391,7 +15401,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_pointing_req_06` — Disturbance torque budget
+### `l3_pointing_req_06` — Required — Disturbance torque budget
 
 > 
 
@@ -15415,7 +15425,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 
 ## `power` — Power
 
-### `l3_power_ach_01` — Cell efficiency
+### `l3_power_ach_01` — Achieved — Cell efficiency
 
 > 
 
@@ -15436,7 +15446,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_ach_02` — Bus power demand
+### `l3_power_ach_02` — Achieved — Bus power demand
 
 > 
 
@@ -15457,7 +15467,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_ach_03` — Depth of discharge
+### `l3_power_ach_03` — Achieved — Depth of discharge
 
 > 
 
@@ -15478,7 +15488,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_ach_04` — Bus voltage
+### `l3_power_ach_04` — Achieved — Bus voltage
 
 > 
 
@@ -15499,7 +15509,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_ach_05` — Array degradation
+### `l3_power_ach_05` — Achieved — Array degradation
 
 > 
 
@@ -15520,7 +15530,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_ach_06` — SADA angle range
+### `l3_power_ach_06` — Achieved — SADA angle range
 
 > 
 
@@ -15541,7 +15551,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_ach_07` — Harness loss
+### `l3_power_ach_07` — Achieved — Harness loss
 
 > 
 
@@ -15562,7 +15572,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_ach_08` — Power margin
+### `l3_power_ach_08` — Achieved — Power margin
 
 > 
 
@@ -15583,7 +15593,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_ach_09` — PPU power
+### `l3_power_ach_09` — Achieved — PPU power
 
 > 
 
@@ -15604,7 +15614,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_ach_10` — Electrical power
+### `l3_power_ach_10` — Achieved — Electrical power
 
 > 
 
@@ -15625,7 +15635,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_ach_11` — Array area
+### `l3_power_ach_11` — Achieved — Array area
 
 > 
 
@@ -15646,7 +15656,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_ach_12` — Battery capacity
+### `l3_power_ach_12` — Achieved — Battery capacity
 
 > 
 
@@ -15667,7 +15677,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_ach_13` — End of life power
+### `l3_power_ach_13` — Achieved — End of life power
 
 > 
 
@@ -16049,7 +16059,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
-### `l3_power_req_01` — Cell efficiency
+### `l3_power_req_01` — Required — Cell efficiency
 
 > 
 
@@ -16070,7 +16080,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_req_02` — Bus power demand
+### `l3_power_req_02` — Required — Bus power demand
 
 > 
 
@@ -16091,7 +16101,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_req_03` — Depth of discharge
+### `l3_power_req_03` — Required — Depth of discharge
 
 > 
 
@@ -16112,7 +16122,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_req_04` — Bus voltage
+### `l3_power_req_04` — Required — Bus voltage
 
 > 
 
@@ -16133,7 +16143,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_req_05` — Array degradation
+### `l3_power_req_05` — Required — Array degradation
 
 > 
 
@@ -16154,7 +16164,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_req_06` — SADA angle range
+### `l3_power_req_06` — Required — SADA angle range
 
 > 
 
@@ -16175,7 +16185,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_req_07` — Harness loss
+### `l3_power_req_07` — Required — Harness loss
 
 > 
 
@@ -16196,7 +16206,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_req_08` — Power margin
+### `l3_power_req_08` — Required — Power margin
 
 > 
 
@@ -16217,7 +16227,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_req_09` — PPU power
+### `l3_power_req_09` — Required — PPU power
 
 > 
 
@@ -16238,7 +16248,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_req_10` — Electrical power
+### `l3_power_req_10` — Required — Electrical power
 
 > 
 
@@ -16259,7 +16269,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_req_11` — Array area
+### `l3_power_req_11` — Required — Array area
 
 > 
 
@@ -16280,7 +16290,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_req_12` — Battery capacity
+### `l3_power_req_12` — Required — Battery capacity
 
 > 
 
@@ -16301,7 +16311,7 @@ Taking the better of the two produces a resolution claim the optics cannot deliv
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_power_req_13` — End of life power
+### `l3_power_req_13` — Required — End of life power
 
 > 
 
@@ -16892,7 +16902,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 
 ## `prop` — Propulsion · ICP plasma thruster
 
-### `l3_prop_ach_01` — Specific impulse
+### `l3_prop_ach_01` — Achieved — Specific impulse
 
 > 
 
@@ -16913,7 +16923,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_02` — Thruster duty cycle
+### `l3_prop_ach_02` — Achieved — Thruster duty cycle
 
 > 
 
@@ -16934,7 +16944,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_03` — Intake capture area
+### `l3_prop_ach_03` — Achieved — Intake capture area
 
 > 
 
@@ -16955,7 +16965,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_04` — PPU efficiency
+### `l3_prop_ach_04` — Achieved — PPU efficiency
 
 > 
 
@@ -16976,7 +16986,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_05` — Thrust vector alignment
+### `l3_prop_ach_05` — Achieved — Thrust vector alignment
 
 > 
 
@@ -16997,7 +17007,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_06` — Propellant type
+### `l3_prop_ach_06` — Achieved — Propellant type
 
 > 
 
@@ -17018,7 +17028,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_07` — Number of thrusters
+### `l3_prop_ach_07` — Achieved — Number of thrusters
 
 > 
 
@@ -17039,7 +17049,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_08` — Throttle range
+### `l3_prop_ach_08` — Achieved — Throttle range
 
 > 
 
@@ -17060,7 +17070,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_09` — Thrust authority
+### `l3_prop_ach_09` — Achieved — Thrust authority
 
 > 
 
@@ -17081,7 +17091,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_10` — Delta-v budget
+### `l3_prop_ach_10` — Achieved — Delta-v budget
 
 > 
 
@@ -17102,7 +17112,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_11` — Propellant mass
+### `l3_prop_ach_11` — Achieved — Propellant mass
 
 > 
 
@@ -17123,7 +17133,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_12` — Decay rate
+### `l3_prop_ach_12` — Achieved — Decay rate
 
 > 
 
@@ -17144,7 +17154,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_13` — Re-entry time unpowered
+### `l3_prop_ach_13` — Achieved — Re-entry time unpowered
 
 > 
 
@@ -17165,7 +17175,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_14` — Total impulse
+### `l3_prop_ach_14` — Achieved — Total impulse
 
 > 
 
@@ -17186,7 +17196,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_15` — Thrust to drag ratio
+### `l3_prop_ach_15` — Achieved — Thrust to drag ratio
 
 > 
 
@@ -17207,7 +17217,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_16` — Minimum impulse bit
+### `l3_prop_ach_16` — Achieved — Minimum impulse bit
 
 > 
 
@@ -17228,7 +17238,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_17` — Tank volume
+### `l3_prop_ach_17` — Achieved — Tank volume
 
 > 
 
@@ -17249,7 +17259,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_18` — Compression ratio
+### `l3_prop_ach_18` — Achieved — Compression ratio
 
 > 
 
@@ -17270,7 +17280,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_ach_19` — Achievable lifetime
+### `l3_prop_ach_19` — Achieved — Achievable lifetime
 
 > 
 
@@ -17872,7 +17882,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
-### `l3_prop_req_01` — Specific impulse
+### `l3_prop_req_01` — Required — Specific impulse
 
 > 
 
@@ -17893,7 +17903,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_02` — Thruster duty cycle
+### `l3_prop_req_02` — Required — Thruster duty cycle
 
 > 
 
@@ -17914,7 +17924,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_03` — Intake capture area
+### `l3_prop_req_03` — Required — Intake capture area
 
 > 
 
@@ -17935,7 +17945,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_04` — PPU efficiency
+### `l3_prop_req_04` — Required — PPU efficiency
 
 > 
 
@@ -17956,7 +17966,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_05` — Thrust vector alignment
+### `l3_prop_req_05` — Required — Thrust vector alignment
 
 > 
 
@@ -17977,7 +17987,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_06` — Propellant type
+### `l3_prop_req_06` — Required — Propellant type
 
 > 
 
@@ -17998,7 +18008,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_07` — Number of thrusters
+### `l3_prop_req_07` — Required — Number of thrusters
 
 > 
 
@@ -18019,7 +18029,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_08` — Throttle range
+### `l3_prop_req_08` — Required — Throttle range
 
 > 
 
@@ -18040,7 +18050,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_09` — Thrust authority
+### `l3_prop_req_09` — Required — Thrust authority
 
 > 
 
@@ -18061,7 +18071,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_10` — Delta-v budget
+### `l3_prop_req_10` — Required — Delta-v budget
 
 > 
 
@@ -18082,7 +18092,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_11` — Propellant mass
+### `l3_prop_req_11` — Required — Propellant mass
 
 > 
 
@@ -18103,7 +18113,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_12` — Decay rate
+### `l3_prop_req_12` — Required — Decay rate
 
 > 
 
@@ -18124,7 +18134,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_13` — Re-entry time unpowered
+### `l3_prop_req_13` — Required — Re-entry time unpowered
 
 > 
 
@@ -18145,7 +18155,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_14` — Total impulse
+### `l3_prop_req_14` — Required — Total impulse
 
 > 
 
@@ -18166,7 +18176,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_15` — Thrust to drag ratio
+### `l3_prop_req_15` — Required — Thrust to drag ratio
 
 > 
 
@@ -18187,7 +18197,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_16` — Minimum impulse bit
+### `l3_prop_req_16` — Required — Minimum impulse bit
 
 > 
 
@@ -18208,7 +18218,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_17` — Tank volume
+### `l3_prop_req_17` — Required — Tank volume
 
 > 
 
@@ -18229,7 +18239,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_18` — Compression ratio
+### `l3_prop_req_18` — Required — Compression ratio
 
 > 
 
@@ -18250,7 +18260,7 @@ A margin silently corrected to zero is a design that drifted without anyone deci
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_prop_req_19` — Achievable lifetime
+### `l3_prop_req_19` — Required — Achievable lifetime
 
 > 
 
@@ -18944,30 +18954,30 @@ At or above one the orbit holds indefinitely. Below one the mission has a lifeti
 
 ## `solar` — Solar weather — addition
 
-### `l3_solar_ach_01` — F10.7, sustained
+### `l3_solar_ach_01` — Closure — F10.7, sustained
 
-> What sustained F10.7 does the record say this mission will present?
+> How much room does the sustained F10.7 requirement have left?
 
 | | |
 |---|---|
-| symbol | `F107_ach_flux` |
+| symbol | `M_f107_long` |
 | type | `Ratio` |
 | unit | - |
 | kind | achieved |
 | owner | environment |
 | evidence tier | A |
-| relation | `F107_ach_flux = sw_f107_design_long` |
+| relation | `M_f107_long = closure(F107_req_long, F107_long, AtMost).margin` |
 | source | `noaa_swpc` |
-| valid over | 60 … 400 - |
+| valid over | -10 … 1 - |
 
-- **lower bound** — the same floor as env_f107 and sw_f107_design_long: below 60 sfu has never been observed and no relation reading F10.7 has support there
-- **upper bound** — the same ceiling as env_f107 and sw_f107_design_long: above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value
-- **reads** — `sw_f107_design_long`
+- **lower bound** — a margin of -10 is a requirement exceeded by eleven times its own value. Below that the comparison has stopped being a design margin and become a sign that one side is in the wrong unit, and it should refuse rather than report a number nobody will read as a fraction
+- **upper bound** — 1 is the whole of the requirement: an achieved value of zero against a positive bound. A margin above 1 under this sense would mean the achieved value is negative, which none of these drivers can be
+- **reads** — `sw_f107_design_long`, `l3_solar_req_01`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **assumes** It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when the same cost as the interface, and worth repeating on the row a closure actually binds. The number is sized on the cycle analogue at the mission's own epoch rather than on the record's unconditional mean, which this chain now reads the epoch to do; where it is a band it is 1.28 sigma, the 90th percentile, and not the 95 per cent the run is labelled; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way.
-- **evidence** the five-year conclusion, restated unchanged — expect 228.1374378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** the half-year conclusion, restated unchanged — expect 171.8843338669 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** the fifteen-year conclusion, restated unchanged — expect 229.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the sustained F10.7 the record presents against the 260 sfu commitment — expect 0.599725639035 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** exactly on the bound, where the margin must be zero and the closure still closed — expect 0 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** twice the bound, where the margin must be -1 and the closure must fail — expect -1 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 
 The headline of the five. It is the same number the interface carries to
 sys_space_environment as its primary member, restated on the achieved side of
@@ -18975,91 +18985,91 @@ the closure so that the comparison against what the spacecraft can sustain
 happens on a row rather than in somebody's head.
 
 
-### `l3_solar_ach_02` — F10.7, single day
+### `l3_solar_ach_02` — Closure — F10.7, single day
 
-> What F10.7 does the record say a single day inside this mission window will reach?
+> How much room does the single-day F10.7 requirement have left?
 
 | | |
 |---|---|
-| symbol | `F107_ach` |
+| symbol | `M_f107_short` |
 | type | `Ratio` |
 | unit | - |
 | kind | achieved |
 | owner | environment |
 | evidence tier | A |
-| relation | `F107_ach = sw_f107_design_short` |
+| relation | `M_f107_short = closure(F107_req_short, F107_short, AtMost).margin` |
 | source | `noaa_swpc` |
-| valid over | 60 … 400 - |
+| valid over | -10 … 1 - |
 
-- **lower bound** — the same floor as env_f107: below 60 sfu has never been observed
-- **upper bound** — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating. This is the achieved row most likely to reach it, being a sustained level with a daily excursion on top
-- **reads** — `sw_f107_design_short`
+- **lower bound** — a margin of -10 is a requirement exceeded by eleven times its own value. Below that the comparison has stopped being a design margin and become a sign that one side is in the wrong unit, and it should refuse rather than report a number nobody will read as a fraction
+- **upper bound** — 1 is the whole of the requirement: an achieved value of zero against a positive bound. A margin above 1 under this sense would mean the achieved value is negative, which none of these drivers can be
+- **reads** — `sw_f107_design_short`, `l3_solar_req_02`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **assumes** It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when a margin is computed from this row against a capability. The centre beneath it is a cycle analogue at the mission's own epoch, scaled beyond one cycle past cycle 25's maximum by the mean amplitude of two completed cycles whose peaks differ by 41 per cent; the band around it is 1.28 sigma, the 90th percentile, while the run is labelled 95 per cent; and the daily term stacked on top is a separate one-sided percentile, so the combination is nearer a 1-in-100 day than a 1-in-20 one. None of that travels across the closure, and the margin looks like a clean number either way
 - **assumes** It restates the single-day level and not one of its two siblings — fails when somebody reads it as the sustained level or as the persistence drift. The three are 124.14, 104.07 and 200.14 — all fluxes, same unit, same declared domain — so nothing in the tree would catch the substitution, and each would report a different margin against the same requirement
 - **assumes** Nothing compares this row with its requirement automatically — fails when a reader assumes the tree checks the closure. The pairing is a convention the matrix draws; `sense` is declared on the requirement row and the gate checks only that it is present. The Ap storm closure in this same group, l3_solar_req_03 against l3_solar_ach_03, currently FAILS at 158.38 against 150 and nothing in the tree says so
-- **evidence** the five-year conclusion, restated unchanged — expect 228.1374378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** the half-year conclusion, restated unchanged — expect 171.8843338669 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** the fifteen-year conclusion, restated unchanged — expect 229.8437378829 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the worst single day against the 350 sfu commitment — expect 0.645303999828571 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** exactly on the bound, where the margin must be zero and the closure still closed — expect 0 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** twice the bound, where the margin must be -1 and the closure must fail — expect -1 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 
 The single-day half of the F10.7 closure. Its partner, l3_solar_req_02, commits
 the design to surviving 350 sfu — above the largest daily value in the record —
 and this says what the window's own band actually reaches.
 
 
-### `l3_solar_ach_03` — Ap
+### `l3_solar_ach_03` — Closure — Ap, survival
 
-> What daily planetary Ap does the record say this mission will present?
+> How much room does the Ap survival requirement have left?
 
 | | |
 |---|---|
-| symbol | `Ap_ach` |
+| symbol | `M_ap_survive` |
 | type | `Ratio` |
 | unit | - |
 | kind | achieved |
 | owner | environment |
 | evidence tier | A |
-| relation | `Ap_ach = sw_storm_return_level` |
+| relation | `M_ap_survive = closure(Ap_req_survive, Ap_T, AtMost).margin` |
 | source | `noaa_swpc` |
-| valid over | 20 … 230 - |
+| valid over | -10 … 1 - |
 
-- **lower bound** — the same floor as sw_storm_return_level: below 20 the answer is not a storm at all, and the record's median day is 7
-- **upper bound** — the same ceiling as sw_storm_return_level: the fit's own reach at a return period equal to the record, 28.1971 years, which is Ap 229.18
-- **reads** — `sw_storm_return_level`
+- **lower bound** — a margin of -10 is a requirement exceeded by eleven times its own value. Below that the comparison has stopped being a design margin and become a sign that one side is in the wrong unit, and it should refuse rather than report a number nobody will read as a fraction
+- **upper bound** — 1 is the whole of the requirement: an achieved value of zero against a positive bound. A margin above 1 under this sense would mean the achieved value is negative, which none of these drivers can be
+- **reads** — `sw_storm_return_level`, `l3_solar_req_03`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **assumes** It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when the same cost as the interface, and worth repeating on the row a closure actually binds. The number is sized on the cycle analogue at the mission's own epoch rather than on the record's unconditional mean, which this chain now reads the epoch to do — it was an open decision on sw_central_expectation and it has been made, moving this row by 28.0 sfu; where it is a percentile it is the 95th and not a worst case; and where it is a return level its top end rests on two observations in 28.2 years. A margin computed from this row against a capability carries none of that, and will look like a clean number either way.
-- **evidence** the five-year conclusion, restated unchanged — expect 158.3838 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** the half-year conclusion, restated unchanged — expect 64.1474 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** the fifteen-year conclusion, restated unchanged — expect 203.3466 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the once-per-mission storm against the G4 survival bound — expect 0.23485885410628 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** exactly on the bound, where the margin must be zero and the closure still closed — expect 0 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** twice the bound, where the margin must be -1 and the closure must fail — expect -1 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 
 The geomagnetic driver on the achieved side: the storm that recurs once per mission lifetime. Unlike the F10.7 pair this has no confidence attached, because geomagnetic activity has no usable long-term forecast and the study designs to a return period instead.
 
-### `l3_solar_ach_04` — Ap, sustained
+### `l3_solar_ach_04` — Closure — Ap, sustained
 
-> What sustained Ap does the record say this mission will present?
+> How much room does the sustained Ap requirement have left?
 
 | | |
 |---|---|
-| symbol | `Ap_ach_long` |
+| symbol | `M_ap_long` |
 | type | `Ratio` |
 | unit | - |
 | kind | achieved |
 | owner | environment |
 | evidence tier | A |
-| relation | `Ap_ach_long = sw_ap_design_long` |
+| relation | `M_ap_long = closure(Ap_req_long, Ap_long, AtMost).margin` |
 | source | `noaa_swpc` |
-| valid over | 0 … 400 - |
+| valid over | -10 … 1 - |
 
-- **lower bound** — the same floor as the row it restates: Ap floors at zero, and a perfectly quiet day is Ap 0
-- **upper bound** — the same ceiling as the row it restates: 400 is the top of the Ap index itself, and a value above it is not a geomagnetic index at all
-- **reads** — `sw_ap_design_long`
+- **lower bound** — a margin of -10 is a requirement exceeded by eleven times its own value. Below that the comparison has stopped being a design margin and become a sign that one side is in the wrong unit, and it should refuse rather than report a number nobody will read as a fraction
+- **upper bound** — 1 is the whole of the requirement: an achieved value of zero against a positive bound. A margin above 1 under this sense would mean the achieved value is negative, which none of these drivers can be
+- **reads** — `sw_ap_design_long`, `l3_solar_req_04`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **assumes** It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when a margin is computed from this row against a capability. The centre beneath it is a cycle analogue scaled, beyond one cycle past cycle 25's maximum, by the mean amplitude of two completed cycles whose peaks differ by 41 per cent; the band is 1.28 sigma, which is the 90th percentile and not the 95 per cent the run is labelled; and the residuals it is a sigma of are skewed. None of that travels across the closure, and the margin looks like a clean number either way
 - **assumes** It restates the sustained level and not one of its two siblings — fails when somebody reads it as the other. The subsystem publishes three Ap conclusions — 26.70 sustained, 41.70 for the worst day of the design band, 158.38 for the one storm expected in the mission — and they answer three different questions. Restating the wrong one would move this closure from passing to failing or back without anything in the tree noticing
 - **assumes** Nothing compares this row with its requirement automatically — fails when a reader assumes the tree checks the closure. The pairing is a convention the matrix draws; `sense` is declared on the requirement row and the gate checks only that it is present. The Ap storm closure beside this one, l3_solar_req_03 against l3_solar_ach_03, currently FAILS at 158.38 against 150 and nothing in the tree says so
-- **evidence** the sustained Ap this repository's own chain gives for the declared window crosses unchanged — expect 26.69530964 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** the requirement's own ceiling crosses unchanged — the value at which this closure would sit exactly on its limit — expect 48 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** a round number, so the identity is checkable without a calculator — expect 20 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the sustained hot Ap against the Ap 48 commitment — expect 0.443847702083333 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** exactly on the bound, where the margin must be zero and the closure still closed — expect 0 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** twice the bound, where the margin must be -1 and the closure must fail — expect -1 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 
 An achieved row restates the subsystem's conclusion on the side of the
 comparison the closure reads. It computes nothing of its own, and it exists
@@ -19068,32 +19078,32 @@ comparison binds two rows of the same shape at the same layer — visible on the
 tree instead of an edge somebody has to trace.
 
 
-### `l3_solar_ach_05` — Ap, single day
+### `l3_solar_ach_05` — Closure — Ap, single day
 
-> What single-day Ap does the record say this mission will present?
+> How much room does the single-day Ap requirement have left?
 
 | | |
 |---|---|
-| symbol | `Ap_ach_short` |
+| symbol | `M_ap_short` |
 | type | `Ratio` |
 | unit | - |
 | kind | achieved |
 | owner | environment |
 | evidence tier | A |
-| relation | `Ap_ach_short = sw_ap_design_short` |
+| relation | `M_ap_short = closure(Ap_req_short, Ap_short, AtMost).margin` |
 | source | `noaa_swpc` |
-| valid over | 0 … 400 - |
+| valid over | -10 … 1 - |
 
-- **lower bound** — the same floor as the row it restates: Ap floors at zero, and a perfectly quiet day is Ap 0
-- **upper bound** — the same ceiling as the row it restates: 400 is the top of the Ap index itself, and a value above it is not a geomagnetic index at all
-- **reads** — `sw_ap_design_short`
+- **lower bound** — a margin of -10 is a requirement exceeded by eleven times its own value. Below that the comparison has stopped being a design margin and become a sign that one side is in the wrong unit, and it should refuse rather than report a number nobody will read as a fraction
+- **upper bound** — 1 is the whole of the requirement: an achieved value of zero against a positive bound. A margin above 1 under this sense would mean the achieved value is negative, which none of these drivers can be
+- **reads** — `sw_ap_design_short`, `l3_solar_req_05`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **assumes** It inherits every limitation of the row it restates, and a closure reading it sees none of them — fails when a margin is computed from this row against a capability. The centre beneath it is a cycle analogue scaled, beyond one cycle past cycle 25's maximum, by the mean amplitude of two completed cycles whose peaks differ by 41 per cent; the band is 1.28 sigma, which is the 90th percentile and not the 95 per cent the run is labelled; and the residuals it is a sigma of are skewed. None of that travels across the closure, and the margin looks like a clean number either way
 - **assumes** It restates the single-day level and not one of its two siblings — fails when somebody reads it as the other. The subsystem publishes three Ap conclusions — 26.70 sustained, 90.55 for the worst day of the design band, 158.38 for the one storm expected in the mission — and they answer three different questions. Restating the wrong one would move this closure from passing to failing or back without anything in the tree noticing
 - **assumes** Nothing compares this row with its requirement automatically — fails when a reader assumes the tree checks the closure. The pairing is a convention the matrix draws; `sense` is declared on the requirement row and the gate checks only that it is present. All five closures in this group hold as of 2026-09-16, and two of them did not the day before — this one at 90.55 against 80, and the Ap storm at 158.38 against 150. Both were invisible to every machine check in this repository, and both were found by a person reading the numbers rather than by anything running
-- **evidence** the single-day Ap this repository's own chain gives for the declared window crosses unchanged — expect 41.6971614919 ± 0.0000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** the requirement's own ceiling crosses unchanged — the value at which this closure would sit exactly on its limit — expect 80 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
-- **evidence** the G3 storm level, well above this closure's ceiling, to show the row carries rather than clamps — expect 132 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** the hot scenario worst day against the G3 operating bound — expect 0.314036290151515 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** exactly on the bound, where the margin must be zero and the closure still closed — expect 0 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
+- **evidence** twice the bound, where the margin must be -1 and the closure must fail — expect -1 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 
 An achieved row restates the subsystem's conclusion on the side of the
 comparison the closure reads. It computes nothing of its own, and it exists
@@ -19479,13 +19489,13 @@ which of those their problem is.
 - **read by** — nothing yet. A member nothing reads is a member the set does not need, or an oversight.
 
 
-### `l3_solar_req_01` — F10.7, sustained
+### `l3_solar_req_01` — Required — F10.7, sustained
 
 > What sustained F10.7 must this design operate in, for as long as the mission lasts?
 
 | | |
 |---|---|
-| symbol | `F107_req` |
+| symbol | `F107_req_long` |
 | type | `Ratio` |
 | unit | - |
 | kind | declared |
@@ -19499,7 +19509,7 @@ which of those their problem is.
 
 - **lower bound** — the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement
 - **upper bound** — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **read by** — `l3_solar_ach_01`
 - **assumes** 260 is the record's hottest sustained rotation rounded up, and the SATELLITE-ERA record is not the sun's history — fails when the record is read as the sun's history. 260 is anchored at 252.67 sfu, the largest 27-day mean in 28.2 years of SATELLITE-ERA record, centred 2024-08-13. Cycle 19 in the late 1950s ran higher than anything in that record, so a design meant to operate through a cycle-19 maximum needs a larger number and the rounding to 260 buys seven sfu against it. The anchor is at least checkable, which its predecessor was not: 250 was the next round number above whatever the chain happened to give, so it moved with the design rather than with the sky and its headroom drifted from 9.6 per cent to 140 without anything being wrong.
 - **assumes** It is a ceiling on the DRIVER and says nothing about what the driver does to the vehicle — fails when the requirement is read as a survivability statement. F10.7 is an index of solar radio flux; what a spacecraft actually feels is the density that flux produces at its altitude, through a model this subsystem does not own. A design that meets F10.7 <= 250 and is sized on a density model with the wrong drag coefficient has met this requirement and will still deorbit early. The closure this row takes part in is on the environment, and the environment is only the first half.
 - **assumes** One number for the whole mission, with no epoch and no phase in it — fails when the mission slips. The record runs 64 to 343 sfu across a cycle, so the flux a mission sees depends on where in the cycle it flies; the declared epoch of 2027-01-01 sits at phase 0.619, past maximum on the declining side. A mission starting in 2030 would sit near minimum and 250 would be enormously conservative. The requirement does not move with the epoch and is not meant to — it is the vehicle's capability, and the sky's variation belongs on the achieved side.
@@ -19519,13 +19529,13 @@ is now the sustained half and req_02 is the single day, so the duplication is
 gone and two different commitments are stated instead of one commitment twice.
 
 
-### `l3_solar_req_02` — F10.7, single day
+### `l3_solar_req_02` — Required — F10.7, single day
 
 > What F10.7 must this design survive on a single day inside the mission window?
 
 | | |
 |---|---|
-| symbol | `F107_req_day` |
+| symbol | `F107_req_short` |
 | type | `Ratio` |
 | unit | - |
 | kind | declared |
@@ -19539,7 +19549,7 @@ gone and two different commitments are stated instead of one commitment twice.
 
 - **lower bound** — the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement
 - **upper bound** — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **read by** — `l3_solar_ach_02`
 - **assumes** 350 is anchored in the record's largest observed day, and a longer record would move it — fails when a day above 343 sfu is observed. The record is 28.2 years and covers two and a half cycles; cycle 19 in the late 1950s ran higher than anything in it, with F10.7 reported above 350. So this requirement is anchored in the SATELLITE-ERA record rather than in the observed history of the sun, and a design meant to survive a cycle-19 maximum needs a larger number. The rounding to 350 buys seven sfu against that, which is not much
 - **assumes** A single day and a sustained level are different commitments, and this is the single day — fails when somebody compares the achieved sustained flux against this row, or the achieved day against l3_solar_req_01. The two closures are 138.30 against 350 and 104.07 against 250, and crossing them reports a margin that belongs to neither
 - **assumes** It is a ceiling on the DRIVER and says nothing about what the driver does to the vehicle — fails when the requirement is read as a survivability statement. F10.7 is an index of solar radio flux; what a spacecraft actually feels is the density that flux produces at its altitude, through a model this subsystem does not own. A design that meets F10.7 <= 350 and is sized on a density model with the wrong drag coefficient has met this requirement and will still deorbit early
@@ -19555,13 +19565,13 @@ The checking partner is l3_solar_ach_02, which restates sw_f107_design_short:
 the sustained hot level with the within-rotation daily excursion on top.
 
 
-### `l3_solar_req_03` — Ap
+### `l3_solar_req_03` — Required — Ap, survival
 
 > What daily planetary Ap must this design survive?
 
 | | |
 |---|---|
-| symbol | `Ap_req` |
+| symbol | `Ap_req_survive` |
 | type | `Ratio` |
 | unit | - |
 | kind | declared |
@@ -19575,7 +19585,7 @@ the sustained hot level with the within-rotation daily excursion on top.
 
 - **lower bound** — below 20 the requirement would be under the level at which the record's storms begin — the median day is Ap 7 and sw_storm_return_level's own floor is 20 — so a requirement there could not be met by any mission and is not a requirement
 - **upper bound** — 400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **read by** — `l3_solar_ach_03`
 - **assumes** 207 is a SURVIVAL commitment and not an operating capability, and the two are easy to confuse — fails when a reader takes this as the level the vehicle works through. It is not. sw_storm_design_level declares G3 and sw_ap_design turns it into 132, and that is the operating level; nothing about it moved. This row says a G4 storm does not end the mission, which sw_storm_design_level's own reason_upper describes as the right treatment for G4 — handled 'by operating through the event rather than by building for it'. A design that claimed to OPERATE at G4 would change sw_storm_design_level, and four exceedance rows would move with it.
 - **assumes** This closure now holds and the OPERATING one still does not, and the second is the one that matters — fails when a passing closure here is read as the storm case being closed. 158.4 sits between the two levels: above the 132 the vehicle operates through, below the 207 it must survive. So the mission meets a storm it cannot work through, and the size of that is what a designer needs — 0.284 days a year above 132, 1.42 days over the mission, about 1.24 events averaging 1.14 days each, longest run in 29 years 2 days. Roughly thirty-four hours outside the operating environment across five years. Nothing in the tree compares 158.4 against 132 automatically; the three exceedance rows measure it and a person reads them.
 - **assumes** Switching the G level moves the design value and the exceedance statistics, and not this row — fails when somebody expects the requirement to follow the switch. sw_storm_design_level is the input a design turns to ask what a different storm level costs — G1 gives 48, G2 gives 80, G3 gives 132 — and sw_ap_design and all three exceedance rows move with it. At G2 the exceedance rate is 1.24 days a year, 6.21 days over the mission in 5.1 events. This row does not move: it is a commitment, and a commitment that silently tracked the design would never be violated and would therefore never be a requirement. Changing it is a separate, deliberate act.
@@ -19584,7 +19594,7 @@ the sustained hot level with the within-rotation daily excursion on top.
 
 The G3 design capability of Ap 132 with a 14 per cent margin on it. The record expects 158.4 over the declared five-year mission, so this requirement is NOT met — and the three exceedance rows say what that costs: about 1.42 days outside the bound over the mission, in one or two one-day events, on the declining side of the cycle where the epoch sits.
 
-### `l3_solar_req_04` — Ap, sustained
+### `l3_solar_req_04` — Required — Ap, sustained
 
 > What sustained Ap must this design operate in, for as long as the mission lasts?
 
@@ -19604,7 +19614,7 @@ The G3 design capability of Ap 132 with a 14 per cent margin on it. The record e
 
 - **lower bound** — Ap floors at zero, and a sustained requirement of zero would commit the design to operating only in a perfectly quiet field, which no mission window presents
 - **upper bound** — 400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **read by** — `l3_solar_ach_04`
 - **assumes** It is a ceiling on the driver and says nothing about what the driver does to the vehicle — fails when a reader takes a passing closure as evidence the design is adequate. Ap is an index; what a spacecraft feels is the heating, the density and the torque it produces, through models this subsystem does not own. A design that meets Ap <= 48 and is sized with the wrong drag coefficient has met this requirement and will still deorbit early
 - **assumes** The G1 threshold is a reasonable place for a CONTINUOUS-operation commitment, and nothing here establishes that — fails when the vehicle's real limit is elsewhere. 48 is a published threshold rather than an arbitrary round number, which makes it checkable, but checkable is not the same as correct: the level at which a particular design must stop operating comes from its thermal, its torque authority and its propellant, none of which this subsystem sees. What this row guarantees is that a reader can see what the commitment IS
 - **assumes** A sustained level and a single day are different commitments, and this is the sustained one — fails when somebody compares the achieved single-day Ap against this row. That is l3_solar_req_05's closure and its ceiling is 80. Reading the wrong one of the two reports a failure where there is none, or a pass where there is not
@@ -19618,9 +19628,9 @@ The checking partner is l3_solar_ach_04, which reports the sustained Ap the
 record says the window will present.
 
 
-### `l3_solar_req_05` — Ap, single day
+### `l3_solar_req_05` — Required — Ap, single day
 
-> What Ap must this design survive on a single day inside the mission window?
+> What Ap must this design keep operating through on a single day?
 
 | | |
 |---|---|
@@ -19638,7 +19648,7 @@ record says the window will present.
 
 - **lower bound** — Ap floors at zero, and a single-day requirement of zero would commit the design to surviving only a perfectly quiet day, which is not a survival requirement
 - **upper bound** — 400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **read by** — `l3_solar_ach_05`
 - **assumes** It is a ceiling on the driver and says nothing about what the driver does to the vehicle — fails when a reader takes a passing closure as evidence the design is adequate. Ap is an index; what a spacecraft feels is the heating, the density and the torque it produces, through models this subsystem does not own
 - **assumes** The worst day of a design band and the one storm of a mission are different questions — fails when somebody collapses this row into l3_solar_req_03. At the declared window the two achieved sides differ by a factor of nearly four, 41.70 against 158.38, because one is a percentile of ordinary variation and the other an extreme-value return level. A single ceiling covering both would have to be the storm one, and the design would then be claiming to operate through a G3 storm
 - **assumes** The G3 threshold is a reasonable place for a one-day survival commitment, and nothing here establishes that — fails when the vehicle's real limit is elsewhere. 132 is a published threshold rather than an arbitrary round number, which makes it checkable, but checkable is not the same as correct: the level at which a particular design must stop is a thermal, torque and propellant question this subsystem does not see
@@ -20702,7 +20712,7 @@ The scatter of the daily driver about the smoothed one, as a ratio so it applies
 
 - **lower bound** — the deepest measured bias is -3.968 sfu, at lead 26, the last verifiable lead. A value below -4 means the table was misread or the bundle changed underneath it
 - **upper bound** — the shallowest measured bias is -0.593 sfu, at lead 1. A value above -0.5 — and certainly a positive one — would say the outlook over-forecasts F10.7 somewhere in the window, which this record does not show at any lead. The guard is deliberately on the safe side of zero rather than at zero, because an answer of -0.1 sfu would be as wrong as +0.1 and a bound at zero would pass it
-- **reads** — `sw_outlook_lead`
+- **reads** — `sw_recurrence_lag`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **assumes** The outlook is low at every lead in the window, and that is the unsafe direction — fails when the sign is read as incidental. Measured over 1997-2025 the bias is negative at all 26 verifiable leads, from -0.593 sfu at lead 1 to -3.968 sfu at lead 26, and it never crosses zero. So this is not scatter about a correct central value: the published outlook systematically under-forecasts F10.7, and a design reading it gets a thinner atmosphere, a lower drag and a longer predicted lifetime than it will fly. The remedy is to add the bias back, not to trust the outlook and widen a margin somewhere else
 - **assumes** One mean over 29 years of a varying Sun — fails when the bias is cycle-dependent, which it will be, because a forecaster's error on a 250 sfu day is not the error on a 70 sfu day. The sample is 866 to 1257 issue-target pairs per lead, pooled across cycles 23, 24 and the rise of 25 without conditioning on activity. A design at a known cycle phase is owed a phase-conditioned bias and this row does not give one; it gives the average over the record, which is the honest thing to publish from a pooled sample and is not the same thing
@@ -20735,7 +20745,7 @@ Signed, forecast minus observed, so a negative answer means the outlook was low.
 
 - **lower bound** — the worst measured skill is -0.036, at lead 24. A bound at -0.1 leaves room for the three negative leads and refuses anything that would say the published outlook is substantially worse than doing nothing, which the record does not support
 - **upper bound** — the best measured skill is +0.438, at lead 9. A skill above 0.5 against persistence would mean the outlook halves the baseline's mean squared error, and nothing in this record comes close; an answer there means the table was misread or the bundle changed underneath it
-- **reads** — `sw_outlook_lead`
+- **reads** — `sw_recurrence_lag`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **assumes** Persistence is the last observation STRICTLY BEFORE the issue date, and this choice decides the answer — fails when the baseline is allowed the observation on the issue date itself. 719 of the 1281 issues index their rows from lead 0, so the issue date IS a forecast target for most of the record, and handing it to the baseline gives persistence a number the forecaster did not have. The whole short-lead conclusion turns on it: the same arithmetic then reports -1.314 at lead 1 instead of +0.069, and the outlook appears to lose to persistence through lead 4 when it does not. A skill score is a statement about a baseline, so the baseline is declared here rather than left to whoever reads the number
 - **assumes** It goes negative at the far end of the window, and that is the answer, not a defect — fails when the last three verifiable leads are read as noise. Skill is positive from lead 1 through lead 23, peaks at +0.438 at lead 9, and is negative at leads 24, 25 and 26 — -0.036, -0.032 and -0.022 against samples of 866 to 868 pairs each. At the far end of its own published window the outlook is very slightly worse than assuming nothing changes. A design keying off the end of the outlook is paying attention to a forecast that has stopped carrying information
@@ -21223,7 +21233,7 @@ The climatology that knows where in the cycle it is. sw_central_expectation curr
 
 - **lower bound** — a lead of less than a day is not a forecast the published outlook makes; its first verifiable row is lead 1, present for all 1281 issues
 - **upper bound** — 26 is the last lead in the published window that the record can verify, because lead_days is indexed two ways in the same column and only the 1-based minority reaches 27. At 26 the sample is 868 issues drawn from both conventions; at 27 it is 192 drawn from one, and the answer there has a different sign from each of its neighbours. A larger value would be asking the verification rows about a cell whose contents are a property of the indexing rather than of the forecast
-- **read by** — `sw_forecast_bias`, `sw_forecast_skill`
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **assumes** The product is 27 days long and this row is 26, so it does not answer 'how far ahead does the outlook reach' — fails when somebody reads it as the window length. 899 of 1281 issues span exactly 27 days and the synodic solar rotation is about 27.3 days, so 27 is the honest answer to that question and this row is not asking it. It is asking where the outlook is weakest among the leads the record can verify, and the 27th lead cannot be verified because only 192 of 1281 issues place a row there. If a row is ever needed for the window length it is a second row, not this one.
 - **assumes** One lead, and the skill of the outlook is strongly lead-dependent — fails when measured on this record the outlook's skill against persistence rises from +0.0685 at lead 1 to a peak of +0.4375 at lead 9, falls back through +0.0177 at lead 23, and goes negative at 24, 25 and 26. So a single lead cannot characterise the product: 26 is the pessimistic end and a row evaluated there says nothing about the useful middle. It is chosen because a design wants to know how bad the far edge is, not how good the centre is.
 - **assumes** Skill is measured against persistence defined as the last observation STRICTLY BEFORE the issue date — fails when the baseline is allowed the observation on the issue date itself. That is the lead-0 target for the 719 issues that index from 0, so it hands persistence an answer the forecaster did not have, and it flatters the baseline enormously: the same arithmetic then reports the lead-1 skill as -1.3138 instead of +0.0685, and the outlook appears to lose to persistence at leads 1 through 4 when it does not. One choice of baseline, and the sign of the short-lead conclusion changes. This row's own first version carried the leaky figure and said the outlook loses at short leads; it does not.
@@ -21250,7 +21260,7 @@ The lead the forecast-verification rows are evaluated at. sw_forecast_skill and 
 
 - **lower bound** — below 20 days the autocorrelation is still on the steep descent from lag 1 and is falling, not peaking: it reads +0.186 at lag 20 against +0.376 at the peak. A value there would mean the detrending removed the rotation instead of the cycle
 - **upper bound** — above 35 days the first bump has closed — the correlation is +0.031 at lag 35 and negative by 36 — and anything beyond is the second harmonic near lag 54, which is the same signal counted twice. A value there would be reporting a harmonic as the fundamental
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **read by** — `sw_forecast_bias`, `sw_forecast_skill`
 - **assumes** 26 is where the first peak sits and 27 is the period, and the one-day gap is a known bias in the estimator rather than a disagreement — fails when the first peak is read as the rotation period. The autocorrelation of the detrended series decays steeply from +0.936 at lag 1 to -0.066 at lag 13, and the rotation bump rides on the tail of that decay, so its apparent peak is pulled toward zero lag. The harmonics settle it: the second peak is at lag 54 and the third at lag 81, both exactly 27.0 days per cycle, and they sit far enough out that the decay no longer tilts them. So the period is 27 days and the first-peak estimate is one day short. This row reports the measured peak, which is what the MATLAB field C.rot_peak_lag holds; a row that needs the period should use 27 and cite the harmonics
 - **assumes** The bump is broad, so the single lag overstates how sharp the recurrence is — fails when it is treated as a period a design can phase-lock to. Correlation exceeds +0.34 at every lag from 24 to 28 and exceeds +0.30 from 23 to 29 — a seven-day-wide shoulder. The Sun does not rotate as a solid body: the equator turns in about 25 days and mid-latitudes in about 28, and active regions emerge and decay within a rotation. So the recurrence is a tendency over a week-wide window, not a clock
 - **assumes** The 11-year cycle was removed with a 365-day centred mean, and that choice sets what is left — fails when the detrending window is comparable to the signal. At 365 days it is thirteen rotations long, so it removes the cycle and the annual terms while leaving the rotation untouched; the residual has a standard deviation of 19.85 sfu about a mean of -0.03. A window near 27 days would remove the rotation itself and this row would measure nothing. 3 of 10319 days in the record have no F10.7 and are excluded pairwise rather than interpolated
@@ -21555,7 +21565,7 @@ The companion to sw_central_expectation, and the number a design that must SURVI
 
 ## `struct` — Structure
 
-### `l3_struct_ach_01` — Bus dimensions
+### `l3_struct_ach_01` — Achieved — Bus dimensions
 
 > 
 
@@ -21576,7 +21586,7 @@ The companion to sw_central_expectation, and the number a design that must SURVI
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_struct_ach_02` — Primary structure material
+### `l3_struct_ach_02` — Achieved — Primary structure material
 
 > 
 
@@ -21597,7 +21607,7 @@ The companion to sw_central_expectation, and the number a design that must SURVI
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_struct_ach_03` — Panel thickness
+### `l3_struct_ach_03` — Achieved — Panel thickness
 
 > 
 
@@ -21618,7 +21628,7 @@ The companion to sw_central_expectation, and the number a design that must SURVI
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_struct_ach_04` — Accommodation volume
+### `l3_struct_ach_04` — Achieved — Accommodation volume
 
 > 
 
@@ -22440,7 +22450,7 @@ The companion to sw_central_expectation, and the number a design that must SURVI
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
-### `l3_struct_req_01` — Bus dimensions
+### `l3_struct_req_01` — Required — Bus dimensions
 
 > 
 
@@ -22461,7 +22471,7 @@ The companion to sw_central_expectation, and the number a design that must SURVI
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_struct_req_02` — Primary structure material
+### `l3_struct_req_02` — Required — Primary structure material
 
 > 
 
@@ -22482,7 +22492,7 @@ The companion to sw_central_expectation, and the number a design that must SURVI
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_struct_req_03` — Panel thickness
+### `l3_struct_req_03` — Required — Panel thickness
 
 > 
 
@@ -22503,7 +22513,7 @@ The companion to sw_central_expectation, and the number a design that must SURVI
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_struct_req_04` — Accommodation volume
+### `l3_struct_req_04` — Required — Accommodation volume
 
 > 
 
@@ -29333,7 +29343,7 @@ which of the two their problem is.
 
 ## `thermal` — Thermal
 
-### `l3_thermal_ach_01` — Solar absorptivity
+### `l3_thermal_ach_01` — Achieved — Solar absorptivity
 
 > 
 
@@ -29354,7 +29364,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_ach_02` — Emissivity
+### `l3_thermal_ach_02` — Achieved — Emissivity
 
 > 
 
@@ -29375,7 +29385,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_ach_03` — MLI layer count
+### `l3_thermal_ach_03` — Achieved — MLI layer count
 
 > 
 
@@ -29396,7 +29406,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_ach_04` — Equipment temperature limits
+### `l3_thermal_ach_04` — Achieved — Equipment temperature limits
 
 > 
 
@@ -29417,7 +29427,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_ach_05` — Internal dissipation
+### `l3_thermal_ach_05` — Achieved — Internal dissipation
 
 > 
 
@@ -29438,7 +29448,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_ach_06` — Environmental heat load
+### `l3_thermal_ach_06` — Achieved — Environmental heat load
 
 > 
 
@@ -29459,7 +29469,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_ach_07` — Free-molecular heat flux
+### `l3_thermal_ach_07` — Achieved — Free-molecular heat flux
 
 > 
 
@@ -29480,7 +29490,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_ach_08` — Alpha over epsilon ratio
+### `l3_thermal_ach_08` — Achieved — Alpha over epsilon ratio
 
 > 
 
@@ -29501,7 +29511,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_ach_09` — Radiator area estimate
+### `l3_thermal_ach_09` — Achieved — Radiator area estimate
 
 > 
 
@@ -29522,7 +29532,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_ach_10` — Heater power estimate
+### `l3_thermal_ach_10` — Achieved — Heater power estimate
 
 > 
 
@@ -29543,7 +29553,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_ach_11` — Thermal mass
+### `l3_thermal_ach_11` — Achieved — Thermal mass
 
 > 
 
@@ -29805,7 +29815,7 @@ which of the two their problem is.
 - **upper bound** — 
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
-### `l3_thermal_req_01` — Solar absorptivity
+### `l3_thermal_req_01` — Required — Solar absorptivity
 
 > 
 
@@ -29826,7 +29836,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_req_02` — Emissivity
+### `l3_thermal_req_02` — Required — Emissivity
 
 > 
 
@@ -29847,7 +29857,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_req_03` — MLI layer count
+### `l3_thermal_req_03` — Required — MLI layer count
 
 > 
 
@@ -29868,7 +29878,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_req_04` — Equipment temperature limits
+### `l3_thermal_req_04` — Required — Equipment temperature limits
 
 > 
 
@@ -29889,7 +29899,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_req_05` — Internal dissipation
+### `l3_thermal_req_05` — Required — Internal dissipation
 
 > 
 
@@ -29910,7 +29920,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_req_06` — Environmental heat load
+### `l3_thermal_req_06` — Required — Environmental heat load
 
 > 
 
@@ -29931,7 +29941,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_req_07` — Free-molecular heat flux
+### `l3_thermal_req_07` — Required — Free-molecular heat flux
 
 > 
 
@@ -29952,7 +29962,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_req_08` — Alpha over epsilon ratio
+### `l3_thermal_req_08` — Required — Alpha over epsilon ratio
 
 > 
 
@@ -29973,7 +29983,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_req_09` — Radiator area estimate
+### `l3_thermal_req_09` — Required — Radiator area estimate
 
 > 
 
@@ -29994,7 +30004,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_req_10` — Heater power estimate
+### `l3_thermal_req_10` — Required — Heater power estimate
 
 > 
 
@@ -30015,7 +30025,7 @@ which of the two their problem is.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_thermal_req_11` — Thermal mass
+### `l3_thermal_req_11` — Required — Thermal mass
 
 > 
 
@@ -30361,7 +30371,7 @@ The inverse question, and the one a thermal design actually asks.
 
 ## `ttc` — TT&C and downlink
 
-### `l3_ttc_ach_01` — Telemetry rate
+### `l3_ttc_ach_01` — Achieved — Telemetry rate
 
 > 
 
@@ -30382,7 +30392,7 @@ The inverse question, and the one a thermal design actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_ttc_ach_02` — TT&C transmit power
+### `l3_ttc_ach_02` — Achieved — TT&C transmit power
 
 > 
 
@@ -30403,7 +30413,7 @@ The inverse question, and the one a thermal design actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_ttc_ach_03` — TT&C frequency band
+### `l3_ttc_ach_03` — Achieved — TT&C frequency band
 
 > 
 
@@ -30424,7 +30434,7 @@ The inverse question, and the one a thermal design actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_ttc_ach_04` — TT&C antenna gain
+### `l3_ttc_ach_04` — Achieved — TT&C antenna gain
 
 > 
 
@@ -30445,7 +30455,7 @@ The inverse question, and the one a thermal design actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_ttc_ach_05` — Downlink rate
+### `l3_ttc_ach_05` — Achieved — Downlink rate
 
 > 
 
@@ -30466,7 +30476,7 @@ The inverse question, and the one a thermal design actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_ttc_ach_06` — Data volume per orbit
+### `l3_ttc_ach_06` — Achieved — Data volume per orbit
 
 > 
 
@@ -30487,7 +30497,7 @@ The inverse question, and the one a thermal design actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_ttc_ach_07` — On-board storage
+### `l3_ttc_ach_07` — Achieved — On-board storage
 
 > 
 
@@ -30508,7 +30518,7 @@ The inverse question, and the one a thermal design actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_ttc_ach_08` — TT&C link margin
+### `l3_ttc_ach_08` — Achieved — TT&C link margin
 
 > 
 
@@ -30550,7 +30560,7 @@ The inverse question, and the one a thermal design actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_ttc_req_01` — Telemetry rate
+### `l3_ttc_req_01` — Required — Telemetry rate
 
 > 
 
@@ -30571,7 +30581,7 @@ The inverse question, and the one a thermal design actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_ttc_req_02` — TT&C transmit power
+### `l3_ttc_req_02` — Required — TT&C transmit power
 
 > 
 
@@ -30592,7 +30602,7 @@ The inverse question, and the one a thermal design actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_ttc_req_03` — TT&C frequency band
+### `l3_ttc_req_03` — Required — TT&C frequency band
 
 > 
 
@@ -30613,7 +30623,7 @@ The inverse question, and the one a thermal design actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_ttc_req_04` — TT&C antenna gain
+### `l3_ttc_req_04` — Required — TT&C antenna gain
 
 > 
 
@@ -30634,7 +30644,7 @@ The inverse question, and the one a thermal design actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_ttc_req_05` — Downlink rate
+### `l3_ttc_req_05` — Required — Downlink rate
 
 > 
 
@@ -30655,7 +30665,7 @@ The inverse question, and the one a thermal design actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_ttc_req_06` — Data volume per orbit
+### `l3_ttc_req_06` — Required — Data volume per orbit
 
 > 
 
@@ -30676,7 +30686,7 @@ The inverse question, and the one a thermal design actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_ttc_req_07` — On-board storage
+### `l3_ttc_req_07` — Required — On-board storage
 
 > 
 
@@ -30697,7 +30707,7 @@ The inverse question, and the one a thermal design actually asks.
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-### `l3_ttc_req_08` — TT&C link margin
+### `l3_ttc_req_08` — Required — TT&C link margin
 
 > 
 
