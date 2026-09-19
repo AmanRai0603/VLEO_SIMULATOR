@@ -3724,3 +3724,150 @@ whole-face piece of work and not a chart-palette one.
 | 5 | **the two bad forms** — issue age, and by-day-of-year | each is one view drawing one fact badly |
 | 6 | **a frame-fill warning in panel_check** | cheap, and it finds the half-empty frames without anybody judging |
 | 7 | **dark mode** | the largest and the least epistemic. A whole-face job, and every reference re-shot |
+
+
+---
+
+## 34 · Making the picture carry the argument
+
+§33 counted the figures and found redundancy. This asks a different question of
+the same 63 views: **can a reader understand what a figure says by looking at
+it?** Measured across the eleven panels at the state each opens in:
+
+| panel | words of prose beneath | characters of text INSIDE the frame | marks |
+|---|---|---|---|
+| `forecast` | 354 | 64 | 2 |
+| `pattern` | 281 | 37 | 3 |
+| `predict` | 271 | **0** | **0** |
+| `closure` | 240 | 78 | 3 |
+| `thermosphere` | 219 | 73 | 2 |
+| `density` | 179 | **0** | **0** |
+| `drivers` | 141 | **0** | **0** |
+| `repeatability` | 132 | **0** | **0** |
+| `segmentation` | 116 | 28 | 2 |
+| `design` | 68 | 102 | 3 |
+| `climate` | 71 | 42 | 1 |
+
+**Median: 179 words of argument, 37 characters of picture.** Four of the eleven
+opening views carry no mark at all — nothing in the frame says anything, and the
+entire finding is a paragraph underneath.
+
+The panel already shows its QUESTION twice above the chart: `asks` in bold and
+`draws` in grey. **What it never shows is the answer.** A reader meets a question,
+a line, and then a paragraph, in that order, and the paragraph is where the work
+is.
+
+### 34.1 · Five moves that put the argument in the frame
+
+**1 · The answer, as a number, where the question is.** Every panel declares a
+question the engine can answer, and every one of those answers already exists:
+`design` → *exceeded at 2.62 yr*; `closure` → *margin +0.4438*; `pattern` →
+*26 days, r = 0.376*; `thermosphere` → *949.6 K*; `forecast` → *peak skill +0.44
+at lead 9*. A stat line beside the question gives a reader the answer in half a
+second, and the chart below then shows WHY rather than having to be decoded
+first. This is the cheapest of the five and it touches all sixty-three views.
+
+**2 · Shade the region that means something, instead of ruling a line at its
+edge.** A dashed rule asks the reader to decide which side they are on. A pale
+wash tells them. Where it applies, and what it would say:
+
+| view | the region | what shading it says at a glance |
+|---|---|---|
+| `design`, Ap | above the design level | "outside what the vehicle was built for" |
+| `forecast`, skill | below zero | "worse than not bothering" |
+| `closure` | between required and achieved | that area IS the margin |
+| `thermosphere`, slot | between the two Kp lines | that gap IS the open question |
+| `segmentation` | quiet / active / storm | three regimes, not two dashed lines |
+| `pattern` | inside the Bartlett band | "this wiggle is shape, not finding" |
+| `predict` | between the percentiles | what a band buys and costs |
+
+Seven of eleven panels, from one `kind: 'band'` and one region mark.
+
+**3 · Annotate the feature, not the axis.** A mark labels a position on an axis. An
+annotation points at a place ON A CURVE and says what happens there — and that is
+the sentence the reader is currently getting from the paragraph:
+
+- `design` — at the crossing: *"the design is exceeded here"*
+- `predict` — at the hump: *"half a solar cycle"*; at the dip: *"a full one"*
+- `pattern` — at each of the three peaks: the period it implies
+- `drivers` — at the worst-day dot: *"the study applies one percentile at every level"*
+- `climate` — at the 2017 gap: *"273 days the record does not have"*
+
+Needs `spec.notes = [{x, y, text}]` with a short leader line. Five panels, and in
+each case the text already exists in the note below.
+
+**4 · One line is the answer; the rest are context, and should recede.** `predict`
+does this — the 95th is heavy because it is the published percentile — and
+nowhere else does. In `repeatability` the mean cycle and the three individual
+cycles are the same weight, so the eye has no entry point and the reader has to
+be told in prose which line the panel is about. The rule is mechanical: the row
+the panel is named for gets full weight; context gets a thinner stroke and less
+contrast. It costs nothing and it is what makes a five-curve frame readable.
+
+**5 · Put the finding in the frame, in one line.** The `correct` blocks already
+contain the sentence each figure exists to prove — *"731 sits above 365 at 182 of
+the 200 lags"*, *"the dashed line must sit BELOW the solid one at short lead"*. A
+one-line subtitle inside the frame, drawn from the data rather than typed, is the
+difference between a chart a reader interprets and a chart that tells them what
+they are looking at.
+
+### 34.2 · Interaction, beyond the crosshair
+
+B7 gave every figure a pointer and keyboard readout and B8 a table. What is still
+missing is everything that lets a reader ASK something of the picture:
+
+- **Brush to zoom on x.** `design`'s three crossings are at 0.50, 0.74 and 2.62
+  years on an axis that runs to 15 — the whole argument lives in the left eighth
+  and cannot be enlarged.
+- **Click a legend entry to isolate or mute a series.** With five curves and two
+  nearly coincident, muting three is how a reader separates the other two.
+- **Click a curve or a mark to open the row that computes it.** The rows a panel
+  argues about are already links ABOVE the chart; the picture itself is not
+  navigable, so the connection between a line and the row behind it has to be
+  made by reading.
+- **Pin a view and overlay the next.** This is the comparison every control
+  prevents, and it is the general form of what §33's grid does for four specific
+  panels.
+- **Copy a row, or the whole table.** The table exists; nothing gets a number out
+  of it except selecting text.
+
+### 34.3 · Visual polish, in order of how much it is worth
+
+**The aspect is one shape for every figure.** 2.2:1 capped at 1180 wide — chosen
+in B6 for slope readability, and right for the record panels. It is tall and empty
+for a monotone curve, which is most of the set: `closure`'s first two pairs, the
+nine `design` Ap views, `drivers`' five. A spec that can ask for a shorter frame
+would fix the emptiest third of the sheet.
+
+**The grid is drawn at every tick on both axes.** Halving it, or dropping the
+vertical rules where the x axis is categorical, would take ink out of the picture
+and put emphasis back into the data.
+
+**The canvas fills `#fff` on a `#fcfcfb` page.** A one-step mismatch, visible as a
+faint rectangle at every panel edge. Trivial, and it is the sort of thing that
+makes a set of figures look assembled rather than designed.
+
+**A fill under a single line, where zero is meaningful**, gives a lone curve
+weight without claiming anything: `forecast`'s RMS error, `climate`'s yearly
+means, `segmentation`'s counts.
+
+**And dark mode, which does not exist** — §33.5. The largest of these and the
+least urgent, because it changes how the figures look and not what they say.
+
+### 34.4 · What this is worth, in order
+
+| | move | reach | cost |
+|---|---|---|---|
+| 1 | the answer beside the question | all 63 views | small — the numbers exist |
+| 2 | shade the region that means something | 7 of 11 panels | one `band` kind, one region mark |
+| 3 | emphasis: the answer heavy, context thin | 5 of 11 | none — a width and an alpha |
+| 4 | annotate the feature with a leader | 5 of 11 | `spec.notes`, and the words are already written |
+| 5 | the finding as an in-frame subtitle | all 63 | small, once 1 exists |
+| 6 | brush to zoom, click to isolate, click to open the row | all 63 | the largest piece of work here |
+| 7 | a shorter aspect where the curve is monotone | ~20 views | small |
+| 8 | grid, canvas fill, fills under single lines | all 63 | small |
+| 9 | dark mode | the whole face | large |
+
+Moves 1, 3 and 8 together are perhaps a day's work and they change every figure in
+the set. Move 2 is the one that changes what the figures MEAN, because in seven
+panels the region is the finding and only its edge is currently drawn.
