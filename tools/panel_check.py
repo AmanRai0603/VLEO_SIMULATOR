@@ -771,7 +771,7 @@ def selftest():
         ("a brush that changes nothing",
          lambda d: (d / "web" / "js" / "solar.js").write_text(
              (d / "web" / "js" / "solar.js").read_text().replace(
-                 "        view.zoom = [a, b];\n        again();",
+                 "        view.zoom = next;\n        again();",
                  "        return;")),
          "4 responds"),
         # And the hole 2b's failed-state probe closes: before it, a panel whose

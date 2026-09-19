@@ -23,7 +23,54 @@
 
 import { $, $$, esc, fmt } from './dom.js';
 import { S, reachFrom, isSeeded } from './state.js';
-import { drawChart, attachHover, tableFor, watchScheme, INK } from './chart.js';
+import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
+  watchScheme, INK } from './chart.js';
+
+// THE SAME VIEW STATE THE PANELS HAVE. These are the generated per-node
+// figures — one for every row with a relation, which is most of the tree — and
+// until now they had the crosshair and the arrow keys and nothing else. A
+// relation swept over a decade of its domain has the same problem `design` had:
+// the part worth looking at is a sliver of the axis.
+const RVIEWS = new WeakMap();
+const rview = host => {
+  let v = RVIEWS.get(host);
+  if (!v) { v = { zoom: null, hidden: new Set(), pinned: null }; RVIEWS.set(host, v); }
+  return v;
+};
+
+/**
+ * The strip under a relation figure: what has been done to it, and the way out.
+ *
+ * Deliberately smaller than the panels': there is no key to click here — the
+ * three series are one dataset shown three ways — and no view worth pinning.
+ * What it carries is the window, the way back, and the numbers.
+ */
+function relStrip(host, shown, view, again) {
+  const el = $('.rel-view', host);
+  if (!el) return;
+  const z = view.zoom || {};
+  el.innerHTML = (z.x
+    ? '<span class="sw-vs">showing ' + esc(fmt(z.x[0])) + ' to ' + esc(fmt(z.x[1])) +
+      '</span><button class="ctl rel-unzoom" type="button">the whole domain</button>'
+    : '') +
+    '<button class="ctl rel-copy" type="button">copy as TSV</button>' +
+    '<span class="sw-copied rel-copied"></span>' +
+    '<span class="sw-hint muted">drag across the plot to zoom, double-click or Escape ' +
+    'to undo</span>';
+  const un = $('.rel-unzoom', el);
+  if (un) un.onclick = () => { view.zoom = null; again(); };
+  const cp = $('.rel-copy', el), said = $('.rel-copied', el);
+  cp.onclick = async () => {
+    let okay = true;
+    try {
+      await navigator.clipboard.writeText(tableTsv(shown));
+    } catch (e) { okay = false; }
+    if (said) {
+      said.textContent = okay ? 'copied' : 'could not reach the clipboard';
+      setTimeout(() => { said.textContent = ''; }, 2000);
+    }
+  };
+}
 
 // THESE FIGURES REDRAW ON A THEME CHANGE TOO. The panels have their own
 // registry for it; these are the generated per-node relation and domain
@@ -80,6 +127,7 @@ export async function mountRelation(host) {
     ' <input class="rel-scrub" type="range" min="0" max="100" value="100" step="1">' +
     ' <span class="muted rel-read"></span></div>' +
     '<canvas class="plot rel-plot" width="900" height="320"></canvas>' +
+    '<div class="sw-view rel-view"></div>' +
     // The relation as numbers. Same argument as the panels: the readout is
     // reached by pointing or by stepping, and a number somebody wants to quote
     // should be selectable rather than screenshotted.
@@ -113,8 +161,21 @@ export async function mountRelation(host) {
   const redraw = () => {
     if (!res || !res.ok) return;
     const cv = $('.rel-plot', host);
-    drawChart(cv, spec());
-    attachHover(cv);
+    const view = rview(host);
+    const built = spec();
+    const shown = viewSpec(built, view);
+    drawChart(cv, shown);
+    attachHover(cv, {
+      onBrush: win => {
+        if (!win.x) return;
+        const inside = built.series[0].x.filter(v => v >= win.x[0] && v <= win.x[1]);
+        if (new Set(inside).size < 2) return;
+        view.zoom = { ...(view.zoom || {}), x: win.x };
+        redraw();
+      },
+      onReset: () => { if (viewIsOn(view)) { view.zoom = null; redraw(); } },
+    });
+    relStrip(host, shown, view, redraw);
     const xs = res.x.map(v => v / res.x_factor);
     const ys = res.y.map(v => v / res.y_factor);
     const n = Math.max(1, Math.round((+scrub.value / 100) * xs.length));

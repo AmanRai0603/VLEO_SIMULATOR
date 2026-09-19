@@ -289,9 +289,60 @@ const nice = v => {
  * x extent is computed across every pane, so the frames are registered and a
  * vertical read across them lands on the same lead in all three.
  */
+/**
+ * THE SIZE A FIGURE IS ASKED FOR, AND THE SIZE IT IS DRAWN AT.
+ *
+ * A canvas has two of each. `width`/`height` are the BACKING STORE — how many
+ * pixels there actually are — and the CSS box is what those pixels are stretched
+ * across. Every figure in this tool set them equal, so on a display with a
+ * device pixel ratio of 2, which is most laptops, each drawn pixel was blown up
+ * to four and every axis label, every 1px gridline and every leader line came
+ * out soft. Nothing was wrong with the drawing; there was half as much of it as
+ * the screen could show.
+ *
+ * So: the face asks for a size in CSS pixels through `sizeCanvas`, the backing
+ * store is that times the ratio, the CSS box is pinned to the asked-for size,
+ * and `drawChart` scales the context so that every coordinate in every module
+ * above this line stays in CSS pixels. Nothing else in the codebase changes.
+ *
+ * Capped at 3. Past that the memory is real — a three-pane `forecast` at 1180
+ * by 989 is 3.5 million backing pixels at 2x and 8 million at 3x — and the
+ * sharpness is not.
+ */
+const ratio = () => Math.max(1, Math.min(3,
+  (typeof devicePixelRatio === 'number' && devicePixelRatio) || 1));
+
+/** Ask for a figure `w` by `h` CSS pixels. */
+export function sizeCanvas(canvas, w, h) {
+  const dpr = ratio();
+  canvas._css = { w: Math.round(w), h: Math.round(h) };
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  canvas.style.width = Math.round(w) + 'px';
+  canvas.style.height = Math.round(h) + 'px';
+}
+
+/**
+ * What a figure was asked for, in CSS pixels.
+ *
+ * Falls back to the backing store for a canvas that was sized by markup rather
+ * than through `sizeCanvas` — the width and height attributes in the HTML are
+ * the first size a figure has, before any layout has happened.
+ */
+export function cssSize(canvas) {
+  return canvas._css || { w: canvas.width, h: canvas.height };
+}
+
 export function drawChart(canvas, spec) {
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+  // EVERYTHING BELOW IS IN CSS PIXELS. The context is scaled once, here, so no
+  // geometry in this file or in any panel has to know what a device pixel is.
+  const dpr = ratio();
+  const { w: W, h: H } = cssSize(canvas);
+  if (canvas.width !== Math.round(W * dpr) || canvas.height !== Math.round(H * dpr)) {
+    sizeCanvas(canvas, W, H);
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const L = 74, B = 42;
 
   // One shape for both cases: everything below works over `panes`, and a spec
@@ -820,6 +871,7 @@ function _pane(ctx, o) {
     }
     ctx.restore();
   });
+  ctx.restore();
 
   // The end labels last, over every line, and nudged apart where two series
   // finish at the same height — two numbers printed on top of each other are
@@ -1183,7 +1235,7 @@ function drawReadout(canvas, xv, focused) {
   ctx.font = '10px ui-monospace, monospace';
   const w = Math.max(...lines.map(t => ctx.measureText(t).width)) + 12;
   const h = lines.length * 13 + 8;
-  const bx = Math.min(mx + 10, canvas.width - c.R - w);
+  const bx = Math.min(mx + 10, cssSize(canvas).w - c.R - w);
   const by = c.T + 6;
   ctx.fillStyle = 'rgba(255,255,255,0.94)';
   ctx.strokeStyle = INK.grid;
@@ -1196,7 +1248,7 @@ function drawReadout(canvas, xv, focused) {
   if (focused) {
     ctx.save();
     ctx.strokeStyle = INK.axis; ctx.lineWidth = 2;
-    ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+    ctx.strokeRect(1, 1, cssSize(canvas).w - 2, cssSize(canvas).h - 2);
     ctx.restore();
   }
   return lines.join('. ');
@@ -1234,22 +1286,37 @@ export function attachHover(canvas, handlers) {
   };
 
   // Canvas pixels from a pointer event, whatever the element is scaled to.
+  // INTO CSS PIXELS, which is the space the chart is drawn in. The element's
+  // box and its backing store are no longer the same size — see sizeCanvas —
+  // so scaling by the backing store would put every gesture at the wrong place
+  // on any display with a ratio above one.
   const at = ev => {
     const r = canvas.getBoundingClientRect();
+    const { w, h } = cssSize(canvas);
     return {
-      mx: (ev.clientX - r.left) * (canvas.width / r.width),
-      my: (ev.clientY - r.top) * (canvas.height / r.height),
+      mx: (ev.clientX - r.left) * (w / r.width),
+      my: (ev.clientY - r.top) * (h / r.height),
     };
   };
-  const dataX = (c, mx) => c.x0 + (mx - c.L) / (canvas.width - c.L - c.R) * (c.x1 - c.x0);
+  const dataX = (c, mx) =>
+    c.x0 + (mx - c.L) / (cssSize(canvas).w - c.L - c.R) * (c.x1 - c.x0);
   const inPlot = (c, mx, my) =>
-    mx >= c.L && mx <= canvas.width - c.R && my >= c.T && my <= c.bot;
+    mx >= c.L && mx <= cssSize(canvas).w - c.R && my >= c.T && my <= c.bot;
 
-  // THE BRUSH. A drag across the plot selects a range of x; the band is drawn
-  // over the finished chart rather than by redrawing it, so dragging costs one
-  // fill and not one full render per frame.
+  // THE BRUSH. A drag across the plot selects a window; the band is drawn over
+  // the finished chart rather than by redrawing it, so dragging costs one fill
+  // and not one full render per frame.
+  //
+  // IN BOTH AXES, and independently. A drag that is wide and flat is an x
+  // window — which is what most of these figures want, since x is the thing
+  // they are all read along. A drag with real height as well takes the y with
+  // it, for the cases where the interesting part of a picture is a band rather
+  // than a span: ten thousand dots near the floor of a scatter, or a curve
+  // inside a significance envelope.
   let drag = null;
   const MIN_DRAG = 6;
+  /** Which pane a y coordinate falls in, or -1 above the first and below the last. */
+  const paneAt = (c, my) => c.panes.findIndex(q => my >= q.top && my <= q.bot);
 
   canvas.onmousedown = ev => {
     const c = canvas._chart;
@@ -1268,7 +1335,8 @@ export function attachHover(canvas, handlers) {
     // The finished chart, kept as pixels. Redrawing it on every pointer move
     // would re-render ten thousand dots to move two vertical lines, and on the
     // density panel that is visible as lag.
-    drag = { from: mx, to: mx, my0: my, moved: false, plot: inPlot(c, mx, my),
+    drag = { from: mx, to: mx, my0: my, myTo: my, moved: false, movedY: false,
+      plot: inPlot(c, mx, my), pane: paneAt(c, my),
       snap: canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height) };
     ev.preventDefault();
   };
@@ -1278,25 +1346,30 @@ export function attachHover(canvas, handlers) {
     if (!c) return;
     const { mx, my } = at(ev);
     if (drag) {
-      drag.to = Math.max(c.L, Math.min(canvas.width - c.R, mx));
+      const pn = drag.pane >= 0 ? c.panes[drag.pane] : null;
+      drag.to = Math.max(c.L, Math.min(cssSize(canvas).w - c.R, mx));
+      drag.myTo = pn ? Math.max(pn.top, Math.min(pn.bot, my)) : my;
       if (drag.plot && Math.abs(drag.to - drag.from) >= MIN_DRAG) drag.moved = true;
+      if (drag.plot && pn && Math.abs(drag.myTo - drag.my0) >= MIN_DRAG) drag.movedY = true;
       const g = canvas.getContext('2d');
       g.putImageData(drag.snap, 0, 0);
-      if (drag.moved) {
-        const a = Math.min(drag.from, drag.to), b = Math.max(drag.from, drag.to);
+      if (drag.moved || drag.movedY) {
+        // The band spans the whole frame in whichever axis the drag has not
+        // committed to, so what is about to be selected is what is shaded.
+        const a = drag.moved ? Math.min(drag.from, drag.to) : c.L;
+        const b = drag.moved ? Math.max(drag.from, drag.to) : cssSize(canvas).w - c.R;
+        const t = drag.movedY ? Math.min(drag.my0, drag.myTo) : (pn ? pn.top : c.T);
+        const u = drag.movedY ? Math.max(drag.my0, drag.myTo) : (pn ? pn.bot : c.bot);
         g.save();
         g.fillStyle = INK.mark; g.globalAlpha = 0.10;
-        g.fillRect(a, c.T, b - a, c.bot - c.T);
+        g.fillRect(a, t, b - a, u - t);
         g.globalAlpha = 1; g.strokeStyle = INK.mark; g.lineWidth = 1;
-        g.beginPath();
-        g.moveTo(a + 0.5, c.T); g.lineTo(a + 0.5, c.bot);
-        g.moveTo(b - 0.5, c.T); g.lineTo(b - 0.5, c.bot);
-        g.stroke();
+        g.strokeRect(a + 0.5, t + 0.5, b - a - 1, u - t - 1);
         g.restore();
       }
       return;
     }
-    if (mx < c.L || mx > canvas.width - c.R) return;
+    if (mx < c.L || mx > cssSize(canvas).w - c.R) return;
     drawReadout(canvas, dataX(c, mx), false);
   };
 
@@ -1305,13 +1378,31 @@ export function attachHover(canvas, handlers) {
     if (!drag) return;
     const d = drag; drag = null;
     if (!c) return;
-    if (!d.moved) { _clicked(c, { mx: d.from, my: d.my0 }); return; }
+    if (!d.moved && !d.movedY) { _clicked(c, { mx: d.from, my: d.my0 }); return; }
     // The band comes off before the handler runs. If the face decides the
     // window is not worth honouring it does nothing, and a rectangle left on
     // the canvas would be the only sign anything had happened.
     drawChart(canvas, c.spec);
-    const a = dataX(c, Math.min(d.from, d.to)), b = dataX(c, Math.max(d.from, d.to));
-    if (h.onBrush) h.onBrush(a, b);
+    if (!h.onBrush) return;
+    const win = {};
+    if (d.moved) {
+      win.x = [dataX(c, Math.min(d.from, d.to)), dataX(c, Math.max(d.from, d.to))];
+    }
+    if (d.movedY && d.pane >= 0) {
+      // Through the pane's own scale, and BACK — `fy` formats, `py` projects, so
+      // the inverse is worked from the pane's extent rather than from a second
+      // copy of the mapping. A log pane inverts in log space or the window is
+      // not the one the reader drew.
+      const pn2 = c.panes[d.pane];
+      const inv = my2 => {
+        const f = (pn2.bot - my2) / (pn2.bot - pn2.top);
+        return pn2.log
+          ? Math.pow(10, Math.log10(pn2.y0) + f * (Math.log10(pn2.y1) - Math.log10(pn2.y0)))
+          : pn2.y0 + f * (pn2.y1 - pn2.y0);
+      };
+      win.y = { [d.pane]: [inv(Math.max(d.my0, d.myTo)), inv(Math.min(d.my0, d.myTo))] };
+    }
+    h.onBrush(win);
   };
 
   canvas.ondblclick = () => { if (h.onReset) h.onReset(); };
@@ -1405,12 +1496,21 @@ export function attachHover(canvas, handlers) {
  * under the panel are all reading the one spec, so "the numbers behind this
  * picture" means THIS picture and not the one before the reader touched it.
  *
- * `view` is { zoom: [lo, hi] | null, hidden: Set<name>, pinned: spec | null }.
+ * `view` is { zoom: { x: [lo, hi] | null, y: { <pane>: [lo, hi] } } | null,
+ *             hidden: Set<name>, pinned: spec | null }.
  *
- * ZOOM FILTERS THE POINTS rather than clamping the axis. Clamping would leave
- * the table listing fifteen years of leads under a frame showing two, and would
- * leave the y axis scaled to data the frame no longer holds. Marks are kept
- * whatever the window: a bound outside the view is still the bound.
+ * X FILTERS THE POINTS; Y CLAMPS THE AXIS, and the difference is not arbitrary.
+ * Filtering x keeps the table, the crosshair and the arrow keys reading the
+ * window on screen, and lets the y scale fit what is actually in it — clamping
+ * x would leave the table listing fifteen years of leads under a frame showing
+ * two. Filtering y would do the opposite of what a y window is for: a line that
+ * leaves the window and comes back is one line, and dropping the middle of it
+ * would draw two, which is a claim nobody made. So y is a frame, the series is
+ * clipped to it, and a curve that leaves the top simply leaves.
+ *
+ * A y window belongs to ONE PANE, because on a stack the three frames measure
+ * different quantities. Marks are kept whatever the window: a bound outside the
+ * view is still the bound.
  *
  * PIN OVERLAYS, AND REFUSES WHEN IT CANNOT. Two views of one panel are only
  * comparable if they are drawn against the same quantities, so the pinned spec
@@ -1423,8 +1523,10 @@ export function attachHover(canvas, handlers) {
 export function viewSpec(spec, view) {
   const v = view || {};
   const hidden = v.hidden || new Set();
-  const win = v.zoom && isFinite(v.zoom[0]) && isFinite(v.zoom[1]) && v.zoom[1] > v.zoom[0]
-    ? v.zoom : null;
+  const z = v.zoom || {};
+  const ok2 = r => (Array.isArray(r) && isFinite(r[0]) && isFinite(r[1]) && r[1] > r[0]);
+  const win = ok2(z.x) ? z.x : null;
+  const ywin = z.y || {};
   const cut = ser => {
     if (!win) return ser;
     const keep = [];
@@ -1448,21 +1550,29 @@ export function viewSpec(spec, view) {
       .map(q => ({ ...cut(q), name: q.name + ' (pinned)', colour: INK.muted,
         context: true, dash: [2, 3], aside: false }));
   };
-  const onePane = pane => ({
-    ...pane,
-    series: (pane.series || []).map(dress).concat(pinnedOf(pane)),
-  });
+  const onePane = (pane, i) => {
+    const out = {
+      ...pane,
+      series: (pane.series || []).map(dress).concat(pinnedOf(pane)),
+    };
+    const yr = ywin[i];
+    if (ok2(yr)) out.y = { ...(pane.y || {}), min: yr[0], max: yr[1] };
+    return out;
+  };
   const out = { ...spec };
   if (win) out.x = { ...spec.x, min: win[0], max: win[1] };
   if (spec.panes && spec.panes.length) out.panes = spec.panes.map(onePane);
   else Object.assign(out, onePane({ y: spec.y, series: spec.series, marks: spec.marks,
-    notes: spec.notes }));
+    notes: spec.notes }, 0));
   return out;
 }
 
 /** Is any part of this view not the one the panel built? */
 export function viewIsOn(view) {
-  return !!(view && (view.zoom || view.pinned || (view.hidden && view.hidden.size)));
+  if (!view) return false;
+  const z = view.zoom || {};
+  return !!(z.x || (z.y && Object.keys(z.y).length) || view.pinned ||
+    (view.hidden && view.hidden.size));
 }
 
 /**

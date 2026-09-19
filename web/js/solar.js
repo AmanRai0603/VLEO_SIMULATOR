@@ -23,7 +23,7 @@ import { S } from './state.js';
 import { solarRecord, bundleFile, parityFile, engineValues, engineSweep, engineAt,
   engineLevers, centredMean, corr, quantile, num, daysSince2000 } from './record.js';
 import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
-  watchScheme, INK } from './chart.js';
+  watchScheme, sizeCanvas, cssSize, INK } from './chart.js';
 
 // ---------------------------------------------------------------------------
 // describing the picture that was actually drawn
@@ -3210,10 +3210,20 @@ function viewStrip(host, p, o, view, shown) {
   if (!el) return;
   const fx = (shown.x && shown.x.fmt) || (v => (Number.isInteger(v) ? String(v) : sig(v)));
   const bits = [];
-  if (view.zoom) {
-    bits.push('<span class="sw-vs">showing ' + esc(fx(view.zoom[0])) + ' to ' +
-      esc(fx(view.zoom[1])) + '</span><button class="ctl sw-unzoom" type="button">' +
-      'the whole axis</button>');
+  const z = view.zoom || {};
+  const ys = Object.entries(z.y || {});
+  if (z.x || ys.length) {
+    const said = [];
+    if (z.x) said.push('showing ' + esc(fx(z.x[0])) + ' to ' + esc(fx(z.x[1])));
+    // Named by the frame's own quantity rather than by an index, because "pane
+    // 1" is a fact about the code and the reader is looking at a picture.
+    for (const [i, r] of ys) {
+      const pane = (shown.panes || [shown])[+i] || {};
+      const lab = ((pane.y || {}).label || '').split('  [')[0];
+      said.push((lab ? lab + ' ' : '') + 'from ' + esc(sig(r[0])) + ' to ' + esc(sig(r[1])));
+    }
+    bits.push('<span class="sw-vs">' + said.join(' · ') + '</span>' +
+      '<button class="ctl sw-unzoom" type="button">the whole frame</button>');
   }
   if (view.hidden.size) {
     bits.push('<span class="sw-vs">' + view.hidden.size + ' series hidden</span>' +
@@ -3223,8 +3233,9 @@ function viewStrip(host, p, o, view, shown) {
     ? '<span class="sw-vs">a pinned view is overlaid</span>' +
       '<button class="ctl sw-unpin" type="button">drop it</button>'
     : '<button class="ctl sw-pin" type="button">pin this view</button>');
-  bits.push('<span class="sw-hint muted">drag across the plot to zoom, double-click or ' +
-    'Escape to undo, click a key entry to hide its line</span>');
+  bits.push('<span class="sw-hint muted">drag a box on the plot to zoom — wide for a span, ' +
+    'tall for a band — double-click or Escape to undo, click a key entry to hide its ' +
+    'line</span>');
   el.innerHTML = bits.join(' ');
 
   const again = () => render(host, p, o);
@@ -3291,8 +3302,11 @@ function fitCanvas(host) {
   const cv = $('.sw-panel', host);
   if (!cv) return;
   const w = Math.round(host.getBoundingClientRect().width);
-  if (w > 320) cv.width = Math.min(1180, w);
-  cv.height = fitHeight(cv.width);
+  // ASKED FOR IN CSS PIXELS. `sizeCanvas` gives the backing store the display's
+  // own resolution and pins the box to this; every size read back out of the
+  // canvas from here on is `cssSize`, so the layout arithmetic is unchanged.
+  const want = w > 320 ? Math.min(1180, w) : cssSize(cv).w;
+  sizeCanvas(cv, want, fitHeight(want));
 }
 
 /** One picture's height at a given width. A stack asks for more; see render. */
@@ -3356,7 +3370,7 @@ async function render(host, p, o) {
     // change rebuilds the body and fitCanvas runs; it showed up the moment a
     // zoom redrew in place. Check four found it on its first full pass.
     fitCanvas(host);
-    const H1 = fitHeight(cv.width);
+    const H1 = fitHeight(cssSize(cv).w);
     // A NARROWER FRAME WHERE THE WIDTH HAS NOTHING TO SPEND ITSELF ON. §34.3
     // asked for a SHORTER frame "where the curve is monotone", and measuring the
     // fourteen references says there is no height to reclaim: every canvas panel
@@ -3367,13 +3381,12 @@ async function render(host, p, o) {
     // written for, running the other way. `aspect` is width ÷ height; leaving it
     // out keeps the frame the host gives, so a panel that does not ask is
     // untouched to the pixel.
-    if (out.spec.aspect) {
-      const w = Math.min(cv.width, Math.round(H1 * out.spec.aspect));
-      if (w > 320) cv.width = w;
-    }
-    cv.height = nPanes > 1
+    const wantW = out.spec.aspect
+      ? Math.max(320, Math.min(cssSize(cv).w, Math.round(H1 * out.spec.aspect)))
+      : cssSize(cv).w;
+    sizeCanvas(cv, wantW, nPanes > 1
       ? Math.round(H1 * (1 + 0.42 * (nPanes - 1)))
-      : H1;
+      : H1);
     // WHAT THE READER ASKED FOR, AS A SPEC. Zoom, mute and pin are a transform
     // from the spec the panel built to the spec that gets drawn, so the
     // picture, the readout, the arrow-key ladder and the table below are all
@@ -3386,13 +3399,22 @@ async function render(host, p, o) {
     drawChart(cv, shown);
     const again = () => render(host, p, o);
     attachHover(cv, {
-      onBrush: (a, b) => {
-        // A window holding fewer than two drawn points is not a view of the
-        // data, it is a view of the gap between two of them.
-        const pts = (shown.panes || [shown]).flatMap(q => (q.series || []))
-          .flatMap(q => q.x || []).filter(v => v >= a && v <= b);
-        if (new Set(pts).size < 2) return;
-        view.zoom = [a, b];
+      onBrush: win => {
+        const next = { ...(view.zoom || {}) };
+        if (win.x) {
+          // A window holding fewer than two drawn points is not a view of the
+          // data, it is a view of the gap between two of them.
+          const pts = (shown.panes || [shown]).flatMap(q => (q.series || []))
+            .flatMap(q => q.x || []).filter(v => v >= win.x[0] && v <= win.x[1]);
+          if (new Set(pts).size < 2) return;
+          next.x = win.x;
+        }
+        // A Y WINDOW IS NOT CHECKED THE SAME WAY, and that is deliberate. It
+        // clips rather than filters, so an empty one shows an empty frame
+        // rather than a broken picture — and on a scatter the reader zooming
+        // into a sparse band is doing exactly what the box is for.
+        if (win.y) next.y = { ...(next.y || {}), ...win.y };
+        view.zoom = next;
         again();
       },
       onReset: () => {

@@ -4541,3 +4541,93 @@ signature from four days ago.
 All nine of §34's moves are done. What §34.2 listed and this did not build is
 brushing on the y axis and a brush inside a zoom; what §34.3 listed and this
 declined is halving the grid, which trades a real reading for less ink.
+
+
+## 41 · The three deferrals, and one thing §34 never noticed
+
+§40 closed the ninth move and listed three things left undone. Two of them are
+now done, the third is declined on a measurement rather than an opinion — and
+one of the three turned out to have been done already. Ahead of all of them is
+something §34's whole audit walked past.
+
+### 41.1 · Every figure was drawn at half the resolution of the screen
+
+A canvas has two sizes: the BACKING STORE, which is how many pixels there
+actually are, and the CSS box those pixels are stretched across. **Every figure
+in this tool set them equal.** On a display with a device pixel ratio of 2 —
+which is most laptops — each drawn pixel was blown up to four, and every axis
+label, every 1px gridline and every leader line came out soft. Nothing was wrong
+with the drawing. There was half as much of it as the screen could show.
+
+The face now asks for a size in CSS pixels through `sizeCanvas`; the backing
+store is that times the ratio, capped at 3; the context is scaled once in
+`drawChart` so **every coordinate in every module above that line stays in CSS
+pixels** and nothing else in the codebase changes. Measured at a scale factor of
+2: the backing store goes to 2360×1072 while the box stays 1182×538, and the
+screenshot's compressed size more than doubles — a smooth upscale would have
+compressed smaller, not larger.
+
+One defect on the way, and it is the kind that only appears when you look.
+Pinning the CSS size introduced an inline width, which met the sheet's own
+`* { box-sizing: border-box }` and gave the element a content box **two pixels
+narrower than the drawing**. The references caught it instantly — every canvas
+panel reported 1182×539 becoming 1180×537. `canvas.plot` is `content-box` now,
+which is the behaviour it had when its size came from the width attribute.
+
+### 41.2 · The brush takes both axes, and always could take a second bite
+
+**A box, not a band.** A drag that is wide and flat is an x window; a drag with
+real height takes the y with it, for the pictures where the interesting part is
+a band rather than a span — ten thousand dots near the floor of a scatter, a
+curve inside a significance envelope. A y window belongs to ONE PANE, because on
+a stack the three frames measure different quantities.
+
+**x filters the points; y clamps the axis**, and the difference is not
+arbitrary. Filtering x keeps the table, the crosshair and the arrow keys reading
+the window on screen. Filtering y would do the opposite of what a y window is
+for: a line that leaves the window and comes back is one line, and dropping the
+middle of it would draw two — a claim nobody made. So y is a frame, and the
+series are now **clipped** to it. Until a reader could set a y window there was
+nothing to clip, because the axis always scaled to its own data.
+
+**And "a brush inside a zoom" was already working.** Listing it as not done was
+wrong: the brush reads its coordinates off the CURRENT extent, so a second drag
+has always given a sub-window of the view on screen. Measured on `pattern`: 1 to
+200, then 54.6 to 122.5, then 80.6 to 92.2, and one click back to 1 to 200.
+
+### 41.3 · The generated node figures got the surface the panels have
+
+`relation.js` draws the per-node relation and domain pictures — **one for every
+row with a relation, which is most of a 1393-row tree** — and had the crosshair,
+the arrow keys and nothing else. A relation swept over a decade of its domain
+has exactly the problem `design` had: the part worth looking at is a sliver of
+the axis.
+
+They now brush, undo and copy. Deliberately not more: there is no key to click,
+because the three series there are one dataset shown three ways, and no view
+worth pinning.
+
+### 41.4 · Halving the grid, declined on a count
+
+§34.3 asked for it. Counting the gridlines actually drawn in every reference:
+
+| | vertical | horizontal |
+|---|---|---|
+| fewest | 2 (`predict`, `forecast`, `drivers`) | 3 (`predict`) |
+| median | ~6 | ~7 |
+| most | 9 (`pattern`) | 11 (`forecast`, a three-pane stack — about 4 a frame) |
+
+A frame carrying five horizontal rules is not an over-drawn grid; halving it to
+two would cost a real reading of a value off the axis and save almost no ink.
+The part of that item that WAS right — no vertical rules where the axis is five
+named scenarios — was done in §36.2. The rest is declined, and now it is
+declined against a count rather than a preference.
+
+### 41.5 · What is left
+
+- Twenty-eight references, all UNCONFIRMED, all needing a person.
+- `env_exospheric_temperature`'s `maths.confirmed_by`, and §30 steps 5 and 6.
+- §30 step 4: the walk-forward still fails its own test, 376 rotations against
+  361. Step 7 is blocked behind it.
+- The stale `sw_outlook_lead` citation in `forecast` — a row question, reported
+  in Part D and still open.

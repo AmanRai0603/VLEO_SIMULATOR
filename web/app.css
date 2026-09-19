@@ -427,8 +427,16 @@ h4 { font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
 .sweepctl input { width: 7rem; font: 11px var(--mono); border: 1px solid var(--rule);
   border-radius: 3px; padding: .18rem .35rem; }
 .sweepctl input.bad { border-color: #a4262c; background: #fdf5f4; }
-canvas.plot { border: 1px solid var(--rule-2); background: var(--card);
-  border-radius: 3px; margin-top: .6rem; max-width: 100%; }
+/* CONTENT-BOX, AGAINST THE SHEET'S OWN `* { box-sizing: border-box }`.
+   A canvas's width is its DRAWING AREA, and with border-box an explicit width
+   of 1180px gives a 1178px content box — so the backing store is stretched
+   across two pixels fewer than it was drawn for, which is a squash nobody asked
+   for. It only appeared when the figures started pinning their CSS size to
+   carry a device pixel ratio; before that the element took its size from the
+   width attribute and the border sat outside it, which is the behaviour this
+   restores. */
+canvas.plot { box-sizing: content-box; border: 1px solid var(--rule-2);
+  background: var(--card); border-radius: 3px; margin-top: .6rem; max-width: 100%; }
 
 footer { padding: 1rem 2.5rem 2.5rem; border-top: 1px solid var(--rule-2);
   color: var(--ink-3); font-size: 10.5px; }

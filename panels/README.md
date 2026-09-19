@@ -190,3 +190,26 @@ Two things to look for in a dark reference that the light one will never show:
 a block of light where a fill should have gone dark, and a line you have to hunt
 for. Both are the same defect — a value chosen against the wrong surface — and
 both pass every mechanical check in this file.
+
+## The size a figure is drawn at
+
+A canvas has two sizes and they are not the same thing: the **backing store**
+(`width`/`height`, how many pixels there are) and the **CSS box** they are
+stretched across. Setting them equal means a figure is drawn at one device pixel
+per CSS pixel, which on a display with a ratio of 2 is half the resolution the
+screen can show.
+
+So the face asks for a size in CSS pixels with `sizeCanvas`, the backing store
+takes the display's ratio, and `drawChart` scales the context once — every
+coordinate in every module above it stays in CSS pixels. Read a figure's size
+back with `cssSize`, never off `width`/`height`: those are device pixels now,
+and the only places that want them are `getImageData` and `putImageData`.
+
+Two things this touches that are easy to miss:
+
+- **`box-sizing`**. The sheet sets `border-box` globally, so pinning a canvas's
+  CSS width makes its border eat two pixels of the drawing. `canvas.plot` is
+  `content-box` for that reason.
+- **The references are unaffected** only because Playwright runs at a scale
+  factor of 1. A checker configured for a HiDPI viewport would shoot every
+  reference at twice the size, which is a real difference and not a drift.
