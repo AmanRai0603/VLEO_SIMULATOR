@@ -5,7 +5,14 @@ mount = "canvas.sw-panel"
 draws = """Every cycle the record holds, stacked on cycle phase, with the mean of the
 COMPLETE cycles drawn heavier over them. Cycle 25 is dashed and stops part way,
 because it is still running and the record simply has no days past its end."""
-correct = """One line per cycle in the record plus one heavier line for the mean of the
+correct = """THE MEAN CYCLE IS THE ONLY CURVE AT FULL CONTRAST. It is the row this panel
+is named for; the individual cycles are drawn at half contrast because they are
+what makes the mean legible AS a mean. Five curves at one weight is the state
+§34 measured — no entry point, and the reader told in prose which line the
+panel is about. They must still be readable enough to check the claim in the
+note by looking: cycle 23 peaks visibly above cycle 24.
+
+One line per cycle in the record plus one heavier line for the mean of the
 complete ones, all spanning phase 0 to 1. The mean line lies between cycles 23 and
 24 everywhere, because those are the complete cycles it averages — a mean that
 escapes them is an averaging error. Cycle 25 may sit outside it, and does,
@@ -18,7 +25,13 @@ from the mean rather than drawn as zero."""
 # is right. That is what makes check three mean anything: the reference is the
 # claim, and without a name against it the check only proves the chart has not
 # changed since a machine drew it.
-confirmed_by = "A. Rai / 2026-09-15 (against the pre-move picture; content unchanged, canvas resized 2026-09-16, not yet re-looked)"
+# NOT CONFIRMED ANY MORE. The reference was re-recorded on 2026-09-19: the five
+# individual cycles are now drawn at half contrast so the mean cycle is the
+# frame's entry point. That is a CONTENT change — which curve the eye goes to
+# first is the whole of what this move is — so the earlier signature was against
+# a different picture and carrying it forward would make check three prove only
+# that a machine has not changed its mind.
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19 after \u00a734 move 3; awaiting a look (last signed A. Rai / 2026-09-15, against the previous chart)"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.

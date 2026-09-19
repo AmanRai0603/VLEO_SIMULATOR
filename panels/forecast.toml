@@ -41,6 +41,19 @@ lead 1, peaking near +0.44 around lead 9 and going negative only at leads 23 to
 makes persistence look better, so skill against it collapses at short lead. Two
 lines that agree everywhere means the leak is not being computed.
 
+THE RMS FRAME STARTS AT ZERO AND ITS AREA IS FILLED. RMS error is a magnitude
+measured from perfect rather than a score against a baseline, so zero is the
+origin the quantity is a size from; an axis starting at 9 drew the VARIATION in
+the error and labelled it the error. With zero on the frame the picture says the
+error roughly triples over the first five leads and then flattens, which is the
+claim. A fill under either of the other two frames is the defect — neither is a
+size from zero.
+
+THE LEAKY BASELINE IS DRAWN AT HALF CONTRAST. The strict baseline is the score
+this panel publishes; the leaky one is there to show what the leak is worth, and
+at equal weight it competed with the number. Two skill lines at one weight is the
+state to look for.
+
 Bias and RMS error have ONE line each and no baseline variant, because neither
 uses a baseline. They are also computed over every pair with an observation
 rather than over the pairs a baseline happened to reach, so their sample is

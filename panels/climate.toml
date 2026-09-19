@@ -5,7 +5,11 @@ mount = "canvas.sw-panel"
 draws = """The record aggregated over the long run: by year, by day of year, by month, by
 the 13-month smoother, or Kp against ap. The context a single mission window is
 a slice of."""
-correct = """The selected aggregate over the whole record, with the horizontal axis labelled
+correct = """On the Kp-against-ap setting the median is at full contrast and the two
+percentile edges at half — they bound the shaded spread rather than being two
+more curves to tell apart.
+
+The selected aggregate over the whole record, with the horizontal axis labelled
 for the aggregate chosen — years for by-year, 1 to 366 for day of year. On the
 Kp-against-ap setting the published conversion table is drawn as points and
 they are ALL present: Kp is reported in thirds, so a whole-Kp lookup silently

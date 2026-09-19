@@ -34,7 +34,20 @@ export const INK = {
   axis: '#8a8880',
   text: '#1a1a1a',
   muted: '#8a8880',
-  surface: '#fcfcfb',
+  // THE SURFACE IS THE CARD THE CANVAS SITS ON, AND THAT CARD IS WHITE.
+  // app.css gives `canvas.plot` `background: var(--card)`, which is #ffffff,
+  // inside a 1px rule, on #fbfaf7 paper — so the figure is deliberately a white
+  // card and there never was a canvas/page mismatch to fix. What WAS wrong is
+  // this token: the 2px separator ring that lets two dots overlap and stay two
+  // dots, and the 2px gap between touching bars, are drawn in INK.surface, so
+  // both were being drawn three levels off the colour actually underneath them.
+  //
+  // §34 read the mismatch the other way round and proposed filling the canvas
+  // #fcfcfb, which would have put the one-step seam INSIDE the border instead
+  // of removing it. Both palettes re-validated against #ffffff — the six
+  // categorical hues and `predict`'s four-step ramp — and both still pass, the
+  // ramp's light end at 2.11:1 against a floor of 2.
+  surface: '#ffffff',
   series: ['#b5731a', '#2f6fa8', '#2e7d55', '#8f43e0', '#c2185b', '#00918f'],
   mark: '#8f43e0',
 };
@@ -103,7 +116,11 @@ const nice = v => {
 
 /**
  * @param spec {
- *   x: {label, min, max, ticks?, fmt?},
+ *   x: {label, min, max, ticks?, fmt?,
+ *       grid?: false — no VERTICAL rules. A gridline is an invitation to read a
+ *       value off the axis, and where the axis is five named scenarios there is
+ *       no value between them to read: the rules are then ink that says nothing
+ *       and separates categories the eye had already separated },
  *
  *   // ONE PANE, the ordinary case:
  *   y: {label, min, max, ticks?, fmt?, log?},
@@ -114,6 +131,17 @@ const nice = v => {
  *              either edge breaks the band, the same way it breaks a line,
  *              n?: [] — the sample behind each point; where given, the line fades
  *              as the count falls, so a thin far end does not read as a firm one,
+ *              context?: true — THIS IS NOT THE ANSWER. The row a panel is named
+ *              for gets full weight; everything drawn to make it legible gets a
+ *              thinner stroke and half the contrast, so a five-curve frame has an
+ *              entry point instead of five equals. It is a flag rather than an
+ *              alpha per panel because "how much should context recede" is one
+ *              decision for the whole face, not eleven,
+ *              fill?: true — fill between this line and ZERO. For a quantity that
+ *              accumulates from nothing, the area is the quantity and a lone
+ *              stroke leaves it to be imagined. Refused where zero is off the
+ *              frame: a fill running to the floor of an axis that starts at 9
+ *              would be drawing an area nobody measured,
  *              aside?: true — FURNITURE, not data. A significance band is a
  *              reference the curve is read against, the same job a mark does, and
  *              it happens to vary with x rather than sit at one value. Drawn, and
@@ -210,7 +238,10 @@ export function drawChart(canvas, spec) {
   const bands = legs.map(g => 18 + g.rows.length * LEG_H);
 
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#fff';
+  // THE SURFACE TOKEN, NOT A LITERAL. Same colour as before — the card is
+  // white — but now there is one place that says what the surface is, and the
+  // rings and bar gaps drawn in it agree with the fill underneath them.
+  ctx.fillStyle = INK.surface;
   ctx.fillRect(0, 0, W, H);
 
   // THE X EXTENT IS COMPUTED ACROSS EVERY PANE, which is what registers them: a
@@ -274,7 +305,7 @@ export function drawChart(canvas, spec) {
 
   const drawn = panes.map((pn, pi) => _pane(ctx, {
     pn, W, H, L, R, B, px, x0, x1, xt, top: geom[pi].top, bot: geom[pi].bot,
-    head: geom[pi].head, leg: legs[pi], LEG_H, given,
+    head: geom[pi].head, leg: legs[pi], LEG_H, given, xgrid: spec.x.grid,
   }));
 
   // THE X AXIS ONCE, AT THE BOTTOM, because it is the axis the stack shares. A
@@ -423,10 +454,18 @@ function _pane(ctx, o) {
     ctx.fillText(fy(at), L - 6, y + 3);
   }
   ctx.textAlign = 'center';
+  // `grid: false` MEANS NO VERTICAL RULE AT ALL, INCLUDING AT ZERO. The first
+  // form of this kept the zero rule on the grounds that which side of zero a
+  // point sits on is a fact — true of a signed quantity, and a signed quantity
+  // is never the axis that asks for this. On `drivers` the axis is five named
+  // scenarios running -0.3 to 4.3, so the kept rule landed on the first
+  // category and was the only vertical line in the frame: a mark, drawn darker
+  // than a gridline, at a place that means "index 0".
   for (const at of xt) {
+    if (o.xgrid === false) continue;
+    const isZero = Math.abs(at) < 1e-12;
     const x = Math.round(px(at)) + 0.5;
     if (x < L - 0.5 || x > W - R + 0.5) continue;
-    const isZero = Math.abs(at) < 1e-12;
     ctx.strokeStyle = isZero ? INK.axis : INK.grid;
     ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, BOT); ctx.stroke();
     ctx.strokeStyle = INK.grid;
@@ -467,11 +506,17 @@ function _pane(ctx, o) {
   // is not data.
   const ends = [];
   const hues = _hues(pn.series);
+  // HOW FAR CONTEXT RECEDES IS ONE DECISION, HERE. A series marked `context` is
+  // drawn at half contrast and, where it did not ask for a width, thinner. The
+  // alternative was an alpha per panel, which is eleven decisions that start the
+  // same and end up different.
+  const CONTEXT_A = 0.5, CONTEXT_W = 1.3;
   pn.series.forEach((s, i) => {
     const col = hues[i];
+    const dim = s.context ? CONTEXT_A : 1;
     ctx.save();
     ctx.strokeStyle = col; ctx.fillStyle = col;
-    ctx.lineWidth = s.width || 2;
+    ctx.lineWidth = s.width || (s.context ? CONTEXT_W : 2);
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     if (s.dash) ctx.setLineDash(s.dash);
     if (s.kind === 'band') {
@@ -550,6 +595,42 @@ function _pane(ctx, o) {
       const N = s.n && s.n.length === s.x.length ? s.n : null;
       const nMax = N ? Math.max(...N.filter(v => isFinite(v))) : 0;
       const wt = k => (!N || !nMax ? 1 : Math.max(0.2, Math.min(1, (N[k] || 0) / nMax)));
+
+      // THE AREA UNDER A LINE, WHERE THE AREA IS THE QUANTITY. A quantity that
+      // accumulates from nothing — the temperature a term ADDS, an error
+      // measured from perfect — is a size, and a lone stroke leaves that size to
+      // be imagined off the axis. Refused where zero is off the frame, because
+      // the fill would then run to a floor that is not zero and draw an area
+      // nobody measured. Drawn before the stroke, so the line stays crisp.
+      if (s.fill && s.kind !== 'step') {
+        if (y0 > 0 || y1 < 0) {
+          throw new Error('a fill under "' + (s.name || _plain(pn.y.label)) +
+            '" was asked for, but zero is not on its axis (' + y0 + ' to ' + y1 +
+            ') — the area would be measured from the frame and not from zero');
+        }
+        const base = py(0);
+        ctx.save();
+        ctx.globalAlpha = (s.fillAlpha === undefined ? 0.12 : s.fillAlpha) * dim;
+        let run = [];
+        const shed = () => {
+          if (run.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(px(s.x[run[0]]), base);
+            for (const k of run) ctx.lineTo(px(s.x[k]), py(s.y[k]));
+            ctx.lineTo(px(s.x[run[run.length - 1]]), base);
+            ctx.closePath();
+            ctx.fill();
+          }
+          run = [];
+        };
+        for (let k = 0; k < s.x.length; k++) {
+          const v = s.y[k];
+          if (v !== null && isFinite(v) && !(lg && v <= 0)) run.push(k);
+          else shed();
+        }
+        shed();
+        ctx.restore();
+      }
       const segment = (a, b) => {
         ctx.beginPath();
         ctx.moveTo(px(s.x[a]), py(s.y[a]));
@@ -558,10 +639,11 @@ function _pane(ctx, o) {
         ctx.stroke();
       };
       const live = k => { const v = s.y[k]; return v !== null && isFinite(v) && !(lg && v <= 0); };
+      ctx.globalAlpha = dim;
       if (N) {
         for (let k = 1; k < s.x.length; k++) {
           if (!live(k) || !live(k - 1)) continue;
-          ctx.globalAlpha = Math.min(wt(k), wt(k - 1));
+          ctx.globalAlpha = Math.min(wt(k), wt(k - 1)) * dim;
           segment(k - 1, k);
         }
         ctx.globalAlpha = 1;
@@ -577,6 +659,7 @@ function _pane(ctx, o) {
           else ctx.lineTo(X, Y);
         }
         ctx.stroke();
+        ctx.globalAlpha = 1;
       }
       // DIRECT LABEL AT THE END OF THE LINE.
       //
@@ -599,7 +682,7 @@ function _pane(ctx, o) {
         if (lastK >= 0) {
           const X = px(s.x[lastK]), Y = py(s.y[lastK]);
           if (X >= L && X <= W - R && Y >= T && Y <= BOT) {
-            ends.push({ x: X, y: Y, col, text: fy(s.y[lastK]) });
+            ends.push({ x: X, y: Y, col, text: fy(s.y[lastK]), dim });
           }
         }
       }
@@ -620,8 +703,13 @@ function _pane(ctx, o) {
     // In the gutter, always — left-aligned just outside the plot, so the
     // labels form a column a reader can scan instead of four numbers scattered
     // wherever their lines happened to finish.
+    // The label recedes with its line. A context curve drawn at half contrast
+    // with its number at full strength puts the emphasis back where the width
+    // just took it from.
+    ctx.globalAlpha = e.dim === undefined ? 1 : e.dim;
     ctx.fillStyle = e.col;
     ctx.fillText(e.text, W - R + 6, y);
+    ctx.globalAlpha = 1;
   }
 
   // Marks, and their labels stacked so two nearby marks do not print on top of
@@ -691,8 +779,13 @@ function _pane(ctx, o) {
       const ly = head + 12 + (r + 1) * LEG_H;
       for (const s of row) {
         const col = hues[pn.series.indexOf(s)];
+        // The SWATCH recedes with its line; the NAME does not. A legend entry
+        // greyed out reads as disabled, and text in this face wears text ink
+        // rather than its series' — the colour chip beside it carries identity.
+        ctx.globalAlpha = s.context ? 0.5 : 1;
         ctx.fillStyle = col;
         ctx.fillRect(lx, ly - 5, 14, 3);
+        ctx.globalAlpha = 1;
         ctx.fillStyle = INK.text;
         ctx.fillText(s.name, lx + 19, ly);
         lx += 19 + ctx.measureText(s.name).width + 18;

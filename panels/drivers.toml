@@ -8,7 +8,14 @@ legacy MATLAB tool's own answers for the same cells drawn as dots beside them.
 The second view divides all twenty-five by their legacy counterparts on a
 logarithmic axis, so agreement is one line and the two directions of
 disagreement are the same distance from it."""
-correct = """In the by-quantity view: a rising line of five points, because the scenarios are
+correct = """NO VERTICAL GRIDLINES. This axis is five named scenarios, and a gridline is an
+invitation to read a value off the axis where it falls — between "cold
+sustained" and "nominal" there is nothing to read. The horizontal grid stays,
+because the y axis IS a scale. A vertical rule at the first scenario is the
+specific defect to look for: the axis runs -0.3 to 4.3, so a zero rule kept
+"because zero matters" lands on a category and is drawn darker than a gridline.
+
+In the by-quantity view: a rising line of five points, because the scenarios are
 ordered cold to hot and every quantity here is monotone in that order. A line
 that zigzags means the scenarios have been drawn in the order the CSV lists them
 rather than in the order a design reads them. Five DOTS from the legacy run sit

@@ -7,7 +7,14 @@ for three detrend windows at once — 365 days heavy, 181 and 731 light — with
 rotation peak and its first two harmonics marked, and a dashed Bartlett 95 per
 cent band that widens with lag. The second view leaves the autocorrelation and
 draws spike size against timing instead."""
-correct = """In the recurrence view: THREE curves, one per detrend window, all starting at
+correct = """THE 365-DAY CURVE IS THE ONLY ONE AT FULL CONTRAST. It is the window
+sw_recurrence_lag and sw_recurrence_strength were measured under, and the one
+the band and all three peak marks are computed on; 181 and 731 are drawn at
+half contrast because their job is to show that the published number is a
+CHOICE. All three stay readable — the 731-above-365 claim below is checked by
+looking.
+
+In the recurrence view: THREE curves, one per detrend window, all starting at
 lag 1 and decaying, oscillating rather than falling smoothly, with weaker
 repeats near the multiples. The 365-day curve is the heavy one and the 731-day
 curve sits ABOVE it at 182 of the 200 lags — a longer detrend window calls less

@@ -263,6 +263,14 @@ const PANELS = [
           kind: 'line', x: xs, y: xs.map((_, k) => mean(per.get(c.n)[k])),
           colour: INK.series[i % INK.series.length], width: 1.4,
           dash: c.n === 25 ? [4, 3] : null,
+          // CONTEXT. §34.1 named this frame: the mean cycle and the individual
+          // ones carried the same contrast, so five curves arrived at once and
+          // a reader had to be told in prose which one the panel is about. The
+          // mean is the row the panel is named for; the cycles are what makes
+          // it legible AS a mean, and they stay readable enough that "cycle 23
+          // peaks higher than 24" is still something to look at rather than
+          // read.
+          context: true,
         });
       });
       // A bin thinned by the 2017 gap is dropped, not averaged. sw_cycle_repeatability
@@ -400,8 +408,13 @@ const PANELS = [
             { kind: 'band', x: xs, y: band,
               y0: band.map(b => (b === null ? null : -b)), colour: INK.muted, alpha: 0.16 },
             { name: 'detrended over 365 d', kind: 'line', x: xs, y: A.r, width: 2.2 },
-            { name: '181 d', kind: 'line', x: xs, y: Ashort.r, width: 1.3 },
-            { name: '731 d', kind: 'line', x: xs, y: Along.r, width: 1.3 },
+            // CONTEXT. 365 is the window sw_recurrence_lag and sw_recurrence_
+            // strength were measured under, and it is the curve the band and
+            // the three peak marks are computed on. The other two are here to
+            // show that the published number is a CHOICE and how much it moves
+            // — which is a job that wants them legible and not equal.
+            { name: '181 d', kind: 'line', x: xs, y: Ashort.r, width: 1.3, context: true },
+            { name: '731 d', kind: 'line', x: xs, y: Along.r, width: 1.3, context: true },
             // INSIDE THE BAND IS "SHAPE, NOT FINDING", which is a region and was
             // drawn as its two edges. The edges stay — they are where the band
             // ends and a reader reads a value off them — and the wash between
@@ -560,7 +573,9 @@ const PANELS = [
       const key = o.v, maxL = 5478;
       // The percentiles, lightest to darkest, and the one the row publishes.
       // Validated as an ordinal ramp: monotone lightness, every adjacent gap
-      // clear, and the light end at 2.06:1 against the surface. Never the
+      // clear, and the light end at 2.11:1 against the surface — re-run when
+      // INK.surface was corrected to the white card the canvas actually sits
+      // on, against a floor of 2. Never the
       // categorical hues — those say "unrelated", and these are a ladder.
       const QS = [
         { q: 0.50, name: '50th', colour: '#86b6ef', width: 1.4 },
@@ -777,8 +792,11 @@ const PANELS = [
               y: { label: 'skill against persistence  [-]' },
               series: [
                 { name: 'vs. last obs BEFORE issue', kind: 'line', x: xs, y: skS, n: nStr },
+                // CONTEXT. The strict baseline is the score; the leaky one is
+                // here to show what the leak is worth, and drawn at equal
+                // weight it competed with the number the panel publishes.
                 { name: 'vs. obs ON the issue date (leaks)', kind: 'line', x: xs, y: skL,
-                  n: nLk, colour: INK.series[1], dash: [5, 3] },
+                  n: nLk, colour: INK.series[1], dash: [5, 3], context: true },
               ],
               marks: scoreBaseline('skill'),
             },
@@ -788,8 +806,15 @@ const PANELS = [
               marks: scoreBaseline('bias'),
             },
             {
-              y: { label: 'RMS error  [sfu]' },
-              series: [{ name: '', kind: 'line', x: xs, y: rmse, n: nObs }],
+              // ZERO ON THE AXIS, AND THE AREA FILLED. RMS error is a magnitude
+              // measured from perfect: zero is not a baseline to beat but the
+              // origin the quantity is a size from, so an axis that started at
+              // 9 was drawing the VARIATION in the error and calling it the
+              // error. With zero on it the frame says the error roughly triples
+              // across the lead range, which is the claim, and the fill is what
+              // makes that a size rather than a height to read off gridlines.
+              y: { label: 'RMS error  [sfu]', min: 0 },
+              series: [{ name: '', kind: 'line', x: xs, y: rmse, n: nObs, fill: true }],
               marks: scoreBaseline('rmse'),
             },
           ],
@@ -911,7 +936,12 @@ const PANELS = [
       // right margin and gets cut by the canvas. A categorical axis is not a
       // range that happens to run 0 to 4 — the outer categories need the same
       // room as the inner ones.
-      const XPAD = { min: -0.3, max: 4.3, ticks: 5, fmt: fmtX };
+      // NO VERTICAL RULES. The axis is five named scenarios, and a gridline is
+      // an invitation to read a value off the axis where it falls. Between
+      // "cold sustained" and "nominal" there is nothing to read, so the rules
+      // were ink separating categories the tick labels had already separated.
+      // The horizontal grid stays: the y axis IS a scale.
+      const XPAD = { min: -0.3, max: 4.3, ticks: 5, fmt: fmtX, grid: false };
 
       if (o.view === 'parity') {
         // THE RATIO, ON A LOG AXIS, because agreement is 1 and the two kinds of
@@ -1786,7 +1816,11 @@ function regimeByPhase(rec) {
       y: { label: 'share of days at that phase  [%]', min: 0 },
       series: [
         { name: 'storm (Ap \u2265 26)', kind: 'line', x: xs, y: stPc, colour: '#c2185b' },
-        { name: 'quiet (Ap \u2264 6)', kind: 'line', x: xs, y: qtPc, colour: '#2f6fa8' },
+        // CONTEXT. The view is called "where in a cycle a storm is likely" and
+        // the quiet share is the mirror that makes the storm curve mean
+        // something; two curves at one weight made it a pair of equals.
+        { name: 'quiet (Ap \u2264 6)', kind: 'line', x: xs, y: qtPc, colour: '#2f6fa8',
+          context: true },
       ],
       marks: [{ axis: 'x', at: 0.6193669438, label: 'the declared epoch, phase 0.619' }],
     },
@@ -1941,7 +1975,7 @@ function byIssueYear(fc, byDay, tOf, strict, leaky) {
           series: [
             { name: 'vs. last obs BEFORE issue', kind: 'line', x: span, y: skS, n: nStr },
             { name: 'vs. obs ON the issue date (leaks)', kind: 'line', x: span, y: skL,
-              n: nLk, colour: INK.series[1], dash: [5, 3] },
+              n: nLk, colour: INK.series[1], dash: [5, 3], context: true },
           ],
           marks: scoreBaseline('skill'),
         },
@@ -1951,8 +1985,11 @@ function byIssueYear(fc, byDay, tOf, strict, leaky) {
           marks: scoreBaseline('bias'),
         },
         {
-          y: { label: 'RMS error  [sfu]' },
-          series: [{ name: '', kind: 'line', x: span, y: rmse, n: nObs }],
+          // Zero on the axis and the area filled, for the reason the by-lead
+          // view carries: this is a size measured from perfect, not a score
+          // against a baseline.
+          y: { label: 'RMS error  [sfu]', min: 0 },
+          series: [{ name: '', kind: 'line', x: span, y: rmse, n: nObs, fill: true }],
           marks: scoreBaseline('rmse'),
         },
       ],
@@ -2120,8 +2157,11 @@ function f107Window(extra, o, eng) {
           colour: '#8f43e0' },
         // Dashed, because it is not a design value: it is the analogue's own
         // ceiling, the thing the four solid curves are built from a mean of.
+        // CONTEXT, and the note has always said why: it is NOT a design value.
+        // Four design curves and a fifth line at the same weight read as five
+        // design curves, which is the one misreading this line can cause.
         { name: 'sw_window_peak_level — the analogue’s own peak', kind: 'line',
-          x: xs, y: analogue, colour: '#00918f', dash: [7, 4] },
+          x: xs, y: analogue, colour: '#00918f', dash: [7, 4], context: true },
       ],
       marks: [
         // Above the bound is the side that fails, and the bound binds one way:
@@ -2165,7 +2205,9 @@ const THERMO_CACHE = {};
 
 /** The x axis the two scenario views share: five categories, cold to hot. */
 const SCEN_X = {
-  min: -0.3, max: 4.3, ticks: 5,
+  // `grid: false` for the reason XPAD carries: this axis is five names, and a
+  // vertical rule between two of them marks a place no value can be read at.
+  min: -0.3, max: 4.3, ticks: 5, grid: false,
   fmt: v => (SCEN[Math.round(v)] || {}).shown || '',
 };
 
@@ -2434,9 +2476,13 @@ function thermoShape(extra, eng, decF, decFa, decKp) {
       x: { label: 'Kp  [-]', min: 0, max: 9 },
       y: { label: 'temperature the geomagnetic term adds  [K]', min: 0 },
       series: [
-        { name: 'measured', kind: 'line', x: xs, y: d, width: 2.4 },
+        // FILLED TO ZERO. This quantity is a temperature the geomagnetic term
+        // ADDS, measured from its own value at Kp 0, so the area under the
+        // curve is the thing being reported and the axis already starts at
+        // zero. A lone stroke left that size to be read off the gridlines.
+        { name: 'measured', kind: 'line', x: xs, y: d, width: 2.4, fill: true },
         { name: 'the straight line the quiet end sets', kind: 'line', x: xs, y: lin,
-          colour: INK.muted, width: 1.2, dash: [5, 4] },
+          colour: INK.muted, width: 1.2, dash: [5, 4], context: true },
       ],
     },
     note: 'How much of the exospheric temperature the geomagnetic term is responsible for, against ' +
@@ -2552,8 +2598,9 @@ function kpAgainstAp(rec) {
         // as a maximum, and the 90th is not one.
         { kind: 'band', x: ks, y: p90, y0: p10, colour: '#8a8880', alpha: 0.13 },
         { name: 'median daily Ap', kind: 'line', x: ks, y: med },
-        { name: '10th and 90th percentile', kind: 'line', x: ks, y: p10, colour: '#8a8880', width: 1 },
-        { name: '', kind: 'line', x: ks, y: p90, colour: '#8a8880', width: 1 },
+        { name: '10th and 90th percentile', kind: 'line', x: ks, y: p10, colour: '#8a8880',
+          width: 1, context: true },
+        { name: '', kind: 'line', x: ks, y: p90, colour: '#8a8880', width: 1, context: true },
         { name: 'published ap at that Kp', kind: 'line', x: ks, y: ks.map(tableAt), colour: '#c2185b', dash: [5, 4] },
       ],
     },

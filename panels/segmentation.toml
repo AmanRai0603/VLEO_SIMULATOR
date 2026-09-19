@@ -6,7 +6,11 @@ draws = """The distribution of the selected driver over the whole record, with t
 boundaries the study cut it at drawn on. The second view abandons the
 distribution and shows how the regimes are distributed across cycle phase
 instead."""
-correct = """A distribution with every boundary drawn as a mark ON the axis it belongs to,
+correct = """In the regime-against-phase view the STORM share is at full contrast and the
+quiet share at half: the view is called "where in a cycle a storm is likely",
+and the quiet curve is the mirror that makes the storm curve mean something.
+
+A distribution with every boundary drawn as a mark ON the axis it belongs to,
 at the value sw_regime and sw_activity_band actually use — quiet/active/storm
 at Ap 7 and 26, the activity bands at F10.7 90, 130 and 170. A boundary drawn
 between the wrong pair of bars is the defect this panel exists to catch, so the

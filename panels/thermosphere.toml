@@ -36,6 +36,11 @@ right-hand dot is always the higher. The two lightest curves nearly coincide and
 that is the data: the quietest day rides on the cold sustained level and barely
 departs from it.
 
+IN THE FOURTH VIEW the axis starts at zero and the area under the measured curve
+is FILLED, because the quantity is a temperature the geomagnetic term ADDS and
+that area is the quantity. The straight reference line is drawn at half contrast:
+it is what the curve is measured against, not a second measurement.
+
 IN THE THIRD VIEW two lines across the five scenarios, the worst-slot one above
 the mean-slot one everywhere, with the gap WIDENING toward the hot end. A
 constant gap would mean the exponential is missing. The worst-slot line must NOT

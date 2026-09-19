@@ -4009,3 +4009,126 @@ it has produced a mark that invites the wrong pairing.
 - Moves 3 to 9 of §34 are untouched.
 - The `sw_outlook_lead` citation in `forecast` is still stale — reported in Part
   D, deliberately not fixed, and it is a row question rather than a figure one.
+
+
+## 36 · Moves 3 and 8 — emphasis, and the three small things
+
+§34.4 ranked emphasis third and the visual-polish bundle eighth, on the grounds
+that together they cost almost nothing and touch every figure. Both are now in.
+One of the three small things turned out to be wrong in its premise, and finding
+that out was worth more than the change would have been.
+
+### 36.1 · Move 3 — one line is the answer, the rest recede
+
+A series may now carry `context: true`. The chart draws it at half contrast and,
+where it did not ask for a width, thinner; its legend swatch and its end label
+recede with it, because a curve drawn at half weight with its number at full
+strength puts the emphasis back where the width just took it from.
+
+**It is a flag and not an alpha per panel**, and that is the whole point: *how
+far should context recede* is one decision for the face, made in one place, not
+eleven decisions that start the same and drift.
+
+Ten series across seven panels are context:
+
+| panel · view | receded | why it is not the answer |
+|---|---|---|
+| `repeatability` · stack | the five individual cycles | the mean is the row the panel is named for |
+| `pattern` · recurrence | 181 d, 731 d | 365 is the published window, and what the band and all three peaks are computed on |
+| `forecast` · by lead and by year | the leaky baseline | it shows what the leak is worth; the strict one is the score |
+| `design` · F10.7 | `sw_window_peak_level` | the note has always said it is NOT a design value |
+| `thermosphere` · shape | the straight reference line | it is what the curve is measured against |
+| `segmentation` · phase | the quiet share | the view is called "where a storm is likely" |
+| `climate` · Kp/ap | the 10th and 90th edges | they bound the shaded spread |
+
+`repeatability` is the one §34 named, and it is the clearest: five curves at one
+weight, no entry point, and a reader told in prose which line the panel is about.
+The rule kept is that context must stay legible — "cycle 23 peaks above cycle
+24" is still checked by looking, not by reading.
+
+### 36.2 · Move 8, part one — the categorical axes lost their vertical rules
+
+`spec.x.grid = false` suppresses the vertical rules. It is set on the two axes
+that are five named scenarios — `drivers` and `thermosphere`'s slot view — where
+a gridline is an invitation to read a value off the axis at a place no value
+exists.
+
+The first form of this kept the zero rule, on the reasoning that which side of
+zero a point sits on is a fact. True of a signed quantity — and a signed quantity
+is never the axis that asks for this. On `drivers` the axis runs -0.3 to 4.3, so
+the kept rule landed on the first scenario and was the **only** vertical line in
+the frame, drawn darker than a gridline: a mark, at a place meaning "index 0".
+`grid: false` now means no vertical rule at all.
+
+### 36.3 · Move 8, part two — the fill under a line, where the area is the quantity
+
+A series may carry `fill: true`, filling between the line and **zero**, and it is
+**refused where zero is off the frame**: a fill running to the floor of an axis
+that starts at 9 would draw an area nobody measured. That refusal is what makes
+the feature safe to offer at all.
+
+Two places earned it, and only two:
+
+- `thermosphere` · shape. The quantity is *the temperature the geomagnetic term
+  adds*, measured from its own value at Kp 0. The area under the curve IS the
+  quantity, and the exponential's departure from the straight reference is now a
+  wedge rather than a vertical distance to estimate.
+- `forecast` · RMS error, in both views — and this one needed the axis moved to
+  zero first. RMS error is a magnitude measured from perfect, not a score against
+  a baseline, so an axis starting at 9 was drawing the VARIATION in the error and
+  labelling it the error. With zero on the frame the picture says the error
+  roughly triples over the first five leads and then flattens, which is the claim
+  the note makes.
+
+Everywhere else the candidates were bars, which already have area.
+
+### 36.4 · Move 8, part three — §34 had the canvas backwards
+
+§34.3 said: *"The canvas fills `#fff` on a `#fcfcfb` page. A one-step mismatch,
+visible as a faint rectangle at every panel edge."* I changed the fill to
+`INK.surface` and then measured the page, which is the order those two should
+have gone in.
+
+**The canvas is not on a `#fcfcfb` page.** `app.css` gives `canvas.plot`
+`background: var(--card)` — `#ffffff` — inside a 1px rule, on `#fbfaf7` paper.
+The figure is deliberately a white card. Filling it `#fcfcfb` would have put the
+one-step seam INSIDE the border instead of removing it.
+
+The real inconsistency was the other way round and is worth more than the one
+reported: **`INK.surface` was `#fcfcfb` while the surface is white.** That token
+is not decoration — it draws the 2px separator ring that lets two dots overlap
+and stay two dots, and the 2px gap between touching bars. Both were being drawn
+three levels off the colour underneath them. `INK.surface` is now `#ffffff`, the
+fill takes the token instead of a literal, and both palettes were re-validated
+against the corrected surface: the six categorical hues pass all five checks, and
+`predict`'s four-step ramp passes with its light end at 2.11:1 against a floor of
+2.
+
+**Halving the grid was not done.** The horizontal rules are how a value is read
+off a y axis, and dropping every other one trades a real reading for less ink. It
+is a preference, not a defect, and it is left as one.
+
+### 36.5 · What the byte comparison caught that the check did not
+
+`panel_check` compares pixels with a per-channel slack of 8 levels and a 2 per
+cent tolerance, which is right for a chart and means a small true change can pass.
+After these moves only `forecast` exceeded it. So each panel's fresh shot was
+compared to its stored reference **byte for byte** as well, which said
+`repeatability` was *identical* — and it should not have been.
+
+The `context` flag had never reached it. The edit was in a script that failed its
+NEXT replacement and exited before writing, so a change I had seen in a rendered
+picture was one I had reasoned into a picture that never had it. What the eye
+confirmed was the pre-existing weight difference, 2.4px black against 1.4px
+colour, which is exactly what the move was supposed to improve on.
+
+Two lessons, both cheap: a multi-edit script must write what succeeded or nothing
+at all and say which, and **"the reference is unchanged" is a finding when a
+change was expected**, not a pass.
+
+### 36.6 · Still open
+
+- `repeatability`'s signature is withdrawn — its content changed. Seven panel
+  references are now UNCONFIRMED.
+- Moves 4, 5, 6, 7 and 9 of §34 are untouched. 6 is the large one; 7 (a shorter
+  aspect where the curve is monotone) is the next cheap one.

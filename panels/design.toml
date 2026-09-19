@@ -28,7 +28,7 @@ its hot counterpart by construction. All four WANDER up and down with mission
 length; a monotone set here means they are being read off something other than
 the window mean.
 
-The fifth is DASHED and is not a design value: sw_window_peak_level is the
+The fifth is DASHED AND DRAWN AT HALF CONTRAST, and is not a design value: sw_window_peak_level is the
 maximum of the same cycle analogue the other four are built on a mean of. It
 must rise MONOTONICALLY and in steps — a longer window can only contain more of
 the cycle, and the peak jumps when the window swallows another cycle maximum, so
