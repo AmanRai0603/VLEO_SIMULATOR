@@ -12,7 +12,11 @@ tier = "A"
 criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1352
-state = "published"
+# RETIRED. Nothing in the tree reads this threshold and no figure draws it. It
+# was seeded as an operations trigger, and operations is not a subsystem this
+# tool has. sw_storm_design_level is the declared geomagnetic level the design
+# actually commits to, and it is read. Reviving this is a deliberate act.
+state = "deprecated"
 
 # WHY THIS ROW EXISTS BESIDE sw_spike_threshold.
 #

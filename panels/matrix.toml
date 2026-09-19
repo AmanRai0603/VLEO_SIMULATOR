@@ -7,7 +7,15 @@ Rows and columns are the display list in tree order, with the hierarchy drawn
 as nested boxes on the diagonal. Only cells that carry something are in the
 document; the empty ones are paper, and paper does not need a div.
 """
-correct = """
+correct = """A DARK RENDERING IS RECORDED BESIDE THE LIGHT ONE and both have to be looked at.
+The canvas gets none of CSS's help: its palette is a second table in
+web/js/chart.js, chosen and validated against the dark surface separately, so
+it can be wrong in ways the light one is not. What to check is the same in both
+— every claim above — plus one thing only the dark picture can show: nothing in
+the frame should be a light block. A literal light fill that never followed the
+scheme reads as a hole burned in the page.
+
+
 A mark inside a diagonal box is coupling that subtree owns. A mark outside one
 crosses a boundary and needs an interface. The diagonal is continuous — a gap
 in it means a row was dropped between the tree and the matrix.

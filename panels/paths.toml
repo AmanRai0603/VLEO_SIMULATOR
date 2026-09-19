@@ -9,7 +9,15 @@ It is the join between a name in the tree and a mark in the grid: without it a
 reader counts rows, and counting rows is where a reader stops trusting the
 picture.
 """
-correct = """
+correct = """A DARK RENDERING IS RECORDED BESIDE THE LIGHT ONE and both have to be looked at.
+The canvas gets none of CSS's help: its palette is a second table in
+web/js/chart.js, chosen and validated against the dark surface separately, so
+it can be wrong in ways the light one is not. What to check is the same in both
+— every claim above — plus one thing only the dark picture can show: nothing in
+the frame should be a light block. A literal light fill that never followed the
+scheme reads as a hole burned in the page.
+
+
 Exactly as many markers as there are rows on the display list, numbered from
 one, with the selected row's marker emphasised. An arc exists only where the
 derivation graph declares an edge to or from the selection — an arc drawn from

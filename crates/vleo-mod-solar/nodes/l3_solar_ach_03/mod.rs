@@ -1,9 +1,9 @@
 // GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
 // regeneration and fails the regeneration diff in the gate.
-//! `l3_solar_ach_03` — Ap
+//! `l3_solar_ach_03` — Closure — Ap, survival
 //!
-//! What daily planetary Ap does the record say this mission will present?
+//! How much room does the Ap survival requirement have left?
 
 #[path = "model.rs"]
 pub mod model;

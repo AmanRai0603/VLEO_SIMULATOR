@@ -6,12 +6,13 @@
 use vleo_core::fault::Fault;
 use vleo_core::units::*;
 
-/// What this node publishes: `Ap_ach_long` (Ap, sustained), in `-`.
+/// What this node publishes: `M_ap_long` (Closure — Ap, sustained), in `-`.
 pub const NODE_ID: &str = "l3_solar_ach_04";
-pub const SHEET_HASH: u64 = 0xd375cf53eb415525;
+pub const SHEET_HASH: u64 = 0x1b206c2ef28b8732;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
     "sw_ap_design_long",
+    "l3_solar_req_04",
 ];
 /// The variables this node publishes.
 pub const OUTPUT_VARS: &[&str] = &["l3_solar_ach_04"];
@@ -24,11 +25,12 @@ pub const OUTPUT_UNITS: &[Unit] = &[Ratio::UNIT];
 /// so the bus carries no quantity types and a face cannot pass arguments
 /// in the wrong order.
 pub fn call(inputs: &[f64], outputs: &mut [f64]) -> Result<(), Fault> {
-    if inputs.is_empty() || outputs.is_empty() {
+    if inputs.len() < 2 || outputs.is_empty() {
         return Err(Fault::Blocked { node: NODE_ID, missing: "an input the contract declares" });
     }
-    let conclusion: Ratio = Ratio::new(inputs[0]);
-    let answer = super::model::evaluate(conclusion)?;
+    let ach: Ratio = Ratio::new(inputs[0]);
+    let req: Ratio = Ratio::new(inputs[1]);
+    let answer = super::model::evaluate(ach, req)?;
     outputs[0] = answer.get();
     Ok(())
 }

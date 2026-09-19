@@ -18,6 +18,12 @@ state = "published"
 # closed form, and there is no MATLAB function that computes it. prf_design.m
 # reads the observed record and never verifies the issued outlook against it.
 
+# THE LEAD IS ONE SOLAR ROTATION, AND THAT IS A CHOICE. This reads
+# sw_recurrence_lag, which MEASURES where the rotation signal in F10.7 peaks,
+# and verifies the outlook at that lead. Verifying at one rotation is the
+# choice; the 26 days is the measurement. They used to be two rows carrying one
+# number, and the second could drift from the first without anything noticing.
+
 [question]
 text = "By how much does the published outlook miss the F10.7 that arrived?"
 note = "Signed, forecast minus observed, so a negative answer means the outlook was low. It is measured at the lead sw_outlook_lead declares, which is the far end of the window where the miss is largest. A design that sizes drag on a published outlook is exposed by exactly this number, in the unsafe direction: a low F10.7 is a thin atmosphere and an optimistic lifetime."
@@ -131,7 +137,7 @@ reason_upper = "the shallowest measured bias is -0.593 sfu, at lead 1. A value a
 # against what the producer publishes — which is the only place the
 # whole graph is visible and therefore the only place to ask.
 binding = "lead"
-var = "sw_outlook_lead"
+var = "sw_recurrence_lag"
 type = "Time"
 
 [[algorithm.step]]

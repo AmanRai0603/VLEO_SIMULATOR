@@ -1,6 +1,6 @@
 {
   "id": "sw_alert_threshold",
-  "state": "published",
+  "state": "deprecated",
   "sheet_hash": "bccae5",
   "impl_hash": "222325",
   "owner": "environment",

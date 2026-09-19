@@ -1,6 +1,6 @@
 {
   "id": "sw_cycle_number",
-  "state": "published",
+  "state": "deprecated",
   "sheet_hash": "74c2b1",
   "impl_hash": "a80be6",
   "owner": "environment",

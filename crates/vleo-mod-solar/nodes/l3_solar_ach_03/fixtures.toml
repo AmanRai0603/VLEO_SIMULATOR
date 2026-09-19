@@ -5,33 +5,35 @@
 # implementation, because a number worked out by the thing being
 # checked proves nothing.
 #
-# AN ACHIEVED ROW'S EVIDENCE IS THAT IT CHANGES NOTHING
+# A MARGIN'S EVIDENCE IS ARITHMETIC A PERSON CAN CHECK.
 #
-# Like the interface, this restates a conclusion and there is no physics in it.
-# What can go wrong is that the restatement alters what it carries and both
-# sides still look plausible, so every fixture is the identity at a value taken
-# from sw_storm_return_level's own fixture answers.
+# There is no physics in this row. It reads two numbers the tree already
+# publishes and returns (required - achieved) / required, so every fixture
+# SUPPLIES both sides and states the quotient worked out by hand. Two of the
+# three are the cases that catch a sign error, which is the only interesting
+# way this row can be wrong: on the bound the margin is zero, and at twice
+# the bound it is -1. A row applying the sense backwards passes neither.
 
 [[fixture]]
-label = "the five-year conclusion, restated unchanged"
-expect = 158.3838
+label = "the once-per-mission storm against the G4 survival bound"
+expect = 0.23485885410628
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { conclusion = 158.3838 }
+inputs = { ach = 158.3842172000, req = 207.0000000 }
 
 [[fixture]]
-label = "the half-year conclusion, restated unchanged"
-expect = 64.1474
+label = "exactly on the bound, where the margin must be zero and the closure still closed"
+expect = 0.000000000000
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { conclusion = 64.1474 }
+inputs = { ach = 207.0000000, req = 207.0000000 }
 
 [[fixture]]
-label = "the fifteen-year conclusion, restated unchanged"
-expect = 203.3466
+label = "twice the bound, where the margin must be -1 and the closure must fail"
+expect = -1.000000000000
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { conclusion = 203.3466 }
+inputs = { ach = 414.0000000, req = 207.0000000 }

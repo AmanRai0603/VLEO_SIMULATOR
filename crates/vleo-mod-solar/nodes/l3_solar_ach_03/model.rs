@@ -8,9 +8,9 @@ use vleo_core::physics::*;
 use vleo_core::units::pmath;
 use vleo_core::units::*;
 
-/// What daily planetary Ap does the record say this mission will present?
+/// How much room does the Ap survival requirement have left?
 ///
-/// `Ap_ach = sw_storm_return_level`
+/// `M_ap_survive = closure(Ap_req_survive, Ap_T, AtMost).margin`
 ///
 /// Source: `noaa_swpc`
 ///
@@ -25,25 +25,31 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "l3_solar_ach_03";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xc3f5fe862655aa6d;
+pub const SHEET_HASH: u64 = 0x9c39338e2d10d41e;
 
-pub fn evaluate(conclusion: Ratio) -> Result<Ratio, Fault> {
-    // ---- HOLE 1 : restate the subsystem's conclusion on the achieved side of the closure -> Ratio
-    let ach: Ratio = conclusion;
+pub fn evaluate(ach: Ratio, req: Ratio) -> Result<Ratio, Fault> {
+    // ---- HOLE 1 : compare achieved against required in the declared sense and return the signed fractional margin -> Ratio
+    // The requirement declares sense "<=", so the achieved value must stay UNDER
+    // the bound and the margin is (required - achieved) / required. Positive is
+    // room; negative is a violation and its size. mission::closure is the twelve
+    // KPI closures' own function rather than the arithmetic written out again,
+    // because a second way of computing a margin is a second way of getting its
+    // sign wrong -- and a sign error here still produces a plausible number.
+    let m: Ratio = Ratio::new(mission::closure(req.get(), ach.get(), mission::Sense::AtMost).margin);
     // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = ach;
+    let answer: Ratio = m;
     if !answer.is_finite() {
-        return Err(Fault::Degenerate { node: NODE_ID, field: "Ap_ach", reason: "the computation produced a value that is not a number" });
+        return Err(Fault::Degenerate { node: NODE_ID, field: "M_ap_survive", reason: "the computation produced a value that is not a number" });
     }
-    if answer.get() < 20.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "Ap_ach", value: answer.get(), bound: 20.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "the same floor as sw_storm_return_level: below 20 the answer is not a storm at all, and the record's median day is 7" });
+    if answer.get() < -10.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "M_ap_survive", value: answer.get(), bound: -10.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "a margin of -10 is a requirement exceeded by eleven times its own value. Below that the comparison has stopped being a design margin and become a sign that one side is in the wrong unit, and it should refuse rather than report a number nobody will read as a fraction" });
     }
-    if answer.get() > 230.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "Ap_ach", value: answer.get(), bound: 230.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "the same ceiling as sw_storm_return_level: the fit's own reach at a return period equal to the record, 28.1971 years, which is Ap 229.18" });
+    if answer.get() > 1.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "M_ap_survive", value: answer.get(), bound: 1.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "1 is the whole of the requirement: an achieved value of zero against a positive bound. A margin above 1 under this sense would mean the achieved value is negative, which none of these drivers can be" });
     }
     Ok(answer)
 }

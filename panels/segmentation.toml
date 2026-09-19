@@ -6,7 +6,23 @@ draws = """The distribution of the selected driver over the whole record, with t
 boundaries the study cut it at drawn on. The second view abandons the
 distribution and shows how the regimes are distributed across cycle phase
 instead."""
-correct = """A distribution with every boundary drawn as a mark ON the axis it belongs to,
+correct = """A DARK RENDERING IS RECORDED BESIDE THE LIGHT ONE and both have to be looked at.
+The canvas gets none of CSS's help: its palette is a second table in
+web/js/chart.js, chosen and validated against the dark surface separately, so
+it can be wrong in ways the light one is not. What to check is the same in both
+— every claim above — plus one thing only the dark picture can show: nothing in
+the frame should be a light block. A literal light fill that never followed the
+scheme reads as a hole burned in the page.
+
+the finding line says what share of the DAYS the top band holds and what span of
+the AXIS its bars cover. Those two numbers pulling in opposite directions is why
+the band is not shaded (§35.3).
+
+In the regime-against-phase view the STORM share is at full contrast and the
+quiet share at half: the view is called "where in a cycle a storm is likely",
+and the quiet curve is the mirror that makes the storm curve mean something.
+
+A distribution with every boundary drawn as a mark ON the axis it belongs to,
 at the value sw_regime and sw_activity_band actually use — quiet/active/storm
 at Ap 7 and 26, the activity bands at F10.7 90, 130 and 170. A boundary drawn
 between the wrong pair of bars is the defect this panel exists to catch, so the
@@ -17,7 +33,15 @@ drawn at zero height for an empty bin."""
 # is right. That is what makes check three mean anything: the reference is the
 # claim, and without a name against it the check only proves the chart has not
 # changed since a machine drew it.
-confirmed_by = "A. Rai / 2026-09-15 (against the pre-move picture; content unchanged, canvas resized 2026-09-16, not yet re-looked)"
+# NOT CONFIRMED ANY MORE. The reference was re-recorded on 2026-09-19: every
+# figure in the face now carries a finding line under its y label, so the frame
+# below it has moved and the picture says something it did not say before. The
+# earlier signature was against a picture without that line.
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting a look at BOTH pictures. Every figure gained an answer line above the chart, a finding line inside it, and a second rendering in the dark scheme — see `correct` above for what to check in each"
+# Check four drives this panel: a brush, a key click, and the buttons that undo
+# them. It is declared rather than inferred so a panel that deliberately offers
+# no interaction does not fail a check for not having one.
+interactive = true
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.

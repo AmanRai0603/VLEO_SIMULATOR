@@ -1,9 +1,9 @@
 // GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
 // regeneration and fails the regeneration diff in the gate.
-//! `l3_solar_ach_01` — F10.7, sustained
+//! `l3_solar_ach_01` — Closure — F10.7, sustained
 //!
-//! What sustained F10.7 does the record say this mission will present?
+//! How much room does the sustained F10.7 requirement have left?
 
 #[path = "model.rs"]
 pub mod model;

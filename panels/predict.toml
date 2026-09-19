@@ -2,26 +2,71 @@ id = "predict"
 label = "Predict — how far the flux moves over a lead"
 module = "web/js/solar.js"
 mount = "canvas.sw-panel"
-draws = """The selected percentile of the change in the driver over a lead, against that
-lead, out to the selected span. This is the measured quantity
-sw_uncertainty_growth reads, drawn over its whole range rather than at the one
-lead a mission asks about."""
-correct = """One curve of the percentile change against lead. The horizontal axis ends at
-the last lead in the ladder and NOT at the selected span — the ladder is
-geometric, so a five-year span draws out to 4.08 years, and an axis that
-stopped exactly on the span would mean the ladder had been resampled to be
-tidy. The curve is measured, not fitted: at short leads it wobbles rather than
-rising smoothly, and at the fifteen-year span it stops being monotone
-altogether — the record's 95th percentile rises to about +114 sfu near four
-years, falls to about +66 near ten to eleven, and rises again, which is the
-eleven-year cycle showing through. A smooth monotone curve at that span means
-something has been fitted. Splitting by cycle replaces the single curve with
-one per cycle."""
+draws = """Four percentiles of the change in the driver over a lead — 50th, 90th, 95th
+and 99th — against that lead, out to fifteen years, as an ordinal ramp in one
+hue with the 95th heavy. This is the measured quantity sw_uncertainty_growth
+reads, drawn over its whole range rather than at the one lead a mission asks
+about, and with the cost of choosing a percentile visible rather than hidden
+behind a control."""
+correct = """A DARK RENDERING IS RECORDED BESIDE THE LIGHT ONE and both have to be looked at.
+The canvas gets none of CSS's help: its palette is a second table in
+web/js/chart.js, chosen and validated against the dark surface separately, so
+it can be wrong in ways the light one is not. What to check is the same in both
+— every claim above — plus one thing only the dark picture can show: nothing in
+the frame should be a light block. A literal light fill that never followed the
+scheme reads as a hole burned in the page.
+
+the finding line names the 95th’s hump, its dip and the rise after, with the
+value and lead of each; where there is no hump — on Ap — it reports how far the
+fan opens between the shortest lead and the longest instead.
+
+FOUR curves of percentile change against lead, nested and never crossing: the
+99th is the topmost everywhere and the 50th the lowest, because they are
+quantiles of one sample and a crossing would mean they were read off different
+ones. They are four steps of ONE hue, light for the 50th to dark for the 99th,
+never four different colours — an ordered set drawn in categorical hues says
+the four are unrelated. The 95th is the heavy line. The horizontal axis ends at
+the last lead in the ladder and NOT at fifteen years: the ladder is geometric
+and its last rung is 13.54 years, and an axis that stopped exactly on fifteen
+would mean the ladder had been resampled to be tidy. The curves are measured,
+not fitted: at short leads they wobble rather than rising smoothly, and the
+95th stops being monotone altogether — it rises to 116 sfu at 4.08 years, falls
+to 64 at 10.03, and rises again, which is the eleven-year cycle showing
+through. The four never cross: they are quantiles of one sorted sample at each
+lead, so a crossing is the sample having been rebuilt per percentile. A smooth monotone curve means something has
+been fitted. Every line FADES toward the long leads, because the pair count
+falls away and a line of constant weight would claim the far end is as well
+known as the near one. THE FAN IS FILLED between the 50th and the 99th, in the published
+percentile's own hue and under all four lines. That area is what choosing a
+percentile costs, and it must OPEN with the lead: a fill of roughly constant
+width means the percentiles are not spreading and something has been fitted.
+The fill carries no legend entry — it is the spread of the family the four
+lines are, not a fifth quantity.
+
+TWO NOTES SIT ON THE 95TH, at its mid-lead hump and its late dip, naming them
+as half a solar cycle and a full one. They are found by searching the curve
+between 3 and 6 years and between 9 and 12 — never typed — so a label cannot
+drift from the point under it, and they are drawn ONLY where the hump is
+actually higher than the late maximum. On Ap, where it is not, there are no
+notes and that is correct rather than missing.
+
+Splitting by cycle replaces the four with one curve per
+cycle, at the 95th."""
 # A person looked at panels/reference/predict.png and agreed the picture
 # is right. That is what makes check three mean anything: the reference is the
 # claim, and without a name against it the check only proves the chart has not
 # changed since a machine drew it.
-confirmed_by = "A. Rai / 2026-09-15 (against the pre-move picture; content unchanged, canvas resized 2026-09-16, not yet re-looked)"
+# NOT CONFIRMED. The reference was re-recorded on 2026-09-18 against a
+# picture whose CONTENT changed, not just its size: the growth view now draws FOUR percentiles as an ordinal ramp instead of one at a time, always out to the full lead ladder; the percentile and span controls are gone.
+# The previous signature was against a different chart and carrying it
+# forward would make check three prove only that a machine has not
+# changed its mind. It needs a person to look at
+# panels/reference/predict.png and put their name here.
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting a look at BOTH pictures. Every figure gained an answer line above the chart, a finding line inside it, and a second rendering in the dark scheme — see `correct` above for what to check in each"
+# Check four drives this panel: a brush, a key click, and the buttons that undo
+# them. It is declared rather than inferred so a panel that deliberately offers
+# no interaction does not fail a check for not having one.
+interactive = true
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.
@@ -43,16 +88,6 @@ ready = """(async () => {
 name = "v"
 drive = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'ap'; s.dispatchEvent(new Event('change')); })()"
 why = """the two drivers have different units and different spreads; one curve for both is a chart ignoring the variable"""
-
-[[input]]
-name = "q"
-drive = "(() => { const s = document.querySelector('.sw-opt[data-k=q]'); if (!s) throw new Error('no q control'); s.value = '0.5'; s.dispatchEvent(new Event('change')); })()"
-why = """the median change and the 95th percentile are far apart — a curve that does not drop when the percentile does is not reading it"""
-
-[[input]]
-name = "span"
-drive = "(() => { const s = document.querySelector('.sw-opt[data-k=span]'); if (!s) throw new Error('no span control'); s.value = '5478'; s.dispatchEvent(new Event('change')); })()"
-why = """the span is the horizontal extent and the curve must reach it"""
 
 [[input]]
 name = "by"

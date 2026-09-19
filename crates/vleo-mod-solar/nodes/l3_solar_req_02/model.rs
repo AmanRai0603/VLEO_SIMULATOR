@@ -38,7 +38,7 @@ pub fn evaluate() -> Result<Ratio, Fault> {
     // generated · a declared value, converted from the unit it was written in
     let declared: Ratio = match Ratio::from_unit(350.0, Unit::One) {
         Some(q) => q,
-        None => return Err(Fault::Degenerate { node: NODE_ID, field: "F107_req_day", reason: "the declared unit does not match the declared type" }),
+        None => return Err(Fault::Degenerate { node: NODE_ID, field: "F107_req_short", reason: "the declared unit does not match the declared type" }),
     };
 
     // generated · the declared domain of this node's own answer. The
@@ -46,13 +46,13 @@ pub fn evaluate() -> Result<Ratio, Fault> {
     // written down gets deleted by the next person who finds it awkward.
     let answer: Ratio = declared;
     if !answer.is_finite() {
-        return Err(Fault::Degenerate { node: NODE_ID, field: "F107_req_day", reason: "the computation produced a value that is not a number" });
+        return Err(Fault::Degenerate { node: NODE_ID, field: "F107_req_short", reason: "the computation produced a value that is not a number" });
     }
     if answer.get() < 60.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_req_day", value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement" });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_req_short", value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement" });
     }
     if answer.get() > 400.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_req_day", value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable" });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "F107_req_short", value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable" });
     }
     Ok(answer)
 }

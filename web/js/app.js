@@ -182,6 +182,19 @@ function wire() {
     draw();
   };
   $('#collapse-all').onclick = () => { S.expanded = new Set([layerRoot()]); resetScroll(); draw(); };
+  // Retired rows, on demand. The count is drawn on the button rather than left
+  // to be discovered, because the useful fact is how many there are: a
+  // subsystem with nine retired rows has a history, one with none does not.
+  {
+    const b = $('#show-retired');
+    const paint = () => {
+      const n = S.rows.filter(r => r.state === 'deprecated').length;
+      b.textContent = (S.showRetired ? '▾ ' : '▸ ') + n + ' retired row' + (n === 1 ? '' : 's');
+      b.classList.toggle('sel', S.showRetired);
+    };
+    b.onclick = () => { S.showRetired = !S.showRetired; paint(); resetScroll(); draw(); };
+    paint();
+  }
   $('#howto').onclick = () => { $('#howto-panel').hidden = !$('#howto-panel').hidden; };
   $('#howto-close').onclick = () => { $('#howto-panel').hidden = true; };
 

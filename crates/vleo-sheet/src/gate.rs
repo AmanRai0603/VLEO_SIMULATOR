@@ -509,6 +509,79 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         Check::fail("sense-applied", disagree.join(", "))
     });
 
+    // 7f — a row that returns its one input unchanged is not a row.
+    //
+    // Five achieved rows in the solar subsystem had bodies that read, in full,
+    // `let ach = conclusion;`. Each produced the same number as the row beneath
+    // it under every perturbation the tree allows -- it WAS that row, under a
+    // second name. A reader met the same answer twice with nothing to tell them
+    // which to believe, and the closure those rows were meant to be half of did
+    // not exist, because nothing read the requirement.
+    //
+    // Three exemptions, each for a relay that is doing real work.
+    //
+    // A CROSSING relays without computing because that is precisely its job,
+    // and §20.3 says so.
+    //
+    // A relay ACROSS A LAYER is the receiving layer naming the thing in its own
+    // vocabulary: sys_space_environment_kp is layer 2's word for a member of
+    // the solar driver set, and without it every layer-2 consumer would reach
+    // into a subsystem by its internal member names -- which is the reaching-in
+    // the crossing rule exists to forbid. Same number, different vocabulary,
+    // and the vocabulary is the point.
+    //
+    // A RETIRED row is not asked to justify itself. It is on its way out, and
+    // being a relay is usually why.
+    //
+    // Everything else earns its place by producing a number the tree does not
+    // already hold.
+    let identity = {
+        let body: String = holes.values().cloned().collect::<Vec<_>>().join("\n");
+        let mut found = None;
+        for line in body.lines() {
+            let t = line.trim().trim_end_matches(';');
+            if t.starts_with("//") || !t.starts_with("let ") {
+                continue;
+            }
+            // `let <name>: <Type> = <rhs>` with nothing done to the right-hand
+            // side, where the right-hand side is one of this row's own inputs.
+            let Some((_, rhs)) = t.split_once('=') else {
+                continue;
+            };
+            let rhs = rhs.trim();
+            if sh.inputs.iter().any(|i| i.binding == rhs) && sh.inputs.len() == 1 {
+                found = Some(rhs.to_string());
+                break;
+            }
+        }
+        found
+    };
+    let same_layer = |binding: &str| {
+        sh.inputs
+            .iter()
+            .find(|i| i.binding == binding)
+            .and_then(|i| tree.sheets.get(producer_of(&i.var)))
+            .is_some_and(|p| p.layer == sh.layer)
+    };
+    out.push(match identity {
+        Some(ref binding)
+            if sh.crosses_to.trim().is_empty()
+                && sh.state != "deprecated"
+                && same_layer(binding) =>
+        {
+            Check::fail(
+                "no-identity",
+                format!(
+                "this row's answer is `{binding}` unchanged, and `{binding}` is its only input — \
+                 so it publishes a number the tree already has under another name. Give it \
+                 something to compute, or let its consumers read the producer directly. Only a \
+                 crossing may relay without computing"
+                ),
+            )
+        }
+        _ => Check::pass("no-identity"),
+    });
+
     // 8 — fixture provenance. The one rule the evidence model rests on.
     let mut badfx = Vec::new();
     for f in &sh.fixtures {
@@ -850,6 +923,35 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
         Check::pass("V14 one row per place")
     } else {
         Check::fail("V14 one row per place", clashes.join(", "))
+    });
+
+    // V15 — no two rows in one layer group carry the same label.
+    //
+    // The tree draws the label and nothing else. Two rows sharing one are two
+    // identical lines a reader has to click to tell apart, and the required and
+    // achieved halves of a closure are exactly the pair most likely to collide:
+    // they ask about the same quantity on purpose. Five such pairs sat in the
+    // solar layer — "Ap, sustained" twice, "F10.7, single day" twice — and the
+    // only way to know which was the requirement was to open both.
+    //
+    // Scoped to the group rather than the whole tree, because the same short
+    // label under two different subsystems is read with its parent and is not
+    // ambiguous; within one list it is.
+    let mut lbl: BTreeMap<(&str, &str), Vec<&str>> = BTreeMap::new();
+    for sh in tree.ordered() {
+        lbl.entry((sh.parent.as_str(), sh.label.as_str()))
+            .or_default()
+            .push(sh.id.as_str());
+    }
+    let twins: Vec<String> = lbl
+        .iter()
+        .filter(|(_, ids)| ids.len() > 1)
+        .map(|((p, l), ids)| format!("{p} has \"{l}\" on {}", ids.join(" and ")))
+        .collect();
+    out.push(if twins.is_empty() {
+        Check::pass("V15 one label per row in a group")
+    } else {
+        Check::fail("V15 one label per row in a group", twins.join(", "))
     });
 
     // V13 — the browser face offers only rows it can actually answer.

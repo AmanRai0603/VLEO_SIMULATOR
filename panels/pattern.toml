@@ -2,25 +2,71 @@ id = "pattern"
 label = "Pattern — recurrence at the solar rotation"
 module = "web/js/solar.js"
 mount = "canvas.sw-panel"
-draws = """The autocorrelation of the detrended record against lag in days, out to the
-selected maximum, with the rotation peak and its harmonics where they fall. The
-second view leaves the autocorrelation and draws spike size against timing
-instead."""
-correct = """In the recurrence view: one curve starting at lag 1 and decaying, oscillating
-rather than falling smoothly, with its first local maximum MARKED and weaker
-repeats near the multiples. The mark reads 26 days, not 27: the nominal synodic
-rotation is 27 and the record's own autocorrelation peaks at 26, which is what
-sw_recurrence_lag publishes and a discrepancy a reviewer should weigh rather
-than round away. A panel that marked 27 here would be agreeing with the
-textbook instead of with the record. The curve stays within -1 and 1 everywhere, because it is a
-correlation. The horizontal axis ends at the selected maximum lag and the
-curve reaches it. In the spike view the picture is a scatter rather than a
-curve, and no autocorrelation axis remains."""
+draws = """The autocorrelation of the detrended record against lag in days, out to 200,
+for three detrend windows at once — 365 days heavy, 181 and 731 light — with the
+rotation peak and its first two harmonics marked, and a dashed Bartlett 95 per
+cent band that widens with lag. The second view leaves the autocorrelation and
+draws spike size against timing instead."""
+correct = """A DARK RENDERING IS RECORDED BESIDE THE LIGHT ONE and both have to be looked at.
+The canvas gets none of CSS's help: its palette is a second table in
+web/js/chart.js, chosen and validated against the dark surface separately, so
+it can be wrong in ways the light one is not. What to check is the same in both
+— every claim above — plus one thing only the dark picture can show: nothing in
+the frame should be a light block. A literal light fill that never followed the
+scheme reads as a hole burned in the page.
+
+the finding line reads "the 731-day curve sits above the 365-day one at 182 of the
+200 lags, and the 365 curve is outside the band at N of them". Both counts are
+made at draw time — 182 is not typed anywhere — and the first is this view's own
+claim above, now countable rather than asserted.
+
+THE 365-DAY CURVE IS THE ONLY ONE AT FULL CONTRAST. It is the window
+sw_recurrence_lag and sw_recurrence_strength were measured under, and the one
+the band and all three peak marks are computed on; 181 and 731 are drawn at
+half contrast because their job is to show that the published number is a
+CHOICE. All three stay readable — the 731-above-365 claim below is checked by
+looking.
+
+In the recurrence view: THREE curves, one per detrend window, all starting at
+lag 1 and decaying, oscillating rather than falling smoothly, with weaker
+repeats near the multiples. The 365-day curve is the heavy one and the 731-day
+curve sits ABOVE it at 182 of the 200 lags — a longer detrend window calls less
+of the record trend, so more low-frequency signal survives into the residual and
+every correlation is higher. A picture where 731 sits below 365 through the
+rotation band has the two windows crossed. Three NOTES, not three rules: the first local maximum and its second and third
+harmonics, each a dot on the 365 curve with a leader to a label. The second and
+third carry the period they IMPLY — the lag divided by 2 and by 3 — and both
+must read about 27.0 days per cycle. That division is the argument of this
+view, and it was a sentence underneath a frame where the three marks said only
+where they were. Full-height dashed rules here are the previous form. The first reads 26
+days, not 27: the nominal synodic rotation is 27 and the record's own
+autocorrelation peaks at 26, which is what sw_recurrence_lag publishes and a
+discrepancy a reviewer should weigh rather than round away. A panel that marked
+27 here would be agreeing with the textbook instead of with the record. Every
+curve stays within -1 and 1, because they are correlations. A dashed grey band
+sits symmetrically about zero and WIDENS with lag; a band of constant width is
+the naive white-noise interval and not what is claimed. That band is FILLED
+between its two edges, not merely outlined, so "inside the band" is an area a
+curve is visibly in or out of rather than a pair of dashed lines a reader holds
+in mind; the edges stay, because an area with no boundary invites reading its
+top as a maximum. The horizontal axis
+ends at 200 and the curves reach it. In the spike view the picture is a scatter
+rather than a curve, and no autocorrelation axis remains."""
 # A person looked at panels/reference/pattern.png and agreed the picture
 # is right. That is what makes check three mean anything: the reference is the
 # claim, and without a name against it the check only proves the chart has not
 # changed since a machine drew it.
-confirmed_by = "A. Rai / 2026-09-15 (against the pre-move picture; content unchanged, canvas resized 2026-09-16, not yet re-looked)"
+# NOT CONFIRMED. The reference was re-recorded on 2026-09-18 against a
+# picture whose CONTENT changed, not just its size: the recurrence view now draws THREE detrend windows instead of one, marks the third harmonic, and carries a Bartlett significance band; the detrend-window and max-lag controls are gone.
+# The previous signature was against a different chart and carrying it
+# forward would make check three prove only that a machine has not
+# changed its mind. It needs a person to look at
+# panels/reference/pattern.png and put their name here.
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting a look at BOTH pictures. Every figure gained an answer line above the chart, a finding line inside it, and a second rendering in the dark scheme — see `correct` above for what to check in each"
+# Check four drives this panel: a brush, a key click, and the buttons that undo
+# them. It is declared rather than inferred so a panel that deliberately offers
+# no interaction does not fail a check for not having one.
+interactive = true
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.
@@ -47,13 +93,3 @@ why = """the two views are different quantities on different axes; one picture f
 name = "v"
 drive = "(() => { const s = document.querySelector('.sw-opt[data-k=v]'); if (!s) throw new Error('no v control'); s.value = 'ap'; s.dispatchEvent(new Event('change')); })()"
 why = """Ap and F10.7 recur differently — Ap's rotation signal is the weaker of the two, so an identical curve for both is a chart drawing one of them twice"""
-
-[[input]]
-name = "w"
-drive = "(() => { const s = document.querySelector('.sw-opt[data-k=w]'); if (!s) throw new Error('no w control'); s.value = '731'; s.dispatchEvent(new Event('change')); })()"
-why = """the detrend window sets what counts as the trend and therefore what is left to correlate; a longer window leaves more low-frequency signal in"""
-
-[[input]]
-name = "lag"
-drive = "(() => { const s = document.querySelector('.sw-opt[data-k=lag]'); if (!s) throw new Error('no lag control'); s.value = '200'; s.dispatchEvent(new Event('change')); })()"
-why = """the maximum lag is the horizontal extent; the curve must reach further when it is raised"""

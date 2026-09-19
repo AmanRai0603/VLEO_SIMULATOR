@@ -174,6 +174,11 @@ function sweepControls(r) {
     return '<p class="muted">Nothing declared upstream of this node with a range, so there is no ' +
       'decision to sweep.</p>';
   }
+  // The order here is the graph's, which is not the order a reader wants: it
+  // puts whatever sorts first in front, and that is routinely a decision the
+  // answer does not depend on. wireSweep asks the engine which of these
+  // actually move this row and re-orders the list from the reply; until it
+  // comes back the list is alphabetical, which is at least stable.
   const def = ins.find(x => x.id === 'orbit_altitude') || ins[0];
   return '<h4>behaviour sweep</h4><div class="sweepctl">over <select class="sw-over">' +
     ins.map(x => '<option value="' + esc(x.id) + '"' + (x.id === def.id ? ' selected' : '') + '>' +
@@ -246,6 +251,51 @@ function wireSweep(host, r) {
   over.onchange = () => { const d = S.byId.get(over.value); from.value = d.lo; to.value = d.hi; check(); };
   from.oninput = to.oninput = check;
   check();
+
+  // WHICH OF THESE DECISIONS ACTUALLY MOVES THE ANSWER.
+  //
+  // Offering every declared row upstream is correct and insufficient. A term
+  // can be in the relation, be right, and still be inert: sw_central_expectation
+  // weights today's flux by exp(-lead/27), which at any mission lead is worth
+  // 0.0001 per cent, so env_f107 sorted to the front of this list and eleven
+  // rows in the solar subsystem opened with a sweep whose curve is a flat line.
+  // A reader sees that and concludes the tool is broken.
+  //
+  // The engine is the only thing that knows, so it is asked. Each decision is
+  // evaluated at both ends of its own declared range and the span of the answer
+  // comes back; the list is re-ordered most-moving first and the ones that move
+  // nothing say so in their own label rather than being hidden. Hiding them
+  // would be worse: that a decision does not reach this row is a fact about the
+  // design, and it is often the surprising one.
+  (async () => {
+    let lv;
+    try {
+      lv = await (await fetch('/v1/levers?node=' + encodeURIComponent(r.id) +
+        '&case=' + encodeURIComponent(S.engineCase) + '&mode=branch')).json();
+    } catch (e) { return; }
+    if (!lv || !lv.ok || !lv.levers || !lv.levers.length) return;
+    const keep = lv.levers.filter(l => S.byId.has(l.id));
+    if (!keep.length) return;
+    const pct = v => v >= 0.1 ? Math.round(v * 100) + '%' :
+      v >= 0.001 ? (v * 100).toFixed(2) + '%' : v > 0 ? '<0.01%' : 'nothing';
+    over.innerHTML = keep.map(l => {
+      const tag = l.span === null ? ' — cannot be swept: ' + (l.why || 'refused') :
+        ' — moves this answer by ' + pct(l.span);
+      return '<option value="' + esc(l.id) + '">' + esc(l.id) + esc(tag) + '</option>';
+    }).join('');
+    // Lead with the decision that moves the answer most. If none of them move
+    // it, the first is as good as any and the label already says so.
+    over.value = keep[0].id;
+    const d0 = S.byId.get(over.value);
+    from.value = d0.lo; to.value = d0.hi;
+    check();
+    const dead = keep.filter(l => l.span === 0).length;
+    if (dead) {
+      $('.sw-note', host).textContent = dead + ' of ' + keep.length +
+        ' decisions upstream of this row do not move its answer at all. They are ' +
+        'still listed, because that is a fact about the design and not an omission.';
+    }
+  })();
   go2.onclick = async () => {
     const p = new URLSearchParams({
       node: r.id, over: over.value, from: from.value, to: to.value,
@@ -337,10 +387,10 @@ function plot(host, res) {
   if (markY !== null) {
     const y = py(markY);
     ctx.save();
-    ctx.strokeStyle = '#8a3ffc'; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = '#8f43e0'; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]);
     ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(W - R, y); ctx.stroke();
     ctx.restore();
-    ctx.fillStyle = '#8a3ffc'; ctx.font = '10px ui-monospace, monospace';
+    ctx.fillStyle = '#8f43e0'; ctx.font = '10px ui-monospace, monospace';
     ctx.fillText(markRow.id + ' = ' + fmt(markY), L + 4, y - 4);
     for (let i = 1; i < ys.length; i++) {
       const a = ys[i - 1], b = ys[i];
@@ -349,7 +399,7 @@ function plot(host, res) {
         crossing = xs[i - 1] + t * (xs[i] - xs[i - 1]);
         const cx = px(crossing);
         ctx.save();
-        ctx.strokeStyle = '#8a3ffc'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
+        ctx.strokeStyle = '#8f43e0'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
         ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(cx, H - B); ctx.stroke();
         ctx.restore();
         break;

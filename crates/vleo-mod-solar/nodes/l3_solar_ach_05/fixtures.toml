@@ -5,38 +5,35 @@
 # implementation, because a number worked out by the thing being
 # checked proves nothing.
 #
-# AN ACHIEVED ROW'S EVIDENCE IS THAT IT CHANGES NOTHING
+# A MARGIN'S EVIDENCE IS ARITHMETIC A PERSON CAN CHECK.
 #
-# There is no physics here. What can go wrong is that the restatement alters what
-# it carries — a stray factor, a unit conversion nobody asked for, a clamp
-# inherited from the wrong row — and the failure is invisible because both sides
-# look plausible. So every fixture is the identity, at a value taken from
-# somewhere real.
-#
-# The inputs are sw_ap_design_short's own fixture answers, so if that row's
-# numbers move these move with it and a divergence means the restatement started
-# computing.
+# There is no physics in this row. It reads two numbers the tree already
+# publishes and returns (required - achieved) / required, so every fixture
+# SUPPLIES both sides and states the quotient worked out by hand. Two of the
+# three are the cases that catch a sign error, which is the only interesting
+# way this row can be wrong: on the bound the margin is zero, and at twice
+# the bound it is -1. A row applying the sense backwards passes neither.
 
 [[fixture]]
-label = "the single-day Ap this repository's own chain gives for the declared window crosses unchanged"
-expect = 41.6971614919
-tolerance = 1e-10
-provenance = "independent-derivation"
-source = "noaa_swpc"
-inputs = { conclusion = 41.6971614919 }
-
-[[fixture]]
-label = "the requirement's own ceiling crosses unchanged — the value at which this closure would sit exactly on its limit"
-expect = 80.0
+label = "the hot scenario worst day against the G3 operating bound"
+expect = 0.314036290151515
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { conclusion = 80.0 }
+inputs = { ach = 90.5472097000, req = 132.0000000 }
 
 [[fixture]]
-label = "the G3 storm level, well above this closure's ceiling, to show the row carries rather than clamps"
-expect = 132.0
+label = "exactly on the bound, where the margin must be zero and the closure still closed"
+expect = 0.000000000000
 tolerance = 1e-12
 provenance = "independent-derivation"
 source = "noaa_swpc"
-inputs = { conclusion = 132.0 }
+inputs = { ach = 132.0000000, req = 132.0000000 }
+
+[[fixture]]
+label = "twice the bound, where the margin must be -1 and the closure must fail"
+expect = -1.000000000000
+tolerance = 1e-12
+provenance = "independent-derivation"
+source = "noaa_swpc"
+inputs = { ach = 264.0000000, req = 132.0000000 }

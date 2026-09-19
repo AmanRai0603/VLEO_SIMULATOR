@@ -7,7 +7,15 @@ Every row at the selected layer, as nested boxes in document order. A row with
 no content yet is hatched rather than absent, because a tree that hides what is
 missing reports a design as further along than it is.
 """
-correct = """
+correct = """A DARK RENDERING IS RECORDED BESIDE THE LIGHT ONE and both have to be looked at.
+The canvas gets none of CSS's help: its palette is a second table in
+web/js/chart.js, chosen and validated against the dark surface separately, so
+it can be wrong in ways the light one is not. What to check is the same in both
+— every claim above — plus one thing only the dark picture can show: nothing in
+the frame should be a light block. A literal light fill that never followed the
+scheme reads as a hole burned in the page.
+
+
 One box per visible row. Children sit inside their parent's box and never
 overlap it. The order down the pane is the order the source wrote, not
 alphabetical. Hatching appears on exactly the rows the engine calls seeded.

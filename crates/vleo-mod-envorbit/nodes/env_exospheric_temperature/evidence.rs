@@ -46,6 +46,56 @@ fn fixture_2() {
     assert!(err <= 0.002, "solar maximum, storm: got {} want 1417.9, relative error {} exceeds the declared tolerance 0.002. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
 }
 
+/// the intercept, at the lowest activity the guard admits
+///
+/// Provenance: `independent-derivation`, source `jacchia1971`.
+#[test]
+fn fixture_3() {
+    let got = model::evaluate(Ratio::new(10.0), Ratio::new(10.0), Ratio::new(0.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 411.43);
+    assert!(err <= 1e-9, "the intercept, at the lowest activity the guard admits: got {} want 411.43, relative error {} exceeds the declared tolerance 1e-9. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+}
+
+/// the fast term, flux 50 above its own 81-day mean
+///
+/// Provenance: `independent-derivation`, source `jacchia1971`.
+#[test]
+fn fixture_4() {
+    let got = model::evaluate(Ratio::new(200.0), Ratio::new(150.0), Ratio::new(3.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 1014.6025661077);
+    assert!(err <= 1e-9, "the fast term, flux 50 above its own 81-day mean: got {} want 1014.6025661077, relative error {} exceeds the declared tolerance 1e-9. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+}
+
+/// the fast term, flux 50 below its own 81-day mean
+///
+/// Provenance: `independent-derivation`, source `jacchia1971`.
+#[test]
+fn fixture_5() {
+    let got = model::evaluate(Ratio::new(100.0), Ratio::new(150.0), Ratio::new(3.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 884.6025661077);
+    assert!(err <= 1e-9, "the fast term, flux 50 below its own 81-day mean: got {} want 884.6025661077, relative error {} exceeds the declared tolerance 1e-9. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+}
+
+/// the storm tail at Kp 7, where the exponential is 32.9 K of 228.9
+///
+/// Provenance: `independent-derivation`, source `jacchia1971`.
+#[test]
+fn fixture_6() {
+    let got = model::evaluate(Ratio::new(150.0), Ratio::new(150.0), Ratio::new(7.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 1093.8989947529);
+    assert!(err <= 1e-9, "the storm tail at Kp 7, where the exponential is 32.9 K of 228.9: got {} want 1093.8989947529, relative error {} exceeds the declared tolerance 1e-9. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+}
+
+/// the storm tail at Kp 8, one step up and 84.5 K rather than 28
+///
+/// Provenance: `independent-derivation`, source `jacchia1971`.
+#[test]
+fn fixture_7() {
+    let got = model::evaluate(Ratio::new(150.0), Ratio::new(150.0), Ratio::new(8.0)).expect("the fixture case must not be refused");
+    let err = relative_error(got.get(), 1178.4287396113);
+    assert!(err <= 1e-9, "the storm tail at Kp 8, one step up and 84.5 K rather than 28: got {} want 1178.4287396113, relative error {} exceeds the declared tolerance 1e-9. This is a physics disagreement, not a build failure — take it to the node owner. Do not widen the tolerance.", got.get(), err);
+}
+
 // ---- properties, generated from the declared domain ---------------------
 //
 // The fixture above checks one point. A wrong constant moves that point and

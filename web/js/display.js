@@ -26,7 +26,13 @@ export function buildDisplay() {
     // Siblings read in the order whoever wrote them put them in, not the order
     // their folders happen to sort in. The node table is folder-ordered because
     // generation has to be deterministic; the tree is not a directory listing.
+    // Retired rows are out of the tree by default. A deprecated row still
+    // answers and still has a page — that is the point of retiring rather than
+    // deleting — but it is not work in front of anyone, and leaving it in the
+    // list makes a subsystem look bigger and more repetitive than it is. The
+    // toolbar puts them back.
     const own  = (S.gnodes.get(gid) || []).slice()
+      .filter(i => S.showRetired || S.rows[i].state !== 'deprecated')
       .sort((a, b) => (S.rows[a].order - S.rows[b].order) || (a - b));
     const kids = (S.gkids.get(gid) || []).filter(k => caseOk(S.G.get(k)))
       .sort((a, b) => (S.G.get(a).order - S.G.get(b).order) || a.localeCompare(b));

@@ -9,7 +9,7 @@
 'use strict';
 
 import { $, esc } from './dom.js';
-import { S, subtreeNodes, isSeeded } from './state.js';
+import { S, subtreeNodes, isSeeded, isDeprecated } from './state.js';
 import { pillClass, ancestorAt } from './display.js';
 
 export function drawTree(disp, rel) {
@@ -33,10 +33,13 @@ export function drawTree(disp, rel) {
     const tri = d.kind === 'group' && d.hasKids
       ? '<span class="tri">' + (d.open ? '▾' : '▸') + '</span>' : '';
     const seeded = d.kind === 'node' && isSeeded(d.row);
-    const txt = '<span class="txt' + (seeded ? ' seeded' : '') + '">' + esc(d.label) + '</span>';
+    const retired = d.kind === 'node' && isDeprecated(d.row);
+    const txt = '<span class="txt' + (seeded ? ' seeded' : '') + (retired ? ' retired' : '') +
+      '">' + esc(d.label) + '</span>';
     const n = d.kind === 'group' && !d.open ? '<span class="tri">' + d.members.length + '</span>' : '';
     const title = d.kind === 'node'
-      ? d.row.id + (d.row.question ? ' — ' + d.row.question : ' — seeded, not yet specified')
+      ? d.row.id + (retired ? ' — DEPRECATED: this row still answers, and nothing should read it.' : '') +
+        (d.row.question ? ' — ' + d.row.question : ' — seeded, not yet specified')
       : d.label + ' — ' + subtreeNodes(d.id).length + ' rows, owner ' + d.owner;
     return '<div class="trow" data-i="' + i + '">' +
       '<span class="gutter">' + g + '</span>' +

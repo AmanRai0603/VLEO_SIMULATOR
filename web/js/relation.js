@@ -23,7 +23,72 @@
 
 import { $, $$, esc, fmt } from './dom.js';
 import { S, reachFrom, isSeeded } from './state.js';
-import { drawChart, attachHover, INK } from './chart.js';
+import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
+  watchScheme, INK } from './chart.js';
+
+// THE SAME VIEW STATE THE PANELS HAVE. These are the generated per-node
+// figures — one for every row with a relation, which is most of the tree — and
+// until now they had the crosshair and the arrow keys and nothing else. A
+// relation swept over a decade of its domain has the same problem `design` had:
+// the part worth looking at is a sliver of the axis.
+const RVIEWS = new WeakMap();
+const rview = host => {
+  let v = RVIEWS.get(host);
+  if (!v) { v = { zoom: null, hidden: new Set(), pinned: null }; RVIEWS.set(host, v); }
+  return v;
+};
+
+/**
+ * The strip under a relation figure: what has been done to it, and the way out.
+ *
+ * Deliberately smaller than the panels': there is no key to click here — the
+ * three series are one dataset shown three ways — and no view worth pinning.
+ * What it carries is the window, the way back, and the numbers.
+ */
+function relStrip(host, shown, view, again) {
+  const el = $('.rel-view', host);
+  if (!el) return;
+  const z = view.zoom || {};
+  el.innerHTML = (z.x
+    ? '<span class="sw-vs">showing ' + esc(fmt(z.x[0])) + ' to ' + esc(fmt(z.x[1])) +
+      '</span><button class="ctl rel-unzoom" type="button">the whole domain</button>'
+    : '') +
+    '<button class="ctl rel-copy" type="button">copy as TSV</button>' +
+    '<span class="sw-copied rel-copied"></span>' +
+    '<span class="sw-hint muted">drag across the plot to zoom, double-click or Escape ' +
+    'to undo</span>';
+  const un = $('.rel-unzoom', el);
+  if (un) un.onclick = () => { view.zoom = null; again(); };
+  const cp = $('.rel-copy', el), said = $('.rel-copied', el);
+  cp.onclick = async () => {
+    let okay = true;
+    try {
+      await navigator.clipboard.writeText(tableTsv(shown));
+    } catch (e) { okay = false; }
+    if (said) {
+      said.textContent = okay ? 'copied' : 'could not reach the clipboard';
+      setTimeout(() => { said.textContent = ''; }, 2000);
+    }
+  };
+}
+
+// THESE FIGURES REDRAW ON A THEME CHANGE TOO. The panels have their own
+// registry for it; these are the generated per-node relation and domain
+// pictures, drawn once and then left, so without this they would keep the light
+// palette on a dark page. Same shape as the panels': a redraw is dropped as
+// soon as its host leaves the document, because a listener holding a detached
+// node is a leak with a picture on it.
+const LIVE = new Set();
+const keepLive = (host, fn) => {
+  fn._host = host;
+  LIVE.add(fn);
+};
+watchScheme(() => {
+  for (const fn of [...LIVE]) {
+    if (fn._host && fn._host.isConnected) fn();
+    else LIVE.delete(fn);
+  }
+});
 
 export async function mountRelation(host) {
   const id = host.dataset.node;
@@ -62,6 +127,12 @@ export async function mountRelation(host) {
     ' <input class="rel-scrub" type="range" min="0" max="100" value="100" step="1">' +
     ' <span class="muted rel-read"></span></div>' +
     '<canvas class="plot rel-plot" width="900" height="320"></canvas>' +
+    '<div class="sw-view rel-view"></div>' +
+    // The relation as numbers. Same argument as the panels: the readout is
+    // reached by pointing or by stepping, and a number somebody wants to quote
+    // should be selectable rather than screenshotted.
+    '<details class="sw-table"><summary>the numbers behind this picture</summary>' +
+    '<div class="sw-table-body"></div></details>' +
     '<div class="rel-note muted">asking the engine…</div>';
 
   const over = $('.rel-over', host);
@@ -79,7 +150,7 @@ export async function mountRelation(host) {
       series: [
         // The whole relation, faint, so the walk is seen against where it is
         // going rather than only where it has been.
-        { name: '', kind: 'line', x: xs, y: ys, colour: '#e3dccd', width: 1.2 },
+        { name: '', kind: 'line', x: xs, y: ys, colour: INK.grid, width: 1.2 },
         { name: '', kind: 'line', x: xs.slice(0, n), y: ys.slice(0, n), width: 2.2 },
         { name: '', kind: 'dots', x: [xs[n - 1]], y: [ys[n - 1]], width: 4, alpha: 1 },
       ],
@@ -90,8 +161,21 @@ export async function mountRelation(host) {
   const redraw = () => {
     if (!res || !res.ok) return;
     const cv = $('.rel-plot', host);
-    drawChart(cv, spec());
-    attachHover(cv);
+    const view = rview(host);
+    const built = spec();
+    const shown = viewSpec(built, view);
+    drawChart(cv, shown);
+    attachHover(cv, {
+      onBrush: win => {
+        if (!win.x) return;
+        const inside = built.series[0].x.filter(v => v >= win.x[0] && v <= win.x[1]);
+        if (new Set(inside).size < 2) return;
+        view.zoom = { ...(view.zoom || {}), x: win.x };
+        redraw();
+      },
+      onReset: () => { if (viewIsOn(view)) { view.zoom = null; redraw(); } },
+    });
+    relStrip(host, shown, view, redraw);
     const xs = res.x.map(v => v / res.x_factor);
     const ys = res.y.map(v => v / res.y_factor);
     const n = Math.max(1, Math.round((+scrub.value / 100) * xs.length));
@@ -113,7 +197,20 @@ export async function mountRelation(host) {
       return;
     }
     scrub.value = 100;
+    keepLive(host, redraw);
     redraw();
+    // The WHOLE relation, once, and not the walk. The three series the chart
+    // draws are one dataset shown three ways — faint behind, solid up to the
+    // scrub, a dot at the head — so tabling all three would print the same
+    // column three times. And it is built here rather than in redraw() because
+    // the numbers do not change while the walk runs, only how much of them is
+    // painted.
+    $('.sw-table-body', host).innerHTML = tableFor({
+      x: { label: res.x_id + '  [' + res.x_unit + ']' },
+      y: { label: res.y_id + '  [' + res.y_unit + ']' },
+      series: [{ name: '', kind: 'line',
+        x: res.x.map(v => v / res.x_factor), y: res.y.map(v => v / res.y_factor) }],
+    });
     const lo = +host.dataset.lo, hi = +host.dataset.hi;
     const ys = res.y.map(v => v / res.y_factor);
     const span = Math.max(...ys) - Math.min(...ys);
@@ -169,8 +266,8 @@ function guardMarks(host, res) {
   const span = (y1 - y0) || Math.abs(y1) || 1;
   const near = v => v >= y0 - 2 * span && v <= y1 + 2 * span;
   const out = [];
-  if (near(lo)) out.push({ axis: 'y', at: lo, label: 'refuses below ' + fmt(lo), colour: '#c1440e' });
-  if (near(hi)) out.push({ axis: 'y', at: hi, label: 'refuses above ' + fmt(hi), colour: '#c1440e' });
+  if (near(lo)) out.push({ axis: 'y', at: lo, label: 'refuses below ' + fmt(lo), colour: INK.bound });
+  if (near(hi)) out.push({ axis: 'y', at: hi, label: 'refuses above ' + fmt(hi), colour: INK.bound });
   return out;
 }
 
@@ -207,24 +304,31 @@ async function declaredValue(host, r) {
   }
   const lo = r.lo, hi = r.hi;
   const frac = (v - lo) / (hi - lo);
+  // NO TABLE UNDER THIS ONE, deliberately. The picture is a bar of 101 identical
+  // zeros with one mark on it, so a table of it would be 101 rows saying nothing
+  // — and the three numbers it actually shows, the value and both bounds, are in
+  // the note below in words. That is the equivalent a reader needs; a table here
+  // would be the form of one without the content.
   host.innerHTML =
     '<canvas class="plot rel-plot" width="900" height="200"></canvas>' +
     '<div class="rel-note muted"></div>';
   const xs = [], ys = [];
   for (let i = 0; i <= 100; i++) { xs.push(lo + (hi - lo) * i / 100); ys.push(0); }
-  drawChart($('.rel-plot', host), {
+  const paint = () => drawChart($('.rel-plot', host), {
     x: { label: r.id + '  [' + (r.unit === '-' ? 'dimensionless' : r.unit) + ']', min: lo, max: hi },
     y: { label: 'the declared domain', min: -1, max: 1, ticks: 2, fmt: () => '' },
     series: [
-      { name: '', kind: 'line', x: xs, y: ys, colour: '#e3dccd', width: 8 },
+      { name: '', kind: 'line', x: xs, y: ys, colour: INK.grid, width: 8 },
       { name: '', kind: 'dots', x: [v], y: [0], width: 7, alpha: 1 },
     ],
     marks: [
-      { axis: 'x', at: lo, label: 'refuses below ' + fmt(lo), colour: '#c1440e' },
-      { axis: 'x', at: hi, label: 'refuses above ' + fmt(hi), colour: '#c1440e' },
+      { axis: 'x', at: lo, label: 'refuses below ' + fmt(lo), colour: INK.bound },
+      { axis: 'x', at: hi, label: 'refuses above ' + fmt(hi), colour: INK.bound },
       { axis: 'x', at: v, label: r.symbol + ' = ' + fmt(v) },
     ],
   });
+  keepLive(host, paint);
+  paint();
   const pc = (frac * 100).toFixed(1);
   host.querySelector('.rel-note').innerHTML =
     'A declared value has no relation to walk: it is a number a person chose, and this is where ' +

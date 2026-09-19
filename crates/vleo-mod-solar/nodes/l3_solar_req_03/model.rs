@@ -36,7 +36,7 @@ pub fn evaluate() -> Result<Ratio, Fault> {
     // generated · a declared value, converted from the unit it was written in
     let declared: Ratio = match Ratio::from_unit(207.0, Unit::One) {
         Some(q) => q,
-        None => return Err(Fault::Degenerate { node: NODE_ID, field: "Ap_req", reason: "the declared unit does not match the declared type" }),
+        None => return Err(Fault::Degenerate { node: NODE_ID, field: "Ap_req_survive", reason: "the declared unit does not match the declared type" }),
     };
 
     // generated · the declared domain of this node's own answer. The
@@ -44,13 +44,13 @@ pub fn evaluate() -> Result<Ratio, Fault> {
     // written down gets deleted by the next person who finds it awkward.
     let answer: Ratio = declared;
     if !answer.is_finite() {
-        return Err(Fault::Degenerate { node: NODE_ID, field: "Ap_req", reason: "the computation produced a value that is not a number" });
+        return Err(Fault::Degenerate { node: NODE_ID, field: "Ap_req_survive", reason: "the computation produced a value that is not a number" });
     }
     if answer.get() < 20.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "Ap_req", value: answer.get(), bound: 20.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "below 20 the requirement would be under the level at which the record's storms begin — the median day is Ap 7 and sw_storm_return_level's own floor is 20 — so a requirement there could not be met by any mission and is not a requirement" });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "Ap_req_survive", value: answer.get(), bound: 20.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "below 20 the requirement would be under the level at which the record's storms begin — the median day is Ap 7 and sw_storm_return_level's own floor is 20 — so a requirement there could not be met by any mission and is not a requirement" });
     }
     if answer.get() > 400.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "Ap_req", value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all" });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "Ap_req_survive", value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "400 is the top of the published ap table, the value at Kp 9. A requirement above it is off the scale the G levels are defined on and could not be expressed as a G level at all" });
     }
     Ok(answer)
 }

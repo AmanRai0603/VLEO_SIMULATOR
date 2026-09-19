@@ -22,12 +22,120 @@ state = "published"
 text = "How hot is the upper thermosphere today, given the Sun and the geomagnetic field?"
 
 [maths]
+# A person has NOT read this relation against Jacchia 1971 yet. The theory tab
+# below derives it; somebody has to check that derivation against the source and
+# put their name here. An agent may not supply mathematics, and an unsigned
+# relation is indistinguishable from one that did.
+confirmed_by = ""
 expression = "T_inf = 379 + 3.24*F10.7A + 1.3*(F10.7 - F10.7A) + 28*Kp + 0.03*exp(Kp)"
 source = "jacchia1971"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a
+# sentence here does not invalidate a generated artefact. The tab before this one
+# states the relation; this says why it is that relation, and the tab after it
+# shows what the machine made of it.
+[theory]
+why = """
+The thermosphere is heated from above and from the side, and those are different
+mechanisms on different timescales, so the temperature it settles at is a sum of
+two terms rather than a function of one driver.
+
+From above: solar extreme ultraviolet, absorbed at 100 to 200 km, is what sets
+the base level. EUV is not measured continuously from the ground, so a proxy
+stands in for it, and the 10.7 cm radio flux is the one with the longest
+uninterrupted record — it comes from the same active regions that emit the EUV
+without being the EUV. That proxy relationship is why every term here is a fitted
+coefficient and not a physical constant.
+
+From the side: geomagnetic activity drives currents in the auroral electrojets
+and the Joule dissipation of those currents deposits energy directly into the
+thermosphere at high latitude. Kp indexes that, and its effect is not linear in
+Kp because Kp is itself a quasi-logarithmic scale — which is why an exponential
+appears in a relation that is otherwise straight lines.
+
+`T_inf` is the asymptotic temperature the profile approaches with height, not the
+temperature anywhere in particular. It is the single number a Bates profile needs
+to give a temperature at every altitude, which is what `env::temperature` does
+with it next.
+"""
+reading = """
+It is a NIGHT-TIME MINIMUM in a global average: the coolest the thermosphere gets
+at that level of activity, with no time of day and no time of year in it. The
+diurnal bulge adds up to about 30 per cent at 14:00 local solar time, so a design
+sized on this number alone is sized on the quiet side of the day, and a vehicle in
+a dawn-dusk orbit and one in a noon-midnight orbit are given the same answer.
+
+It is also a FIT, over a record that ended in the 1960s and 70s. Every coefficient
+here was regressed against satellite drag data of that era, so the relation carries
+that era's instrumentation and that era's solar cycles. Later models — MSIS, DTM,
+JB2008 — exist because this one has known biases, and the reason to use it anyway
+is that its drivers are the three this tree computes and theirs are not.
+"""
+
+[[theory.step]]
+text = """
+Start from the base level with no Sun and no storm. 379 K is the intercept of the
+fit, and it is not a physical floor — the declared lower bound of 400 K is, because
+below that the Bates profile this feeds inverts.
+"""
+math = "T_inf(0, 0, 0) = 379 K"
+
+[[theory.step]]
+text = """
+Add the slow solar term. The 81-day centred mean of the 10.7 cm flux stands in for
+the EUV averaged over three solar rotations, which is the timescale the whole
+thermosphere equilibrates on. This is the dominant term: over the observed range of
+F10.7A it moves T_inf by about 900 K.
+"""
+math = "+ 3.24 * F10.7A"
+
+[[theory.step]]
+text = """
+Add the fast solar term, and note that it is a DEPARTURE and not a level. What
+enters is today's flux minus its own 81-day mean, so a day at its mean contributes
+nothing. The coefficient is smaller than the slow one — 1.3 against 3.24 — because
+the thermosphere cannot fully respond to a single day, and a relation that used one
+coefficient for both would be claiming it could.
+"""
+math = "+ 1.3 * (F10.7 - F10.7A)"
+
+[[theory.step]]
+text = """
+Add the geomagnetic term, in two parts because Kp is a quasi-logarithmic index. The
+linear part carries the ordinary response and the exponential carries the storm
+tail: at Kp 3 the exponential contributes 0.6 K of 84.6, and at Kp 7 it contributes
+32.9 K of 228.9. A relation with only the linear part would be right at quiet
+levels and would under-read every storm.
+"""
+math = "+ 28 * Kp + 0.03 * exp(Kp)"
 
 [[assumption]]
 text = "Night-time minimum, with no diurnal or seasonal term"
 fails_when = "the diurnal bulge adds up to 30% at 14:00 local solar time; a design sized on this value alone is sized on the quiet side"
+
+# WHAT THIS ROW IS FED, AS AGAINST WHAT THE RELATION ASKS FOR. The four below are
+# not defects in Jacchia 1971; they are defects in what this tree hands it, and
+# each one is a way this number is read as more than it is. See §30 A2.
+
+[[assumption]]
+text = "Kp is a THREE-HOURLY index and what reaches this row is a daily statistic"
+fails_when = "the two are treated as the same quantity. Jacchia's geomagnetic correction takes the Kp of an interval; the solar subsystem publishes a daily MEAN slot and a daily PEAK slot per scenario and they are different numbers — 3.832 against 5.198 at the hot sustained scenario. Fed through this relation that is 824.9 K against 867.2 K, and on the worst-day scenario it is 914.7 K against 1055.3 K, a 15 per cent difference in the quantity every density in this tree is built from. Nothing in the tree yet says which slot the design is driven by; §30 B1 is the row that would"
+
+[[assumption]]
+text = "The geomagnetic correction is applied with no lag"
+fails_when = "the timing of a storm matters rather than only its size. Jacchia applies the correction to Kp lagged by about a quarter of a day, because the energy deposited in the auroral zone takes hours to reach the altitudes and latitudes this is a temperature for. Applied instantaneously, a storm's heating arrives too early and leaves too early, and the peak is placed about six hours before it happens"
+
+[[assumption]]
+text = "F10.7 is the PREVIOUS day's flux in the source, and this reads the same day's"
+fails_when = "the fast term is read as a same-day response. The EUV that heated the thermosphere is yesterday's, which is why the source lags it; taking today's makes the departure term lead the temperature it is meant to explain by one day. Small on a monthly mean and not small on a single design day, which is exactly where the fast term is doing the work"
+
+[[assumption]]
+text = "No semiannual term, on a record that measures one"
+fails_when = "the answer is read as the same in March as in June. The thermosphere has a well-known semiannual density variation with maxima near the equinoxes, and this subsystem MEASURES it — sw_semiannual_amplitude, off the record's own day-of-year means, and the climate panel draws it with both equinoxes marked. This relation has no term for it, so the measurement exists in the tree and does not reach the temperature"
+
+[[assumption]]
+text = "These are the global night-time coefficients, and the source has variants"
+fails_when = "this is compared against another implementation of 'Jacchia 1971' and they disagree. The 1971 model is a family — different coefficient sets for the static diffusion tables, for the exospheric temperature, and for the geomagnetic correction above and below 350 km. Nothing here records which set these four coefficients are, so a disagreement cannot be traced to a variant rather than to a defect"
 
 [output]
 # The node's one answer. The variable id is the node id: one small

@@ -1,7 +1,7 @@
 <article class="node" data-node="l3_solar_req_02" data-sheet-hash="f07658" data-impl-hash="222325">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
-  <h2>F10.7, single day</h2>
+  <h2>Required — F10.7, single day</h2>
   <p class="ident"><code>l3_solar_req_02</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
 <div class="tabs" role="tablist">
@@ -59,34 +59,34 @@ the sustained hot level with the within-rotation daily excursion on top.
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
-<tr class="out"><td>out</td><td><code>F107_req_day</code></td><td>l3_solar_req_02</td><td>Ratio</td><td>-</td></tr>
+<tr class="out"><td>out</td><td><code>F107_req_short</code></td><td>l3_solar_req_02</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
-<p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
+<p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="l3_solar_ach_02">l3_solar_ach_02</a></p>
 </section>
 <section class="panel" data-panel="3">
 <p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
 <p>This is a declared value: <b>350</b> -, confirmed by <b>A. Rai / 2026-09-16</b>.</p>
 <h4>Pseudocode</h4>
 <pre class="pseudo"><code>function l3_solar_req_02() -> Ratio
-    F107_req_day ← 350          // declared, confirmed by A. Rai / 2026-09-16
+    F107_req_short ← 350          // declared, confirmed by A. Rai / 2026-09-16
 
     // a guard whose reason is not written down gets deleted
-    require F107_req_day ≥ 60
-    require F107_req_day ≤ 400
-    require F107_req_day is finite
+    require F107_req_short ≥ 60
+    require F107_req_short ≤ 400
+    require F107_req_short is finite
 
-    return F107_req_day
+    return F107_req_short
 </code></pre>
 <p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code>F107_req_day &ge; 60</code> — the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement</li>
-<li><code>F107_req_day &le; 400</code> — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable</li>
+<li><code>F107_req_short &ge; 60</code> — the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement</li>
+<li><code>F107_req_short &le; 400</code> — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="4">
-<div class="relation-host" data-node="l3_solar_req_02" data-lo="60" data-hi="400" data-symbol="F107_req_day">
+<div class="relation-host" data-node="l3_solar_req_02" data-lo="60" data-hi="400" data-symbol="F107_req_short">
 <p class="muted">asking the engine…</p>
 </div>
 </section>
@@ -132,7 +132,7 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
     // generated · a declared value, converted from the unit it was written in
     let declared: Ratio = match Ratio::from_unit(350.0, Unit::One) {
         Some(q) =&gt; q,
-        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_req_day&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
+        None =&gt; return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_req_short&quot;, reason: &quot;the declared unit does not match the declared type&quot; }),
     };
 
     // generated · the declared domain of this node's own answer. The
@@ -140,13 +140,13 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
     // written down gets deleted by the next person who finds it awkward.
     let answer: Ratio = declared;
     if !answer.is_finite() {
-        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_req_day&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
+        return Err(Fault::Degenerate { node: NODE_ID, field: &quot;F107_req_short&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
     }
     if answer.get() &lt; 60.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_req_day&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement&quot; });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_req_short&quot;, value: answer.get(), bound: 60.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement&quot; });
     }
     if answer.get() &gt; 400.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_req_day&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable&quot; });
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;F107_req_short&quot;, value: answer.get(), bound: 400.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable&quot; });
     }
     Ok(answer)
 }

@@ -12,7 +12,11 @@ tier = "A"
 criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 order = 1363
-state = "published"
+# RETIRED. Superseded by sw_exceedance_rate, which answers the same question
+# against the level the design actually commits to rather than against an
+# arbitrary Kp. The exceedance block is what the design panel draws; this is
+# read by nothing and drawn by nothing.
+state = "deprecated"
 
 # No migrated_from and no parity grid: an exceedance count over the record is a
 # statistic and not a closed form, and there is no MATLAB here to run. Same

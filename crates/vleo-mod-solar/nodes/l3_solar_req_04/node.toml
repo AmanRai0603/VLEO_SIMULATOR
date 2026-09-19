@@ -2,7 +2,7 @@
 # hand, and every other artefact here is generated from it. A hand edit
 # outside a numbered HOLE block in model.rs fails the regeneration diff.
 id = "l3_solar_req_04"
-label = "Ap, sustained"
+label = "Required — Ap, sustained"
 folder = "l3_solar_req_04"   # frozen at seed
 subsystem = "solar"
 parent = "l3_solar"

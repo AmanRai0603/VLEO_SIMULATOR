@@ -1,4 +1,4 @@
-<article class="node" data-node="sw_forecast_bias" data-sheet-hash="7e038d" data-impl-hash="d8e4d4">
+<article class="node" data-node="sw_forecast_bias" data-sheet-hash="979bae" data-impl-hash="d8e4d4">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Issued-outlook F10.7 bias</h2>
@@ -48,7 +48,7 @@
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr><td>in</td><td><code>lead</code></td><td><a class="xref" data-goto="sw_outlook_lead">sw_outlook_lead</a></td><td>Time</td><td>d</td></tr>
+<tr><td>in</td><td><code>lead</code></td><td><a class="xref" data-goto="sw_recurrence_lag">sw_recurrence_lag</a></td><td>Time</td><td>d</td></tr>
 <tr class="out"><td>out</td><td><code>B_f107</code></td><td>sw_forecast_bias</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
@@ -59,7 +59,7 @@
 </ol>
 <h4>Pseudocode</h4>
 <pre class="pseudo"><code>function sw_forecast_bias(lead: Time) -> Ratio
-    given lead from sw_outlook_lead
+    given lead from sw_recurrence_lag
     // read the measured mean signed F10.7 error of the issued outlook at this lead
     B_f107 ← step 1
 
@@ -116,7 +116,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &amp;str = &quot;sw_forecast_bias&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xfdb3c6344d7e038d;
+pub const SHEET_HASH: u64 = 0xc8d2f17093979bae;
 
 pub fn evaluate(lead: Time) -&gt; Result&lt;Ratio, Fault&gt; {
     // ---- HOLE 1 : read the measured mean signed F10.7 error of the issued outlook at this lead -&gt; Ratio

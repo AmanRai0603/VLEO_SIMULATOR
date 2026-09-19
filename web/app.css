@@ -176,6 +176,10 @@ main { padding: 1.1rem 2.5rem 3rem; }
 .pill .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 .pill .tri { color: inherit; opacity: .55; font-size: 9px; flex: none; }
 .pill .seeded { opacity: .55; font-style: italic; }
+/* Retired, not absent. A deprecated row is struck through rather than hidden:
+   its question was real and the decision to stop reading it is a fact worth
+   seeing, but nothing should mistake it for a live answer. */
+.pill .retired { opacity: .5; text-decoration: line-through; text-decoration-thickness: 1px; }
 
 /* Relation to the selection, carried in the fill. Solid = one hop, pale =
    further down the chain. */
@@ -304,6 +308,60 @@ dl.asm { font-size: 11.5px; }
 dl.asm dt { font-weight: 600; margin-top: .45rem; }
 dl.asm dd { margin: 0 0 0 1rem; color: var(--ink-2); }
 table.iface, table.fx { border-collapse: collapse; width: 100%; font-size: 11px; margin: .5rem 0; }
+/* THE ANSWER, BESIDE THE QUESTION. Large enough to be read before the chart is,
+   and the qualifier beside it in running weight so the number is what carries.
+   Empty where a panel has no single number, and it collapses rather than
+   leaving a gap. */
+/* AN EMPTY BLOCK IS NOT A FREE BLOCK, even at display:none. Adding a bare <p>
+   to panelBody moved three panels this change does not touch — predict by a
+   whole CSS pixel of canvas height, repeatability and segmentation by 5.3 and
+   2.5 per cent of their pixels — because the extra node shifts the layout the
+   canvas is measured against by a sub-pixel, and the canvas height is a
+   function of its measured width. Carrying `caption`, which the siblings
+   already carry, makes the empty case identical to having no node at all. */
+.sw-answer:empty { display: none; margin: 0; padding: 0; }
+.sw-answer { margin: .1rem 0 .35rem; line-height: 1.35; }
+.sw-answer b { font-size: 21px; font-weight: 600; color: var(--ink);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.sw-answer span { font-size: 11.5px; color: var(--ink-3); margin-left: .45rem; }
+
+/* WHAT THE POINTER CAN DO, WRITTEN DOWN. Drag-to-zoom and click-to-hide leave
+   no trace on the page, so this strip names the state the figure is in and
+   offers the way out of it — which is also the only path to either for a reader
+   without a mouse. It carries one hint line when nothing has been done, and
+   grows a button per thing that has. */
+.sw-view { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem;
+  margin: .1rem 0 .2rem; font-size: 10.5px; min-height: 1.35rem; }
+.sw-view .sw-vs { color: var(--ink-2); font: 10.5px var(--mono); }
+.sw-view .sw-hint { font-size: 10px; color: var(--ink-3); margin-left: auto;
+  text-align: right; }
+.sw-view button { font-size: 10px; padding: .1rem .4rem; }
+/* The copy control sits with the table it copies, not with the view strip: it
+   is about the numbers, and it is reachable only when they are open. */
+.sw-table-copy { display: flex; align-items: center; gap: .45rem; margin: .3rem 0; }
+.sw-table-copy button { font-size: 10px; padding: .1rem .4rem; }
+.sw-copied { font-size: 10px; color: var(--teal); }
+
+/* The numbers behind a figure. Closed by default — the picture is the point —
+   and scrollable, because a panel with two hundred lead points should not push
+   the next figure off the page to prove it has them. */
+.sw-table { margin: .35rem 0 .1rem; }
+.sw-table > summary { font-size: 10.5px; color: var(--ink-3); cursor: pointer; }
+.sw-table > summary:hover { color: var(--ink-2); }
+.sw-table-body { max-height: 260px; overflow: auto; }
+/* COLUMNS THAT HUG THEIR NUMBERS. Inheriting width:100% from table.fx spread
+   two columns across the whole panel, so "days in bin" sat halfway across the
+   page from the value under it and the eye had to travel a foot to pair them —
+   the same distance problem a legend off to the side has. At width:auto the
+   columns are as wide as their contents and the reader compares adjacent
+   numbers; the body scrolls in both directions if a wide one needs it. */
+table.chart-table { width: auto; min-width: 0; }
+table.chart-table td, table.chart-table th { font-variant-numeric: tabular-nums;
+  text-align: right; white-space: nowrap; }
+table.chart-table td:first-child, table.chart-table th:first-child { text-align: left;
+  padding-right: 1.25rem; }
+/* A focused chart says so, for a reader arriving by keyboard. */
+canvas.plot:focus { outline: 2px solid var(--ink-3); outline-offset: 2px; }
 table.iface th, table.fx th { text-align: left; font-size: 9.5px; text-transform: uppercase;
   letter-spacing: .07em; color: var(--ink-3); border-bottom: 1px solid var(--rule); padding: .3rem .5rem; }
 table.iface td, table.fx td { padding: .25rem .5rem; border-bottom: 1px solid var(--rule-2); }
@@ -369,8 +427,16 @@ h4 { font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
 .sweepctl input { width: 7rem; font: 11px var(--mono); border: 1px solid var(--rule);
   border-radius: 3px; padding: .18rem .35rem; }
 .sweepctl input.bad { border-color: #a4262c; background: #fdf5f4; }
-canvas.plot { border: 1px solid var(--rule-2); background: var(--card);
-  border-radius: 3px; margin-top: .6rem; max-width: 100%; }
+/* CONTENT-BOX, AGAINST THE SHEET'S OWN `* { box-sizing: border-box }`.
+   A canvas's width is its DRAWING AREA, and with border-box an explicit width
+   of 1180px gives a 1178px content box — so the backing store is stretched
+   across two pixels fewer than it was drawn for, which is a squash nobody asked
+   for. It only appeared when the figures started pinning their CSS size to
+   carry a device pixel ratio; before that the element took its size from the
+   width attribute and the border sat outside it, which is the behaviour this
+   restores. */
+canvas.plot { box-sizing: content-box; border: 1px solid var(--rule-2);
+  background: var(--card); border-radius: 3px; margin-top: .6rem; max-width: 100%; }
 
 footer { padding: 1rem 2.5rem 2.5rem; border-top: 1px solid var(--rule-2);
   color: var(--ink-3); font-size: 10.5px; }
@@ -465,3 +531,87 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
 .relation-host .rel-plot { width: 100%; max-width: 900px; height: auto; margin: 8px 0; }
 .relation-host .rel-scrub { vertical-align: middle; width: 220px; }
 .relation-host .rel-note { max-width: 900px; line-height: 1.5; font-size: 12px; }
+
+
+/* ---------------------------------------------------------------------------
+   DARK MODE LIVES AT THE END OF THE SHEET, AND THAT IS NOT TIDINESS.
+
+   It was written at the top, beside the tokens it overrides, and the token
+   overrides worked while every plain-selector one silently did not: at equal
+   specificity the LATER rule wins, and `.mcell.diag` is declared three hundred
+   lines below. The matrix came out a grey slab with the light diagonal cells
+   still glowing through it, and nothing reported a thing — the page was valid
+   CSS doing exactly what it said.
+   --------------------------------------------------------------------------- */
+/* DARK IS SELECTED, NOT FLIPPED.
+   Every token here is chosen against the dark surface rather than derived from
+   the light one: an inverted palette is how hues picked against white end up
+   unreadable on black. The paper/card relationship is kept — the card is a step
+   LIGHTER than the paper here, where in light mode it is a step brighter — so a
+   figure is still a card on a page and the 1px rule still separates them.
+
+   The five accent pairs keep their meanings and their hue angles and take the
+   lightness a dark surface needs; the pale companions become dark washes rather
+   than light ones, because a pale fill on a dark page is a hole in it.
+
+   The chart's own palette is NOT here. Canvas ink cannot come from CSS, so
+   web/js/chart.js carries both schemes and swaps them; the two were validated
+   separately, each against its own surface. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper:   #141310;
+    --card:    #1e1d19;
+    --ink:     #ecebe6;
+    --ink-2:   #b8b5ad;
+    --ink-3:   #8f8c84;
+    --rule:    #3a382f;
+    --rule-2:  #2e2c27;
+
+    --out:     #d18a2b;
+    --out-pale:#3a2c14;
+    --in:      #a98ae0;
+    --in-pale: #2a2340;
+    --both:    #4fa87a;
+    --both-pale:#17301f;
+    --teal:    #3cb3b1;
+    --teal-pale:#123230;
+    --slate:   #94a3b8;
+    --slate-pale:#22262e;
+  }
+  /* WHITE ON AN ACCENT IS THE WRONG WAY ROUND HERE. In light mode the accents
+     are dark enough to carry white text; in dark mode they are chosen light
+     enough to be seen ON the page, so the text on top of one has to be the
+     page's own dark instead. Five places print `color: #fff` on a filled
+     accent, and every one of them reads as glare without this. */
+  .step.on .n, .pill.out, .pill.in, .pill.both { color: var(--paper); }
+  /* The seeded hatch is two light greys, which on a dark page is a bright
+     block. Same pattern, dark. */
+  .seeded, .hatch {
+    background: repeating-linear-gradient(45deg,#232119,#232119 3px,#2b2921 3px,#2b2921 6px);
+  }
+  /* A form field inherits the system's light chrome unless told otherwise. */
+  input, select, textarea, button { color-scheme: dark; }
+  .sweepctl input.bad { background: #2c1a19; }
+  .maths code, .seg-lead code, ol.derive .dm { background: #232119; }
+
+  /* EVERY LITERAL LIGHT FILL IN THE SHEET, AND THERE WERE FOURTEEN. A token
+     follows the scheme; a hex does not, and a warm off-white block is a hole
+     burned in a dark page. The matrix was the loud one — its diagonal cells and
+     the veil over the whole grid are both literals, so in dark mode the entire
+     matrix came out a grey slab with the tree glowing through it. Nothing here
+     is a new decision: each is the same job the light value does, chosen
+     against the dark surface. */
+  .mcell.diag { background: #2a2820; }
+  .mcell.diag:hover { background: #3a372c; }
+  .mcell.diag.seeded {
+    background: repeating-linear-gradient(45deg,#26241d,#26241d 3px,#2f2c24 3px,#2f2c24 6px);
+  }
+  .boxrect { background: rgba(0,0,0,.35); }
+  .empty { background: #1b1a16; }
+  .gaps { background: #241f16; }
+  table.iface tr.out td { background: #241f16; }
+  ol.derive li.now { background: #241f16; outline-color: #4a3d23; }
+  pre.code { background: #1b1a16; }
+  .cred .f { background: #2e2c27; }
+  .blocked { color: #e88a8a; background: #2c1a19; border-color: #4a2a28; }
+}
