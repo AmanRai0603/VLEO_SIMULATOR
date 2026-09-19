@@ -3588,3 +3588,139 @@ different places to stand.
 Everything an agent can do without a decision is now done. Steps 5 and 6 are two
 numbers; step 3 is a signature; step 4 is the one piece of open work, and it is
 work rather than a decision.
+
+
+---
+
+## 33 · All 63 figures on one sheet, and what that shows
+
+Every view of every panel captured as a canvas and tiled — 63 of them, which is
+the first time the figure set has been looked at as a set rather than one at a
+time. `tools/` does not hold the capture script; it was scratch, and the findings
+below are what it was for.
+
+### 33.1 · NINE VIEWS, ONE CURVE — measured, not eyeballed
+
+`design`'s Ap branch has nine states: three G levels times three requirements. On
+the contact sheet they are visibly the same picture. Measured by hashing the
+drawn series across all nine:
+
+```
+distinct CURVE sets across the nine Ap views: 1
+```
+
+One. The curve is `sw_storm_return_level` against mission length and neither
+control touches it. What moves is three marks — and they take only three distinct
+positions, because the crossing depends on the G level alone:
+
+| | G1 | G2 | G3 |
+|---|---|---|---|
+| the design level | Ap 48 | Ap 80 | Ap 132 |
+| exceeded at | 0.50 yr | 0.74 yr | 2.62 yr |
+
+The three requirement options move a second mark to 207, 48 or 132 and change
+nothing else. **So nine frames carry one curve, three crossing points and three
+bound positions**, and a reader who wants the comparison — which G level survives
+which requirement, and for how long — has to click through nine states and
+remember.
+
+Part A hunted repeats and did not catch this, correctly: the pictures are not
+identical, a mark does move, so "it moves" passes. They are not repeats. They are
+**one small-multiple grid that has been unrolled into a control**.
+
+The same shape is elsewhere:
+
+| panel | views | what the knob actually is |
+|---|---|---|
+| `design`, Ap | 9 | one curve, a 3×3 grid of marks |
+| `repeatability`, stack | 9 | 3 variables × 3 bin counts — bins is a smoothing knob, not a view |
+| `segmentation`, hist | 4 | 2 variables × lin/log — the scale is a knob |
+| `drivers`, set | 5 | five quantities across five scenarios — a 5-up row IS the driver table |
+
+### 33.2 · The idea that follows: a grid, not just a column
+
+`spec.panes` already stacks frames vertically on one x axis; that is what
+`forecast` uses. Adding `cols` makes it a grid, and the four rows above become
+four single views that say more than the twenty-seven they replace:
+
+- **`design`** — one 3×3 of small frames, same curve and same scales in every
+  cell, each with its own pair of marks. The design question is a table of
+  crossing points and this draws that table.
+- **`repeatability`** — a 3-up row, one per variable, bins staying a knob.
+- **`drivers`** — a 5-up row, which is the legacy driver table as a picture
+  rather than as five clicks.
+
+This is the highest-leverage change available to the figure layer: it is one
+feature in `chart.js`, it uses machinery that already exists, and it converts the
+set's largest redundancy into its most comparative view.
+
+### 33.3 · Not one of the 63 views uses a band, and at least six want one
+
+`kind` is used 44 times as `line`, 4 as `bars`, 3 as `dots`, and **0 as anything
+filled**. The layer has no area. Six places where the note already calls the
+thing a band and the picture draws its edges:
+
+| view | what the prose says | what is drawn |
+|---|---|---|
+| `predict` | "four percentiles as a fan" | four lines |
+| `design`, F10.7 | "the band between the outer two is the design window" | four lines |
+| `pattern` | "the dashed band is the 95 per cent interval" | two dashed lines |
+| `closure` | the margin between required and achieved | two lines, the area unmarked |
+| `climate`, by day of year | the semiannual swing | one noisy line through 5-day bins |
+| `forecast` | skill against persistence | a line with no uncertainty at all |
+
+One `kind: 'band'` taking `y0` and `y1`, filled at low alpha in the series
+colour, fixes all six. It is a small addition and it is the difference between a
+figure that shows a region and one that shows the region's edges and asks the
+reader to fill it in.
+
+### 33.4 · Four smaller things the sheet made obvious
+
+**`forecast`'s issue-age view is one bar at about 99 per cent** and two bars too
+short to see. It is a count histogram of a quantity whose whole mass is in one
+bin, so the frame carries one fact and a lot of floor. It wants a log count axis
+or a different form.
+
+**`climate` by day of year is noise.** Three of its twelve views draw a single
+line through 5-day bins of the whole record, and the semiannual signal the panel
+exists to show is buried in the scatter of individual years. A band across the
+years with the mean on it would show the thing; the current picture shows that
+the thing is hard to see.
+
+**Several frames use about half their height.** `closure`'s first two pairs are
+the clearest: the requirement sits far above the achieved curve and most of the
+frame is empty. Worth measuring rather than judging — the fraction of a frame's
+y range that the drawn data actually occupies is computable, and `panel_check`
+could report it the way it reports a failed render.
+
+**Nothing has a log x axis.** `spec.y.log` exists and `spec.x.log` does not.
+`design`'s crossings at 0.50, 0.74 and 2.62 years all sit in the left eighth of a
+linear 0.5-to-15 axis; `predict`'s lead ladder is geometric and drawn linearly;
+`segmentation`'s Ap histogram has a long tail it draws in full.
+
+### 33.5 · The two standing risks, restated with the new count
+
+**63 views, 14 reference images.** Every spec records one, shot at the state the
+panel opens in. **Forty-nine views are covered by nothing automatic** — `design`'s
+whole F10.7 branch, eight of `repeatability`'s nine, eleven of `climate`'s twelve.
+`panel_check` already takes a per-row `state`; letting a spec declare several
+views each with its own reference is a modest change and the only one here that
+is about correctness rather than about reading.
+
+**There is no dark mode anywhere.** `prefers-color-scheme` appears **zero** times
+in `web/app.css`, and `chart.js` reads no CSS variable — it fills the canvas
+`#fff` unconditionally. Earlier notes in this plan called this "dark mode has no
+steps", which understated it: the face has no dark mode at all, so this is a
+whole-face piece of work and not a chart-palette one.
+
+### 33.6 · In order, if these are wanted
+
+| | what | why it is first |
+|---|---|---|
+| 1 | **a grid of panes** | 27 views collapse into 4, and the comparison the knobs prevent becomes the picture. One feature, machinery already there |
+| 2 | **a band kind** | zero of 63 use one, six want one, and in four of those the prose already promises it |
+| 3 | **several references per spec** | 49 views with no automatic check is the layer's real risk |
+| 4 | **log x** | three panels put their whole argument in the left eighth of a linear axis |
+| 5 | **the two bad forms** — issue age, and by-day-of-year | each is one view drawing one fact badly |
+| 6 | **a frame-fill warning in panel_check** | cheap, and it finds the half-empty frames without anybody judging |
+| 7 | **dark mode** | the largest and the least epistemic. A whole-face job, and every reference re-shot |
