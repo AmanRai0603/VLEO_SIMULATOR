@@ -153,6 +153,14 @@ const nice = v => {
  *             work out which side they are on; a wash tells them. "Above the
  *             design level", "below zero skill", "the storm regime" are regions,
  *             and each was drawn as its edge ],
+ *   notes: [{ x, y, text, colour? }] — A LABEL POINTING AT A PLACE ON A CURVE.
+ *             A mark labels a position on an AXIS and runs the width or the
+ *             height of the frame; a note points at one point of the data and
+ *             says what happens there. "The design is exceeded here", "half a
+ *             solar cycle", "273 days the record does not have" are sentences
+ *             about a place in the picture, and every one of them was a
+ *             paragraph underneath it. Drawn last, on top of everything, with a
+ *             leader to a label placed clear of the data,
  *
  *   // OR SEVERAL, STACKED, SHARING ONE X AXIS:
  *   panes: [{ y, series, marks }, …],
@@ -188,8 +196,10 @@ export function drawChart(canvas, spec) {
   // feature that works on one path and silently does nothing on the other.
   const panes = (spec.panes && spec.panes.length
     ? spec.panes
-    : [{ y: spec.y, series: spec.series, marks: spec.marks }]).map(p => ({
+    : [{ y: spec.y, series: spec.series, marks: spec.marks, notes: spec.notes }])
+    .map(p => ({
       y: p.y || {}, series: p.series || [], marks: p.marks || [],
+      notes: p.notes || [],
     }));
 
   // A GUTTER FOR THE END LABELS, so a direct label sits BESIDE its line rather
@@ -760,8 +770,72 @@ function _pane(ctx, o) {
       // over the data it is annotating.
       let y = Math.max(T + 10, py(at) - 4);
       while (taken.y.some(t => Math.abs(t.at - y) < 11) && y < BOT - 2) y += 11;
-      taken.y.push({ at: y });
+      // The box as well as the row, because the notes below place themselves
+      // against these: a note is drawn after every mark and had no way to know
+      // where a mark's label had already landed.
+      taken.y.push({ at: y, x: L + 4, w });
       ctx.fillText(m.label, L + 4, y);
+    }
+  }
+
+  // NOTES, LAST AND ON TOP OF EVERYTHING. A leader from the point to a label
+  // set clear of it, and a ringed dot at the point itself so the place being
+  // talked about is unambiguous on a curve two pixels wide.
+  //
+  // Placement is up-and-right, flipping left where the label would leave the
+  // frame and down where there is no room above; where two notes would collide
+  // the second drops a line. No cleverness beyond that: a note whose text does
+  // not fit beside its point is a note that needs shorter text.
+  const notes = (pn.notes || []).filter(n =>
+    n && isFinite(n.x) && isFinite(n.y) && n.text);
+  if (notes.length) {
+    ctx.font = '10px ui-monospace, monospace';
+    // Seeded with the y-mark labels, which are already on the canvas. Without
+    // this a note landing beside a bound's label printed a line above it and
+    // read as part of it.
+    const placed = taken.y.map(t => ({ x: t.x, y: t.at, w: t.w }));
+    for (const n of notes) {
+      const X = px(n.x), Y = py(n.y);
+      // A note about a point the frame does not hold is not drawn at the edge
+      // pretending to be about the edge.
+      if (X < L - 2 || X > W - R + 2 || Y < T - 2 || Y > BOT + 2) continue;
+      const col = n.colour || INK.text;
+      const tw = ctx.measureText(n.text).width;
+      const LEAD = 15;
+      const dir = (X + LEAD + tw + 6 <= W - R) ? 1 : -1;
+      let ly = Y - LEAD;
+      const above = ly >= T + 12;
+      if (!above) ly = Y + LEAD + 8;
+      const lx = dir === 1 ? X + LEAD : X - LEAD - tw;
+      // A COLLIDING LABEL MOVES AWAY FROM ITS POINT, NOT DOWNWARD. Stepping
+      // always down pushed `design`'s "exceeded here" from above its bound to
+      // below it, so the note about the exceeded side ended up labelling the
+      // side that is not exceeded. Which side of a line a label sits on is read
+      // as part of what it says.
+      const step = above ? -13 : 13;
+      let guard = 0;
+      while (guard++ < 8 && placed.some(q =>
+        Math.abs(q.y - ly) < 12 && lx < q.x + q.w && lx + tw > q.x)) {
+        ly += step;
+        if (ly < T + 12 || ly > BOT - 2) { ly -= step * guard; break; }
+      }
+      placed.push({ x: lx, y: ly, w: tw });
+      ctx.save();
+      ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(X, Y);
+      ctx.lineTo(dir === 1 ? lx - 4 : lx + tw + 4, ly - 3);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      // The same 2px surface ring every other point marker in this face wears,
+      // so the dot reads as a marker on the line rather than as a datum of its
+      // own.
+      ctx.strokeStyle = INK.surface; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(X, Y, 2.5, 0, 6.284); ctx.stroke();
+      ctx.beginPath(); ctx.arc(X, Y, 2.5, 0, 6.284); ctx.fill();
+      ctx.fillText(n.text, lx, ly);
+      ctx.restore();
     }
   }
 

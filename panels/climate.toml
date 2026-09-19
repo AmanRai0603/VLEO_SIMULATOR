@@ -5,7 +5,13 @@ mount = "canvas.sw-panel"
 draws = """The record aggregated over the long run: by year, by day of year, by month, by
 the 13-month smoother, or Kp against ap. The context a single mission window is
 a slice of."""
-correct = """On the Kp-against-ap setting the median is at full contrast and the two
+correct = """On the by-year setting the 2017 bar carries a note saying how many days that
+year actually holds — the record has a 273-day gap in it, so the bar is a mean
+over about 92 days and looks like every other bar. The count is read off the
+record rather than typed, and the note is drawn only if that year really is
+short.
+
+On the Kp-against-ap setting the median is at full contrast and the two
 percentile edges at half — they bound the shaded spread rather than being two
 more curves to tell apart.
 
@@ -20,7 +26,11 @@ is the panel's claim and must be visible."""
 # is right. That is what makes check three mean anything: the reference is the
 # claim, and without a name against it the check only proves the chart has not
 # changed since a machine drew it.
-confirmed_by = "A. Rai / 2026-09-15 (against the pre-move picture; content unchanged, canvas resized 2026-09-16, reference re-recorded 2026-09-16, not yet re-looked)"
+# NOT CONFIRMED ANY MORE. The reference was re-recorded on 2026-09-19: the
+# by-year view — which is the view the reference is shot at — now carries a note
+# on the 2017 bar saying how few days that year actually holds. That is a
+# CONTENT change, so the earlier signature was against a different picture.
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19 after \u00a734 move 4; awaiting a look (last signed A. Rai / 2026-09-15, against the previous chart)"
 # WHY THE REFERENCE WAS RE-RECORDED, AND A FINDING ABOUT THIS CHECK.
 #
 # Adding sw_f107_cold_long put a third name in sw_central_expectation's

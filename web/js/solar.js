@@ -391,14 +391,30 @@ const PANELS = [
         return { at, r: best };
       };
       const p1 = peakIn(18, 36), p2 = peakIn(45, 65), p3 = peakIn(72, 95);
+      // THREE NOTES WHERE THERE WERE THREE FULL-HEIGHT RULES, and each now says
+      // what its peak IMPLIES rather than only where it is. The harmonics are
+      // the whole argument — the first bump rides on the decay from lag 1, which
+      // pulls its apparent peak toward zero, and the far harmonics are clear of
+      // it — and the division that shows it was a sentence underneath. Three
+      // dashed lines down a frame of oscillating curves also cost more ink than
+      // any of them was worth.
+      //
+      // THE THIRD PEAK WAS COMPUTED, QUOTED IN THE PROSE AND NEVER DRAWN until
+      // §26; it is the one that settles the period, so leaving it to the prose
+      // asked a reader to take the most important of the three on trust.
       const marks = [];
-      if (p1.at) marks.push({ axis: 'x', at: p1.at, label: 'first peak, lag ' + p1.at });
-      if (p2.at) marks.push({ axis: 'x', at: p2.at, label: 'second, ' + p2.at, colour: '#2f6fa8' });
-      // THE THIRD PEAK WAS COMPUTED, QUOTED IN THE PROSE AND NEVER DRAWN. It is
-      // the one that settles the period — it is furthest from the decay the
-      // first bump rides on — so the sentence claiming it was asking the reader
-      // to take the most important of the three on trust.
-      if (p3.at) marks.push({ axis: 'x', at: p3.at, label: 'third, ' + p3.at, colour: '#2e7d55' });
+      const notes = [];
+      if (p1.at) notes.push({ x: p1.at, y: p1.r, text: 'first peak, lag ' + p1.at });
+      if (p2.at) {
+        notes.push({ x: p2.at, y: p2.r,
+          text: 'second, ' + p2.at + ' → ' + (p2.at / 2).toFixed(1) + ' d per cycle',
+          colour: '#2f6fa8' });
+      }
+      if (p3.at) {
+        notes.push({ x: p3.at, y: p3.r,
+          text: 'third, ' + p3.at + ' → ' + (p3.at / 3).toFixed(1) + ' d per cycle',
+          colour: '#2e7d55' });
+      }
 
       return {
         spec: {
@@ -425,6 +441,7 @@ const PANELS = [
               colour: INK.muted, width: 1, dash: [3, 3], aside: true },
           ],
           marks,
+          notes,
         },
         answer: p1.at
           ? { value: p1.at + ' d', of: 'the lag the rotation signal peaks at, r = ' +
@@ -616,6 +633,30 @@ const PANELS = [
       const atYear = xs.reduce((b, x, i) => (Math.abs(x - 1) < Math.abs(xs[b] - 1) ? i : b), 0);
       const spread = QS.map((Q, i) => ys[i][atYear]).filter(v => v !== null && isFinite(v));
       const at1 = y95[atYear];
+      // THE TWO FEATURES THE PROSE POINTS AT, POINTED AT. The hump and the dip
+      // are the eleven-year cycle showing through a statistic that was never
+      // told about it, and the sentence saying so sat four paragraphs below the
+      // place it is about. Found the same way the prose finds them — the
+      // largest of the mid-lead points and the smallest of the late ones — so
+      // the label cannot drift from the curve under it.
+      const pick = (lo, hi, want) => {
+        let bi = -1;
+        for (let i = 0; i < xs.length; i++) {
+          const v = y95[i];
+          if (v === null || !isFinite(v) || xs[i] < lo || xs[i] > hi) continue;
+          if (bi < 0 || (want === 'max' ? v > y95[bi] : v < y95[bi])) bi = i;
+        }
+        return bi;
+      };
+      const iHump = pick(3, 6, 'max'), iDip = pick(9, 12, 'min');
+      const notes = [];
+      if (humped && iHump >= 0) {
+        notes.push({ x: xs[iHump], y: y95[iHump],
+          text: 'half a cycle — the lead most likely to land on the opposite phase' });
+      }
+      if (humped && iDip >= 0) {
+        notes.push({ x: xs[iDip], y: y95[iDip], text: 'about a full cycle, back to a similar one' });
+      }
       return {
         answer: at1 === null || !isFinite(at1)
           ? { value: '\u2014', of: 'no lead near a year has enough pairs to read' }
@@ -629,6 +670,7 @@ const PANELS = [
           // makes the far end of these curves look as thin as they are — and it
           // goes on ALL FOUR, because the thinning is a property of the lead and
           // fading only the published one would say the others rest on more.
+          notes,
           series: [
             // THE FAN, FILLED, AND THE FOUR LINES STILL ON IT. The note says the
             // gap between the 50th and the 99th is the whole of what a band buys
@@ -969,6 +1011,7 @@ const PANELS = [
               + (off === null ? '' : '; the furthest is out by a factor of ' + off.toFixed(2))
               + ', and both families of disagreement are deliberate' },
           spec: {
+            aspect: 1.5,
             x: { label: 'scenario', ...XPAD },
             y: { label: 'this tree ÷ the legacy run  [-]', log: true },
             series,
@@ -1012,6 +1055,11 @@ const PANELS = [
               of: 'the widest gap to the legacy run, at the ' + SHOWN[worstI] + ' scenario \u2014 '
                 + sig(mine[worstI]) + u + ' here against ' + sig(theirsY[worstI]) + u },
         spec: {
+          // FIVE CATEGORIES DO NOT NEED 1180 PIXELS. See render(): width is what
+          // is wasted on this axis, not height, and stretching five points
+          // across a full frame flattens the ladder the view is drawn to show
+          // rising.
+          aspect: 1.5,
           x: { label: 'scenario', ...XPAD },
           y: { label: Q.label + '  [' + Q.unit + ']' },
           series: [
@@ -1022,6 +1070,18 @@ const PANELS = [
             { name: 'the legacy run', kind: 'dots', x: xs, y: theirsY,
               colour: INK.series[1], width: 5, alpha: 1 },
           ],
+          // WHERE THE TWO METHODS PART, SAID AT THE POINT IT HAPPENS. The gap is
+          // widest at whichever scenario the data says, and on the single-day
+          // ones the reason is one sentence: the study reads one percentile of
+          // the within-rotation departure over a fixed window and applies it at
+          // every level. That sentence is four paragraphs below the dot.
+          notes: worstI < 0 ? [] : [{
+            x: xs[worstI], y: theirsY[worstI],
+            text: /day$/.test(ORDER[worstI])
+              ? 'one percentile, applied at every level'
+              : 'the two windows are centred differently',
+            colour: INK.series[1],
+          }],
         },
         note: 'The five scenarios this subsystem hands to sys_space_environment, in the order a ' +
           'design reads them: the quietest single day, the cold sustained level, where the mission ' +
@@ -1201,8 +1261,16 @@ const PANELS = [
               '  (sw_ap_design)' },
             { axis: 'y', at: req, label: 'required ≤ ' + req.toFixed(0) + '  (' + o.req + ')',
               colour: '#c2185b' },
-            { axis: 'x', at: cross(bound), label: 'exceeds the design at ' + cross(bound).toFixed(2) + ' yr' },
           ],
+          // A NOTE, NOT A RULE. This was a dashed line the full height of the
+          // frame carrying "exceeds the design at 2.62 yr" at the top, which is
+          // a fact about a POINT ON THE CURVE told at the ceiling. It now points
+          // where it happens, and the frame is one long dashed line lighter for
+          // it.
+          notes: !isFinite(hitsAt) ? [] : [{
+            x: hitsAt, y: bound,
+            text: 'exceeded here — ' + hitsAt.toFixed(2) + ' yr',
+          }],
         },
         note: 'The design bound is exceeded beyond a ' + cross(bound).toFixed(2) + '-year mission and the ' +
           o.req + '\u2019s ' + req.toFixed(0) + ' beyond ' + cross(req).toFixed(2) +
@@ -1611,6 +1679,23 @@ const PANELS = [
       const hi = Math.max(...ys), lo = Math.min(...ys);
       const atHi = xs[ys.indexOf(hi)], atLo = xs[ys.indexOf(lo)];
       const gname = o.by === 'doy' ? '5-day bin' : o.by === 'year' ? 'year' : 'month';
+      // THE GAP, POINTED AT. "The 2017 gap is 273 consecutive days and shows
+      // here as a year drawn from nine months" is the last sentence of a
+      // paragraph under a chart where the bar it is about looks like every other
+      // bar. Counted from the record rather than asserted, and only drawn where
+      // the record actually holds a gap that year — a hard-coded 273 would be a
+      // second copy of a fact the bundle owns.
+      const notes = [];
+      if (o.by === 'year') {
+        const gi = ks.indexOf(2017);
+        if (gi >= 0) {
+          const held = rec.days.filter(d => d.year === 2017 && d[key] !== null).length;
+          if (held < 330) {
+            notes.push({ x: xs[gi], y: ys[gi],
+              text: 'a year drawn from ' + held + ' days, not 365' });
+          }
+        }
+      }
       return {
         answer: !isFinite(hi / lo) || lo === 0
           ? { value: '\u2014', of: 'the record holds nothing to compare at this setting' }
@@ -1618,6 +1703,7 @@ const PANELS = [
               of: 'between the quietest ' + gname + ' of the record and the busiest \u2014 a mission '
                 + 'is sized against wherever in that range it falls' },
         spec: {
+          notes,
           x: { label: o.by === 'year' ? 'year' : o.by === 'doy' ? 'day of year  [5-day bins]' : 'year' },
           y: { label: (key === 'f107' ? 'F10.7  [sfu]' : key === 'ap' ? 'Ap  [-]' : 'sunspot number  [-]') + ', mean' },
           series: [{ name: '', kind: o.by === 'year' ? 'bars' : 'line', x: xs, y: ys }],
@@ -2407,6 +2493,7 @@ function thermoSlot(extra, eng) {
           of: 'the most the choice of Kp slot is worth — at the ' +
             (wi < 0 ? 'worst scenario' : SCEN[wi].shown) + ', and nothing says which slot to use' },
     spec: {
+      aspect: 1.5,
       x: { label: 'scenario', ...SCEN_X },
       y: { label: 'exospheric temperature  [K]' },
       series: [
@@ -2860,9 +2947,24 @@ async function render(host, p, o) {
     // third of the vertical resolution a slope is read from, which is the aspect
     // argument from B6 applied three times over and in the wrong direction.
     const nPanes = (out.spec.panes || []).length;
+    const H1 = fitHeight(cv.width);
+    // A NARROWER FRAME WHERE THE WIDTH HAS NOTHING TO SPEND ITSELF ON. §34.3
+    // asked for a SHORTER frame "where the curve is monotone", and measuring the
+    // fourteen references says there is no height to reclaim: every canvas panel
+    // puts ink in 99.4 per cent of its rows, because the y axis scales to its own
+    // data. What is actually wasted is WIDTH, and only where the x axis is five
+    // named scenarios: 1180 pixels across five positions stretches the picture
+    // into a shallow diagonal, which is the banking argument fitCanvas was
+    // written for, running the other way. `aspect` is width ÷ height; leaving it
+    // out keeps the frame the host gives, so a panel that does not ask is
+    // untouched to the pixel.
+    if (out.spec.aspect) {
+      const w = Math.min(cv.width, Math.round(H1 * out.spec.aspect));
+      if (w > 320) cv.width = w;
+    }
     cv.height = nPanes > 1
-      ? Math.round(fitHeight(cv.width) * (1 + 0.42 * (nPanes - 1)))
-      : fitHeight(cv.width);
+      ? Math.round(H1 * (1 + 0.42 * (nPanes - 1)))
+      : H1;
     drawChart(cv, out.spec);
     attachHover(cv);
     // From the same spec the chart was drawn from, so the two cannot disagree.

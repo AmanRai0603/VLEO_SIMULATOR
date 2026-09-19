@@ -9,8 +9,11 @@ correct = """The record's expectation as a curve, with the selected capability a
 selected requirement drawn as marks that sit at their stated values on the same
 axis — at G3 the capability is Ap 132, and the requirement mark moves when the
 requirement control does. Where the expectation crosses the capability is the
-number sw_design_safe_duration publishes, so the crossing must be visible on
-the picture rather than only in the note. Both marks carry labels naming what
+number sw_design_safe_duration publishes, and it is labelled AT THE CROSSING —
+a dot on the curve with a short leader to "exceeded here", carrying the year.
+It used to be a dashed rule the full height of the frame with its label at the
+ceiling, which is a fact about a point told somewhere else. A vertical rule
+here is the defect now. Both marks carry labels naming what
 they are; two unlabelled horizontal lines are the defect this catches.
 
 EVERYTHING ABOVE THE CAPABILITY IS WASHED, in the capability mark's own colour

@@ -4132,3 +4132,100 @@ change was expected**, not a pass.
   references are now UNCONFIRMED.
 - Moves 4, 5, 6, 7 and 9 of §34 are untouched. 6 is the large one; 7 (a shorter
   aspect where the curve is monotone) is the next cheap one.
+
+
+## 37 · Moves 7 and 4 — the frame, and the label that points at something
+
+§34.4 ranked a shorter aspect seventh and leader-line annotation fourth. Both are
+in, and as with §36.4 the aspect move turned out to rest on a premise that did
+not survive being measured — in the same direction, and for the same reason: the
+observation was made by looking at the figures rather than by counting them.
+
+### 37.1 · Move 7 — there was no empty height, and the waste was somewhere else
+
+§34.3 said the 2.2:1 frame is *"tall and empty for a monotone curve, which is
+most of the set"*, and named `closure`'s first two pairs, the nine `design` Ap
+views and `drivers`' five. Before changing anything, all fourteen references were
+measured for ink coverage and for how many of their pixel rows carry any ink at
+all:
+
+| panel | ink | rows carrying ink |
+|---|---|---|
+| `drivers` | 2.4 % | 99.4 % |
+| `design` | 3.5 % | 99.4 % |
+| `predict` | 3.8 % | 99.4 % |
+| `repeatability` | 3.8 % | 99.4 % |
+| … | … | … |
+| `climate` | 31.7 % | 99.4 % |
+
+**Every canvas panel puts ink in 99.4 per cent of its rows.** There is no empty
+height anywhere in the set, and there cannot be: the y axis scales to its own
+data with 6 per cent of padding, so a curve always spans its frame. What the
+sparse panels have is low ink DENSITY, and shortening a frame raises density
+without adding information while flattening every slope in it — the opposite of
+what `fitCanvas` was written for.
+
+**The waste is width, and only on a categorical axis.** `drivers` spends 1180
+pixels on FIVE x positions. The scenario ladder — the thing that view exists to
+show rising — is stretched into a shallow diagonal, which is the banking argument
+running the other way.
+
+So `spec.aspect` (width ÷ height) asks for a NARROWER frame, not a shorter one.
+Leaving it out keeps the frame the host gives, so a panel that does not ask is
+untouched to the pixel; the three views with a five-scenario axis — `drivers`'
+two and `thermosphere`'s slot view — ask for 1.5 and come out about 806 wide.
+
+### 37.2 · Move 4 — a label that points at a place on a curve
+
+`spec.notes = [{ x, y, text, colour? }]`. A ringed dot at the point, a leader to
+a label set clear of the data, up-and-right by default, flipping left at the
+frame edge and down where there is no room above. A note about a point the frame
+does not hold is not drawn.
+
+Five views took one, and in four of them a note REPLACED a rule:
+
+- **`pattern`** — three full-height dashed rules became three dots on the 365-day
+  curve, and the second and third now carry the period they IMPLY: *54 → 27.0 d
+  per cycle*, *81 → 27.0 d per cycle*, against a first peak at 26. That division
+  is the whole argument of the view and it was a sentence underneath a frame
+  whose marks said only where they were.
+- **`design`** — the crossing was a dashed rule the full height of the frame with
+  its label at the ceiling; it is now *exceeded here — 2.62 yr* on the curve at
+  the point it happens.
+- **`predict`** — the hump and the dip of the 95th, named as half a solar cycle
+  and a full one. Found by searching the curve between 3 and 6 years and between
+  9 and 12, never typed, and drawn only where the hump really is higher than the
+  late maximum — on Ap it is not, and there are no notes, which is correct rather
+  than missing.
+- **`drivers`** — at the legacy dot where the two methods part furthest, saying
+  why: *one percentile, applied at every level*.
+- **`climate`** — on the 2017 bar: *a year drawn from 92 days, not 365*. Counted
+  off the record, so it is the bundle's fact and not a second copy of it.
+
+**Which side of a line a label sits on is part of what it says.** The first form
+of the collision rule stepped a clashing label DOWNWARD, which pushed `design`'s
+*exceeded here* from above its bound to below it — a note about the exceeded side
+labelling the side that is not exceeded. A colliding label now moves AWAY from
+its own point instead.
+
+### 37.3 · The tolerance hid four of the five changes, again
+
+`panel_check` reported one finding — `drivers`, and only because its canvas
+changed shape. `design`, `pattern`, `predict` and `climate` all changed and all
+came in under the 2 per cent tolerance: 0.25, 0.59, 0.33 and 0.11 per cent. A few
+short labels and three removed rules are not many pixels.
+
+That is the second time in two changes that the byte-for-byte comparison found
+what the percentage could not, and the first time it found a change that had
+never happened (§36.5). The tolerance is right for a chart and is not the thing
+to change. The habit is: **after any visual change, compare every fresh shot to
+its reference byte for byte, and account for each panel that differs and each one
+that does not.**
+
+### 37.4 · Still open
+
+- `climate`'s signature is withdrawn — the by-year view is the view its reference
+  is shot at, and it now carries a note. Eight panel references are UNCONFIRMED;
+  `closure`, `density`, `segmentation` and the three DOM panels are untouched.
+- Moves 5, 6 and 9 of §34 remain: the in-frame subtitle, the interaction layer,
+  and dark mode. 6 is the large one.

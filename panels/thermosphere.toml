@@ -41,7 +41,9 @@ is FILLED, because the quantity is a temperature the geomagnetic term ADDS and
 that area is the quantity. The straight reference line is drawn at half contrast:
 it is what the curve is measured against, not a second measurement.
 
-IN THE THIRD VIEW two lines across the five scenarios, the worst-slot one above
+IN THE THIRD VIEW the frame is NARROWER than the others — five named scenarios
+do not need 1180 pixels of width, and stretched across a full frame the gap
+this view exists to show flattens. Two lines across the five scenarios, the worst-slot one above
 the mean-slot one everywhere, with the gap WIDENING toward the hot end. A
 constant gap would mean the exponential is missing. The worst-slot line must NOT
 be drawn in #c2185b: that colour is what this face uses for a line a value is

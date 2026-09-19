@@ -8,7 +8,18 @@ legacy MATLAB tool's own answers for the same cells drawn as dots beside them.
 The second view divides all twenty-five by their legacy counterparts on a
 logarithmic axis, so agreement is one line and the two directions of
 disagreement are the same distance from it."""
-correct = """NO VERTICAL GRIDLINES. This axis is five named scenarios, and a gridline is an
+correct = """THE FRAME IS NARROWER THAN THE OTHERS AND THAT IS DELIBERATE. Five categories
+cannot use 1180 pixels of width: stretched across a full frame the scenario
+ladder becomes a shallow diagonal, which is the banking argument fitCanvas was
+written for, running the other way. The spec asks for width ÷ height = 1.5, so
+the picture is about 806 wide. A full-width drivers frame is the previous form.
+
+THE WIDEST GAP CARRIES A NOTE at the legacy dot it happens on, saying WHY the
+two methods part there — one percentile applied at every level on the
+single-day scenarios, a differently centred window on the sustained ones. Which
+scenario that is comes from the data, not from a list here.
+
+NO VERTICAL GRIDLINES. This axis is five named scenarios, and a gridline is an
 invitation to read a value off the axis where it falls — between "cold
 sustained" and "nominal" there is nothing to read. The horizontal grid stays,
 because the y axis IS a scale. A vertical rule at the first scenario is the
