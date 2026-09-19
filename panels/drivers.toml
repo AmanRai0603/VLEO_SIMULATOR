@@ -8,7 +8,15 @@ legacy MATLAB tool's own answers for the same cells drawn as dots beside them.
 The second view divides all twenty-five by their legacy counterparts on a
 logarithmic axis, so agreement is one line and the two directions of
 disagreement are the same distance from it."""
-correct = """the finding line says at how many scenarios this tree sits below the legacy run,
+correct = """A DARK RENDERING IS RECORDED BESIDE THE LIGHT ONE and both have to be looked at.
+The canvas gets none of CSS's help: its palette is a second table in
+web/js/chart.js, chosen and validated against the dark surface separately, so
+it can be wrong in ways the light one is not. What to check is the same in both
+— every claim above — plus one thing only the dark picture can show: nothing in
+the frame should be a light block. A literal light fill that never followed the
+scheme reads as a hole burned in the page.
+
+the finding line says at how many scenarios this tree sits below the legacy run,
 and whether its own line rises across all five. Both are counted, so a ladder
 that stopped being monotone would say so rather than being described as rising.
 
@@ -65,7 +73,7 @@ the wrong claim about two errors of the same size."""
 # the whole value of check three rests on a human having agreed the picture is
 # right, and a machine recording its own output and signing for it proves
 # nothing at all.
-confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–5; awaiting a look. Every figure gained an answer line above the chart and a finding line inside it, and this panel’s own picture changed as well — see `correct` above for what to check"
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting a look at BOTH pictures. Every figure gained an answer line above the chart, a finding line inside it, and a second rendering in the dark scheme — see `correct` above for what to check in each"
 # Check four drives this panel: a brush, a key click, and the buttons that undo
 # them. It is declared rather than inferred so a panel that deliberately offers
 # no interaction does not fail a check for not having one.

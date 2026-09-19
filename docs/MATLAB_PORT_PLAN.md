@@ -4255,10 +4255,16 @@ rule, so the rule is written into the chart's own documentation:
   nothing else.
 
 `repeatability` shows the difference. Its answer is *0.972 · how well cycle 24
-repeats 23's shape*. Its finding is *"cycle 23 runs above cycle 24 in 17 of the 20
-phase bins both fill, by 20.5 on the rise and 1.06 after phase 0.6"* — a statement
+repeats 23's shape*. Its finding is *"cycle 23 runs above cycle 24 in 15 of the 18
+phase bins both fill, by 35.8 on the rise and 2.96 after phase 0.6"* — a statement
 about which line is on top, which is what the picture actually shows and what the
 correlation cannot say.
+
+*(Those numbers were wrong in the first draft of this section: 17, 20, 20.5 and
+1.06, typed from memory of the rule rather than read off the figure. They were
+caught by comparing the light and dark renderings of the same panel, which is
+not what that comparison was for. A section about never typing a number is a
+poor place to type four.)*
 
 **A finding that quotes the answer again is not a finding**, and neither is a
 clause that could have been written without the data. Four went in with such a
@@ -4435,3 +4441,103 @@ the first time in four rounds.
   those keep the pointer they had — hover, arrow keys, Escape — and gain nothing.
   Extending it is a small change and a separate one.
 - All eleven references remain UNCONFIRMED and awaiting a person.
+
+
+## 40 · Move 9 — dark mode, and what having no tokens costs
+
+The last of §34's nine, and the one it called "the largest of these and the
+least urgent, because it changes how the figures look and not what they say".
+The second half of that was right. The first half was not: the work was not the
+dark palette, it was discovering how much of the face had never been tokenised
+at all.
+
+### 40.1 · Two schemes, both selected
+
+`INK` is now one object with two tables behind it. Every module still imports it
+once and holds that binding, so the scheme cannot be a new object — it is the
+same object with different values in it, swapped by `setScheme`.
+
+**The dark six are selected, not flipped.** The lightness band for a dark
+surface is 0.48–0.67, narrower and higher than the light one's 0.43–0.77, so
+every hue is re-stepped and re-checked. They keep the light palette's six hue
+ANGLES — the orange still means "the record", the pink still means "the line a
+value is measured against" — and take a lightness per slot chosen by searching
+the band.
+
+**The search was run twice and the first answer was thrown away.** Maximising
+colourblind separation alone gave ΔE 10.1, better than the light palette's 8.2 —
+and four of the six hues sat at 3.1 to 3.5:1 against the surface, scraping the
+3:1 minimum where the light palette runs 3.9 to 5.9. *Separation you cannot see
+is not separation.* Re-scored to prefer contrast once every check passes and the
+CVD target is met: ΔE 8.5, and all six between 4.6 and 5.3:1.
+
+The two ordinal ramps run the other way on a dark surface — dimmest at the
+unemphasised end, brightest at the one the panel is about — and **the dim end
+was lifted after looking at it.** The first pass put it at 2.13:1, which is
+legal (the ordinal floor is 2) and symmetric with the light ramp's own pale end
+at 2.11. On `predict` the 50th percentile was a navy line on a near-black frame
+that took hunting for. Symmetric by the check and not by the eye: a pale line on
+white is still a line; a dark one on black is a gap.
+
+### 40.2 · The real work: forty-two literals
+
+A token follows the scheme. A hex does not.
+
+- **Twenty-eight in the chart layer.** `'#c2185b'` appeared sixteen times in
+  `solar.js` alone — the pink every bound in this face is drawn in, spelled out
+  at every site. Two ordinal ramps were four and five hexes typed into a panel.
+  The scenario ladder was a module-level list of five colours, frozen before any
+  scheme existed, so its `colour` is now a getter that reads the ramp in force at
+  the moment the picture is drawn.
+- **Fourteen in the stylesheet**, including the whole matrix: its diagonal cells,
+  its hover, its seeded hatch and the veil over the grid were all literals, so in
+  dark mode the matrix came out a grey slab with the light cells glowing through
+  it.
+- **One seventh hue.** `climate`'s monthly-mean line wore a gold nothing else in
+  the face uses. The palette is six assigned in a fixed order and never extended;
+  a seventh is also a hue with no dark counterpart validated for it. It takes
+  slot 0 now.
+
+### 40.3 · Three defects, and the cascade one is the instructive one
+
+**The dark block was at the top of the stylesheet and half of it silently did
+nothing.** Token overrides worked — `:root` in the media block comes after the
+`:root` it overrides — while every plain-selector override lost, because
+`.mcell.diag` is declared three hundred lines below and **at equal specificity
+the later rule wins**. The matrix rendered as a grey slab and nothing reported a
+thing: the page was valid CSS doing exactly what it said. The block lives at the
+end of the sheet now, and that is not tidiness.
+
+**A canvas does not restyle itself.** CSS carries the shell across a theme
+change for free; the figures are pixels. Without a `matchMedia` listener a
+reader flipping their system theme keeps the light palette on a dark page — the
+one combination neither scheme was ever validated in. Both the panels and the
+generated per-node relation figures now redraw, each through the same registry
+its resize handling uses.
+
+**White on an accent is the wrong way round in dark mode.** Five places print
+`color: #fff` on a filled accent; in light the accents are dark enough to carry
+it, in dark they are chosen light enough to be seen ON the page, so the text on
+one has to be the page's own dark instead.
+
+### 40.4 · A number in §38 that I typed
+
+§38.1 quoted `repeatability`'s finding as *"17 of the 20 phase bins both fill,
+by 20.5 on the rise and 1.06 after phase 0.6"*. The figure says 15, 18, 35.8 and
+2.96. The four wrong numbers were typed from memory of what the rule computes
+rather than read off the picture — in the section arguing that a finding must
+never be typed. They were caught by comparing the light and dark renderings of
+the same panel to check the TEXT had not changed, which is not what that
+comparison was for. §38.1 now carries the measured numbers and a note saying so.
+
+### 40.5 · Where this leaves the set
+
+Twenty-eight references: fourteen light and fourteen dark, every one
+UNCONFIRMED, each panel's `correct` block saying what to check in each. That is
+the honest state — a dark rendering is new work nobody has signed for, and the
+light ones have changed under it too many times this session to carry a
+signature from four days ago.
+
+All nine of §34's moves are done. What §34.2 listed and this did not build is
+brushing on the y axis and a brush inside a zoom; what §34.3 listed and this
+declined is halving the grid, which trades a real reading for less ink.

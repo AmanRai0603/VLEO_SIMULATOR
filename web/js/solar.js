@@ -22,8 +22,8 @@ import { $, esc } from './dom.js';
 import { S } from './state.js';
 import { solarRecord, bundleFile, parityFile, engineValues, engineSweep, engineAt,
   engineLevers, centredMean, corr, quantile, num, daysSince2000 } from './record.js';
-import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn, INK }
-  from './chart.js';
+import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
+  watchScheme, INK } from './chart.js';
 
 // ---------------------------------------------------------------------------
 // describing the picture that was actually drawn
@@ -199,13 +199,18 @@ const CLOSURE_CACHE = {};
  * it rises. `l3_solar_interface`'s own answer is f107_hotmean — the one cell that
  * is not a published member — which is why that one is reached by the node id.
  */
+//
+// A STEP OF THE RAMP, NOT A COLOUR. This list is module-level and the scheme is
+// not: a hex frozen here would still be the light one on a dark page. `colour`
+// is a getter so the ladder reads whichever ramp is in force at the moment the
+// picture is drawn.
 const SCEN = [
-  { k: 'coldday',  shown: 'quietest day',   colour: '#86b6ef' },
-  { k: 'coldmean', shown: 'cold sustained', colour: '#5598e7' },
-  { k: 'nominal',  shown: 'nominal',        colour: '#2a78d6' },
-  { k: 'hotmean',  shown: 'hot sustained',  colour: '#1c5cab' },
-  { k: 'hotday',   shown: 'worst day',      colour: '#0d366b' },
-];
+  { k: 'coldday',  shown: 'quietest day',   ci: 0 },
+  { k: 'coldmean', shown: 'cold sustained', ci: 1 },
+  { k: 'nominal',  shown: 'nominal',        ci: 2 },
+  { k: 'hotmean',  shown: 'hot sustained',  ci: 3 },
+  { k: 'hotday',   shown: 'worst day',      ci: 4 },
+].map(sc => ({ ...sc, get colour() { return INK.ramp5[this.ci]; } }));
 
 /** One scenario's four drivers, in SI, out of one run of the crossing. */
 function driversOf(eng, k) {
@@ -257,7 +262,7 @@ const PANELS = [
         const v = complete.map(c => mean(per.get(c.n)[i])).filter(x => x !== null);
         return v.length ? v.reduce((p, c) => p + c, 0) / v.length : null;
       });
-      series.push({ name: 'mean of the complete cycles', kind: 'line', x: xs, y: meanCycle, colour: '#1a1a1a', width: 2.4 });
+      series.push({ name: 'mean of the complete cycles', kind: 'line', x: xs, y: meanCycle, colour: INK.text, width: 2.4 });
       rec.cycles.forEach((c, i) => {
         series.push({
           name: 'cycle ' + c.n + (c.n === 25 ? ' (incomplete)' : ''),
@@ -427,12 +432,12 @@ const PANELS = [
       if (p2.at) {
         notes.push({ x: p2.at, y: p2.r,
           text: 'second, ' + p2.at + ' → ' + (p2.at / 2).toFixed(1) + ' d per cycle',
-          colour: '#2f6fa8' });
+          colour: INK.series[1] });
       }
       if (p3.at) {
         notes.push({ x: p3.at, y: p3.r,
           text: 'third, ' + p3.at + ' → ' + (p3.at / 3).toFixed(1) + ' d per cycle',
-          colour: '#2e7d55' });
+          colour: INK.series[2] });
       }
 
       // The claim panels/pattern.toml makes about this picture, counted rather
@@ -566,7 +571,7 @@ const PANELS = [
             ', which is most of the axis',
           x: { label: (key === 'ap' ? 'daily Ap' : 'F10.7  [sfu]') + '  [bin ' + bw + ']', min: 0 },
           y: { label: o.scale === 'log' ? 'days in bin  [log10]' : 'days in bin', min: 0 },
-          series: [{ name: '', kind: 'bars', x: xs, y: ys, colour: '#b5731a' }],
+          series: [{ name: '', kind: 'bars', x: xs, y: ys, colour: INK.series[0] }],
           // NO REGION HERE, AND THAT IS A MEASUREMENT RATHER THAN A PREFERENCE.
           // Shading the top band is the obvious move and it is wrong on this
           // axis: storm is Ap 26 and above, the axis runs to 400, so the band
@@ -630,11 +635,16 @@ const PANELS = [
       // INK.surface was corrected to the white card the canvas actually sits
       // on, against a floor of 2. Never the
       // categorical hues — those say "unrelated", and these are a ladder.
+      // FROM THE RAMP, NOT FROM FOUR HEXES TYPED HERE. A hue a panel spells out
+      // is a hue that cannot follow the scheme, and on a dark surface an ordinal
+      // ramp runs the other way: dim at the unemphasised end, bright at the one
+      // the panel is about. Both directions are validated in chart.js; this
+      // reads whichever is in force.
       const QS = [
-        { q: 0.50, name: '50th', colour: '#86b6ef', width: 1.4 },
-        { q: 0.90, name: '90th', colour: '#3987e5', width: 1.4 },
-        { q: 0.95, name: '95th — the published one', colour: '#1c5cab', width: 2.4 },
-        { q: 0.99, name: '99th', colour: '#0d366b', width: 1.4 },
+        { q: 0.50, name: '50th', colour: INK.ramp4[0], width: 1.4 },
+        { q: 0.90, name: '90th', colour: INK.ramp4[1], width: 1.4 },
+        { q: 0.95, name: '95th — the published one', colour: INK.ramp4[2], width: 2.4 },
+        { q: 0.99, name: '99th', colour: INK.ramp4[3], width: 1.4 },
       ];
       if (o.by === 'cycle') return growthByCycle(rec, key, 0.95, maxL);
       const byDay = new Map();
@@ -1080,7 +1090,7 @@ const PANELS = [
             x: { label: 'scenario', ...XPAD },
             y: { label: 'this tree ÷ the legacy run  [-]', log: true },
             series,
-            marks: [{ axis: 'y', at: 1, label: 'exact agreement', colour: '#c2185b' }],
+            marks: [{ axis: 'y', at: 1, label: 'exact agreement', colour: INK.bound }],
           },
           note: 'Every one of the twenty-five numbers this subsystem publishes, divided by what the ' +
             'legacy tool wrote for the same cell. One is agreement, and the axis is logarithmic so ' +
@@ -1328,8 +1338,9 @@ const PANELS = [
           finding: !isFinite(hitsAt)
             ? 'the curve stays under the design level across the whole declared range'
             : 'the curve enters the shaded region at ' + hitsAt.toFixed(2) +
-              ' yr and never leaves it; it reaches the requirement at ' +
-              (isFinite(cross(req)) ? cross(req).toFixed(2) + ' yr' : 'no point drawn'),
+              ' yr and never leaves it; ' + (isFinite(cross(req))
+                ? 'it reaches the requirement at ' + cross(req).toFixed(2) + ' yr'
+                : 'the requirement is not reached inside the declared range'),
           x: { label: 'mission length  [years]', min: xs[0], max: xs[xs.length - 1] },
           y: { label: 'daily Ap the record expects once in that time  [-]' },
           // `row` MAKES THE PICTURE NAVIGABLE. A curve that IS a row opens it
@@ -1352,7 +1363,7 @@ const PANELS = [
             { axis: 'y', at: bound, label: 'designed for G' + o.g + ' = Ap ' + bound.toFixed(0) +
               '  (sw_ap_design)', row: 'sw_ap_design' },
             { axis: 'y', at: req, label: 'required ≤ ' + req.toFixed(0) + '  (' + o.req + ')',
-              colour: '#c2185b', row: o.req },
+              colour: INK.bound, row: o.req },
           ],
           // A NOTE, NOT A RULE. This was a dashed line the full height of the
           // frame carrying "exceeds the design at 2.62 yr" at the top, which is
@@ -1568,7 +1579,7 @@ const PANELS = [
                 // in. Both end exactly at the interpolated crossing rather than
                 // at the nearest swept point, so neither claims a sample it does
                 // not have.
-                ...[[true, INK.series[0], 0.10], [false, '#c2185b', 0.13]].map(([w, c, a]) => {
+                ...[[true, INK.series[0], 0.10], [false, INK.bound, 0.13]].map(([w, c, a]) => {
                   const b = bandSide(w);
                   return { kind: 'band', x: b.x, y: b.y, y0: b.x.map(() => reqV),
                     colour: c, alpha: a };
@@ -1582,7 +1593,7 @@ const PANELS = [
                 // same thing in the same ink: crossing the pink line above is
                 // crossing the pink line below.
                 { name: 'the requirement — ' + req, kind: 'line',
-                  x, y: x.map(() => reqV), colour: '#c2185b', dash: [6, 4], row: req },
+                  x, y: x.map(() => reqV), colour: INK.bound, dash: [6, 4], row: req },
               ],
               marks,
             },
@@ -1593,9 +1604,9 @@ const PANELS = [
                 // Below zero the requirement is not met, whichever way it binds:
                 // the margin is signed, so its sign is the verdict and the
                 // region is the verdict drawn.
-                { axis: 'y', to: 0, label: '', colour: '#c2185b', alpha: 0.05 },
+                { axis: 'y', to: 0, label: '', colour: INK.bound, alpha: 0.05 },
                 { axis: 'y', at: 0, label: 'the requirement is exactly met',
-                  colour: '#c2185b' },
+                  colour: INK.bound },
               ].concat(marks),
             },
           ],
@@ -1792,8 +1803,8 @@ const PANELS = [
       const marks = [{ axis: 'y', at: overall,
         label: 'mean over the record’s ' + allDays.length + ' days = ' + overall.toFixed(2) }];
       if (o.by === 'doy') {
-        marks.push({ axis: 'x', at: 80, label: 'March equinox', colour: '#2f6fa8' });
-        marks.push({ axis: 'x', at: 266, label: 'September equinox', colour: '#2f6fa8' });
+        marks.push({ axis: 'x', at: 80, label: 'March equinox', colour: INK.series[1] });
+        marks.push({ axis: 'x', at: 266, label: 'September equinox', colour: INK.series[1] });
       }
       // HOISTED OUT OF THE NOTE, because the answer and the prose have to be the
       // same measurement. They were one expression inside the caption's closure,
@@ -2079,11 +2090,11 @@ function regimeByPhase(rec) {
       x: { label: 'cycle phase', min: 0, max: 1 },
       y: { label: 'share of days at that phase  [%]', min: 0 },
       series: [
-        { name: 'storm (Ap \u2265 26)', kind: 'line', x: xs, y: stPc, colour: '#c2185b' },
+        { name: 'storm (Ap \u2265 26)', kind: 'line', x: xs, y: stPc, colour: INK.bound },
         // CONTEXT. The view is called "where in a cycle a storm is likely" and
         // the quiet share is the mirror that makes the storm curve mean
         // something; two curves at one weight made it a pair of equals.
-        { name: 'quiet (Ap \u2264 6)', kind: 'line', x: xs, y: qtPc, colour: '#2f6fa8',
+        { name: 'quiet (Ap \u2264 6)', kind: 'line', x: xs, y: qtPc, colour: INK.series[1],
           context: true },
       ],
       marks: [{ axis: 'x', at: 0.6193669438, label: 'the declared epoch, phase 0.619' }],
@@ -2327,13 +2338,13 @@ function byIssueYear(fc, byDay, tOf, strict, leaky) {
 function scoreBaseline(metric) {
   if (metric === 'skill') {
     return [
-      { axis: 'y', to: 0, label: '', colour: '#c2185b', alpha: 0.05 },
-      { axis: 'y', at: 0, label: 'no better than persistence', colour: '#c2185b' },
+      { axis: 'y', to: 0, label: '', colour: INK.bound, alpha: 0.05 },
+      { axis: 'y', at: 0, label: 'no better than persistence', colour: INK.bound },
     ];
   }
   if (metric === 'bias') {
     return [{ axis: 'y', at: 0, label: 'unbiased — above is high, below is LOW',
-      colour: '#c2185b' }];
+      colour: INK.bound }];
   }
   return [];
 }
@@ -2434,26 +2445,26 @@ function f107Window(extra, o, eng) {
         { name: 'sw_f107_design_short — hot, single day', kind: 'line', x: xs, y: hot,
           row: 'sw_f107_design_short' },
         { name: 'sw_f107_design_long — hot, sustained', kind: 'line', x: xs, y: hotLong,
-          colour: '#2f6fa8', row: 'sw_f107_design_long' },
+          colour: INK.series[1], row: 'sw_f107_design_long' },
         { name: 'sw_f107_cold_long — cold, sustained', kind: 'line', x: xs, y: coldLong,
-          colour: '#2e7d55', row: 'sw_f107_cold_long' },
+          colour: INK.series[2], row: 'sw_f107_cold_long' },
         { name: 'sw_f107_cold_short — cold, single day', kind: 'line', x: xs, y: cold,
-          colour: '#8f43e0', row: 'sw_f107_cold_short' },
+          colour: INK.series[3], row: 'sw_f107_cold_short' },
         // Dashed, because it is not a design value: it is the analogue's own
         // ceiling, the thing the four solid curves are built from a mean of.
         // CONTEXT, and the note has always said why: it is NOT a design value.
         // Four design curves and a fifth line at the same weight read as five
         // design curves, which is the one misreading this line can cause.
         { name: 'sw_window_peak_level — the analogue’s own peak', kind: 'line',
-          x: xs, y: analogue, colour: '#00918f', dash: [7, 4], context: true,
+          x: xs, y: analogue, colour: INK.series[5], dash: [7, 4], context: true,
           row: 'sw_window_peak_level' },
       ],
       marks: [
         // Above the bound is the side that fails, and the bound binds one way:
         // the requirement's sense is `<=`, so the region is everything over it.
-        { axis: 'y', from: REQ, label: '', colour: '#c2185b', alpha: 0.06 },
+        { axis: 'y', from: REQ, label: '', colour: INK.bound, alpha: 0.06 },
         { axis: 'y', at: REQ, label: 'required \u2264 ' + REQ.toFixed(0) + '  (' + o.reqf + ')',
-          colour: '#c2185b', row: o.reqf },
+          colour: INK.bound, row: o.reqf },
       ],
     },
     note: 'The F10.7 half of what crosses to the system, as the four rows §20 built for it compute ' +
@@ -2564,10 +2575,10 @@ function thermoSolar(extra, eng, decF, decFa, decKp, now) {
           : { axis: 'x',
             from: Math.min(decF, eng.l3_solar_interface.si),
             to: Math.max(decF, eng.l3_solar_interface.si),
-            label: '', colour: '#c2185b', alpha: 0.05 },
+            label: '', colour: INK.bound, alpha: 0.05 },
         decF === null ? null : { axis: 'x', at: decF,
           label: 'env_f107 = ' + decF.toFixed(0) + ', what the design is sized on',
-          colour: '#c2185b', row: 'env_f107' },
+          colour: INK.bound, row: 'env_f107' },
         !(eng.l3_solar_interface && isFinite(eng.l3_solar_interface.si)) ? null
           // INK.mark, not a series slot. Slot 2 is the green the "81-day mean
           // alone" line is drawn in three inches to the right, and a mark
@@ -2656,7 +2667,7 @@ function thermoKp(extra, eng, decKp) {
       y: { label: 'exospheric temperature  [K]' },
       series,
       marks: decKp === null ? [] : [{ axis: 'x', at: decKp,
-        label: 'env_kp = ' + decKp.toFixed(0), colour: '#c2185b', row: 'env_kp' }],
+        label: 'env_kp = ' + decKp.toFixed(0), colour: INK.bound, row: 'env_kp' }],
     },
     note: 'One curve per scenario, each swept at that scenario\u2019s OWN flux — so these are ' +
       'five places to stand and not one curve drawn five times. The two dots on each are the ' +
@@ -2858,8 +2869,13 @@ function smoothed(rows, key) {
       x: { label: 'year' },
       y: { label: (key === 'f107' ? 'F10.7  [sfu]' : key === 'ap' ? 'Ap  [-]' : 'sunspot number  [-]') + ', monthly' },
       series: [
-        { name: 'monthly mean', kind: 'line', x: xs, y: raw, width: 1.1, colour: '#c9a227' },
-        { name: '13-month smoother', kind: 'line', x: xs, y: sm, width: 2.2, colour: '#1a1a1a' },
+        // SLOT 0, NOT A GOLD OF ITS OWN. The palette is six hues assigned in a
+        // fixed order and never extended; this line was the one place in the
+        // face wearing a seventh, and a seventh hue is also a hue with no dark
+        // counterpart validated for it.
+        { name: 'monthly mean', kind: 'line', x: xs, y: raw, width: 1.1,
+          colour: INK.series[0] },
+        { name: '13-month smoother', kind: 'line', x: xs, y: sm, width: 2.2, colour: INK.text },
       ],
     },
     note: 'monthly_means.csv, which until the audit that added this view nothing in this repository ' +
@@ -2933,12 +2949,12 @@ function kpAgainstAp(rec) {
         // filling it says so, and says it behind the median rather than beside
         // it. The edges stay: an area with no boundary invites reading its top
         // as a maximum, and the 90th is not one.
-        { kind: 'band', x: ks, y: p90, y0: p10, colour: '#8a8880', alpha: 0.13 },
+        { kind: 'band', x: ks, y: p90, y0: p10, colour: INK.muted, alpha: 0.13 },
         { name: 'median daily Ap', kind: 'line', x: ks, y: med },
-        { name: '10th and 90th percentile', kind: 'line', x: ks, y: p10, colour: '#8a8880',
+        { name: '10th and 90th percentile', kind: 'line', x: ks, y: p10, colour: INK.muted,
           width: 1, context: true },
-        { name: '', kind: 'line', x: ks, y: p90, colour: '#8a8880', width: 1, context: true },
-        { name: 'published ap at that Kp', kind: 'line', x: ks, y: ks.map(tableAt), colour: '#c2185b', dash: [5, 4] },
+        { name: '', kind: 'line', x: ks, y: p90, colour: INK.muted, width: 1, context: true },
+        { name: 'published ap at that Kp', kind: 'line', x: ks, y: ks.map(tableAt), colour: INK.bound, dash: [5, 4] },
       ],
     },
     note: 'The published table converts a THREE-HOURLY Kp to a three-hourly ap; the record\u2019s daily ' +
@@ -3127,6 +3143,19 @@ function panelBody(p, o) {
  * whichever host asked, not a view that may not be on screen.
  */
 const LIVE = new Set();
+
+// A CANVAS DOES NOT RESTYLE ITSELF. The shell follows `prefers-color-scheme`
+// for free because it is CSS; the figures are pixels, and without this a reader
+// flipping their system theme would be left with the light palette on a dark
+// page — the one combination neither scheme was ever validated in. The same
+// registry the resize listener uses, for the same reason: a redraw must not
+// keep a detached figure alive.
+watchScheme(() => {
+  for (const fn of [...LIVE]) {
+    if (fn._host && fn._host.isConnected) fn();
+    else LIVE.delete(fn);
+  }
+});
 
 function wirePanel(host, p, o, redraw) {
   host.querySelectorAll('.sw-opt').forEach(sel => {

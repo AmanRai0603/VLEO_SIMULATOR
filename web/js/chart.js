@@ -29,32 +29,118 @@
 // The worst adjacent CVD separation is 8.2 against a floor of 8. That is a pass
 // and not a comfortable one, which is why direct labelling and a legend are not
 // decoration here — they are what makes the palette legal.
-export const INK = {
-  grid: '#ece8de',
-  axis: '#8a8880',
-  text: '#1a1a1a',
-  // Secondary text, matching app.css's --ink-2. The finding line wears it: it
-  // is content and not furniture, so it may not have the axis grey, and it is
-  // not the frame's title either. 7.9:1 on white.
-  text2: '#4b4b4b',
-  muted: '#8a8880',
-  // THE SURFACE IS THE CARD THE CANVAS SITS ON, AND THAT CARD IS WHITE.
-  // app.css gives `canvas.plot` `background: var(--card)`, which is #ffffff,
-  // inside a 1px rule, on #fbfaf7 paper — so the figure is deliberately a white
-  // card and there never was a canvas/page mismatch to fix. What WAS wrong is
-  // this token: the 2px separator ring that lets two dots overlap and stay two
-  // dots, and the 2px gap between touching bars, are drawn in INK.surface, so
-  // both were being drawn three levels off the colour actually underneath them.
+const SCHEMES = {
+  light: {
+    grid: '#ece8de',
+    axis: '#8a8880',
+    text: '#1a1a1a',
+    // Secondary text, matching app.css's --ink-2. The finding line wears it: it
+    // is content and not furniture, so it may not have the axis grey, and it is
+    // not the frame's title either. 7.9:1 on white.
+    text2: '#4b4b4b',
+    muted: '#8a8880',
+    // THE SURFACE IS THE CARD THE CANVAS SITS ON, AND THAT CARD IS WHITE.
+    // app.css gives `canvas.plot` `background: var(--card)`, inside a 1px rule,
+    // on paper — so the figure is deliberately a white card and there never was
+    // a canvas/page mismatch to fix. What WAS wrong is this token: the 2px
+    // separator ring that lets two dots overlap and stay two dots, and the 2px
+    // gap between touching bars, are drawn in INK.surface, so both were being
+    // drawn three levels off the colour actually underneath them.
+    surface: '#ffffff',
+    series: ['#b5731a', '#2f6fa8', '#2e7d55', '#8f43e0', '#c2185b', '#00918f'],
+    // Four steps and five, one hue, for the two ordered sets this face draws:
+    // `predict`'s percentiles and the scenario ladder. Validated as ordinal
+    // ramps — monotone lightness, every adjacent gap clear, the light end
+    // clearing the surface — which is a different set of checks from the
+    // categorical one above and has to be run separately.
+    ramp4: ['#86b6ef', '#3987e5', '#1c5cab', '#0d366b'],
+    ramp5: ['#86b6ef', '#5598e7', '#2a78d6', '#1c5cab', '#0d366b'],
+  },
+
+  // THE DARK SCHEME IS SELECTED, NOT FLIPPED.
   //
-  // §34 read the mismatch the other way round and proposed filling the canvas
-  // #fcfcfb, which would have put the one-step seam INSIDE the border instead
-  // of removing it. Both palettes re-validated against #ffffff — the six
-  // categorical hues and `predict`'s four-step ramp — and both still pass, the
-  // ramp's light end at 2.11:1 against a floor of 2.
-  surface: '#ffffff',
-  series: ['#b5731a', '#2f6fa8', '#2e7d55', '#8f43e0', '#c2185b', '#00918f'],
-  mark: '#8f43e0',
+  // Inverting a palette is how a set of hues chosen against white ends up
+  // unreadable on black: the lightness band for a dark surface is 0.48 to 0.67,
+  // narrower and higher than the light one's 0.43 to 0.77, so every hue has to
+  // be re-stepped and re-checked rather than turned up.
+  //
+  // These six keep the light palette's six HUE ANGLES — the orange still means
+  // "the record", the pink still means "the line a value is measured against" —
+  // and take a lightness per slot chosen by searching the band. All five checks
+  // pass against #1e1d19: the worst adjacent pair is the teal and the pink at
+  // ΔE 8.5 under deuteranopia, against a target of 8, and the worst
+  // normal-vision pair is 18.3.
+  //
+  // THE SEARCH WAS RUN TWICE AND THE FIRST ANSWER WAS THROWN AWAY. Maximising
+  // colourblind separation alone gave ΔE 10.1 — better than the light
+  // palette's 8.2 — and four of the six hues sat at 3.1 to 3.5:1 against the
+  // surface, scraping the 3:1 minimum where the light palette runs 3.9 to 5.9.
+  // Separation you cannot see is not separation. Once every check passes and
+  // the CVD TARGET is met, contrast is what the remaining freedom buys: these
+  // six run 4.6 to 5.3:1.
+  dark: {
+    grid: '#2e2c27',
+    axis: '#8f8c84',
+    text: '#ecebe6',
+    text2: '#b8b5ad',
+    muted: '#8f8c84',
+    surface: '#1e1d19',
+    series: ['#c37900', '#4191d9', '#349967', '#a563f4', '#f74c82', '#00a19e'],
+    // The ordered sets run the other way on a dark surface: dimmest at the
+    // unemphasised end, brightest at the one the panel is about. Both validated
+    // as ordinal ramps against #1e1d19.
+    //
+    // THE DIM END WAS LIFTED AFTER LOOKING AT IT. A first pass put it at 2.13:1
+    // — legal, the ordinal floor is 2, and the light ramp's own pale end sits
+    // at 2.11 — and on `predict` the 50th percentile was a navy line on a
+    // near-black frame that took hunting for. Symmetric with the light ramp by
+    // the check and not by the eye, because a pale line on white is still a
+    // line and a dark one on black is a gap. 3.02:1 now, and the four steps
+    // still clear the 0.06 lightness gap the check asks between them.
+    ramp4: ['#0f66c8', '#3d8bf1', '#7bb3ff', '#bedaff'],
+    ramp5: ['#0f66c8', '#3382e6', '#569fff', '#8dbdff', '#bedaff'],
+  },
 };
+
+// ONE OBJECT, TWO TABLES. Every module imports `INK` once and holds that
+// binding for the life of the page, so the scheme cannot be a new object — it
+// is the same object with different values in it. `mark` and `bound` are not
+// extra hues: they are slots 4 and 5 under the names the face uses them by, so
+// a mark and the region it opens cannot drift apart.
+export const INK = {};
+
+/** Put one of the two schemes into INK. Returns the name that is now in force. */
+export function setScheme(name) {
+  const which = name === 'dark' ? 'dark' : 'light';
+  const t = SCHEMES[which];
+  Object.assign(INK, t, { mark: t.series[3], bound: t.series[4] });
+  INK.scheme = which;
+  return which;
+}
+
+/** Whatever the reader's system asks for, now. */
+export function applyScheme() {
+  const dark = typeof matchMedia === 'function' &&
+    matchMedia('(prefers-color-scheme: dark)').matches;
+  return setScheme(dark ? 'dark' : 'light');
+}
+
+/**
+ * Re-run `fn` when the reader's system changes its mind.
+ *
+ * A canvas does not restyle itself. CSS carries the shell across a theme change
+ * for free and the figures would have stayed in the old palette on the new
+ * page — the one combination neither scheme was ever checked in.
+ */
+export function watchScheme(fn) {
+  if (typeof matchMedia !== 'function') return;
+  const q = matchMedia('(prefers-color-scheme: dark)');
+  const go = () => { applyScheme(); fn(); };
+  if (q.addEventListener) q.addEventListener('change', go);
+  else if (q.addListener) q.addListener(go);
+}
+
+applyScheme();
 
 /**
  * Tick VALUES on round numbers, rather than whatever lands on an even pixel.

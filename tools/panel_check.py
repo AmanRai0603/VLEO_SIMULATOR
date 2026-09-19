@@ -22,7 +22,11 @@ So a panel gets a spec like a node does, and three checks that need no person:
   2b · it reads    for every row the panel declares in `engine`, serve that row
                    a different answer and the picture must change. A panel that
                    asks the engine and then ignores the reply fails here
-  3 · it matches   against a stored reference, within tolerance
+  3 · it matches   against a stored reference, within tolerance — IN BOTH COLOUR
+                   SCHEMES. A dark rendering nobody has looked at is a rendering
+                   nobody has checked, and a canvas gets none of CSS's help: its
+                   palette is a second table in the source, chosen and validated
+                   separately, so it can be wrong in ways the light one is not
   4 · it responds  for a panel that declares an interaction: brushing a window
                    changes the picture and SAYS SO in the view strip, hiding a
                    series changes it again, and undoing either returns the
@@ -487,33 +491,45 @@ def check_all(ids=None, record=False):
                 except Exception as e:
                     found.append((d["id"], "3 matches", "could not reach the reference state: %s" % e))
             REFERENCE.mkdir(exist_ok=True)
-            ref = REFERENCE / ("%s.png" % d["id"])
-            shot = page.locator(mount).screenshot()
-            if record:
-                ref.write_bytes(shot)
-                print("  recorded %s (%d bytes)" % (ref.relative_to(ROOT), len(shot)))
-            elif not ref.is_file():
-                found.append((
-                    d["id"], "3 matches",
-                    "no reference image. `--record` stores one, and a person has to look at "
-                    "the picture first — a reference nobody looked at is a snapshot of a bug",
-                ))
-            else:
+            for scheme in ("light", "dark"):
+                # `emulate_media` is what a reader's system preference looks like
+                # to the page: the shell follows it through CSS and the figures
+                # through the media listener in the face. Both have to be given
+                # a moment — the canvas redraw is a listener, not a repaint.
+                page.emulate_media(color_scheme=scheme)
+                page.wait_for_timeout(500)
+                name = d["id"] if scheme == "light" else "%s.dark" % d["id"]
+                ref = REFERENCE / ("%s.png" % name)
+                shot = page.locator(mount).screenshot()
+                if record:
+                    ref.write_bytes(shot)
+                    print("  recorded %s (%d bytes)" % (ref.relative_to(ROOT), len(shot)))
+                    continue
+                if not ref.is_file():
+                    found.append((
+                        d["id"], "3 matches",
+                        "no %s reference image. `--record` stores one, and a person has to "
+                        "look at the picture first — a reference nobody looked at is a "
+                        "snapshot of a bug" % scheme,
+                    ))
+                    continue
                 diff = _differ(ref.read_bytes(), shot)
                 if isinstance(diff, tuple):
                     found.append((
                         d["id"], "3 matches",
-                        "the canvas changed shape, %dx%d to %dx%d — a reference of a different "
-                        "shape cannot be compared at all, so this is not a percentage: re-record "
-                        "and look at the new picture"
-                        % (diff[1][0], diff[1][1], diff[2][0], diff[2][1]),
+                        "the %s canvas changed shape, %dx%d to %dx%d — a reference of a "
+                        "different shape cannot be compared at all, so this is not a "
+                        "percentage: re-record and look at the new picture"
+                        % (scheme, diff[1][0], diff[1][1], diff[2][0], diff[2][1]),
                     ))
                 elif diff > d.get("tolerance", 0.02):
                     found.append((
                         d["id"], "3 matches",
-                        "%.1f%% of pixels differ from the reference; %.1f%% is the tolerance"
-                        % (diff * 100, d.get("tolerance", 0.02) * 100),
+                        "%.1f%% of the %s picture's pixels differ from its reference; "
+                        "%.1f%% is the tolerance"
+                        % (diff * 100, scheme, d.get("tolerance", 0.02) * 100),
                     ))
+            page.emulate_media(color_scheme="light")
             page.close()
         browser.close()
     return found

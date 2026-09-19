@@ -166,3 +166,27 @@ caught any other way:
   It never showed through the controls, because a control change rebuilds the
   body and re-fits the canvas; it needed a redraw in place, which is exactly
   what a zoom is
+
+## Two schemes, two references
+
+Check three shoots every panel twice — once under `prefers-color-scheme: light`
+and once under dark — and compares each against its own reference,
+`<id>.png` and `<id>.dark.png`. **A rendering nobody has looked at is a
+rendering nobody has checked**, and the dark one can be wrong in ways the light
+one cannot:
+
+- the shell follows the scheme through CSS tokens, but **a canvas gets none of
+  that help**. Its palette is a second table in `web/js/chart.js`, selected and
+  validated against the dark surface rather than flipped from the light one —
+  the lightness band for a dark surface is 0.48 to 0.67, narrower and higher
+  than the light one's 0.43 to 0.77, so every hue has to be re-stepped and
+  re-checked
+- a literal colour anywhere in the face or the sheet never follows the scheme at
+  all. Twenty-eight hex values in the chart layer and fourteen in the stylesheet
+  had to become tokens before dark mode meant anything, and the ones that were
+  missed showed up as light blocks burned into a dark page
+
+Two things to look for in a dark reference that the light one will never show:
+a block of light where a fill should have gone dark, and a line you have to hunt
+for. Both are the same defect — a value chosen against the wrong surface — and
+both pass every mechanical check in this file.

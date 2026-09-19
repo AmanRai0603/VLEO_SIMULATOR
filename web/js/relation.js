@@ -23,7 +23,25 @@
 
 import { $, $$, esc, fmt } from './dom.js';
 import { S, reachFrom, isSeeded } from './state.js';
-import { drawChart, attachHover, tableFor, INK } from './chart.js';
+import { drawChart, attachHover, tableFor, watchScheme, INK } from './chart.js';
+
+// THESE FIGURES REDRAW ON A THEME CHANGE TOO. The panels have their own
+// registry for it; these are the generated per-node relation and domain
+// pictures, drawn once and then left, so without this they would keep the light
+// palette on a dark page. Same shape as the panels': a redraw is dropped as
+// soon as its host leaves the document, because a listener holding a detached
+// node is a leak with a picture on it.
+const LIVE = new Set();
+const keepLive = (host, fn) => {
+  fn._host = host;
+  LIVE.add(fn);
+};
+watchScheme(() => {
+  for (const fn of [...LIVE]) {
+    if (fn._host && fn._host.isConnected) fn();
+    else LIVE.delete(fn);
+  }
+});
 
 export async function mountRelation(host) {
   const id = host.dataset.node;
@@ -84,7 +102,7 @@ export async function mountRelation(host) {
       series: [
         // The whole relation, faint, so the walk is seen against where it is
         // going rather than only where it has been.
-        { name: '', kind: 'line', x: xs, y: ys, colour: '#e3dccd', width: 1.2 },
+        { name: '', kind: 'line', x: xs, y: ys, colour: INK.grid, width: 1.2 },
         { name: '', kind: 'line', x: xs.slice(0, n), y: ys.slice(0, n), width: 2.2 },
         { name: '', kind: 'dots', x: [xs[n - 1]], y: [ys[n - 1]], width: 4, alpha: 1 },
       ],
@@ -118,6 +136,7 @@ export async function mountRelation(host) {
       return;
     }
     scrub.value = 100;
+    keepLive(host, redraw);
     redraw();
     // The WHOLE relation, once, and not the walk. The three series the chart
     // draws are one dataset shown three ways — faint behind, solid up to the
@@ -186,8 +205,8 @@ function guardMarks(host, res) {
   const span = (y1 - y0) || Math.abs(y1) || 1;
   const near = v => v >= y0 - 2 * span && v <= y1 + 2 * span;
   const out = [];
-  if (near(lo)) out.push({ axis: 'y', at: lo, label: 'refuses below ' + fmt(lo), colour: '#c2185b' });
-  if (near(hi)) out.push({ axis: 'y', at: hi, label: 'refuses above ' + fmt(hi), colour: '#c2185b' });
+  if (near(lo)) out.push({ axis: 'y', at: lo, label: 'refuses below ' + fmt(lo), colour: INK.bound });
+  if (near(hi)) out.push({ axis: 'y', at: hi, label: 'refuses above ' + fmt(hi), colour: INK.bound });
   return out;
 }
 
@@ -234,19 +253,21 @@ async function declaredValue(host, r) {
     '<div class="rel-note muted"></div>';
   const xs = [], ys = [];
   for (let i = 0; i <= 100; i++) { xs.push(lo + (hi - lo) * i / 100); ys.push(0); }
-  drawChart($('.rel-plot', host), {
+  const paint = () => drawChart($('.rel-plot', host), {
     x: { label: r.id + '  [' + (r.unit === '-' ? 'dimensionless' : r.unit) + ']', min: lo, max: hi },
     y: { label: 'the declared domain', min: -1, max: 1, ticks: 2, fmt: () => '' },
     series: [
-      { name: '', kind: 'line', x: xs, y: ys, colour: '#e3dccd', width: 8 },
+      { name: '', kind: 'line', x: xs, y: ys, colour: INK.grid, width: 8 },
       { name: '', kind: 'dots', x: [v], y: [0], width: 7, alpha: 1 },
     ],
     marks: [
-      { axis: 'x', at: lo, label: 'refuses below ' + fmt(lo), colour: '#c2185b' },
-      { axis: 'x', at: hi, label: 'refuses above ' + fmt(hi), colour: '#c2185b' },
+      { axis: 'x', at: lo, label: 'refuses below ' + fmt(lo), colour: INK.bound },
+      { axis: 'x', at: hi, label: 'refuses above ' + fmt(hi), colour: INK.bound },
       { axis: 'x', at: v, label: r.symbol + ' = ' + fmt(v) },
     ],
   });
+  keepLive(host, paint);
+  paint();
   const pc = (frac * 100).toFixed(1);
   host.querySelector('.rel-note').innerHTML =
     'A declared value has no relation to walk: it is a number a person chose, and this is where ' +

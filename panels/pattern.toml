@@ -7,7 +7,15 @@ for three detrend windows at once — 365 days heavy, 181 and 731 light — with
 rotation peak and its first two harmonics marked, and a dashed Bartlett 95 per
 cent band that widens with lag. The second view leaves the autocorrelation and
 draws spike size against timing instead."""
-correct = """the finding line reads "the 731-day curve sits above the 365-day one at 182 of the
+correct = """A DARK RENDERING IS RECORDED BESIDE THE LIGHT ONE and both have to be looked at.
+The canvas gets none of CSS's help: its palette is a second table in
+web/js/chart.js, chosen and validated against the dark surface separately, so
+it can be wrong in ways the light one is not. What to check is the same in both
+— every claim above — plus one thing only the dark picture can show: nothing in
+the frame should be a light block. A literal light fill that never followed the
+scheme reads as a hole burned in the page.
+
+the finding line reads "the 731-day curve sits above the 365-day one at 182 of the
 200 lags, and the 365 curve is outside the band at N of them". Both counts are
 made at draw time — 182 is not typed anywhere — and the first is this view's own
 claim above, now countable rather than asserted.
@@ -54,7 +62,7 @@ rather than a curve, and no autocorrelation axis remains."""
 # forward would make check three prove only that a machine has not
 # changed its mind. It needs a person to look at
 # panels/reference/pattern.png and put their name here.
-confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–5; awaiting a look. Every figure gained an answer line above the chart and a finding line inside it, and this panel’s own picture changed as well — see `correct` above for what to check"
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting a look at BOTH pictures. Every figure gained an answer line above the chart, a finding line inside it, and a second rendering in the dark scheme — see `correct` above for what to check in each"
 # Check four drives this panel: a brush, a key click, and the buttons that undo
 # them. It is declared rather than inferred so a panel that deliberately offers
 # no interaction does not fail a check for not having one.

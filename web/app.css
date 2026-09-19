@@ -523,3 +523,87 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
 .relation-host .rel-plot { width: 100%; max-width: 900px; height: auto; margin: 8px 0; }
 .relation-host .rel-scrub { vertical-align: middle; width: 220px; }
 .relation-host .rel-note { max-width: 900px; line-height: 1.5; font-size: 12px; }
+
+
+/* ---------------------------------------------------------------------------
+   DARK MODE LIVES AT THE END OF THE SHEET, AND THAT IS NOT TIDINESS.
+
+   It was written at the top, beside the tokens it overrides, and the token
+   overrides worked while every plain-selector one silently did not: at equal
+   specificity the LATER rule wins, and `.mcell.diag` is declared three hundred
+   lines below. The matrix came out a grey slab with the light diagonal cells
+   still glowing through it, and nothing reported a thing — the page was valid
+   CSS doing exactly what it said.
+   --------------------------------------------------------------------------- */
+/* DARK IS SELECTED, NOT FLIPPED.
+   Every token here is chosen against the dark surface rather than derived from
+   the light one: an inverted palette is how hues picked against white end up
+   unreadable on black. The paper/card relationship is kept — the card is a step
+   LIGHTER than the paper here, where in light mode it is a step brighter — so a
+   figure is still a card on a page and the 1px rule still separates them.
+
+   The five accent pairs keep their meanings and their hue angles and take the
+   lightness a dark surface needs; the pale companions become dark washes rather
+   than light ones, because a pale fill on a dark page is a hole in it.
+
+   The chart's own palette is NOT here. Canvas ink cannot come from CSS, so
+   web/js/chart.js carries both schemes and swaps them; the two were validated
+   separately, each against its own surface. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper:   #141310;
+    --card:    #1e1d19;
+    --ink:     #ecebe6;
+    --ink-2:   #b8b5ad;
+    --ink-3:   #8f8c84;
+    --rule:    #3a382f;
+    --rule-2:  #2e2c27;
+
+    --out:     #d18a2b;
+    --out-pale:#3a2c14;
+    --in:      #a98ae0;
+    --in-pale: #2a2340;
+    --both:    #4fa87a;
+    --both-pale:#17301f;
+    --teal:    #3cb3b1;
+    --teal-pale:#123230;
+    --slate:   #94a3b8;
+    --slate-pale:#22262e;
+  }
+  /* WHITE ON AN ACCENT IS THE WRONG WAY ROUND HERE. In light mode the accents
+     are dark enough to carry white text; in dark mode they are chosen light
+     enough to be seen ON the page, so the text on top of one has to be the
+     page's own dark instead. Five places print `color: #fff` on a filled
+     accent, and every one of them reads as glare without this. */
+  .step.on .n, .pill.out, .pill.in, .pill.both { color: var(--paper); }
+  /* The seeded hatch is two light greys, which on a dark page is a bright
+     block. Same pattern, dark. */
+  .seeded, .hatch {
+    background: repeating-linear-gradient(45deg,#232119,#232119 3px,#2b2921 3px,#2b2921 6px);
+  }
+  /* A form field inherits the system's light chrome unless told otherwise. */
+  input, select, textarea, button { color-scheme: dark; }
+  .sweepctl input.bad { background: #2c1a19; }
+  .maths code, .seg-lead code, ol.derive .dm { background: #232119; }
+
+  /* EVERY LITERAL LIGHT FILL IN THE SHEET, AND THERE WERE FOURTEEN. A token
+     follows the scheme; a hex does not, and a warm off-white block is a hole
+     burned in a dark page. The matrix was the loud one — its diagonal cells and
+     the veil over the whole grid are both literals, so in dark mode the entire
+     matrix came out a grey slab with the tree glowing through it. Nothing here
+     is a new decision: each is the same job the light value does, chosen
+     against the dark surface. */
+  .mcell.diag { background: #2a2820; }
+  .mcell.diag:hover { background: #3a372c; }
+  .mcell.diag.seeded {
+    background: repeating-linear-gradient(45deg,#26241d,#26241d 3px,#2f2c24 3px,#2f2c24 6px);
+  }
+  .boxrect { background: rgba(0,0,0,.35); }
+  .empty { background: #1b1a16; }
+  .gaps { background: #241f16; }
+  table.iface tr.out td { background: #241f16; }
+  ol.derive li.now { background: #241f16; outline-color: #4a3d23; }
+  pre.code { background: #1b1a16; }
+  .cred .f { background: #2e2c27; }
+  .blocked { color: #e88a8a; background: #2c1a19; border-color: #4a2a28; }
+}
