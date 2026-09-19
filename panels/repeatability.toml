@@ -5,7 +5,11 @@ mount = "canvas.sw-panel"
 draws = """Every cycle the record holds, stacked on cycle phase, with the mean of the
 COMPLETE cycles drawn heavier over them. Cycle 25 is dashed and stops part way,
 because it is still running and the record simply has no days past its end."""
-correct = """THE MEAN CYCLE IS THE ONLY CURVE AT FULL CONTRAST. It is the row this panel
+correct = """the finding line counts the phase bins in which cycle 23 runs above cycle 24, and
+the average gap on the rise against the average gap after phase 0.6. Both are
+counted at draw time; a reviewer checks the count against the curves.
+
+THE MEAN CYCLE IS THE ONLY CURVE AT FULL CONTRAST. It is the row this panel
 is named for; the individual cycles are drawn at half contrast because they are
 what makes the mean legible AS a mean. Five curves at one weight is the state
 §34 measured — no entry point, and the reader told in prose which line the
@@ -31,7 +35,7 @@ from the mean rather than drawn as zero."""
 # first is the whole of what this move is — so the earlier signature was against
 # a different picture and carrying it forward would make check three prove only
 # that a machine has not changed its mind.
-confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19 after \u00a734 move 3; awaiting a look (last signed A. Rai / 2026-09-15, against the previous chart)"
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–5; awaiting a look. Every figure gained an answer line above the chart and a finding line inside it, and this panel’s own picture changed as well — see `correct` above for what to check"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.

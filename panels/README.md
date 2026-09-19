@@ -95,3 +95,34 @@ Checks one and two are mechanical and catch the mechanical failures. `correct`
 is for the reviewer, and it is the field that makes the visual review a
 comparison rather than an impression: "one box per row, none overlapping" is
 something a person can disagree with. "Looks right" is not.
+
+## The answer, and the finding
+
+Two lines were added to every solar panel in §35 and §37 of
+`docs/MATLAB_PORT_PLAN.md`, and they are not the same line. A reviewer checking
+one against the other is the point of separating them.
+
+**The answer** — `answer: { value, of }` on the build — is the number the panel
+publishes for the question it asks, drawn above the chart, outside the canvas.
+It is optional: a build with no single number must not invent one, because a
+headline that is a guess is worse than no headline.
+
+**The finding** — `finding` on the spec — is one line inside the frame, under
+the y label. It is a relation between things DRAWN: which curve is above which
+and over how much of the axis, where two lines cross, how many points fall
+outside a band. Phrased so a reader can check it against the picture and
+nothing else.
+
+Both are computed from the same arrays the figure is drawn from. **Neither may
+be typed**, and this is the rule with teeth: a sentence a person wrote about a
+chart is a second copy of the chart, and §21 found three of those going stale
+in one panel. Where a `correct` block says the finding must read "the 731-day
+curve sits above the 365-day one at 182 of the 200 lags", the number in it is
+counted at draw time — the reviewer is checking the count against the picture,
+not against the sheet.
+
+A finding that only quotes the answer again is not a finding. Two symptoms to
+look for in review: a finding whose clause could have been written without the
+data ("and the curve rises throughout" with nothing counting it), and a finding
+wider than three lines, which the chart refuses to draw because a paragraph
+belongs in the note below the chart.

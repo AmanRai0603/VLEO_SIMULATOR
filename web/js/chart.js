@@ -33,6 +33,10 @@ export const INK = {
   grid: '#ece8de',
   axis: '#8a8880',
   text: '#1a1a1a',
+  // Secondary text, matching app.css's --ink-2. The finding line wears it: it
+  // is content and not furniture, so it may not have the axis grey, and it is
+  // not the frame's title either. 7.9:1 on white.
+  text2: '#4b4b4b',
   muted: '#8a8880',
   // THE SURFACE IS THE CARD THE CANVAS SITS ON, AND THAT CARD IS WHITE.
   // app.css gives `canvas.plot` `background: var(--card)`, which is #ffffff,
@@ -165,6 +169,20 @@ const nice = v => {
  *   // OR SEVERAL, STACKED, SHARING ONE X AXIS:
  *   panes: [{ y, series, marks }, …],
  *
+ *   finding: string — ONE LINE, INSIDE THE FRAME, SAYING WHAT THE PICTURE SHOWS.
+ *     Not the panel's answer, which is a number above the chart and belongs to
+ *     the question the panel asks. A finding is a relation between things DRAWN
+ *     — which curve is above which and over how much of the axis, where two
+ *     lines cross, how many points fall outside a band — phrased so a reader
+ *     can check it against the picture and nothing else. Computed from the same
+ *     arrays the figure is drawn from, never typed: a sentence a person wrote
+ *     about a chart is a second copy of the chart. It quotes the answer again,
+ *     it is not a finding.
+ *
+ *     Drawn under the first pane's y label, wrapped to the plot width, at most
+ *     three lines — a finding that needs four is a paragraph and belongs in the
+ *     note.
+ *
  *   note: string
  * }
  *
@@ -244,8 +262,16 @@ export function drawChart(canvas, spec) {
     const named = pn.series.filter(s => s.name);
     return { named, rows: named.length > 1 ? _legendRows(ctx, named, W - L - R) : [] };
   });
-  // Each pane's own header: the y label, plus however many legend rows it needs.
-  const bands = legs.map(g => 18 + g.rows.length * LEG_H);
+  // THE FINDING, WRAPPED TO THE PLOT WIDTH, under the FIRST pane's y label. One
+  // per figure rather than one per frame: a stack is one argument read down, and
+  // three findings in a column is the paragraph this line exists to replace.
+  const FIND_H = 13;
+  ctx.font = '10px ui-monospace, monospace';
+  const findLines = spec.finding ? _wrapText(ctx, spec.finding, W - L - R, 3) : [];
+  // Each pane's own header: the y label, the finding on the first pane, and
+  // however many legend rows the pane needs.
+  const bands = legs.map((g, i) =>
+    18 + (i === 0 ? findLines.length * FIND_H : 0) + g.rows.length * LEG_H);
 
   ctx.clearRect(0, 0, W, H);
   // THE SURFACE TOKEN, NOT A LITERAL. Same colour as before — the card is
@@ -316,6 +342,7 @@ export function drawChart(canvas, spec) {
   const drawn = panes.map((pn, pi) => _pane(ctx, {
     pn, W, H, L, R, B, px, x0, x1, xt, top: geom[pi].top, bot: geom[pi].bot,
     head: geom[pi].head, leg: legs[pi], LEG_H, given, xgrid: spec.x.grid,
+    find: pi === 0 ? findLines : [], FIND_H,
   }));
 
   // THE X AXIS ONCE, AT THE BOTTOM, because it is the axis the stack shares. A
@@ -387,6 +414,7 @@ function _hues(series) {
  */
 function _pane(ctx, o) {
   const { pn, W, H, L, R, B, px, x0, x1, xt, top, bot, head, leg, LEG_H, given } = o;
+  const find = o.find || [], FIND_H = o.FIND_H || 13;
   const T = top, BOT = bot;
 
   // THE EXTENT IS ALWAYS COMPUTED, AND A DECLARED BOUND THEN OVERRIDES ITS OWN
@@ -845,12 +873,23 @@ function _pane(ctx, o) {
   ctx.fillStyle = INK.text; ctx.font = '11px ui-monospace, monospace';
   ctx.fillText(pn.y.label, L, head + 12);
 
+  // The finding, between the frame's name and its key. It is the one line a
+  // reader who reads nothing else should get, so it sits where the eye already
+  // is rather than over the data.
+  if (find.length) {
+    ctx.font = '10px ui-monospace, monospace';
+    ctx.fillStyle = INK.text2;
+    ctx.textAlign = 'left';
+    find.forEach((line, i) => ctx.fillText(line, L, head + 12 + (i + 1) * FIND_H));
+  }
+  const findH = find.length * FIND_H;
+
   if (leg.rows.length) {
     ctx.font = '10px ui-monospace, monospace';
     ctx.textAlign = 'left';
     leg.rows.forEach((row, r) => {
       let lx = L;
-      const ly = head + 12 + (r + 1) * LEG_H;
+      const ly = head + 12 + findH + (r + 1) * LEG_H;
       for (const s of row) {
         const col = hues[pn.series.indexOf(s)];
         // The SWATCH recedes with its line; the NAME does not. A legend entry
@@ -868,6 +907,33 @@ function _pane(ctx, o) {
   }
 
   return { y: pn.y, series: pn.series, hues, py, fy, y0, y1, top: T, bot: BOT, log: lg };
+}
+
+/**
+ * Greedy word wrap to a pixel width, refusing to run past `maxLines`.
+ *
+ * Refusing rather than truncating, because a silently shortened finding is a
+ * claim with its qualifier cut off — "the outlook beats persistence" where the
+ * text said "from lead 1 to 22" — and that is a worse sentence than none. A
+ * finding that needs four lines is a paragraph and belongs in the note under
+ * the chart.
+ */
+function _wrapText(ctx, text, width, maxLines) {
+  const words = String(text).split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = '';
+  for (const w of words) {
+    const probe = line ? line + ' ' + w : w;
+    if (line && ctx.measureText(probe).width > width) { lines.push(line); line = w; }
+    else line = probe;
+  }
+  if (line) lines.push(line);
+  if (lines.length > maxLines) {
+    throw new Error('the finding needs ' + lines.length + ' lines and ' + maxLines +
+      ' is the limit — it is a paragraph, and the note below the chart is where a ' +
+      'paragraph goes: "' + text + '"');
+  }
+  return lines;
 }
 
 /** Pack the legend into rows that fit the plot width. */

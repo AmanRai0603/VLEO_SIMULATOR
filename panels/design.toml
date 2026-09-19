@@ -5,7 +5,10 @@ mount = "canvas.sw-panel"
 draws = """What the record expects against what the design is built for: a return curve
 for the Ap driver, or lead and confidence for F10.7, with the capability and
 the requirement drawn on as the lines a reader compares against."""
-correct = """The record's expectation as a curve, with the selected capability and the
+correct = """the finding line says where the curve enters the shaded region and where it
+reaches the requirement, both read off the drawn curve by interpolation.
+
+The record's expectation as a curve, with the selected capability and the
 selected requirement drawn as marks that sit at their stated values on the same
 axis — at G3 the capability is Ap 132, and the requirement mark moves when the
 requirement control does. Where the expectation crosses the capability is the
@@ -56,7 +59,7 @@ requirement is washed in the same pink the requirement line is drawn in."""
 # changed, not its size, so the earlier signature was against a different chart
 # and carrying it forward would make check three prove only that a machine has
 # not changed its mind.
-confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19 after §34 moves 1 and 2; awaiting a look (last signed A. Rai / 2026-09-15, against the previous chart)"
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–5; awaiting a look. Every figure gained an answer line above the chart and a finding line inside it, and this panel’s own picture changed as well — see `correct` above for what to check"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.

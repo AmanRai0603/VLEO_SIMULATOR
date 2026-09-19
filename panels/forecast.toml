@@ -9,7 +9,12 @@ error — because the three have different units and a shared y axis would be a
 dual-axis chart. The persistence baseline is two lines in the skill frame, not
 a control: the leaky one is drawn beside the strict one so the size of the leak
 is visible rather than remembered."""
-correct = """THREE FRAMES IN A COLUMN on the by-lead and by-year views, sharing one
+correct = """the finding line counts the leads at which the strict skill line is above zero,
+the leads at which the leaky one is, and the leads at which the bias frame is
+below zero. Three counts, all made at draw time, and the gap between the first
+two is the leak this panel exists to show.
+
+THREE FRAMES IN A COLUMN on the by-lead and by-year views, sharing one
 horizontal axis with its ticks and title drawn ONCE at the bottom. Each frame
 carries its own y label and its own scale; a single y axis across all three, or
 two scales in one frame, is the defect to look for. A vertical read down the
@@ -88,7 +93,7 @@ either."""
 # forward would make check three prove only that a machine has not
 # changed its mind. It needs a person to look at
 # panels/reference/forecast.png and put their name here.
-confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19 after §34 moves 1 and 2; awaiting a look (last signed A. Rai / 2026-09-15, against the previous chart)"
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–5; awaiting a look. Every figure gained an answer line above the chart and a finding line inside it, and this panel’s own picture changed as well — see `correct` above for what to check"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.

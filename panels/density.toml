@@ -6,7 +6,12 @@ draws = """Not a density profile. The study's density tab needs an atmosphere mo
 by a subsystem with nothing written in it, so what is drawn is the honest
 precondition: the two drivers such a model takes, against each other, over
 every day carrying both."""
-correct = """A scatter of the two drivers against each other, one point per day carrying
+correct = """the finding line reports the share of days below BOTH medians against the 25 per
+cent two independent drivers would give, and the number of flux deciles in which
+a storm-level Ap appears. A scatter of ten thousand dots does not tell a reader
+either of those by looking.
+
+A scatter of the two drivers against each other, one point per day carrying
 both, with no fitted line through it — a trend line here would be this face
 carrying a model no row owns. The axes are the two drivers with their units,
 and the Ap axis STARTS AT ZERO. That is worth checking rather than assuming:
@@ -26,7 +31,11 @@ be the defect, and it is the one this spec exists to fix in place."""
 # did not carry; it was put back in front of a person and agreed again. That
 # second look is the whole reason this row may go to main, and it is the step
 # no check can perform.
-confirmed_by = "A. Rai / 2026-09-15 (against the pre-move picture; content unchanged, canvas resized 2026-09-16, not yet re-looked)"
+# NOT CONFIRMED ANY MORE. The reference was re-recorded on 2026-09-19: every
+# figure in the face now carries a finding line under its y label, so the frame
+# below it has moved and the picture says something it did not say before. The
+# earlier signature was against a picture without that line.
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–5; awaiting a look. Every figure gained an answer line above the chart and a finding line inside it, and this panel’s own picture changed as well — see `correct` above for what to check"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.

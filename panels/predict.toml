@@ -8,7 +8,11 @@ hue with the 95th heavy. This is the measured quantity sw_uncertainty_growth
 reads, drawn over its whole range rather than at the one lead a mission asks
 about, and with the cost of choosing a percentile visible rather than hidden
 behind a control."""
-correct = """FOUR curves of percentile change against lead, nested and never crossing: the
+correct = """the finding line names the 95th’s hump, its dip and the rise after, with the
+value and lead of each; where there is no hump — on Ap — it reports how far the
+fan opens between the shortest lead and the longest instead.
+
+FOUR curves of percentile change against lead, nested and never crossing: the
 99th is the topmost everywhere and the 50th the lowest, because they are
 quantiles of one sample and a crossing would mean they were read off different
 ones. They are four steps of ONE hue, light for the 50th to dark for the 99th,
@@ -50,7 +54,7 @@ cycle, at the 95th."""
 # forward would make check three prove only that a machine has not
 # changed its mind. It needs a person to look at
 # panels/reference/predict.png and put their name here.
-confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19 after §34 moves 1 and 2; awaiting a look (last signed A. Rai / 2026-09-15, against the previous chart)"
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–5; awaiting a look. Every figure gained an answer line above the chart and a finding line inside it, and this panel’s own picture changed as well — see `correct` above for what to check"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.

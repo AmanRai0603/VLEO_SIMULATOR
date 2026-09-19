@@ -5,7 +5,12 @@ mount = "canvas.sw-panel"
 draws = """The record aggregated over the long run: by year, by day of year, by month, by
 the 13-month smoother, or Kp against ap. The context a single mission window is
 a slice of."""
-correct = """On the by-year setting the 2017 bar carries a note saying how many days that
+correct = """the finding line counts how many of the drawn groups sit below the record mean
+and the ratio of the highest to the lowest; on the Kp-against-ap setting it
+counts the Kp at which the published table is above the median day and above the
+90th percentile, which is this view’s claim made countable.
+
+On the by-year setting the 2017 bar carries a note saying how many days that
 year actually holds — the record has a 273-day gap in it, so the bar is a mean
 over about 92 days and looks like every other bar. The count is read off the
 record rather than typed, and the note is drawn only if that year really is
@@ -30,7 +35,7 @@ is the panel's claim and must be visible."""
 # by-year view — which is the view the reference is shot at — now carries a note
 # on the 2017 bar saying how few days that year actually holds. That is a
 # CONTENT change, so the earlier signature was against a different picture.
-confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19 after \u00a734 move 4; awaiting a look (last signed A. Rai / 2026-09-15, against the previous chart)"
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–5; awaiting a look. Every figure gained an answer line above the chart and a finding line inside it, and this panel’s own picture changed as well — see `correct` above for what to check"
 # WHY THE REFERENCE WAS RE-RECORDED, AND A FINDING ABOUT THIS CHECK.
 #
 # Adding sw_f107_cold_long put a third name in sw_central_expectation's

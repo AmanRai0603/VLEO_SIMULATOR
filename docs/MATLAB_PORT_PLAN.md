@@ -4229,3 +4229,95 @@ that does not.**
   `closure`, `density`, `segmentation` and the three DOM panels are untouched.
 - Moves 5, 6 and 9 of §34 remain: the in-frame subtitle, the interaction layer,
   and dark mode. 6 is the large one.
+
+
+## 38 · Move 5 — the finding, in the frame
+
+§34.1 put it this way: *"The `correct` blocks already contain the sentence each
+figure exists to prove. A one-line subtitle inside the frame, drawn from the data
+rather than typed, is the difference between a chart a reader interprets and a
+chart that tells them what they are looking at."*
+
+`spec.finding` is that line. It sits under the first pane's y label, in secondary
+ink, wrapped to the plot width. **All twenty-four solar views carry one**, which
+is the same twenty-four that carry an answer.
+
+### 38.1 · The answer and the finding are not the same line
+
+They sit a few pixels apart and they would collapse into each other without a
+rule, so the rule is written into the chart's own documentation:
+
+- **The answer** is the number the panel publishes for the question it ASKS. It
+  lives above the chart, outside the canvas.
+- **The finding** is a relation between things DRAWN — which curve is above which
+  and over how much of the axis, where two lines cross, how many points fall
+  outside a band — phrased so a reader can check it against the picture and
+  nothing else.
+
+`repeatability` shows the difference. Its answer is *0.972 · how well cycle 24
+repeats 23's shape*. Its finding is *"cycle 23 runs above cycle 24 in 17 of the 20
+phase bins both fill, by 20.5 on the rise and 1.06 after phase 0.6"* — a statement
+about which line is on top, which is what the picture actually shows and what the
+correlation cannot say.
+
+**A finding that quotes the answer again is not a finding**, and neither is a
+clause that could have been written without the data. Four went in with such a
+clause and all four were replaced by a measurement before anything was recorded:
+*"and the two converge past phase 0.6"*, *"the tall bars are all before phase
+0.6"*, *"the line rises across all five"*, *"high Ap appears at every flux
+drawn"*. Each is now a number, and one of them — the drivers ladder — will now
+say *"does not rise all the way"* if it ever stops rising.
+
+### 38.2 · Three findings that say something no other part of the figure does
+
+- **`closure`** — its `correct` block has always asked a reviewer to check that
+  the crossing in the top frame and the margin's zero in the bottom one are at
+  the same x. Those come from different arrays. The finding now computes both and
+  states their agreement, **or states in capitals that they disagree**. A panel
+  where they differed would previously have drawn perfectly.
+- **`density`** — *"27.8% of the days sit below both medians, against the 25% two
+  independent drivers would give, and storm-level Ap appears in 10 of the 10 flux
+  deciles."* A scatter of ten thousand dots tells a reader neither of those by
+  looking, and the correlation in the prose tells them only the first.
+- **`pattern`** — *"the 731-day curve sits above the 365-day one at 182 of the 200
+  lags."* That sentence was already in `panels/pattern.toml` as the thing a
+  reviewer must verify, with 182 typed into it. It is now counted at draw time,
+  so the reviewer checks the count against the picture rather than against a
+  number somebody wrote down once.
+
+### 38.3 · Two guards, because the failure modes are silent
+
+**A misplaced key does nothing at all.** `answer` belongs to the build and
+`finding` to the spec, and the two returns sit one line apart. The `drivers`
+parity view had its finding beside `answer`, where nothing reads it, and the only
+symptom was a figure that looked exactly like a figure nobody had written a
+finding for. `render()` now throws on either key in the wrong place.
+
+**A truncated finding is a claim with its qualifier cut off.** The wrapper
+refuses past three lines rather than clipping: *"the outlook beats persistence"*
+where the sentence said *"from lead 1 to 22"* is a worse sentence than none. A
+finding that needs four lines is a paragraph, and the note under the chart is
+where a paragraph goes.
+
+### 38.4 · What the check saw, and what it did not
+
+Every one of the eleven canvas panels changed — the header band grew by a line,
+so the frame below it moved. Ten were reported. `segmentation` came in at **1.95
+per cent against a 2 per cent tolerance** and passed: its ink is a solid block of
+bars, so a 13-pixel shift overlaps itself almost exactly.
+
+That is the third round in a row where the percentage missed a real change, and
+the byte comparison caught it again. It is not an argument for lowering the
+tolerance — 2 per cent is right for a chart, and a tolerance somebody tunes is
+worse than none. It is an argument for the habit: **compare byte for byte after
+any visual change, and account for every panel that differs and every panel that
+does not.**
+
+### 38.5 · Where this leaves the eleven references
+
+All eleven are UNCONFIRMED, with one sentence each in `correct` saying what the
+finding line must claim, so a person re-signing them has something specific to
+check rather than a picture to approve. `panels/README.md` now carries the
+answer/finding rule once, rather than eleven times.
+
+Moves 6 and 9 of §34 remain — the interaction layer and dark mode.

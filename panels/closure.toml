@@ -8,7 +8,13 @@ the requirement as a flat dashed line. The bottom frame holds the same fact as
 a signed margin, a fraction of the requirement, with zero drawn. The horizontal
 axis is whichever declared decision /v1/levers reports as spending this margin
 fastest, excluding the requirement itself."""
-correct = """TWO FRAMES on one shared x axis, its ticks and title drawn once at the bottom.
+correct = """THE FINDING LINE IS THE CHECK ABOVE, MADE BY THE PANEL. The crossing in the top
+frame is computed from the achieved curve and the requirement line; the crossing
+in the bottom one from the margin. They come from different arrays, and the
+finding states that they agree — or, in capitals, that they do NOT, which is the
+defect this block describes and nothing else could catch.
+
+TWO FRAMES on one shared x axis, its ticks and title drawn once at the bottom.
 The top frame carries two lines in the same unit: a swept curve and a flat
 dashed one. THE REQUIREMENT LINE MUST BE FLAT — it is a declared number a
 person chose, and a requirement that slopes means the panel is sweeping the
@@ -48,7 +54,7 @@ the window. An axis that stays the same across all five means the lever
 question is not being asked."""
 # NOT CONFIRMED. This panel is new on 2026-09-18 and nobody has looked at
 # panels/reference/closure.png yet, and an agent may not be that person.
-confirmed_by = "UNCONFIRMED / new 2026-09-18, re-recorded 2026-09-19 after §34 moves 1 and 2; awaiting a look"
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–5; awaiting a look. Every figure gained an answer line above the chart and a finding line inside it, and this panel’s own picture changed as well — see `correct` above for what to check"
 tolerance = 0.02
 settle_ms = 10000
 

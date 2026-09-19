@@ -6,7 +6,11 @@ draws = """The distribution of the selected driver over the whole record, with t
 boundaries the study cut it at drawn on. The second view abandons the
 distribution and shows how the regimes are distributed across cycle phase
 instead."""
-correct = """In the regime-against-phase view the STORM share is at full contrast and the
+correct = """the finding line says what share of the DAYS the top band holds and what span of
+the AXIS its bars cover. Those two numbers pulling in opposite directions is why
+the band is not shaded (§35.3).
+
+In the regime-against-phase view the STORM share is at full contrast and the
 quiet share at half: the view is called "where in a cycle a storm is likely",
 and the quiet curve is the mirror that makes the storm curve mean something.
 
@@ -21,7 +25,11 @@ drawn at zero height for an empty bin."""
 # is right. That is what makes check three mean anything: the reference is the
 # claim, and without a name against it the check only proves the chart has not
 # changed since a machine drew it.
-confirmed_by = "A. Rai / 2026-09-15 (against the pre-move picture; content unchanged, canvas resized 2026-09-16, not yet re-looked)"
+# NOT CONFIRMED ANY MORE. The reference was re-recorded on 2026-09-19: every
+# figure in the face now carries a finding line under its y label, so the frame
+# below it has moved and the picture says something it did not say before. The
+# earlier signature was against a picture without that line.
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–5; awaiting a look. Every figure gained an answer line above the chart and a finding line inside it, and this panel’s own picture changed as well — see `correct` above for what to check"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.

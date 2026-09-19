@@ -7,7 +7,12 @@ for three detrend windows at once — 365 days heavy, 181 and 731 light — with
 rotation peak and its first two harmonics marked, and a dashed Bartlett 95 per
 cent band that widens with lag. The second view leaves the autocorrelation and
 draws spike size against timing instead."""
-correct = """THE 365-DAY CURVE IS THE ONLY ONE AT FULL CONTRAST. It is the window
+correct = """the finding line reads "the 731-day curve sits above the 365-day one at 182 of the
+200 lags, and the 365 curve is outside the band at N of them". Both counts are
+made at draw time — 182 is not typed anywhere — and the first is this view's own
+claim above, now countable rather than asserted.
+
+THE 365-DAY CURVE IS THE ONLY ONE AT FULL CONTRAST. It is the window
 sw_recurrence_lag and sw_recurrence_strength were measured under, and the one
 the band and all three peak marks are computed on; 181 and 731 are drawn at
 half contrast because their job is to show that the published number is a
@@ -49,7 +54,7 @@ rather than a curve, and no autocorrelation axis remains."""
 # forward would make check three prove only that a machine has not
 # changed its mind. It needs a person to look at
 # panels/reference/pattern.png and put their name here.
-confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19 after §34 moves 1 and 2; awaiting a look (last signed A. Rai / 2026-09-15, against the previous chart)"
+confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–5; awaiting a look. Every figure gained an answer line above the chart and a finding line inside it, and this panel’s own picture changed as well — see `correct` above for what to check"
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.

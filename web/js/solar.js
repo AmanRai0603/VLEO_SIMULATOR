@@ -282,6 +282,16 @@ const PANELS = [
       const b = xs.map((_, i) => (ok(i) ? mean(per.get(24)[i]) : null));
       const r = corr(a, b);
       const usable = a.filter((v, i) => v !== null && b[i] !== null).length;
+      // How far apart the two complete cycles run, on the rise and after it.
+      // Measured, because "they converge" is the kind of clause that is written
+      // once from one picture and then carried through every variable.
+      const gapIn = (lo, hi) => {
+        const d = [];
+        for (let i = 0; i < xs.length; i++) {
+          if (xs[i] >= lo && xs[i] < hi && a[i] !== null && b[i] !== null) d.push(a[i] - b[i]);
+        }
+        return d.length ? d.reduce((q, c) => q + c, 0) / d.length : null;
+      };
       // The peak disagreement is measured for the variable on screen. The figure
       // used to be 28 per cent under all three, which is F10.7's.
       const pk = n => Math.max(...xs.map((_, i) => mean(per.get(n)[i])).filter(v => v !== null));
@@ -297,6 +307,14 @@ const PANELS = [
               of: 'how well cycle 24 repeats 23\u2019s ' + vname + ' SHAPE \u2014 while its peak is '
                 + (p24 / p23).toFixed(2) + ' of 23\u2019s' },
         spec: {
+          // THE FINDING IS NOT THE ANSWER. The answer above the chart is the
+          // correlation, which is a number about the two cycles; this is a
+          // relation between two curves a reader can check by looking at which
+          // one is on top and over how much of the axis.
+          finding: 'cycle 23 runs above cycle 24 in ' +
+            a.filter((v, i) => v !== null && b[i] !== null && v > b[i]).length +
+            ' of the ' + usable + ' phase bins both fill, by ' + sig(gapIn(0, 0.6)) +
+            ' on the rise and ' + sig(gapIn(0.6, 1)) + ' after phase 0.6',
           x: { label: 'cycle phase  [0 = minimum, 1 = the next]', min: 0, max: 1 },
           y: { label: key === 'f107' ? 'F10.7  [sfu]' : key === 'ap' ? 'Ap  [-]' : 'sunspot number  [-]' },
           series,
@@ -416,8 +434,19 @@ const PANELS = [
           colour: '#2e7d55' });
       }
 
+      // The claim panels/pattern.toml makes about this picture, counted rather
+      // than asserted: a longer detrend window calls less of the record trend,
+      // so more low-frequency signal survives and every correlation is higher.
+      let over = 0, pairs = 0;
+      for (let k = 0; k < xs.length; k++) {
+        const lo = A.r[k], hi = Along.r[k];
+        if (lo === null || hi === null || !isFinite(lo) || !isFinite(hi)) continue;
+        pairs++; if (hi > lo) over++;
+      }
       return {
         spec: {
+          finding: 'the 731-day curve sits above the 365-day one at ' + over + ' of the ' +
+            pairs + ' lags, and the 365 curve is outside the band at ' + outside + ' of them',
           x: { label: 'lag  [days]', min: 1, max: MAXLAG },
           y: { label: 'autocorrelation of the detrended series  [-]' },
           series: [
@@ -528,6 +557,12 @@ const PANELS = [
           of: 'of the record is ' + names[TOP] + ' \u2014 the tail a drag design is sized by; '
             + names[0] + ' holds ' + pc(0).toFixed(1) + '%' },
         spec: {
+          // The fact that made the shaded region wrong (§35.3), said as a
+          // sentence instead: the band a design is sized by is a sliver of the
+          // record and most of the axis.
+          finding: 'the ' + names[TOP] + ' band holds ' + pc(TOP).toFixed(1) +
+            '% of the days and runs from ' + sig(cuts[cuts.length - 1]) + ' to ' + sig(hi) +
+            ', which is most of the axis',
           x: { label: (key === 'ap' ? 'daily Ap' : 'F10.7  [sfu]') + '  [bin ' + bw + ']', min: 0 },
           y: { label: o.scale === 'log' ? 'days in bin  [log10]' : 'days in bin', min: 0 },
           series: [{ name: '', kind: 'bars', x: xs, y: ys, colour: '#b5731a' }],
@@ -649,6 +684,12 @@ const PANELS = [
         return bi;
       };
       const iHump = pick(3, 6, 'max'), iDip = pick(9, 12, 'min');
+      // How wide the fan is at one lead, for the case where there is no hump to
+      // name. Measured off the two edges the fill is drawn between.
+      const fanAt = i => {
+        const a = ys[3][i], b = ys[0][i];
+        return (a === null || b === null || !isFinite(a) || !isFinite(b)) ? null : a - b;
+      };
       const notes = [];
       if (humped && iHump >= 0) {
         notes.push({ x: xs[iHump], y: y95[iHump],
@@ -664,6 +705,16 @@ const PANELS = [
               of: 'the 95th-percentile change in ' + name + ' over a lead of '
                 + xs[atYear].toFixed(2) + ' yr \u2014 the percentile sw_uncertainty_growth publishes' },
         spec: {
+          // The shape of the published percentile, off the published percentile.
+          // The answer above the chart is its value at a year; this is what the
+          // curve DOES, which is the thing a monotone-looking fan hides.
+          finding: (iHump >= 0 && iDip >= 0 && humped)
+            ? 'the 95th rises to ' + sig(y95[iHump]) + (unit ? ' ' + unit : '') + ' at ' +
+              xs[iHump].toFixed(1) + ' yr, falls to ' + sig(y95[iDip]) + ' at ' +
+              xs[iDip].toFixed(1) + ', and rises again \u2014 that is the eleven-year cycle'
+            : 'the fan between the 50th and the 99th opens from ' + sig(fanAt(0)) +
+              (unit ? ' ' + unit : '') + ' at the shortest lead to ' + sig(fanAt(xs.length - 1)) +
+              ' at the longest',
           x: { label: 'lead  [years]', min: 0 },
           y: { label: 'change in ' + name + ' at a percentile  [' + (unit || '-') + ']' },
           // `ns` was counted here and thrown away. Handing it to the chart is what
@@ -820,6 +871,7 @@ const PANELS = [
         if (nObs[k] - nStr[k] > gapBy) { gapBy = nObs[k] - nStr[k]; gapAt = xs[k]; }
       }
       const sig2 = v => (v === null ? '—' : v.toFixed(3));
+      const runOf = arr => arr.filter(v => v !== null && isFinite(v) && v > 0).length;
       const best = skS.reduce((b, v, i) => (v !== null && (b < 0 || v > skS[b]) ? i : b), -1);
       return {
         answer: best < 0
@@ -828,6 +880,12 @@ const PANELS = [
               of: 'peak skill against persistence, at lead ' + xs[best] +
                 ' — above zero the outlook beats assuming nothing changes' },
         spec: {
+          // The sentence panels/forecast.toml asks a reader to check, counted:
+          // the strict baseline is beaten over a run of leads and the leaky one
+          // is not, and where each stops is the leak.
+          finding: 'the strict line is above zero at ' + runOf(skS) + ' of the ' + xs.length +
+            ' leads and the leaky one at ' + runOf(skL) + '; the bias frame is below zero at ' +
+            bias.filter(v => v !== null && isFinite(v) && v < 0).length + ' of them',
           x: { label: 'lead  [days]', min: 1, max: 27 },
           panes: [
             {
@@ -1012,6 +1070,12 @@ const PANELS = [
               + ', and both families of disagreement are deliberate' },
           spec: {
             aspect: 1.5,
+            finding: (() => {
+              const lowTop = all.filter(v => v < 0.999).length;
+              return near + ' of the ' + all.length + ' points sit on the line, ' + lowTop +
+                ' below it and ' + (all.length - near - lowTop) + ' above \u2014 the ' +
+                'disagreement is not scattered, it is two families';
+            })(),
             x: { label: 'scenario', ...XPAD },
             y: { label: 'this tree ÷ the legacy run  [-]', log: true },
             series,
@@ -1060,6 +1124,22 @@ const PANELS = [
           // across a full frame flattens the ladder the view is drawn to show
           // rising.
           aspect: 1.5,
+          finding: (() => {
+            const both = ORDER.map((_, i) => [mine[i], theirsY[i]])
+              .filter(([m2, t]) => m2 !== null && t !== null);
+            if (!both.length) return 'nothing to compare at this setting';
+            const below = both.filter(([m2, t]) => m2 < t).length;
+            return (below === both.length
+              ? 'this tree is below the legacy run at all ' + both.length + ' scenarios'
+              : below === 0
+                ? 'this tree is above the legacy run at all ' + both.length + ' scenarios'
+                : 'this tree is below the legacy run at ' + below + ' of the ' + both.length +
+                  ' scenarios and above it at ' + (both.length - below)) +
+              ', and this tree\u2019s own line ' + (mine.every((v, i) =>
+                i === 0 || v === null || mine[i - 1] === null || v >= mine[i - 1])
+                ? 'rises across all five'
+                : 'does not rise all the way \u2014 the ladder turns back somewhere');
+          })(),
           x: { label: 'scenario', ...XPAD },
           y: { label: Q.label + '  [' + Q.unit + ']' },
           series: [
@@ -1243,6 +1323,11 @@ const PANELS = [
           : { value: sig(hitsAt) + ' yr', of: 'before the record expects a storm above the ' +
               'G' + o.g + ' design level of Ap ' + bound.toFixed(0) },
         spec: {
+          finding: !isFinite(hitsAt)
+            ? 'the curve stays under the design level across the whole declared range'
+            : 'the curve enters the shaded region at ' + hitsAt.toFixed(2) +
+              ' yr and never leaves it; it reaches the requirement at ' +
+              (isFinite(cross(req)) ? cross(req).toFixed(2) + ' yr' : 'no point drawn'),
           x: { label: 'mission length  [years]', min: xs[0], max: xs[xs.length - 1] },
           y: { label: 'daily Ap the record expects once in that time  [-]' },
           series: [{ name: 'sw_storm_return_level', kind: 'line', x: xs, y: ys }],
@@ -1388,6 +1473,25 @@ const PANELS = [
         if (a === null || b === null || !isFinite(a) || !isFinite(b)) continue;
         if ((a > 0) !== (b > 0)) { cross = x[k - 1] + (x[k] - x[k - 1]) * a / (a - b); break; }
       }
+      // THE TOP FRAME'S CROSSING, COMPUTED FROM THE TOP FRAME. `cross` above is
+      // where the MARGIN goes through zero; this is where the achieved curve
+      // meets the requirement line. panels/closure.toml says the two must be the
+      // same x, and until now that was a check a person made by looking — which
+      // is exactly the kind of agreement worth measuring, because the two come
+      // from different arrays and a panel where they disagreed would still draw.
+      let crossQ = null;
+      if (reqV !== null) {
+        for (let k = 1; k < value.length; k++) {
+          const a2 = value[k - 1] - reqV, b2 = value[k] - reqV;
+          if (a2 === null || b2 === null || !isFinite(a2) || !isFinite(b2)) continue;
+          if ((a2 > 0) !== (b2 > 0)) {
+            crossQ = x[k - 1] + (x[k] - x[k - 1]) * a2 / (a2 - b2);
+            break;
+          }
+        }
+      }
+      const agree = cross !== null && crossQ !== null &&
+        Math.abs(cross - crossQ) <= Math.abs(x[x.length - 1] - x[0]) * 1e-6;
       const now = eng[ach] && isFinite(eng[ach].si) ? eng[ach].si : null;
       const marks = cross === null ? [] : [{ axis: 'x', at: cross,
         label: 'the margin runs out here' }];
@@ -1418,6 +1522,19 @@ const PANELS = [
                   (-now * 100).toFixed(1) + ' per cent of its own value'
                 : 'margin — ' + (now * 100).toFixed(1) + ' per cent of ' + req + ' is unspent' },
         spec: {
+          // THE CHECK panels/closure.toml ASKS FOR, MADE BY THE PANEL. "Wherever
+          // the swept curve crosses the requirement in the top frame, the margin
+          // crosses zero in the bottom one, at the same x" — the two crossings
+          // are computed from different arrays, so their agreement is worth
+          // stating rather than assuming.
+          finding: cross === null && crossQ === null
+            ? 'neither frame crosses anywhere in this decision\u2019s range'
+            : agree
+              ? 'the two lines cross at ' + sig(crossQ) + ' and the margin reaches zero at the ' +
+                'same point; past it the fill is the requirement being exceeded'
+              : 'THE TWO FRAMES DISAGREE: the lines cross at ' +
+                (crossQ === null ? 'no point drawn' : sig(crossQ)) +
+                ' and the margin reaches zero at ' + (cross === null ? 'no point drawn' : sig(cross)),
           x: { label: lv.label + '  [' + lv.unit + ']' },
           panes: [
             {
@@ -1703,6 +1820,9 @@ const PANELS = [
               of: 'between the quietest ' + gname + ' of the record and the busiest \u2014 a mission '
                 + 'is sized against wherever in that range it falls' },
         spec: {
+          finding: ys.filter(v => v < overall).length + ' of the ' + ys.length + ' ' + gname +
+            's sit below the record mean of ' + overall.toFixed(1) + ', and the highest is ' +
+            (hi / lo).toFixed(1) + ' times the lowest',
           notes,
           x: { label: o.by === 'year' ? 'year' : o.by === 'doy' ? 'day of year  [5-day bins]' : 'year' },
           y: { label: (key === 'f107' ? 'F10.7  [sfu]' : key === 'ap' ? 'Ap  [-]' : 'sunspot number  [-]') + ', mean' },
@@ -1752,6 +1872,22 @@ const PANELS = [
       // it is the claim this panel rests on: if the two drivers carried the same
       // information a density model would not need both.
       const r = corr(withBoth.map(d => d.f107), withBoth.map(d => d.ap));
+      // How much of the cloud sits below BOTH medians. Two independent drivers
+      // put a quarter of their days there; the distance from a quarter is the
+      // dependence, and it is the one thing a scatter of ten thousand dots does
+      // not tell a reader by looking.
+      const mf = quantile(withBoth.map(d => d.f107).sort((x, y) => x - y), 0.5);
+      const ma = quantile(withBoth.map(d => d.ap).sort((x, y) => x - y), 0.5);
+      const quad = 100 * withBoth.filter(d => d.f107 < mf && d.ap < ma).length / withBoth.length;
+      // And whether the tail really is everywhere along the flux axis, counted
+      // by decile rather than seen in a cloud of ten thousand dots.
+      const fSorted = withBoth.map(d => d.f107).sort((x, y) => x - y);
+      const edge = k => quantile(fSorted, k / 10);
+      let stormDecs = 0;
+      for (let k = 0; k < 10; k++) {
+        const lo = edge(k), hi2 = k === 9 ? Infinity : edge(k + 1);
+        if (withBoth.some(d => d.f107 >= lo && d.f107 < hi2 && d.ap >= 26)) stormDecs++;
+      }
       return {
         // THE ANSWER IS A REFUSAL, AND IT SAYS SO. Rule 5: a refusal is never a
         // substitution. Putting the correlation in this slot would answer "what
@@ -1769,6 +1905,9 @@ const PANELS = [
           // declare this floor; this one did not, which is why it was the only
           // chart in the repository drawing space that cannot exist.
           y: { label: 'daily Ap  [-]', min: 0 },
+          finding: quad.toFixed(1) + '% of the days sit below both medians, against the 25% two ' +
+            'independent drivers would give, and storm-level Ap appears in ' + stormDecs +
+            ' of the 10 flux deciles',
           series: [{ name: '', kind: 'dots', x: withBoth.map(d => d.f107), y: withBoth.map(d => d.ap), width: 1.1, alpha: 0.18 }],
         },
         note: 'NOTHING COMPUTES THIS ROW AND THIS FIGURE IS NOT IT — but the reason written here ' +
@@ -1815,12 +1954,24 @@ function stormScale(rec) {
   // How uneven "unevenly" is, at the mildest level, measured off the bars drawn.
   const g1 = (series[0].y || []).filter(v => v !== null && isFinite(v) && v > 0);
   const evenness = g1.length > 1 ? Math.max(...g1) / Math.min(...g1) : null;
+  // Which cycle is busiest, at each level, off the bars themselves.
+  const topAt = series.map(sr => {
+    let bi = -1;
+    sr.y.forEach((v, i) => { if (v !== null && isFinite(v) && (bi < 0 || v > sr.y[bi])) bi = i; });
+    return bi;
+  });
+  const oneWinner = topAt.length && topAt.every(i => i >= 0 && i === topAt[0]);
   return {
     answer: evenness === null
       ? { value: '\u2014', of: 'not enough cycles reach G1 to compare' }
       : { value: '\u00d7' + evenness.toFixed(1),
           of: 'between the busiest cycle and the quietest, in days a year at G1 or above' },
     spec: {
+      finding: oneWinner
+        ? 'cycle ' + per[topAt[0]].c.n + ' has the most days a year at all three levels'
+        : 'the busiest cycle is not the same at every level: ' +
+          LV.map(([, n], i) => n + ' \u2192 cycle ' +
+            (topAt[i] < 0 ? '\u2014' : per[topAt[i]].c.n)).join(', '),
       x: { label: 'solar cycle', ticks: 2 },
       y: { label: 'days a year at or above the level', min: 0 },
       series,
@@ -1855,14 +2006,23 @@ function spikes(rec) {
     }
   });
   const xs = byPhase.map((_, i) => (i + 0.5) / nb);
+  const rate = byPhase.map((c, i) => (allPhase[i] ? 1000 * c / allPhase[i] : null));
+  const drawnRates = rate.filter(v => v !== null && isFinite(v));
+  const rHi = drawnRates.length ? Math.max(...drawnRates) : null;
+  const rLo = drawnRates.length ? Math.min(...drawnRates) : null;
   return {
     answer: { value: n + ' days',
       of: 'F10.7 spikes over the record, in ' + runs + ' separate bursts \u2014 a spike being a day '
         + 'above its own 81-day mean by 2.5 of the record\u2019s own scatter' },
     spec: {
+      finding: rHi === null
+        ? 'no phase bin holds a spike'
+        : 'the busiest phase bin is at ' + xs[rate.indexOf(rHi)].toFixed(2) +
+          ' and holds ' + rHi.toFixed(0) + ' spike days per thousand, against ' +
+          rLo.toFixed(0) + ' at the quietest',
       x: { label: 'cycle phase', min: 0, max: 1 },
       y: { label: 'spike days per 1000 days at that phase', min: 0 },
-      series: [{ name: '', kind: 'bars', x: xs, y: byPhase.map((c, i) => (allPhase[i] ? 1000 * c / allPhase[i] : null)) }],
+      series: [{ name: '', kind: 'bars', x: xs, y: rate }],
     },
     note: 'A spike is a day whose F10.7 exceeds its own 81-day centred mean by the record\u2019s own ' +
       'scatter: mean + 2.5 sd = ' + thr.toFixed(6) + ', which sw_spike_threshold declares. That ' +
@@ -1891,6 +2051,10 @@ function regimeByPhase(rec) {
   const drawn = stPc.filter(v => v !== null && isFinite(v));
   const pk = drawn.length ? Math.max(...drawn) : null;
   const atPk = pk === null ? null : xs[stPc.indexOf(pk)];
+  const qDrawn = qtPc.filter(v => v !== null && isFinite(v));
+  const qMin = qDrawn.length ? Math.min(...qDrawn) : null;
+  const qMinAt = qMin === null ? null : xs[qtPc.indexOf(qMin)];
+  const mirror = corr(stPc, qtPc);
   return {
     answer: pk === null
       ? { value: '\u2014', of: 'no phase bin holds a day with an Ap' }
@@ -1898,6 +2062,13 @@ function regimeByPhase(rec) {
           of: 'the peak storm share, at phase ' + atPk.toFixed(2)
             + ' \u2014 past maximum, on the declining side, and the declared epoch sits in it' },
     spec: {
+      // Whether the two curves really are mirrors is a correlation, and it is
+      // the one thing a reader would otherwise take from the shape by eye.
+      finding: pk === null
+        ? 'no phase bin holds a day with an Ap'
+        : 'the storm share peaks at phase ' + atPk.toFixed(2) + ' and the quiet share bottoms at ' +
+          (qMinAt === null ? '\u2014' : qMinAt.toFixed(2)) + '; the two move opposite at r = ' +
+          (mirror === null ? '\u2014' : mirror.toFixed(2)),
       x: { label: 'cycle phase', min: 0, max: 1 },
       y: { label: 'share of days at that phase  [%]', min: 0 },
       series: [
@@ -1952,6 +2123,10 @@ function growthByCycle(rec, key, q, maxL) {
           of: 'how far the cycles disagree at ' + shared.toFixed(2)
             + ' yr, the longest lead all of them reach \u2014 sw_uncertainty_growth pools exactly this' },
     spec: {
+      finding: !spread
+        ? 'no lead is reached by all of the cycles'
+        : 'at ' + shared.toFixed(2) + ' yr the highest cycle is ' + sig(spread[1]) + unit +
+          ' and the lowest ' + sig(spread[0]) + ' \u2014 the curves do not share a shape',
       x: { label: 'lead  [years]', min: 0 },
       y: { label: 'change in ' + name + ' at the ' + (q * 100) + 'th percentile  [' + (unit.trim() || '-') + ']' },
       series,
@@ -2054,6 +2229,10 @@ function byIssueYear(fc, byDay, tOf, strict, leaky) {
           of: 'the worst annual bias, in ' + span[low] + ' \u2014 the outlook came in LOW, which is '
             + 'the direction that costs propellant' },
     spec: {
+      finding: 'of the ' + kept.length + ' years with enough pairs to score, ' +
+        keptS.filter(v => v !== null && v > 0).length + ' beat persistence and ' +
+        bias.filter(v => v !== null && isFinite(v) && v < 0).length +
+        ' came in low; the RMS frame tracks the level, not the skill',
       x: { label: 'the calendar year the outlook was issued in', fmt: v => String(Math.round(v)) },
       panes: [
         {
@@ -2166,6 +2345,10 @@ function issueAge(idx) {
       of: 'the median gap between one outlook and the next \u2014 how stale the newest one already '
         + 'is on a typical day, which no lead_days column says' },
     spec: {
+      finding: 'the tallest bar is at ' + xs[xs.map(k => hist.get(k))
+        .indexOf(Math.max(...xs.map(k => hist.get(k))))] + ' days, and ' +
+        (100 * gaps.filter(g => g > 1).length / gaps.length).toFixed(0) +
+        '% of the gaps are longer than one day',
       x: { label: 'days between one issue and the next  [30 = 30 or more]', min: 0 },
       y: { label: 'number of gaps', min: 0 },
       series: [{ name: '', kind: 'bars', x: xs, y: xs.map(k => hist.get(k)) }],
@@ -2214,6 +2397,9 @@ function f107Window(extra, o, eng) {
   const hot = w.fs.y, hotLong = w.fl.y, coldLong = w.cl.y, cold = w.cs.y;
   const analogue = w.pk.y;
   const peak = Math.max(...hot);
+  // How wide the filled window actually is, along its length — the fill's own
+  // two edges, so the sentence and the area are the same measurement.
+  const band = xs.map((_, k) => hot[k] - cold[k]).filter(v => v !== null && isFinite(v));
   // Where the analogue's own maximum climbs above the hot single-day design
   // value, which is the finding this fifth line is here for.
   let over = null;
@@ -2225,6 +2411,10 @@ function f107Window(extra, o, eng) {
       of: 'margin against ' + o.reqf + '\u2019s ' + REQ.toFixed(0)
         + ' \u2014 the worst single day any declared window reaches is ' + peak.toFixed(1) },
     spec: {
+      finding: 'the window is ' + sig(Math.max(...band)) + ' sfu wide at its widest and ' +
+        sig(Math.min(...band)) + ' at its narrowest, and the dashed peak ' +
+        (over === null ? 'stays under the hot single-day curve throughout'
+          : 'crosses above it at ' + over.toFixed(1) + ' yr'),
       x: { label: 'mission length  [years]', min: xs[0], max: xs[xs.length - 1] },
       y: { label: 'F10.7 the window is designed to  [sfu]' },
       series: [
@@ -2335,6 +2525,9 @@ function thermoSolar(extra, eng, decF, decFa, decKp, now) {
             + (si === null ? '' : ', and the subsystem publishes ' + si.toFixed(1) + ' sfu, not '
               + (decF === null ? '—' : decF.toFixed(0))) },
     spec: {
+      finding: 'the three lines meet only at ' + (decF === null ? '\u2014' : decF.toFixed(0)) +
+        ' sfu, where the day and its mean are declared equal, and the sustained slope is ' +
+        k(mSust) + ' K per sfu against ' + k(mFast) + ' for a single day',
       x: { label: 'F10.7  [sfu]' },
       y: { label: 'exospheric temperature  [K]' },
       series: [
@@ -2444,6 +2637,9 @@ function thermoKp(extra, eng, decKp) {
             + ' \u2014 ' + (100 * worst.d / worst.tm).toFixed(1) + ' per cent of the temperature, '
             + 'and nothing in this tree says which slot to take' },
     spec: {
+      finding: 'all ' + lines.length + ' curves bend upward, and the two lightest stay within ' +
+        (close === null ? '\u2014' : close.toFixed(1) + ' K') +
+        ' of each other across the whole Kp range',
       x: { label: 'Kp  [-]', min: 0, max: 9 },
       y: { label: 'exospheric temperature  [K]' },
       series,
@@ -2494,6 +2690,11 @@ function thermoSlot(extra, eng) {
             (wi < 0 ? 'worst scenario' : SCEN[wi].shown) + ', and nothing says which slot to use' },
     spec: {
       aspect: 1.5,
+      finding: !ok.length
+        ? 'no scenario answered at both of its Kp'
+        : 'the worst-slot line is above the mean-slot one at all ' + ok.length +
+          ' scenarios, and the gap grows from ' + Math.min(...ok).toFixed(1) + ' K to ' +
+          Math.max(...ok).toFixed(1) + ' K across them',
       x: { label: 'scenario', ...SCEN_X },
       y: { label: 'exospheric temperature  [K]' },
       series: [
@@ -2553,6 +2754,16 @@ function thermoShape(extra, eng, decF, decFa, decKp) {
   const lin = xs.map(x => m * (x - xs[i0]));
   const last = d.length - 1;
   const excess = d[last] === null ? null : d[last] - lin[last];
+  // Where the measured curve first stands clear of the straight line by more
+  // than a fiftieth of its final departure — "they separate above Kp 4" said as
+  // a measurement rather than as an impression of the drawing.
+  let splitAt = null;
+  if (excess !== null && excess > 0) {
+    for (let i = 0; i <= last; i++) {
+      if (d[i] === null) continue;
+      if (d[i] - lin[i] > excess / 50) { splitAt = xs[i]; break; }
+    }
+  }
   return {
     answer: excess === null
       ? { value: '\u2014', of: 'the sweep returned nothing at the top of the Kp range' }
@@ -2560,6 +2771,9 @@ function thermoShape(extra, eng, decF, decFa, decKp) {
           of: 'how far the measured curve stands above the straight line its own quiet end sets, '
             + 'by Kp ' + xs[last].toFixed(0) + ' \u2014 that is the exponential, measured' },
     spec: {
+      finding: 'the two lie on top of each other up to Kp ' + (splitAt === null ? '\u2014'
+        : splitAt.toFixed(1)) + ' and separate above it, reaching ' +
+        (excess === null ? '\u2014' : excess.toFixed(0) + ' K') + ' apart at the top',
       x: { label: 'Kp  [-]', min: 0, max: 9 },
       y: { label: 'temperature the geomagnetic term adds  [K]', min: 0 },
       series: [
@@ -2611,11 +2825,23 @@ function smoothed(rows, key) {
     : 0;
   const vname = key === 'f107' ? 'F10.7' : key === 'ap' ? 'Ap' : 'the sunspot number';
   const unit = key === 'f107' ? ' sfu' : '';
+  // How often the raw line actually cuts the smoother, and how far it ever
+  // strays — the two things a reader takes from this picture by eye.
+  let crossings = 0, maxDev = 0, prevSign = 0;
+  for (const [a2, b2] of both) {
+    const dv = a2 - b2;
+    if (Math.abs(dv) > maxDev) maxDev = Math.abs(dv);
+    const sgn = dv > 0 ? 1 : dv < 0 ? -1 : 0;
+    if (sgn && prevSign && sgn !== prevSign) crossings++;
+    if (sgn) prevSign = sgn;
+  }
   return {
     answer: { value: sig(resid) + unit,
       of: 'the rms a month keeps once the cycle is smoothed out of it \u2014 the part of '
         + vname + ' a design cannot plan around' },
     spec: {
+      finding: 'the monthly line crosses the smoother ' + crossings +
+        ' times, and is never further from it than ' + sig(maxDev) + unit,
       x: { label: 'year' },
       y: { label: (key === 'f107' ? 'F10.7  [sfu]' : key === 'ap' ? 'Ap  [-]' : 'sunspot number  [-]') + ', monthly' },
       series: [
@@ -2667,6 +2893,13 @@ function kpAgainstAp(rec) {
   };
   const i7 = ks.indexOf(7);
   const t7 = tableAt(7), m7 = i7 < 0 ? null : med[i7];
+  let aboveMed = 0, above90 = 0;
+  ks.forEach((kp, i) => {
+    const t = tableAt(kp);
+    if (t === null) return;
+    if (med[i] !== null && t > med[i]) aboveMed++;
+    if (p90[i] !== null && t > p90[i]) above90++;
+  });
   return {
     answer: m7 === null || !m7 || t7 === null
       ? { value: '\u2014', of: 'the record holds no day whose worst slot reached Kp 7' }
@@ -2674,6 +2907,10 @@ function kpAgainstAp(rec) {
           of: 'the published table\u2019s ap over the median day\u2019s, at Kp 7 \u2014 the bias '
             + 'sw_kp_slot_bias exists for, and why the table is read as a ceiling' },
     spec: {
+      // The claim panels/climate.toml makes about this view, counted at every Kp
+      // the record holds rather than read off the drawing at one of them.
+      finding: 'the published table is above the median day at ' + aboveMed + ' of the ' +
+        ks.length + ' Kp the record holds, and above the 90th percentile at ' + above90,
       x: { label: 'Kp reached that day  [worst three-hourly slot]', min: 0, max: 9 },
       y: { label: 'daily Ap  [-], log scale', log: true },
       series: [
@@ -2932,6 +3169,17 @@ async function render(host, p, o) {
       engineValues(p.engine || []),
     ]);
     const out = p.build(rec, o, extra, eng);
+    // A MISPLACED KEY IS A FEATURE THAT SILENTLY DOES NOTHING. `answer` belongs
+    // to the build and `finding` belongs to the spec, and the two returns sit
+    // one line apart — the drivers parity view had its finding beside `answer`,
+    // where nothing reads it, and the only symptom was a figure that looked
+    // exactly like a figure nobody had written a finding for.
+    if (out.finding !== undefined) {
+      throw new Error('`finding` belongs in spec, beside `series` — it is on the build');
+    }
+    if (out.spec && out.spec.answer !== undefined) {
+      throw new Error('`answer` belongs on the build, beside `spec` — it is inside the spec');
+    }
     // `answer` is optional and a build that has no single number should not
     // invent one — a headline that is a guess is worse than no headline.
     const ans = $('.sw-answer', host);
