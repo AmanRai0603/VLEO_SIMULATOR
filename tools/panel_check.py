@@ -23,6 +23,13 @@ So a panel gets a spec like a node does, and three checks that need no person:
                    a different answer and the picture must change. A panel that
                    asks the engine and then ignores the reply fails here
   3 · it matches   against a stored reference, within tolerance
+  4 · it responds  for a panel that declares an interaction: brushing a window
+                   changes the picture and SAYS SO in the view strip, hiding a
+                   series changes it again, and undoing either returns the
+                   picture to exactly what it was. The last is the one worth
+                   having — an interaction that cannot be undone to the pixel is
+                   a reader stuck in a view they did not mean to reach, with no
+                   way back except reloading the page
 
 Check two is the one worth having. "Three correct power numbers on one screen,
 correct at three different times" is a panel that renders, matches yesterday's
@@ -451,6 +458,22 @@ def check_all(ids=None, record=False):
                 except Exception:
                     pass
 
+            # 4 · it responds
+            #
+            # AN INTERACTION NOBODY DRIVES IS AN INTERACTION NOBODY HAS CHECKED.
+            # Zoom, hide and the buttons that undo them leave no trace in the
+            # DOM the other three checks look at, and they are the first thing
+            # in this face that can put a reader somewhere they cannot get back
+            # from.
+            #
+            # The legend's hit boxes are read off `canvas._chart`, which the
+            # chart keeps for its OWN click handling. That is not a test hook in
+            # the product — it is the same state the page uses to decide what a
+            # click landed on, and reading it is how the checker clicks where a
+            # person would rather than where it guesses.
+            if d.get("interactive"):
+                found += _responds(page, mount, settle, d)
+
             # 3 · it matches
             #
             # Taken in the state the spec names, not wherever the page happens
@@ -493,6 +516,122 @@ def check_all(ids=None, record=False):
                     ))
             page.close()
         browser.close()
+    return found
+
+
+# The pixel positions of the quartiles of the DRAWN x values, off the chart's
+# own scale. A window picked as "the middle third of the width" is a window in
+# pixels, and on an axis of five named scenarios the middle third holds one
+# category — which the face rightly refuses to zoom into, and the check then
+# reports as the brush doing nothing. Asking where the data actually is makes
+# the gesture one a reader could make and the panel would honour.
+_XSPAN = """
+sel => { const e = document.querySelector(sel);
+         if (!e || !e._chart) return null;
+         const c = e._chart;
+         const panes = c.panes || [];
+         const xs = [...new Set(panes.flatMap(p => (p.series || [])
+           .filter(s => !s.hidden && s.kind !== 'band')
+           .flatMap(s => (s.x || []).filter(v => isFinite(v)))))].sort((a, b) => a - b);
+         if (xs.length < 4) return null;
+         const lo = xs[Math.floor(xs.length * 0.2)], hi = xs[Math.floor(xs.length * 0.8)];
+         return [c.px(lo), c.px(hi), e.width]; }
+"""
+
+_HITS = """
+sel => { const e = document.querySelector(sel);
+         if (!e || !e._chart) return [];
+         return e._chart.panes.flatMap(p => p.legendHits || [])
+           .map(h => [h.x + h.w / 2, h.y + h.h / 2, h.name]); }
+"""
+
+_STRIP = """
+sel => { const e = document.querySelector(sel); if (!e) return '';
+         const s = e.parentElement && e.parentElement.querySelector('.sw-view');
+         return s ? s.textContent : ''; }
+"""
+
+
+def _responds(page, mount, settle, d):
+    """Check four, in one place: drive it, watch it move, put it back."""
+    found = []
+    # SCROLLED INTO VIEW FIRST. `page.mouse` works in VIEWPORT coordinates and
+    # `bounding_box()` returns page ones; the figure is section four of a node
+    # page, so without this every press landed off-screen, hit nothing, and the
+    # check reported "dragging a window across the plot changed nothing" about
+    # an interaction that works. A checker that cannot reach the thing it drives
+    # reports the product broken, which is the worst kind of false finding.
+    page.locator(mount).scroll_into_view_if_needed()
+    page.wait_for_timeout(120)
+    box = page.locator(mount).bounding_box()
+    if not box:
+        return [(d["id"], "4 responds", "the mount has no box to point at")]
+    def sig():
+        # POINTER OFF THE CANVAS FIRST. A hover crosshair is part of the picture
+        # while the pointer is on the plot, and a check that measured with it
+        # there would count "the reader moved the mouse" as "the interaction
+        # worked" — which is exactly how the first run of this check passed a
+        # legend click that did nothing.
+        page.mouse.move(box["x"] - 8, box["y"] - 8)
+        page.wait_for_timeout(120)
+        return _settle(page, mount, tries=8, gap=150)
+
+    def strip():
+        return page.evaluate(_STRIP, mount)
+
+    clean = sig()
+
+    # A DRAG ACROSS THE MIDDLE THIRD. Any window a reader could plausibly pick;
+    # the check is that the picture answers, not that this particular window is
+    # interesting.
+    y = box["y"] + box["height"] / 2
+    span = page.evaluate(_XSPAN, mount)
+    if span:
+        sx = box["width"] / span[2]
+        x1, x2 = box["x"] + span[0] * sx, box["x"] + span[1] * sx
+    else:
+        x1 = box["x"] + box["width"] * 0.35
+        x2 = box["x"] + box["width"] * 0.65
+    page.mouse.move(x1, y)
+    page.mouse.down()
+    page.mouse.move(x2, y, steps=8)
+    page.mouse.up()
+    page.wait_for_timeout(400)
+    zoomed = sig()
+    if zoomed == clean:
+        found.append((d["id"], "4 responds",
+                      "dragging a window across the plot changed nothing"))
+    elif "showing" not in strip():
+        found.append((d["id"], "4 responds",
+                      "the picture zoomed and the view strip does not say so, so there is "
+                      "no way back for a reader without a mouse"))
+    else:
+        page.locator(".sw-view .sw-unzoom").first.click()
+        page.wait_for_timeout(400)
+        if sig() != clean:
+            found.append((d["id"], "4 responds",
+                          "undoing the zoom did not restore the picture exactly"))
+
+    # A CLICK ON THE FIRST KEY ENTRY, where the chart itself says that entry is.
+    hits = page.evaluate(_HITS, mount)
+    if hits:
+        hx, hy, _name = hits[0]
+        sx = box["width"] / page.evaluate("s => document.querySelector(s).width", mount)
+        sy = box["height"] / page.evaluate("s => document.querySelector(s).height", mount)
+        page.mouse.click(box["x"] + hx * sx, box["y"] + hy * sy)
+        page.wait_for_timeout(400)
+        if sig() == clean:
+            found.append((d["id"], "4 responds",
+                          "clicking a key entry changed nothing"))
+        elif "hidden" not in strip():
+            found.append((d["id"], "4 responds",
+                          "a series was hidden and the view strip does not say so"))
+        else:
+            page.locator(".sw-view .sw-unhide").first.click()
+            page.wait_for_timeout(400)
+            if sig() != clean:
+                found.append((d["id"], "4 responds",
+                              "showing the series again did not restore the picture exactly"))
     return found
 
 
@@ -604,6 +743,21 @@ def selftest():
                  "      const req = rq.si;",
                  "      const req = 150;")),
          "2b reads"),
+        # CHECK FOUR'S OWN TWO. The first is the invariant that matters: an
+        # interaction a reader cannot undo to the pixel leaves them in a view
+        # they did not mean to reach with no way back but a reload.
+        ("a zoom that cannot be undone",
+         lambda d: (d / "web" / "js" / "solar.js").write_text(
+             (d / "web" / "js" / "solar.js").read_text().replace(
+                 "on('.sw-unzoom', () => { view.zoom = null; });",
+                 "on('.sw-unzoom', () => {});")),
+         "4 responds"),
+        ("a brush that changes nothing",
+         lambda d: (d / "web" / "js" / "solar.js").write_text(
+             (d / "web" / "js" / "solar.js").read_text().replace(
+                 "        view.zoom = [a, b];\n        again();",
+                 "        return;")),
+         "4 responds"),
         # And the hole 2b's failed-state probe closes: before it, a panel whose
         # render THREW passed check 2, because a failed render blanks the canvas
         # and a blank canvas has a different signature from a drawn one.
@@ -638,6 +792,7 @@ def selftest():
             ROOT, PANELS, REFERENCE = work, work / "panels", work / "panels" / "reference"
             try:
                 which = ("sweep" if "canvas" in label
+                         else "pattern" if "zoom" in label or "brush" in label
                          else "design" if "engine" in label or "throws" in label
                          else "tree")
                 found = check_all(ids={which})

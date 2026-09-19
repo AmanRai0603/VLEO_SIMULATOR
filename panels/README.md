@@ -126,3 +126,43 @@ look for in review: a finding whose clause could have been written without the
 data ("and the curve rises throughout" with nothing counting it), and a finding
 wider than three lines, which the chart refuses to draw because a paragraph
 belongs in the note below the chart.
+
+## What a reader can do to a figure, and check four
+
+Three things are reachable by pointer and every one of them has a button as
+well, in the strip under the figure:
+
+- **drag across the plot** to show only that window of x — and the window
+  FILTERS the points rather than clamping the axis, so the table under the
+  panel, the crosshair and the arrow keys are all reading the picture on screen
+  rather than the one before the drag
+- **click a key entry** to hide its line. The frame rescales to what is left,
+  which is the point of isolating two curves that sit on top of each other, and
+  the hues do NOT move: a filter that repaints the survivors of a chart can make
+  a reader misread the very series they were comparing
+- **click a line or a bound that IS a row** to open it. Most curves in this face
+  are computed from the record by the panel and have no row behind them; they
+  are not clickable, and that absence is correct rather than missing
+
+`pin this view` overlays the current picture on the next one, in one neutral ink
+at context weight, and **refuses when the axes do not match** — two views of a
+panel are comparable only if they are drawn against the same quantities, and
+silently overlaying sfu on Ap is the dual-axis mistake wearing different clothes.
+
+**Check four drives all of it.** A panel declaring `interactive = true` gets
+brushed, gets a key entry clicked, and then has both undone — and the undo has
+to restore the picture **exactly**, to the pixel. That is the invariant worth
+having: an interaction a reader cannot get out of leaves them in a view they did
+not mean to reach with no way back but a reload.
+
+Two things the first runs of check four caught, and neither would have been
+caught any other way:
+
+- a press on a key entry never started a gesture, because the code required a
+  press to begin inside the PLOT and the key sits above it. The picture changed
+  anyway — moving the pointer there drew the crosshair — so the check had to
+  learn to take its measurements with the pointer off the canvas
+- a panel asking for a narrower frame shrank on every redraw: 1180 → 806 → 512.
+  It never showed through the controls, because a control change rebuilds the
+  body and re-fits the canvas; it needed a redraw in place, which is exactly
+  what a zoom is

@@ -231,7 +231,7 @@ export function drawChart(canvas, spec) {
     if (pn.series.filter(q => q.name).length <= 1) continue;
     const f = pn.y.fmt || nice;
     for (const q of pn.series) {
-      if (!q.name || q.aside || q.kind === 'bars' || q.kind === 'dots'
+      if (!q.name || q.aside || q.hidden || q.kind === 'bars' || q.kind === 'dots'
           || q.kind === 'band') continue;
       for (let k = q.y.length - 1; k >= 0; k--) {
         const v = q.y[k];
@@ -423,7 +423,7 @@ function _pane(ctx, o) {
   // the far end undefined, so every tick came out NaN and the chart drew nothing
   // but gridlines. The Segmentation histogram declares `min: 0` on both axes and
   // had been rendering blank.
-  const all = pn.series.filter(s => s.x.length);
+  const all = pn.series.filter(s => s.x.length && !s.hidden);
   // A band's far edge is data too. Without this the frame is scaled to one side
   // of it and the fill runs off the top.
   const ysAll = all.flatMap(s => (s.y || []).concat(s.y0 || [])
@@ -551,6 +551,13 @@ function _pane(ctx, o) {
   const CONTEXT_A = 0.5, CONTEXT_W = 1.3;
   pn.series.forEach((s, i) => {
     const col = hues[i];
+    // HIDDEN, NOT REMOVED. A muted series stays in the array so `_hues` walks
+    // the same list and the survivors keep their colours — a filter that
+    // repaints what is left of a chart is the one interaction that can make a
+    // reader misread the series they were comparing. The frame DOES rescale to
+    // what is left, because rescaling is the whole point of isolating two
+    // curves that sit on top of each other.
+    if (s.hidden) return;
     const dim = s.context ? CONTEXT_A : 1;
     ctx.save();
     ctx.strokeStyle = col; ctx.fillStyle = col;
@@ -884,6 +891,11 @@ function _pane(ctx, o) {
   }
   const findH = find.length * FIND_H;
 
+  // WHERE EVERY LEGEND ENTRY WAS DRAWN, so a click can find it. Collected
+  // rather than recomputed: a hit box worked out a second time from the same
+  // inputs is a second layout, and the first time the two disagree the symptom
+  // is a legend that responds to clicks a few pixels from where it looks.
+  const legendHits = [];
   if (leg.rows.length) {
     ctx.font = '10px ui-monospace, monospace';
     ctx.textAlign = 'left';
@@ -892,21 +904,39 @@ function _pane(ctx, o) {
       const ly = head + 12 + findH + (r + 1) * LEG_H;
       for (const s of row) {
         const col = hues[pn.series.indexOf(s)];
+        const tw = ctx.measureText(s.name).width;
         // The SWATCH recedes with its line; the NAME does not. A legend entry
         // greyed out reads as disabled, and text in this face wears text ink
         // rather than its series' — the colour chip beside it carries identity.
-        ctx.globalAlpha = s.context ? 0.5 : 1;
+        //
+        // A HIDDEN one IS disabled, and says so: its swatch hollows out to a
+        // ring and its name goes grey with a rule through it, so "off" is a
+        // state a reader can see rather than a series they think is missing.
+        ctx.globalAlpha = s.context && !s.hidden ? 0.5 : 1;
         ctx.fillStyle = col;
-        ctx.fillRect(lx, ly - 5, 14, 3);
+        if (s.hidden) {
+          ctx.strokeStyle = col; ctx.lineWidth = 1;
+          ctx.strokeRect(lx + 0.5, ly - 5.5, 13, 3);
+        } else {
+          ctx.fillRect(lx, ly - 5, 14, 3);
+        }
         ctx.globalAlpha = 1;
-        ctx.fillStyle = INK.text;
+        ctx.fillStyle = s.hidden ? INK.axis : INK.text;
         ctx.fillText(s.name, lx + 19, ly);
-        lx += 19 + ctx.measureText(s.name).width + 18;
+        if (s.hidden) {
+          ctx.strokeStyle = INK.axis; ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(lx + 19, ly - 3.5); ctx.lineTo(lx + 19 + tw, ly - 3.5);
+          ctx.stroke();
+        }
+        legendHits.push({ x: lx - 3, y: ly - 11, w: 19 + tw + 6, h: 15, name: s.name });
+        lx += 19 + tw + 18;
       }
     });
   }
 
-  return { y: pn.y, series: pn.series, hues, py, fy, y0, y1, top: T, bot: BOT, log: lg };
+  return { y: pn.y, series: pn.series, marks: pn.marks, hues, py, fy, y0, y1,
+    top: T, bot: BOT, log: lg, legendHits };
 }
 
 /**
@@ -1018,7 +1048,7 @@ function drawReadout(canvas, xv, focused) {
   // arithmetic rather than the record.
   const hits = [];
   for (const pane of c.panes) pane.series.forEach((s, i) => {
-    if (!s.x.length || s.aside || s.kind === 'band') return;
+    if (!s.x.length || s.aside || s.hidden || s.kind === 'band') return;
     // A SERIES ANSWERS ONLY WHERE SOMETHING IS DRAWN.
     //
     // Taking the nearest point unconditionally reported whatever the series had,
@@ -1095,14 +1125,20 @@ function drawReadout(canvas, xv, focused) {
  * Arrow keys step through the drawn points, Home and End jump to the ends, and
  * the readout is identical because it is the same function.
  */
-export function attachHover(canvas, onLeave) {
+export function attachHover(canvas, handlers) {
+  // Back-compatible: relation.js passes a bare onLeave, the solar face passes a
+  // table of handlers. A figure that wires nothing keeps exactly the pointer it
+  // had — hover, arrow keys, Escape — and gains no interaction it has not asked
+  // for.
+  const h = typeof handlers === 'function' ? { onLeave: handlers } : (handlers || {});
+  const onLeave = h.onLeave;
   const xsOf = () => {
     const c = canvas._chart;
     if (!c) return [];
     const all = [];
     for (const pane of c.panes) {
       for (const s of pane.series) {
-        if (s.aside || s.kind === 'band') continue;
+        if (s.aside || s.hidden || s.kind === 'band') continue;
         for (let k = 0; k < s.x.length; k++) {
           if (s.y[k] !== null && isFinite(s.y[k])) all.push(s.x[k]);
         }
@@ -1111,16 +1147,129 @@ export function attachHover(canvas, onLeave) {
     return [...new Set(all)].sort((a, b) => a - b);
   };
 
+  // Canvas pixels from a pointer event, whatever the element is scaled to.
+  const at = ev => {
+    const r = canvas.getBoundingClientRect();
+    return {
+      mx: (ev.clientX - r.left) * (canvas.width / r.width),
+      my: (ev.clientY - r.top) * (canvas.height / r.height),
+    };
+  };
+  const dataX = (c, mx) => c.x0 + (mx - c.L) / (canvas.width - c.L - c.R) * (c.x1 - c.x0);
+  const inPlot = (c, mx, my) =>
+    mx >= c.L && mx <= canvas.width - c.R && my >= c.T && my <= c.bot;
+
+  // THE BRUSH. A drag across the plot selects a range of x; the band is drawn
+  // over the finished chart rather than by redrawing it, so dragging costs one
+  // fill and not one full render per frame.
+  let drag = null;
+  const MIN_DRAG = 6;
+
+  canvas.onmousedown = ev => {
+    const c = canvas._chart;
+    // A press starts tracking if ANY pointer handler is wired: a click is a
+    // drag that did not move, so isolating a series and opening a row come
+    // through the same path as the brush and must not depend on it.
+    if (!c || ev.button !== 0) return;
+    if (!h.onBrush && !h.onIsolate && !h.onOpenRow) return;
+    const { mx, my } = at(ev);
+    // TRACKED WHEREVER THE PRESS LANDS, and only the BRUSH cares that it
+    // started inside the plot. Requiring the plot here meant a press on a
+    // legend entry — which sits in the header band, above the frame — never
+    // started a gesture at all, so no mouseup arrived, so the click that hides
+    // a series did nothing. The symptom was a picture that changed anyway,
+    // because moving the pointer there had drawn the hover crosshair.
+    // The finished chart, kept as pixels. Redrawing it on every pointer move
+    // would re-render ten thousand dots to move two vertical lines, and on the
+    // density panel that is visible as lag.
+    drag = { from: mx, to: mx, my0: my, moved: false, plot: inPlot(c, mx, my),
+      snap: canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height) };
+    ev.preventDefault();
+  };
+
   canvas.onmousemove = ev => {
     const c = canvas._chart;
     if (!c) return;
-    const r = canvas.getBoundingClientRect();
-    const mx = (ev.clientX - r.left) * (canvas.width / r.width);
+    const { mx, my } = at(ev);
+    if (drag) {
+      drag.to = Math.max(c.L, Math.min(canvas.width - c.R, mx));
+      if (drag.plot && Math.abs(drag.to - drag.from) >= MIN_DRAG) drag.moved = true;
+      const g = canvas.getContext('2d');
+      g.putImageData(drag.snap, 0, 0);
+      if (drag.moved) {
+        const a = Math.min(drag.from, drag.to), b = Math.max(drag.from, drag.to);
+        g.save();
+        g.fillStyle = INK.mark; g.globalAlpha = 0.10;
+        g.fillRect(a, c.T, b - a, c.bot - c.T);
+        g.globalAlpha = 1; g.strokeStyle = INK.mark; g.lineWidth = 1;
+        g.beginPath();
+        g.moveTo(a + 0.5, c.T); g.lineTo(a + 0.5, c.bot);
+        g.moveTo(b - 0.5, c.T); g.lineTo(b - 0.5, c.bot);
+        g.stroke();
+        g.restore();
+      }
+      return;
+    }
     if (mx < c.L || mx > canvas.width - c.R) return;
-    const xv = c.x0 + (mx - c.L) / (canvas.width - c.L - c.R) * (c.x1 - c.x0);
-    drawReadout(canvas, xv, false);
+    drawReadout(canvas, dataX(c, mx), false);
   };
+
+  canvas.onmouseup = ev => {
+    const c = canvas._chart;
+    if (!drag) return;
+    const d = drag; drag = null;
+    if (!c) return;
+    if (!d.moved) { _clicked(c, { mx: d.from, my: d.my0 }); return; }
+    // The band comes off before the handler runs. If the face decides the
+    // window is not worth honouring it does nothing, and a rectangle left on
+    // the canvas would be the only sign anything had happened.
+    drawChart(canvas, c.spec);
+    const a = dataX(c, Math.min(d.from, d.to)), b = dataX(c, Math.max(d.from, d.to));
+    if (h.onBrush) h.onBrush(a, b);
+  };
+
+  canvas.ondblclick = () => { if (h.onReset) h.onReset(); };
+
+  // A CLICK IS A DRAG THAT DID NOT MOVE, so both arrive here and nothing has to
+  // decide between two listeners. A legend entry toggles its series; a point on
+  // a series that names a row opens that row.
+  const _clicked = (c, pt) => {
+    for (const pane of c.panes) {
+      for (const hit of (pane.legendHits || [])) {
+        if (pt.mx >= hit.x && pt.mx <= hit.x + hit.w &&
+            pt.my >= hit.y && pt.my <= hit.y + hit.h) {
+          if (h.onIsolate) h.onIsolate(hit.name);
+          return;
+        }
+      }
+    }
+    if (!h.onOpenRow || !inPlot(c, pt.mx, pt.my)) return;
+    // The nearest drawn point within a finger's reach, across every pane. A
+    // series with no `row` is not a miss to report — most curves in this face
+    // are computed from the record and have no row behind them.
+    let best = null;
+    for (const pane of c.panes) {
+      for (const ser of pane.series) {
+        if (!ser.row || ser.hidden || !ser.x.length) continue;
+        for (let k = 0; k < ser.x.length; k++) {
+          const y = ser.y[k];
+          if (y === null || !isFinite(y)) continue;
+          const dx = c.px(ser.x[k]) - pt.mx, dy = pane.py(y) - pt.my;
+          const d2 = dx * dx + dy * dy;
+          if (!best || d2 < best.d2) best = { d2, row: ser.row };
+        }
+      }
+      for (const m of (pane.marks || [])) {
+        if (!m.row || m.at === undefined || !isFinite(m.at)) continue;
+        const d = m.axis === 'x' ? Math.abs(c.px(m.at) - pt.mx) : Math.abs(pane.py(m.at) - pt.my);
+        if (!best || d * d < best.d2) best = { d2: d * d, row: m.row };
+      }
+    }
+    if (best && best.d2 <= 14 * 14) h.onOpenRow(best.row);
+  };
+
   canvas.onmouseleave = () => {
+    drag = null;
     if (canvas._chart && document.activeElement !== canvas) drawChart(canvas, canvas._chart.spec);
     if (onLeave) onLeave();
   };
@@ -1139,7 +1288,14 @@ export function attachHover(canvas, onLeave) {
     else if (ev.key === 'ArrowLeft') ki = ki < 0 ? xs.length - 1 : Math.max(0, ki - step);
     else if (ev.key === 'Home') ki = 0;
     else if (ev.key === 'End') ki = xs.length - 1;
-    else if (ev.key === 'Escape') { ki = -1; drawChart(canvas, canvas._chart.spec); return; }
+    else if (ev.key === 'Escape') {
+      // Escape clears the readout; a second Escape, with nothing to clear,
+      // undoes whatever the pointer did to the view. The keyboard reaches the
+      // same state the pointer can put the figure into, which is the whole
+      // reason the arrow keys exist here.
+      if (ki < 0 && h.onReset) { h.onReset(); return; }
+      ki = -1; drawChart(canvas, canvas._chart.spec); return;
+    }
     else return;
     ev.preventDefault();
     const said = drawReadout(canvas, xs[ki], true);
@@ -1152,6 +1308,75 @@ export function attachHover(canvas, onLeave) {
   canvas.onfocus = () => {
     if (canvas._said) canvas.setAttribute('aria-label', canvas._said);
   };
+}
+
+/**
+ * THE VIEW A READER HAS ASKED FOR, AS A SPEC.
+ *
+ * Zoom, mute and pin are not chart modes — they are a transform from the spec a
+ * panel built to the spec that gets drawn. Everything downstream then agrees by
+ * construction: the picture, the readout, the arrow-key ladder and the table
+ * under the panel are all reading the one spec, so "the numbers behind this
+ * picture" means THIS picture and not the one before the reader touched it.
+ *
+ * `view` is { zoom: [lo, hi] | null, hidden: Set<name>, pinned: spec | null }.
+ *
+ * ZOOM FILTERS THE POINTS rather than clamping the axis. Clamping would leave
+ * the table listing fifteen years of leads under a frame showing two, and would
+ * leave the y axis scaled to data the frame no longer holds. Marks are kept
+ * whatever the window: a bound outside the view is still the bound.
+ *
+ * PIN OVERLAYS, AND REFUSES WHEN IT CANNOT. Two views of one panel are only
+ * comparable if they are drawn against the same quantities, so the pinned spec
+ * is dropped unless its axis titles match the live one's — silently overlaying
+ * sfu on Ap is the dual-axis mistake wearing different clothes. The pinned
+ * series are drawn in one neutral ink at context weight rather than taking
+ * fresh hues: they are a reference, not a second categorical set, and a palette
+ * cannot be asked for ten more colours.
+ */
+export function viewSpec(spec, view) {
+  const v = view || {};
+  const hidden = v.hidden || new Set();
+  const win = v.zoom && isFinite(v.zoom[0]) && isFinite(v.zoom[1]) && v.zoom[1] > v.zoom[0]
+    ? v.zoom : null;
+  const cut = ser => {
+    if (!win) return ser;
+    const keep = [];
+    for (let k = 0; k < ser.x.length; k++) {
+      if (ser.x[k] >= win[0] && ser.x[k] <= win[1]) keep.push(k);
+    }
+    const pick = arr => (Array.isArray(arr) ? keep.map(k => arr[k]) : arr);
+    return { ...ser, x: keep.map(k => ser.x[k]), y: pick(ser.y), y0: pick(ser.y0), n: pick(ser.n) };
+  };
+  const dress = ser => {
+    const out = cut(ser);
+    return hidden.has(ser.name) ? { ...out, hidden: true } : out;
+  };
+  const pinnedOf = pane => {
+    if (!v.pinned) return [];
+    const src = v.pinned.panes && v.pinned.panes.length ? v.pinned.panes : [v.pinned];
+    const twin = src.find(q => (q.y || {}).label === (pane.y || {}).label);
+    if (!twin || (v.pinned.x || {}).label !== (spec.x || {}).label) return [];
+    return (twin.series || [])
+      .filter(q => q.name && !q.hidden && q.kind !== 'band')
+      .map(q => ({ ...cut(q), name: q.name + ' (pinned)', colour: INK.muted,
+        context: true, dash: [2, 3], aside: false }));
+  };
+  const onePane = pane => ({
+    ...pane,
+    series: (pane.series || []).map(dress).concat(pinnedOf(pane)),
+  });
+  const out = { ...spec };
+  if (win) out.x = { ...spec.x, min: win[0], max: win[1] };
+  if (spec.panes && spec.panes.length) out.panes = spec.panes.map(onePane);
+  else Object.assign(out, onePane({ y: spec.y, series: spec.series, marks: spec.marks,
+    notes: spec.notes }));
+  return out;
+}
+
+/** Is any part of this view not the one the panel built? */
+export function viewIsOn(view) {
+  return !!(view && (view.zoom || view.pinned || (view.hidden && view.hidden.size)));
 }
 
 /**
@@ -1168,7 +1393,7 @@ export function attachHover(canvas, onLeave) {
  * it disagrees with the chart the disagreement is invisible — which is the same
  * argument that put the record's parser next to the engine's.
  */
-export function tableFor(spec) {
+function _grid(spec) {
   // Every series in every pane, in one table, because the stack shares an x and
   // a reader comparing frames is comparing rows. Each column carries its own
   // pane's formatter and, where the series has no name of its own, its pane's y
@@ -1180,25 +1405,54 @@ export function tableFor(spec) {
   const cols = [];
   for (const pn of panes) {
     for (const s of (pn.series || [])) {
-      if (s.x && s.x.length && !s.aside && s.kind !== 'band') {
+      if (s.x && s.x.length && !s.aside && !s.hidden && s.kind !== 'band') {
         cols.push({ s, name: s.name || pn.y.label, fy: pn.y.fmt || nice });
       }
     }
   }
-  if (!cols.length) return '<p class="muted">nothing plotted.</p>';
+  if (!cols.length) return null;
   const xs = [...new Set(cols.flatMap(c => c.s.x))].sort((a, b) => a - b);
   const fx = spec.x.fmt || nice;
-  const head = ['<tr><th>' + esc(spec.x.label) + '</th>'].concat(
-    cols.map(c => '<th>' + esc(c.name) + '</th>')).join('') + '</tr>';
   const at = (c, x) => {
     const k = c.s.x.indexOf(x);
-    return k < 0 || c.s.y[k] === null || !isFinite(c.s.y[k]) ? '' : c.fy(c.s.y[k]);
+    return k < 0 || c.s.y[k] === null || !isFinite(c.s.y[k]) ? '' : String(c.fy(c.s.y[k]));
   };
-  const rows = xs.map(x =>
-    '<tr><td>' + esc(fx(x)) + '</td>' +
-    cols.map(c => '<td>' + esc(at(c, x)) + '</td>').join('') + '</tr>').join('');
+  return {
+    head: [_plain(spec.x.label)].concat(cols.map(c => _plain(c.name))),
+    rows: xs.map(x => [String(fx(x))].concat(cols.map(c => at(c, x)))),
+    xLabel: spec.x.label,
+    names: cols.map(c => c.name),
+  };
+}
+
+export function tableFor(spec) {
+  const g = _grid(spec);
+  if (!g) return '<p class="muted">nothing plotted.</p>';
+  const head = '<tr><th>' + esc(g.xLabel) + '</th>' +
+    g.names.map(n => '<th>' + esc(n) + '</th>').join('') + '</tr>';
+  const rows = g.rows.map(r =>
+    '<tr>' + r.map(c => '<td>' + esc(c) + '</td>').join('') + '</tr>').join('');
   return '<table class="fx chart-table"><thead>' + head + '</thead><tbody>' +
     rows + '</tbody></table>';
+}
+
+/**
+ * The same grid as text, for the clipboard.
+ *
+ * Built from `_grid` rather than scraped out of the rendered table or rebuilt
+ * from the panel's arrays: a third description of the same numbers is a third
+ * chance for them to disagree, and a reader who pastes a column into a document
+ * has no way of telling which of the three they got. Tab-separated because that
+ * is what a spreadsheet and a document table both accept without being asked.
+ *
+ * Column headers lose their unit brackets here, the same way the readout does,
+ * because the unit belongs to the axis title and a pasted "F10.7  [sfu]" is a
+ * header nobody wants.
+ */
+export function tableTsv(spec) {
+  const g = _grid(spec);
+  if (!g) return '';
+  return [g.head].concat(g.rows).map(r => r.join('\t')).join('\n') + '\n';
 }
 
 function esc(v) {

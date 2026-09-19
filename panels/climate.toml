@@ -52,6 +52,10 @@ confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–5; awaiting
 # candidates are capturing the canvas at a fixed device pixel ratio, or
 # comparing after a structural-similarity pass rather than pixel by pixel.
 # Left as a finding for the panel's owner rather than fixed here.
+# Check four drives this panel: a brush, a key click, and the buttons that undo
+# them. It is declared rather than inferred so a panel that deliberately offers
+# no interaction does not fail a check for not having one.
+interactive = true
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.

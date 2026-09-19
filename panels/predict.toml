@@ -55,6 +55,10 @@ cycle, at the 95th."""
 # changed its mind. It needs a person to look at
 # panels/reference/predict.png and put their name here.
 confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–5; awaiting a look. Every figure gained an answer line above the chart and a finding line inside it, and this panel’s own picture changed as well — see `correct` above for what to check"
+# Check four drives this panel: a brush, a key click, and the buttons that undo
+# them. It is declared rather than inferred so a panel that deliberately offers
+# no interaction does not fail a check for not having one.
+interactive = true
 tolerance = 0.02
 # The panel refetches the whole solar-weather record on every redraw, so
 # check two has to wait on the content changing rather than on a fixed pause.

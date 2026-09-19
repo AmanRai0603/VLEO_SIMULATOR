@@ -325,6 +325,23 @@ table.iface, table.fx { border-collapse: collapse; width: 100%; font-size: 11px;
   font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .sw-answer span { font-size: 11.5px; color: var(--ink-3); margin-left: .45rem; }
 
+/* WHAT THE POINTER CAN DO, WRITTEN DOWN. Drag-to-zoom and click-to-hide leave
+   no trace on the page, so this strip names the state the figure is in and
+   offers the way out of it — which is also the only path to either for a reader
+   without a mouse. It carries one hint line when nothing has been done, and
+   grows a button per thing that has. */
+.sw-view { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem;
+  margin: .1rem 0 .2rem; font-size: 10.5px; min-height: 1.35rem; }
+.sw-view .sw-vs { color: var(--ink-2); font: 10.5px var(--mono); }
+.sw-view .sw-hint { font-size: 10px; color: var(--ink-3); margin-left: auto;
+  text-align: right; }
+.sw-view button { font-size: 10px; padding: .1rem .4rem; }
+/* The copy control sits with the table it copies, not with the view strip: it
+   is about the numbers, and it is reachable only when they are open. */
+.sw-table-copy { display: flex; align-items: center; gap: .45rem; margin: .3rem 0; }
+.sw-table-copy button { font-size: 10px; padding: .1rem .4rem; }
+.sw-copied { font-size: 10px; color: var(--teal); }
+
 /* The numbers behind a figure. Closed by default — the picture is the point —
    and scrollable, because a panel with two hundred lead points should not push
    the next figure off the page to prove it has them. */

@@ -22,7 +22,8 @@ import { $, esc } from './dom.js';
 import { S } from './state.js';
 import { solarRecord, bundleFile, parityFile, engineValues, engineSweep, engineAt,
   engineLevers, centredMean, corr, quantile, num, daysSince2000 } from './record.js';
-import { drawChart, attachHover, tableFor, INK } from './chart.js';
+import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn, INK }
+  from './chart.js';
 
 // ---------------------------------------------------------------------------
 // describing the picture that was actually drawn
@@ -1143,7 +1144,8 @@ const PANELS = [
           x: { label: 'scenario', ...XPAD },
           y: { label: Q.label + '  [' + Q.unit + ']' },
           series: [
-            { name: 'this tree', kind: 'line', x: xs, y: mine, width: 2.2 },
+            { name: 'this tree', kind: 'line', x: xs, y: mine, width: 2.2,
+              row: 'l3_solar_interface' },
             // Dots rather than a second line: the legacy run is five separate
             // answers and joining them would claim it interpolates between
             // scenarios, which is not a thing a scenario set does.
@@ -1330,7 +1332,12 @@ const PANELS = [
               (isFinite(cross(req)) ? cross(req).toFixed(2) + ' yr' : 'no point drawn'),
           x: { label: 'mission length  [years]', min: xs[0], max: xs[xs.length - 1] },
           y: { label: 'daily Ap the record expects once in that time  [-]' },
-          series: [{ name: 'sw_storm_return_level', kind: 'line', x: xs, y: ys }],
+          // `row` MAKES THE PICTURE NAVIGABLE. A curve that IS a row opens it
+          // on a click. Most curves in this face are computed from the record
+          // by the panel and have no row behind them; they carry no `row`, and
+          // that absence is correct rather than missing.
+          series: [{ name: 'sw_storm_return_level', kind: 'line', x: xs, y: ys,
+            row: 'sw_storm_return_level' }],
           marks: [
             // THE REGION, NOT ITS EDGE. Everything above the design level is
             // outside what the vehicle was built for, and a wash says that where
@@ -1343,9 +1350,9 @@ const PANELS = [
             // other. A region belongs to the edge it opens at.
             { axis: 'y', from: bound, label: '', colour: INK.mark, alpha: 0.05 },
             { axis: 'y', at: bound, label: 'designed for G' + o.g + ' = Ap ' + bound.toFixed(0) +
-              '  (sw_ap_design)' },
+              '  (sw_ap_design)', row: 'sw_ap_design' },
             { axis: 'y', at: req, label: 'required ≤ ' + req.toFixed(0) + '  (' + o.req + ')',
-              colour: '#c2185b' },
+              colour: '#c2185b', row: o.req },
           ],
           // A NOTE, NOT A RULE. This was a dashed line the full height of the
           // frame carrying "exceeds the design at 2.62 yr" at the top, which is
@@ -1567,7 +1574,7 @@ const PANELS = [
                     colour: c, alpha: a };
                 }),
                 { name: 'what the record gives — ' + quantity, kind: 'line',
-                  x, y: value, width: 2.2 },
+                  x, y: value, width: 2.2, row: ach },
                 // THE SAME COLOUR THE ZERO RULE BELOW IS DRAWN IN, deliberately.
                 // It is not a series competing with the curve — it is the line
                 // the curve is measured against, which is the job every mark in
@@ -1575,13 +1582,13 @@ const PANELS = [
                 // same thing in the same ink: crossing the pink line above is
                 // crossing the pink line below.
                 { name: 'the requirement — ' + req, kind: 'line',
-                  x, y: x.map(() => reqV), colour: '#c2185b', dash: [6, 4] },
+                  x, y: x.map(() => reqV), colour: '#c2185b', dash: [6, 4], row: req },
               ],
               marks,
             },
             {
               y: { label: 'margin, signed fraction of the requirement  [-]' },
-              series: [{ name: '', kind: 'line', x, y: margin, colour: INK.series[2] }],
+              series: [{ name: '', kind: 'line', x, y: margin, colour: INK.series[2], row: ach }],
               marks: [
                 // Below zero the requirement is not met, whichever way it binds:
                 // the margin is signed, so its sign is the verdict and the
@@ -2424,27 +2431,29 @@ function f107Window(extra, o, eng) {
         // Filled between the hot single day and the cold single day, the window
         // is the thing on the canvas and the four rows are its edges.
         { kind: 'band', x: xs, y: hot, y0: cold, colour: INK.series[0], alpha: 0.10 },
-        { name: 'sw_f107_design_short — hot, single day', kind: 'line', x: xs, y: hot },
+        { name: 'sw_f107_design_short — hot, single day', kind: 'line', x: xs, y: hot,
+          row: 'sw_f107_design_short' },
         { name: 'sw_f107_design_long — hot, sustained', kind: 'line', x: xs, y: hotLong,
-          colour: '#2f6fa8' },
+          colour: '#2f6fa8', row: 'sw_f107_design_long' },
         { name: 'sw_f107_cold_long — cold, sustained', kind: 'line', x: xs, y: coldLong,
-          colour: '#2e7d55' },
+          colour: '#2e7d55', row: 'sw_f107_cold_long' },
         { name: 'sw_f107_cold_short — cold, single day', kind: 'line', x: xs, y: cold,
-          colour: '#8f43e0' },
+          colour: '#8f43e0', row: 'sw_f107_cold_short' },
         // Dashed, because it is not a design value: it is the analogue's own
         // ceiling, the thing the four solid curves are built from a mean of.
         // CONTEXT, and the note has always said why: it is NOT a design value.
         // Four design curves and a fifth line at the same weight read as five
         // design curves, which is the one misreading this line can cause.
         { name: 'sw_window_peak_level — the analogue’s own peak', kind: 'line',
-          x: xs, y: analogue, colour: '#00918f', dash: [7, 4], context: true },
+          x: xs, y: analogue, colour: '#00918f', dash: [7, 4], context: true,
+          row: 'sw_window_peak_level' },
       ],
       marks: [
         // Above the bound is the side that fails, and the bound binds one way:
         // the requirement's sense is `<=`, so the region is everything over it.
         { axis: 'y', from: REQ, label: '', colour: '#c2185b', alpha: 0.06 },
         { axis: 'y', at: REQ, label: 'required \u2264 ' + REQ.toFixed(0) + '  (' + o.reqf + ')',
-          colour: '#c2185b' },
+          colour: '#c2185b', row: o.reqf },
       ],
     },
     note: 'The F10.7 half of what crosses to the system, as the four rows §20 built for it compute ' +
@@ -2532,11 +2541,14 @@ function thermoSolar(extra, eng, decF, decFa, decKp, now) {
       y: { label: 'exospheric temperature  [K]' },
       series: [
         { name: 'sustained — the day and its 81-day mean together', kind: 'line',
-          x: sust.map(p => p.x), y: sust.map(p => p.y), width: 2.4 },
+          x: sust.map(p => p.x), y: sust.map(p => p.y), width: 2.4,
+          row: 'env_exospheric_temperature' },
         { name: 'one day alone, its 81-day mean held', kind: 'line',
-          x: fx(extra.fast), y: fy(extra.fast), colour: INK.series[1] },
+          x: fx(extra.fast), y: fy(extra.fast), colour: INK.series[1],
+          row: 'env_exospheric_temperature' },
         { name: 'the 81-day mean alone, the day held', kind: 'line',
-          x: fx(extra.slow), y: fy(extra.slow), colour: INK.series[2] },
+          x: fx(extra.slow), y: fy(extra.slow), colour: INK.series[2],
+          row: 'env_exospheric_temperature' },
       ],
       // THE TWO SKIES, ON THE AXIS, BESIDE EACH OTHER. The declared constant the
       // density chain is actually sized on, and what the solar subsystem computes
@@ -2555,14 +2567,14 @@ function thermoSolar(extra, eng, decF, decFa, decKp, now) {
             label: '', colour: '#c2185b', alpha: 0.05 },
         decF === null ? null : { axis: 'x', at: decF,
           label: 'env_f107 = ' + decF.toFixed(0) + ', what the design is sized on',
-          colour: '#c2185b' },
+          colour: '#c2185b', row: 'env_f107' },
         !(eng.l3_solar_interface && isFinite(eng.l3_solar_interface.si)) ? null
           // INK.mark, not a series slot. Slot 2 is the green the "81-day mean
           // alone" line is drawn in three inches to the right, and a mark
           // wearing a series' colour invites the reader to pair the two.
           : { axis: 'x', at: eng.l3_solar_interface.si,
             label: 'the solar subsystem says ' + eng.l3_solar_interface.si.toFixed(1),
-            colour: INK.mark },
+            colour: INK.mark, row: 'l3_solar_interface' },
       ].filter(Boolean),
     },
     note: 'Three ways to raise the flux, and the relation answers differently for each — which ' +
@@ -2644,7 +2656,7 @@ function thermoKp(extra, eng, decKp) {
       y: { label: 'exospheric temperature  [K]' },
       series,
       marks: decKp === null ? [] : [{ axis: 'x', at: decKp,
-        label: 'env_kp = ' + decKp.toFixed(0), colour: '#c2185b' }],
+        label: 'env_kp = ' + decKp.toFixed(0), colour: '#c2185b', row: 'env_kp' }],
     },
     note: 'One curve per scenario, each swept at that scenario\u2019s OWN flux — so these are ' +
       'five places to stand and not one curve drawn five times. The two dots on each are the ' +
@@ -2781,7 +2793,8 @@ function thermoShape(extra, eng, decF, decFa, decKp) {
         // ADDS, measured from its own value at Kp 0, so the area under the
         // curve is the thing being reported and the axis already starts at
         // zero. A lone stroke left that size to be read off the gridlines.
-        { name: 'measured', kind: 'line', x: xs, y: d, width: 2.4, fill: true },
+        { name: 'measured', kind: 'line', x: xs, y: d, width: 2.4, fill: true,
+          row: 'env_exospheric_temperature' },
         { name: 'the straight line the quiet end sets', kind: 'line', x: xs, y: lin,
           colour: INK.muted, width: 1.2, dash: [5, 4], context: true },
       ],
@@ -2943,6 +2956,25 @@ function kpAgainstAp(rec) {
 const state = { panel: 'design', opts: {} };
 
 /**
+ * WHAT A READER HAS DONE TO A FIGURE, kept per host rather than per panel.
+ *
+ * One node page can hold one figure, but the solar face can hold several, and a
+ * view is a property of the picture somebody is looking at rather than of the
+ * panel definition. Keyed on the host element, so navigating away drops it: a
+ * zoom that survived a change of row would be a frame showing two years of a
+ * quantity that no longer has years.
+ *
+ * Reset when the controls change, for the same reason. The window a reader
+ * chose on a lead axis means nothing on a phase axis.
+ */
+const VIEWS = new WeakMap();
+const viewOf = host => {
+  let v = VIEWS.get(host);
+  if (!v) { v = { zoom: null, hidden: new Set(), pinned: null }; VIEWS.set(host, v); }
+  return v;
+};
+
+/**
  * Which version of a bundle the engine is actually serving.
  *
  * This line used to read `S.index.data_versions[0]`, a field the index has never
@@ -3073,7 +3105,16 @@ function panelBody(p, o) {
     // document without screenshotting a picture of it. Closed by default
     // because the figure is the point; present always because a tooltip that is
     // the only way to reach a number gates the data behind a mouse.
+    // WHAT THE POINTER CAN DO, AS BUTTONS. Drag-to-zoom and click-to-mute are
+    // invisible and unreachable without a mouse, so every one of them has a
+    // control here: the strip names the state the figure is in and offers the
+    // way out of it, and `pin` and `copy` are only reachable from here at all.
+    // A hint line that says what the pointer can do lives in the same strip,
+    // because a discoverable interaction nobody can find is not one.
+    '<div class="sw-view"></div>' +
     '<details class="sw-table"><summary>the numbers behind this picture</summary>' +
+    '<div class="sw-table-copy"><button class="ctl sw-copy" type="button">' +
+    'copy as TSV</button><span class="sw-copied"></span></div>' +
     '<div class="sw-table-body"></div></details>' +
     '<div class="sw-panel-note muted">reading the record…</div>';
 }
@@ -3089,7 +3130,17 @@ const LIVE = new Set();
 
 function wirePanel(host, p, o, redraw) {
   host.querySelectorAll('.sw-opt').forEach(sel => {
-    sel.onchange = () => { o[sel.dataset.k] = sel.value; redraw(); };
+    sel.onchange = () => {
+      // A CONTROL CHANGE DROPS THE VIEW. The window a reader brushed on a lead
+      // axis means nothing on a phase axis, and a hidden series named "cycle
+      // 23" is not the series named "cycle 23" in another variable. Carrying
+      // either across would show a figure nobody asked for and give no sign
+      // that it had happened.
+      const v = viewOf(host);
+      v.zoom = null; v.hidden.clear(); v.pinned = null;
+      o[sel.dataset.k] = sel.value;
+      redraw();
+    };
   });
 
   // The canvas takes the width it is given rather than a width chosen once. The
@@ -3114,6 +3165,79 @@ function wirePanel(host, p, o, redraw) {
   }
 
   render(host, p, o);
+}
+
+/**
+ * The strip under a figure: what has been done to it, and how to undo it.
+ *
+ * Rebuilt on every render rather than patched, because it is a statement about
+ * the view and the view is recomposed on every render. It carries nothing when
+ * the figure is as the panel built it, except the one line saying what the
+ * pointer can do — which is there because an interaction nobody can discover is
+ * an interaction nobody has.
+ */
+function viewStrip(host, p, o, view, shown) {
+  const el = $('.sw-view', host);
+  if (!el) return;
+  const fx = (shown.x && shown.x.fmt) || (v => (Number.isInteger(v) ? String(v) : sig(v)));
+  const bits = [];
+  if (view.zoom) {
+    bits.push('<span class="sw-vs">showing ' + esc(fx(view.zoom[0])) + ' to ' +
+      esc(fx(view.zoom[1])) + '</span><button class="ctl sw-unzoom" type="button">' +
+      'the whole axis</button>');
+  }
+  if (view.hidden.size) {
+    bits.push('<span class="sw-vs">' + view.hidden.size + ' series hidden</span>' +
+      '<button class="ctl sw-unhide" type="button">show all</button>');
+  }
+  bits.push(view.pinned
+    ? '<span class="sw-vs">a pinned view is overlaid</span>' +
+      '<button class="ctl sw-unpin" type="button">drop it</button>'
+    : '<button class="ctl sw-pin" type="button">pin this view</button>');
+  bits.push('<span class="sw-hint muted">drag across the plot to zoom, double-click or ' +
+    'Escape to undo, click a key entry to hide its line</span>');
+  el.innerHTML = bits.join(' ');
+
+  const again = () => render(host, p, o);
+  const on = (sel, fn) => { const b = $(sel, el); if (b) b.onclick = () => { fn(); again(); }; };
+  on('.sw-unzoom', () => { view.zoom = null; });
+  on('.sw-unhide', () => view.hidden.clear());
+  on('.sw-unpin', () => { view.pinned = null; });
+  // PINNED WITHOUT THE PIN. `_built` is the panel's own spec, before the view
+  // transform — pinning the shown spec would pin the previous pin as well, and
+  // two changes of control later the figure would be carrying a stack of
+  // overlays nobody asked for.
+  on('.sw-pin', () => {
+    const cv = $('.sw-panel', host);
+    view.pinned = cv && cv._built ? cv._built : null;
+  });
+
+  const cp = $('.sw-copy', host), said = $('.sw-copied', host);
+  if (cp) {
+    cp.onclick = async () => {
+      const text = tableTsv(shown);
+      let okay = true;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (e) {
+        // A clipboard is not always there to write to — an insecure origin, a
+        // permission refused. Falling back to a selection means the reader can
+        // still take the numbers with one more keystroke instead of none.
+        okay = false;
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;left:-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try { okay = document.execCommand('copy'); } catch (e2) { okay = false; }
+        ta.remove();
+      }
+      if (said) {
+        said.textContent = okay ? 'copied' : 'could not reach the clipboard';
+        setTimeout(() => { said.textContent = ''; }, 2000);
+      }
+    };
+  }
 }
 
 /** The drawing surface, sized to the space there actually is. */
@@ -3195,6 +3319,14 @@ async function render(host, p, o) {
     // third of the vertical resolution a slope is read from, which is the aspect
     // argument from B6 applied three times over and in the wrong direction.
     const nPanes = (out.spec.panes || []).length;
+    // SIZED FROM THE HOST, EVERY TIME. This read cv.width, which is fine on the
+    // first draw and compounding on every one after it: a panel asking for
+    // `aspect` narrowed itself, the next render took that narrower width as its
+    // base and narrowed again, and `drivers` walked 1180 → 806 → 512 across
+    // three redraws. It never showed up through the controls, because a control
+    // change rebuilds the body and fitCanvas runs; it showed up the moment a
+    // zoom redrew in place. Check four found it on its first full pass.
+    fitCanvas(host);
     const H1 = fitHeight(cv.width);
     // A NARROWER FRAME WHERE THE WIDTH HAS NOTHING TO SPEND ITSELF ON. §34.3
     // asked for a SHORTER frame "where the curve is monotone", and measuring the
@@ -3213,11 +3345,48 @@ async function render(host, p, o) {
     cv.height = nPanes > 1
       ? Math.round(H1 * (1 + 0.42 * (nPanes - 1)))
       : H1;
-    drawChart(cv, out.spec);
-    attachHover(cv);
+    // WHAT THE READER ASKED FOR, AS A SPEC. Zoom, mute and pin are a transform
+    // from the spec the panel built to the spec that gets drawn, so the
+    // picture, the readout, the arrow-key ladder and the table below are all
+    // reading one thing. `out.spec` is kept beside it because the view is
+    // composed afresh on every redraw and the panel's own spec is what it is
+    // composed from.
+    const view = viewOf(host);
+    const shown = viewSpec(out.spec, view);
+    cv._built = out.spec;
+    drawChart(cv, shown);
+    const again = () => render(host, p, o);
+    attachHover(cv, {
+      onBrush: (a, b) => {
+        // A window holding fewer than two drawn points is not a view of the
+        // data, it is a view of the gap between two of them.
+        const pts = (shown.panes || [shown]).flatMap(q => (q.series || []))
+          .flatMap(q => q.x || []).filter(v => v >= a && v <= b);
+        if (new Set(pts).size < 2) return;
+        view.zoom = [a, b];
+        again();
+      },
+      onReset: () => {
+        if (!viewIsOn(view)) return;
+        view.zoom = null; view.hidden.clear(); view.pinned = null;
+        again();
+      },
+      onIsolate: name => {
+        if (view.hidden.has(name)) view.hidden.delete(name);
+        else view.hidden.add(name);
+        // Never all of them. A frame with nothing in it is not an isolation,
+        // it is a panel that looks broken.
+        const named = (out.spec.panes || [out.spec]).flatMap(q => (q.series || []))
+          .filter(q => q.name).map(q => q.name);
+        if (named.length && named.every(n => view.hidden.has(n))) view.hidden.delete(name);
+        again();
+      },
+      onOpenRow: row => { if (window.openNode) window.openNode(row); },
+    });
     // From the same spec the chart was drawn from, so the two cannot disagree.
     const tb = $('.sw-table-body', host);
-    if (tb) tb.innerHTML = tableFor(out.spec);
+    if (tb) tb.innerHTML = tableFor(shown);
+    viewStrip(host, p, o, view, shown);
     note.innerHTML = linkRows(esc(out.note).replace(/\n\n/g, '<br><br>'));
     // SAY SO WHEN IT WORKED, so that a checker can tell a redraw from a
     // collapse. A failed render blanks the canvas, and a blank canvas has a

@@ -4321,3 +4321,117 @@ check rather than a picture to approve. `panels/README.md` now carries the
 answer/finding rule once, rather than eleven times.
 
 Moves 6 and 9 of §34 remain — the interaction layer and dark mode.
+
+
+## 39 · Move 6 — the interaction layer, and the two defects it found
+
+§34.4 called this "the largest piece of work here". All five pieces §34.2 listed
+are in, and the check that drives them found two defects on its first passes —
+one of them mine, from move 7, three commits old and invisible to every other
+check in the repository.
+
+### 39.1 · The view is a transform, not a mode
+
+`viewSpec(spec, view)` maps the spec a panel built to the spec that gets drawn.
+Everything downstream then agrees by construction: the picture, the crosshair,
+the arrow-key ladder and the table under the panel are all reading one spec, so
+*"the numbers behind this picture"* means **this** picture and not the one before
+the reader touched it.
+
+That single decision is what made the rest small. Zoom does not need the chart to
+know about zooming; it needs `x.min`, `x.max` and a filtered array.
+
+- **Brush to zoom** — a drag filters the points to the window. Filtering rather
+  than clamping, because a clamped axis leaves the table listing fifteen years of
+  leads under a frame showing two, and leaves the y scale fitted to data the
+  frame no longer holds. Marks stay whatever the window: a bound outside the view
+  is still the bound. A window holding fewer than two drawn points is refused —
+  that is not a view of the data, it is a view of the gap between two of them.
+- **Click a key entry to hide its line** — the frame rescales to what is left,
+  which is the whole point of isolating two curves that coincide. The hues do
+  not move: the series stays in the array, `hidden`, so the palette walk is
+  unchanged. A filter that repaints the survivors can make a reader misread the
+  series they were comparing.
+- **Click a line that IS a row to open it** — twenty-one series and marks carry
+  `row`. Every other curve in this face is computed from the record by the panel
+  and has none, and that absence is correct rather than missing.
+- **Pin a view and overlay the next** — in one neutral ink at context weight, and
+  **refused when the axis titles do not match**. Two views of a panel are
+  comparable only if they are drawn against the same quantities; silently
+  overlaying sfu on Ap is the dual-axis mistake wearing different clothes. The
+  pinned spec is the panel's own, taken before the view transform, so pinning
+  twice does not stack overlays.
+- **Copy the table** — as TSV, built from the same `_grid` the HTML table is
+  built from. A third description of the same numbers is a third chance for them
+  to disagree, and a reader pasting a column has no way of telling which they
+  got.
+
+Everything the pointer does has a button in a strip under the figure, which is
+also where the one line saying the pointer can do it lives. An interaction
+nobody can discover is an interaction nobody has, and one that needs a mouse is
+one half the readers do not have at all. Escape with nothing to clear undoes the
+view, so the keyboard reaches the same states.
+
+### 39.2 · Check 4 · it responds
+
+A panel declaring `interactive = true` gets brushed, gets a key entry clicked,
+and has both undone — and **the undo must restore the picture exactly, to the
+pixel**. That is the invariant worth having: an interaction a reader cannot get
+out of leaves them in a view they did not mean to reach with no way back but a
+reload.
+
+The check reads the legend's hit boxes and the drawn x values off `canvas._chart`
+— state the chart already keeps for its own click handling. That is not a test
+hook in the product: it is how the checker clicks where a person would rather
+than where it guesses, and it is the same move as reading `dataset.failed`.
+
+Three things had to be got right before the check was worth anything, and each
+was a false report first:
+
+1. **`page.mouse` works in viewport coordinates and `bounding_box()` returns page
+   ones.** The figure is section four of a node page, so every press landed
+   off-screen and hit nothing. The check reported "dragging a window across the
+   plot changed nothing" about an interaction that worked — the worst kind of
+   false finding, because it accuses the product.
+2. **A hover crosshair is part of the picture.** Measuring with the pointer still
+   on the plot counted "the reader moved the mouse" as "the interaction worked",
+   which is how the first run passed a legend click that did nothing at all.
+3. **The middle third of the WIDTH is not the middle third of the DATA.** On an
+   axis of five named scenarios it holds one category, which the face rightly
+   refuses to zoom into. The check now asks the chart where the data is.
+
+### 39.3 · The two defects
+
+**A press on a key entry never started a gesture.** The code required a press to
+begin inside the plot, and the key sits in the header band above it — so no
+mouseup arrived, and the click that hides a series did nothing. Only the brush
+cares where the press began; a click is a drag that did not move, and it now
+starts wherever it lands.
+
+**A panel asking for a narrower frame shrank on every redraw.** `render` sized
+from `cv.width`, which is right once and compounding after: `drivers` walked
+1180 → 806 → 512 across three renders. This was mine, from move 7 (§37.1), and
+**no existing check could see it** — a control change rebuilds the body and
+re-fits the canvas, so the panel always looked right through the controls. It
+needed a redraw in place, which is exactly what a zoom is. Check 4 found it on
+its first full pass.
+
+### 39.4 · What did not change
+
+The eleven references are untouched: the strip is DOM and the interactions add
+no ink until used. A byte comparison put three panels at 11 to 16 differing
+pixels, all at the canvas's rounded corners and all one level in one channel —
+the element's own border antialiasing, below the checker's 8-level slack. That
+is the comparison agreeing with the check rather than catching it out, which is
+the first time in four rounds.
+
+### 39.5 · Still open
+
+- Move 9, dark mode, is the last of the nine and the least urgent: it changes how
+  the figures look and not what they say.
+- Brushing on the **y** axis, and a second brush inside a zoom, are not
+  implemented. One axis is what the panels needed.
+- `relation.js` draws the generated per-node figures and wires no handlers, so
+  those keep the pointer they had — hover, arrow keys, Escape — and gain nothing.
+  Extending it is a small change and a separate one.
+- All eleven references remain UNCONFIRMED and awaiting a person.
