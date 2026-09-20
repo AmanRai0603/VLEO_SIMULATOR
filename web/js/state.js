@@ -34,6 +34,15 @@ export const S = {
   expanded: new Set(),
   selected: null,
 
+  // The inputs a reader has moved: node id -> value in SI. A what-if, held in
+  // this browser and sent with every run as `set=`; it never reaches a sheet
+  // and never reaches the repository. See inputs.js for why that is the whole
+  // design rather than a limitation of it.
+  overrides: new Map(),
+  // The same run with nothing overridden, kept so "what did this move" can be
+  // answered by comparing two runs rather than by trusting one.
+  baseline: null,
+
   // the run
   engineCase: 'nominal',
   mode: 'branch',

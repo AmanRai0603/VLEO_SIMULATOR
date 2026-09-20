@@ -16,6 +16,8 @@ import { drawFigure, drawCaptions, drawStepper, drawStatus, drawFoot } from './f
 import { openNode } from './node.js';
 import { renderRun } from './run.js';
 import { drawArchitecture } from './architecture.js';
+import { loadOverrides, overrideCount, clearAllOverrides, clearOverride,
+         fromSI, onOverrideChange } from './inputs.js';
 
 // ---------------------------------------------------------------------------
 // boot
@@ -28,6 +30,15 @@ async function boot() {
     return;
   }
   fillSubsys();
+  // What this browser remembered from last time. It is read after the index so
+  // an override naming a row that no longer exists can be dropped rather than
+  // sent to the engine.
+  loadOverrides();
+  // The bar is redrawn wherever an override is set from — the node page's own
+  // control sets one without going through a full draw, and a bar that only
+  // appeared on the next navigation would be missing at the one moment it has
+  // something to say.
+  onOverrideChange(() => drawOverrideBar());
   $('#howto-steps').innerHTML = HOWTO.map(t => '<li>' + t + '</li>').join('');
   wire();
   setLayer(1);
@@ -66,6 +77,7 @@ export function draw() {
   $$('.ctl.cpt').forEach(b => b.classList.toggle('sel', b.dataset.concept === S.concept));
   $('#concept-tag').textContent = S.concept === 'single' ? 'Single satellite' : 'Constellation';
 
+  drawOverrideBar();
   drawCaptions();
   drawStepper();
   drawFoot();
@@ -75,6 +87,53 @@ export function draw() {
   if (v === 'node') { drawStatus(S.disp); return; }
   drawStatus(drawFigure());
 }
+
+/**
+ * The what-if bar.
+ *
+ * Hidden when nothing is overridden — a control strip that is always there
+ * teaches a reader to stop seeing it, and the one moment this has to be seen
+ * is the moment it appears. Every row it lists is a number the design does not
+ * hold, so each one names itself, shows what it is running at, and can be put
+ * back on its own without disturbing the others.
+ */
+function drawOverrideBar() {
+  const bar = $('#ovrbar');
+  const n = overrideCount();
+  bar.hidden = n === 0;
+  if (!n) return;
+  const rows = [];
+  for (const [id, si] of S.overrides) {
+    const r = S.byId.get(id);
+    if (!r) continue;
+    rows.push('<span class="ovr-chip xref" data-goto="' + id + '">' +
+      '<b>' + (r.symbol || r.label) + '</b> ' + fmtNum(fromSI(r, si)) + ' ' + r.unit +
+      '<button class="ovr-x" data-drop="' + id + '" title="put this one back">×</button>' +
+      '</span>');
+  }
+  // THE BAR SAYS WHAT IS TRUE; IT DOES NOT RUN ANYTHING. Update lives beside
+  // the field on the node page, which is where the hand already is. A second
+  // update button here re-rendered this bar during its own click — the field's
+  // blur fires first, the bar redraws, and the button the click was travelling
+  // to no longer exists. One action, one place.
+  bar.innerHTML =
+    '<div class="ovr-bar-h"><b>' + n + ' input' + (n === 1 ? '' : 's') +
+      ' overridden.</b> Everything below is a what-if — the sheets on disk are ' +
+      'unchanged and nothing has been written to the repository.</div>' +
+    '<div class="ovr-chips">' + rows.join('') +
+      '<button class="ctl ovr-bar-clear">put all back</button></div>';
+
+  $$('.ovr-x', bar).forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    clearOverride(b.dataset.drop);
+    S.lastRun = null;
+    draw();
+  });
+  $('.ovr-bar-clear', bar).onclick = () => { clearAllOverrides(); S.lastRun = null; draw(); };
+}
+
+/** Six significant figures, as the rest of the face writes a number. */
+const fmtNum = v => (v == null || !isFinite(v)) ? '—' : String(Number(v.toPrecision(6)));
 
 function drawRunView() {
   const id = S.runTarget || (S.byId.has('prop_thrust_to_drag') ? 'prop_thrust_to_drag' : S.rows[0].id);

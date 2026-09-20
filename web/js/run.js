@@ -14,6 +14,7 @@
 
 import { $, $$, esc, fmt } from './dom.js';
 import { S, reachFrom, isSeeded } from './state.js';
+import { withOverrides } from './inputs.js';
 
 export function renderRun(host, r, standalone) {
   if (!host || !r) return;
@@ -77,7 +78,11 @@ export function renderRun(host, r, standalone) {
 async function go(host, r, standalone) {
   $('.run-go', host).disabled = true;
   $('.run-why', host).textContent = 'running…';
-  const body = new URLSearchParams({ node: r.id, mode: S.mode, case: S.engineCase });
+  // The overrides travel with every run. A face that showed a what-if number
+  // on one panel and the declared design on another would be the three-correct-
+  // numbers-at-three-different-times bug this tool already has a comment about.
+  const body = withOverrides(
+    new URLSearchParams({ node: r.id, mode: S.mode, case: S.engineCase }));
   let res;
   try {
     res = await (await fetch('/v1/run', {
@@ -270,8 +275,9 @@ function wireSweep(host, r) {
   (async () => {
     let lv;
     try {
-      lv = await (await fetch('/v1/levers?node=' + encodeURIComponent(r.id) +
-        '&case=' + encodeURIComponent(S.engineCase) + '&mode=branch')).json();
+      const lp = withOverrides(new URLSearchParams(
+        { node: r.id, case: S.engineCase, mode: 'branch' }));
+      lv = await (await fetch('/v1/levers?' + lp.toString())).json();
     } catch (e) { return; }
     if (!lv || !lv.ok || !lv.levers || !lv.levers.length) return;
     const keep = lv.levers.filter(l => S.byId.has(l.id));
@@ -302,7 +308,7 @@ function wireSweep(host, r) {
       points: '80', case: S.engineCase, mode: 'branch',
     });
     $('.sw-note', host).textContent = 'sweeping…';
-    lastRes = await (await fetch('/v1/sweep?' + p.toString())).json();
+    lastRes = await (await fetch('/v1/sweep?' + withOverrides(p).toString())).json();
     plot(host, lastRes);
   };
   // Changing the level redraws from the sweep already in hand. Re-running the

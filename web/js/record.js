@@ -17,6 +17,7 @@
 */
 'use strict';
 
+import { withOverrides } from './inputs.js';
 const cache = new Map();
 
 /**
@@ -101,7 +102,7 @@ export async function engineSweep(node, over, from, to, points = 80, sets = null
   // five. `sets` is {id: value in SI}, and it is the same override the run
   // endpoint takes, so a swept point and a run at the same place agree.
   for (const [k, v] of Object.entries(sets || {})) q.append('set', k + ':' + v);
-  const r = await fetch('/v1/sweep?' + q.toString());
+  const r = await fetch('/v1/sweep?' + withOverrides(q).toString());
   const d = await r.json();
   if (!d.ok) throw new Error(d.message || 'the sweep was refused');
   return d;
@@ -138,7 +139,8 @@ export async function engineAt(node, sets) {
  * a decision worth exactly nothing.
  */
 export async function engineLevers(node) {
-  const r = await fetch('/v1/levers?node=' + encodeURIComponent(node));
+  const r = await fetch('/v1/levers?' + withOverrides(
+    new URLSearchParams({ node })).toString());
   const d = await r.json();
   return d.ok ? (d.levers || []) : [];
 }
