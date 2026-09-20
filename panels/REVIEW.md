@@ -4,7 +4,7 @@
 
 # Signing the panel references
 
-Fourteen panels, each with a light and a dark rendering, and **a machine drew
+14 panels, each with a light and a dark rendering, and **a machine drew
 every one of them.** `panels/README.md` says why that matters: the check cannot
 tell a reference somebody studied from one a machine drew unattended, which is
 the whole reason the name is written by hand.
@@ -15,8 +15,11 @@ reading aid; the boxes are for keeping your place.
 
 ## What a machine has already established
 
-- All fourteen pass `tools/panel_check.py`: they render, they move, they read
-  the rows they declare, and each matches its own stored reference.
+- All 14 pass `tools/panel_check.py`: they render, they read the rows they
+  declare, and each matches its own stored reference in both schemes.
+- 11 of them are `interactive` and are also driven — brushed, and their legend
+  entries clicked — to check the picture actually changes. `matrix`, `paths`, `tree` are not, so
+  nothing mechanical has moved them: what you see is the whole of it.
 - Every number printed inside a figure is computed from the arrays that figure
   is drawn from. None is typed. That makes them self-consistent; it does not
   make them right, which is what a reader is for.
@@ -50,9 +53,11 @@ tools/panel_review.py --sheets /tmp/sheets
 
 ---
 
-**11 of 14 panels are UNCONFIRMED.** `matrix`, `paths`, `tree` carry no `confirmed_by` field at all —
-those three predate the field and it was deliberately never backfilled, because
-nobody now remembers who looked and a guessed attestation is worse than none.
+**11 of 14 panels are UNCONFIRMED.**
+
+`matrix`, `paths`, `tree` carry no `confirmed_by` field at all. They predate the field and they were
+deliberately never backfilled, because nobody now remembers who looked and a
+guessed attestation is worse than none.
 
 ---
 
