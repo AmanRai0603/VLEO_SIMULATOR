@@ -23,6 +23,7 @@
 
 import { $, $$, esc, fmt } from './dom.js';
 import { S, reachFrom, isSeeded } from './state.js';
+import { withOverrides } from './inputs.js';
 import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
   watchScheme, INK } from './chart.js';
 
@@ -191,7 +192,7 @@ export async function mountRelation(host) {
       node: id, over: d.id, from: d.lo, to: d.hi,
       points: '120', case: S.engineCase, mode: 'branch',
     });
-    res = await (await fetch('/v1/sweep?' + p.toString())).json();
+    res = await (await fetch('/v1/sweep?' + withOverrides(p).toString())).json();
     if (!res.ok) {
       $('.rel-note', host).textContent = res.message || 'the engine refused the sweep';
       return;

@@ -543,6 +543,82 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
    still glowing through it, and nothing reported a thing — the page was valid
    CSS doing exactly what it said.
    --------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+   The what-if: an input a reader has moved, and the bar that will not let them
+   forget it.
+
+   Everything here is a token, never a literal. The dark work that preceded this
+   found fourteen hex values in this stylesheet that never followed the scheme
+   and showed up as light blocks burned into a dark page; a new block written in
+   literals would be the fifteenth. Amber is the colour: it is already this
+   face's "attention" hue and it is not teal, which is the shell's own.
+*/
+#ovrbar {
+  margin: 0 0 14px; padding: 10px 12px;
+  background: var(--out-pale); border: 1px solid var(--out);
+  border-radius: 6px;
+}
+.ovr-bar-h { font-size: 13px; margin-bottom: 8px; }
+.ovr-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.ovr-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 2px 4px 2px 8px; border-radius: 12px;
+  background: var(--card); border: 1px solid var(--out);
+  font: 12px/1.6 var(--mono); cursor: pointer;
+}
+.ovr-x {
+  border: 0; background: none; cursor: pointer; color: var(--muted);
+  font-size: 14px; line-height: 1; padding: 2px 5px; border-radius: 10px;
+}
+.ovr-x:hover { background: var(--out); color: var(--card); }
+.ovr-bar-act { display: flex; align-items: center; gap: 8px; }
+.ovr-bar-out:not(:empty) { margin-top: 10px; }
+
+/* The control on a node page. */
+.ovr-panel { border-left: 3px solid var(--out); }
+.ovr { padding: 2px 0 8px; }
+.ovr-h { margin-bottom: 6px; }
+.ovr-tag {
+  margin-left: 8px; padding: 1px 7px; border-radius: 10px;
+  background: var(--out); color: var(--card);
+  font: 11px/1.6 var(--mono); text-transform: uppercase; letter-spacing: .04em;
+}
+.ovr-row { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+.ovr-dec, .ovr-in {
+  display: flex; flex-direction: column; gap: 3px;
+  font-size: 11px; color: var(--muted); text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.ovr-dec span { font: 15px/1.4 var(--mono); color: var(--ink); text-transform: none; }
+.ovr-in { position: relative; }
+.ovr-v {
+  width: 9em; padding: 5px 34px 5px 8px;
+  font: 15px/1.4 var(--mono); color: var(--ink);
+  background: var(--card); border: 1px solid var(--rule); border-radius: 4px;
+}
+.ovr.on .ovr-v { border-color: var(--out); background: var(--out-pale); }
+.ovr.bad .ovr-v { border-color: #a4262c; background: #fdf5f4; }
+.ovr-u {
+  position: absolute; right: 8px; bottom: 7px;
+  font: 12px/1 var(--mono); color: var(--muted); text-transform: none;
+}
+.ovr-range { font-size: 12px; margin-top: 6px; }
+.ovr-why { color: #a4262c; }
+.ovr-count { font-size: 13px; margin: 0 0 6px; }
+
+/* What moved. A table, because the reader scans down one column. */
+.ovr-diff { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ovr-diff th {
+  text-align: left; font-weight: 600; color: var(--muted);
+  border-bottom: 1px solid var(--rule); padding: 4px 8px 4px 0;
+  text-transform: uppercase; letter-spacing: .04em; font-size: 11px;
+}
+.ovr-diff td { padding: 5px 8px 5px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.ovr-diff td:last-child { text-align: right; font: 12px/1.5 var(--mono); white-space: nowrap; }
+.ovr-diff .up { color: var(--out); }
+.ovr-diff .down { color: var(--in); }
+
 /* DARK IS SELECTED, NOT FLIPPED.
    Every token here is chosen against the dark surface rather than derived from
    the light one: an inverted palette is how hues picked against white end up
@@ -614,4 +690,10 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
   pre.code { background: #1b1a16; }
   .cred .f { background: #2e2c27; }
   .blocked { color: #e88a8a; background: #2c1a19; border-color: #4a2a28; }
+  /* The what-if bar. The amber pale token is already dark-side, so the block
+     only has to stop the chip reading as a hole in the page. */
+  .ovr-chip { background: var(--paper); }
+  .ovr.on .ovr-v { background: var(--paper); }
+  .ovr-why { color: #e88a8a; }
+  .ovr.bad .ovr-v { border-color: #e88a8a; background: #2c1a19; }
 }

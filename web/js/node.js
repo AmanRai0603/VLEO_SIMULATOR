@@ -15,6 +15,7 @@ import { renderRun } from './run.js';
 import { mountRelation } from './relation.js';
 import { mountTheory } from './theory.js';
 import { figuresForRow, drawRowFigure } from './solar.js';
+import { isInput, inputControl, mountInput } from './inputs.js';
 
 export async function openNode(id) {
   const r = S.byId.get(id);
@@ -29,6 +30,11 @@ export async function openNode(id) {
   ]);
 
   body.innerHTML =
+    // THE CONTROL COMES BEFORE THE DESCRIPTION, and it is not a numbered
+    // segment. The four segments say what this node IS; a declared row is also
+    // a thing a reader can move, and that is a different kind of statement. It
+    // is drawn only where it can do something — see isInput.
+    (isInput(r) ? '<section class="seg ovr-panel"></section>' : '') +
     '<section class="seg" data-seg="assembly"><h3 class="seg-h">' +
       '<span class="seg-n">1</span>assembly — what this node is made of</h3>' +
       assemblyHtml(r, meta) + '</section>' +
@@ -55,6 +61,8 @@ export async function openNode(id) {
           : '') +
         '<div class="row-figure"></div></section>'
       : '');
+
+  if (isInput(r)) mountInput($('.ovr-panel', body), r);
 
   if (figs.length) {
     const hostFig = $('.row-figure', body);

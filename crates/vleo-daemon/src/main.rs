@@ -565,6 +565,20 @@ fn index_json() -> String {
         j.str_field("question", d.question);
         j.num_field("lo", v.limit.lower);
         j.num_field("hi", v.limit.upper);
+        // THE LIMITS ABOVE ARE SI, AND THE UNIT BESIDE THEM IS NOT.
+        //
+        // Mission duration is `yr` with a lower bound of 15778800 — five
+        // years is 157788000 seconds, and a face that puts the bound straight
+        // into a field beside the word "yr" offers a reader a range of fifteen
+        // million years. The factor is what makes the two agree, and it is the
+        // same `si_factor()` the levers endpoint already sends for exactly this
+        // reason. Any face that lets a person type a value needs it, so it is
+        // here rather than fetched per row from somewhere else.
+        j.num_field("factor", v.unit.si_factor());
+        // A bound without its reason is a bound the next person deletes when it
+        // is inconvenient. The face shows these when a typed value is refused.
+        j.str_field("why_lo", v.limit.reason_lower);
+        j.str_field("why_hi", v.limit.reason_upper);
         j.num_field("fixtures", d.fixtures.len() as f64);
         // THE PRODUCING NODE, NOT THE VARIABLE.
         //
