@@ -191,6 +191,19 @@ a block of light where a fill should have gone dark, and a line you have to hunt
 for. Both are the same defect — a value chosen against the wrong surface — and
 both pass every mechanical check in this file.
 
+## Where the signing stands
+
+`panels/REVIEW.md` is the reading list: every panel, both of its pictures, what
+each must show, and who has signed for it. It is **generated** from the sheets by
+`tools/panel_review.py`, so the `confirmed_by` lines exist in exactly one place
+and a stale copy of who signed what cannot be committed — the tooling job runs
+`--check` and fails on a diff.
+
+Which means the order is: look at both pictures, write your name into
+`panels/<id>.toml`, re-run the tool, commit both. Ticking a box in `REVIEW.md`
+signs nothing and the check ignores it; it is there for keeping your place
+across a sitting.
+
 ## The size a figure is drawn at
 
 A canvas has two sizes and they are not the same thing: the **backing store**

@@ -178,6 +178,14 @@ jobs:
         run: python3 tools/mat_parity.py --selftest
       - name: the release notes
         run: python3 tools/release_notes.py --selftest
+      # The reference-signing checklist is generated from the panel sheets, so
+      # the `confirmed_by` lines exist in exactly one place. A hand-kept copy of
+      # who signed what is a second answer to the same question, and the one
+      # that goes stale is always the copy.
+      - name: the panel-review checklist
+        run: |
+          python3 tools/panel_review.py --selftest
+          python3 tools/panel_review.py --check
       # Every recipe, applied twice on a copy; the second must change nothing.
       - name: every recipe is idempotent
         run: python3 tools/recipe.py --check
