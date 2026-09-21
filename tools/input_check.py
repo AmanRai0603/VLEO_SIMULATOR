@@ -132,12 +132,51 @@ def check():
         if "rows moved" not in pg.inner_text(".ovr-stage:last-of-type"):
             bad.append("stage three did not report what moved")
 
+        # A CLEARED BOX MUST NOT SIT OVER A LIVE WHAT-IF. Clearing the field
+        # cannot clear the override — there is nothing to set it to — so the
+        # engine kept being sent seven years while the box read empty.
+        pg.fill(".ovr-v", "")
+        pg.click("body")
+        pg.wait_for_timeout(400)
+        if pg.input_value(".ovr-v").strip() == "":
+            bad.append("a cleared field is left sitting over a live override")
+
+        # The bar may not claim more than is true: a figure drawn from the
+        # record does not move under an override, and saying otherwise tells a
+        # reader a chart reflects their change when it does not.
+        barred = pg.inner_text("#ovrbar") if pg.query_selector("#ovrbar:not([hidden])") else ""
+        if "Everything below is a what-if" in barred:
+            bad.append("the what-if bar claims the record moves with an override")
+
         # Out of range is refused, with the reason off the sheet.
         pg.fill(".ovr-v", "99")
         pg.wait_for_timeout(400)
         why = pg.inner_text(".ovr-why")
         if "refused" not in why:
             bad.append("99 yr was not refused (the sheet bounds it at 15)")
+
+        # A STORED OVERRIDE THAT CANNOT BE USED MUST NOT COME BACK. `commit`
+        # refuses an out-of-range value, so one is only ever stored by being
+        # valid at the time and the sheet narrowing afterwards. Kept, it made
+        # the engine refuse EVERY run anywhere in the tool, with nothing on the
+        # field saying why, and it survived a reload.
+        pg.evaluate("p => localStorage.setItem('vleo.overrides.v1', p)",
+                    '{"%s": 3155760000}' % ROW)     # 100 yr, bounded at 15
+        pg.reload(wait_until="networkidle")
+        pg.wait_for_timeout(1500)
+        kept = pg.evaluate("async()=>{const s=await import('/js/state.js');return s.S.overrides.size}")
+        if kept:
+            bad.append("an out-of-range value survived a reload and will refuse every run")
+        chips = len(pg.query_selector_all(".ovr-chip"))
+        if chips != kept:
+            bad.append("the bar counts %d override(s) but draws %d chip(s)" % (kept, chips))
+        pg.evaluate("() => localStorage.clear()")
+        pg.reload(wait_until="networkidle")
+        pg.wait_for_selector(".ovr-v", timeout=120000) if pg.query_selector(".ovr-v") else None
+        pg.evaluate("id => window.openNode(id)", ROW)
+        pg.wait_for_selector(".ovr-v", timeout=120000)
+        pg.fill(".ovr-v", TRIED)
+        pg.wait_for_timeout(300)
 
         # And reset puts it back.
         pg.click(".ovr-reset")
@@ -168,10 +207,27 @@ def selftest():
         ("pageerror", "it listens for a page error"),
         ('if errs:', "it stops on a page error instead of waiting"),
         ('.ovr-reset', "it checks reset puts the declared value back"),
+        ('vleo.overrides.v1', "it checks a poisoned store is dropped"),
     ):
         if probe not in src:
             bad += 1
             print("  FAIL the check no longer proves %s (%r is gone)" % (why, probe))
+
+    # A retired row is a question whose answer nothing should read any more, so
+    # it must not get a live-looking control. The face once tested `state !==
+    # 'empty'`, which let a deprecated row have a field while `/v1/branches` and
+    # tools/branch_audit.py both counted only published rows — three statements
+    # of one idea, and the face was the one that differed.
+    face = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        "web", "js", "inputs.js")
+    try:
+        js = open(face, encoding="utf-8").read()
+        if "state === 'published'" not in js:
+            bad += 1
+            print("  FAIL inputs.js no longer restricts the field to published rows")
+    except OSError as e:
+        bad += 1
+        print("  FAIL could not read inputs.js: %s" % e)
 
     # The row it drives has to be one the face would offer a field for, or the
     # whole check is vacuous. That rule is inputs.js's; this is its shape.
@@ -182,7 +238,7 @@ def selftest():
         bad += 1
         print("  FAIL the value tried equals the declared one, so nothing changes")
 
-    print("selftest: %d cases, %s" % (8, "all as expected" if not bad else "%d FAILED" % bad))
+    print("selftest: %d cases, %s" % (10, "all as expected" if not bad else "%d FAILED" % bad))
     return 1 if bad else 0
 
 

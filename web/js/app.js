@@ -117,9 +117,18 @@ function drawOverrideBar() {
   // blur fires first, the bar redraws, and the button the click was travelling
   // to no longer exists. One action, one place.
   bar.innerHTML =
+    // WHAT THIS BAR MAY CLAIM. It used to say "everything below is a what-if",
+    // and that is not true of a figure drawn from the record: sw_regime is
+    // byte-identical with and without an override, correctly, because the
+    // measured record is the measured record whatever the design is set to.
+    // A reader looking at that chart under this bar would have been told it
+    // reflected their change. Anything the ENGINE computes does follow the
+    // override — the relation curves move — so that is what it says.
     '<div class="ovr-bar-h"><b>' + n + ' input' + (n === 1 ? '' : 's') +
-      ' overridden.</b> Everything below is a what-if — the sheets on disk are ' +
-      'unchanged and nothing has been written to the repository.</div>' +
+      ' overridden.</b> Every number the engine computes below is a what-if. ' +
+      'A figure drawn from the measured record is unchanged, because the record ' +
+      'is. The sheets on disk are untouched and nothing is written to the ' +
+      'repository.</div>' +
     '<div class="ovr-chips">' + rows.join('') +
       '<button class="ctl ovr-bar-clear">put all back</button></div>';
 

@@ -61,9 +61,17 @@ export const fromSI = (r, si) => si / (r.factor || 1);
  * applies: a row whose upper bound does not exceed its lower has no room to be
  * moved in, and offering a field for it is offering a control that cannot do
  * anything.
+ *
+ * PUBLISHED, not merely "not seeded". This read `state !== 'empty'`, which let
+ * a DEPRECATED row have a field — and a retired row is a question whose answer
+ * nothing should read any more, so a live-looking control on one is an
+ * invitation to use it. state.js says as much about drawing them. It also
+ * disagreed with the two other places the same idea is written: `/v1/branches`
+ * counts a row active only when it is published, and tools/branch_audit.py
+ * says the same, so the face was the one of the three that differed.
  */
 export const isInput = r =>
-  !!r && r.kind === 'declared' && r.state !== 'empty' && r.hi > r.lo;
+  !!r && r.kind === 'declared' && r.state === 'published' && r.hi > r.lo;
 
 // ---------------------------------------------------------------------------
 // the store
@@ -83,15 +91,36 @@ export function loadOverrides() {
     return;
   }
   if (!raw) return;
+  let dropped = 0;
   try {
     const o = JSON.parse(raw);
     for (const k of Object.keys(o)) {
-      if (typeof o[k] === 'number' && isFinite(o[k])) S.overrides.set(k, o[k]);
+      const v = o[k];
+      if (typeof v !== 'number' || !isFinite(v)) continue;
+      // WHAT CAME BACK MUST STILL BE USABLE, and neither test is paranoia.
+      //
+      // A row can be gone — a reseed, a rename — and an override naming one
+      // would be counted in the bar while nothing could show it.
+      //
+      // A value can be outside the row's range without ever having been typed
+      // there. `commit` refuses an out-of-range value, so the only way one is
+      // stored is that it was INSIDE the range when it was stored and the sheet
+      // narrowed afterwards. That is not hypothetical: §42 of the port plan
+      // recommends narrowing three solar bounds for exactly the reason they
+      // are too wide. Kept, such a value made the engine refuse EVERY run
+      // anywhere in the tool, with nothing on the field to say why, and it
+      // survived a reload — a tool that looks broken until somebody clears
+      // browser storage. It cannot be used, so it is not kept.
+      const r = S.byId.get(k);
+      if (!r || v < r.lo || v > r.hi) { dropped++; continue; }
+      S.overrides.set(k, v);
     }
   } catch (e) {
     // Malformed is the same as absent. It is not worth a message: the reader
     // did not put it there and cannot act on it.
   }
+  // Rewrite what was kept, so a dropped entry does not come back next time.
+  if (dropped) persist();
 }
 
 function persist() {
@@ -443,6 +472,19 @@ export async function mountInput(host, r) {
 
   field.oninput = commit;
   field.onchange = commit;
+  // AN EMPTY BOX MUST NOT SIT OVER A LIVE WHAT-IF. Clearing the field does not
+  // clear the override — there is nothing to set it to — so the row stayed
+  // tagged, the bar kept listing it, and the engine kept being sent 7 years
+  // while the box a reader was looking at was blank. Two things on one screen
+  // disagreeing about what the design is set to. On leaving an empty field it
+  // is put back to whatever is actually in force.
+  field.onblur = () => {
+    if (field.value.trim() !== '') return;
+    const si = S.overrides.has(r.id) ? S.overrides.get(r.id) : declared;
+    if (si != null) field.value = fmt(fromSI(r, si));
+    why.textContent = '';
+    box.classList.remove('bad');
+  };
   field.onkeydown = e => { if (e.key === 'Enter') go.click(); };
   reset.onclick = () => {
     clearOverride(r.id);
