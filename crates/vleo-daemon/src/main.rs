@@ -1054,8 +1054,8 @@ fn branches_json(params: &str) -> String {
         let cl = walk(n, &prod);
         let mut ok = true;
         let mut size = 1usize;
-        for k in 0..NODES.len() {
-            if cl[k] {
+        for (k, inside) in cl.iter().enumerate() {
+            if *inside {
                 size += 1;
                 if !live(k as u16) {
                     ok = false;
@@ -1084,7 +1084,10 @@ fn branches_json(params: &str) -> String {
         .collect();
     // Biggest first: the branch that covers most of the design is the one a
     // reader wants at the top.
-    out.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| NODES[a.0 as usize].id.cmp(NODES[b.0 as usize].id)));
+    out.sort_by(|a, b| {
+        b.1.cmp(&a.1)
+            .then_with(|| NODES[a.0 as usize].id.cmp(NODES[b.0 as usize].id))
+    });
 
     // How many rows read this one at all, so a face can say whether an empty
     // list means "nothing reads it" or "everything that does is unfinished".
