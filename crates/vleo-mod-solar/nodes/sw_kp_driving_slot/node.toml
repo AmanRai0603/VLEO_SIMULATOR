@@ -1,0 +1,77 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_kp_driving_slot"
+label = "Kp slot the design is driven by"
+folder = "sw_kp_driving_slot"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "declared"
+owner = "environment"
+tier = "A"
+criticality = "significant"   # minor | significant — significant means two reviewers and a differential fill
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1388
+state = "empty"
+
+# SEEDED, AND DELIBERATELY SO. §30 B1 of docs/MATLAB_PORT_PLAN.md asks for this
+# row and says the value NEEDS A PERSON. The folder, the label and the question
+# are here so that the decision has somewhere to live and so that `xtask declare`
+# names it; the value, the domain and the reasons are not, because an agent may
+# supply none of them. Generation refuses while they are open, which is the
+# mechanism rather than an inconvenience.
+#
+# WHAT IS BEING DECIDED. Kp is a three-hourly index. The solar subsystem
+# publishes two readings of it per scenario — the day's MEAN of eight slots and
+# its WORST slot — and the tree currently names neither as the one a design is
+# driven by. `sw_kp_slot_bias` exists precisely because they differ, and
+# `env_exospheric_temperature`'s second assumption records that nothing says
+# which slot reaches it.
+#
+# THE EVIDENCE, as it stood when this folder was made. All measured, none of it
+# a recommendation:
+#
+#   * the legacy run's own header says `Kp slot 'mean'`, so the study answered
+#     this for its own run and the answer was the daily mean;
+#   * `sw_kp_scenarios` publishes both slots for all five scenarios. At the
+#     sustained disturbed scenario they are 3.832 and 5.198; on the disturbed
+#     single day they are 5.802 and 7.997;
+#   * fed through `env_exospheric_temperature`, those pairs are 824.9 K against
+#     867.2 K sustained, and 914.7 K against 1055.3 K on the worst day — a 15
+#     per cent difference in the quantity every density in this tree is built
+#     from. §31.2b's `tools/theory_check.py` re-measures all six on every run;
+#   * what the choice costs further down the chain is measured by
+#     `tools/kp_slot_cost.py` and recorded in §43 of the plan: 70 rows move at
+#     either scenario, six of them KPI closures, and no row leaves its declared
+#     domain under either slot.
+#
+# WHY IT IS NOT OBVIOUS, stated so that the choice is made rather than defaulted.
+# The mean is what the legacy run used and what a daily-averaged density model
+# wants. The peak is what a vehicle actually meets. A third answer is defensible
+# — BOTH, with the design sized on the mean and closed against the peak — and
+# that one would make this row a set rather than a switch, which is a different
+# sheet. Whoever answers this decides which of the three it is.
+
+[question]
+text = "Which Kp slot is the design driven by — the day's mean, or its worst three-hour interval?"
+note = ""   # REQUIRED — a person answers this row; see the comment above for what is already measured
+
+[maths]
+confirmed_by = ""   # REQUIRED — an agent may never supply mathematics
+expression = ""   # REQUIRED — re-decide, do not inherit
+source = ""   # REQUIRED — re-decide, do not inherit
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+# A unit is a decision, not data. None of these is filled yet.
+symbol = ""
+type = ""
+unit = ""
+lower = 0.0
+upper = 0.0
+reason_lower = ""   # REQUIRED — a declared limit's reason is a person's
+reason_upper = ""   # REQUIRED — a declared limit's reason is a person's
+
+[view]
+kind = "number"

@@ -3371,7 +3371,7 @@ is deliberately not in this plan.
 | 2 | **A1** fixtures that test the 1.3 term and the exponential | yes — the source | no |
 | 3 | **A3** `[theory]` and the relation's signature | yes — the signature | no |
 | 4 | **B3.1** the walk-forward script, checked against σ | no | no |
-| 5 | **B1** `sw_kp_driving_slot` | **yes — the value** | yes, downstream |
+| 5 | **B1** `sw_kp_driving_slot` — row seeded, evidence measured, §43 | **yes — the value** | yes, downstream: 70 rows, 6 KPIs |
 | 6 | **B2** `sw_band_confidence` | **yes — the value** | yes, if 0.95 |
 | 7 | **B3.2** the two empirical-quantile rows | **yes — both values** | no |
 | 8 | **A4** the `thermosphere` panel, 4 views | signature on the reference | no |
@@ -3632,7 +3632,7 @@ on work nobody had done.*
 | 2 · A1 fixtures | **done**, and the gap measured rather than asserted |
 | 3 · A3 theory | **drafted, its numbers now checked on every run, one wrong magnitude found and fixed** — §31.2a; still unsigned, needs a person |
 | 4 · B3.1 walk-forward | **written, failing its own test, and every candidate for the gap measured and eliminated** — §31.4a |
-| 5 · B1 which Kp slot | needs a person |
+| 5 · B1 which Kp slot | **the row exists, seeded, with the evidence measured** — §43; the value needs a person |
 | 6 · B2 band confidence | needs a person |
 | 7 · B3.2 empirical quantiles | **blocked on 31.4** — on `prf_rebuild.m`, which is not here, or on a person |
 | 8 · A4 thermosphere panel | ready to build |
@@ -3725,7 +3725,7 @@ different places to stand.
 | 2 · A1 fixtures | done |
 | 3 · A3 theory | drafted and **checked** (§31.2a), **unsigned — needs a person** |
 | 4 · B3.1 walk-forward | written, **failing its own test**, every candidate eliminated, §31.4a |
-| 5 · B1 which Kp slot | **needs a person**, and the third view is now the picture to decide it from |
+| 5 · B1 which Kp slot | **needs a person** — the row is seeded and §43 measures what each answer costs; the third view is the picture to decide it from |
 | 6 · B2 band confidence | **needs a person** |
 | 7 · B3.2 empirical quantiles | blocked on step 4 |
 | 8 · A4 thermosphere panel | **done**, reference unsigned |
@@ -4782,6 +4782,12 @@ declined against a count rather than a preference.
   citation still names SAO Special Report 332 with no page or equation.
 - The other 65 theory blocks carrying `math` in their steps, which nothing checks;
   several carry another row's answer as a literal in prose.
+- §30 step 5's value: `sw_kp_driving_slot` is seeded and unanswered. §43 measures
+  what each answer costs — 70 rows and six KPI closures move — and picks none.
+- `agents/lanes.toml`: no lane covers the row count in README.md, AGENTS.md and
+  `areas/generators.md`, nor the generated `page.html`/`model.rs`, so the tree
+  cannot grow inside any one lane. §43.7. Reported, not fixed — widening a lane
+  is not an agent's edit.
 - §30 step 4: the walk-forward still fails its own test, 376 rotations against
   361, and §31.4a has now measured and eliminated every candidate the sheet
   leaves open — none of them closes the gap, and one of them (the sheet's own
@@ -4963,3 +4969,186 @@ ask for it. The endpoint reproduces the JavaScript exactly — 28 branches for
 mission duration, same heads, same row counts, and 0 disagreements across all
 130 inputs.
 
+
+---
+
+## §43 · Step 5, the Kp slot — the row exists, and what the choice costs is measured
+
+§30 B1 asks which Kp slot a design is driven by: the day's MEAN of eight
+three-hourly values, or its WORST slot. The value **needs a person**, and this
+section is the part of that step an agent may do.
+
+### 43.1 · The row exists, seeded, and the gate refuses to publish it
+
+`crates/vleo-mod-solar/nodes/sw_kp_driving_slot`, `kind = "declared"`,
+`state = "empty"`, `order` 1388, immediately after `sw_storm_design_level` — the
+other row in this group that is a decision rather than a measurement.
+
+What is filled: the folder, the label, the question §30 B1 wrote, and a header
+comment carrying every piece of evidence listed below. What is **not** filled:
+the value, the domain, the two bound reasons, the relation and its signature.
+That is not an oversight — `agents/lanes.toml` says a declaration drafter *may
+not supply mathematics, a reason, or a value*, and the row's own comment says so
+where somebody will read it.
+
+`cargo xtask gate sw_kp_driving_slot` is green and `xtask declare` names what is
+open, which is the mechanism the repository was built around: **ambiguity becomes
+a blocking item on an engineer's screen rather than something an implementer
+resolves silently.** Before this row existed, the question was in a plan
+document; now it is in the tree.
+
+The tree is **1394 rows**. `tools/instruction_lint.py` caught the four prose
+copies of 1393 the moment the folder appeared — README twice more, AGENTS.md and
+`areas/generators.md` — which is that check earning its place.
+
+### 43.2 · The evidence, all measured, none of it a recommendation
+
+- **The legacy run answered this for itself.** Its header says `Kp slot 'mean'`.
+- **Both slots are published.** `sw_kp_scenarios` gives 3.832 and 5.198 at the
+  sustained disturbed scenario, 5.802 and 7.997 on the disturbed single day.
+- **Through the temperature relation** those are 824.9 K against 867.2 K, and
+  914.7 K against 1055.3 K — a 15 per cent difference in the quantity every
+  density in this tree is built from. §31.2b's `theory_check.py` re-measures all
+  six on every run.
+- **Through the whole tree** — `tools/kp_slot_cost.py`, new here — the choice
+  moves **70 rows at either scenario, six of them KPI closures**:
+
+| | sustained: mean → peak | worst day: mean → peak |
+|---|---|---|
+| `env_mass_density` | +8.9 % | **+26.9 %** |
+| `orbit_makeup_delta_v` | 274 → 299 m/s | **311 → 396 m/s** |
+| `prop_bus_power` | 61.2 → 66.0 W | **68.4 → 84.4 W** |
+| `gnc_along_track_error` | 25.8 → 32.4 km | **35.8 → 54.8 km** |
+| `kpi_mass_margin` | −0.181 → −0.188 | **−0.191 → −0.214** |
+| `kpi_power_margin` | 29.7 → 28.9 | 28.6 → 26.3 |
+| `kpi_thermal_margin`, `kpi_thrust_margin`, `kpi_service_lifetime`, `kpi_cost_per_year` | all move | all move |
+
+**And no row leaves its declared domain under either slot.** That is checked
+rather than assumed, because a row that computed under one slot and refused under
+the other would make this a decision about whether the design computes at all,
+which would be a different and much sharper finding.
+
+The tool reads both slot values **off the engine**, never from a literal — a
+scenario value copied into a tool is §21's stale panel constant again, and its
+selftest fails if a digit appears in the scenario table.
+
+### 43.3 · Why it is still not an agent's call
+
+The mean is what the legacy run used and what a daily-averaged density model
+wants. The peak is what a vehicle actually meets. A third answer is defensible —
+**both**, sized on the mean and closed against the peak — and that one would make
+this row a *set* rather than a switch, which is a different sheet. Nothing above
+picks between them; it says what each costs.
+
+### 43.4 · The two cross-references §30 B1 made the condition of this step
+
+- `sw_kp_slot_bias` gains an assumption saying, in its own sheet, that **which
+  slot a design is driven by is not its to say**. It corrects the table for one
+  slot; its existence is evidence the two differ, not a claim that the peak is
+  the one that matters. If the answer is `mean`, a drag design reads
+  `sw_kp_mean_bias` and not that row.
+- `env_exospheric_temperature`'s second assumption now names the row instead of
+  pointing at a plan section, and says plainly that its declared `env_kp = 3` is
+  **neither slot of any scenario**.
+
+`kp_slot_cost.py --selftest` checks both directions, because a one-way reference
+is exactly how the two drift.
+
+### 43.5 · `xtask new` was carrying the sibling's answers into the clone
+
+Making this row exposed the tool that makes rows. `cargo xtask new <id> --like
+<sibling>` is documented as *"not a copy: a real copy drags a stale source
+citation through thirty nodes"*, and it was doing a partial job. The clone of
+`sw_storm_design_level` arrived with:
+
+| carried | why it is wrong |
+|---|---|
+| `state = "published"` | a folder with every field blank claimed a state meaning *specified* — it counted as published in `xtask status`, in the index the face reads, and in `/v1/branches`' idea of an **active branch** |
+| three `fails_when` clauses | the other half of an `[[assumption]]` whose `text` **was** blanked, so the sheet stated how a claim it no longer made would fail — about the NOAA G scale, on a row about Kp slots |
+| `[theory] why` and `reading` | a derivation of the sibling's relation beside a blanked `expression`. §31.2a is what an inherited magnitude in a theory tab costs |
+| `symbol = "G_design"` | the row's own name for its own answer, which is what the `no-identity` check exists to keep unique |
+| `[value] number = 3.0` | a number a person picked **for another row**, beside a blanked signature |
+
+All five are now blanked. Two details that only appear once you write it:
+
+1. **`number` is two different fields.** Under `[value]` it is a value; under
+   `[[algorithm.step]]` it is a step index. Blanking by key alone renumbers the
+   algorithm, so the rule tracks which section the line is in.
+2. **A blanked number is `0.0`, not `""`.** The existing code comment records
+   that the tool twice wrote a sheet its own next command could not parse; a
+   string where the loader wants a float is that bug again. The gate still
+   refuses the row, on `declared-value`, which is the check that is actually true.
+
+**What it still cannot do is blank the comment blocks**, because nothing marks
+which sentences are about the sibling — the header explaining a G scale is prose,
+not a field. So they are **reported** rather than carried silently: the command
+now prints how many comment lines came across and the first four of them.
+
+The blanking is extracted into a pure `clone_sheet` and **six tests** cover it,
+each of the eight rules broken in turn to watch the right test fail. There were
+no tests in `xtask` before this.
+
+### 43.6 · The picture check was measuring where a figure sits on the page
+
+`tools/panel_check.py` reported that the `thermosphere` panel no longer matched
+its reference: **5.7 per cent of pixels changed, in both the light and the dark
+rendering**, against a 2 per cent tolerance. No drawn value had moved. The only
+edit near it was two extra lines of assumption prose on
+`env_exospheric_temperature`'s sheet.
+
+Bisected rather than argued about: reverting that one sheet made the panel match
+again, and it matched on a clean checkout of `main`. So the change was real and it
+was mine. Then measured:
+
+| | before | after |
+|---|---|---|
+| the canvas's size | 1182 × 538 | 1182 × 538 |
+| its backing store | 1180 × 536 | 1180 × 536 |
+| **its top, down the page** | **2176 px** | **2210 px** |
+| the page's height | 3301 px | 3335 px |
+
+Two lines of prose, 34 pixels lower, same size. And the decisive measurement:
+**shifting the new picture down by exactly one row makes it match the old
+reference with 0.00 % of pixels differing.** Bit-identical, one row off.
+
+An element screenshot is rasterised at the element's position, so a figure that
+moves down a page is captured with different sub-pixel rounding and **every edge
+in it lands one row off**. The file's own note — *"a reference that then changes
+when something unrelated moves"* — turned out to be about itself.
+
+`_differ` now compares at the **best of nine single-pixel alignments**, and
+`_frac` does the comparison through PIL's band operations instead of a Python
+loop over 637,000 pixels, because it now runs nine times. What this gives up is a
+genuine one-pixel translation of a chart inside its own canvas, which is not a
+design defect either; what it stops is re-recording a signed-off reference every
+time a sentence is added to a sheet.
+
+**The references were restored, not re-recorded.** The picture a person looked at
+is the same picture, so it stays the reference, and `confirmed_by` keeps meaning
+what it says. Four image cases were added to the selftest — identical, one pixel
+lower, a curve actually moved, a shape changed — and they need no browser, so
+they cost nothing. Five mutations, each red.
+
+### 43.7 · A row cannot be added inside any lane, and that is a gap in the table
+
+`agents/lanes.toml` gives every agent the paths it may change. Adding one row to
+the tree touches five kinds of file, and **no single lane covers them**:
+
+| what adding a row touches | whose lane |
+|---|---|
+| `crates/vleo-mod-*/nodes/*/node.toml` — the new sheet, the two cross-references, and the five sheets whose `order` shifted | `declaration-drafter` |
+| `docs/**` — the plan, `VARIABLES.md` | three lanes list it |
+| `.github/**`, `tools/**`, `xtask/**` | `systems-backend` |
+| the regenerated `page.html` and `model.rs` beside each changed sheet | **no lane** |
+| `README.md`, `AGENTS.md`, `areas/generators.md` — the row count, which `instruction_lint.py` **requires** to match the tree | **no lane** |
+
+The last row is the one that matters. The tree's size is written in prose in four
+places and a check enforces it, so **growing the tree forces an instruction-file
+edit that no agent is permitted to make.** The generated artefacts are the same
+shape of gap: regenerating is the required next step after any sheet edit, and the
+files it writes are in nobody's `writes` list.
+
+This is reported and **not fixed**. A lane table decides what an agent may do, and
+an agent widening its own lane is not a change an agent should make — it is the
+one edit where the diff check cannot be the control, because the diff check reads
+the file being edited. It wants a person.

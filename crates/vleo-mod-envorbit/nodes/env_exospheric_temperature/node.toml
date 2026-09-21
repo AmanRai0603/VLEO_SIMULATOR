@@ -126,7 +126,7 @@ fails_when = "the diurnal bulge adds up to 30% at 14:00 local solar time; a desi
 
 [[assumption]]
 text = "Kp is a THREE-HOURLY index and what reaches this row is a daily statistic"
-fails_when = "the two are treated as the same quantity. Jacchia's geomagnetic correction takes the Kp of an interval; the solar subsystem publishes a daily MEAN slot and a daily PEAK slot per scenario and they are different numbers — 3.832 against 5.198 at the hot sustained scenario. Fed through this relation that is 824.9 K against 867.2 K, and on the worst-day scenario it is 914.7 K against 1055.3 K, a 15 per cent difference in the quantity every density in this tree is built from. Nothing in the tree yet says which slot the design is driven by; §30 B1 is the row that would"
+fails_when = "the two are treated as the same quantity. Jacchia's geomagnetic correction takes the Kp of an interval; the solar subsystem publishes a daily MEAN slot and a daily PEAK slot per scenario and they are different numbers — 3.832 against 5.198 at the hot sustained scenario. Fed through this relation that is 824.9 K against 867.2 K, and on the worst-day scenario it is 914.7 K against 1055.3 K, a 15 per cent difference in the quantity every density in this tree is built from. Which slot the design is driven by is now a row of its own — sw_kp_driving_slot, seeded by §30 B1 and unanswered, because the value needs a person. Until it carries one, this row's declared env_kp = 3 is neither slot of any scenario and says so here rather than implying one. §43 measures what the choice is worth: 70 rows move at either scenario, six of them KPI closures, and tools/kp_slot_cost.py re-measures it on every run"
 
 [[assumption]]
 text = "The geomagnetic correction is applied with no lag"

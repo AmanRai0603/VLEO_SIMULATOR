@@ -122,6 +122,10 @@ fails_when = "the offset rises with Ap as the concavity argument predicts — +1
 text = "The 24-hour-mean slot is NOT what this publishes"
 fails_when = "the two slots have opposite signs, and using this row for the mean slot would double the error rather than remove it. Measured on the same 10,297 days, the mean-slot offset runs from +0.042 at Ap 2.5 down to -0.487 in the top bin — the table reads HIGH against the 24-hour mean and LOW against the peak. DTM2020_Oper wants both: akp(1) is a single three-hourly value, akp(3) the mean of the eight. The mean-slot offset is published by sw_kp_mean_bias; this row is the peak."
 
+[[assumption]]
+text = "WHICH SLOT A DESIGN IS DRIVEN BY IS NOT THIS ROW'S TO SAY, AND sw_kp_driving_slot IS WHERE IT WILL BE SAID"
+fails_when = "this row is read as the answer to which slot matters. It corrects the table for ONE slot, the daily peak, and its existence is evidence that the two slots differ — not a statement that the peak is the one a design is driven by. That statement is sw_kp_driving_slot, which is seeded and unanswered: §30 B1 asks for it and the value needs a person. Until it carries one, every consumer of a Kp in this tree is choosing a slot implicitly, and this row and sw_kp_mean_bias exist to correct whichever one it turns out to be. The cross-reference is here so the two cannot drift: if sw_kp_driving_slot is answered 'mean', it is sw_kp_mean_bias and not this row that a drag design reads, and §43 measures what that choice is worth downstream — 70 rows move at either scenario, six of them KPI closures, and tools/kp_slot_cost.py re-measures it on every run"
+
 [output]
 # The node's one answer. The variable id is the node id: one small
 # question, one answer, one folder, one row on the tree.

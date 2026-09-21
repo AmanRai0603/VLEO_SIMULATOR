@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1393 rows** — 663 a person picked, 730 worked out. Two thirds of any design tree is
+**1394 rows** — 664 a person picked, 730 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -2555,7 +2555,7 @@ A node that consumes density and does not carry this forward is a node whose mar
 - **reads** — `env_f107`, `env_f107a`, `env_kp`
 - **read by** — `aero_accommodation`, `env_atomic_oxygen_density`, `env_local_temperature`, `env_mass_density`, `env_mean_molar_mass`, `env_number_density`, `env_scale_height`, `orbit_lifetime_uncontrolled`
 - **assumes** Night-time minimum, with no diurnal or seasonal term — fails when the diurnal bulge adds up to 30% at 14:00 local solar time; a design sized on this value alone is sized on the quiet side
-- **assumes** Kp is a THREE-HOURLY index and what reaches this row is a daily statistic — fails when the two are treated as the same quantity. Jacchia's geomagnetic correction takes the Kp of an interval; the solar subsystem publishes a daily MEAN slot and a daily PEAK slot per scenario and they are different numbers — 3.832 against 5.198 at the hot sustained scenario. Fed through this relation that is 824.9 K against 867.2 K, and on the worst-day scenario it is 914.7 K against 1055.3 K, a 15 per cent difference in the quantity every density in this tree is built from. Nothing in the tree yet says which slot the design is driven by; §30 B1 is the row that would
+- **assumes** Kp is a THREE-HOURLY index and what reaches this row is a daily statistic — fails when the two are treated as the same quantity. Jacchia's geomagnetic correction takes the Kp of an interval; the solar subsystem publishes a daily MEAN slot and a daily PEAK slot per scenario and they are different numbers — 3.832 against 5.198 at the hot sustained scenario. Fed through this relation that is 824.9 K against 867.2 K, and on the worst-day scenario it is 914.7 K against 1055.3 K, a 15 per cent difference in the quantity every density in this tree is built from. Which slot the design is driven by is now a row of its own — sw_kp_driving_slot, seeded by §30 B1 and unanswered, because the value needs a person. Until it carries one, this row's declared env_kp = 3 is neither slot of any scenario and says so here rather than implying one. §43 measures what the choice is worth: 70 rows move at either scenario, six of them KPI closures, and tools/kp_slot_cost.py re-measures it on every run
 - **assumes** The geomagnetic correction is applied with no lag — fails when the timing of a storm matters rather than only its size. Jacchia applies the correction to Kp lagged by about a quarter of a day, because the energy deposited in the auroral zone takes hours to reach the altitudes and latitudes this is a temperature for. Applied instantaneously, a storm's heating arrives too early and leaves too early, and the peak is placed about six hours before it happens
 - **assumes** F10.7 is the PREVIOUS day's flux in the source, and this reads the same day's — fails when the fast term is read as a same-day response. The EUV that heated the thermosphere is yesterday's, which is why the source lags it; taking today's makes the departure term lead the temperature it is meant to explain by one day. Small on a monthly mean and not small on a single design day, which is exactly where the fast term is doing the work
 - **assumes** No semiannual term, on a record that measures one — fails when the answer is read as the same in March as in June. The thermosphere has a well-known semiannual density variation with maxima near the equinoxes, and this subsystem MEASURES it — sw_semiannual_amplitude, off the record's own day-of-year means, and the climate panel draws it with both equinoxes marked. This relation has no term for it, so the measurement exists in the tree and does not reach the temperature
@@ -20855,6 +20855,26 @@ The baseline that makes sw_horizon_persistence mean something. On its own this n
 
 prf_horizon's structure function D(L) = RMS[F107(t+L) - F107(t)], its first method. Paired with sw_horizon_climatology it answers the design question directly: which of the two cheapest forecasts is worth using at this lead, and what either costs.
 
+### `sw_kp_driving_slot` — Kp slot the design is driven by
+
+> Which Kp slot is the design driven by — the day's mean, or its worst three-hour interval?
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+
 ### `sw_kp_from_ap` — Kp from daily Ap
 
 > What Kp does this daily planetary Ap mean?
@@ -21120,6 +21140,7 @@ than the record's, and on exactly the days a drag design is sized by.
 - **assumes** The correction is a median per bin, so it describes the typical day at that Ap and not the day in hand — fails when the offset is a distribution, not a number. Adding the median recovers the typical peak and still misses any individual day, and the spread within a bin is not published by this row. A design that needs the worst case at a given Ap needs a percentile of the offset, not its median.
 - **assumes** The nine bin medians are not monotone, and the top bin sits exactly at the record's support limit — fails when the offset rises with Ap as the concavity argument predicts — +1.000 at Ap 2.5 through +1.747 at Ap 90 — and then FALLS to +1.317 in the 110-to-400 bin. That bin holds 20 days, which is exactly prf_ap2kp's own minimum for using a bin at all, so the fall is as likely to be a small-sample artefact as a real saturation of the table near its top. It is carried through rather than smoothed away, because smoothing it would be this node inventing a shape the record does not show. Anyone designing at Ap above 110 is reading a correction supported by twenty days.
 - **assumes** The 24-hour-mean slot is NOT what this publishes — fails when the two slots have opposite signs, and using this row for the mean slot would double the error rather than remove it. Measured on the same 10,297 days, the mean-slot offset runs from +0.042 at Ap 2.5 down to -0.487 in the top bin — the table reads HIGH against the 24-hour mean and LOW against the peak. DTM2020_Oper wants both: akp(1) is a single three-hourly value, akp(3) the mean of the eight. The mean-slot offset is published by sw_kp_mean_bias; this row is the peak.
+- **assumes** WHICH SLOT A DESIGN IS DRIVEN BY IS NOT THIS ROW'S TO SAY, AND sw_kp_driving_slot IS WHERE IT WILL BE SAID — fails when this row is read as the answer to which slot matters. It corrects the table for ONE slot, the daily peak, and its existence is evidence that the two slots differ — not a statement that the peak is the one a design is driven by. That statement is sw_kp_driving_slot, which is seeded and unanswered: §30 B1 asks for it and the value needs a person. Until it carries one, every consumer of a Kp in this tree is choosing a slot implicitly, and this row and sw_kp_mean_bias exist to correct whichever one it turns out to be. The cross-reference is here so the two cannot drift: if sw_kp_driving_slot is answered 'mean', it is sw_kp_mean_bias and not this row that a drag design reads, and §43 measures what that choice is worth downstream — 70 rows move at either scenario, six of them KPI closures, and tools/kp_slot_cost.py re-measures it on every run
 - **evidence** Ap bin 0-5, centre 2.5 — 2529 days — expect 1 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** Ap bin 5-10, centre 7.5 — 3938 days — expect 0.8333333333333333 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)
 - **evidence** Ap bin 10-15, centre 12.5 — 1836 days — expect 1.114406779661017 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)

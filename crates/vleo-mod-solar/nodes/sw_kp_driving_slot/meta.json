@@ -1,0 +1,17 @@
+{
+  "id": "sw_kp_driving_slot",
+  "state": "empty",
+  "sheet_hash": "c447a5",
+  "impl_hash": "222325",
+  "owner": "environment",
+  "tier": "A",
+  "fixtures": 0,
+  "criticality": "significant",
+  "reviewers": 2,
+  "differential_fill": true,
+  "migrated_from": "",
+  "holes": 0,
+  "inputs": [],
+  "contributes": [],
+  "gaps": ["seeded, not yet specified — it needs a question, a relation cited to a page, an interface with units, a domain with a reason per bound, a numbered algorithm and a known-good value from outside this code"]
+}
