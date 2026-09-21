@@ -3411,6 +3411,93 @@ minimum in a global average, and a fit against 1960s and 70s drag data.
 derivation against Jacchia 1971 and sign it.** An agent may not, and an unsigned
 relation is indistinguishable from one an agent supplied.
 
+### 31.2a · And the draft had a wrong magnitude in it — `tools/theory_check.py`
+
+A derivation with a wrong number in it is worse than no derivation, because it
+reads as evidence. The draft's second step said the slow solar term moves T_inf
+**"by about 900 K over the observed range of F10.7A"**. It does not:
+
+| quantity, over the record this tree carries | range | through 3.24 |
+|---|---|---|
+| the 81-day centred mean — what the step is about | 65.91 to 226.81 | **521 K** |
+| the monthly mean | 65.8 to 247.4 | 588 K |
+| the 13-month smoother | 68.4 to 196.4 | 415 K |
+| **the DAILY flux** — the fast term's quantity | **64 to 343** | **904 K** |
+| the declared domain of `env_f107a`, for comparison | 60 to 400 | 1102 K |
+
+900 K is the daily flux's swing, cited for the slow term, **in the one step whose
+whole job is to separate the two**. No reading of the 81-day mean gives it. The
+sheet now says 520 K, names the range it is the range of, and says in the next
+sentence what 900 K actually belongs to — so the wrong number is recorded rather
+than deleted, which is what stops it drifting back.
+
+Nothing else in the draft was wrong. Every other magnitude checks out, and now
+checks out on every run rather than on my reading of it.
+
+### 31.2b · What `tools/theory_check.py` checks, and what it does not
+
+A theory tab is prose, so it is outside the sheet hash: nothing regenerates it and
+no gate check reads it. It is also the thing a reviewer reads before signing the
+relation. §21 found this defect class in panels — four of `design`'s numbers were a
+row's constants copied into a figure, one two revisions stale — and the answer
+there was the `correct` block. This is that idea for a sheet.
+
+**Thirteen numeric claims, verified three ways, none of them the prose:**
+
+- **off the row's own `maths.expression`** — the intercept, the two solar
+  coefficients, and the geomagnetic split at Kp 3 and Kp 7. The coefficients are
+  read off the expression by pattern and then **the pattern is proven against the
+  expression evaluated as a string**, so a parse that misread the algebra fails
+  by name instead of agreeing with itself;
+- **off the engine**, through `/v1/run` with driver overrides — the four Kp slots
+  the assumption cites, the four temperatures it puts them through, and the 15 per
+  cent between the worst day's two slots;
+- **off the RECORD** — the bundle CSVs — for the two range claims, which is the
+  only place a claim about what has been *observed* can come from.
+
+**And two structural checks worth more than any single claim:**
+
+1. **The sheet's expression IS the implementation.** 100 points across the whole
+   declared domain, worst disagreement 2.3 × 10⁻¹³ K. Nothing in the gate's
+   sixteen checks compared those two: the sheet's relation is a string and the
+   hole is Rust, and they are two statements of one fact. Every claim above is
+   read off one or the other, so had they drifted the claims would have agreed
+   with one and been wrong about the other.
+2. **The theory's four steps compose to `maths.expression`.** Read as a build-up
+   they must, or the tab derives one relation and the row computes another.
+
+**The claims are templates, and that is the whole design.** `{}` stands for a
+number; the words are the anchor and the digits are read out of the **sheet**, so
+two different things fail differently — reworded prose says *the claim moved,
+re-check it against the source*, and a changed number says *the sheet states 900
+and the measurement is 520*. The first version carried each claim as a literal
+substring including its number, and every wrong-number case failed on the
+substring, which meant **the arithmetic half never ran on anything and could have
+been broken from the start with nothing to show it.** That is the same defect as
+§31.4b's refusal-gate probe, found the same way: by breaking what each check
+covers and watching which failure fires.
+
+Eleven sheet mutations and four tool mutations, each red with a named message. Two
+were not load-bearing when first written: the self-proof of the coefficient parse
+passed against being disabled (no case made the parse wrong, so a prefix-matching
+relation with a term beyond it was added), and the rewriter's case died with a
+`NameError` instead of naming what was wrong.
+
+**What it does not do.** It checks ONE row of the 66 that carry a theory block
+with `math` in its steps — the row §30 step 3 is about. The other 65 are
+unchecked, and several carry another row's answer as a literal in their prose:
+`l3_solar_ach_01` carries 104.07, `sw_ap_cold_long` carries 3.5937,
+`l3_solar_req_03` carries five. That is §21's staleness surface, unmeasured.
+Adding a row is adding an entry to `CLAIMS`.
+
+**And it cannot do the one thing step 3 is waiting for.** It checks that the
+derivation's arithmetic is true of the relation the row computes. Whether that
+relation is *Jacchia's* is not an arithmetic question, and `maths.confirmed_by` is
+still `""`. The sheet cites SAO Special Report 332 with no page or equation, and I
+did not add one: a locator I produced from memory would be a citation nobody
+checked, wearing the authority of one. **Step 3 still needs a person**, and what
+changed is that the person is now checking a derivation whose numbers are right.
+
 ### 31.3 · A1, the fixtures — done, and the gap was worse than stated
 
 The three fixtures all set `f107 == f107a`. §30 predicted that the `1.3` coefficient
@@ -3543,7 +3630,7 @@ on work nobody had done.*
 |---|---|
 | 1 · A2 five assumptions | **done** |
 | 2 · A1 fixtures | **done**, and the gap measured rather than asserted |
-| 3 · A3 theory | **drafted**, unsigned — needs a person |
+| 3 · A3 theory | **drafted, its numbers now checked on every run, one wrong magnitude found and fixed** — §31.2a; still unsigned, needs a person |
 | 4 · B3.1 walk-forward | **written, failing its own test, and every candidate for the gap measured and eliminated** — §31.4a |
 | 5 · B1 which Kp slot | needs a person |
 | 6 · B2 band confidence | needs a person |
@@ -3636,7 +3723,7 @@ different places to stand.
 |---|---|
 | 1 · A2 five assumptions | done |
 | 2 · A1 fixtures | done |
-| 3 · A3 theory | drafted, **unsigned — needs a person** |
+| 3 · A3 theory | drafted and **checked** (§31.2a), **unsigned — needs a person** |
 | 4 · B3.1 walk-forward | written, **failing its own test**, every candidate eliminated, §31.4a |
 | 5 · B1 which Kp slot | **needs a person**, and the third view is now the picture to decide it from |
 | 6 · B2 band confidence | **needs a person** |
@@ -3645,7 +3732,8 @@ different places to stand.
 | 9 · B3.3 residual view | blocked with 7 |
 
 Everything an agent can do without a decision is now done. Steps 5 and 6 are two
-numbers; step 3 is a signature. **Step 4 was the one piece of open work and is no
+numbers; step 3 is a signature, and §31.2a has now made it a signature on a
+derivation whose arithmetic is checked rather than on one nobody had read. **Step 4 was the one piece of open work and is no
 longer that either:** §31.4a measured every candidate the sheet leaves open and
 none of them closes the gap, so what is left is `prf_rebuild.m`, which is not in
 this repository, or a person deciding what the sheet should say. That is a worse
@@ -4688,7 +4776,12 @@ declined against a count rather than a preference.
 ### 41.5 · What is left
 
 - Twenty-eight references, all UNCONFIRMED, all needing a person.
-- `env_exospheric_temperature`'s `maths.confirmed_by`, and §30 steps 5 and 6.
+- `env_exospheric_temperature`'s `maths.confirmed_by`, and §30 steps 5 and 6. The
+  derivation under that signature is now checked on every run (§31.2b) and one
+  wrong magnitude in it is fixed; the signature itself is still nobody's, and the
+  citation still names SAO Special Report 332 with no page or equation.
+- The other 65 theory blocks carrying `math` in their steps, which nothing checks;
+  several carry another row's answer as a literal in prose.
 - §30 step 4: the walk-forward still fails its own test, 376 rotations against
   361, and §31.4a has now measured and eliminated every candidate the sheet
   leaves open — none of them closes the gap, and one of them (the sheet's own
