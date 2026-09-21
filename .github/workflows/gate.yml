@@ -186,6 +186,13 @@ jobs:
         run: |
           python3 tools/panel_review.py --selftest
           python3 tools/panel_review.py --check
+      # The audit drives every editable input through its own branches and needs
+      # a daemon, so the run itself is in the panels job; this is the half that
+      # can check itself without one.
+      - name: the branch audit checks itself
+        run: python3 tools/branch_audit.py --selftest
+      - name: the input control checks itself
+        run: python3 tools/input_check.py --selftest
       # Every recipe, applied twice on a copy; the second must change nothing.
       - name: every recipe is idempotent
         run: python3 tools/recipe.py --check
@@ -336,6 +343,22 @@ jobs:
             sleep 2
           done
           python3 tools/matlab_parity.py
+      # Every editable input in the solar subsystem, driven through the branches
+      # the engine says it is in. Solar is the one subsystem filled in end to
+      # end, so it is the one where this can say anything. It reports findings
+      # and does not fail the build: every finding it prints is a true statement
+      # about the design, and a check that fails on those is a check people
+      # learn to word their way past.
+      # The field on a declared row, clicked the way a person clicks it. Every
+      # defect it has caught was invisible to the engine and to a source
+      # reading: a repaint from inside a change event, a button that destroyed
+      # itself on blur, a column pushed off screen by one long refusal, and a
+      # branch list still reading the shape the rule had before it moved into
+      # the engine.
+      - name: the input control, three stages, clicked
+        run: python3 tools/input_check.py
+      - name: every solar input, through its own branches
+        run: python3 tools/branch_audit.py --sub solar
           python3 tools/mat_parity.py
 
   # The two faces the workspace excludes, because they need targets of their

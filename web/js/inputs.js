@@ -26,7 +26,7 @@
 'use strict';
 
 import { esc, fmt } from './dom.js';
-import { S, reachFrom } from './state.js';
+import { S } from './state.js';
 
 /** The key the browser remembers overrides under. Never a file, never the repo. */
 const KEY = 'vleo.overrides.v1';
@@ -337,67 +337,27 @@ async function runOnce(node, mode, bare) {
 // the branches an input is in
 
 /**
- * A row that can actually be computed.
+ * The active branches this input is part of, as the ENGINE computes them.
  *
- * `published` is the state that means somebody filled the sheet in. A seeded
- * row returns NotRun by design and a deprecated one is a question whose answer
- * nothing should read any more, so neither belongs in a branch being offered
- * as ready to run.
+ * This used to be a graph walk here, over the index. It was correct — it agreed
+ * with the engine on all 130 editable inputs — and it was still the wrong place
+ * for it: the audit in tools/ needs the same answer, and a rule with two
+ * implementations is a rule that drifts. `/v1/branches` is now the one of them.
+ *
+ * What comes back: `branches`, the maximal active ones, biggest first; and
+ * `read_by`, how many rows read this one at all. The second is what lets an
+ * empty list say which of two different things it means.
  */
-const isActive = r => !!r && r.state === 'published';
-
-/**
- * The active branches this input is part of.
- *
- * A branch is the dependency closure of one row — everything it reads, however
- * far back. An input is in as many branches as there are rows that read it,
- * which for mission duration is dozens, and most of them are nested inside each
- * other: running the branch of a row that reads this one already computes every
- * row between them.
- *
- * So the set offered is the MAXIMAL active branches. A candidate is a row
- * downstream of this input whose whole closure is active; it is maximal when no
- * other candidate reads it, directly or at any distance. Running all of them
- * computes every row in every active branch containing this input, and computes
- * none of them twice for the sake of a longer list.
- *
- * A branch with one inactive row in it is not offered at all: a branch that
- * stops at a row nobody has filled in cannot give an output.
- *
- * ACTIVE IS NOT THE SAME AS WILL SUCCEED, and the difference is not a flaw in
- * the test. Every row being published says the tree is filled in; it says
- * nothing about whether a value lands inside its own declared domain on this
- * case. aero_ao_fluence is eleven published rows and refuses anyway, because
- * the fluence it computes is above its own upper limit. That refusal is a real
- * answer about the design and stage two prints it — against the baseline, so a
- * row that was already refusing is not reported as something the edit did.
- */
-export function activeBranches(row) {
-  if (!row || row.i == null) return [];
-  const down = reachFrom([row.i], S.consumers);
-
-  // Each candidate, with its own closure, kept so neither is walked twice.
-  const closure = new Map();
-  const cand = [];
-  for (const i of down) {
-    if (!isActive(S.rows[i])) continue;
-    const cl = reachFrom([i], S.producers);
-    let ok = true;
-    for (const k of cl) if (!isActive(S.rows[k])) { ok = false; break; }
-    if (!ok) continue;
-    closure.set(i, cl);
-    cand.push(i);
+export async function activeBranches(row) {
+  if (!row) return { branches: [], read_by: 0 };
+  try {
+    const r = await (await fetch('/v1/branches?node=' +
+      encodeURIComponent(row.id))).json();
+    return r && r.ok ? { branches: r.branches || [], read_by: r.read_by || 0 }
+                     : { branches: [], read_by: 0 };
+  } catch (e) {
+    return { branches: [], read_by: 0, failed: true };
   }
-
-  const set = new Set(cand);
-  const heads = cand.filter(i => {
-    for (const c of reachFrom([i], S.consumers)) if (set.has(c)) return false;
-    return true;
-  });
-
-  return heads
-    .map(i => ({ i, row: S.rows[i], rows: closure.get(i).size + 1 }))
-    .sort((a, b) => b.rows - a.rows || a.row.id.localeCompare(b.row.id));
 }
 
 // ---------------------------------------------------------------------------
@@ -542,15 +502,30 @@ export async function runStages(r, base, out, say) {
   out.innerHTML = h;
 
   // ---- 2 · the active branches -----------------------------------------
-  const branches = activeBranches(r);
+  const found = await activeBranches(r);
+  const branches = found.branches;
+  // AN EMPTY LIST MEANS ONE OF TWO DIFFERENT THINGS and a reader needs to know
+  // which. Seven solar rows are read by nothing in the tree at all — they are
+  // answers a person reads off a figure, and there is no branch to run because
+  // there is nothing downstream, not because anything is unfinished. That is a
+  // different sentence from "everything that reads this is still seeded".
   const head = branches.length
     ? '<p class="muted">' + branches.length + ' active branch' +
-      (branches.length === 1 ? '' : 'es') + ' read this row, directly or through ' +
-      'another. Each is a dependency closure whose every row is published, and ' +
-      'between them they cover every row in every active branch this input is in.</p>'
-    : '<p class="muted">No active branch reads this row yet. Either nothing reads it, ' +
-      'or every row that does sits in a branch with a seeded row still in it — which ' +
-      'is a fact about how far the tree is filled in, not a failure.</p>';
+      (branches.length === 1 ? '' : 'es') + ', of the ' + found.read_by +
+      ' row' + (found.read_by === 1 ? '' : 's') + ' that read this one. Each is a ' +
+      'dependency closure whose every row is published, and between them they ' +
+      'cover every row in every active branch this input is in.</p>'
+    : found.failed
+      ? '<p class="muted">The engine did not answer when asked which branches this ' +
+        'row is in.</p>'
+      : found.read_by === 0
+        ? '<p class="muted">Nothing in the tree reads this row. Its answer is read ' +
+          'by a person, off a figure, so there is no branch to run — that is what ' +
+          'this row is for, not something missing from it.</p>'
+        : '<p class="muted">' + found.read_by + ' row' +
+          (found.read_by === 1 ? '' : 's') + ' read this one, and none of them sits ' +
+          'in a branch that is fully published, so there is nothing that would run ' +
+          'end to end. That is how far the tree is filled in, not a failure.</p>';
   h += sec(2, 'branch by branch — every active branch this row is in',
            head + '<div class="ovr-branches"></div>');
   out.innerHTML = h;
@@ -559,8 +534,8 @@ export async function runStages(r, base, out, say) {
   const done = [];
   for (let k = 0; k < branches.length; k++) {
     const b = branches[k];
-    say('2 · branch ' + (k + 1) + ' of ' + branches.length + ' — ' + b.row.id);
-    const res = await runOnce(b.row.id, 'branch', false);
+    say('2 · branch ' + (k + 1) + ' of ' + branches.length + ' — ' + b.id);
+    const res = await runOnce(b.id, 'branch', false);
     done.push(branchRow(b, res, base));
     list.innerHTML = '<table class="ovr-diff ovr-bt"><thead><tr><th>branch</th>' +
       '<th class="num">rows</th><th>was</th><th>now</th></tr></thead><tbody>' +
@@ -594,17 +569,17 @@ function aloneHtml(r, res) {
 
 /** Stage two: one branch, its head\u2019s new output, or why it refused. */
 function branchRow(b, res, base) {
-  const name = '<td><a class="xref" data-goto="' + esc(b.row.id) + '"><code>' +
-    esc(b.row.id) + '</code></a><br><span class="muted">' + esc(b.row.label) +
+  const name = '<td><a class="xref" data-goto="' + esc(b.id) + '"><code>' +
+    esc(b.id) + '</code></a><br><span class="muted">' + esc(b.label) +
     '</span></td><td class="num">' + b.rows + '</td>';
   if (!res.ok) {
     return '<tr class="ovr-refused">' + name + '<td colspan="2"><b>' +
       esc(res.fault || 'refused') + '</b> — ' + esc(res.message || '') + '</td></tr>';
   }
-  const v = res.values.find(x => x.id === b.row.id);
-  const was = (base.values || []).find(x => x.id === b.row.id);
+  const v = res.values.find(x => x.id === b.id);
+  const was = (base.values || []).find(x => x.id === b.id);
   if (!v) {
-    const why = (res.blocked || []).find(x => x.id === b.row.id);
+    const why = (res.blocked || []).find(x => x.id === b.id);
     // WHOSE FAULT IS THIS. A row that was already refusing before the edit is
     // not evidence about the edit, and colouring it like a new failure is a
     // false alarm the reader learns to ignore — which then hides the real one.
