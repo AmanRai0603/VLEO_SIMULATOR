@@ -5139,10 +5139,20 @@ the tree touches five kinds of file, and **no single lane covers them**:
 | `crates/vleo-mod-*/nodes/*/node.toml` — the new sheet, the two cross-references, and the five sheets whose `order` shifted | `declaration-drafter` |
 | `docs/**` — the plan, `VARIABLES.md` | three lanes list it |
 | `.github/**`, `tools/**`, `xtask/**` | `systems-backend` |
-| the regenerated `page.html` and `model.rs` beside each changed sheet | **no lane** |
+| the regenerated `page.html`, `meta.json` and `model.rs` beside each changed sheet | **no lane** |
+| the `fixtures.toml` stub `xtask new` writes into the new folder | `fixture-recorder`, and **`declaration-drafter` may not touch it** |
 | `README.md`, `AGENTS.md`, `areas/generators.md` — the row count, which `instruction_lint.py` **requires** to match the tree | **no lane** |
 
-The last row is the one that matters. The tree's size is written in prose in four
+**The `fixtures.toml` row is the sharp one**, because it is a *prohibition* and
+not merely an unlisted path: `tools/agent_lanes.py --agent declaration-drafter`
+reports it as "may not touch it". The substance of that prohibition — *produce an
+expected value* — is not breached, and this was checked rather than assumed: the
+file `xtask new` writes contains the two-line header and **no fixtures at all**.
+The sibling's expected values are not cloned. So the path rule is broken and the
+rule it encodes is not, which is worth stating both halves of rather than
+choosing the convenient half.
+
+The row count is the one that binds hardest. The tree's size is written in prose in four
 places and a check enforces it, so **growing the tree forces an instruction-file
 edit that no agent is permitted to make.** The generated artefacts are the same
 shape of gap: regenerating is the required next step after any sheet edit, and the

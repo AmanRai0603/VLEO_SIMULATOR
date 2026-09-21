@@ -652,7 +652,7 @@ def _responds(page, mount, settle, d):
 
 
 def _differ(a, b):
-    """Fraction of pixels that differ, by more than a hair.
+    """Fraction of pixels that differ, by more than a hair, at the best alignment.
 
     Pixels, not bytes. Comparing compressed PNG bytes gives a yes-or-no answer
     dressed up as a percentage — one changed pixel diverges the whole stream
@@ -661,8 +661,22 @@ def _differ(a, b):
 
     The per-channel slack absorbs antialiasing, which moves a pixel by one or
     two levels on a redraw and is not a change anybody wants reported.
+
+    AND THE BEST OF NINE SINGLE-PIXEL ALIGNMENTS, which is the other thing that
+    is not a change anybody wants reported. An element screenshot is rasterised
+    at the element's position on the page, so a figure that sits lower because
+    PROSE ABOVE IT GREW is captured with a different sub-pixel rounding and every
+    edge in it lands one row off. `env_exospheric_temperature` gained two lines
+    of assumption text, its figure moved 34 px down the page, and this reported
+    5.7 per cent of pixels changed in a picture that was bit-identical one row
+    up — the file's own note about "a reference that then changes when something
+    unrelated moves" turning out to be about itself.
+
+    What this gives up is a genuine one-pixel translation of a chart inside its
+    own canvas. That is not a design defect either, and it is the price of not
+    re-recording every reference whenever a sentence is added to a sheet.
     """
-    from PIL import Image
+    from PIL import Image, ImageChops
 
     ia = Image.open(io.BytesIO(a)).convert("RGB")
     ib = Image.open(io.BytesIO(b)).convert("RGB")
@@ -673,15 +687,91 @@ def _differ(a, b):
         # aspect was capped, which is true, useless, and indistinguishable from
         # eight panels having broken at once.
         return ("size", ia.size, ib.size)
-    pa, pb = ia.load(), ib.load()
     w, h = ia.size
-    n = 0
-    for y in range(h):
-        for x in range(w):
-            ca, cb = pa[x, y], pb[x, y]
-            if max(abs(ca[0] - cb[0]), abs(ca[1] - cb[1]), abs(ca[2] - cb[2])) > 8:
-                n += 1
-    return n / float(w * h)
+    best = 1.0
+    for dy in (0, -1, 1):
+        for dx in (0, -1, 1):
+            ca = ia.crop((max(dx, 0), max(dy, 0), w + min(dx, 0), h + min(dy, 0)))
+            cb = ib.crop((max(-dx, 0), max(-dy, 0), w + min(-dx, 0), h + min(-dy, 0)))
+            best = min(best, _frac(ca, cb))
+            if best == 0.0:
+                return 0.0
+    return best
+
+
+def _frac(ia, ib, slack=8):
+    """Pixels differing by more than `slack` on any channel, as a fraction.
+
+    Through PIL's own band operations rather than a Python loop over every
+    pixel: this runs nine times per comparison now, and a 1182x539 figure is
+    637,000 pixels.
+    """
+    from PIL import ImageChops
+
+    bands = ImageChops.difference(ia, ib).split()
+    worst = bands[0]
+    for band in bands[1:]:
+        worst = ImageChops.lighter(worst, band)
+    over = worst.point(lambda v: 255 if v > slack else 0).convert("L")
+    w, h = ia.size
+    return over.histogram()[255] / float(w * h) if w and h else 0.0
+
+
+def _differ_cases():
+    """What the picture comparison must and must not report. No browser needed.
+
+    The one-pixel case is the one that earned its place: a figure whose page
+    gained two lines of prose above it is captured one row lower, and every edge
+    in a bit-identical picture then differs. It cost a full re-record of a
+    reference a person had signed off before anyone measured that the pictures
+    were the same.
+    """
+    from PIL import Image, ImageDraw
+
+    bad = 0
+
+    def png(fn):
+        im = Image.new("RGB", (120, 80), (250, 250, 250))
+        fn(ImageDraw.Draw(im))
+        buf = io.BytesIO()
+        im.save(buf, "PNG")
+        return buf.getvalue()
+
+    chart = png(lambda d: (d.line((10, 70, 110, 20), fill=(20, 60, 200), width=2),
+                           d.rectangle((10, 10, 110, 70), outline=(120, 120, 120))))
+    same = png(lambda d: (d.line((10, 70, 110, 20), fill=(20, 60, 200), width=2),
+                          d.rectangle((10, 10, 110, 70), outline=(120, 120, 120))))
+    down = png(lambda d: (d.line((10, 71, 110, 21), fill=(20, 60, 200), width=2),
+                          d.rectangle((10, 11, 110, 71), outline=(120, 120, 120))))
+    moved = png(lambda d: (d.line((10, 70, 110, 45), fill=(20, 60, 200), width=2),
+                           d.rectangle((10, 10, 110, 70), outline=(120, 120, 120))))
+    taller = Image.new("RGB", (120, 90), (250, 250, 250))
+    buf = io.BytesIO(); taller.save(buf, "PNG"); taller = buf.getvalue()
+
+    for label, a, b, want in (
+        ("an identical picture", chart, same, 0.0),
+        # THE CASE THIS EXISTS FOR. Shifted one row, nothing else changed.
+        ("a picture one pixel lower", chart, down, 0.0),
+    ):
+        got = _differ(a, b)
+        if not isinstance(got, float) or got > 1e-9:
+            bad += 1
+            print("  FAIL %s was reported as %r differing; it must be 0" % (label, got))
+
+    # And a curve that actually moved is still reported, or the tolerance above
+    # has swallowed the check rather than aligned it.
+    got = _differ(chart, moved)
+    if not isinstance(got, float) or got < 0.02:
+        bad += 1
+        print("  FAIL a line drawn to a different place was reported as %r; a real "
+              "change must survive the alignment" % got)
+
+    # A size change stays its own fact and is not a percentage.
+    got = _differ(chart, taller)
+    if not (isinstance(got, tuple) and got[0] == "size"):
+        bad += 1
+        print("  FAIL a picture of a different shape was reported as %r" % (got,))
+    return bad
 
 
 def _tree_sig(root):
@@ -709,6 +799,8 @@ def selftest():
     checked at all.
     """
     import shutil, tempfile
+
+    bad_img = _differ_cases()
 
     global ROOT, PANELS, REFERENCE
     real_root, real_panels, real_ref = ROOT, PANELS, REFERENCE
@@ -817,7 +909,9 @@ def selftest():
             if not any(stage == want for _, stage, _ in found):
                 bad += 1
                 print("  FAIL %s was not caught by check %s; got %s" % (label, want, found))
-    print("selftest: %d cases, %s" % (len(cases), "all as expected" if not bad else "%d FAILED" % bad))
+    bad += bad_img
+    print("selftest: %d cases, %s"
+          % (len(cases) + 4, "all as expected" if not bad else "%d FAILED" % bad))
     return 1 if bad else 0
 
 

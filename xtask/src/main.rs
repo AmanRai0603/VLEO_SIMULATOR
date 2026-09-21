@@ -1777,6 +1777,133 @@ fn cmd_fill(root: &Path, args: &[&str]) -> Result<(), String> {
     Ok(())
 }
 
+/// Clone a sibling's sheet, blanking every field that must be re-decided.
+///
+/// Pure, and separated from `cmd_new` so it can be tested: each rule below
+/// exists because a clone carried something it should not have, and a rule with
+/// no test is a rule that comes back. Returns the sheet and the comment lines it
+/// could not blank, which are prose about the sibling and have no marker saying
+/// which sentences are row-specific.
+fn clone_sheet(sheet: &str, id: &str, folder: &str, src_order: u32) -> (String, Vec<String>) {
+    // Blank what must be re-decided. A literal copy drags a stale source
+    // citation and someone else's domain limits through thirty nodes.
+    let mut out = String::new();
+    // A blanked field whose value is a multi-line string leaves its BODY behind,
+    // and the body is not TOML on its own. `text = "\"\"\"` became
+    // `text = ""` and the twenty prose lines under it were still there,
+    // starting with a bare word where a key was expected, so the sheet the tool
+    // had just written could not be parsed by the tool's own next command. It
+    // happened twice before this skipped the body.
+    let mut in_blanked_block = false;
+    // Which [section] the line belongs to. `number` is a value under [value] and
+    // a step index under [[algorithm.step]]; blanking both would renumber the
+    // algorithm, so the key alone is not enough to decide.
+    let mut section = String::new();
+    let mut carried: Vec<String> = Vec::new();
+    for line in sheet.lines() {
+        let l = line.trim_start();
+        if l.starts_with('[') {
+            section = l.to_string();
+        }
+        // A comment block is prose about the SIBLING, and there is no way to tell
+        // its row-specific sentences from the template's generic ones. So it is
+        // carried and reported rather than carried silently: the sibling's header
+        // explained a G scale on a row that had nothing to do with one.
+        if l.starts_with("# ") && l.len() > 40 && !carried.iter().any(|c| c == l) {
+            carried.push(l.to_string());
+        }
+        if in_blanked_block {
+            if l == "\"\"\"" || l.ends_with("\"\"\"") {
+                in_blanked_block = false;
+            }
+            continue;
+        }
+        if l.starts_with("id = ") {
+            out.push_str(&format!("id = \"{id}\"\n"));
+        } else if l.starts_with("folder = ") {
+            out.push_str(&format!("folder = \"{folder}\"   # frozen at seed\n"));
+        } else if l.starts_with("label = ")
+            || l.starts_with("text = ")
+            || l.starts_with("expression = ")
+            || l.starts_with("source = ")
+            || l.starts_with("note = ")
+            || l.starts_with("reason_lower = ")
+            || l.starts_with("reason_upper = ")
+            || l.starts_with("confirmed_by = ")
+            // `migrated_from` is a source citation, and this loop exists
+            // because "a literal copy drags a stale source citation through
+            // thirty nodes". It was not in the list, so a clone pointed at the
+            // sibling's MATLAB function and at a parity grid that was not its
+            // own.
+            || l.starts_with("migrated_from = ")
+            // A `fails_when` is the other half of an `[[assumption]]` whose
+            // `text` is blanked above, so inheriting it leaves the sheet stating
+            // how a claim it no longer makes would fail. The clone carried three
+            // of them about the NOAA G scale onto a row about Kp slots.
+            || l.starts_with("fails_when = ")
+            // `why` and `reading` are the theory tab: a derivation of the
+            // SIBLING's relation, beside a blanked `expression`. §31.2a is what
+            // an inherited magnitude in a theory tab costs.
+            || l.starts_with("why = ")
+            || l.starts_with("reading = ")
+            // The symbol is the row's own name for its own answer. Two rows
+            // sharing one is the defect the `no-identity` check looks for.
+            || l.starts_with("symbol = ")
+            // A value under [value] is a number a person picked for another row.
+            // Under [[algorithm.step]] the same key is a step index, which is
+            // shape and is inherited.
+            || (l.starts_with("number = ") && section == "[value]")
+        {
+            let key = l.split(" = ").next().unwrap();
+            // A blanked NUMBER is 0.0 and not "": the sheet has to stay TOML the
+            // tool's own next command can read, and `number = ""` is a string
+            // where the loader wants a float. The gate still refuses it, on
+            // `declared-value`, which is the check that is actually true.
+            let blank = if key == "number" { "0.0" } else { "\"\"" };
+            out.push_str(&format!(
+                "{key} = {blank}   # REQUIRED — re-decide, do not inherit\n"
+            ));
+            // Opened a \"\"\" block and did not close it on the same line: the
+            // rest belongs to the value that was just blanked.
+            let after = l.split_once(" = ").map(|x| x.1).unwrap_or("");
+            if after.starts_with("\"\"\"") && !after[3..].contains("\"\"\"") {
+                in_blanked_block = true;
+            }
+        } else if l.starts_with("state = ") {
+            // A NEW ROW IS SEEDED, WHATEVER THE SIBLING IS. Inheriting
+            // `published` gave a folder with every field blank a state that
+            // means "specified": it counted as published in `xtask status`, in
+            // the index the face reads and in /v1/branches' idea of an active
+            // branch, and the gate then refused it for four separate reasons at
+            // once instead of the one that is true — that nobody has written it
+            // yet.
+            out.push_str("state = \"empty\"\n");
+        } else if l.starts_with("order = ") {
+            // THE SIBLING'S PLACE IS TAKEN. `order` is globally contiguous and
+            // one row per place is an assembly check, so copying the sibling's
+            // number guarantees a collision — the tool wrote a tree its own
+            // gate refused, every time, and the person then renumbered 32 rows
+            // by hand. The new row goes immediately after the sibling and
+            // everything at or beyond that place moves up one, below.
+            out.push_str(&format!("order = {}\n", src_order + 1));
+        } else {
+            out.push_str(line);
+            out.push('\n');
+            // Criticality decides how many people read this node and whether
+            // its hole is filled twice by different model families. A sibling's
+            // answer is not this node's answer, so it is asked here rather than
+            // inherited silently.
+            if l.starts_with("tier = ") && !sheet.contains("criticality") {
+                out.push_str(
+                    "criticality = \"minor\"   # minor | significant — significant means two \
+                     reviewers and a differential fill\n",
+                );
+            }
+        }
+    }
+    (out, carried)
+}
+
 fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
     let id = args
         .first()
@@ -1807,78 +1934,22 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
     }
     let sheet = fs::read_to_string(src.dir.join("node.toml")).map_err(|e| e.to_string())?;
     let src_order = src.order;
-    // Blank what must be re-decided. A literal copy drags a stale source
-    // citation and someone else's domain limits through thirty nodes.
-    let mut out = String::new();
-    // A blanked field whose value is a multi-line string leaves its BODY behind,
-    // and the body is not TOML on its own. `text = "\"\"\"` became
-    // `text = ""` and the twenty prose lines under it were still there,
-    // starting with a bare word where a key was expected, so the sheet the tool
-    // had just written could not be parsed by the tool's own next command. It
-    // happened twice before this skipped the body.
-    let mut in_blanked_block = false;
-    for line in sheet.lines() {
-        let l = line.trim_start();
-        if in_blanked_block {
-            if l == "\"\"\"" || l.ends_with("\"\"\"") {
-                in_blanked_block = false;
-            }
-            continue;
-        }
-        if l.starts_with("id = ") {
-            out.push_str(&format!("id = \"{id}\"\n"));
-        } else if l.starts_with("folder = ") {
-            out.push_str(&format!("folder = \"{folder}\"   # frozen at seed\n"));
-        } else if l.starts_with("label = ")
-            || l.starts_with("text = ")
-            || l.starts_with("expression = ")
-            || l.starts_with("source = ")
-            || l.starts_with("note = ")
-            || l.starts_with("reason_lower = ")
-            || l.starts_with("reason_upper = ")
-            || l.starts_with("confirmed_by = ")
-            // `migrated_from` is a source citation, and this loop exists
-            // because "a literal copy drags a stale source citation through
-            // thirty nodes". It was not in the list, so a clone pointed at the
-            // sibling's MATLAB function and at a parity grid that was not its
-            // own.
-            || l.starts_with("migrated_from = ")
-        {
-            let key = l.split(" = ").next().unwrap();
-            out.push_str(&format!(
-                "{key} = \"\"   # REQUIRED — re-decide, do not inherit\n"
-            ));
-            // Opened a \"\"\" block and did not close it on the same line: the
-            // rest belongs to the value that was just blanked.
-            let after = l.split_once(" = ").map(|x| x.1).unwrap_or("");
-            if after.starts_with("\"\"\"") && !after[3..].contains("\"\"\"") {
-                in_blanked_block = true;
-            }
-        } else if l.starts_with("order = ") {
-            // THE SIBLING'S PLACE IS TAKEN. `order` is globally contiguous and
-            // one row per place is an assembly check, so copying the sibling's
-            // number guarantees a collision — the tool wrote a tree its own
-            // gate refused, every time, and the person then renumbered 32 rows
-            // by hand. The new row goes immediately after the sibling and
-            // everything at or beyond that place moves up one, below.
-            out.push_str(&format!("order = {}\n", src_order + 1));
-        } else {
-            out.push_str(line);
-            out.push('\n');
-            // Criticality decides how many people read this node and whether
-            // its hole is filled twice by different model families. A sibling's
-            // answer is not this node's answer, so it is asked here rather than
-            // inherited silently.
-            if l.starts_with("tier = ") && !sheet.contains("criticality") {
-                out.push_str(
-                    "criticality = \"minor\"   # minor | significant — significant means two \
-                     reviewers and a differential fill\n",
-                );
-            }
-        }
-    }
+    let (out, carried) = clone_sheet(&sheet, id, &folder, src_order);
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     fs::write(dir.join("node.toml"), out).map_err(|e| e.to_string())?;
+    if !carried.is_empty() {
+        println!(
+            "{} comment block line(s) were carried from {like} and may be about that row \
+             rather than this one. Read them before `docs`:",
+            carried.len()
+        );
+        for c in carried.iter().take(4) {
+            println!("   {}", &c[..c.len().min(96)]);
+        }
+        if carried.len() > 4 {
+            println!("   ... and {} more", carried.len() - 4);
+        }
+    }
     // Make room. Every sheet already at or beyond the new row's place moves up
     // one, so the tree stays contiguous and the assembly check stays quiet.
     // `order` is outside the sheet hash, so this rewrites no generated artefact.
@@ -2249,4 +2320,156 @@ fn cmd_variables(root: &Path) -> Result<(), String> {
         p.display()
     );
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::clone_sheet;
+
+    /// A sibling sheet with one of every field a clone has carried wrongly.
+    const SIBLING: &str = r#"# A long comment block that is prose about the sibling row and its own scale.
+id = "sw_sibling"
+label = "The sibling"
+folder = "sw_sibling"
+kind = "declared"
+order = 40
+state = "published"
+
+[question]
+text = "What does the sibling answer?"
+note = "a note about the sibling"
+
+[maths]
+confirmed_by = "A. Person / 2026-01-01"
+expression = "X = 3"
+source = "some_source"
+
+[theory]
+why = """
+Three paragraphs about why the SIBLING's relation is that relation.
+"""
+reading = """
+What the sibling's answer is and is not.
+"""
+
+[[assumption]]
+text = "an assumption about the sibling"
+fails_when = "the sibling's own failure mode, which is not this row's"
+
+[output]
+symbol = "X_sib"
+type = "Ratio"
+unit = "One"
+lower = 1.0
+upper = 3.0
+reason_lower = "the sibling's lower reason"
+reason_upper = "the sibling's upper reason"
+
+[[algorithm.step]]
+number = 1
+text = "the sibling's one step"
+
+[value]
+number = 3.0
+confirmed_by = "A. Person / 2026-01-01"
+"#;
+
+    fn clone() -> String {
+        clone_sheet(SIBLING, "sw_new", "sw_new", 40).0
+    }
+
+    /// A NEW ROW IS SEEDED, whatever the sibling is. Inheriting `published` gave a
+    /// folder with every field blank a state that means "specified": it counted as
+    /// published in `xtask status`, in the index the face reads and in
+    /// /v1/branches' idea of an active branch.
+    #[test]
+    fn a_clone_is_seeded() {
+        let out = clone();
+        assert!(out.contains("state = \"empty\""), "{out}");
+        assert!(!out.contains("state = \"published\""), "{out}");
+    }
+
+    /// The identifiers are the new row's, and the place is the one after the
+    /// sibling — copying `order` guarantees the collision the assembly check
+    /// catches.
+    #[test]
+    fn identity_and_place_are_the_new_rows() {
+        let out = clone();
+        assert!(out.contains("id = \"sw_new\""), "{out}");
+        assert!(out.contains("folder = \"sw_new\""), "{out}");
+        assert!(out.contains("order = 41"), "{out}");
+    }
+
+    /// Everything a person must re-decide comes back blank, and the sibling's
+    /// answers do not survive anywhere in the file.
+    #[test]
+    fn what_must_be_re_decided_is_blank() {
+        let out = clone();
+        for gone in [
+            "The sibling",                   // label
+            "What does the sibling answer?", // question text
+            "a note about the sibling",      // note
+            "X = 3",                         // expression
+            "some_source",                   // source
+            "A. Person / 2026-01-01",        // confirmed_by, twice
+            "X_sib",                         // symbol
+            "the sibling's lower reason",
+            "the sibling's upper reason",
+            // A `fails_when` is the other half of an assumption whose `text` is
+            // blanked, so inheriting it left the sheet stating how a claim it no
+            // longer makes would fail.
+            "the sibling's own failure mode",
+            // The theory tab is a derivation of the SIBLING's relation, sitting
+            // beside a blanked expression.
+            "why the SIBLING's relation",
+            "What the sibling's answer is and is not",
+        ] {
+            assert!(
+                !out.contains(gone),
+                "a clone still carries {gone:?}:\n{out}"
+            );
+        }
+    }
+
+    /// `number` is a value under [value] and a step index under
+    /// [[algorithm.step]]. Blanking by key alone renumbers the algorithm; not
+    /// blanking at all leaves a value nobody picked beside a blanked signature.
+    #[test]
+    fn a_value_is_blanked_and_a_step_index_is_not() {
+        let out = clone();
+        assert!(
+            out.contains("number = 0.0   # REQUIRED"),
+            "the value was not blanked:\n{out}"
+        );
+        assert!(
+            out.contains("number = 1\n"),
+            "the step index was blanked:\n{out}"
+        );
+    }
+
+    /// And it is 0.0 rather than "": the sheet must stay TOML that the tool's own
+    /// next command can read.
+    #[test]
+    fn the_clone_is_still_toml() {
+        let out = clone();
+        let parsed: Result<toml::Value, _> = out.parse();
+        assert!(
+            parsed.is_ok(),
+            "a clone does not parse: {:?}\n{out}",
+            parsed.err()
+        );
+    }
+
+    /// The comment blocks cannot be blanked — nothing marks which sentences are
+    /// about the sibling — so they are reported instead of carried silently.
+    #[test]
+    fn carried_comments_are_reported() {
+        let (_, carried) = clone_sheet(SIBLING, "sw_new", "sw_new", 40);
+        assert!(
+            carried
+                .iter()
+                .any(|c| c.contains("prose about the sibling")),
+            "the sibling's comment block was carried without being named: {carried:?}"
+        );
+    }
 }
