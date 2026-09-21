@@ -74,6 +74,19 @@ HEAD = re.compile(r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z0-9._-]+)\))?(?P<bang>!)
 #: A merge or a revert subject is written by git, not by a person.
 GENERATED = re.compile(r"^(Merge |Revert |fixup! |squash! )")
 
+#: The pull-request number a squash merge APPENDS to the subject. The sentence
+#: before it is the author's; these six or seven characters are the forge's, and
+#: measuring them against the author's limit fails a commit the author cannot
+#: edit any more.
+#:
+#: This is not a widened limit. It is the same rule as GENERATED above, applied
+#: to the half of a squash subject that git wrote: a 70-character subject passed
+#: the hook, the commit-msg check and the pipeline, and then turned the pipeline
+#: red FOR EVERY LATER BRANCH the moment it merged, because the range check reads
+#: the whole history and the history now held a subject nobody could shorten
+#: without rewriting `main`.
+MERGED_SUFFIX = re.compile(r" \(#\d+\)$")
+
 #: Lines a body may exceed the wrap on: a trailer, a URL, a table, an indented
 #: block. Re-wrapping any of those breaks them.
 UNWRAPPABLE = re.compile(r"^(\s|\||[A-Za-z-]+: \S|\S+://|`)")
@@ -101,6 +114,8 @@ def check(message, valid=None):
     subject = lines[0]
     if GENERATED.match(subject):
         return []
+    # What the author wrote, without what the forge appended.
+    subject = MERGED_SUFFIX.sub("", subject)
 
     m = HEAD.match(subject)
     if not m:
@@ -173,6 +188,30 @@ CASES = [
     ("fix(data): An incomplete bundle is refused", 1),
     ("fix(data): an incomplete bundle is refused.", 1),
     ("fix(data): " + "x" * 70, 1),
+    # A SQUASH MERGE APPENDS ITS PULL-REQUEST NUMBER. What the author wrote is
+    # measured; what the forge added is not. A 61-character subject plus " (#39)"
+    # is 67 and passes; the same sentence at 70 is 76 merged, and passed the hook
+    # and the pipeline before merging and failed them after — on `main`, for
+    # every later branch, with nobody able to shorten it.
+    ("fix(data): " + "x" * 61 + " (#39)", 0),
+    ("fix(data): " + "x" * 61, 0),
+    # And the suffix is not a way past the limit.
+    ("fix(data): " + "x" * 70 + " (#39)", 1),
+    # Nor past anything else: the rest of the subject is still read.
+    ("fix(data): An incomplete bundle is refused (#41)", 1),
+    # ONLY at the end, and only that shape. A reference in the MIDDLE of a
+    # subject is the author's words and is measured; an unanchored pattern would
+    # strip it and let 78 characters through as 72.
+    ("fix(data): " + "x" * 40 + " (#12) " + "y" * 20, 1),
+    # And a trailing parenthetical that is not a pull-request number stays. A
+    # pattern greedy enough to eat "(a note)" is a hole the size of any aside.
+    ("fix(data): " + "x" * 61 + " (a note)", 1),
+    # The limit itself is unchanged, which is the difference between reading the
+    # author's subject and simply allowing longer ones: 74 characters still fail.
+    ("fix(data): " + "x" * 63, 1),
+    # A NUMBER, not anything after a hash. The suffix this exempts is one shape,
+    # written by one thing; "(#see the notes)" is the author's and is measured.
+    ("fix(data): " + "x" * 61 + " (#see the notes)", 1),
     ("fix(data): a subject\nthe body, with no blank line", 1),
     ("fix(data): a subject\n\n" + "y" * 90, 1),
     ("fix(data)!: the manifest fields changed", 1),
