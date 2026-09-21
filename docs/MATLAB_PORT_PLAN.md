@@ -4757,10 +4757,43 @@ wrong:
   clamps at both ends. Its declared range runs to 35 days, so the probe landed
   in the clamped region. At 20 days the bias is -2.176 and at 26 it is -3.968.
 
-The probe now walks the whole declared range instead. A related fact is worth
-recording from it: **`sw_recurrence_lag` is declared to 35 days while its table
-is measured to 26**, so every value above 26 silently returns the lead-26
-answer. That is the same class of thing as §42.2 and also **[needs a person]**.
+The probe now walks the whole declared range instead.
+
+**A third correction, to what was written here.** This section used to add that
+"`sw_recurrence_lag` is declared to 35 days while its table is measured to 26"
+and call it the same class of thing as §42.2. It is not, and the framing
+conflated two rows.
+
+`sw_recurrence_lag` has no table. It asks at what lag the solar-rotation signal
+in F10.7 peaks, and its bounds describe where that peak can legitimately sit.
+Every number in those two reasons checks out against the record:
+
+| the sheet says | measured on bundles/solar-weather@2026.09.14 |
+|---|---|
+| the peak is at 26 d | the autocorrelation peaks at **26** |
+| +0.186 at lag 20, still descending | **+0.185** |
+| +0.376 at the peak | **+0.380** |
+| +0.031 at lag 35, the bump closed | **+0.027** |
+| negative by 36 | **-0.012** |
+| the second harmonic near lag 54 | a secondary bump, **+0.135** |
+
+**So that bound is right and was not touched.** The table belongs to its
+consumer. `sw_forecast_bias` reads this lag into a measured table of leads 1 to
+26 and clamps past the end, so leads 27 to 35 — a third of the producer's
+declared domain — all return the lead-26 bias of -3.9677.
+
+What was actually wrong was a sentence. The hole body said the table "clamps at
+both ends, so a lead inside the declared domain always lands between two
+measurements", which is false exactly over that third. The comment now says what
+happens instead, and the value is unchanged.
+
+**[needs a person]**, and it is a smaller question than the one this section
+used to pose: should `sw_forecast_bias` REFUSE a lead above 26 rather than clamp
+to it? The repository's instinct elsewhere is to refuse — `run.js` says "refuse,
+never clamp; a value silently corrected is a design that drifted without anyone
+deciding to" — and beyond lead 26 there is no measurement to return. Against
+that, the declared value is 26 exactly, so the clamp only bites under a what-if.
+Adding a guard changes the relation, which is not an agent's to change.
 
 ### 42.4 · Where the branch rule lives
 

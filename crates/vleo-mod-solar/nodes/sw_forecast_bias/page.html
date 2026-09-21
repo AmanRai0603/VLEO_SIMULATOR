@@ -1,4 +1,4 @@
-<article class="node" data-node="sw_forecast_bias" data-sheet-hash="979bae" data-impl-hash="d8e4d4">
+<article class="node" data-node="sw_forecast_bias" data-sheet-hash="979bae" data-impl-hash="92894d">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Issued-outlook F10.7 bias</h2>
@@ -123,8 +123,20 @@ pub fn evaluate(lead: Time) -&gt; Result&lt;Ratio, Fault&gt; {
     // The measured table, lead 1 to 26 in days. Not a fit: the curve has an
     // interior extremum and a straight line through it would be a different
     // claim than the record makes. Table1 interpolates between the measured
-    // leads and clamps at both ends, so a lead inside the declared domain
-    // always lands between two measurements.
+    // leads and CLAMPS at both ends.
+    //
+    // THE CLAMP IS REACHABLE AND THIS COMMENT USED TO DENY IT. It said a lead
+    // inside the declared domain always lands between two measurements, which
+    // is false over a third of that domain: sw_recurrence_lag is declared over
+    // 20 to 35 days — correctly, its bounds describe where the rotation peak of
+    // the autocorrelation can sit — while this table stops at 26, the last lead
+    // the record can verify. A lead of 30 returns the lead-26 bias of -3.9677
+    // and says nothing about having run out of measurements.
+    //
+    // It does not bite at the declared value, which is 26 exactly. It bites
+    // under a what-if. Whether this should REFUSE above 26 rather than clamp is
+    // a question about the relation and not about this comment, so it is left
+    // as it was and raised in §42.3 of docs/MATLAB_PORT_PLAN.md.
     use vleo_core::math::Table1;
     const LEAD_DAYS: [f64; 26] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0];
     const BIAS_SFU: [f64; 26] = [
