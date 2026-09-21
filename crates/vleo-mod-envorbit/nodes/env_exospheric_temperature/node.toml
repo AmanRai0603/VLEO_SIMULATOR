@@ -85,7 +85,14 @@ text = """
 Add the slow solar term. The 81-day centred mean of the 10.7 cm flux stands in for
 the EUV averaged over three solar rotations, which is the timescale the whole
 thermosphere equilibrates on. This is the dominant term: over the observed range of
-F10.7A it moves T_inf by about 900 K.
+F10.7A — 65.91 to 226.81 across the record this tree carries — it moves T_inf by
+about 520 K.
+
+That range is the 81-DAY MEAN's own, and it has to be. The daily flux runs 64 to
+343 over the same record, which through this coefficient would be 900 K, and citing
+that here would be attributing the fast term's swing to the slow one in the very
+step whose job is to separate them. `tools/theory_check.py` measures both off the
+bundle so this sentence cannot drift back.
 """
 math = "+ 3.24 * F10.7A"
 

@@ -202,6 +202,14 @@ jobs:
       # the record itself is minutes long and is not run here.
       - name: the walk-forward checks its own maths
         run: python3 tools/rotation_residuals.py --selftest
+      # A theory tab is prose, so it sits outside the sheet hash and nothing
+      # regenerates it — and it is what the person signing maths.confirmed_by
+      # reads. This half needs no daemon: the coefficient parse proving itself
+      # against the expression, the record's own ranges, and that every claim's
+      # words are still in the sheet exactly once. The run against the engine is
+      # in the panels job, which has one.
+      - name: the theory tabs check their own numbers
+        run: python3 tools/theory_check.py --selftest
       # Every recipe, applied twice on a copy; the second must change nothing.
       - name: every recipe is idempotent
         run: python3 tools/recipe.py --check
@@ -369,6 +377,13 @@ jobs:
       # learn to word their way past.
       - name: every solar input, through its own branches
         run: python3 tools/branch_audit.py --sub solar
+      # And the theory tab's numbers against the engine that answers them: the
+      # sheet's own expression against the implementation over its whole declared
+      # domain, and every magnitude the derivation cites re-measured through
+      # /v1/run. The tab is what a reviewer reads before signing the relation, so
+      # a wrong magnitude in it reads as evidence.
+      - name: the theory tab's numbers, against the engine
+        run: python3 tools/theory_check.py
 
   # The two faces the workspace excludes, because they need targets of their
   # own. `cargo build --workspace` does not reach them, so until this job
