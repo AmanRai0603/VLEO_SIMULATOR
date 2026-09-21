@@ -1,4 +1,4 @@
-<article class="node" data-node="sw_ap_central_expectation" data-sheet-hash="f3c02c" data-impl-hash="222325">
+<article class="node" data-node="sw_ap_central_expectation" data-sheet-hash="006209" data-impl-hash="222325">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>Expected Ap over the mission window</h2>
@@ -61,8 +61,8 @@ before it can have edges.
     Ap_central ← 22.095389          // declared, confirmed by A. Rai / 2026-09-16
 
     // a guard whose reason is not written down gets deleted
-    require Ap_central ≥ 0
-    require Ap_central ≤ 80
+    require Ap_central ≥ 1
+    require Ap_central ≤ 40
     require Ap_central is finite
 
     return Ap_central
@@ -70,13 +70,13 @@ before it can have edges.
 <p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
 <h4>Guards</h4>
 <ul class="guards">
-<li><code>Ap_central &ge; 0</code> — a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0</li>
-<li><code>Ap_central &le; 80</code> — above 80 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun</li>
+<li><code>Ap_central &ge; 1</code> — below 1 the level is beneath anything the record holds over a rotation: the quietest of 381 rotations in bundles/solar-weather@2026.09.14 has a mean Ap of 1.48. The bound WAS 0, carrying a reason about DAILY Ap — a single quiet day really is Ap 0 — which is the wrong quantity for this row. A rotation mean of 0 needs 27 consecutive Ap-0 days and the record has never held two</li>
+<li><code>Ap_central &le; 40</code> — above 40 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun. This row is a rotation-scale level, and the largest rotation mean of Ap in the 381 rotations of bundles/solar-weather@2026.09.14 is 36.96; the bound WAS 80, which is more than twice a level the sun has never reached over a rotation</li>
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
 <section class="panel" data-panel="4">
-<div class="relation-host" data-node="sw_ap_central_expectation" data-lo="0" data-hi="80" data-symbol="Ap_central">
+<div class="relation-host" data-node="sw_ap_central_expectation" data-lo="1" data-hi="40" data-symbol="Ap_central">
 <p class="muted">asking the engine…</p>
 </div>
 </section>
@@ -111,7 +111,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &amp;str = &quot;sw_ap_central_expectation&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x634220313cf3c02c;
+pub const SHEET_HASH: u64 = 0x3c9879b7ba006209;
 
 pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
     // generated · a declared value, converted from the unit it was written in
@@ -127,11 +127,11 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: &quot;Ap_central&quot;, reason: &quot;the computation produced a value that is not a number&quot; });
     }
-    if answer.get() &lt; 0.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_central&quot;, value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0&quot; });
+    if answer.get() &lt; 1.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_central&quot;, value: answer.get(), bound: 1.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: &quot;below 1 the level is beneath anything the record holds over a rotation: the quietest of 381 rotations in bundles/solar-weather@2026.09.14 has a mean Ap of 1.48. The bound WAS 0, carrying a reason about DAILY Ap — a single quiet day really is Ap 0 — which is the wrong quantity for this row. A rotation mean of 0 needs 27 consecutive Ap-0 days and the record has never held two&quot; });
     }
-    if answer.get() &gt; 80.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_central&quot;, value: answer.get(), bound: 80.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;above 80 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun&quot; });
+    if answer.get() &gt; 40.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: &quot;Ap_central&quot;, value: answer.get(), bound: 40.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: &quot;above 40 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun. This row is a rotation-scale level, and the largest rotation mean of Ap in the 381 rotations of bundles/solar-weather@2026.09.14 is 36.96; the bound WAS 80, which is more than twice a level the sun has never reached over a rotation&quot; });
     }
     Ok(answer)
 }
@@ -143,8 +143,8 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 <section class="panel" data-panel="7">
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
-<li><code>OutOfDomain</code> below 0 — a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0</li>
-<li><code>OutOfDomain</code> above 80 — above 80 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun</li>
+<li><code>OutOfDomain</code> below 1 — below 1 the level is beneath anything the record holds over a rotation: the quietest of 381 rotations in bundles/solar-weather@2026.09.14 has a mean Ap of 1.48. The bound WAS 0, carrying a reason about DAILY Ap — a single quiet day really is Ap 0 — which is the wrong quantity for this row. A rotation mean of 0 needs 27 consecutive Ap-0 days and the record has never held two</li>
+<li><code>OutOfDomain</code> above 40 — above 40 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun. This row is a rotation-scale level, and the largest rotation mean of Ap in the 381 rotations of bundles/solar-weather@2026.09.14 is 36.96; the bound WAS 80, which is more than twice a level the sun has never reached over a rotation</li>
 <li><code>Degenerate</code> when the computation produces a value that is not a number</li>
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
@@ -154,8 +154,8 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 <div class="cred" data-cred-for="sw_ap_central_expectation"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
 <section class="panel" data-panel="9">
-<p>Valid over <code>0 &hellip; 80</code> -.</p>
-<ul class="guards"><li>lower — a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0</li><li>upper — above 80 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun</li></ul>
+<p>Valid over <code>1 &hellip; 40</code> -.</p>
+<ul class="guards"><li>lower — below 1 the level is beneath anything the record holds over a rotation: the quietest of 381 rotations in bundles/solar-weather@2026.09.14 has a mean Ap of 1.48. The bound WAS 0, carrying a reason about DAILY Ap — a single quiet day really is Ap 0 — which is the wrong quantity for this row. A rotation mean of 0 needs 27 consecutive Ap-0 days and the record has never held two</li><li>upper — above 40 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun. This row is a rotation-scale level, and the largest rotation mean of Ap in the 381 rotations of bundles/solar-weather@2026.09.14 is 36.96; the bound WAS 80, which is more than twice a level the sun has never reached over a rotation</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>

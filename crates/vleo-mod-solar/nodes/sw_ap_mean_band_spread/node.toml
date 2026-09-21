@@ -80,9 +80,9 @@ symbol = "sigma_ap"
 type = "Ratio"
 unit = "One"
 lower = 0.0
-upper = 20.0
+upper = 6.0
 reason_lower = "a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0"
-reason_upper = "above 20 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun"
+reason_upper = "above 6 the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean. This row is identical in method to sw_mean_band_spread and takes that row's criterion rather than the vaguer one it carried before: the 381 Ap rotation means of bundles/solar-weather@2026.09.14 have a standard deviation of 4.96, and 6 is that rounded up. The bound WAS 20, which is four times what the record supports for a residual of this quantity"
 
 [value]
 number = 3.593688

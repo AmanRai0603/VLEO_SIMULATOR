@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `Ap_central` (Expected Ap over the mission window), in `-`.
 pub const NODE_ID: &str = "sw_ap_central_expectation";
-pub const SHEET_HASH: u64 = 0x634220313cf3c02c;
+pub const SHEET_HASH: u64 = 0x3c9879b7ba006209;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
 ];
