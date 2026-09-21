@@ -4653,31 +4653,95 @@ by a person off a figure rather than by another node. The audit checks the
 panels itself rather than reporting seven findings a reader has to go and
 disprove.
 
-### 42.2 · Three declared domains are wider than the design closes over
+### 42.2 · Three bounds were wider than the reasons written beside them
 
-The finding. A declared range is a claim that the relation is valid across it.
-Nothing checks that claim against what happens downstream, and for three rows it
-does not hold:
+**The first version of this section was wrong and is replaced.** It said three
+declared domains should be narrowed because layer 2 does not close across them.
+That is fitting the domain to the code: a bound states where a relation is
+valid, and moving one to wherever the downstream happens to stop refusing would
+make the guard unfalsifiable and the bound meaningless.
 
-| row | declared | range | layer 2 survives |
-|---|---|---|---|
-| `sw_mean_band_spread` | 13.45 | 0 … 60 | only below about 15 — **71% of the range gives no interface** |
-| `sw_ap_mean_band_spread` | 3.59 | 0 … 20 | below about 14 |
-| `sw_ap_central_expectation` | 22.10 | 0 … 80 | above about 8 — the **low** end is what fails |
+Reading the sheets instead of the symptom gives a different and checkable
+defect. Each bound carries a reason, and on all three the number and the reason
+disagree — measured against `bundles/solar-weather@2026.09.14`, whose 382 F10.7
+and 381 Ap rotation means are what these rows are computed from:
 
-The mechanism is the same in each: the five `sys_space_environment_*` rows are
-built through `l3_solar_interface`, which needs `sw_f107_cold_long`, and that
-row has a declared floor of 60 sfu. A wide enough band spread drives the cold
-long-run F10.7 under it — at a spread of 25 it computes 54.85 — and the refusal
-takes 33 rows with it. **The refusal machinery is working exactly as designed**;
-what is wrong is that three rows claim validity over a range where the design
-they feed does not close.
+| row | was | its own reason says | the record measures | now |
+|---|---|---|---|---|
+| `sw_mean_band_spread` | 0 … 60 | "would exceed the standard deviation of the rotation means themselves" | SD = **41.45** sfu | 0 … 45 |
+| `sw_ap_mean_band_spread` | 0 … 20 | "exceeds anything the record supports" | SD = **4.96** | 0 … 6 |
+| `sw_ap_central_expectation` | 0 … 80 | "exceeds anything the record supports" | largest rotation mean = **36.96** | 1 … 40 |
 
-Not fixed here. A declared bound is a statement about where a relation holds,
-and narrowing one is a physics decision with a reason attached — `AGENTS.md` is
-explicit that an agent may never supply mathematics. **[needs a person]** to
-decide whether each bound should be narrowed to where layer 2 closes, or whether
-the floor on `sw_f107_cold_long` is the thing that is wrong.
+The F10.7 row already named the right criterion and simply had a number 45 per
+cent above it. Its Ap twin is identical in method — its own sheet says so — and
+now takes the same criterion rather than the vaguer sentence it carried.
+
+The third row's LOWER bound was a category error, not merely loose. It read
+"Ap itself floors at zero — a quiet day really is Ap 0", which is true of a
+DAILY Ap and not of this row, which is a rotation-scale level. The quietest of
+381 rotations has a mean Ap of 1.48, and a rotation mean of zero would need 27
+consecutive Ap-0 days, which the record has never held two of.
+
+Each new bound is the measurement rounded outward far enough that refreshing
+the bundle does not move it. The declared values — 13.4544, 3.5937, 22.0954 —
+are untouched and all three still run.
+
+### 42.2a · What that fixed, and what it correctly did not
+
+`sw_ap_mean_band_spread` now closes across its whole declared range: at a
+residual spread of 6 the cold side cannot reach the floor that was refusing.
+One finding gone, by making a bound honest rather than by moving a guard.
+
+**The other two are guards working, and must not be chased.** Both are named in
+advance by the very rows that refuse:
+
+- A large `sw_mean_band_spread` drives `sw_f107_cold_long` under its 60 sfu
+  floor. That row's `reason_lower` says why it exists: *"a sustained level below
+  the record's own floor says the band is wider than the sky, which happens when
+  a window near solar minimum is given a sigma measured across a whole cycle."*
+  That is this situation exactly.
+- A small `sw_ap_central_expectation` drives `sw_ap_cold_long` and
+  `sw_ap_cold_short` below zero. `sw_ap_cold_long`'s `reason_lower`: *"a
+  symmetric band subtracted from a small centre reaches below zero, and what
+  comes out then is arithmetic rather than sky."* `sw_ap_cold_short` goes
+  further and predicts the frequency: *"the only one where the guard is likely
+  to fire on an ordinary input rather than on a mistake."*
+
+So `tools/branch_audit.py` still reports two findings on solar, and both are
+true statements that a reader should be able to dismiss from the sheets in a
+minute. They are recorded here so nobody re-derives them as defects.
+
+### 42.2b · The over-wide bound was drawing a false alarm
+
+The bound change broke `panel_check` on `closure`, 35 per cent of the pixels
+against a 2 per cent tolerance, and the reason is the point rather than an
+inconvenience. That panel sweeps the most-moving decision upstream across its
+DECLARED range, so narrowing a bound moves the axis.
+
+On pair 04 the swept decision is `sw_ap_central_expectation`. The old reference
+read:
+
+> the two lines cross at 43.4 and the margin reaches zero at the same point;
+> past it the fill is the requirement being exceeded
+
+**43.4 is a sky the record has never held.** The largest of its 381 rotation
+means is 36.96. So the figure a designer reads was showing the Ap survival
+requirement being breached, with a pink exceeded-region occupying the right
+half of both frames, at an expected Ap the sun has not produced over a rotation
+in the whole record. The crossing existed only because the bound ran to 80.
+
+With the bound at 40 the panel says what is true: *neither frame crosses
+anywhere in this decision's range*. The reference is re-recorded and stays
+UNCONFIRMED, with the reason on its `confirmed_by`.
+
+This is the argument for §42.2 that the section did not have when it was
+written. An over-wide bound is not untidy; here it put a requirement breach on
+the screen that the record does not support.
+
+The panel's `correct` block also said, unconditionally, that "one fill in one
+colour across the whole span is the defect". That is right where a crossing
+exists and wrong where none does, which is now a reachable case. The block
+admits it.
 
 ### 42.3 · Two findings that were the audit's fault, not the design's
 

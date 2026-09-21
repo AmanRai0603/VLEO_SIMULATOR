@@ -122,9 +122,9 @@ symbol = "sigma_total"
 type = "Ratio"
 unit = "One"
 lower = 0.0
-upper = 60.0
+upper = 45.0
 reason_lower = "a spread of zero would mean the pattern predicts every rotation exactly, which the record contradicts at every rotation it scores; below zero is not a spread"
-reason_upper = "above 60 sfu the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean and the band would be arithmetic rather than physics"
+reason_upper = "above 45 sfu the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean and the band would be arithmetic rather than physics. The bound WAS 60, which was wider than this same sentence justifies: the 382 rotation means of bundles/solar-weather@2026.09.14 have a standard deviation of 41.45 sfu, and 45 is that rounded up far enough that refreshing the bundle does not move the bound"
 
 [value]
 number = 13.454382

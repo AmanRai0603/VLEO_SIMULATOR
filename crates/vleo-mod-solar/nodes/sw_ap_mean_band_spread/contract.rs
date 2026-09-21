@@ -8,7 +8,7 @@ use vleo_core::units::*;
 
 /// What this node publishes: `sigma_ap` (Ap rotation-forecast residual spread), in `-`.
 pub const NODE_ID: &str = "sw_ap_mean_band_spread";
-pub const SHEET_HASH: u64 = 0xedb0388432a1795e;
+pub const SHEET_HASH: u64 = 0x45cad798f2700db8;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
 ];

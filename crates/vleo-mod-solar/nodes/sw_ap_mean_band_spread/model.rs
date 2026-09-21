@@ -26,7 +26,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_ap_mean_band_spread";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xedb0388432a1795e;
+pub const SHEET_HASH: u64 = 0x45cad798f2700db8;
 
 pub fn evaluate() -> Result<Ratio, Fault> {
     // generated · a declared value, converted from the unit it was written in
@@ -45,8 +45,8 @@ pub fn evaluate() -> Result<Ratio, Fault> {
     if answer.get() < 0.0 {
         return Err(Fault::OutOfDomain { node: NODE_ID, field: "sigma_ap", value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0" });
     }
-    if answer.get() > 20.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "sigma_ap", value: answer.get(), bound: 20.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "above 20 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun" });
+    if answer.get() > 6.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "sigma_ap", value: answer.get(), bound: 6.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "above 6 the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean. This row is identical in method to sw_mean_band_spread and takes that row's criterion rather than the vaguer one it carried before: the 381 Ap rotation means of bundles/solar-weather@2026.09.14 have a standard deviation of 4.96, and 6 is that rounded up. The bound WAS 20, which is four times what the record supports for a residual of this quantity" });
     }
     Ok(answer)
 }

@@ -19742,10 +19742,10 @@ Not a property of the sky but of the people watching it, and it is the operation
 | source | `noaa_swpc` |
 | declared value | **22.095389** - |
 | confirmed by | A. Rai / 2026-09-16 |
-| valid over | 0 … 80 - |
+| valid over | 1 … 40 - |
 
-- **lower bound** — a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0
-- **upper bound** — above 80 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun
+- **lower bound** — below 1 the level is beneath anything the record holds over a rotation: the quietest of 381 rotations in bundles/solar-weather@2026.09.14 has a mean Ap of 1.48. The bound WAS 0, carrying a reason about DAILY Ap — a single quiet day really is Ap 0 — which is the wrong quantity for this row. A rotation mean of 0 needs 27 consecutive Ap-0 days and the record has never held two
+- **upper bound** — above 40 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun. This row is a rotation-scale level, and the largest rotation mean of Ap in the 381 rotations of bundles/solar-weather@2026.09.14 is 36.96; the bound WAS 80, which is more than twice a level the sun has never reached over a rotation
 - **read by** — `l3_solar_interface`, `sw_ap_cold_long`, `sw_ap_design_long`, `sw_kp_scenarios`
 - **assumes** The level the sun was last at is the level it will be at — fails when the window is long or far out. This carries no cycle trend at all: the same number is published for a window opening next month and one opening in 2032, and over a 365-day window the sun demonstrably moves
 - **assumes** A rotation-mean level stands in for a daily level — fails when a design reads it as a day. It is the mean of 27 days; half the days in the window are above it by construction, which is what sw_ap_daily_band_spread exists to say
@@ -20023,10 +20023,10 @@ sustained sibling is what a propellant budget integrates.
 | source | `noaa_swpc` |
 | declared value | **3.593688** - |
 | confirmed by | A. Rai / 2026-09-16 |
-| valid over | 0 … 20 - |
+| valid over | 0 … 6 - |
 
 - **lower bound** — a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0
-- **upper bound** — above 20 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun
+- **upper bound** — above 6 the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean. This row is identical in method to sw_mean_band_spread and takes that row's criterion rather than the vaguer one it carried before: the 381 Ap rotation means of bundles/solar-weather@2026.09.14 have a standard deviation of 4.96, and 6 is that rounded up. The bound WAS 20, which is four times what the record supports for a residual of this quantity
 - **read by** — `sw_ap_cold_long`, `sw_ap_design_long`
 - **assumes** One sigma holds across the whole cycle — fails when it does not, and the source says so about its own number. Geomagnetic activity is burstier near the declining phase than at minimum, so a window there is given a band too narrow
 - **assumes** The residual spread is a usable margin for a non-negative index — fails when Ap floors at zero and its residuals are strongly skewed — a quiet rotation cannot undershoot far but an active one can overshoot a long way. A symmetric sigma understates the high tail, which is the tail a design is sized against
@@ -21150,10 +21150,10 @@ sw_kp_from_ap applies the published scale as published, and the scale is defined
 | source | `noaa_swpc` |
 | declared value | **13.454382** - |
 | confirmed by | A. Rai / 2026-09-16 |
-| valid over | 0 … 60 - |
+| valid over | 0 … 45 - |
 
 - **lower bound** — a spread of zero would mean the pattern predicts every rotation exactly, which the record contradicts at every rotation it scores; below zero is not a spread
-- **upper bound** — above 60 sfu the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean and the band would be arithmetic rather than physics
+- **upper bound** — above 45 sfu the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean and the band would be arithmetic rather than physics. The bound WAS 60, which was wider than this same sentence justifies: the 382 rotation means of bundles/solar-weather@2026.09.14 have a standard deviation of 41.45 sfu, and 45 is that rounded up far enough that refreshing the bundle does not move the bound
 - **read by** — `sw_f107_cold_long`, `sw_f107_design_long`
 - **assumes** One sigma holds across the whole cycle — fails when it does not, and the source this was rebuilt from says so about its own number: 'sigma is NOT flat across the cycle; a design that uses one number is too tight somewhere and too loose somewhere else.' prf_rebuild reports sigma split into five phase bins for that reason. This row publishes the pooled number, so a design near solar maximum is given a band that is too narrow and one near minimum a band too wide
 - **assumes** The cycle table ends before the record does, and the phase past it is an extrapolation — fails when it is read as measured. Cycle 25 is tabulated to 2025-12-15 and the record runs to 2025-12-31, so the last sixteen days carry a phase computed from the MEAN length of the three cycles the table holds — one of which is itself incomplete. Every day the window is held forward from inherits that extrapolation

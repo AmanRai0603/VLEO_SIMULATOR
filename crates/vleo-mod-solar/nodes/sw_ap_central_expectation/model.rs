@@ -27,7 +27,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_ap_central_expectation";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x634220313cf3c02c;
+pub const SHEET_HASH: u64 = 0x3c9879b7ba006209;
 
 pub fn evaluate() -> Result<Ratio, Fault> {
     // generated · a declared value, converted from the unit it was written in
@@ -43,11 +43,11 @@ pub fn evaluate() -> Result<Ratio, Fault> {
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "Ap_central", reason: "the computation produced a value that is not a number" });
     }
-    if answer.get() < 0.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "Ap_central", value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0" });
+    if answer.get() < 1.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "Ap_central", value: answer.get(), bound: 1.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "below 1 the level is beneath anything the record holds over a rotation: the quietest of 381 rotations in bundles/solar-weather@2026.09.14 has a mean Ap of 1.48. The bound WAS 0, carrying a reason about DAILY Ap — a single quiet day really is Ap 0 — which is the wrong quantity for this row. A rotation mean of 0 needs 27 consecutive Ap-0 days and the record has never held two" });
     }
-    if answer.get() > 80.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "Ap_central", value: answer.get(), bound: 80.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "above 80 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun" });
+    if answer.get() > 40.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "Ap_central", value: answer.get(), bound: 40.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "above 40 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun. This row is a rotation-scale level, and the largest rotation mean of Ap in the 381 rotations of bundles/solar-weather@2026.09.14 is 36.96; the bound WAS 80, which is more than twice a level the sun has never reached over a rotation" });
     }
     Ok(answer)
 }

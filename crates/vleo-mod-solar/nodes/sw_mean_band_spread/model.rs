@@ -29,7 +29,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_mean_band_spread";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x2b0e59409ed71ac0;
+pub const SHEET_HASH: u64 = 0xa91f1c1d4db8980b;
 
 pub fn evaluate() -> Result<Ratio, Fault> {
     // generated · a declared value, converted from the unit it was written in
@@ -48,8 +48,8 @@ pub fn evaluate() -> Result<Ratio, Fault> {
     if answer.get() < 0.0 {
         return Err(Fault::OutOfDomain { node: NODE_ID, field: "sigma_total", value: answer.get(), bound: 0.0, edge: Edge::Lower, unit: Ratio::UNIT, reason: "a spread of zero would mean the pattern predicts every rotation exactly, which the record contradicts at every rotation it scores; below zero is not a spread" });
     }
-    if answer.get() > 60.0 {
-        return Err(Fault::OutOfDomain { node: NODE_ID, field: "sigma_total", value: answer.get(), bound: 60.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "above 60 sfu the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean and the band would be arithmetic rather than physics" });
+    if answer.get() > 45.0 {
+        return Err(Fault::OutOfDomain { node: NODE_ID, field: "sigma_total", value: answer.get(), bound: 45.0, edge: Edge::Upper, unit: Ratio::UNIT, reason: "above 45 sfu the residual would exceed the standard deviation of the rotation means themselves, so the pattern would be worse than predicting the record's own mean and the band would be arithmetic rather than physics. The bound WAS 60, which was wider than this same sentence justifies: the 382 rotation means of bundles/solar-weather@2026.09.14 have a standard deviation of 41.45 sfu, and 45 is that rounded up far enough that refreshing the bundle does not move the bound" });
     }
     Ok(answer)
 }

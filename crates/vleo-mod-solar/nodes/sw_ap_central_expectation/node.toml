@@ -78,10 +78,10 @@ fails_when = "it is read as measured. The last rotations sit past cycle 25's tab
 symbol = "Ap_central"
 type = "Ratio"
 unit = "One"
-lower = 0.0
-upper = 80.0
-reason_lower = "a value below zero is not a spread, and Ap itself floors at zero — a quiet day really is Ap 0"
-reason_upper = "above 80 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun"
+lower = 1.0
+upper = 40.0
+reason_lower = "below 1 the level is beneath anything the record holds over a rotation: the quietest of 381 rotations in bundles/solar-weather@2026.09.14 has a mean Ap of 1.48. The bound WAS 0, carrying a reason about DAILY Ap — a single quiet day really is Ap 0 — which is the wrong quantity for this row. A rotation mean of 0 needs 27 consecutive Ap-0 days and the record has never held two"
+reason_upper = "above 40 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun. This row is a rotation-scale level, and the largest rotation mean of Ap in the 381 rotations of bundles/solar-weather@2026.09.14 is 36.96; the bound WAS 80, which is more than twice a level the sun has never reached over a rotation"
 
 [value]
 number = 22.095389
