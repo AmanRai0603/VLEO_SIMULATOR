@@ -145,6 +145,62 @@ of inputs is not a clock.
 In with a case, out with scalars and raw buffers. That is the whole reason it
 can be tested.
 
+## An input is edited in the face and run in three stages
+
+The tool is one application: a tree of questions, a kernel that answers them,
+and a face that is how a person drives it. A `declared` row is where that
+driving starts — it is a number somebody chose, so it is the one kind of row a
+reader may change. A `computed` row is never editable, because its answer is
+its algorithm applied to its inputs; the way to move it is to move what it
+reads.
+
+**The edit does not touch the repository.** It travels as `set=<id>:<si>` on
+the run, which is `Case::supply`, the mechanism the engine has always had for
+answering a question about a design other than the one on disk. The sheet keeps
+its number and its `confirmed_by` line, and a session of this leaves
+`git status` empty. That is the first of the five rules holding: the sheet is
+the only source, and a face that wrote to it would be a second one.
+
+Pressing update then runs **three stages, in this order**, because they answer
+three different questions and a single run answers only the last:
+
+| stage | mode | the question it answers |
+|---|---|---|
+| 1 · alone | `alone` | did the value I typed reach the engine |
+| 2 · branch by branch | `branch`, once per branch | what does each thing that reads this row now say |
+| 3 · everything | `all` | what does the whole design now say |
+
+**Stage two is the one that needs a definition.** A branch is the dependency
+closure of one row. A row is in as many branches as there are rows that read
+it — mission duration is read, directly or at a distance, by 69 — and most of
+those branches are nested inside each other, so running all of them would
+compute the same rows many times over to produce a longer list.
+
+So the branches offered are the **maximal active** ones. *Active* means every
+row in the closure is `published`: a branch that stops at a row nobody has
+filled in cannot give an output, and offering it as though it might is how a
+reader learns to ignore the list. *Maximal* means no other candidate reads it,
+directly or at any distance. Running the maximal set computes every row in
+every active branch containing the input, and computes none of them twice. For
+mission duration that is 28 branches rather than 69.
+
+**Active is not the same as will succeed, and the difference is not a flaw in
+the test.** Every row being published says the tree is filled in. It says
+nothing about whether a value lands inside its own declared domain on this
+case. `aero_ao_fluence` is eleven published rows and refuses anyway, because
+the fluence it computes is above its own upper limit. That refusal is a real
+answer about the design, so stage two prints it.
+
+**A refusal is reported against the baseline, so it is attributed correctly.**
+A row that was already refusing before the edit is not evidence about the edit,
+and colouring it as a new failure is a false alarm — which teaches a reader to
+skim past the one that matters. A row that *had* a number and now does not is
+the finding, and it is the one shown as such: at its upper bound
+`com_antenna_diameter` takes `kpi_data_volume` from 197.919 to blocked.
+
+Each stage draws as it lands, because stage two is one engine call per branch
+and a reader should not watch a blank panel while they run.
+
 ## The front end is assembled exactly like the back end
 
 |  | back end | front end |

@@ -26,7 +26,7 @@
 'use strict';
 
 import { esc, fmt } from './dom.js';
-import { S } from './state.js';
+import { S, reachFrom } from './state.js';
 
 /** The key the browser remembers overrides under. Never a file, never the repo. */
 const KEY = 'vleo.overrides.v1';
@@ -334,6 +334,73 @@ async function runOnce(node, mode, bare) {
 }
 
 // ---------------------------------------------------------------------------
+// the branches an input is in
+
+/**
+ * A row that can actually be computed.
+ *
+ * `published` is the state that means somebody filled the sheet in. A seeded
+ * row returns NotRun by design and a deprecated one is a question whose answer
+ * nothing should read any more, so neither belongs in a branch being offered
+ * as ready to run.
+ */
+const isActive = r => !!r && r.state === 'published';
+
+/**
+ * The active branches this input is part of.
+ *
+ * A branch is the dependency closure of one row — everything it reads, however
+ * far back. An input is in as many branches as there are rows that read it,
+ * which for mission duration is dozens, and most of them are nested inside each
+ * other: running the branch of a row that reads this one already computes every
+ * row between them.
+ *
+ * So the set offered is the MAXIMAL active branches. A candidate is a row
+ * downstream of this input whose whole closure is active; it is maximal when no
+ * other candidate reads it, directly or at any distance. Running all of them
+ * computes every row in every active branch containing this input, and computes
+ * none of them twice for the sake of a longer list.
+ *
+ * A branch with one inactive row in it is not offered at all: a branch that
+ * stops at a row nobody has filled in cannot give an output.
+ *
+ * ACTIVE IS NOT THE SAME AS WILL SUCCEED, and the difference is not a flaw in
+ * the test. Every row being published says the tree is filled in; it says
+ * nothing about whether a value lands inside its own declared domain on this
+ * case. aero_ao_fluence is eleven published rows and refuses anyway, because
+ * the fluence it computes is above its own upper limit. That refusal is a real
+ * answer about the design and stage two prints it — against the baseline, so a
+ * row that was already refusing is not reported as something the edit did.
+ */
+export function activeBranches(row) {
+  if (!row || row.i == null) return [];
+  const down = reachFrom([row.i], S.consumers);
+
+  // Each candidate, with its own closure, kept so neither is walked twice.
+  const closure = new Map();
+  const cand = [];
+  for (const i of down) {
+    if (!isActive(S.rows[i])) continue;
+    const cl = reachFrom([i], S.producers);
+    let ok = true;
+    for (const k of cl) if (!isActive(S.rows[k])) { ok = false; break; }
+    if (!ok) continue;
+    closure.set(i, cl);
+    cand.push(i);
+  }
+
+  const set = new Set(cand);
+  const heads = cand.filter(i => {
+    for (const c of reachFrom([i], S.consumers)) if (set.has(c)) return false;
+    return true;
+  });
+
+  return heads
+    .map(i => ({ i, row: S.rows[i], rows: closure.get(i).size + 1 }))
+    .sort((a, b) => b.rows - a.rows || a.row.id.localeCompare(b.row.id));
+}
+
+// ---------------------------------------------------------------------------
 // the control
 
 /**
@@ -429,15 +496,133 @@ export async function mountInput(host, r) {
     commit();
     if (box.classList.contains('bad')) return;
     go.disabled = true;
-    say.textContent = 'running the engine end to end…';
-    const after = await runOnce(r.id, 'all', false);
-    go.disabled = false;
-    say.textContent = '';
-    out.innerHTML = resultHtml({ before: base, after,
-      diff: after.ok ? diffRuns(base, after) : null });
+    out.innerHTML = '';
+    try {
+      await runStages(r, base, out, t => { say.textContent = t; });
+    } finally {
+      go.disabled = false;
+      say.textContent = '';
+    }
   };
 
   mark();
+}
+
+/**
+ * The three runs an edited input asks for, in order, each drawn as it lands.
+ *
+ * 1 · ALONE. This row and nothing else, so the number the reader typed is
+ *     confirmed to be the number the engine took. It is the shortest possible
+ *     answer to "did my edit arrive", and when it disagrees with the field the
+ *     fault is between the face and the engine rather than anywhere in the
+ *     design.
+ *
+ * 2 · EACH ACTIVE BRANCH. A row is in as many branches as there are rows that
+ *     read it, so the branches are found rather than chosen — see
+ *     activeBranches — and each is run on its own. One branch failing is a fact
+ *     about that branch: the others still run and still report, because a
+ *     single refusal stopping the whole list would hide every branch behind it.
+ *
+ * 3 · EVERYTHING. The final update. Whatever is active recomputes and whatever
+ *     is not stays blocked and is counted, and the rows that moved are listed
+ *     against the baseline.
+ *
+ * Drawn incrementally: stage 2 can be a dozen engine calls and a reader should
+ * not watch a blank panel while they run.
+ */
+export async function runStages(r, base, out, say) {
+  const sec = (n, title, body) =>
+    '<section class="ovr-stage"><h4><span class="ovr-n">' + n + '</span>' + title +
+    '</h4>' + body + '</section>';
+
+  // ---- 1 · alone --------------------------------------------------------
+  say('1 · running this row alone…');
+  const alone = await runOnce(r.id, 'alone', false);
+  let h = sec(1, 'alone — this row, and nothing else', aloneHtml(r, alone));
+  out.innerHTML = h;
+
+  // ---- 2 · the active branches -----------------------------------------
+  const branches = activeBranches(r);
+  const head = branches.length
+    ? '<p class="muted">' + branches.length + ' active branch' +
+      (branches.length === 1 ? '' : 'es') + ' read this row, directly or through ' +
+      'another. Each is a dependency closure whose every row is published, and ' +
+      'between them they cover every row in every active branch this input is in.</p>'
+    : '<p class="muted">No active branch reads this row yet. Either nothing reads it, ' +
+      'or every row that does sits in a branch with a seeded row still in it — which ' +
+      'is a fact about how far the tree is filled in, not a failure.</p>';
+  h += sec(2, 'branch by branch — every active branch this row is in',
+           head + '<div class="ovr-branches"></div>');
+  out.innerHTML = h;
+
+  const list = out.querySelector('.ovr-branches');
+  const done = [];
+  for (let k = 0; k < branches.length; k++) {
+    const b = branches[k];
+    say('2 · branch ' + (k + 1) + ' of ' + branches.length + ' — ' + b.row.id);
+    const res = await runOnce(b.row.id, 'branch', false);
+    done.push(branchRow(b, res, base));
+    list.innerHTML = '<table class="ovr-diff ovr-bt"><thead><tr><th>branch</th>' +
+      '<th class="num">rows</th><th>was</th><th>now</th></tr></thead><tbody>' +
+      done.join('') + '</tbody></table>';
+  }
+
+  // ---- 3 · everything ---------------------------------------------------
+  say('3 · running everything…');
+  const after = await runOnce(r.id, 'all', false);
+  h = out.innerHTML + sec(3, 'everything — the final update',
+    resultHtml({ before: base, after, diff: after.ok ? diffRuns(base, after) : null }));
+  out.innerHTML = h;
+}
+
+/** Stage one: the row's own answer, or the refusal that replaced it. */
+function aloneHtml(r, res) {
+  if (!res.ok) {
+    return '<div class="blocked"><b>' + esc(res.fault || 'refused') + '</b> · ' +
+      esc(res.node || '') + '<div>' + esc(res.message || '') + '</div></div>';
+  }
+  const v = res.values.find(x => x.id === r.id);
+  if (!v) {
+    return '<div class="blocked">The engine ran but returned no value for this row.' +
+      (res.blocked && res.blocked.length
+        ? '<div>' + esc(res.blocked[0].message) + '</div>' : '') + '</div>';
+  }
+  return '<div class="answer">' + esc(v.symbol || r.symbol) + ' = ' + esc(v.shown) +
+    (unitOf(v.unit) ? ' <span class="unit">' + esc(unitOf(v.unit)) + '</span>' : '') +
+    '</div>';
+}
+
+/** Stage two: one branch, its head\u2019s new output, or why it refused. */
+function branchRow(b, res, base) {
+  const name = '<td><a class="xref" data-goto="' + esc(b.row.id) + '"><code>' +
+    esc(b.row.id) + '</code></a><br><span class="muted">' + esc(b.row.label) +
+    '</span></td><td class="num">' + b.rows + '</td>';
+  if (!res.ok) {
+    return '<tr class="ovr-refused">' + name + '<td colspan="2"><b>' +
+      esc(res.fault || 'refused') + '</b> — ' + esc(res.message || '') + '</td></tr>';
+  }
+  const v = res.values.find(x => x.id === b.row.id);
+  const was = (base.values || []).find(x => x.id === b.row.id);
+  if (!v) {
+    const why = (res.blocked || []).find(x => x.id === b.row.id);
+    // WHOSE FAULT IS THIS. A row that was already refusing before the edit is
+    // not evidence about the edit, and colouring it like a new failure is a
+    // false alarm the reader learns to ignore — which then hides the real one.
+    // The baseline says which: no value there either means it was already
+    // blocked, and the edit only has to answer for a row that HAD a number.
+    const already = !was;
+    return '<tr class="' + (already ? 'ovr-pre' : 'ovr-refused') + '">' + name +
+      '<td>' + (already ? '<span class="muted">blocked</span>' : esc(was.shown)) + '</td>' +
+      '<td><b>blocked</b>' + (why ? ' — ' + esc(why.message) : '') +
+      (already
+        ? '<div class="muted">already blocked before this edit — not caused by it</div>'
+        : '<div><b>this edit blocked it</b></div>') + '</td></tr>';
+  }
+  const moved = was && was.si !== v.si;
+  return '<tr>' + name + '<td>' + esc(was ? was.shown : '—') + '</td>' +
+    '<td' + (moved ? ' class="up"' : '') + '><b>' + esc(v.shown) + '</b>' +
+    (unitOf(v.unit) ? ' <span class="unit">' + esc(unitOf(v.unit)) + '</span>' : '') +
+    (moved ? '' : ' <span class="muted">unchanged</span>') + '</td></tr>';
 }
 
 /** What update produced: the refusal, or what moved. */

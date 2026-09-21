@@ -607,6 +607,26 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
 .ovr-why { color: #a4262c; }
 .ovr-count { font-size: 13px; margin: 0 0 6px; }
 
+/* The three stages of a run, numbered the way the segments on a node page are:
+   alone, then every active branch, then everything. */
+.ovr-stage { margin-top: 16px; }
+.ovr-stage h4 {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 0 8px; font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+}
+.ovr-n {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--out); color: var(--card);
+  font: 11px/1 var(--mono); letter-spacing: 0;
+}
+.ovr-stage .answer { margin: 0; }
+.ovr-diff td.num { text-align: right; font: 12px/1.5 var(--mono); }
+.ovr-refused td { color: #a4262c; }
+/* Already refusing before the edit: a fact, not an alarm. */
+.ovr-pre td { color: var(--muted); }
+
 /* What moved. A table, because the reader scans down one column. */
 .ovr-diff { width: 100%; border-collapse: collapse; font-size: 12px; }
 .ovr-diff th {
@@ -616,6 +636,18 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
 }
 .ovr-diff td { padding: 5px 8px 5px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
 .ovr-diff td:last-child { text-align: right; font: 12px/1.5 var(--mono); white-space: nowrap; }
+/* THE BRANCH TABLE'S LAST COLUMN IS PROSE, NOT A PERCENTAGE. A refusal message
+   carries the offending value, and one of them is a 28-digit number: under the
+   nowrap above it stretched the table past the viewport and pushed the `now`
+   column off the right-hand edge, so every branch appeared to have no answer.
+   The screenshot showed it; the text assertions did not, because the data was
+   there and only the layout was wrong. */
+.ovr-bt { table-layout: fixed; }
+.ovr-bt td:last-child, .ovr-bt th:last-child { text-align: left; white-space: normal; }
+.ovr-bt td { overflow-wrap: anywhere; }
+.ovr-bt th:first-child, .ovr-bt td:first-child { width: 34%; }
+.ovr-bt th.num, .ovr-bt td.num { width: 8%; }
+.ovr-bt th:nth-child(3), .ovr-bt td:nth-child(3) { width: 16%; }
 .ovr-diff .up { color: var(--out); }
 .ovr-diff .down { color: var(--in); }
 
@@ -696,4 +728,5 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
   .ovr.on .ovr-v { background: var(--paper); }
   .ovr-why { color: #e88a8a; }
   .ovr.bad .ovr-v { border-color: #e88a8a; background: #2c1a19; }
+  .ovr-refused td { color: #e88a8a; }
 }
