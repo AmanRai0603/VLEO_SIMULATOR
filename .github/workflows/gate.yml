@@ -210,6 +210,13 @@ jobs:
       # in the panels job, which has one.
       - name: the theory tabs check their own numbers
         run: python3 tools/theory_check.py --selftest
+      # §30 B1's decision row is seeded and unanswered, and this is the evidence
+      # for it. The half that needs no daemon: the arithmetic of what counts as a
+      # row that moved, that the decision row exists and is still SEEDED rather
+      # than carrying a value nobody signed, and the two cross-references §30 B1
+      # makes the condition of the step.
+      - name: the Kp slot decision still has its evidence
+        run: python3 tools/kp_slot_cost.py --selftest
       # Every recipe, applied twice on a copy; the second must change nothing.
       - name: every recipe is idempotent
         run: python3 tools/recipe.py --check
@@ -384,6 +391,11 @@ jobs:
       # a wrong magnitude in it reads as evidence.
       - name: the theory tab's numbers, against the engine
         run: python3 tools/theory_check.py
+      # What choosing a Kp slot costs, through the whole tree. Not a check with a
+      # verdict: it prints the evidence §30 B1 asks a person to decide against,
+      # and fails only if the engine cannot produce it.
+      - name: what the Kp slot choice costs downstream
+        run: python3 tools/kp_slot_cost.py
 
   # The two faces the workspace excludes, because they need targets of their
   # own. `cargo build --workspace` does not reach them, so until this job
