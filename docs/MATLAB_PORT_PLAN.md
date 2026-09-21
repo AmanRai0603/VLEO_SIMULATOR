@@ -4711,6 +4711,38 @@ So `tools/branch_audit.py` still reports two findings on solar, and both are
 true statements that a reader should be able to dismiss from the sheets in a
 minute. They are recorded here so nobody re-derives them as defects.
 
+### 42.2b · The over-wide bound was drawing a false alarm
+
+The bound change broke `panel_check` on `closure`, 35 per cent of the pixels
+against a 2 per cent tolerance, and the reason is the point rather than an
+inconvenience. That panel sweeps the most-moving decision upstream across its
+DECLARED range, so narrowing a bound moves the axis.
+
+On pair 04 the swept decision is `sw_ap_central_expectation`. The old reference
+read:
+
+> the two lines cross at 43.4 and the margin reaches zero at the same point;
+> past it the fill is the requirement being exceeded
+
+**43.4 is a sky the record has never held.** The largest of its 381 rotation
+means is 36.96. So the figure a designer reads was showing the Ap survival
+requirement being breached, with a pink exceeded-region occupying the right
+half of both frames, at an expected Ap the sun has not produced over a rotation
+in the whole record. The crossing existed only because the bound ran to 80.
+
+With the bound at 40 the panel says what is true: *neither frame crosses
+anywhere in this decision's range*. The reference is re-recorded and stays
+UNCONFIRMED, with the reason on its `confirmed_by`.
+
+This is the argument for §42.2 that the section did not have when it was
+written. An over-wide bound is not untidy; here it put a requirement breach on
+the screen that the record does not support.
+
+The panel's `correct` block also said, unconditionally, that "one fill in one
+colour across the whole span is the defect". That is right where a crossing
+exists and wrong where none does, which is now a reachable case. The block
+admits it.
+
 ### 42.3 · Two findings that were the audit's fault, not the design's
 
 The first version perturbed an input by a quarter of the distance to its bound

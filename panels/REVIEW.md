@@ -146,8 +146,18 @@ THE AREA BETWEEN THE TWO LINES IS FILLED AND IT CHANGES COLOUR AT THE CROSSING.
 Left of the crossing the fill is the achieved curve's own hue and it is margin
 left; right of it the fill is the pink every bound in this face is drawn in and
 it is requirement exceeded. The two meet exactly at the crossing and nowhere
-else — one fill in one colour across the whole span is the defect, because it
-draws "this much is unspent" and "this much is overspent" as the same wedge.
+else — where there IS a crossing, one fill in one colour across the whole span
+is the defect, because it draws "this much is unspent" and "this much is
+overspent" as the same wedge.
+
+WHERE THERE IS NO CROSSING, one colour across the whole span is correct and the
+finding line says so in as many words. That case is reachable and this sentence
+did not used to admit it: on pair 04 the crossing sat at an expected Ap of 43.4,
+which is a sky the record has never held over a rotation — the largest of its
+381 rotation means is 36.96. The crossing was an artefact of
+sw_ap_central_expectation being bounded at 80, and narrowing that bound to what
+the record supports removed it. A figure that shows a requirement breached
+outside anything the record holds is a false alarm, and it was one.
 The bottom frame washes everything below zero in the same pink, and the wash
 must start at the same x the top frame's pink fill does.
 
@@ -171,7 +181,7 @@ question is not being asked.
 
 </details>
 
-Current: `UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting a look at BOTH pictures. Every figure gained an answer line above the chart, a finding line inside it, and a second rendering in the dark scheme — see `correct` above for what to check in each`
+Current: `UNCONFIRMED / re-recorded 2026-09-21 after three solar bounds were narrowed to what the record supports. This panel sweeps the most-moving decision across its DECLARED range, so a bound change moves the axis: pair 04 now runs to Ap 40 rather than 80 and no longer shows the requirement being exceeded at 43.4, which was a crossing outside anything the record holds. Still awaiting a look at BOTH pictures — see `correct` above`
 
 ---
 
