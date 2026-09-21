@@ -3451,32 +3451,91 @@ The plan said the first output that matters is whether σ comes back at 13.4544.
 | Ap, Yule-Walker | 376 | 3.5264 | 3.5937 | −1.87 % |
 | Ap, least squares | 376 | 3.5791 | 3.5937 | −0.41 % |
 
-**Two differences, and they are the work left.** The rotation COUNT is 376 against
-361. The record is 10,592 days on a dense grid, which is 392 rotations of 27, and
-this scores every one past a warm-up of 16; reaching 361 needs a warm-up of 31 and
-the sheet states none. Dropping the 13 rotations that contain an interpolated day
-would give 379, and the sheet's own third assumption says those days **were**
-counted, so that is not the route either.
+**Two differences.** The rotation COUNT is 376 against 361. The record is 10,592
+days on a dense grid, which is 392 rotations of 27, and this scores every one past
+a warm-up of 16; reaching 361 needs a warm-up of 31 and the sheet states none.
+Dropping the 13 rotations that contain an interpolated day would give 379, and the
+sheet's own third assumption says those days **were** counted, so that is not the
+route either.
 
-The estimator is the other candidate and is not enough alone: the sheet says "an
-AR(2) fitted on the training anomalies" without naming one, and least squares moves
-Ap to −0.41 % while moving F10.7 the wrong way to +6.91 %. **That Ap nearly lands
-and F10.7 does not says the difference is not one systematic choice.**
+### 31.4a · And none of the candidates for them closes it — `--why`
 
-**What was NOT done, on purpose.** The free parameters were not tuned until the
-number matched. A walk-forward whose warm-up and estimator were chosen to reproduce
-13.4544 agrees with it by construction and is evidence for nothing — and the
-quantiles taken off it would be the thing §30 B3.2 asks a person to sign.
+The first version of this section named two candidates, the warm-up and the
+estimator, and left them open. `tools/rotation_residuals.py --why` now measures
+each one, and the finding is that **every one of them moves the two channels in
+opposite directions**, which is something no single choice can do. A walk has one
+warm-up, one estimator and one scale rule.
 
-**So the script refuses to print them.** It gates on both σ and the rotation count,
-and prints the reason instead. The count is the stricter of the two and it is
-there because of a near miss: Ap under least squares lands within half a per cent
-while its sample is 376 rotations rather than 361, and printing quantiles off that
-because one of the two agreed would be reporting a coincidence in the right units.
+| candidate | F10.7 | Ap |
+|---|---|---|
+| as written (Yule-Walker, warm-up 16) | +6.39 % | −1.87 % |
+| the drop that gives each channel its own σ | a further 43, leaving n = 333 | a further 1, leaving n = 375 |
+| **the drop that gives the sheet's count of 361** | **+6.23 %** | **−3.36 %** |
+| least squares instead of Yule-Walker | +6.91 % | −0.41 % |
+| theory step 2's scale disabled | +13.46 % | +2.06 % |
 
-*This is the honest state of step 4: the tool exists, its disagreement is recorded,
-and the two open differences are named. B3.2 stays blocked until one of them
-closes, which is correct — it was blocked before and nothing knew.*
+Read the third row first, because it is the one that retires the warm-up. Taking
+the warm-up that produces the sheet's own sample size of 361 leaves F10.7 6.23 per
+cent high and **makes Ap worse**, from −1.87 % to −3.36 %. The count and the two
+σ are not reachable together: the two channels want warm-ups of 43 and 1 further
+rotations, and the count wants 15.
+
+The estimator is retired the same way — least squares walks Ap in and F10.7 out —
+and so is the scale, which pulls **both** down when Ap is already under.
+
+**And a fourth measurement says why searching harder would be worse than useless.**
+F10.7's σ runs from 11.4736 to 14.3671 across a choice of scored window alone, a
+span of 25 per cent. That is four times the gap being chased. A walk-forward that
+landed on 13.4544 by choosing a window would have demonstrated nothing whatever
+about its method, which is the reason the free parameters were never tuned until
+the number matched: the quantiles taken off such a walk are what §30 B3.2 asks a
+person to sign.
+
+So the remaining work is not in this file. It is either `prf_rebuild.m` itself —
+**which is not in this repository**; `matlab/` holds only the port's own `+vleo`
+binding, and no second in-repo derivation of 13.4544 exists — or a person deciding
+what the sheet should say.
+
+### 31.4b · The maths under the finding is now checked, not asserted
+
+A disagreement is only evidence if the thing disagreeing is right. An AR(2)
+estimator that was simply wrong, or a walk that leaked one future value, would
+produce a disagreement with 13.4544 that looks exactly like this one. So
+`--selftest` checks the parts against answers known independently of the record,
+and it is in the gate:
+
+- both estimators recover a known AR(2) of (0.5, 0.3) from a 40,000-point
+  synthetic draw;
+- perturbing one rotation mean moves **no earlier** residual, and moves that
+  rotation's own residual by **exactly** the perturbation — which is the check
+  that catches a `rm[:k + 1]` training slice, the easiest leak to write and one
+  that moves no earlier residual at all;
+- the causal debias is the mean of the residuals already seen, pinned as an
+  identity rather than an inequality, because "the mean of them" and "the last
+  one" are both causal and both shrink the mean on a ramp;
+- the warm-up is the one this document does arithmetic about;
+- the quantile convention, both signs of the skew, phase wrapping past the table's
+  end, and the refusal gate.
+
+Every one of those was checked by breaking what it covers and watching it go red.
+Two of them were **not** load-bearing when first written and were rewritten until
+they were: the skew case passed against an `abs()` because it only tested a
+right-tailed sample, and the refusal gate was a source probe that looked for a
+string the probe itself spelled, so it matched its own line and passed against a
+gate whose `or` had been changed to `and`.
+
+**The refusal itself is unchanged.** The script gates on both σ and the rotation
+count and prints the reason instead of quantiles. The count is the stricter of the
+two and it is there because of a near miss: Ap under least squares lands within
+half a per cent while its sample is 376 rotations rather than 361, and printing
+quantiles off that because one of the two agreed would be reporting a coincidence
+in the right units.
+
+*This is the honest state of step 4: the tool exists, its maths is checked, its
+disagreement is recorded, and every candidate the sheet leaves open has been
+measured and eliminated. **The number is still not reproduced.** B3.2 stays
+blocked, and now on something named — the MATLAB source or a person — rather than
+on work nobody had done.*
 
 ### 31.5 · Where this leaves §30
 
@@ -3485,10 +3544,10 @@ closes, which is correct — it was blocked before and nothing knew.*
 | 1 · A2 five assumptions | **done** |
 | 2 · A1 fixtures | **done**, and the gap measured rather than asserted |
 | 3 · A3 theory | **drafted**, unsigned — needs a person |
-| 4 · B3.1 walk-forward | **written and failing its own test**, which is the finding |
+| 4 · B3.1 walk-forward | **written, failing its own test, and every candidate for the gap measured and eliminated** — §31.4a |
 | 5 · B1 which Kp slot | needs a person |
 | 6 · B2 band confidence | needs a person |
-| 7 · B3.2 empirical quantiles | **blocked on 31.4**, not on a person |
+| 7 · B3.2 empirical quantiles | **blocked on 31.4** — on `prf_rebuild.m`, which is not here, or on a person |
 | 8 · A4 thermosphere panel | ready to build |
 | 9 · B3.3 residual view | blocked with 7 |
 
@@ -3578,7 +3637,7 @@ different places to stand.
 | 1 · A2 five assumptions | done |
 | 2 · A1 fixtures | done |
 | 3 · A3 theory | drafted, **unsigned — needs a person** |
-| 4 · B3.1 walk-forward | written, **failing its own test**, §31.4 |
+| 4 · B3.1 walk-forward | written, **failing its own test**, every candidate eliminated, §31.4a |
 | 5 · B1 which Kp slot | **needs a person**, and the third view is now the picture to decide it from |
 | 6 · B2 band confidence | **needs a person** |
 | 7 · B3.2 empirical quantiles | blocked on step 4 |
@@ -3586,8 +3645,11 @@ different places to stand.
 | 9 · B3.3 residual view | blocked with 7 |
 
 Everything an agent can do without a decision is now done. Steps 5 and 6 are two
-numbers; step 3 is a signature; step 4 is the one piece of open work, and it is
-work rather than a decision.
+numbers; step 3 is a signature. **Step 4 was the one piece of open work and is no
+longer that either:** §31.4a measured every candidate the sheet leaves open and
+none of them closes the gap, so what is left is `prf_rebuild.m`, which is not in
+this repository, or a person deciding what the sheet should say. That is a worse
+answer than a reproduction and a better one than an open question.
 
 
 ---
@@ -4628,7 +4690,10 @@ declined against a count rather than a preference.
 - Twenty-eight references, all UNCONFIRMED, all needing a person.
 - `env_exospheric_temperature`'s `maths.confirmed_by`, and §30 steps 5 and 6.
 - §30 step 4: the walk-forward still fails its own test, 376 rotations against
-  361. Step 7 is blocked behind it.
+  361, and §31.4a has now measured and eliminated every candidate the sheet
+  leaves open — none of them closes the gap, and one of them (the sheet's own
+  rotation count) makes Ap worse. Step 7 is blocked behind it, on
+  `prf_rebuild.m`, which is not in this repository, or on a person.
 - The stale `sw_outlook_lead` citation in `forecast` — a row question, reported
   in Part D and still open.
 
