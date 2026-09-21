@@ -193,6 +193,15 @@ jobs:
         run: python3 tools/branch_audit.py --selftest
       - name: the input control checks itself
         run: python3 tools/input_check.py --selftest
+      # The walk-forward that reproduces sw_mean_band_spread's sigma disagrees
+      # with the published number, and §31.4 rests on that disagreement being
+      # real rather than an arithmetic slip. Its selftest checks the estimators
+      # against synthetic series with known coefficients, that the walk never
+      # reads a value it is predicting, and that the debias is the mean of the
+      # residuals already seen. It needs no bundle and no daemon; the walk over
+      # the record itself is minutes long and is not run here.
+      - name: the walk-forward checks its own maths
+        run: python3 tools/rotation_residuals.py --selftest
       # Every recipe, applied twice on a copy; the second must change nothing.
       - name: every recipe is idempotent
         run: python3 tools/recipe.py --check
