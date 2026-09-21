@@ -229,6 +229,40 @@ def selftest():
         bad += 1
         print("  FAIL could not read inputs.js: %s" % e)
 
+    # THE WORKFLOW STILL RUNS THIS, AND NO STEP HAS BEEN SWALLOWED.
+    #
+    # Adding these two steps orphaned the line below them: `python3
+    # tools/mat_parity.py` belonged to the daemon step's `run: |` block, ended
+    # up after the new steps, and YAML folded it into one of them as
+    # "branch_audit.py --sub solar python3 tools/mat_parity.py". The file still
+    # PARSED — it is valid YAML — so a yaml.safe_load check said nothing, and
+    # the effect was that the MATLAB .mat comparison silently stopped running.
+    # A check that is quietly not running is worse than one that fails.
+    wf = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                      ".github", "workflows", "gate.yml")
+    try:
+        import yaml
+        jobs = yaml.safe_load(open(wf, encoding="utf-8"))["jobs"]
+        runs = [str(st.get("run", "")) for j in jobs.values() for st in j.get("steps", [])]
+        for want in ("tools/input_check.py", "tools/branch_audit.py",
+                     "tools/mat_parity.py", "tools/matlab_parity.py",
+                     "tools/panel_check.py"):
+            if not any(want in r for r in runs):
+                bad += 1
+                print("  FAIL the workflow no longer runs %s" % want)
+        # A one-line `run:` naming two interpreters is the signature of a block
+        # line that got folded into the step above it.
+        for r in runs:
+            if "\n" not in r.strip() and r.count("python3 ") > 1:
+                bad += 1
+                print("  FAIL a workflow step folded two commands onto one line: %r"
+                      % r.strip()[:90])
+    except ImportError:
+        pass          # no pyyaml here; CI has it
+    except (OSError, KeyError, TypeError) as e:
+        bad += 1
+        print("  FAIL could not read the workflow: %s" % e)
+
     # The row it drives has to be one the face would offer a field for, or the
     # whole check is vacuous. That rule is inputs.js's; this is its shape.
     if not ROW or "." in ROW:
@@ -238,7 +272,7 @@ def selftest():
         bad += 1
         print("  FAIL the value tried equals the declared one, so nothing changes")
 
-    print("selftest: %d cases, %s" % (10, "all as expected" if not bad else "%d FAILED" % bad))
+    print("selftest: %d cases, %s" % (12, "all as expected" if not bad else "%d FAILED" % bad))
     return 1 if bad else 0
 
 

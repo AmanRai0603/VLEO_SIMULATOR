@@ -343,12 +343,7 @@ jobs:
             sleep 2
           done
           python3 tools/matlab_parity.py
-      # Every editable input in the solar subsystem, driven through the branches
-      # the engine says it is in. Solar is the one subsystem filled in end to
-      # end, so it is the one where this can say anything. It reports findings
-      # and does not fail the build: every finding it prints is a true statement
-      # about the design, and a check that fails on those is a check people
-      # learn to word their way past.
+          python3 tools/mat_parity.py
       # The field on a declared row, clicked the way a person clicks it. Every
       # defect it has caught was invisible to the engine and to a source
       # reading: a repaint from inside a change event, a button that destroyed
@@ -357,9 +352,14 @@ jobs:
       # the engine.
       - name: the input control, three stages, clicked
         run: python3 tools/input_check.py
+      # Every editable input in the solar subsystem, driven through the branches
+      # the engine says it is in. Solar is the one subsystem filled in end to
+      # end, so it is the one where this can say anything. It reports findings
+      # and does not fail the build: every finding it prints is a true statement
+      # about the design, and a check that fails on those is a check people
+      # learn to word their way past.
       - name: every solar input, through its own branches
         run: python3 tools/branch_audit.py --sub solar
-          python3 tools/mat_parity.py
 
   # The two faces the workspace excludes, because they need targets of their
   # own. `cargo build --workspace` does not reach them, so until this job
