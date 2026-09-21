@@ -189,7 +189,8 @@ function sweepControls(r) {
     ins.map(x => '<option value="' + esc(x.id) + '"' + (x.id === def.id ? ' selected' : '') + '>' +
       esc(x.id) + '</option>').join('') + '</select>' +
     ' from <input class="sw-from" value="' + def.lo + '"> to <input class="sw-to" value="' + def.hi + '">' +
-    ' <span class="muted">SI, and the declared range is ' + fmt(def.lo) + ' … ' + fmt(def.hi) + '</span>' +
+    ' <span class="muted sw-range">SI, and the declared range is ' + fmt(def.lo) +
+      ' … ' + fmt(def.hi) + '</span>' +
     ' <button class="ctl sw-go">sweep</button></div>' +
     markControl(r) +
     '<canvas class="plot sw-plot" width="900" height="300" hidden></canvas>' +
@@ -240,8 +241,18 @@ function wireSweep(host, r) {
   const go2 = $('.sw-go', host);
   if (!go2) return;
   const from = $('.sw-from', host), to = $('.sw-to', host), over = $('.sw-over', host);
+  const range = $('.sw-range', host);
   const check = () => {
     const d = S.byId.get(over.value);
+    // THE HINT IS RENDERED ONCE AND THE SELECTION CHANGES TWICE: the levers
+    // reply re-orders the list and picks the decision that moves this row most,
+    // and the reader can pick another. Both moved the boxes and left this text
+    // describing whatever was selected first — on the run view it read "the
+    // declared range is 150000 … 450000", which is orbit_altitude in metres,
+    // beside two boxes holding a ratio's 0.05 and 0.95.
+    if (range) {
+      range.textContent = 'SI, and the declared range is ' + fmt(d.lo) + ' … ' + fmt(d.hi);
+    }
     for (const el of [from, to]) {
       const v = parseFloat(el.value);
       // Refuse, never clamp. A value silently corrected is a design that

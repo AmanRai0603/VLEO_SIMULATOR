@@ -4631,3 +4631,80 @@ declined against a count rather than a preference.
   361. Step 7 is blocked behind it.
 - The stale `sw_outlook_lead` citation in `forecast` — a row question, reported
   in Part D and still open.
+
+## §42 · The solar subsystem, driven through its own branches
+
+`tools/branch_audit.py --sub solar` takes every editable row in the subsystem,
+asks the engine which branches it is in, and moves it across its whole declared
+range. Solar is the one subsystem filled in end to end, so it is the one where
+this can say anything: 62 rows, 55 published, 17 editable.
+
+### 42.1 · What is sound
+
+At the declared values, **all 55 published rows answer**. None refuses, none is
+silent. The seven that are not published are all `deprecated` and are read by
+nothing, so no branch depends on a retired row.
+
+Seven editable rows are read by nothing in the tree — `sw_band_coverage`,
+`sw_cycle_repeatability`, `sw_event_duration`, `sw_f107a_ratio`,
+`sw_recurrence_strength`, `sw_semiannual_amplitude`, `sw_spike_threshold`. That
+is not a loose end: every one of them is named by a panel, so its answer is read
+by a person off a figure rather than by another node. The audit checks the
+panels itself rather than reporting seven findings a reader has to go and
+disprove.
+
+### 42.2 · Three declared domains are wider than the design closes over
+
+The finding. A declared range is a claim that the relation is valid across it.
+Nothing checks that claim against what happens downstream, and for three rows it
+does not hold:
+
+| row | declared | range | layer 2 survives |
+|---|---|---|---|
+| `sw_mean_band_spread` | 13.45 | 0 … 60 | only below about 15 — **71% of the range gives no interface** |
+| `sw_ap_mean_band_spread` | 3.59 | 0 … 20 | below about 14 |
+| `sw_ap_central_expectation` | 22.10 | 0 … 80 | above about 8 — the **low** end is what fails |
+
+The mechanism is the same in each: the five `sys_space_environment_*` rows are
+built through `l3_solar_interface`, which needs `sw_f107_cold_long`, and that
+row has a declared floor of 60 sfu. A wide enough band spread drives the cold
+long-run F10.7 under it — at a spread of 25 it computes 54.85 — and the refusal
+takes 33 rows with it. **The refusal machinery is working exactly as designed**;
+what is wrong is that three rows claim validity over a range where the design
+they feed does not close.
+
+Not fixed here. A declared bound is a statement about where a relation holds,
+and narrowing one is a physics decision with a reason attached — `AGENTS.md` is
+explicit that an agent may never supply mathematics. **[needs a person]** to
+decide whether each bound should be narrowed to where layer 2 closes, or whether
+the floor on `sw_f107_cold_long` is the thing that is wrong.
+
+### 42.3 · Two findings that were the audit's fault, not the design's
+
+The first version perturbed an input by a quarter of the distance to its bound
+and called anything that did not move inert. It reported `sw_recurrence_lag` and
+`sw_storm_design_level` as having active branches that do not respond. Both were
+wrong:
+
+- `sw_storm_design_level` is bounded to the integers 1 to 3 and its consumer is
+  a lookup on those three levels. The probe landed on 2.5, between two defined
+  levels. At 1, 2 and 3 it gives 48, 80 and 132, exactly as the sheet says.
+- `sw_recurrence_lag` is read through a table measured at leads 1 to 26 which
+  clamps at both ends. Its declared range runs to 35 days, so the probe landed
+  in the clamped region. At 20 days the bias is -2.176 and at 26 it is -3.968.
+
+The probe now walks the whole declared range instead. A related fact is worth
+recording from it: **`sw_recurrence_lag` is declared to 35 days while its table
+is measured to 26**, so every value above 26 silently returns the lead-26
+answer. That is the same class of thing as §42.2 and also **[needs a person]**.
+
+### 42.4 · Where the branch rule lives
+
+It was a graph walk in `web/js/inputs.js`. It agreed with a Python replica on
+all 130 editable inputs in the tree, and it was still in the wrong place: this
+audit needs the same answer, and a rule with two implementations is a rule that
+drifts. It is now `/v1/branches` in the daemon, and the face and the audit both
+ask for it. The endpoint reproduces the JavaScript exactly — 28 branches for
+mission duration, same heads, same row counts, and 0 disagreements across all
+130 inputs.
+

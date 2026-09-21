@@ -285,6 +285,7 @@ fn route(
         ("POST", "/v1/run") | ("GET", "/v1/run") => ok_json(run_json(params, ctx)),
         ("GET", "/v1/sweep") => ok_json(sweep_json(params, ctx)),
         ("GET", "/v1/levers") => ok_json(levers_json(params, ctx)),
+        ("GET", "/v1/branches") => ok_json(branches_json(params)),
         // The reference data itself, so a face can draw the record rather than
         // only the answers computed from it.
         ("GET", p) if p.starts_with("/v1/bundle/") => {
@@ -981,6 +982,136 @@ fn sweep_json(params: &str, ctx: &Ctx) -> String {
 /// A candidate whose ends both refuse is reported with its reason, not
 /// dropped: a decision that cannot be swept is a different fact from one that
 /// changes nothing, and collapsing the two would hide a broken bound.
+/// The maximal active branches a row is in.
+///
+/// A branch is the dependency closure of one row. A row is in as many branches
+/// as there are rows that read it, and most of those nest inside each other, so
+/// what is useful is the maximal ones: a candidate that no other candidate
+/// reads, directly or at any distance. Running that set computes every row in
+/// every active branch containing the input and computes none of them twice.
+///
+/// ACTIVE means every row in the closure is `published` — the tree is filled in
+/// that far. It does not mean the branch will succeed: a published row can
+/// still refuse when its own value lands outside its own declared domain, and
+/// that refusal is a real answer rather than a gap.
+///
+/// THIS LIVES HERE RATHER THAN IN THE FACE because two things need it — the
+/// node page and the audit in tools/ — and a rule with two implementations is
+/// a rule that drifts. The face used to walk the graph in JavaScript off the
+/// index; it now asks for this.
+fn branches_json(params: &str) -> String {
+    let node = param(params, "node").map(decode).unwrap_or_default();
+    let mut j = Json::new();
+    j.raw("{");
+    let ni = match Vleo::find(&node) {
+        Some(a) => VARS[a as usize].producer,
+        None => {
+            j.bool_field("ok", false);
+            j.str_field("message", "the branches name a node that does not exist");
+            j.raw("}");
+            return j.0;
+        }
+    };
+    j.bool_field("ok", true);
+    j.str_field("node", &node);
+
+    // node -> the nodes that read it. Built from `inputs`, which holds VARIABLE
+    // indices, so each is mapped to its producing node first; conflating the
+    // two indices is a defect this file has already shipped once.
+    let mut cons: Vec<Vec<u16>> = vec![Vec::new(); NODES.len()];
+    for (n, d) in NODES.iter().enumerate() {
+        for x in d.inputs {
+            cons[VARS[*x as usize].producer as usize].push(n as u16);
+        }
+    }
+    let walk = |from: u16, edges: &Vec<Vec<u16>>| -> Vec<bool> {
+        let mut seen = vec![false; NODES.len()];
+        let mut st = vec![from];
+        while let Some(n) = st.pop() {
+            for m in &edges[n as usize] {
+                if !seen[*m as usize] {
+                    seen[*m as usize] = true;
+                    st.push(*m);
+                }
+            }
+        }
+        seen
+    };
+    let mut prod: Vec<Vec<u16>> = vec![Vec::new(); NODES.len()];
+    for (n, d) in NODES.iter().enumerate() {
+        for x in d.inputs {
+            prod[n].push(VARS[*x as usize].producer);
+        }
+    }
+    let live = |n: u16| NODES[n as usize].state == vleo_core::graph::State::Published;
+
+    let down = walk(ni, &cons);
+    let mut cand: Vec<(u16, usize)> = Vec::new();
+    for n in 0..NODES.len() as u16 {
+        if !down[n as usize] || !live(n) {
+            continue;
+        }
+        let cl = walk(n, &prod);
+        let mut ok = true;
+        let mut size = 1usize;
+        for (k, inside) in cl.iter().enumerate() {
+            if *inside {
+                size += 1;
+                if !live(k as u16) {
+                    ok = false;
+                    break;
+                }
+            }
+        }
+        if ok {
+            cand.push((n, size));
+        }
+    }
+    let is_cand: Vec<bool> = {
+        let mut v = vec![false; NODES.len()];
+        for (n, _) in &cand {
+            v[*n as usize] = true;
+        }
+        v
+    };
+    let mut out: Vec<(u16, usize)> = cand
+        .iter()
+        .filter(|(n, _)| {
+            let up = walk(*n, &cons);
+            !(0..NODES.len()).any(|k| up[k] && is_cand[k])
+        })
+        .cloned()
+        .collect();
+    // Biggest first: the branch that covers most of the design is the one a
+    // reader wants at the top.
+    out.sort_by(|a, b| {
+        b.1.cmp(&a.1)
+            .then_with(|| NODES[a.0 as usize].id.cmp(NODES[b.0 as usize].id))
+    });
+
+    // How many rows read this one at all, so a face can say whether an empty
+    // list means "nothing reads it" or "everything that does is unfinished".
+    let read_by = (0..NODES.len()).filter(|k| down[*k]).count();
+    j.num_field("read_by", read_by as f64);
+
+    j.key("branches").open_arr();
+    for (i, (n, size)) in out.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        let d = &NODES[*n as usize];
+        j.raw("{");
+        j.str_field("id", d.id);
+        j.str_field("label", d.label);
+        j.str_field("sub", d.subsystem);
+        j.num_field("rows", *size as f64);
+        j.close_obj();
+    }
+    j.close_arr();
+    j.raw("}");
+    j.0
+}
+
 fn levers_json(params: &str, ctx: &Ctx) -> String {
     let node = param(params, "node").map(decode).unwrap_or_default();
     let mut j = Json::new();

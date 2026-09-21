@@ -61,9 +61,17 @@ export const fromSI = (r, si) => si / (r.factor || 1);
  * applies: a row whose upper bound does not exceed its lower has no room to be
  * moved in, and offering a field for it is offering a control that cannot do
  * anything.
+ *
+ * PUBLISHED, not merely "not seeded". This read `state !== 'empty'`, which let
+ * a DEPRECATED row have a field — and a retired row is a question whose answer
+ * nothing should read any more, so a live-looking control on one is an
+ * invitation to use it. state.js says as much about drawing them. It also
+ * disagreed with the two other places the same idea is written: `/v1/branches`
+ * counts a row active only when it is published, and tools/branch_audit.py
+ * says the same, so the face was the one of the three that differed.
  */
 export const isInput = r =>
-  !!r && r.kind === 'declared' && r.state !== 'empty' && r.hi > r.lo;
+  !!r && r.kind === 'declared' && r.state === 'published' && r.hi > r.lo;
 
 // ---------------------------------------------------------------------------
 // the store
@@ -83,15 +91,36 @@ export function loadOverrides() {
     return;
   }
   if (!raw) return;
+  let dropped = 0;
   try {
     const o = JSON.parse(raw);
     for (const k of Object.keys(o)) {
-      if (typeof o[k] === 'number' && isFinite(o[k])) S.overrides.set(k, o[k]);
+      const v = o[k];
+      if (typeof v !== 'number' || !isFinite(v)) continue;
+      // WHAT CAME BACK MUST STILL BE USABLE, and neither test is paranoia.
+      //
+      // A row can be gone — a reseed, a rename — and an override naming one
+      // would be counted in the bar while nothing could show it.
+      //
+      // A value can be outside the row's range without ever having been typed
+      // there. `commit` refuses an out-of-range value, so the only way one is
+      // stored is that it was INSIDE the range when it was stored and the sheet
+      // narrowed afterwards. That is not hypothetical: §42 of the port plan
+      // recommends narrowing three solar bounds for exactly the reason they
+      // are too wide. Kept, such a value made the engine refuse EVERY run
+      // anywhere in the tool, with nothing on the field to say why, and it
+      // survived a reload — a tool that looks broken until somebody clears
+      // browser storage. It cannot be used, so it is not kept.
+      const r = S.byId.get(k);
+      if (!r || v < r.lo || v > r.hi) { dropped++; continue; }
+      S.overrides.set(k, v);
     }
   } catch (e) {
     // Malformed is the same as absent. It is not worth a message: the reader
     // did not put it there and cannot act on it.
   }
+  // Rewrite what was kept, so a dropped entry does not come back next time.
+  if (dropped) persist();
 }
 
 function persist() {
@@ -334,6 +363,33 @@ async function runOnce(node, mode, bare) {
 }
 
 // ---------------------------------------------------------------------------
+// the branches an input is in
+
+/**
+ * The active branches this input is part of, as the ENGINE computes them.
+ *
+ * This used to be a graph walk here, over the index. It was correct — it agreed
+ * with the engine on all 130 editable inputs — and it was still the wrong place
+ * for it: the audit in tools/ needs the same answer, and a rule with two
+ * implementations is a rule that drifts. `/v1/branches` is now the one of them.
+ *
+ * What comes back: `branches`, the maximal active ones, biggest first; and
+ * `read_by`, how many rows read this one at all. The second is what lets an
+ * empty list say which of two different things it means.
+ */
+export async function activeBranches(row) {
+  if (!row) return { branches: [], read_by: 0 };
+  try {
+    const r = await (await fetch('/v1/branches?node=' +
+      encodeURIComponent(row.id))).json();
+    return r && r.ok ? { branches: r.branches || [], read_by: r.read_by || 0 }
+                     : { branches: [], read_by: 0 };
+  } catch (e) {
+    return { branches: [], read_by: 0, failed: true };
+  }
+}
+
+// ---------------------------------------------------------------------------
 // the control
 
 /**
@@ -416,6 +472,19 @@ export async function mountInput(host, r) {
 
   field.oninput = commit;
   field.onchange = commit;
+  // AN EMPTY BOX MUST NOT SIT OVER A LIVE WHAT-IF. Clearing the field does not
+  // clear the override — there is nothing to set it to — so the row stayed
+  // tagged, the bar kept listing it, and the engine kept being sent 7 years
+  // while the box a reader was looking at was blank. Two things on one screen
+  // disagreeing about what the design is set to. On leaving an empty field it
+  // is put back to whatever is actually in force.
+  field.onblur = () => {
+    if (field.value.trim() !== '') return;
+    const si = S.overrides.has(r.id) ? S.overrides.get(r.id) : declared;
+    if (si != null) field.value = fmt(fromSI(r, si));
+    why.textContent = '';
+    box.classList.remove('bad');
+  };
   field.onkeydown = e => { if (e.key === 'Enter') go.click(); };
   reset.onclick = () => {
     clearOverride(r.id);
@@ -429,15 +498,148 @@ export async function mountInput(host, r) {
     commit();
     if (box.classList.contains('bad')) return;
     go.disabled = true;
-    say.textContent = 'running the engine end to end…';
-    const after = await runOnce(r.id, 'all', false);
-    go.disabled = false;
-    say.textContent = '';
-    out.innerHTML = resultHtml({ before: base, after,
-      diff: after.ok ? diffRuns(base, after) : null });
+    out.innerHTML = '';
+    try {
+      await runStages(r, base, out, t => { say.textContent = t; });
+    } finally {
+      go.disabled = false;
+      say.textContent = '';
+    }
   };
 
   mark();
+}
+
+/**
+ * The three runs an edited input asks for, in order, each drawn as it lands.
+ *
+ * 1 · ALONE. This row and nothing else, so the number the reader typed is
+ *     confirmed to be the number the engine took. It is the shortest possible
+ *     answer to "did my edit arrive", and when it disagrees with the field the
+ *     fault is between the face and the engine rather than anywhere in the
+ *     design.
+ *
+ * 2 · EACH ACTIVE BRANCH. A row is in as many branches as there are rows that
+ *     read it, so the branches are found rather than chosen — see
+ *     activeBranches — and each is run on its own. One branch failing is a fact
+ *     about that branch: the others still run and still report, because a
+ *     single refusal stopping the whole list would hide every branch behind it.
+ *
+ * 3 · EVERYTHING. The final update. Whatever is active recomputes and whatever
+ *     is not stays blocked and is counted, and the rows that moved are listed
+ *     against the baseline.
+ *
+ * Drawn incrementally: stage 2 can be a dozen engine calls and a reader should
+ * not watch a blank panel while they run.
+ */
+export async function runStages(r, base, out, say) {
+  const sec = (n, title, body) =>
+    '<section class="ovr-stage"><h4><span class="ovr-n">' + n + '</span>' + title +
+    '</h4>' + body + '</section>';
+
+  // ---- 1 · alone --------------------------------------------------------
+  say('1 · running this row alone…');
+  const alone = await runOnce(r.id, 'alone', false);
+  let h = sec(1, 'alone — this row, and nothing else', aloneHtml(r, alone));
+  out.innerHTML = h;
+
+  // ---- 2 · the active branches -----------------------------------------
+  const found = await activeBranches(r);
+  const branches = found.branches;
+  // AN EMPTY LIST MEANS ONE OF TWO DIFFERENT THINGS and a reader needs to know
+  // which. Seven solar rows are read by nothing in the tree at all — they are
+  // answers a person reads off a figure, and there is no branch to run because
+  // there is nothing downstream, not because anything is unfinished. That is a
+  // different sentence from "everything that reads this is still seeded".
+  const head = branches.length
+    ? '<p class="muted">' + branches.length + ' active branch' +
+      (branches.length === 1 ? '' : 'es') + ', of the ' + found.read_by +
+      ' row' + (found.read_by === 1 ? '' : 's') + ' that read this one. Each is a ' +
+      'dependency closure whose every row is published, and between them they ' +
+      'cover every row in every active branch this input is in.</p>'
+    : found.failed
+      ? '<p class="muted">The engine did not answer when asked which branches this ' +
+        'row is in.</p>'
+      : found.read_by === 0
+        ? '<p class="muted">Nothing in the tree reads this row. Its answer is read ' +
+          'by a person, off a figure, so there is no branch to run — that is what ' +
+          'this row is for, not something missing from it.</p>'
+        : '<p class="muted">' + found.read_by + ' row' +
+          (found.read_by === 1 ? '' : 's') + ' read this one, and none of them sits ' +
+          'in a branch that is fully published, so there is nothing that would run ' +
+          'end to end. That is how far the tree is filled in, not a failure.</p>';
+  h += sec(2, 'branch by branch — every active branch this row is in',
+           head + '<div class="ovr-branches"></div>');
+  out.innerHTML = h;
+
+  const list = out.querySelector('.ovr-branches');
+  const done = [];
+  for (let k = 0; k < branches.length; k++) {
+    const b = branches[k];
+    say('2 · branch ' + (k + 1) + ' of ' + branches.length + ' — ' + b.id);
+    const res = await runOnce(b.id, 'branch', false);
+    done.push(branchRow(b, res, base));
+    list.innerHTML = '<table class="ovr-diff ovr-bt"><thead><tr><th>branch</th>' +
+      '<th class="num">rows</th><th>was</th><th>now</th></tr></thead><tbody>' +
+      done.join('') + '</tbody></table>';
+  }
+
+  // ---- 3 · everything ---------------------------------------------------
+  say('3 · running everything…');
+  const after = await runOnce(r.id, 'all', false);
+  h = out.innerHTML + sec(3, 'everything — the final update',
+    resultHtml({ before: base, after, diff: after.ok ? diffRuns(base, after) : null }));
+  out.innerHTML = h;
+}
+
+/** Stage one: the row's own answer, or the refusal that replaced it. */
+function aloneHtml(r, res) {
+  if (!res.ok) {
+    return '<div class="blocked"><b>' + esc(res.fault || 'refused') + '</b> · ' +
+      esc(res.node || '') + '<div>' + esc(res.message || '') + '</div></div>';
+  }
+  const v = res.values.find(x => x.id === r.id);
+  if (!v) {
+    return '<div class="blocked">The engine ran but returned no value for this row.' +
+      (res.blocked && res.blocked.length
+        ? '<div>' + esc(res.blocked[0].message) + '</div>' : '') + '</div>';
+  }
+  return '<div class="answer">' + esc(v.symbol || r.symbol) + ' = ' + esc(v.shown) +
+    (unitOf(v.unit) ? ' <span class="unit">' + esc(unitOf(v.unit)) + '</span>' : '') +
+    '</div>';
+}
+
+/** Stage two: one branch, its head\u2019s new output, or why it refused. */
+function branchRow(b, res, base) {
+  const name = '<td><a class="xref" data-goto="' + esc(b.id) + '"><code>' +
+    esc(b.id) + '</code></a><br><span class="muted">' + esc(b.label) +
+    '</span></td><td class="num">' + b.rows + '</td>';
+  if (!res.ok) {
+    return '<tr class="ovr-refused">' + name + '<td colspan="2"><b>' +
+      esc(res.fault || 'refused') + '</b> — ' + esc(res.message || '') + '</td></tr>';
+  }
+  const v = res.values.find(x => x.id === b.id);
+  const was = (base.values || []).find(x => x.id === b.id);
+  if (!v) {
+    const why = (res.blocked || []).find(x => x.id === b.id);
+    // WHOSE FAULT IS THIS. A row that was already refusing before the edit is
+    // not evidence about the edit, and colouring it like a new failure is a
+    // false alarm the reader learns to ignore — which then hides the real one.
+    // The baseline says which: no value there either means it was already
+    // blocked, and the edit only has to answer for a row that HAD a number.
+    const already = !was;
+    return '<tr class="' + (already ? 'ovr-pre' : 'ovr-refused') + '">' + name +
+      '<td>' + (already ? '<span class="muted">blocked</span>' : esc(was.shown)) + '</td>' +
+      '<td><b>blocked</b>' + (why ? ' — ' + esc(why.message) : '') +
+      (already
+        ? '<div class="muted">already blocked before this edit — not caused by it</div>'
+        : '<div><b>this edit blocked it</b></div>') + '</td></tr>';
+  }
+  const moved = was && was.si !== v.si;
+  return '<tr>' + name + '<td>' + esc(was ? was.shown : '—') + '</td>' +
+    '<td' + (moved ? ' class="up"' : '') + '><b>' + esc(v.shown) + '</b>' +
+    (unitOf(v.unit) ? ' <span class="unit">' + esc(unitOf(v.unit)) + '</span>' : '') +
+    (moved ? '' : ' <span class="muted">unchanged</span>') + '</td></tr>';
 }
 
 /** What update produced: the refusal, or what moved. */
