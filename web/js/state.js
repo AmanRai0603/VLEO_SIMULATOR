@@ -192,6 +192,27 @@ export const isSeeded = r => r && r.state === 'empty';
 // invites being used.
 export const isDeprecated = r => r && r.state === 'deprecated';
 
+/* WHETHER THE ROW ANSWERS, and it is not the same question as `state`.
+   `state` is how far through its life the row is; this is whether the design
+   has made the number.
+
+   The two halves of the tree answer it differently and they should. An INPUT
+   is defined by carrying a value — a default is a decision somebody made, and
+   the face exists to let it be moved. A FUNCTION is defined by its derivation:
+   not by its expression, which is one line anybody can type, and not by its
+   citation, which says a paper exists rather than that the relation came out of
+   it. Until that derivation is written the engine refuses the row, so drawing
+   it like any other one offers a reader a control that cannot work.
+
+   `fn` and `derived` arrive on every row from the index. Computed in the
+   engine, carried here — never re-derived from the sheet text, which would be
+   a second implementation of the rule and would go wrong on the first row that
+   disagreed. */
+export const isUndefined = r => !!(r && r.fn && !r.derived);
+/* Whether anybody has read the relation against its source. Weaker, and it
+   does NOT silence the row — it is what the mathematics factor is scored on. */
+export const isUnconfirmed = r => !!(r && r.fn && r.derived && !r.by);
+
 // Whether the tree lists retired rows. Off by default: a reader opening a
 // subsystem should see the work that is live in it.
 S.showRetired = false;

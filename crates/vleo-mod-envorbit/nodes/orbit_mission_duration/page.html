@@ -23,7 +23,18 @@
 <p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
 </section>
 <section class="panel" data-panel="1">
-<p class="empty">Nobody has written the theory for this row yet. The relation is stated in the tab before this one and generated in the tab after it; what is missing is why it is that relation, which is the part a reader cannot recover from either.</p>
+<p class="why">It restates the requirement; it does not set it.</p>
+<p class="why">Mission length is a programme decision, so it is declared once, at layer 2, where the requirements are — `sys_mission_requirements_mission_duration`, five years, confirmed. This row is the subsystem-facing copy of that decision, and its relation is the identity because a copy that computes anything is a second opinion about how long the mission is.</p>
+<p class="why">Two rows declaring a mission length is two rows that can disagree, and the twelve rows reading this one would then be sized against whichever of the two their author happened to open. Carrying the number rather than re-declaring it is what makes that impossible.</p>
+<div class="theory-walk" data-steps="1">
+<ol class="derive">
+<li><span class="dt">Take the declared requirement and publish it unchanged, at the same type and the same unit. There is no arithmetic here on purpose: the whole value of the row is that there is nowhere for a discrepancy to enter.</span><code class="dm">T_mis = T_mis_req</code></li>
+</ol>
+</div>
+<h4>Reading the answer</h4>
+<p class="reading">It is ONE SATELLITE'S operating duration, not the service's. A constellation that replenishes on a schedule shorter than a satellite's life has two mission lengths and this is the shorter one — the upstream row states that as its assumption, and it travels with the number rather than staying at layer 2.</p>
+<p class="reading">The declared range is the same 0.5 to 15 years as the requirement it carries, and deliberately so: a copy with a wider range would admit a value its own source refuses.</p>
+<p class="maths concl">which is the relation this node states: <code>T_mis = T_mis_req</code></p>
 </section>
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
@@ -133,6 +144,5 @@ pub fn evaluate(required: Time) -&gt; Result&lt;Time, Fault&gt; {
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 <li>no fixture: nothing outside this code has ever agreed with what it computes</li>
-<li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

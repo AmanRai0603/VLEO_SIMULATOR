@@ -37,6 +37,20 @@ pub enum Fault {
     },
     /// The node has never run and something asked for its value.
     NotRun { node: &'static str },
+    /// The row states a relation and never derives it.
+    ///
+    /// Distinct from `NotRun`, which is a row nobody has written at all. This
+    /// one has an expression, a citation, filled holes, fixtures that pass and
+    /// a number it would happily print. What it has not got is anything saying
+    /// where the relation came from or what its answer means — so there is
+    /// nothing a reader can check it against, and the number is the scaffold's
+    /// rather than the design's. Its consumers block on it by name.
+    ///
+    /// A **declared** row never gets this. An input is allowed to carry a
+    /// default; a default is a definition, and what stands behind one is
+    /// `[value] confirmed_by`, a different field answering a different
+    /// question.
+    Undefined { node: &'static str },
     /// One or more upstream nodes have never run. The missing node is named,
     /// because a disabled control that does not say why is a defect.
     Blocked {
@@ -101,6 +115,7 @@ impl Fault {
             Fault::OutOfDomain { node, .. }
             | Fault::Degenerate { node, .. }
             | Fault::NotRun { node }
+            | Fault::Undefined { node }
             | Fault::Blocked { node, .. }
             | Fault::DataMissing { node, .. }
             | Fault::DataUnverified { node, .. }
@@ -118,6 +133,7 @@ impl Fault {
             Fault::OutOfDomain { .. } => "out-of-domain",
             Fault::Degenerate { .. } => "degenerate",
             Fault::NotRun { .. } => "not-run",
+            Fault::Undefined { .. } => "undefined",
             Fault::Blocked { .. } => "blocked",
             Fault::DataMissing { .. } => "data-missing",
             Fault::DataUnverified { .. } => "data-unverified",
@@ -143,6 +159,10 @@ impl core::fmt::Display for Fault {
                 write!(f, "{node}: {field} is degenerate — {reason}")
             }
             Fault::NotRun { node } => write!(f, "{node}: has not run"),
+            Fault::Undefined { node } => write!(
+                f,
+                "{node}: the relation is stated and never derived — nothing on the sheet says where it came from, so this row does not answer"
+            ),
             Fault::Blocked { node, missing } => {
                 write!(f, "{node}: blocked — {missing} has never run")
             }

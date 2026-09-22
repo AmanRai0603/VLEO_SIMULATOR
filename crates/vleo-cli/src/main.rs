@@ -221,6 +221,19 @@ fn cmd_run(args: &[&str]) -> Result<(), String> {
                 v.governing
             );
         }
+        None if !def.is_defined() => {
+            // Its own fault, not an upstream one. Say what it is and say what
+            // would turn it on, because a disabled control that does not say
+            // why is a defect.
+            println!("  \x1b[33mINACTIVE\x1b[0m — the relation is stated and never derived");
+            println!("  {}", def.expression);
+            // One println per line. A single multi-line literal reads better in
+            // the source and prints the source's own indentation, which is how
+            // this came out nineteen spaces deep the first time.
+            println!("  to define it: a [theory] block on the sheet — why it is this relation,");
+            println!("  what the answer means, and the steps it comes in. Until then nothing");
+            println!("  here is a definition a reader can check, and the row does not answer.");
+        }
         None => println!("  \x1b[33mnot computed\x1b[0m — see the blocked list below"),
     }
     println!();

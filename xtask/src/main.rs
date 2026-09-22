@@ -4,7 +4,7 @@
 //! identical on a laptop and in continuous integration. A rule that lives only
 //! in the pipeline is a rule half the team never sees.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -27,6 +27,7 @@ fn main() -> ExitCode {
         "assemble" => cmd_assemble(&root, &rest),
         "gate" => cmd_gate(&root, &rest),
         "status" => cmd_status(&root),
+        "active" => cmd_active(&root, &rest),
         "gap" => cmd_gap(&root),
         "graph" => cmd_graph(&root),
         "new" => cmd_new(&root, &rest),
@@ -74,6 +75,11 @@ cargo xtask <command>
   gate [<node>]      the checks, in order, stopping at the first failure.
                      Called by the authoring hook, by the pipeline and by hand.
   status             counts by state and by subsystem, and what is blocking.
+  active [<subsystem>]
+                     which rows answer and which do not, and for each one that
+                     does not, whether it is its own derivation that is missing
+                     or a row it reads. A function is defined by its
+                     derivation; an input is defined by carrying a value.
   gap                what every sheet promised and nothing yet covers.
   graph              the three graphs, their sizes, and the crate direction check.
   new <id> --like <sibling>
@@ -1439,9 +1445,26 @@ fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
         }
     }
 
+    // The derivation. Not a blocking field for generation either — an underived
+    // relation still generates, still compiles and still has fixtures that pass
+    // — but the row does not answer, so this is the first thing to say about a
+    // function that has one and is silent. It is printed before authorship
+    // because it is the stronger of the two: no derivation is no number, no
+    // attribution is a number worth less.
+    println!();
+    if !sh.steps.is_empty() && sh.theory.is_empty() {
+        println!("  \x1b[33m?\x1b[0m  where this relation came from — and THE ROW DOES NOT ANSWER until it is here");
+        println!("     [theory] why, reading, and a [[theory.step]] per step. A function is");
+        println!("     defined by its derivation, not by its expression and not by its citation:");
+        println!("     a relation an agent invented carries a citation just as convincingly, and");
+        println!("     the expression is one line anybody can type. Until this is written the");
+        println!("     resolver refuses the row and every reader of it blocks by name.");
+    } else if !sh.steps.is_empty() {
+        println!("  \x1b[32m·\x1b[0m  derived — the sheet says where the relation came from");
+    }
+
     // Authorship. Not a blocking field for generation — a relation with no name
     // against it still generates — but a gap, so the node cannot reach H2.
-    println!();
     if sh.expression.trim().is_empty() {
     } else if sh.relation_by.trim().is_empty() {
         println!("  \x1b[33m?\x1b[0m  who supplied this relation, and when");
@@ -2318,6 +2341,216 @@ fn cmd_variables(root: &Path) -> Result<(), String> {
         tree.sheets.len(),
         o.len() / 1024,
         p.display()
+    );
+    Ok(())
+}
+
+/// Which rows answer, which do not, and what is in the way.
+///
+/// The question a person actually has in front of the tool is "is this number
+/// real", and until now nothing answered it in one place: a row with an
+/// expression and a citation printed a number exactly like a row somebody had
+/// worked out. The two are not the same, and the difference is the derivation
+/// — see `NodeDef::is_defined`.
+///
+/// Three states, and the third is the one worth having:
+///
+///   ACTIVE      it answers. An input, which is defined by carrying a value, or
+///               a function whose relation the sheet derives, reading only
+///               active rows.
+///   UNDEFINED   a function whose relation is stated and never derived. Its own
+///               fault, and one sheet edit away from being fixed.
+///   BLOCKED     defined in itself; something it reads is not. Named, because
+///               "not active" without the name is a dead end.
+///
+/// It is computed from the sheets, so it is answerable on a tree that cannot
+/// run — which is most of a tree for most of a programme.
+fn cmd_active(root: &Path, args: &[&str]) -> Result<(), String> {
+    let tree = load(root)?;
+    let only = args.iter().find(|a| !a.starts_with("--")).copied();
+
+    // A variable id is either a node id or `<node id>.<extra>`; a node id never
+    // contains a dot, so the producer is everything before the first one.
+    let producer = |var: &str| var.split('.').next().unwrap_or(var).to_string();
+
+    // Undefined in itself. A seeded row is not undefined — it is unwritten, and
+    // the tree already counts those separately. Conflating the two would report
+    // 1076 rows as a derivation problem when they are a nothing-has-been-written
+    // problem.
+    let mut undefined: BTreeSet<&str> = BTreeSet::new();
+    for sh in tree.ordered() {
+        if sh.is_seeded() {
+            continue;
+        }
+        if !sh.steps.is_empty() && sh.theory.is_empty() {
+            undefined.insert(sh.id.as_str());
+        }
+    }
+
+    // Walk each row's closure. The first row in the way is the one reported:
+    // a person fixes one thing at a time, and naming the whole set of ancestors
+    // is a list nobody reads.
+    #[derive(Clone)]
+    enum Verdict {
+        Active,
+        Seeded,
+        Undefined,
+        BlockedBy(String),
+    }
+    let mut verdict: BTreeMap<&str, Verdict> = BTreeMap::new();
+    fn walk<'a>(
+        id: &'a str,
+        tree: &'a vleo_sheet::load::Tree,
+        undefined: &BTreeSet<&str>,
+        verdict: &mut BTreeMap<&'a str, Verdict>,
+        on_stack: &mut BTreeSet<String>,
+    ) -> Verdict {
+        if let Some(v) = verdict.get(id) {
+            return v.clone();
+        }
+        // A declared cycle is walked once; treat a revisit as satisfied rather
+        // than recursing forever. Whether the cycle converges is the resolver's
+        // question, not this one's.
+        if !on_stack.insert(id.to_string()) {
+            return Verdict::Active;
+        }
+        let sh = match tree.sheets.get(id) {
+            Some(s) => s,
+            None => {
+                on_stack.remove(id);
+                return Verdict::Active;
+            }
+        };
+        let v = if sh.is_seeded() {
+            Verdict::Seeded
+        } else if undefined.contains(id) {
+            Verdict::Undefined
+        } else {
+            let mut blocker = None;
+            for inp in &sh.inputs {
+                // A variable id is a node id or `<node id>.<extra>`, and a node
+                // id never contains a dot — so the producer is everything
+                // before the first one. Resolved against the tree rather than
+                // trusted, because an input naming a row that does not exist is
+                // assembly's refusal to make, not this command's.
+                let name = inp.var.split('.').next().unwrap_or(&inp.var);
+                let Some((key, _)) = tree.sheets.get_key_value(name) else {
+                    continue;
+                };
+                let up: &'a str = key.as_str();
+                if up == id {
+                    continue;
+                }
+                match walk(up, tree, undefined, verdict, on_stack) {
+                    Verdict::Active => {}
+                    Verdict::Seeded | Verdict::Undefined => {
+                        blocker = Some(up.to_string());
+                        break;
+                    }
+                    Verdict::BlockedBy(b) => {
+                        blocker = Some(b);
+                        break;
+                    }
+                }
+            }
+            match blocker {
+                Some(b) => Verdict::BlockedBy(b),
+                None => Verdict::Active,
+            }
+        };
+        on_stack.remove(id);
+        verdict.insert(sh.id.as_str(), v.clone());
+        v
+    }
+    let ids: Vec<&str> = tree.ordered().iter().map(|s| s.id.as_str()).collect();
+    for id in &ids {
+        let mut on_stack = BTreeSet::new();
+        walk(id, &tree, &undefined, &mut verdict, &mut on_stack);
+    }
+    let _ = producer;
+
+    // How much each undefined row is costing, measured rather than guessed:
+    // the rows that name it as their blocker. This is the order to fix them in.
+    let mut cost: BTreeMap<&str, usize> = BTreeMap::new();
+    for sh in tree.ordered() {
+        if let Some(Verdict::BlockedBy(b)) = verdict.get(sh.id.as_str()) {
+            if let Some((k, _)) = tree.sheets.get_key_value(b.as_str()) {
+                *cost.entry(k.as_str()).or_default() += 1;
+            }
+        }
+    }
+
+    let rows: Vec<&vleo_sheet::model::Sheet> = tree
+        .ordered()
+        .into_iter()
+        .filter(|s| only.is_none_or(|sub| s.subsystem == sub))
+        .collect();
+    if rows.is_empty() {
+        return Err(format!(
+            "no rows in subsystem '{}'",
+            only.unwrap_or("<none>")
+        ));
+    }
+
+    let mut by_sub: BTreeMap<&str, [usize; 4]> = BTreeMap::new();
+    for sh in &rows {
+        let e = by_sub.entry(sh.subsystem.as_str()).or_default();
+        match verdict.get(sh.id.as_str()) {
+            Some(Verdict::Active) => e[0] += 1,
+            Some(Verdict::Undefined) => e[1] += 1,
+            Some(Verdict::BlockedBy(_)) => e[2] += 1,
+            _ => e[3] += 1,
+        }
+    }
+    println!(
+        "{:<12} {:>7} {:>10} {:>10} {:>8}",
+        "subsystem", "active", "undefined", "blocked", "seeded"
+    );
+    for (s, c) in &by_sub {
+        println!(
+            "{:<12} {:>7} {:>10} {:>10} {:>8}",
+            s, c[0], c[1], c[2], c[3]
+        );
+    }
+    let tot = |i: usize| by_sub.values().map(|c| c[i]).sum::<usize>();
+    println!(
+        "{:<12} {:>7} {:>10} {:>10} {:>8}\n",
+        "total",
+        tot(0),
+        tot(1),
+        tot(2),
+        tot(3)
+    );
+
+    if tot(1) > 0 {
+        println!("undefined — the relation is stated and never derived:");
+        let mut list: Vec<(&str, usize)> = rows
+            .iter()
+            .filter(|s| matches!(verdict.get(s.id.as_str()), Some(Verdict::Undefined)))
+            .map(|s| (s.id.as_str(), cost.get(s.id.as_str()).copied().unwrap_or(0)))
+            .collect();
+        // Worst first: a row nothing reads is a different job from one that is
+        // standing in front of forty.
+        list.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(b.0)));
+        for (id, n) in list.iter().take(24) {
+            let sh = &tree.sheets[*id];
+            println!(
+                "  {:<40} {:>3} row(s) wait on it   {}",
+                id, n, sh.expression
+            );
+        }
+        if list.len() > 24 {
+            println!("  … and {} more", list.len() - 24);
+        }
+        println!();
+    }
+    println!(
+        "{} of {} rows answer. A function is defined by its derivation, not by its\n\
+         expression and not by its citation — `cargo xtask declare <node>` says what\n\
+         one is missing, and `confirm --list` is the separate question of who has\n\
+         read the relation against its source.",
+        tot(0),
+        rows.len()
     );
     Ok(())
 }
