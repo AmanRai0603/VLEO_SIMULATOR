@@ -251,6 +251,31 @@ pub fn fixture_verdicts(node: NodeIdx) -> Vec<vleo_bus::VerdictOut> {
     out
 }
 
+/// Evaluate ONE node's relation at supplied inputs, with no graph at all.
+///
+/// The design question and the relation question are different, and the engine
+/// answers only the first. *What is the design's number* walks the graph: every
+/// driver comes from whatever produces it, and a value supplied for a computed
+/// row is rightly refused because the run would overwrite it. *What does this
+/// relation do at these inputs* has no graph in it — it is what a fixture asks,
+/// and `run_fixture` below has always asked it this way.
+///
+/// It became worth exposing when `env_f107` stopped being declared and started
+/// reading the solar subsystem. The flux is no longer free, so a sweep over it
+/// is meaningless to the resolver and correctly refused — but the coefficients
+/// of the thermosphere relation are still a fact about the relation, and
+/// checking one still means moving one driver while holding the others.
+///
+/// It is deliberately NOT a way to fake a design number. It returns the
+/// relation's own outputs and touches no store, so nothing downstream can see
+/// what a probe computed, and no run's provenance can contain one.
+pub fn probe(node: NodeIdx, inputs: &[f64]) -> Result<[f64; MAX_OUTPUTS], Fault> {
+    let def = &NODES[node as usize];
+    let mut outputs = [0.0f64; MAX_OUTPUTS];
+    (tables::DISPATCH[node as usize])(inputs, &mut outputs[..def.outputs.len()])?;
+    Ok(outputs)
+}
+
 /// One fixture, executed against the live engine.
 pub fn run_fixture(node: NodeIdx, inputs: &[f64]) -> Result<(f64, Verdict), Fault> {
     let def = &NODES[node as usize];

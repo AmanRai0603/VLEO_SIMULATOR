@@ -161,9 +161,31 @@ def run(node, **over):
     return out
 
 
+def probe(node, **inputs):
+    """One RELATION, at given inputs, with no graph — `/v1/probe`.
+
+    Not `/v1/run`. This file asks what the thermosphere relation DOES at chosen
+    drivers, which is a question about the relation and not about the design,
+    and since env_f107 started reading the solar subsystem the two have needed
+    different paths: the flux is no longer free, so the engine correctly refuses
+    to pretend a supplied one survives the run.
+
+    The refusal is the point. Before the daemon learned to give it, a `set=` on
+    a computed row was accepted and silently dropped, and this file compared
+    867.2 K against 867.2 K across a hundred sweep points and called the
+    disagreement 1303 K without ever noticing it was measuring one number.
+    """
+    q = (HOST + "/v1/probe?" + urllib.parse.urlencode({"node": node})
+         + "".join("&in=%s:%r" % (k, v) for k, v in sorted(inputs.items())))
+    with urllib.request.urlopen(q, timeout=120) as fh:
+        d = json.load(fh)
+    if not d.get("ok"):
+        raise SystemExit("probe refused: %s" % d.get("message", d))
+    return d["si"]
+
+
 def t_inf(f, fa, kp):
-    got = run("env_exospheric_temperature", env_f107=f, env_f107a=fa, env_kp=kp)
-    return None if got is None else got.get("env_exospheric_temperature")
+    return probe("env_exospheric_temperature", env_f107=f, env_f107a=fa, env_kp=kp)
 
 
 # ─── the claims ───────────────────────────────────────────────────────────────
