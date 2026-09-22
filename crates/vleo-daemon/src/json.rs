@@ -96,6 +96,16 @@ impl Json {
     }
 }
 
+/// One escaped JSON string, for a message built by hand.
+///
+/// The escaping already exists on `Json::push_string`; this reaches it without a
+/// second copy of the rules, which is where an escaping bug would hide.
+pub fn string(v: &str) -> String {
+    let mut j = Json::new();
+    j.push_string(v);
+    j.0
+}
+
 impl Default for Json {
     fn default() -> Self {
         Json::new()

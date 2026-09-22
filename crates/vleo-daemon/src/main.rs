@@ -288,6 +288,10 @@ fn route(
         ("GET", p) if p.starts_with("/v1/declare/") => {
             declare_endpoint(ctx, p.trim_start_matches("/v1/declare/"))
         }
+        // THE ONE WRITE PATH IN THIS SERVER. One field of one sheet.
+        ("POST", p) if p.starts_with("/v1/sheet/") => {
+            sheet_write(ctx, p.trim_start_matches("/v1/sheet/"), params)
+        }
         ("POST", "/v1/run") | ("GET", "/v1/run") => ok_json(run_json(params, ctx)),
         ("GET", "/v1/sweep") => ok_json(sweep_json(params, ctx)),
         ("GET", "/v1/probe") => ok_json(probe_json(params)),
@@ -400,6 +404,110 @@ fn module(ctx: &Ctx, name: &str) -> (&'static str, &'static str, Vec<u8>) {
 /// table entirely, and the person filling it in needs to see the blank. It
 /// carries the sheet hash so a later save can prove which version it started
 /// from.
+/// Whether this daemon may write to the tree at all.
+///
+/// Off unless asked for. A read-only deployment must not become a writable one
+/// because somebody pointed a browser at it: editing a sheet is work in a
+/// checkout, and a daemon serving a built copy of the tool has nothing it should
+/// be editing.
+fn writes_allowed() -> bool {
+    matches!(
+        std::env::var("VLEO_ALLOW_WRITE").unwrap_or_default().as_str(),
+        "1" | "true" | "yes"
+    )
+}
+
+/// Change one field of one sheet.
+///
+/// One field per request, which is how `xtask confirm` works and for the same
+/// reason: an edit that changes several things at once is an edit nobody can
+/// read in a diff. The transaction itself is `vleo_sheet::form::save` — the
+/// ordering, the atomic write and the restore-on-failure are tested there,
+/// without an HTTP server in the way.
+///
+///     POST /v1/sheet/<id>
+///     field=unit&value=Kelvin&base=1f2e3d&by=A.%20Person
+///
+/// `base` is the `file_hash` the editor was shown. A stale one is 409 with the
+/// current hash, never an overwrite.
+fn sheet_write(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static str, Vec<u8>) {
+    const JSON: &str = "application/json; charset=utf-8";
+    let refuse = |status: &'static str, why: String| -> (&'static str, &'static str, Vec<u8>) {
+        (
+            status,
+            JSON,
+            format!(
+                "{{\"ok\":false,\"message\":{}}}",
+                json::string(&why)
+            )
+            .into_bytes(),
+        )
+    };
+    if !writes_allowed() {
+        return refuse(
+            "403 Forbidden",
+            "this daemon is read-only. Start it with VLEO_ALLOW_WRITE=1 in a checkout to \
+             edit sheets from the face."
+                .into(),
+        );
+    }
+    if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+        return refuse("400 Bad Request", "not a node identifier".into());
+    }
+    let (Some(field), Some(value), Some(base)) = (
+        param(params, "field"),
+        param(params, "value"),
+        param(params, "base"),
+    ) else {
+        return refuse(
+            "400 Bad Request",
+            "field, value and base are all required — base is the file_hash the form was \
+             shown, and without it a save cannot tell whether somebody else has edited the \
+             row since"
+                .into(),
+        );
+    };
+    let by = param(params, "by").map(decode).unwrap_or_default();
+    match vleo_sheet::form::save(
+        &ctx.root,
+        id,
+        &decode(field),
+        &decode(value),
+        &decode(base),
+        &by,
+    ) {
+        vleo_sheet::form::Saved::Ok {
+            file_hash,
+            sheet_hash,
+            regenerated,
+        } => (
+            "200 OK",
+            JSON,
+            format!(
+                "{{\"ok\":true,\"file_hash\":{},\"sheet_hash\":{},\"regenerated\":{}}}",
+                json::string(&file_hash),
+                json::string(&sheet_hash),
+                regenerated
+            )
+            .into_bytes(),
+        ),
+        // Not an error the reader caused, and not an overwrite either: somebody
+        // else moved the row. The current hash goes back so the face can show
+        // what it looks like now rather than clobber it.
+        vleo_sheet::form::Saved::Stale { current } => (
+            "409 Conflict",
+            JSON,
+            format!(
+                "{{\"ok\":false,\"stale\":true,\"file_hash\":{},\"message\":\"this row changed \
+                 since the form was opened — reload it and reapply the edit\"}}",
+                json::string(&current)
+            )
+            .into_bytes(),
+        ),
+        vleo_sheet::form::Saved::Refused(why) => refuse("400 Bad Request", why),
+    }
+}
+
 fn declare_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
     if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
         return (
