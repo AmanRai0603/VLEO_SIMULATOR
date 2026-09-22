@@ -758,15 +758,25 @@ coefficients recovered from three sweeps, and if the panel ever carried them as
 literals this check would pass while meaning nothing.
 
 IN THE FIRST VIEW the three lines must CROSS at a single point, and that point
-is where env_f107 and env_f107a are both declared — 150. There is no departure
-there, so all three relations agree, and three lines that cross at three
-different places mean one of the sweeps is being taken somewhere else. Two
-vertical marks: the declared 150, and what the solar subsystem computes for its
-hot sustained scenario, which is lower. The distance between those two marks is
-§28.2 and it is the reason this panel exists, and it is WASHED between them
-rather than left as two ticks a reader subtracts. The wash has two measured
-ends and both are named by the marks it runs between; an open-ended wash here
-would be claiming a bound one of them does not have.
+is where env_f107 and env_f107a both sit. There is no departure there, so all
+three relations agree, and three lines that cross at three different places
+mean one of the sweeps is being taken somewhere else.
+
+THAT POINT IS NOW COMPUTED. §49 wired env_f107 to read the solar subsystem
+through layer 2, so the crossing is at what the subsystem publishes for its hot
+sustained scenario rather than at a declared 150. The two vertical marks that
+used to straddle §28.2's gap are therefore on top of each other, and the wash
+between them has no width — which is the finding, not a drawing fault. A wash
+that reopens means the design and the subsystem have stopped agreeing, and the
+caption says which is which.
+
+The three curves come from `/v1/probe`, not from a sweep. A sweep moves a
+decision the design lets you move, and the flux stopped being one: it is
+derived from the record now, and the engine refuses to pretend a supplied value
+survives the run. The three slopes are facts about Jacchia 1971 rather than
+about the design, so they are asked of the relation directly — which is also
+why they must still read 3.24, 1.30 and 1.94 whatever the design point moves
+to.
 
 IN THE SECOND VIEW five curves, one per scenario, ordered cold to hot as five
 steps of ONE hue — never five different colours, because the scenarios are a

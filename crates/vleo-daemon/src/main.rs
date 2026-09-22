@@ -285,6 +285,7 @@ fn route(
         }
         ("POST", "/v1/run") | ("GET", "/v1/run") => ok_json(run_json(params, ctx)),
         ("GET", "/v1/sweep") => ok_json(sweep_json(params, ctx)),
+        ("GET", "/v1/probe") => ok_json(probe_json(params)),
         ("GET", "/v1/levers") => ok_json(levers_json(params, ctx)),
         ("GET", "/v1/branches") => ok_json(branches_json(params)),
         // The reference data itself, so a face can draw the record rather than
@@ -822,6 +823,50 @@ fn sets(params: &str) -> Vec<(String, f64)> {
         .collect()
 }
 
+/// A supplied value only survives on a row that declares its own number.
+///
+/// Every other kind works its answer out during the run and overwrites what was
+/// supplied, so a `set=` on one was accepted, ignored, and reported as a
+/// successful run against a number nobody asked for. A sweep over one drew a
+/// flat line and said "0 refused", which reads as a real result — a reader
+/// turns the knob and nothing moves, and nothing anywhere says why.
+///
+/// The CLI has refused this since it was written (`suppliable`); this path
+/// never checked. It stayed invisible while every driver was declared, and
+/// became load-bearing the moment `env_f107` started reading the solar
+/// subsystem: the two faces then disagreed about the same request.
+fn unsuppliable(id: &str) -> Option<String> {
+    let k = Vleo::find(id)?;
+    let def = &NODES[k as usize];
+    if def.kind == Kind::Declared {
+        return None;
+    }
+    Some(format!(
+        "'{}' is {}, so a supplied value would be overwritten the moment it is \
+         evaluated. Set one of the declared numbers it reads instead.",
+        def.id,
+        match def.kind {
+            Kind::Computed => "computed from its inputs",
+            Kind::Required => "a target handed down from the layer above",
+            Kind::Achieved => "what a subsystem returned",
+            Kind::Kpi => "a key performance indicator",
+            Kind::Declared => unreachable!(),
+        }
+    ))
+}
+
+/// The refusal, as the wire form every endpoint here uses.
+fn refuse(node: &str, message: &str) -> String {
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", false);
+    j.str_field("fault", "not-suppliable");
+    j.str_field("node", node);
+    j.str_field("message", message);
+    j.raw("}");
+    j.0
+}
+
 fn build_case(params: &str, ctx: &Ctx) -> Case {
     Case {
         base: param(params, "case")
@@ -841,6 +886,13 @@ fn build_case(params: &str, ctx: &Ctx) -> Case {
 
 fn run_json(params: &str, ctx: &Ctx) -> String {
     let case = build_case(params, ctx);
+    // Refuse before running, not after: a supplied value that cannot survive
+    // the run has to be reported as a refusal rather than silently dropped.
+    for (id, _) in &case.supply {
+        if let Some(why) = unsuppliable(id) {
+            return refuse(id, &why);
+        }
+    }
     let mut scratch = Scratch::new();
     let mut j = Json::new();
     j.raw("{");
@@ -943,6 +995,118 @@ fn run_json(params: &str, ctx: &Ctx) -> String {
 /// A behaviour sweep. Refused points are recorded with their reason, never
 /// dropped — a sweep in which some rows quietly used a substituted value is a
 /// sweep whose conclusion is unknown.
+/// `/v1/probe?node=<id>&in=<var>:<value>&in=…` — one relation, at given inputs.
+///
+/// The counterpart to `run` refusing a supplied value on a computed row. That
+/// refusal is right: the run would overwrite it. But a relation's behaviour at
+/// chosen driver values is a different question with a different answer, and
+/// until `env_f107` became computed the two could be asked the same way.
+///
+/// Inputs are named by the VARIABLE they bind, not given positionally. The
+/// dispatch table takes them in the node's declared order, and a caller
+/// counting commas to match that order is a caller that silently swaps two
+/// drivers of the same type the first time a sheet's input list is reordered —
+/// which `env_exospheric_temperature`, whose three drivers are all `Ratio`,
+/// would do without a single type error.
+fn probe_json(params: &str) -> String {
+    let node = param(params, "node").map(decode).unwrap_or_default();
+    let Some(k) = Vleo::find(&node) else {
+        return refuse(&node, "no such row");
+    };
+    let def = &NODES[k as usize];
+
+    let mut given: BTreeMap<String, f64> = BTreeMap::new();
+    for kv in params.split('&') {
+        if let Some(v) = kv.strip_prefix("in=") {
+            let d = decode(v);
+            let Some((name, val)) = d.rsplit_once(':') else {
+                return refuse(&node, &format!("'{d}' is not <var>:<value>"));
+            };
+            let Ok(x) = val.parse::<f64>() else {
+                return refuse(&node, &format!("'{val}' is not a number"));
+            };
+            given.insert(name.to_string(), x);
+        }
+    }
+
+    // Every declared input must be given, by name. A missing one defaulting to
+    // zero is a probe that answers confidently about a relation nobody asked
+    // about, which is the whole failure this endpoint exists to stop repeating.
+    let mut inputs = Vec::with_capacity(def.inputs.len());
+    for &v in def.inputs {
+        let id = VARS[v as usize].id;
+        match given.remove(id) {
+            Some(x) => inputs.push(x),
+            None => {
+                return refuse(
+                    &node,
+                    &format!(
+                        "no value given for input '{id}'; this row reads {} of them",
+                        def.inputs.len()
+                    ),
+                )
+            }
+        }
+    }
+    if let Some((extra, _)) = given.iter().next() {
+        return refuse(&node, &format!("'{extra}' is not an input of {}", def.id));
+    }
+
+    let mut j = Json::new();
+    j.raw("{");
+    match vleo_modules::probe(k, &inputs) {
+        Err(f) => {
+            j.bool_field("ok", false);
+            j.str_field("fault", f.kind());
+            j.str_field("node", f.node());
+            j.str_field("message", &format!("{f}"));
+        }
+        Ok(out) => {
+            j.bool_field("ok", true);
+            j.str_field("node", def.id);
+            // The primary answer, then every published member in slot order.
+            j.num_field("si", out[0]);
+            // UNIT AND FACTOR, the same pair the sweep endpoint sends.
+            //
+            // Everything crossing this boundary is SI and a face divides by the
+            // factor to display. A caller that has to source those from
+            // somewhere else is a caller that gets `undefined`, divides by it,
+            // and draws nothing — which is exactly what the thermosphere
+            // panel's two flux curves did the first time they came through
+            // here: legend entries with no lines under them.
+            let ov = VARS[def.outputs[0] as usize].unit;
+            j.str_field("unit", ov.symbol());
+            j.num_field("factor", ov.si_factor());
+            j.key("inputs").open_arr();
+            for (i, &v) in def.inputs.iter().enumerate() {
+                if i > 0 {
+                    j.raw(",");
+                }
+                let var = &VARS[v as usize];
+                j.raw("{");
+                j.str_field("id", var.id);
+                j.str_field("unit", var.unit.symbol());
+                j.num_field("factor", var.unit.si_factor());
+                j.close_obj();
+            }
+            j.close_arr();
+            j.key("outputs").open_arr();
+            for (i, &v) in def.outputs.iter().enumerate() {
+                if i > 0 {
+                    j.raw(",");
+                }
+                j.raw("{");
+                j.str_field("id", VARS[v as usize].id);
+                j.num_field("si", out[i]);
+                j.close_obj();
+            }
+            j.close_arr();
+        }
+    }
+    j.raw("}");
+    j.0
+}
+
 fn sweep_json(params: &str, ctx: &Ctx) -> String {
     let node = param(params, "node").map(decode).unwrap_or_default();
     let over = param(params, "over").map(decode).unwrap_or_default();
@@ -956,6 +1120,13 @@ fn sweep_json(params: &str, ctx: &Ctx) -> String {
         .and_then(|v| v.parse().ok())
         .unwrap_or(48)
         .clamp(2, 400);
+
+    // The axis has to be a row a reader can actually move. Sweeping a computed
+    // one drew a flat line and reported no refusals, which is the same silent
+    // substitution as `set=` on one and reads as a real result.
+    if let Some(why) = unsuppliable(&over) {
+        return refuse(&over, &why);
+    }
 
     let mut j = Json::new();
     j.raw("{");

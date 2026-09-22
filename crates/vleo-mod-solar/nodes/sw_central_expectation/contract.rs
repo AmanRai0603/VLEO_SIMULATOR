@@ -8,10 +8,10 @@ use vleo_core::units::*;
 
 /// What this node publishes: `F107_central` (F10.7 central expectation at a lead), in `-`.
 pub const NODE_ID: &str = "sw_central_expectation";
-pub const SHEET_HASH: u64 = 0xf466d7e9c4204c31;
+pub const SHEET_HASH: u64 = 0xdfed80b967f888cd;
 /// The variables this node reads, in the order `call` expects them.
 pub const INPUT_VARS: &[&str] = &[
-    "env_f107",
+    "sw_f107_observed",
     "orbit_mission_duration",
     "sys_mission_requirements_mission_epoch",
 ];

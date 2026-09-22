@@ -14,7 +14,7 @@ layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
 # It sits immediately before sw_forecast_skill and sw_forecast_bias, the two
 # rows that read it. Twelve rows were shifted by one to open the slot, because
 # an argument printed after the functions that take it reads backwards.
-order = 1359
+order = 1360
 # RETIRED, BECAUSE IT RESTATED A MEASUREMENT AS A DECISION. This declared 26
 # days as the lead the published outlook is verified at, and sw_recurrence_lag
 # MEASURES 26 days as the lag where the rotation signal in F10.7 peaks. The

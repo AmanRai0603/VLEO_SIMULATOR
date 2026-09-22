@@ -8,30 +8,30 @@ use vleo_core::physics::*;
 use vleo_core::units::pmath;
 use vleo_core::units::*;
 
-/// Where has the Sun been sitting over the last three solar rotations?
+/// What 81-day mean 10.7 cm radio flux is the design sized to?
 ///
-/// `F107A = 150`
+/// `F107A = F107bar_sys`
 ///
-/// Source: `noaa_swpc`
+/// Source: `orbitt_case_c1`
 ///
-/// Separate from the daily value on purpose: the mean sets where the
-/// atmosphere sits, the daily value sets how far it is from there today.
+/// The slow solar term the thermosphere relation weights 3.24 — the
+/// dominant one. Computed by the solar-weather subsystem over the mission
+/// window and carried here through layer 2, for the same reason as env_f107:
+/// one row owns the answer and the rest read it.
 pub const NODE_ID: &str = "env_f107a";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x05d65296f11f2253;
+pub const SHEET_HASH: u64 = 0x6474789c1e46c8fd;
 
-pub fn evaluate() -> Result<Ratio, Fault> {
-    // generated · a declared value, converted from the unit it was written in
-    let declared: Ratio = match Ratio::from_unit(150.0, Unit::One) {
-        Some(q) => q,
-        None => return Err(Fault::Degenerate { node: NODE_ID, field: "F107A", reason: "the declared unit does not match the declared type" }),
-    };
+pub fn evaluate(from_system: Ratio) -> Result<Ratio, Fault> {
+    // ---- HOLE 1 : carry the system layer's 81-day mean flux through unchanged -> Ratio
+    let mean_flux: Ratio = from_system;
+    // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = declared;
+    let answer: Ratio = mean_flux;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "F107A", reason: "the computation produced a value that is not a number" });
     }

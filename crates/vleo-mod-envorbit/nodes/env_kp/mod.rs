@@ -3,7 +3,7 @@
 // regeneration and fails the regeneration diff in the gate.
 //! `env_kp` — Planetary geomagnetic index Kp
 //!
-//! How disturbed is the geomagnetic field?
+//! What planetary geomagnetic index is the design sized to?
 
 #[path = "model.rs"]
 pub mod model;

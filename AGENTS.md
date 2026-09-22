@@ -15,7 +15,7 @@ computes every number; four rings depend inward only:
     vleo-units  →  vleo-core  →  vleo-bus  →  vleo-mod-*  →  the faces
     RING 0         RING 1        RING 2       RING 3
 
-The tree is 1395 rows across four layers. Each row is one small question with
+The tree is 1396 rows across four layers. Each row is one small question with
 one answer, one folder, and one variable whose id is the row's id.
 
 ## The five rules that do not bend

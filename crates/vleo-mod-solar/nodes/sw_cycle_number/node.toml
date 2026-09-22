@@ -11,7 +11,7 @@ owner = "environment"
 tier = "A"
 criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1342
+order = 1343
 # RETIRED. The cycle number is a label, not a quantity anything computes with:
 # sw_cycle_phase carries the position in the cycle and every row that needs to
 # know where in the cycle the mission sits reads the phase. Nothing reads this

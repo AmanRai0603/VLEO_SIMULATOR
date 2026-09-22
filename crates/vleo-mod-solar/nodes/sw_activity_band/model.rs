@@ -27,7 +27,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_activity_band";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x13655a54560fb263;
+pub const SHEET_HASH: u64 = 0xdf9258212406f61f;
 
 pub fn evaluate(f107: Ratio) -> Result<Ratio, Fault> {
     // ---- HOLE 1 : count how many of the three published edges this flux has reached, and add one -> Ratio

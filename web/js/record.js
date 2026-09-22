@@ -133,6 +133,74 @@ export async function engineAt(node, sets) {
 }
 
 /**
+ * ONE RELATION, AT GIVEN INPUTS — `/v1/probe`, and not `/v1/run`.
+ *
+ * The two answer different questions and only recently had to. `run` asks what
+ * the DESIGN's number is: it walks the graph, every driver comes from whatever
+ * produces it, and a value supplied for a computed row is refused because the
+ * run would overwrite it. This asks what the RELATION does at chosen inputs,
+ * which has no graph in it at all.
+ *
+ * A figure about a relation's shape wants this one. The thermosphere panel's
+ * three flux slopes are facts about Jacchia 1971, true whatever the design is
+ * currently sized to, and they stopped being reachable through `run` the moment
+ * env_f107 began reading the solar subsystem.
+ *
+ * `inputs` is {variable id: value in SI}, and every input the row declares must
+ * be present — the endpoint refuses a partial set rather than defaulting one to
+ * zero and answering confidently about a relation nobody asked about.
+ */
+export async function engineProbe(node, inputs) {
+  const q = new URLSearchParams({ node });
+  for (const [k, v] of Object.entries(inputs || {})) q.append('in', k + ':' + v);
+  try {
+    const r = await fetch('/v1/probe?' + q.toString());
+    const d = await r.json();
+    if (!d.ok) return { si: null, refused: d.message || d.fault || 'refused' };
+    return { si: d.si, unit: d.unit, factor: d.factor, inputs: d.inputs, outputs: d.outputs };
+  } catch (e) {
+    return { si: null, refused: String(e) };
+  }
+}
+
+/**
+ * A sweep of one relation over one of its inputs, the others held.
+ *
+ * The shape `engineSweep` returns, so a caller can swap one for the other, but
+ * taken point by point through `engineProbe`. There is no sweep endpoint for
+ * this and there should not be: a sweep is a statement about the design space,
+ * and moving a driver the design does not let you move is not one.
+ *
+ * `held` gives every OTHER input. Refused points are recorded and never
+ * dropped, the same rule the engine's own sweep follows.
+ */
+export async function probeSweep(node, over, from, to, points, held) {
+  const xs = [];
+  for (let i = 0; i < points; i++) {
+    xs.push(from + (to - from) * (points === 1 ? 0 : i / (points - 1)));
+  }
+  const got = await Promise.all(
+    xs.map(x => engineProbe(node, { ...(held || {}), [over]: x })));
+  // The SHAPE engineSweep returns, units and factors included. A caller divides
+  // by the factor to display, so omitting them hands it `undefined`, every
+  // point becomes NaN, and the curve silently does not draw — with the legend
+  // entry still there, which is worse than an error.
+  const first = got.find(g => g.si !== null && g.inputs) || {};
+  const xin = (first.inputs || []).find(i => i.id === over);
+  const out = {
+    ok: true, x_id: over, y_id: node,
+    x_unit: xin ? xin.unit : '-', y_unit: first.unit || '-',
+    x_factor: xin ? xin.factor : 1, y_factor: first.factor || 1,
+    x: [], y: [], refused: [],
+  };
+  xs.forEach((x, i) => {
+    if (got[i].si === null || !isFinite(got[i].si)) out.refused.push([x, got[i].refused || 'refused']);
+    else { out.x.push(x); out.y.push(got[i].si); }
+  });
+  return out;
+}
+
+/**
  * Which declared decisions actually move a row's answer, most first. The engine
  * measures it; see the levers endpoint. A figure uses this to choose what to put
  * on an axis rather than guessing, which is how the sweep control came to offer

@@ -3,7 +3,7 @@
 // regeneration and fails the regeneration diff in the gate.
 //! `env_f107a` — Solar radio flux F10.7, 81-day mean
 //!
-//! Where has the Sun been sitting over the last three solar rotations?
+//! What 81-day mean 10.7 cm radio flux is the design sized to?
 
 #[path = "model.rs"]
 pub mod model;

@@ -3,7 +3,7 @@
 // regeneration and fails the regeneration diff in the gate.
 //! `env_f107` — Solar radio flux F10.7, daily
 //!
-//! How active is the Sun today, on the 10.7 cm radio flux index?
+//! What daily 10.7 cm radio flux is the design sized to?
 
 #[path = "model.rs"]
 pub mod model;

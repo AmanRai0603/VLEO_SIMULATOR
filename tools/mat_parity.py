@@ -144,6 +144,29 @@ def run_node(port, node, sets=(), mode="branch"):
     return None
 
 
+def probe_node(port, node, inputs):
+    """ONE RELATION, at given inputs — `/v1/probe`, and not `/v1/run?set=`.
+
+    These three rows each read sw_storm_return_level, which is COMPUTED. A
+    `set=` on a computed row cannot survive the run, and until the daemon
+    learned to say so it was accepted and silently dropped: this file believed
+    it was asking what the ap-to-Kp table gives at Ap 22.093, 26.683 and
+    41.535, and was in fact being handed the same three answers at whatever Ap
+    the tree itself sits at — and reporting AGREES against MATLAB for all of
+    them.
+
+    A parity check comparing the wrong points and finding agreement is worse
+    than no parity check. The probe asks the relation directly, which is the
+    question this file was always asking.
+    """
+    q = [("node", node)] + [("in", f"{k}:{v!r}") for k, v in inputs]
+    req = urllib.request.Request(
+        f"http://localhost:{port}/v1/probe?" + urllib.parse.urlencode(q))
+    with urllib.request.urlopen(req, timeout=30) as r:
+        d = json.load(r)
+    return d.get("si") if d.get("ok") else None
+
+
 def cycle_analogue(rows):
     """What the record's earlier cycles actually did over this same window.
 
@@ -204,7 +227,7 @@ def check(port):
     ctr_m, off_m = fit_offset(rows, "mean")
     for tag in ("nominal", "hotmean", "hotday"):
         ap = ref[tag]["ap"]
-        got = run_node(port, "sw_kp_slot_bias", [("sw_storm_return_level", ap)], "alone")
+        got = probe_node(port, "sw_kp_slot_bias", [("sw_storm_return_level", ap)])
         want = ref[tag]["kp_peak"] - kp_table(ap)
         if got is None:
             entry("DIFFERS", f"sw_kp_slot_bias at Ap {ap:.3f}", "the engine refused")
@@ -223,8 +246,8 @@ def check(port):
     # sheets tell them to must land on MATLAB's answer.
     for tag in ("nominal", "hotmean", "hotday"):
         ap = ref[tag]["ap"]
-        raw = run_node(port, "sw_kp_from_ap", [("sw_storm_return_level", ap)], "alone")
-        bias = run_node(port, "sw_kp_mean_bias", [("sw_storm_return_level", ap)], "alone")
+        raw = probe_node(port, "sw_kp_from_ap", [("sw_storm_return_level", ap)])
+        bias = probe_node(port, "sw_kp_mean_bias", [("sw_storm_return_level", ap)])
         want = ref[tag]["kp_mean"]
         if raw is None or bias is None:
             entry("DIFFERS", f"sw_kp_from_ap + sw_kp_mean_bias at Ap {ap:.3f}",

@@ -8,27 +8,34 @@ use vleo_core::physics::*;
 use vleo_core::units::pmath;
 use vleo_core::units::*;
 
-/// How disturbed is the geomagnetic field?
+/// What planetary geomagnetic index is the design sized to?
 ///
-/// `Kp = 3`
+/// `Kp = Kp_sys`
 ///
-/// Source: `noaa_swpc`
+/// Source: `orbitt_case_c1`
+///
+/// The geomagnetic driver of the thermosphere relation, computed by the
+/// solar- weather subsystem and carried here through layer 2. WHICH SLOT this
+/// is remains open. The subsystem publishes a daily MEAN slot and a daily
+/// PEAK slot per scenario and they are different numbers; sw_kp_driving_slot
+/// is the seeded row that will say which one a design is driven by, and it
+/// needs a person. Until it carries a value this row carries what layer 2
+/// publishes, and env_exospheric_temperature's second assumption says so at
+/// length.
 pub const NODE_ID: &str = "env_kp";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x2651d1805ca45d77;
+pub const SHEET_HASH: u64 = 0x2181dd88d8825954;
 
-pub fn evaluate() -> Result<Ratio, Fault> {
-    // generated · a declared value, converted from the unit it was written in
-    let declared: Ratio = match Ratio::from_unit(3.0, Unit::One) {
-        Some(q) => q,
-        None => return Err(Fault::Degenerate { node: NODE_ID, field: "Kp", reason: "the declared unit does not match the declared type" }),
-    };
+pub fn evaluate(from_system: Ratio) -> Result<Ratio, Fault> {
+    // ---- HOLE 1 : carry the system layer's geomagnetic index through unchanged -> Ratio
+    let index: Ratio = from_system;
+    // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
     // reason travels with the guard, because a guard whose reason is not
     // written down gets deleted by the next person who finds it awkward.
-    let answer: Ratio = declared;
+    let answer: Ratio = index;
     if !answer.is_finite() {
         return Err(Fault::Degenerate { node: NODE_ID, field: "Kp", reason: "the computation produced a value that is not a number" });
     }

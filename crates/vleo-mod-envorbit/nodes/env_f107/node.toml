@@ -6,7 +6,7 @@ label = "Solar radio flux F10.7, daily"
 folder = "env_f107"   # frozen at seed; renaming the label never moves the directory
 subsystem = "env"
 parent = "l3_x_envorbit"
-kind = "declared"
+kind = "computed"
 owner = "environment"
 tier = "A"
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
@@ -19,12 +19,80 @@ order = 495
 state = "published"
 
 [question]
-text = "How active is the Sun today, on the 10.7 cm radio flux index?"
-note = "Shipped climatology stands in when no solar-drivers bundle is synced, and the run is marked amber."
+text = "What daily 10.7 cm radio flux is the design sized to?"
+note = """
+The number the density chain is built on. It is no longer declared here: the
+solar-weather subsystem computes it over the mission window and publishes it
+through l3_solar_interface, layer 2 carries it as sys_space_environment_f10_7,
+and this row carries it into the subsystems that read it.
+
+It is a SUSTAINED level over the window, not the flux on a day. What the Sun is
+doing now is a different question and a different row — sw_f107_observed, which
+is what the subsystem's own forecast starts from.
+"""
 
 [maths]
-expression = "F107 = 150"
-source = "noaa_swpc"
+# NOT A RELATION. The identity is the point: one row owns the answer and this
+# one carries it, because two rows declaring the design flux is two rows that
+# can disagree and the readers are sized against whichever they opened.
+confirmed_by = ""
+expression = "F107 = F107_sys_daily"
+source = "orbitt_case_c1"
+
+# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash.
+[theory]
+why = """
+It restates what the system layer was told; it does not decide it.
+
+Which flux the design is sized to is a conclusion about a five-year window, and
+producing it is a subsystem's whole job — a record, a cycle analogue, a lead-
+weighted estimator and a spread, which is what the forty rows of solar weather
+are. A row here that declared its own number would be a second answer to that
+question, and the twelve rows reading this one would be sized against whichever
+of the two their author happened to open.
+
+That is not hypothetical: it is what this row was until now. It declared 150
+while the subsystem computed 104.07 over the same window, and the two were
+never compared because nothing read both.
+"""
+reading = """
+It is the HOTMEAN scenario's sustained level, because that is the member
+l3_solar_interface publishes as its primary. The subsystem also publishes
+nominal, coldmean, hotday and coldday, and a design that must survive its worst
+single day rather than its worst sustained period wants a different member of
+that set than this row carries.
+
+The value dropped from 150 to 104.07 when this wiring landed. That is not a
+correction of an error — 150 was a declared design default and is a defensible
+one — it is the record's own answer for this mission window replacing a round
+number, and it makes the modelled thermosphere COOLER and the density LOWER.
+A design sized on the new number has less drag and less margin against a real
+hot sky than one sized on the old, and §49 measures what moved.
+"""
+
+[[theory.step]]
+text = """
+Take what layer 2 publishes and pass it on, at the same type and the same unit.
+There is no arithmetic here on purpose: the value of the row is that there is
+nowhere for a discrepancy to enter between what the subsystem concluded and
+what the design is built to.
+"""
+math = "F107 = F107_sys_daily"
+
+[[input]]
+# Read across the layer boundary: the driver is a system-level conclusion and
+# lives at layer 2. The subsystem that produced it is reached through its
+# interface, never by reaching into it.
+binding = "from_system"
+var = "sys_space_environment_f10_7"
+type = "Ratio"
+
+[[algorithm.step]]
+number = 1
+text = "carry the system layer's daily flux through unchanged"
+binds = "flux"
+type = "Ratio"
+
 
 [output]
 # The node's one answer. The variable id is the node id: one small
@@ -37,11 +105,6 @@ upper = 400.0
 reason_lower = "below 60 sfu has never been observed; the fit has no support there"
 reason_upper = "above 400 sfu is beyond the largest recorded daily value, so the temperature relation is extrapolated"
 
-[value]
-# A number a person picked. It carries the same discipline as a
-# fixture, because every margin in the design is built out of these.
-number = 150.0
-confirmed_by = "A. Rai / 2026-09-01"
 
 [view]
 kind = "number"

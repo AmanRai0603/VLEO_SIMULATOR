@@ -32,7 +32,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &str = "sw_central_expectation";
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0xf466d7e9c4204c31;
+pub const SHEET_HASH: u64 = 0xdfed80b967f888cd;
 
 pub fn evaluate(today: Ratio, lead: Time, epoch: Time) -> Result<Ratio, Fault> {
     // ---- HOLE 1 : average the amplitude-scaled cycle analogue over the mission window -> Ratio

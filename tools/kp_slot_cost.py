@@ -30,6 +30,7 @@ rather than a switch. Whoever answers it decides.
 import argparse
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -51,9 +52,14 @@ FLOOR = 1e-9
 # The two scenarios where the choice is a real decision, and the symbols
 # `sw_kp_scenarios` publishes each slot under. The values are NOT written here —
 # they are read off the engine, so a change in the record moves this report.
+# Each scenario carries its own flux as well as its own two Kp slots, and the
+# temperature has to be taken at BOTH of that scenario's drivers. Probing every
+# scenario at one flux conflates them: it reproduces the gap correctly — the
+# geomagnetic term does not depend on the flux — and puts both ends of the
+# worst-day pair 26 K below where the sheets say they are.
 SCENARIOS = [
-    ("the sustained disturbed scenario", "Kp_mean_hotmean", "Kp_peak_hotmean"),
-    ("the disturbed single day", "Kp_mean_hotday", "Kp_peak_hotday"),
+    ("the sustained disturbed scenario", "Kp_mean_hotmean", "Kp_peak_hotmean", "F107_hotmean", "F107bar_hotmean"),
+    ("the disturbed single day", "Kp_mean_hotday", "Kp_peak_hotday", "F107_hotday", "F107bar_hotday"),
 ]
 
 # The closures a reader will look for first. Named so the report says whether the
@@ -72,17 +78,43 @@ def get(node, mode="branch", **over):
             {b["id"]: b.get("message", "") for b in d.get("blocked", [])})
 
 
+def probe(node, **inputs):
+    """ONE RELATION at given inputs — `/v1/probe`, not `/v1/run?set=`.
+
+    env_kp used to be a declared constant and the two candidate slots were
+    supplied as what-if overrides. §49 wired it to read the solar subsystem, so
+    it is computed now and an override cannot survive the run — the engine says
+    so rather than accepting one and dropping it.
+
+    What that costs this file is stated where it is felt, below: the
+    tree-wide count is gone and the temperature is not.
+    """
+    q = urllib.parse.urlencode([("node", node)]
+                               + [("in", "%s:%r" % (k, v)) for k, v in sorted(inputs.items())])
+    with urllib.request.urlopen(HOST + "/v1/probe?" + q, timeout=120) as fh:
+        d = json.load(fh)
+    return d.get("si") if d.get("ok") else None
+
+
 def slots():
     """Both readings of both scenarios, off the engine."""
+    # BOTH RUNS. The Kp slots are sw_kp_scenarios' own members; the flux each
+    # scenario sits at is published by the crossing, and a run of one does not
+    # carry the other's members.
     vals, _ = get("sw_kp_scenarios")
-    if vals is None:
+    iface, _ = get("l3_solar_interface")
+    if vals is None or iface is None:
         return None
     by_symbol = {v["symbol"]: v["si"] for v in vals.values() if v.get("symbol")}
+    for v in iface.values():
+        if v.get("symbol"):
+            by_symbol.setdefault(v["symbol"], v["si"])
     out = []
-    for label, mean_sym, peak_sym in SCENARIOS:
-        if mean_sym not in by_symbol or peak_sym not in by_symbol:
+    for label, mean_sym, peak_sym, f_sym, fbar_sym in SCENARIOS:
+        if any(s not in by_symbol for s in (mean_sym, peak_sym, f_sym, fbar_sym)):
             return None
-        out.append((label, by_symbol[mean_sym], by_symbol[peak_sym]))
+        out.append((label, by_symbol[mean_sym], by_symbol[peak_sym],
+                    by_symbol[f_sym], by_symbol[fbar_sym]))
     return out
 
 
@@ -126,33 +158,41 @@ def check(top):
     print("at the declared %s: %d row(s) answer" % (DRIVER, len(base)))
     print()
 
-    for label, mean, peak in got:
-        a, ab = get("env_exospheric_temperature", mode="all", **{DRIVER: mean})
-        b, bb = get("env_exospheric_temperature", mode="all", **{DRIVER: peak})
-        if a is None or b is None:
-            bad.append("the tree refused a run at %s" % label)
+    # WHAT THIS FILE CAN NO LONGER MEASURE, said once and plainly.
+    #
+    # It used to run the whole tree twice with env_kp forced to each slot and
+    # count every row that moved — 70 of them, six a KPI closure. That worked
+    # because env_kp was a declared constant. §49 wired it to read the solar
+    # subsystem, so it is computed, an override cannot survive the run, and the
+    # tree-wide count is not available through this path any more.
+    #
+    # It is not available through another one either. The slot choice now lives
+    # inside the subsystem, in which member sys_space_environment_kp selects,
+    # and nothing declared upstream of it selects a slot. What would restore
+    # the count is sw_kp_driving_slot carrying a value: two cases differing
+    # only in that row would give two full runs to diff, which is what this
+    # file wants and what §30 B1 asked that row to be for.
+    #
+    # The temperature cost survives, because it is a fact about the relation
+    # rather than about the wiring, and it is the number §29.2 and §30 A2 quote.
+    print("THE TREE-WIDE COUNT IS NOT MEASURABLE HERE while %s is computed." % DRIVER)
+    print("  It was 70 rows and 6 KPI closures when %s was declared. Restoring it" % DRIVER)
+    print("  needs %s to carry a value, so two cases can differ by the slot" % DECISION)
+    print("  alone. The temperature cost below is unaffected and is measured.")
+    print()
+
+    for label, mean, peak, f107, f107a in got:
+        tm = probe("env_exospheric_temperature",
+                   env_f107=f107, env_f107a=f107a, env_kp=mean)
+        tp = probe("env_exospheric_temperature",
+                   env_f107=f107, env_f107a=f107a, env_kp=peak)
+        if tm is None or tp is None:
+            bad.append("the relation refused a probe at %s" % label)
             continue
-        rows = moved(a, b)
-        kpis = [r for r in rows if r[1].startswith(KPIS)]
-        print("%s — mean slot Kp %.4f against peak slot Kp %.4f" % (label, mean, peak))
-        print("   %d row(s) move, %d of them a KPI closure" % (len(rows), len(kpis)))
-        # A row falling out of its declared domain under one slot and not the
-        # other would be the strongest possible finding, so it is checked even
-        # though it has not happened: the choice would then decide whether the
-        # design computes at all.
-        newly, healed = sorted(set(bb) - set(ab)), sorted(set(ab) - set(bb))
-        if newly:
-            print("   REFUSES UNDER THE PEAK SLOT AND NOT THE MEAN: %s" % ", ".join(newly))
-        if healed:
-            print("   refuses under the mean slot and not the peak: %s" % ", ".join(healed))
-        if not newly and not healed:
-            print("   no row leaves its declared domain under either slot")
-        for rel, k, x, y, u in rows[:top]:
-            print("      %-38s %12.6g -> %-12.6g %+7.2f%%  %s"
-                  % (k, x, y, 100 * rel, u))
-        if len(rows) > top:
-            print("      ... and %d more, down to %+.2f%%"
-                  % (len(rows) - top, 100 * rows[-1][0]))
+        print("%s — at its own flux %.3f sfu (81-day mean %.3f)" % (label, f107, f107a))
+        print("   mean slot Kp %.4f against peak slot Kp %.4f" % (mean, peak))
+        print("   exospheric temperature %.1f K against %.1f K, a gap of %.1f K (%+.2f%%)"
+              % (tm, tp, tp - tm, 100 * (tp - tm) / tm))
         print()
 
     for x in bad:
@@ -219,9 +259,13 @@ def selftest():
 
     # 5 · the slot values are read off the engine and not written here, because a
     #     scenario value copied into a tool is §21's stale panel constant again.
+    #     A NUMBER, not a digit. The scenario symbols are names — F107_hotmean,
+    #     F107bar_hotday — and a digit inside an identifier is part of the name
+    #     rather than a value copied in. What this must catch is a bare literal,
+    #     so it looks for one that is not embedded in an identifier.
     src = open(os.path.abspath(__file__), encoding="utf-8").read()
     body = src.split("SCENARIOS = [", 1)[1].split("]", 1)[0]
-    if any(ch.isdigit() for ch in body):
+    if re.search(r"(?<![A-Za-z0-9_])\d+(?:\.\d+)?(?![A-Za-z0-9_])", body):
         bad += 1
         print("  FAIL SCENARIOS carries a number; the slot values must come off the "
               "engine so a change in the record moves this report")

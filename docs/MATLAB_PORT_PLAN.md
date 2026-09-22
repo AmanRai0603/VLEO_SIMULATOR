@@ -5779,3 +5779,136 @@ somebody writes a derivation for one it starts answering.
 lists every defined function and its subsystem, and the summary line above it
 gives the count per subsystem. The first time this question was asked it took
 reading the repository's history to answer; it should not the second time.
+
+
+---
+
+## §49 · The wiring — the design reads the study
+
+§28.2 called this "a decision, not a task" and listed three ways to close it.
+The first was chosen: `env_f107`, `env_f107a` and `env_kp` become computed and
+read the crossing. This is what that cost and what it moved.
+
+### 49.1 · What moved
+
+| row | was | is |
+|---|---|---|
+| `env_f107` | declared 150 | **104.071**, from `sys_space_environment_f10_7` |
+| `env_f107a` | declared 150 | **104.071**, from `sys_space_environment_f10_7_81day` |
+| `env_kp` | declared 3 | **5.198**, from `sys_space_environment_kp` |
+| `env_exospheric_temperature` | 949.603 K | **867.155 K** |
+
+Solar reaches **19 KPI closures** where it reached none, and the tree-wide count
+goes 93 → 116. The two skies are one sky.
+
+The flux fell and the Kp rose, so the direction is not uniform: a cooler
+thermosphere from the flux, a hotter one from the geomagnetic term, and 867 K
+net against 950 K declared. Nothing further down moved, because the rest of the
+density chain is undefined and silent under §46's rule.
+
+### 49.2 · The cycle, and the row that resolves it
+
+`env_f107` could not simply read the crossing. The solar subsystem reads it —
+`sw_central_expectation` takes it as the persistence anchor `F107_today` — so
+wiring it directly closes a loop in two hops and the resolver refuses it as an
+undeclared cycle.
+
+The row was answering two questions at once: *what is the Sun doing now*, which
+the forecast starts from, and *what flux is the design sized to*, which the
+density chain reads. While both were one declared 150 that was invisible.
+
+**`sw_f107_observed`** now owns the first. Same 150, same confirmation, carried
+unchanged — §20 step 2's pattern in the other direction. How little rests on it
+is measured rather than argued: the estimator weights it `exp(-L/27 d)`, which
+its own reading section puts at 0.00114 at the shortest lead the declared range
+allows, and moving the new row across its entire range 60 → 400 leaves
+`sw_central_expectation` at 86.8497 to six figures.
+
+### 49.3 · Three defects it exposed
+
+**The daemon silently ignored a supplied value on a computed row.** `set=`
+returned `ok: true` with the value unchanged; a sweep drew a flat line and
+reported `refused: []`. The CLI has refused this since it was written. The two
+faces disagreed about the same request, and it stayed invisible while every
+driver was declared. Both refuse by name now.
+
+**`tools/mat_parity.py` was comparing the wrong points and reporting
+agreement.** It sets `sw_storm_return_level` — a *computed* row — to ask what
+the ap-to-Kp table gives at Ap 22.093, 26.683 and 41.535. Every one of those was
+silently dropped, so it was handed the same three answers at whatever Ap the
+tree itself sits at, and reported AGREES against MATLAB for all of them. A
+parity check that compares the wrong points and finds agreement is worse than no
+parity check.
+
+**`tools/theory_check.py` was measuring one number across a hundred points.**
+Same cause. It reported the sheet's expression and the engine disagreeing by
+1303 K, which was the sweep collapsing rather than the physics moving. It is
+back to 2.27e-13 K.
+
+### 49.4 · `/v1/probe`, and why a new path was needed
+
+The design question and the relation question stopped having the same answer.
+
+`/v1/run` asks *what is the design's number*: it walks the graph, and a value
+supplied for a computed row is rightly refused because the run would overwrite
+it. But a relation's behaviour at chosen drivers is a fact about the relation,
+true whatever the design is currently sized to, and the thermosphere's three
+coefficients are exactly that.
+
+`/v1/probe?node=…&in=<var>:<value>` evaluates one node's relation with no graph
+at all — what a fixture does through `model::evaluate`, exposed. Inputs are
+named by variable rather than given positionally, because
+`env_exospheric_temperature`'s three drivers are all `Ratio` and a positional
+caller would swap two of them without a single type error. Every declared input
+must be present; a partial set is refused rather than defaulted to zero.
+
+It is not a way to fake a design number: it returns the relation's own outputs,
+touches no store, and no run's provenance can contain one.
+
+### 49.5 · What the panel now draws
+
+§32's thermosphere panel rendered **empty** after the wiring — its four views
+are built from sweeps over `env_f107` and `env_kp`. It draws from the probe now,
+and the three flux slopes still recover 3.24, 1.30 and 1.94 K per sfu off the
+curves, which is the check that they are measured and not carried as literals.
+
+The panel's argument changed with it. It existed to show §28.2's gap as the
+distance between two marks — a declared 150 here, a computed 104 two panels
+along. That distance is zero now, so the second mark is drawn **only when the
+two part**, and the caption says they agree rather than implying a discrepancy
+between one number and itself.
+
+### 49.6 · What was lost, and it is worth stating
+
+**The design flux can no longer be swept.** It is derived from the record, so it
+is not a decision a reader can move, and the engine says so. Sensitivity to the
+sky is now asked by moving the epoch or the mission duration — decisions that
+are actually free — or of the relation directly through the probe.
+
+**`tools/kp_slot_cost.py` lost its tree-wide count.** It ran the whole tree
+twice with `env_kp` forced to each slot and counted every row that moved: 70 of
+them, six a KPI closure. That worked because `env_kp` was declared. The slot
+choice now lives inside the subsystem, in which member
+`sys_space_environment_kp` selects, and nothing declared upstream selects a
+slot. What would restore the count is **`sw_kp_driving_slot` carrying a value**,
+so two cases can differ by the slot alone — which is what §30 B1 asked that row
+to be for.
+
+The temperature cost survives, is measured through the probe, and reproduces the
+sheets exactly: **824.9 K against 867.2 K** at the sustained disturbed scenario,
+**914.7 K against 1055.3 K** on the disturbed single day, each at its own flux.
+Those are the numbers `env_exospheric_temperature`'s second assumption states,
+arrived at independently.
+
+### 49.7 · What this does not do
+
+- `sw_f107_observed` carries a round 150 rather than an observation. The row is
+  there so the subsystem's input and its output are not the same variable; a
+  real reading would make it honest rather than make it matter.
+- **Which Kp slot drives the design is still open.** The wiring carries whatever
+  layer 2 publishes, and `sw_kp_driving_slot` is still seeded and still needs a
+  person. §49.6 is now a second reason to answer it.
+- The three new pass-throughs have no fixture, like `orbit_mission_duration`
+  before them, so the design chain reports 0 of 4 for validation where it
+  reported 1. That is a gap already counted against those rows.
+- `gnc` still reaches no KPI closure at all.
