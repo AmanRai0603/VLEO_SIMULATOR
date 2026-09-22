@@ -177,6 +177,13 @@ pub fn json(sh: &Sheet) -> Result<String, String> {
         "  \"sheet_hash\": {},\n",
         jq(&crate::short_hex(sh.sheet_hash))
     ));
+    // What a save must send back. See `file_hash`: the sheet hash is not it.
+    o.push_str(&format!(
+        "  \"file_hash\": {},\n",
+        jq(&std::fs::read_to_string(sh.dir.join("node.toml"))
+            .map(|t| file_hash(&t))
+            .unwrap_or_default())
+    ));
     o.push_str(&format!("  \"criticality\": {},\n", jq(&sh.criticality)));
     o.push_str("  \"structural\": {\n");
     let st = [
@@ -228,6 +235,20 @@ pub fn json(sh: &Sheet) -> Result<String, String> {
         asks.iter().filter(|a| a.open).count()
     ));
     Ok(o)
+}
+
+/// A hash of the sheet's bytes, for detecting a concurrent edit.
+///
+/// NOT `sheet_hash`, and the difference matters. `sheet_hash` covers what a
+/// reader would call the node's meaning and deliberately leaves out formatting,
+/// comments and notes, so tidying a sentence does not invalidate every artefact
+/// downstream. That makes it exactly wrong for this job: of the nine fields this
+/// form writes, `label`, `symbol`, `reason_lower` and `reason_upper` are all
+/// outside it, so two people editing a bound's reason would both see the same
+/// `sheet_hash` and the second would overwrite the first without either being
+/// told. This moves whenever the file moves.
+pub fn file_hash(text: &str) -> String {
+    crate::short_hex(crate::fnv1a(text))
 }
 
 /// Where each form field lives in the file: its table, and its key.
@@ -372,4 +393,266 @@ fn toml_quote(v: &str) -> String {
     }
     o.push('"');
     o
+}
+
+/// Every name that is an agent, not a person, lowercased.
+///
+/// Read from `agents/provenance.toml` so adding an agent to the roster adds it
+/// here, plus the two generic words no attribution should ever be.
+pub fn agent_identities(root: &std::path::Path) -> Vec<String> {
+    let Ok(text) = std::fs::read_to_string(root.join("agents/provenance.toml")) else {
+        return vec!["claude".into(), "agent".into()];
+    };
+    let Ok(v) = text.parse::<toml::Value>() else {
+        return vec!["claude".into(), "agent".into()];
+    };
+    let mut out = Vec::new();
+    for a in v
+        .get("agent")
+        .and_then(toml::Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        for k in ["name", "id"] {
+            if let Some(x) = a.get(k).and_then(|x| x.as_str()) {
+                out.push(x.to_lowercase());
+            }
+        }
+    }
+    out.push("claude".into());
+    out.push("agent".into());
+    out
+}
+
+/// Whether this attribution is an agent's, and so must never be written.
+///
+/// An agent may never supply mathematics. Stated as a sentence that is a hope;
+/// here it is a fact about what can reach the file — and it has to hold at every
+/// face, or the browser becomes the way round a rule the terminal enforces.
+pub fn refuse_agent_attribution(root: &std::path::Path, who: &str) -> Result<(), String> {
+    let lower = who.trim().to_lowercase();
+    if lower.is_empty() {
+        return Err("an attribution cannot be blank — it takes the name of a person who has \
+                    read the relation against its source and is prepared to own it"
+            .into());
+    }
+    for bad in agent_identities(root) {
+        if lower == bad
+            || lower.starts_with(&format!("{bad} "))
+            || lower.contains(&format!("{bad}/"))
+        {
+            return Err(format!(
+                "refused: '{who}' is an agent. An agent may never supply mathematics, and this \
+                 field is the only thing that can tell whether one did. It takes the name of a \
+                 person who has read the relation against its source and is prepared to own it. \
+                 Nothing was written."
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// What a save did, or why it did nothing.
+pub enum Saved {
+    /// Written, regenerated and gated. Carries the row's new sheet hash.
+    Ok {
+        /// What the next save must send back.
+        file_hash: String,
+        /// Whether the row's MEANING moved — a caption or a bound's reason can
+        /// change without this changing, and that is deliberate.
+        sheet_hash: String,
+        regenerated: usize,
+    },
+    /// The editor started from a version that is no longer current. Carries the
+    /// hash it should have started from, so the face can show what changed
+    /// rather than overwrite it.
+    Stale { current: String },
+    /// Refused, and nothing was written.
+    Refused(String),
+}
+
+/// Change one field of one sheet, and leave the tree consistent or untouched.
+///
+/// The whole transaction, so it can be tested without an HTTP server:
+///
+///   1  the field is one the form writes, and is not structural
+///   2  `base` is the hash the editor started from — a stale one is refused
+///      rather than overwritten, which is what makes two editors safe
+///   3  an edit to the relation carries an attribution, and that attribution is
+///      not an agent's
+///   4  the sheet is written atomically: a temporary file, then a rename, so a
+///      reader never sees half a sheet
+///   5  the row's artefacts are regenerated and the gate is run on it
+///   6  ANY failure after the write restores the previous sheet. A tree left
+///      half-edited by a browser is the thing this must never do
+///
+/// `rustfmt` must be on the path, because the generated Rust is formatted before
+/// it is compared and a fallback to unformatted text would leave the tree
+/// failing its own regeneration diff. Refused up front rather than discovered
+/// afterwards.
+pub fn save(
+    root: &std::path::Path,
+    id: &str,
+    field: &str,
+    value: &str,
+    base: &str,
+    by: &str,
+) -> Saved {
+    if let Some(why) = structural(field) {
+        return Saved::Refused(format!("'{field}' is not editable here: {why}"));
+    }
+    if place(field).is_none() {
+        return Saved::Refused(format!("'{field}' is not a field this form writes"));
+    }
+    if std::process::Command::new("rustfmt")
+        .arg("--version")
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .map(|s| !s.success())
+        .unwrap_or(true)
+    {
+        return Saved::Refused(
+            "rustfmt is not on the path. The generated Rust is formatted before it is compared, \
+             so saving without it would leave the tree failing its own regeneration check. \
+             Nothing was written."
+                .into(),
+        );
+    }
+
+    let tree = match crate::load::load_all(root) {
+        Ok(t) => t,
+        Err(e) => return Saved::Refused(format!("the tree does not load: {e}")),
+    };
+    let Some(sh) = tree.sheets.get(id) else {
+        return Saved::Refused(format!("no node '{id}'"));
+    };
+    let path = sh.dir.join("node.toml");
+    let before = match std::fs::read_to_string(&path) {
+        Ok(t) => t,
+        Err(e) => return Saved::Refused(format!("{}: {e}", path.display())),
+    };
+    let current = file_hash(&before);
+    if base != current {
+        return Saved::Stale { current };
+    }
+    // An agent may never supply mathematics, at any face.
+    if field == "expression" || field == "confirmed_by" {
+        if let Err(e) = refuse_agent_attribution(root, by) {
+            return Saved::Refused(e);
+        }
+    }
+
+    let after = match set(&before, field, value) {
+        Ok(t) => t,
+        Err(e) => return Saved::Refused(e),
+    };
+    if let Err(e) = write_atomic(&path, &after) {
+        return Saved::Refused(e);
+    }
+
+    // From here on, a failure has to put the old sheet back.
+    // Restoring the sheet is not enough on its own: once the artefacts have
+    // been regenerated from the rejected edit, putting only node.toml back
+    // leaves the tree failing its own regeneration check — the exact state this
+    // whole path exists to avoid. So the artefacts are regenerated from the
+    // restored sheet too.
+    let restore = |e: String| -> Saved {
+        let _ = write_atomic(&path, &before);
+        let put_back = crate::load::load_all(root)
+            .ok()
+            .and_then(|t| t.sheets.get(id).map(|s| regenerate(s, &t)));
+        let lost = match put_back {
+            Some(Err(w)) => format!(" — AND THE ARTEFACTS COULD NOT BE PUT BACK: {w}"),
+            None => " — AND THE TREE WOULD NOT RELOAD TO PUT THE ARTEFACTS BACK".into(),
+            Some(Ok(_)) => String::new(),
+        };
+        Saved::Refused(format!(
+            "{e} — the sheet was restored, nothing changed{lost}"
+        ))
+    };
+    let tree = match crate::load::load_all(root) {
+        Ok(t) => t,
+        Err(e) => return restore(format!("the edit does not parse: {e}")),
+    };
+    let Some(sh) = tree.sheets.get(id) else {
+        return restore("the row vanished from the tree after the edit".into());
+    };
+    // REGENERATE BEFORE GATING, not after. One of the gate's own checks is that
+    // every artefact matches what the sheet generates, so gating a freshly
+    // written sheet whose artefacts are still the old ones fails every time —
+    // and fails for a reason that has nothing to do with the edit.
+    let n = match regenerate(sh, &tree) {
+        Ok(n) => n,
+        Err(e) => return restore(e),
+    };
+    let failed: Vec<String> = crate::gate::gate_node(sh, &tree)
+        .iter()
+        .filter(|c| c.failed())
+        .map(|c| match &c.verdict {
+            crate::gate::Verdict::Fail(w) => format!("{}: {w}", c.name),
+            _ => c.name.to_string(),
+        })
+        .collect();
+    if !failed.is_empty() {
+        return restore(format!("the gate refuses it — {}", failed.join("; ")));
+    }
+    Saved::Ok {
+        file_hash: std::fs::read_to_string(&path)
+            .map(|t| file_hash(&t))
+            .unwrap_or_default(),
+        sheet_hash: crate::short_hex(sh.sheet_hash),
+        regenerated: n,
+    }
+}
+
+/// A temporary file then a rename, so a reader never sees half a sheet.
+fn write_atomic(path: &std::path::Path, text: &str) -> Result<(), String> {
+    let tmp = path.with_extension("toml.writing");
+    std::fs::write(&tmp, text).map_err(|e| format!("{}: {e}", tmp.display()))?;
+    std::fs::rename(&tmp, path).map_err(|e| format!("{}: {e}", path.display()))
+}
+
+/// `regenerate`, for a test that has to put a row back after editing it.
+pub fn regenerate_for_test(
+    sh: &crate::model::Sheet,
+    tree: &crate::load::Tree,
+) -> Result<usize, String> {
+    regenerate(sh, tree)
+}
+
+/// The six per-node generators, for one row. The same set `xtask docs` writes.
+fn regenerate(sh: &crate::model::Sheet, tree: &crate::load::Tree) -> Result<usize, String> {
+    let holes = crate::load::read_holes(&sh.dir);
+    let gaps = crate::emit::gap_pass(sh, &holes);
+    let artefacts: Vec<(&str, String)> = if sh.is_seeded() {
+        vec![
+            ("page.html", crate::page::fragment(sh, &holes, tree)),
+            ("meta.json", crate::emit::meta_json(sh, &gaps)),
+        ]
+    } else {
+        vec![
+            ("model.rs", crate::emit::model_rs(sh, &holes)),
+            ("contract.rs", crate::emit::contract_rs(sh)),
+            ("mod.rs", crate::emit::mod_rs(sh)),
+            ("evidence.rs", crate::emit::evidence_rs(sh)),
+            ("page.html", crate::page::fragment(sh, &holes, tree)),
+            ("meta.json", crate::emit::meta_json(sh, &gaps)),
+        ]
+    };
+    let mut n = 0;
+    for (name, text) in artefacts {
+        let text = if name.ends_with(".rs") {
+            crate::gate::formatted(&text)
+        } else {
+            text
+        };
+        let p = sh.dir.join(name);
+        let same = std::fs::read_to_string(&p).map(|o| o == text).unwrap_or(false);
+        if !same {
+            std::fs::write(&p, &text).map_err(|e| format!("{}: {e}", p.display()))?;
+            n += 1;
+        }
+    }
+    Ok(n)
 }

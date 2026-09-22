@@ -172,34 +172,6 @@ fn write_if_changed(path: &Path, text: &str) -> Result<bool, String> {
 
 // ---------------------------------------------------------------------------
 
-/// Every identity that may never appear in `confirmed_by`.
-///
-/// Read from the file that declares the fleet rather than hard-coded, so an
-/// agent added tomorrow is covered without anybody remembering to come here.
-fn agent_identities(root: &Path) -> Vec<String> {
-    let Ok(text) = fs::read_to_string(root.join("agents/provenance.toml")) else {
-        return Vec::new();
-    };
-    let Ok(v) = text.parse::<toml::Value>() else {
-        return Vec::new();
-    };
-    let mut out = Vec::new();
-    for a in v
-        .get("agent")
-        .and_then(toml::Value::as_array)
-        .into_iter()
-        .flatten()
-    {
-        for k in ["name", "id"] {
-            if let Some(x) = a.get(k).and_then(|x| x.as_str()) {
-                out.push(x.to_lowercase());
-            }
-        }
-    }
-    out.push("claude".into());
-    out.push("agent".into());
-    out
-}
 
 /// Today, as the sheets write it.
 fn today() -> String {
@@ -296,7 +268,7 @@ fn cmd_confirm(root: &Path, args: &[&str]) -> Result<(), String> {
     // An agent may never supply mathematics. Stated as a sentence it is a hope;
     // this makes it a fact about what can be written to the file.
     let lower = who.to_lowercase();
-    for bad in agent_identities(root) {
+    for bad in vleo_sheet::form::agent_identities(root) {
         if lower == bad
             || lower.starts_with(&format!("{bad} "))
             || lower.contains(&format!("{bad}/"))
