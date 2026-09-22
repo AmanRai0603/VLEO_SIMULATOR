@@ -28,6 +28,7 @@ fn main() -> ExitCode {
         "gate" => cmd_gate(&root, &rest),
         "status" => cmd_status(&root),
         "active" => cmd_active(&root, &rest),
+        "reach" => cmd_reach(&root, &rest),
         "gap" => cmd_gap(&root),
         "graph" => cmd_graph(&root),
         "new" => cmd_new(&root, &rest),
@@ -80,6 +81,10 @@ cargo xtask <command>
                      does not, whether it is its own derivation that is missing
                      or a row it reads. A function is defined by its
                      derivation; an input is defined by carrying a value.
+  reach [<subsystem>]
+                     where each answer GOES: how many reach a KPI closure, and
+                     which answer and are read by nothing. A subsystem can
+                     answer on every row it has and be wired to nothing.
   gap                what every sheet promised and nothing yet covers.
   graph              the three graphs, their sizes, and the crate direction check.
   new <id> --like <sibling>
@@ -2365,14 +2370,35 @@ fn cmd_variables(root: &Path) -> Result<(), String> {
 ///
 /// It is computed from the sheets, so it is answerable on a tree that cannot
 /// run — which is most of a tree for most of a programme.
-fn cmd_active(root: &Path, args: &[&str]) -> Result<(), String> {
-    let tree = load(root)?;
-    let only = args.iter().find(|a| !a.starts_with("--")).copied();
+/// Whether a row answers, and if not, what is in the way.
+///
+/// Lifted out of `cmd_active` when `cmd_reach` needed the same answer. Two
+/// walks computing "does this row answer" would be two definitions of it, and
+/// the one that drifts is always the copy nobody is looking at.
+#[derive(Clone)]
+enum Verdict {
+    Active,
+    Seeded,
+    /// Retired. It still answers — that is deliberate, so a consumer that has
+    /// not migrated keeps working — but it is not work in progress and nothing
+    /// is supposed to read it. Counted apart from `Active` because folding the
+    /// two overstates what the tree currently produces, and because a retired
+    /// row with no consumer is the intended end state rather than a finding.
+    Retired,
+    Undefined,
+    BlockedBy(String),
+}
 
-    // A variable id is either a node id or `<node id>.<extra>`; a node id never
-    // contains a dot, so the producer is everything before the first one.
-    let producer = |var: &str| var.split('.').next().unwrap_or(var).to_string();
+/// The producing row behind a variable id.
+///
+/// A variable id is a node id or `<node id>.<extra>` — a node id never contains
+/// a dot — so the producer is everything before the first one.
+fn producer_of(var: &str) -> &str {
+    var.split('.').next().unwrap_or(var)
+}
 
+/// Every row's verdict, computed once from the sheets.
+fn active_verdicts(tree: &Tree) -> BTreeMap<&str, Verdict> {
     // Undefined in itself. A seeded row is not undefined — it is unwritten, and
     // the tree already counts those separately. Conflating the two would report
     // 1076 rows as a derivation problem when they are a nothing-has-been-written
@@ -2390,14 +2416,6 @@ fn cmd_active(root: &Path, args: &[&str]) -> Result<(), String> {
     // Walk each row's closure. The first row in the way is the one reported:
     // a person fixes one thing at a time, and naming the whole set of ancestors
     // is a list nobody reads.
-    #[derive(Clone)]
-    enum Verdict {
-        Active,
-        Seeded,
-        Undefined,
-        BlockedBy(String),
-    }
-    let mut verdict: BTreeMap<&str, Verdict> = BTreeMap::new();
     fn walk<'a>(
         id: &'a str,
         tree: &'a vleo_sheet::load::Tree,
@@ -2423,6 +2441,8 @@ fn cmd_active(root: &Path, args: &[&str]) -> Result<(), String> {
         };
         let v = if sh.is_seeded() {
             Verdict::Seeded
+        } else if sh.state == "deprecated" {
+            Verdict::Retired
         } else if undefined.contains(id) {
             Verdict::Undefined
         } else {
@@ -2433,7 +2453,7 @@ fn cmd_active(root: &Path, args: &[&str]) -> Result<(), String> {
                 // before the first one. Resolved against the tree rather than
                 // trusted, because an input naming a row that does not exist is
                 // assembly's refusal to make, not this command's.
-                let name = inp.var.split('.').next().unwrap_or(&inp.var);
+                let name = producer_of(&inp.var);
                 let Some((key, _)) = tree.sheets.get_key_value(name) else {
                     continue;
                 };
@@ -2442,7 +2462,10 @@ fn cmd_active(root: &Path, args: &[&str]) -> Result<(), String> {
                     continue;
                 }
                 match walk(up, tree, undefined, verdict, on_stack) {
-                    Verdict::Active => {}
+                    // Retired still answers, so a consumer of one is not
+                    // blocked. Whether it should still be reading it is what
+                    // `Retirement::Wrong` and the deprecation notice are for.
+                    Verdict::Active | Verdict::Retired => {}
                     Verdict::Seeded | Verdict::Undefined => {
                         blocker = Some(up.to_string());
                         break;
@@ -2462,12 +2485,275 @@ fn cmd_active(root: &Path, args: &[&str]) -> Result<(), String> {
         verdict.insert(sh.id.as_str(), v.clone());
         v
     }
+    let mut verdict: BTreeMap<&str, Verdict> = BTreeMap::new();
     let ids: Vec<&str> = tree.ordered().iter().map(|s| s.id.as_str()).collect();
     for id in &ids {
         let mut on_stack = BTreeSet::new();
-        walk(id, &tree, &undefined, &mut verdict, &mut on_stack);
+        walk(id, tree, &undefined, &mut verdict, &mut on_stack);
     }
-    let _ = producer;
+    verdict
+}
+
+/// Every row whose number reaches a KPI closure.
+///
+/// Computed by walking BACKWARDS from the KPIs once, rather than asking each
+/// row "can you reach one" and memoising the answer. The forward version is the
+/// obvious one and it is wrong on a cycle: it must seed `false` before
+/// recursing so a loop terminates, and that provisional `false` then gets
+/// memoised for any row whose real answer arrived later by another edge. A row
+/// inside a declared cycle that genuinely reaches a KPI reported that it did
+/// not, which is the one direction this report must never be wrong in — it
+/// would invent unread work that is being read.
+///
+/// Backwards there is no such subtlety: reachability is a set, a seen-set ends
+/// every walk, and the answer does not depend on which row was asked first.
+fn reaching_kpi<'a>(
+    parents: &BTreeMap<&'a str, Vec<&'a str>>,
+    kpis: &BTreeSet<&'a str>,
+) -> BTreeSet<&'a str> {
+    let mut seen: BTreeSet<&str> = BTreeSet::new();
+    let mut stack: Vec<&str> = kpis.iter().copied().collect();
+    while let Some(n) = stack.pop() {
+        if !seen.insert(n) {
+            continue;
+        }
+        if let Some(ps) = parents.get(n) {
+            stack.extend(ps.iter().copied());
+        }
+    }
+    seen
+}
+
+/// How much answering work stands behind a row — its upstream closure, counting
+/// only rows that answer. A terminal row with fifty rows behind it and one with
+/// none are the same line in a count and very different findings.
+fn work_behind(
+    id: &str,
+    parents: &BTreeMap<&str, Vec<&str>>,
+    answers: &dyn Fn(&str) -> bool,
+) -> usize {
+    let mut seen: BTreeSet<&str> = BTreeSet::new();
+    let mut stack = vec![id];
+    while let Some(n) = stack.pop() {
+        if !seen.insert(n) {
+            continue;
+        }
+        if let Some(ps) = parents.get(n) {
+            stack.extend(ps.iter().copied());
+        }
+    }
+    seen.remove(id);
+    seen.into_iter().filter(|n| answers(n)).count()
+}
+
+/// Where each answer GOES — the other half of `active`.
+///
+/// `active` asks whether a row produces a number. This asks what the number is
+/// for, and they are not the same question: a subsystem can answer on every row
+/// it has and still be wired to nothing.
+///
+/// The measure is the KPI closure, because that is what this tree says it is
+/// for — twelve promises to a customer, and every other row exists to move one
+/// of them. So an answer that reaches no KPI is not wrong, and it is not a
+/// defect in the row; it is work the design is not currently reading. Stating
+/// that is the whole job here. Deciding what to do about it is not: a crossing
+/// nothing reads can be wired up, retired, or kept as a deliberate reference
+/// beside the design point, and which of those is right is a design decision
+/// with a person's name on it.
+///
+/// TERMINAL is reported beside it and is the sharper number: a row that answers
+/// and has no consumer at all. Ranked by how much answering work stands behind
+/// it, because one terminal row with fifty rows behind it and fifty terminal
+/// rows with nothing behind them are very different findings and the count
+/// alone cannot tell them apart.
+///
+/// A CONCLUSION is excluded from that list by kind, not by name. An achieved
+/// row is a margin and a KPI row is a promise; both are the end of a chain, so
+/// having no consumer is what they are for. Counting those as unread work would
+/// put five correct rows at the top of a list of findings, and a check that
+/// cries wolf on its own best rows is a check people stop reading.
+fn cmd_reach(root: &Path, args: &[&str]) -> Result<(), String> {
+    let tree = load(root)?;
+    let only = args.iter().find(|a| !a.starts_with("--")).copied();
+    let verdict = active_verdicts(&tree);
+    let answers = |id: &str| matches!(verdict.get(id), Some(Verdict::Active));
+
+    // The derivation graph, read the other way. Declared by the consumer, so
+    // the consumer list is derived here and never stored — the same rule the
+    // face follows, for the same reason.
+    let mut consumers: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
+    for sh in tree.ordered() {
+        for inp in &sh.inputs {
+            if let Some((k, _)) = tree.sheets.get_key_value(producer_of(&inp.var)) {
+                if k.as_str() != sh.id.as_str() {
+                    consumers
+                        .entry(k.as_str())
+                        .or_default()
+                        .push(sh.id.as_str());
+                }
+            }
+        }
+    }
+
+    let kpis: BTreeSet<&str> = tree
+        .ordered()
+        .iter()
+        .filter(|s| s.kind == "kpi")
+        .map(|s| s.id.as_str())
+        .collect();
+
+    // Parents: the same edges as `consumers`, reversed. Both walks use it.
+    let mut parents: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
+    for sh in tree.ordered() {
+        for inp in &sh.inputs {
+            if let Some((k, _)) = tree.sheets.get_key_value(producer_of(&inp.var)) {
+                if k.as_str() != sh.id.as_str() {
+                    parents.entry(sh.id.as_str()).or_default().push(k.as_str());
+                }
+            }
+        }
+    }
+
+    let reaches = reaching_kpi(&parents, &kpis);
+
+    let rows: Vec<&vleo_sheet::model::Sheet> = tree
+        .ordered()
+        .into_iter()
+        .filter(|s| only.is_none_or(|sub| s.subsystem == sub))
+        .collect();
+    if rows.is_empty() {
+        return Err(format!(
+            "no rows in subsystem '{}'",
+            only.unwrap_or("<none>")
+        ));
+    }
+
+    let mut by_sub: BTreeMap<&str, [usize; 3]> = BTreeMap::new();
+    for sh in &rows {
+        if !answers(&sh.id) {
+            continue;
+        }
+        let e = by_sub.entry(sh.subsystem.as_str()).or_default();
+        e[0] += 1;
+        if reaches.contains(sh.id.as_str()) {
+            e[1] += 1;
+        }
+        if consumers.get(sh.id.as_str()).is_none_or(|c| c.is_empty()) {
+            e[2] += 1;
+        }
+    }
+    println!(
+        "{:<12} {:>7} {:>12} {:>10}",
+        "subsystem", "answer", "reach a KPI", "terminal"
+    );
+    let mut order: Vec<&&str> = by_sub.keys().collect();
+    order.sort_by_key(|s| std::cmp::Reverse(by_sub[*s][0]));
+    for s in order {
+        let c = by_sub[*s];
+        println!("{:<12} {:>7} {:>12} {:>10}", s, c[0], c[1], c[2]);
+    }
+    let tot = |i: usize| by_sub.values().map(|c| c[i]).sum::<usize>();
+    println!(
+        "{:<12} {:>7} {:>12} {:>10}\n",
+        "total",
+        tot(0),
+        tot(1),
+        tot(2)
+    );
+
+    // A subsystem that answers and reaches nothing is the finding worth a
+    // paragraph rather than a row, so it gets one, with the crossing named.
+    for (s, c) in &by_sub {
+        if c[0] == 0 || c[1] > 0 {
+            continue;
+        }
+        println!(
+            "{s} answers on {} row(s) and reaches no KPI closure. Its work is computed \
+             and not read.",
+            c[0]
+        );
+        for sh in tree.ordered() {
+            if sh.subsystem == *s && !sh.crosses_to.is_empty() {
+                let cs = consumers.get(sh.id.as_str()).cloned().unwrap_or_default();
+                println!("  crossing  {} -> {}", sh.id, sh.crosses_to);
+                for up in &cs {
+                    let onward = consumers.get(up).cloned().unwrap_or_default();
+                    println!(
+                        "    {:<38} read by {}",
+                        up,
+                        if onward.is_empty() {
+                            "NOBODY".to_string()
+                        } else {
+                            onward.join(", ")
+                        }
+                    );
+                }
+            }
+        }
+        println!();
+    }
+
+    let is_conclusion = |k: &str| k == "achieved" || k == "kpi";
+    let terminal: Vec<&&vleo_sheet::model::Sheet> = rows
+        .iter()
+        .filter(|s| answers(&s.id))
+        .filter(|s| consumers.get(s.id.as_str()).is_none_or(|c| c.is_empty()))
+        .collect();
+    let (concl, mut mid): (
+        Vec<&vleo_sheet::model::Sheet>,
+        Vec<&vleo_sheet::model::Sheet>,
+    ) = terminal
+        .iter()
+        .map(|s| **s)
+        .partition(|s| is_conclusion(s.kind.as_str()));
+    mid.sort_by_key(|s| {
+        (
+            std::cmp::Reverse(work_behind(s.id.as_str(), &parents, &answers)),
+            s.id.clone(),
+        )
+    });
+    if !mid.is_empty() {
+        println!("unread — it answers, it is not a conclusion, and nothing reads it:");
+        for s in mid.iter().take(12) {
+            println!(
+                "  {:<42} {:>3} answering row(s) behind it",
+                s.id,
+                work_behind(s.id.as_str(), &parents, &answers)
+            );
+        }
+        if mid.len() > 12 {
+            println!("  … and {} more", mid.len() - 12);
+        }
+        println!();
+    }
+    if !concl.is_empty() {
+        println!(
+            "{} conclusion(s) also have no consumer, which is what a margin and a KPI are \
+             for: {}",
+            concl.len(),
+            concl
+                .iter()
+                .map(|s| s.id.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+        println!();
+    }
+    println!(
+        "{} of {} answering row(s) reach one of the {} KPI closure(s). Reaching none is \
+         not a defect in a row — it is the design not reading it, and what to do about \
+         that is a decision with a person's name on it.",
+        tot(1),
+        tot(0),
+        kpis.len()
+    );
+    Ok(())
+}
+
+fn cmd_active(root: &Path, args: &[&str]) -> Result<(), String> {
+    let tree = load(root)?;
+    let only = args.iter().find(|a| !a.starts_with("--")).copied();
+    let verdict = active_verdicts(&tree);
 
     // How much each undefined row is costing, measured rather than guessed:
     // the rows that name it as their blocker. This is the order to fix them in.
@@ -2492,34 +2778,36 @@ fn cmd_active(root: &Path, args: &[&str]) -> Result<(), String> {
         ));
     }
 
-    let mut by_sub: BTreeMap<&str, [usize; 4]> = BTreeMap::new();
+    let mut by_sub: BTreeMap<&str, [usize; 5]> = BTreeMap::new();
     for sh in &rows {
         let e = by_sub.entry(sh.subsystem.as_str()).or_default();
         match verdict.get(sh.id.as_str()) {
             Some(Verdict::Active) => e[0] += 1,
             Some(Verdict::Undefined) => e[1] += 1,
             Some(Verdict::BlockedBy(_)) => e[2] += 1,
+            Some(Verdict::Retired) => e[4] += 1,
             _ => e[3] += 1,
         }
     }
     println!(
-        "{:<12} {:>7} {:>10} {:>10} {:>8}",
-        "subsystem", "active", "undefined", "blocked", "seeded"
+        "{:<12} {:>7} {:>10} {:>10} {:>8} {:>8}",
+        "subsystem", "active", "undefined", "blocked", "seeded", "retired"
     );
     for (s, c) in &by_sub {
         println!(
-            "{:<12} {:>7} {:>10} {:>10} {:>8}",
-            s, c[0], c[1], c[2], c[3]
+            "{:<12} {:>7} {:>10} {:>10} {:>8} {:>8}",
+            s, c[0], c[1], c[2], c[3], c[4]
         );
     }
     let tot = |i: usize| by_sub.values().map(|c| c[i]).sum::<usize>();
     println!(
-        "{:<12} {:>7} {:>10} {:>10} {:>8}\n",
+        "{:<12} {:>7} {:>10} {:>10} {:>8} {:>8}\n",
         "total",
         tot(0),
         tot(1),
         tot(2),
-        tot(3)
+        tot(3),
+        tot(4)
     );
 
     if tot(1) > 0 {
@@ -2704,5 +2992,120 @@ confirmed_by = "A. Person / 2026-01-01"
                 .any(|c| c.contains("prose about the sibling")),
             "the sibling's comment block was carried without being named: {carried:?}"
         );
+    }
+}
+
+#[cfg(test)]
+mod reach_tests {
+    use super::*;
+
+    type Map<'a> = BTreeMap<&'a str, Vec<&'a str>>;
+
+    /// Build `consumers` / `parents` from a list of (producer, consumer) edges.
+    fn graph<'a>(edges: &[(&'a str, &'a str)]) -> (Map<'a>, Map<'a>) {
+        let (mut cons, mut par): (Map, Map) = (BTreeMap::new(), BTreeMap::new());
+        for (p, c) in edges {
+            cons.entry(p).or_default().push(c);
+            par.entry(c).or_default().push(p);
+        }
+        (cons, par)
+    }
+
+    fn kpis<'a>(ids: &[&'a str]) -> BTreeSet<&'a str> {
+        ids.iter().copied().collect()
+    }
+
+    #[test]
+    fn a_chain_that_ends_at_a_kpi_reaches_it() {
+        let (_, par) = graph(&[("a", "b"), ("b", "c"), ("c", "k")]);
+        let r = reaching_kpi(&par, &kpis(&["k"]));
+        for n in ["a", "b", "c", "k"] {
+            assert!(r.contains(n), "{n} feeds the KPI and was not counted");
+        }
+    }
+
+    /// The case this whole command exists for: work that runs and goes nowhere.
+    #[test]
+    fn a_chain_that_ends_nowhere_does_not() {
+        let (_, par) = graph(&[("a", "b"), ("b", "c"), ("x", "k")]);
+        let r = reaching_kpi(&par, &kpis(&["k"]));
+        for n in ["a", "b", "c"] {
+            assert!(!r.contains(n), "{n} reaches nothing and was counted");
+        }
+        assert!(r.contains("x"), "the control case");
+    }
+
+    /// A KPI is its own witness; otherwise every KPI reports as unreached.
+    #[test]
+    fn a_kpi_reaches_itself() {
+        let (_, par) = graph(&[]);
+        assert!(reaching_kpi(&par, &kpis(&["k"])).contains("k"));
+    }
+
+    /// A declared cycle must terminate and must not hide a real path.
+    ///
+    /// This is the case that killed the first implementation. It asked each row
+    /// "can you reach a KPI", seeding `false` before recursing so the loop
+    /// terminated — and then memoised that provisional `false` for `a`, whose
+    /// real answer arrived later through `b`. `a` reported unread work that was
+    /// being read. Walking backwards from the KPIs has no such ordering.
+    #[test]
+    fn a_cycle_terminates_and_still_finds_the_path() {
+        let (_, par) = graph(&[("a", "b"), ("b", "a"), ("b", "k")]);
+        let r = reaching_kpi(&par, &kpis(&["k"]));
+        assert!(r.contains("a"), "a reaches k through b");
+        assert!(r.contains("b"));
+
+        let (_, par2) = graph(&[("a", "b"), ("b", "a")]);
+        let r2 = reaching_kpi(&par2, &kpis(&["k"]));
+        assert!(
+            !r2.contains("a"),
+            "a closed loop reaching nothing is not reached"
+        );
+    }
+
+    /// The same cycle with the KPI edge on the OTHER side of it.
+    ///
+    /// Both orientations are here because the forward-memo version this
+    /// replaced fails on exactly one of them, and which one depends on the
+    /// order rows happen to be visited in. A single orientation passes against
+    /// the broken implementation about half the time, which is the same as not
+    /// testing it: the first draft of this file had only the other one, and the
+    /// re-introduced bug went straight through it.
+    #[test]
+    fn the_cycle_holds_whichever_side_the_kpi_edge_is_on() {
+        let (_, par) = graph(&[("a", "b"), ("b", "a"), ("a", "k")]);
+        let r = reaching_kpi(&par, &kpis(&["k"]));
+        assert!(r.contains("a"), "a feeds k directly");
+        assert!(r.contains("b"), "b reaches k through a, around the cycle");
+    }
+
+    #[test]
+    fn work_behind_counts_the_upstream_closure_once() {
+        // a diamond: d reads b and c, both read a.
+        let (_, par) = graph(&[("a", "b"), ("a", "c"), ("b", "d"), ("c", "d")]);
+        let all = |_: &str| true;
+        assert_eq!(work_behind("d", &par, &all), 3, "a counted once, not twice");
+        assert_eq!(
+            work_behind("a", &par, &all),
+            0,
+            "nothing is behind the root"
+        );
+    }
+
+    /// Only answering rows count. A terminal row with fifty blocked rows behind
+    /// it is not fifty rows of wasted work — it is fifty rows of nothing.
+    #[test]
+    fn work_behind_counts_only_rows_that_answer() {
+        let (_, par) = graph(&[("a", "b"), ("b", "c")]);
+        let silent = |id: &str| id != "a";
+        assert_eq!(work_behind("c", &par, &silent), 1);
+    }
+
+    #[test]
+    fn work_behind_terminates_on_a_cycle() {
+        let (_, par) = graph(&[("a", "b"), ("b", "a")]);
+        let all = |_: &str| true;
+        assert_eq!(work_behind("a", &par, &all), 1);
     }
 }
