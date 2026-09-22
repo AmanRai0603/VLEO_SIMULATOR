@@ -229,3 +229,147 @@ pub fn json(sh: &Sheet) -> Result<String, String> {
     ));
     Ok(o)
 }
+
+/// Where each form field lives in the file: its table, and its key.
+///
+/// An empty table means a top-level key.
+pub fn place(field: &str) -> Option<(&'static str, &'static str)> {
+    Some(match field {
+        "label" => ("", "label"),
+        "question" => ("question", "text"),
+        "expression" => ("maths", "expression"),
+        "source" => ("maths", "source"),
+        "confirmed_by" => ("maths", "confirmed_by"),
+        "symbol" => ("output", "symbol"),
+        "type" => ("output", "type"),
+        "unit" => ("output", "unit"),
+        "reason_lower" => ("output", "reason_lower"),
+        "reason_upper" => ("output", "reason_upper"),
+        _ => return None,
+    })
+}
+
+/// The fields a face may never write, and why.
+///
+/// Not a blocklist of names but the reason each one is refused, because a
+/// reader who is told "no" and not "why" goes looking for a way round.
+pub fn structural(field: &str) -> Option<&'static str> {
+    Some(match field {
+        "id" | "folder" => "the identifier is the folder and the variable name; renaming it is a move",
+        "parent" => "the parent is the tree's shape — moving a row moves everyone who reads it",
+        "order" => "order decides position among siblings, and the block may be packed solid; \
+                    inserting renumbers its neighbours",
+        "layer" => "the layer decides which contract the row sits under",
+        "kind" => "kind decides whether the row declares a value or computes one, which changes \
+                   what is generated for it",
+        "subsystem" | "owner" => "ownership is generated into CODEOWNERS and decides who reviews it",
+        "tier" | "state" => "both change what the gate demands of the row",
+        _ => return None,
+    })
+}
+
+/// Replace one field's value in a sheet's text, leaving everything else alone.
+///
+/// TEXTUAL, never a TOML round-trip. These sheets carry more comment than
+/// content and every comment is somebody's reason; a serialiser would silently
+/// drop the lot. The same choice `xtask confirm` makes, for the same reason.
+///
+/// Refuses rather than guesses: an absent key, a duplicated one, or a value
+/// written as a multi-line string are all reported instead of being patched
+/// approximately. A sheet edited approximately is worse than one not edited.
+pub fn set(text: &str, field: &str, value: &str) -> Result<String, String> {
+    let Some((table, key)) = place(field) else {
+        return Err(format!("'{field}' is not a field this form writes"));
+    };
+    // The window this key must be found in: from its table header to the next
+    // one. Without it, `source` under [maths] and a `source` under some other
+    // table are the same search.
+    let (from, to) = if table.is_empty() {
+        (0, text.find("\n[").unwrap_or(text.len()))
+    } else {
+        let header = format!("\n[{table}]\n");
+        let Some(h) = text.find(&header) else {
+            return Err(format!("this sheet has no [{table}] table to write {key} into"));
+        };
+        let start = h + header.len();
+        let end = text[start..]
+            .find("\n[")
+            .map(|i| start + i)
+            .unwrap_or(text.len());
+        (start, end)
+    };
+    let window = &text[from..to];
+
+    // Every line in the window that assigns this key.
+    //
+    // A commented-out assignment needs no guard: the key extracted from
+    // `# unit = "Foot"` is `# unit`, which is not `unit`, so it never matches. A
+    // check for it was here and nothing could reach it — removed rather than
+    // left looking load-bearing.
+    //
+    // A key-looking line INSIDE a multi-line body does match, and that is what
+    // the duplicate refusal below is really protecting: it counts two and
+    // refuses, rather than replacing a line in somebody's prose.
+    let mut hits = Vec::new();
+    let mut at = from;
+    for line in window.split_inclusive('\n') {
+        let t = line.trim_start();
+        if let Some(eq) = t.find('=') {
+            if t[..eq].trim() == key {
+                hits.push((at, at + line.len(), line));
+            }
+        }
+        at += line.len();
+    }
+    if hits.is_empty() {
+        return Err(format!(
+            "no `{key} =` in {} — this form replaces a value that is already there, it does not \
+             decide where a new key belongs",
+            if table.is_empty() { "the sheet's head" } else { table }
+        ));
+    }
+    if hits.len() > 1 {
+        return Err(format!(
+            "`{key}` is assigned {} times in [{table}] — refusing to guess which one is meant",
+            hits.len()
+        ));
+    }
+    let (s0, s1, line) = hits[0];
+    // A multi-line string is a body somebody laid out on purpose. Replacing it
+    // by line would truncate it at the first newline and leave the rest as
+    // stray TOML, so it is refused by name.
+    let rhs = line.split_once('=').map(|x| x.1.trim()).unwrap_or("");
+    if rhs.starts_with("\"\"\"") && !(rhs.len() > 5 && rhs.ends_with("\"\"\"")) {
+        return Err(format!(
+            "`{key}` is a multi-line string. Editing one through this form would truncate it; \
+             edit the sheet directly"
+        ));
+    }
+    let mut o = String::with_capacity(text.len() + value.len());
+    o.push_str(&text[..s0]);
+    o.push_str(&format!("{key} = {}\n", toml_quote(value)));
+    o.push_str(&text[s1..]);
+    Ok(o)
+}
+
+/// A TOML string literal. Prefers a basic string, falls back to a literal one
+/// where the value has backslashes worth keeping as typed.
+fn toml_quote(v: &str) -> String {
+    if v.contains('\n') {
+        // A form field that has become multi-line is written as one, so the
+        // file stays parseable rather than losing the tail.
+        return format!("\"\"\"\n{}\"\"\"", if v.ends_with('\n') { v.to_string() } else { format!("{v}\n") });
+    }
+    let mut o = String::from("\"");
+    for c in v.chars() {
+        match c {
+            '"' => o.push_str("\\\""),
+            '\\' => o.push_str("\\\\"),
+            '\t' => o.push_str("\\t"),
+            c if (c as u32) < 0x20 => o.push_str(&format!("\\u{:04x}", c as u32)),
+            c => o.push(c),
+        }
+    }
+    o.push('"');
+    o
+}
