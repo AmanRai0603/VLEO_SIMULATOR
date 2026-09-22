@@ -1,0 +1,31 @@
+# The declared cycles in this design, once.
+#
+# A cycle is a property of the ARCHITECTURE, not of a customer. Power becomes
+# heat, heat sets array temperature, array temperature sets cell efficiency,
+# cell efficiency sets available power, and available power throttles the
+# largest load on the bus. That loop is the same loop whoever bought the
+# spacecraft, so it is declared here and every case inherits it.
+#
+# It used to live in cases/, repeated identically in all five files — the same
+# eight nodes, the same tolerance, the same seed. Five copies of one fact, in
+# files whose own header warns that n copies mean n fixes and silent drift. A
+# case now carries only what a customer chose: id, label, note and `supply`.
+#
+# A case may still declare an `[[iterate]]` of its own. It is ADDED to these,
+# never a replacement, because a customer cannot un-declare a loop the design
+# has.
+#
+# An undeclared cycle is a named error, not a hung run.
+
+[[iterate]]
+nodes = ["pwr_cell_derating", "pwr_array_power_eol", "pwr_available", "prop_throttle", "prop_delivered_bus_power", "pwr_demand", "thm_dissipation", "thm_equilibrium_temperature"]
+converge_on = "pwr_demand"
+tolerance = 1e-06
+max_iter = 80
+
+[[iterate.seed]]
+# A seed decides which fixed point the iteration reaches, so it carries a
+# source like every other declared number.
+var = "thm_equilibrium_temperature"
+value = 300.0
+source = "orbitt_case_c1"

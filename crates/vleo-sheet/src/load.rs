@@ -18,6 +18,9 @@ pub struct Tree {
     pub relations: Vec<Relation>,
     pub cases: BTreeMap<String, Case>,
     pub sources: BTreeMap<String, Source>,
+    /// The cycles the ARCHITECTURE declares, read once from `layers/`. Every
+    /// case inherits these; a case's own `[[iterate]]` is added to them.
+    pub cycles: Vec<CycleSpec>,
 }
 
 fn s(v: Option<&toml::Value>) -> String {
@@ -421,6 +424,10 @@ fn load_layers(tree: &mut Tree) -> Result<(), String> {
     for p in files {
         let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
         let v: toml::Value = text.parse().map_err(|e| format!("{}: {e}", p.display()))?;
+        // A layer file may declare the architecture's own cycles. They belong
+        // here rather than in a case because a loop is a property of the
+        // design, not of who bought it.
+        tree.cycles.extend(parse_cycles(&v));
         for g in v.get("group").and_then(|g| g.as_array()).unwrap_or(&vec![]) {
             let g = g.as_table().unwrap();
             let grp = Group {
@@ -460,6 +467,31 @@ fn load_layers(tree: &mut Tree) -> Result<(), String> {
     Ok(())
 }
 
+/// Parse an `[[iterate]]` array. The same shape appears in `layers/cycles.toml`
+/// for the architecture's own loops and in a case file for one a customer adds,
+/// so it is read in one place rather than twice.
+fn parse_cycles(v: &toml::Value) -> Vec<CycleSpec> {
+    let mut out = Vec::new();
+    for it in v.get("iterate").and_then(|i| i.as_array()).unwrap_or(&vec![]) {
+        let Some(it) = it.as_table() else { continue };
+        let mut cy = CycleSpec {
+            converge_on: s(it.get("converge_on")),
+            tolerance: f(it.get("tolerance")),
+            max_iter: u(it.get("max_iter")),
+            ..Default::default()
+        };
+        for n in it.get("nodes").and_then(|n| n.as_array()).unwrap_or(&vec![]) {
+            cy.nodes.push(n.as_str().unwrap_or("").to_string());
+        }
+        for sd in it.get("seed").and_then(|s| s.as_array()).unwrap_or(&vec![]) {
+            let Some(sd) = sd.as_table() else { continue };
+            cy.seeds.push((s(sd.get("var")), f(sd.get("value"))));
+        }
+        out.push(cy);
+    }
+    out
+}
+
 fn load_cases(tree: &mut Tree) -> Result<(), String> {
     let dir = tree.root.join("cases");
     let mut files: Vec<PathBuf> = fs::read_dir(&dir)
@@ -484,31 +516,10 @@ fn load_cases(tree: &mut Tree) -> Result<(), String> {
             }
             c.supply.sort_by(|a, b| a.0.cmp(&b.0));
         }
-        for it in v
-            .get("iterate")
-            .and_then(|i| i.as_array())
-            .unwrap_or(&vec![])
-        {
-            let it = it.as_table().unwrap();
-            let mut cy = CycleSpec {
-                converge_on: s(it.get("converge_on")),
-                tolerance: f(it.get("tolerance")),
-                max_iter: u(it.get("max_iter")),
-                ..Default::default()
-            };
-            for n in it
-                .get("nodes")
-                .and_then(|n| n.as_array())
-                .unwrap_or(&vec![])
-            {
-                cy.nodes.push(n.as_str().unwrap_or("").to_string());
-            }
-            for sd in it.get("seed").and_then(|s| s.as_array()).unwrap_or(&vec![]) {
-                let sd = sd.as_table().unwrap();
-                cy.seeds.push((s(sd.get("var")), f(sd.get("value"))));
-            }
-            c.cycles.push(cy);
-        }
+        // Every case runs the architecture's cycles. A case may add one of its
+        // own; it may not drop one the design has.
+        c.cycles = tree.cycles.clone();
+        c.cycles.extend(parse_cycles(&v));
         tree.cases.insert(c.id.clone(), c);
     }
     Ok(())
