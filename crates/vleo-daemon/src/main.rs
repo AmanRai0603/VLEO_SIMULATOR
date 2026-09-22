@@ -559,6 +559,24 @@ fn index_json() -> String {
         j.str_field("sub", d.subsystem);
         j.str_field("kind", d.kind.name());
         j.str_field("state", d.state.name());
+        // WHETHER IT ANSWERS, AND WHY NOT.
+        //
+        // `state` says how far through its life the row is; these say whether
+        // the design has made this number. A function whose relation the sheet
+        // never derives is refused by the resolver, so a face that draws it
+        // like any other row is offering a reader a control that cannot work
+        // and a blank where a number should be, with nothing saying which.
+        //
+        // Both are sent rather than one combined flag, because the face has to
+        // say what would fix it: `fn` decides whether the rule applies at all
+        // — an input is defined by carrying a default — and `derived` is the
+        // thing that is missing.
+        j.bool_field("fn", d.is_function());
+        j.bool_field("derived", d.derived);
+        // Who read the relation against its source. Not the same claim, and it
+        // does not silence the row — it is what the mathematics factor of the
+        // credibility vector is scored on. Empty is the normal state.
+        j.str_field("by", d.relation_by);
         j.str_field("owner", d.owner);
         j.str_field("tier", d.tier.name());
         j.str_field("unit", v.unit.symbol());
