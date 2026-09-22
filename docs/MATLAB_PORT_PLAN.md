@@ -3322,13 +3322,20 @@ the decision has a cost either way:
 | | what it does | what it costs |
 |---|---|---|
 | keep 0.8997 | the label becomes true, no number moves | the driver table stays at a 90 per cent bound while the study's prose says 95 |
-| move to 0.95 (z = 1.645) | one confidence throughout, matching the label | the sustained scenarios rise about 4.9 sfu and **parity with `mission_drivers.csv` is lost** — 14 rows hold the legacy run's own answers and four of them would stop matching |
+| move to 0.95 (z = 1.645) | one confidence throughout, matching the label | the sustained scenarios rise 4.91 sfu, 47 rows move and no KPI closure does. ~~parity with `mission_drivers.csv` is lost — 14 rows hold the legacy run's own answers and four of them would stop matching~~ **THIS WAS WRONG and §44.3 measures it: none of the 14 entries compares a band value, so no parity check breaks at either z** |
 
 *My reading, offered and not taken:* this repository's discipline is to reproduce
 the study and say where it is wrong, not to repair it silently — so keeping 0.8997
 and making the label true is more in character, with B3 providing the correct
 number beside it rather than instead of it. But it is a design decision about a
 published bound and it is yours.
+
+**That reading was written against a cost that does not exist.** It leaned on
+parity, and §44.3 measures that no parity check in this repository compares a band
+value — nor could one, since the port's centre already sits 38.7 per cent below
+MATLAB's for the same window by deliberate choice. The reading is left standing
+because it was offered rather than taken, and it is marked here so that nobody
+weighs it without the correction.
 
 **B3 · The empirical quantile, beside the z-multiplier rather than instead of it.**
 
@@ -3372,7 +3379,7 @@ is deliberately not in this plan.
 | 3 | **A3** `[theory]` and the relation's signature | yes — the signature | no |
 | 4 | **B3.1** the walk-forward script, checked against σ | no | no |
 | 5 | **B1** `sw_kp_driving_slot` — row seeded, evidence measured, §43 | **yes — the value** | yes, downstream: 70 rows, 6 KPIs |
-| 6 | **B2** `sw_band_confidence` | **yes — the value** | yes, if 0.95 |
+| 6 | **B2** `sw_band_confidence` — row seeded, evidence measured, §44 | **yes — the value** | yes, if 0.95: 47 rows, no KPI |
 | 7 | **B3.2** the two empirical-quantile rows | **yes — both values** | no |
 | 8 | **A4** the `thermosphere` panel, 4 views | signature on the reference | no |
 | 9 | **B3.3** the residual view on the `spread` panel | signature on the reference | no |
@@ -3726,7 +3733,7 @@ different places to stand.
 | 3 · A3 theory | drafted and **checked** (§31.2a), **unsigned — needs a person** |
 | 4 · B3.1 walk-forward | written, **failing its own test**, every candidate eliminated, §31.4a |
 | 5 · B1 which Kp slot | **needs a person** — the row is seeded and §43 measures what each answer costs; the third view is the picture to decide it from |
-| 6 · B2 band confidence | **needs a person** |
+| 6 · B2 band confidence | **the row exists, seeded, with the evidence measured** — §44; the value needs a person |
 | 7 · B3.2 empirical quantiles | blocked on step 4 |
 | 8 · A4 thermosphere panel | **done**, reference unsigned |
 | 9 · B3.3 residual view | blocked with 7 |
@@ -4784,6 +4791,10 @@ declined against a count rather than a preference.
   several carry another row's answer as a literal in prose.
 - §30 step 5's value: `sw_kp_driving_slot` is seeded and unanswered. §43 measures
   what each answer costs — 70 rows and six KPI closures move — and picks none.
+- §30 step 6's value: `sw_band_confidence` is seeded and unanswered. §44 measures
+  what each answer costs — 47 rows, no KPI closure, 3.1 to 6.2 per cent of margin
+  — and corrects §30 B2's own cost table, which claimed a parity loss that no
+  check in this repository would suffer.
 - `agents/lanes.toml`: no lane covers the row count in README.md, AGENTS.md and
   `areas/generators.md`, nor the generated `page.html`/`model.rs`, so the tree
   cannot grow inside any one lane. §43.7. Reported, not fixed — widening a lane
@@ -5158,7 +5169,126 @@ edit that no agent is permitted to make.** The generated artefacts are the same
 shape of gap: regenerating is the required next step after any sheet edit, and the
 files it writes are in nobody's `writes` list.
 
+One wrinkle found while adding the second row: over the **working tree** the lane
+check reports an untracked new folder as one directory entry — *"not in the
+lane"* — so the `fixtures.toml` prohibition inside it does not surface until the
+folder is committed and the check runs over a commit range. Both readings are of
+the same diff; only the committed one is exact. Worth knowing before trusting a
+clean working-tree lane report on a new row.
+
 This is reported and **not fixed**. A lane table decides what an agent may do, and
 an agent widening its own lane is not a change an agent should make — it is the
 one edit where the diff check cannot be the control, because the diff check reads
 the file being edited. It wants a person.
+
+---
+
+## §44 · Step 6, the band's confidence — the row exists, and §30 B2's cost table was wrong
+
+§30 B2 asks what confidence the design band is at. The value **needs a person**,
+and this section is the part of that step an agent may do — plus one correction
+the measuring turned up.
+
+### 44.1 · The contradiction is in the source, not in the port
+
+`matlab/reference/mission_drivers.csv` is the legacy run's own output, and its
+header says both halves in four lines of each other:
+
+> *"The run: window opens 2027-06-26, 365 d, **95% confidence**, Kp slot 'mean'…"*
+> *"…the mean band is that centre **+/- 1.28\*sigma_total**"*
+
+Φ(1.28) = 0.8997. So the sustained half is a one-sided **90th** percentile while
+the run is labelled **95 per cent**, and the daily half of the same band does use
+0.95. Two halves of one scenario at different confidences, neither at the label's.
+The port reproduces that rather than repairing it silently — right at port time,
+and now a published table whose header does not describe it.
+
+The evidence is read rather than asserted: `tools/band_confidence_cost.py` checks
+that both sentences are still in that file, and separately that the run's **own
+numbers** still imply 1.28 — its hotmean minus its nominal over its own σ, for
+both F10.7 and Ap — so a reworded header cannot take the evidence with it.
+
+### 44.2 · The row exists, seeded, and the multiplier has no home until it is answered
+
+`crates/vleo-mod-solar/nodes/sw_band_confidence`, `kind = "declared"`,
+`state = "empty"`, `order` 1388. The question, the label and the evidence are
+there; the value, the domain and the bound reasons are not.
+
+**What makes this row worth having is a defect visible today.** The multiplier is
+a literal in four hole bodies — `sw_f107_design_long`, `sw_f107_cold_long`,
+`sw_ap_design_long`, `sw_ap_cold_long` — and each of them says, in its own
+comment, *"1.28 is declared in the sheet, not chosen here"*. **No sheet declares
+it.** Four copies of one number, each pointing at a row that does not exist. All
+four now cross-reference `sw_band_confidence`, and the selftest fails if any of
+them stops.
+
+### 44.3 · What each answer costs — and the cost §30 B2 stated does not exist
+
+Measured by editing those four holes in a working tree, rebuilding and running the
+whole tree at z = 1.645, then reverting. Moving from 1.28 to 1.645:
+
+| | z = 1.28 | z = 1.645 | |
+|---|---|---|---|
+| `sw_f107_design_long` | 104.0713 | 108.9822 | **+4.91 sfu** |
+| `sw_f107_cold_long` | 69.6281 | 64.7173 | −4.91 sfu |
+| `sw_ap_design_long` | 26.6953 | 28.0070 | +1.31 |
+| `sw_ap_cold_long` | 17.4955 | 16.1838 | −1.31 |
+
+- **47 rows move**, all inside solar and its layer-2 interface. It does cross into
+  layer 2: `sys_space_environment_f10_7`, `_f10_7_81day`, `_ap` and `_kp` all move.
+- **No KPI closure moves at all**, because the density chain reads declared
+  constants rather than this subsystem — §28.2, left open by §30 A5. That is the
+  opposite of §43's Kp slot, which reached six KPIs.
+- **All five solar closures still close**, with 3.1 to 6.2 per cent less margin.
+  `l3_solar_ach_03`, Ap survival, does not move at all.
+
+**And now the correction.** §30 B2's cost table said that moving to 0.95 loses
+parity with `mission_drivers.csv` — *"14 rows hold the legacy run's own answers
+and four of them would stop matching"* — and that was the main argument for
+leaving the number alone. **It does not hold.** The 14 entries are
+`tools/mat_parity.py`'s, and none of them compares a band value:
+
+| the 14 entries | what they compare |
+|---|---|
+| 8 **AGREE** | two `prf_ap2kp` slot recomputations, three `sw_kp_slot_bias`, three `sw_kp_from_ap + sw_kp_mean_bias` — **all Kp, no z in any of them** |
+| 2 **DIFFER**, expected | the bare Kp table; the centre of the window |
+| 1 **CLOSED** | the 24-hour-mean Kp slot |
+| 3 **NO ROW** | including, in its own words, *"the sustained band around the centre… the port publishes a one-sided p95 rise instead"* |
+
+`tools/matlab_parity.py`'s 15 rows name no band row either. So **moving the
+confidence breaks no parity check in this repository**, at either value.
+
+There is a second reason the stated cost could not have held: the port's centre is
+already **38.7 per cent below** MATLAB's for the same window — 96.99 sfu against
+158.33 — by a deliberate and documented method difference. Band parity with the
+study does not exist at any z, because the thing the band is drawn around does not
+match.
+
+The selftest guards this the only way it can: it fails if either parity tool ever
+starts naming one of the four band rows, because that would change the cost of
+this decision and this section would need re-measuring.
+
+### 44.4 · Why it is still not an agent's call
+
+Keeping 0.8997 makes the label true at no cost to any number, and leaves the
+published band at a 90 per cent bound while the study's prose says 95. Moving to
+0.95 gives one confidence throughout at the cost of margin — measured above, and
+smaller than §30 B2 believed. A third answer, that the two halves are at different
+confidences **on purpose** and the row should say so, is not absurd either.
+
+Nothing above picks between them. §30 B3 is also still open, and its empirical
+quantile would sit beside whichever is chosen rather than instead of it.
+
+### 44.5 · What this step did not do
+
+It did not make the four holes READ the new row. That is the change the row exists
+for, and it cannot happen until the row carries a value: a hole reading a seeded
+row would block every band in the tree. When the value lands, the four literals
+become one input and `sw_band_confidence` becomes a switch, the way
+`sw_storm_design_level` is.
+
+It also did not touch `sw_daily_band_spread` or `sw_ap_daily_band_spread`, the
+0.95 half. They moved in the measurement — +10.8 per cent and +7.2 per cent —
+because they are measured relative to a sustained level that moved, not because
+their own percentile changed. Whether one row should govern both halves is part of
+what is being decided.

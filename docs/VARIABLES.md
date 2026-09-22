@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1394 rows** — 664 a person picked, 730 worked out. Two thirds of any design tree is
+**1395 rows** — 665 a person picked, 730 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -19777,7 +19777,7 @@ before it can have edges.
 - **upper bound** — above 300 the level exceeds the largest daily Ap in the record, 273. A COLD level there means the spread has been added rather than subtracted, which is the one failure this row has that its twin does not
 - **reads** — `sw_ap_central_expectation`, `sw_ap_mean_band_spread`
 - **read by** — `l3_solar_interface`, `sw_ap_cold_short`, `sw_ap_daily_band_drop`, `sw_kp_scenarios`
-- **assumes** 1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent — fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997, so this edge is the 10th percentile and not the 5th. A one-sided 95 per cent bound is 1.645 sigma, a further 1.3 down at this sigma. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it
+- **assumes** 1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent — fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997, so this edge is the 10th percentile and not the 5th. A one-sided 95 per cent bound is 1.645 sigma, a further 1.3 down at this sigma. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it Which number that is, is now a row of its own — sw_band_confidence, seeded by §30 B2 and unanswered, because the value needs a person. Until it carries one the multiplier is a literal in this hole and three others, each saying it is declared in the sheet while no sheet declares it. §44 measures what each answer costs: moving to 1.645 moves 47 rows and no KPI closure, leaves all five solar closures closing with 3.1 to 6.2 per cent less margin, and breaks no parity check in this repository
 - **assumes** A symmetric band on a quantity truncated at zero — fails when the centre is small. Ap cannot be negative, so the true low edge of any band is bounded by the centre itself, and a symmetric subtraction of 1.28 sigma ignores that. With this sigma the crossing is at a centre near 4.6, which is a deep-minimum window rather than an impossible one. The guard catches it; the arithmetic does not know about it
 - **assumes** One sigma covers the whole window — fails when sigma is not flat across the cycle, and Ap's is least flat of all — geomagnetic activity peaks in the DECLINING phase rather than at maximum, when coronal holes are largest and high-speed streams recur. A window spanning that transition is given one width where it needs two
 - **assumes** The quiet edge is a design case and not a nuisance — fails when it is read as the harmless side. A quiet field is the coolest, thinnest thermosphere, the weakest signal a magnetometer has to work with and the least torque a magnetorquer can generate. The last of those sizes an actuator
@@ -20036,6 +20036,26 @@ The Ap twin of sw_mean_band_spread, by the same method on the same rotations.
 It is a separate row because it is a separate measurement of a separate
 quantity, and because a row publishes one number.
 
+
+### `sw_band_confidence` — Confidence the design band is at
+
+> What confidence is the design band at — one number both halves of it read?
+
+| | |
+|---|---|
+| symbol | `` |
+| type | `` |
+| unit | ? |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `` |
+| source | `` |
+| valid over | 0 … 0 ? |
+
+- **lower bound** — 
+- **upper bound** — 
+- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 
 ### `sw_band_coverage` — Stated band coverage
 
@@ -20476,7 +20496,7 @@ The second driver every empirical density model wants, beside the daily flux. At
 - **upper bound** — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value. A COLD level there is arithmetic rather than sky — it means the spread has been added rather than subtracted, which is the one failure this row has that its twin does not
 - **reads** — `sw_central_expectation`, `sw_mean_band_spread`
 - **read by** — `l3_solar_interface`, `sw_daily_band_drop`, `sw_f107_cold_short`
-- **assumes** 1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent — fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997, so this edge is the 10th percentile and not the 5th. A one-sided 95 per cent bound is 1.645 sigma, which at this sigma is a further 4.9 sfu DOWN. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it
+- **assumes** 1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent — fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997, so this edge is the 10th percentile and not the 5th. A one-sided 95 per cent bound is 1.645 sigma, which at this sigma is a further 4.9 sfu DOWN. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it Which number that is, is now a row of its own — sw_band_confidence, seeded by §30 B2 and unanswered, because the value needs a person. Until it carries one the multiplier is a literal in this hole and three others, each saying it is declared in the sheet while no sheet declares it. §44 measures what each answer costs: moving to 1.645 moves 47 rows and no KPI closure, leaves all five solar closures closing with 3.1 to 6.2 per cent less margin, and breaks no parity check in this repository
 - **assumes** The band is symmetric because sigma is a standard deviation — fails when the residuals are skewed, which they are. A forecast that misses hardest when activity is highest has a long high tail and a short low one, so the true 10th percentile of the residuals is nearer the centre than 1.28 sigma and this edge is a little too cold. It errs toward the conservative on THIS side — a colder cold case is a harder case for drag authority — but it is the wrong number, not a safe one
 - **assumes** One sigma covers the whole window — fails when sigma is not flat across the cycle — the source says so about its own number — so a window spanning a rise or a fall is given one width where it needs two
 - **assumes** The cold edge is a design case and not a nuisance — fails when it is read as the harmless side. Thin air is the case with the least aerodynamic control authority, the slowest differential-drag phasing, the longest end-of-life de-orbit and the least array flux. Two of those are mission-ending in their own way
@@ -20615,7 +20635,7 @@ accident.
 - **upper bound** — above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, and a sustained level there is not a window this tool can model
 - **reads** — `sw_central_expectation`, `sw_mean_band_spread`
 - **read by** — `l3_solar_ach_01`, `l3_solar_interface`, `sw_daily_band_spread`, `sw_f107_design_short`
-- **assumes** 1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent — fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997. A one-sided 95 per cent bound is 1.645 sigma, which at this sigma is a further 4.9 sfu. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it
+- **assumes** 1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent — fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997. A one-sided 95 per cent bound is 1.645 sigma, which at this sigma is a further 4.9 sfu. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it Which number that is, is now a row of its own — sw_band_confidence, seeded by §30 B2 and unanswered, because the value needs a person. Until it carries one the multiplier is a literal in this hole and three others, each saying it is declared in the sheet while no sheet declares it. §44 measures what each answer costs: moving to 1.645 moves 47 rows and no KPI closure, leaves all five solar closures closing with 3.1 to 6.2 per cent less margin, and breaks no parity check in this repository
 - **assumes** The residual spread is normal enough for a z multiplier to mean a percentile — fails when it is not. The residuals of a forecast that misses hardest when activity is highest are skewed, and a normal multiplier under-covers the high tail — which is the tail a design is sized against. The empirical percentile of the residuals would be the honest statistic, and sw_mean_band_spread publishes only their standard deviation
 - **assumes** One sigma covers the whole window — fails when sigma is not flat across the cycle — the source says so about its own number — so a window spanning a rise or a fall is given one width where it needs two
 - **evidence** a mid-cycle centre of 160 with this repository's own measured spread — 160 + 1.28 × 13.454382 — expect 177.22160896 ± 0.000000000001 relative, from `noaa_swpc` (independent-derivation)

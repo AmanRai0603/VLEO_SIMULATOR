@@ -1,0 +1,87 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "sw_band_confidence"
+label = "Confidence the design band is at"
+folder = "sw_band_confidence"   # frozen at seed
+subsystem = "solar"
+parent = "l3_solar"
+kind = "declared"
+owner = "environment"
+tier = "A"
+criticality = "significant"   # minor | significant — significant means two reviewers and a differential fill
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+order = 1388
+state = "empty"
+
+# SEEDED, AND DELIBERATELY SO. §30 B2 of docs/MATLAB_PORT_PLAN.md asks for this
+# row and says the value NEEDS A PERSON. The folder, the label and the question
+# are here so the decision has somewhere to live and `xtask declare` names it;
+# the value, the domain and the reasons are not, because an agent may supply
+# none of them.
+#
+# WHAT IS BEING DECIDED. The design band is centre ± z·sigma, and z is written
+# as a literal in four hole bodies — sw_f107_design_long, sw_f107_cold_long,
+# sw_ap_design_long, sw_ap_cold_long. Each of those four says "1.28 is declared
+# in the sheet, not chosen here", and NO ROW DECLARES IT. This is the row that
+# would, so that the multiplier and the word for it are one fact rather than
+# five copies.
+#
+# THE CONTRADICTION IS IN THE SOURCE, not in the port. The legacy run's own
+# header, recorded verbatim in matlab/reference/mission_drivers.csv, reads:
+#
+#   "The run: window opens 2027-06-26, 365 d, 95% confidence, Kp slot 'mean' ...
+#    the mean band is that centre +/- 1.28*sigma_total"
+#
+# Phi(1.28) = 0.8997, so the sustained half is a one-sided 90th percentile while
+# the run is labelled 95 per cent. The DAILY half of the same band does use
+# 0.95. So the two halves of one scenario are at different confidences and
+# neither is at the label's. The port reproduces that rather than repairing it
+# silently, which was right at port time and leaves a published table whose
+# header does not describe it.
+#
+# WHAT EACH ANSWER COSTS, measured by tools/band_confidence_cost.py and recorded
+# in §44 of the plan. Moving z from 1.28 to 1.645:
+#
+#   * moves 47 rows, all inside solar and its layer-2 interface. The sustained
+#     F10.7 level rises 4.91 sfu, 104.07 to 108.98;
+#   * reaches sys_space_environment_f10_7, _f10_7_81day, _ap and _kp — so it
+#     does cross into layer 2;
+#   * reaches NO KPI closure, because the density chain reads declared constants
+#     rather than this subsystem. That is §28.2, and §30 A5 leaves it open;
+#   * leaves all five solar closures closing, with 3.1 to 6.2 per cent less
+#     margin. l3_solar_ach_03, Ap survival, does not move at all;
+#   * BREAKS NO PARITY CHECK IN THIS REPOSITORY. Neither mat_parity.py's 14
+#     entries nor matlab_parity.py's 15 rows compares a band value; the eight
+#     that agree are all Kp conversions, which have no z in them.
+#
+# THAT LAST POINT CORRECTS §30 B2's own cost table, which said parity with
+# mission_drivers.csv would be lost and four of fourteen rows would stop
+# matching. It was the main argument for leaving the number alone, and it does
+# not hold — see §44.3, which also records that the port's centre already sits
+# 38.7 per cent below MATLAB's for the same window by deliberate choice, so
+# band parity with the study does not exist at any z.
+
+[question]
+text = "What confidence is the design band at — one number both halves of it read?"
+note = ""   # REQUIRED — a person answers this row; see the comment above for what is measured
+
+[maths]
+confirmed_by = ""   # REQUIRED — an agent may never supply mathematics
+expression = ""   # REQUIRED — re-decide, do not inherit
+source = ""   # REQUIRED — re-decide, do not inherit
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+# A unit is a decision, not data. None of these is filled yet.
+symbol = ""
+type = ""
+unit = ""
+lower = 0.0
+upper = 0.0
+reason_lower = ""   # REQUIRED — a declared limit's reason is a person's
+reason_upper = ""   # REQUIRED — a declared limit's reason is a person's
+
+[view]
+kind = "number"
