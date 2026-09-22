@@ -30,6 +30,50 @@ text = "How long must one satellite operate?"
 expression = "T_mis = T_mis_req"
 source = "orbitt_case_c1"
 
+# WHERE THIS RELATION CAME FROM. The account below is the one that was already
+# written as a comment on [maths] above, moved into the field the schema keeps
+# for it. Nothing about the relation changed: it was and is the identity, and
+# `T_mis_req` is still declared at layer 2 and confirmed there.
+#
+# It is here because a comment is not a field. A row whose derivation lives in a
+# comment reads, to everything downstream, exactly like a row nobody derived —
+# and this one was standing in front of 26 others, 21 of them the solar
+# subsystem, for that reason alone.
+[theory]
+why = """
+It restates the requirement; it does not set it.
+
+Mission length is a programme decision, so it is declared once, at layer 2,
+where the requirements are — `sys_mission_requirements_mission_duration`, five
+years, confirmed. This row is the subsystem-facing copy of that decision, and
+its relation is the identity because a copy that computes anything is a second
+opinion about how long the mission is.
+
+Two rows declaring a mission length is two rows that can disagree, and the
+twelve rows reading this one would then be sized against whichever of the two
+their author happened to open. Carrying the number rather than re-declaring it
+is what makes that impossible.
+"""
+
+reading = """
+It is ONE SATELLITE'S operating duration, not the service's. A constellation
+that replenishes on a schedule shorter than a satellite's life has two mission
+lengths and this is the shorter one — the upstream row states that as its
+assumption, and it travels with the number rather than staying at layer 2.
+
+The declared range is the same 0.5 to 15 years as the requirement it carries,
+and deliberately so: a copy with a wider range would admit a value its own
+source refuses.
+"""
+
+[[theory.step]]
+text = """
+Take the declared requirement and publish it unchanged, at the same type and
+the same unit. There is no arithmetic here on purpose: the whole value of the
+row is that there is nowhere for a discrepancy to enter.
+"""
+math = "T_mis = T_mis_req"
+
 [[input]]
 # The consumer declares what it expects. Assembly refuses a mismatch
 # against what the producer publishes — which is the only place the
