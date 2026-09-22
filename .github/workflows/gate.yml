@@ -217,6 +217,14 @@ jobs:
       # makes the condition of the step.
       - name: the Kp slot decision still has its evidence
         run: python3 tools/kp_slot_cost.py --selftest
+      # §30 B2's decision row is seeded and unanswered too, and its evidence is
+      # more fragile: it rests on two sentences in the legacy run's own header,
+      # on that run's own numbers still implying 1.28, on four holes still
+      # carrying the literal, and on NO parity check comparing a band value —
+      # which is the fact that corrects §30 B2's cost table. All four are
+      # checked here, and none of them needs a daemon.
+      - name: the band confidence decision still has its evidence
+        run: python3 tools/band_confidence_cost.py --selftest
       # Every recipe, applied twice on a copy; the second must change nothing.
       - name: every recipe is idempotent
         run: python3 tools/recipe.py --check
@@ -396,6 +404,12 @@ jobs:
       # and fails only if the engine cannot produce it.
       - name: what the Kp slot choice costs downstream
         run: python3 tools/kp_slot_cost.py
+      # And the band's four rows against the arithmetic that makes them: each is
+      # its own centre plus or minus z sigma and nothing else, so if the relation
+      # ever changes, every figure §44 records about it is about a relation that
+      # is gone.
+      - name: what the band confidence costs
+        run: python3 tools/band_confidence_cost.py
 
   # The two faces the workspace excludes, because they need targets of their
   # own. `cargo build --workspace` does not reach them, so until this job
