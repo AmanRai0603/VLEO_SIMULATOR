@@ -288,6 +288,10 @@ fn route(
         ("GET", p) if p.starts_with("/v1/declare/") => {
             declare_endpoint(ctx, p.trim_start_matches("/v1/declare/"))
         }
+        // What a pasted sheet body WOULD change. Writes nothing.
+        ("POST", p) if p.starts_with("/v1/preview/") => {
+            sheet_preview(ctx, p.trim_start_matches("/v1/preview/"), params)
+        }
         // THE ONE WRITE PATH IN THIS SERVER. One field of one sheet.
         ("POST", p) if p.starts_with("/v1/sheet/") => {
             sheet_write(ctx, p.trim_start_matches("/v1/sheet/"), params)
@@ -404,6 +408,57 @@ fn module(ctx: &Ctx, name: &str) -> (&'static str, &'static str, Vec<u8>) {
 /// table entirely, and the person filling it in needs to see the blank. It
 /// carries the sheet hash so a later save can prove which version it started
 /// from.
+/// What pasting a sheet body into this row would change — and nothing else.
+///
+/// Read-only, deliberately, and separate from the write path. Pasting a
+/// sibling's sheet is how twenty rows that share a pattern get filled quickly,
+/// and it is also how one stale source citation gets dragged through thirty of
+/// them. So the paste is parsed and reported, never applied: a person looks at
+/// the list, then each field goes through the same one-at-a-time save as any
+/// other edit.
+fn sheet_preview(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static str, Vec<u8>) {
+    const JSON: &str = "application/json; charset=utf-8";
+    if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+        return (
+            "400 Bad Request",
+            JSON,
+            b"{\"ok\":false,\"message\":\"not a node identifier\"}".to_vec(),
+        );
+    }
+    let Some(body) = param(params, "body").map(decode) else {
+        return (
+            "400 Bad Request",
+            JSON,
+            b"{\"ok\":false,\"message\":\"nothing pasted\"}".to_vec(),
+        );
+    };
+    let tree = match vleo_sheet::load::load_all(&ctx.root) {
+        Ok(t) => t,
+        Err(e) => {
+            return (
+                "500 Internal Server Error",
+                JSON,
+                format!("{{\"ok\":false,\"message\":{}}}", json::string(&e)).into_bytes(),
+            )
+        }
+    };
+    let Some(sh) = tree.sheets.get(id) else {
+        return (
+            "404 Not Found",
+            JSON,
+            b"{\"ok\":false,\"message\":\"no such node\"}".to_vec(),
+        );
+    };
+    match vleo_sheet::form::preview(sh, &body) {
+        Ok(j) => ("200 OK", JSON, j.into_bytes()),
+        Err(e) => (
+            "400 Bad Request",
+            JSON,
+            format!("{{\"ok\":false,\"message\":{}}}", json::string(&e)).into_bytes(),
+        ),
+    }
+}
+
 /// Whether this daemon may write to the tree at all.
 ///
 /// Off unless asked for. A read-only deployment must not become a writable one

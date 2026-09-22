@@ -656,3 +656,126 @@ fn regenerate(sh: &crate::model::Sheet, tree: &crate::load::Tree) -> Result<usiz
     }
     Ok(n)
 }
+
+/// What pasting a sheet body into this row would change.
+///
+/// Pasting a sibling's `node.toml` is how twenty rows that share a pattern get
+/// filled without retyping, and it is also how a stale source citation gets
+/// dragged through thirty of them. So a paste is never applied: it is parsed,
+/// every structural key is dropped, and what remains is reported as a list of
+/// changes for a person to look at before anything is written.
+///
+/// Returned as JSON because the face is what shows it. `changes` is what would
+/// move, `dropped` is what was in the paste and will not be used — named
+/// individually, because a key silently ignored is a key somebody believes they
+/// set.
+pub fn preview(sh: &Sheet, pasted: &str) -> Result<String, String> {
+    let v: toml::Value = pasted
+        .parse()
+        .map_err(|e| format!("that is not TOML: {e}"))?;
+    let get = |field: &str| -> Option<String> {
+        let (table, key) = place(field)?;
+        let t = if table.is_empty() {
+            Some(&v)
+        } else {
+            v.get(table)
+        }?;
+        t.get(key).and_then(|x| x.as_str()).map(|s| s.to_string())
+    };
+    let mut changes = Vec::new();
+    for a in asks(sh)? {
+        if let Some(new) = get(a.field) {
+            let old = value(sh, a.field);
+            if new != old {
+                changes.push((a.field, old.to_string(), new));
+            }
+        }
+    }
+    // Everything the paste carried that this form will not write, so the reader
+    // can see what was ignored rather than assume it landed.
+    //
+    // A TABLE IS NOT A FIELD. `[maths]` and `[output]` are containers the form
+    // writes INTO, so reporting them as "not a field this form writes" told a
+    // reader their whole relation had been dropped when only, say, an extra key
+    // beside it had. Tables are walked; their keys are what gets judged.
+    let mut dropped: Vec<String> = Vec::new();
+    fn note(dropped: &mut Vec<String>, table: &str, k: &str) {
+        // The name this form knows the key by, which for a table key is the
+        // form field that lands there.
+        let field = if table.is_empty() {
+            k.to_string()
+        } else {
+            match (table, k) {
+                ("question", "text") => "question".into(),
+                ("maths", x) => x.to_string(),
+                ("output", x) => x.to_string(),
+                _ => format!("{table}.{k}"),
+            }
+        };
+        let shown = if table.is_empty() {
+            k.to_string()
+        } else {
+            format!("{table}.{k}")
+        };
+        // AN ATTRIBUTION IS NEVER PASTED. `confirmed_by` is a writable field,
+        // so without this it would be carried across with the relation — which
+        // is forging somebody's name onto mathematics they have not read. It is
+        // set by the person confirming, on the row they are confirming.
+        if field == "confirmed_by" {
+            dropped.push(format!(
+                "{shown} — an attribution is not pasted. It is the name of the person who \
+                 read THIS relation against its source; carrying one across from another row \
+                 would put their name on mathematics they have not seen"
+            ));
+        } else if let Some(why) = structural(&field) {
+            dropped.push(format!("{shown} — {why}"));
+        } else if place(&field).is_none() {
+            dropped.push(format!("{shown} — not a field this form writes"));
+        }
+    }
+    if let Some(t) = v.as_table() {
+        for (k, val) in t {
+            match val.as_table() {
+                // A table the form reaches into: judge its keys, not its name.
+                Some(inner) if matches!(k.as_str(), "question" | "maths" | "output") => {
+                    for ik in inner.keys() {
+                        note(&mut dropped, k, ik);
+                    }
+                }
+                // Any other table is wholly outside the form.
+                Some(_) => dropped.push(format!("[{k}] — not a table this form writes")),
+                None if val.as_array().is_some() => {
+                    dropped.push(format!("[[{k}]] — not a table this form writes"))
+                }
+                None => note(&mut dropped, "", k),
+            }
+        }
+    }
+    dropped.sort();
+    dropped.dedup();
+    let mut o = String::from("{\n  \"changes\": [\n");
+    for (i, (f, from, to)) in changes.iter().enumerate() {
+        o.push_str(&format!(
+            "    {{\"field\": {}, \"from\": {}, \"to\": {}}}{}\n",
+            jq(f),
+            jq(from),
+            jq(to),
+            if i + 1 == changes.len() { "" } else { "," }
+        ));
+    }
+    o.push_str("  ],\n  \"dropped\": [\n");
+    for (i, d) in dropped.iter().enumerate() {
+        o.push_str(&format!(
+            "    {}{}\n",
+            jq(d),
+            if i + 1 == dropped.len() { "" } else { "," }
+        ));
+    }
+    o.push_str(&format!(
+        "  ],\n  \"file_hash\": {}\n}}\n",
+        jq(&std::fs::read_to_string(sh.dir.join("node.toml"))
+            .map(|t| file_hash(&t))
+            .unwrap_or_default())
+    ));
+    Ok(o)
+}

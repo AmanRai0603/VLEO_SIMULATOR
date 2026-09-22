@@ -35,6 +35,27 @@ async function load(id) {
 }
 
 /**
+ * Paste a sibling's sheet body.
+ *
+ * This is how twenty rows that share a pattern get filled without retyping, and
+ * it is also how one stale source citation gets dragged through thirty of them.
+ * So a paste is never applied: the server parses it, drops every structural
+ * key, and returns what WOULD change. A person looks at that list, and only
+ * then does each field go through the same one-at-a-time save as any other
+ * edit.
+ */
+function pasteHtml() {
+  return '<details class="sf-paste"><summary>paste a sheet body from another row</summary>' +
+    '<p class="sf-why">Nothing is written by pasting. The structural keys — the ' +
+    'identifier, the parent, the order — are dropped, and you are shown what ' +
+    'would change before anything happens.</p>' +
+    '<textarea class="sf-paste-in" rows="6" spellcheck="false" ' +
+      'placeholder="[maths]&#10;expression = &quot;…&quot;&#10;source = &quot;…&quot;"></textarea>' +
+    '<button class="ctl sf-paste-go">show me what this would change</button>' +
+    '<div class="sf-paste-out"></div></details>';
+}
+
+/**
  * One question.
  *
  * The `why` is not a tooltip. A field whose consequence is hidden is a field
@@ -119,10 +140,69 @@ export async function mountSheetEditor(host, id) {
       '</label><input id="sf-by" type="text" placeholder="A. Person" autocomplete="name">' +
       '<p class="sf-why">An agent may never supply mathematics, and this field is the only ' +
       'thing that can tell whether one did. The server refuses an agent’s name.</p></div>' +
+    pasteHtml() +
     d.fields.map(fieldHtml).join('') +
     lockedHtml(d.structural, LOCKED_WHY) +
     '<p class="sf-foot muted">Holes are not edited here: a hole body is Rust between ' +
     'numbered markers, and an edit outside one is discarded by the next generation pass.</p>';
+
+  // The paste. Preview first, always; applying is the ordinary per-field save,
+  // so a pasted value goes through exactly the checks a typed one does.
+  const pgo = $('.sf-paste-go', host);
+  if (pgo) pgo.addEventListener('click', async () => {
+    const out = $('.sf-paste-out', host);
+    const text = $('.sf-paste-in', host).value;
+    if (!text.trim()) { out.innerHTML = '<p class="sf-said bad">nothing pasted</p>'; return; }
+    out.innerHTML = '<p class="sf-said waiting">reading it…</p>';
+    let r;
+    try {
+      r = await (await fetch('/v1/preview/' + encodeURIComponent(id), {
+        method: 'POST', body: new URLSearchParams({ body: text }),
+      })).json();
+    } catch (e) { out.innerHTML = '<p class="sf-said bad">' + esc(String(e)) + '</p>'; return; }
+    if (r.ok === false) {
+      out.innerHTML = '<p class="sf-said bad">' + esc(r.message || 'refused') + '</p>';
+      return;
+    }
+    // What would change, and what was ignored. A key silently dropped is a key
+    // somebody believes they set.
+    out.innerHTML =
+      (r.changes.length
+        ? '<table class="sf-diff"><thead><tr><th></th><th>field</th><th>from</th>' +
+          '<th>to</th></tr></thead><tbody>' +
+          r.changes.map((c, i) =>
+            '<tr><td><input type="checkbox" checked data-i="' + i + '"></td>' +
+            '<td><code>' + esc(c.field) + '</code></td>' +
+            '<td class="was">' + esc(c.from || '(empty)') + '</td>' +
+            '<td class="now">' + esc(c.to) + '</td></tr>').join('') +
+          '</tbody></table>' +
+          '<button class="ctl sf-paste-apply">apply the ticked ones</button>'
+        : '<p class="sf-said">nothing in that paste would change this row.</p>') +
+      (r.dropped.length
+        ? '<p class="sf-why"><b>Ignored:</b></p><ul class="sf-dropped">' +
+          r.dropped.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>'
+        : '');
+    const apply = $('.sf-paste-apply', out);
+    if (apply) apply.addEventListener('click', async () => {
+      apply.disabled = true;
+      const by = ($('#sf-by', host) || {}).value || '';
+      const picked = $$('.sf-diff input:checked', out).map(x => r.changes[+x.dataset.i]);
+      const said = [];
+      // One at a time, through the same endpoint a typed edit uses. Sequential
+      // because each save moves the hash the next one has to send.
+      for (const c of picked) {
+        const res = await (await fetch('/v1/sheet/' + encodeURIComponent(id), {
+          method: 'POST',
+          body: new URLSearchParams({ field: c.field, value: c.to, base, by }),
+        })).json();
+        if (res.ok) { base = res.file_hash; said.push(c.field + ' — saved'); }
+        else { said.push(c.field + ' — ' + (res.message || 'refused')); break; }
+      }
+      out.insertAdjacentHTML('beforeend',
+        '<ul class="sf-applied">' + said.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' +
+        '<p class="sf-why">Reopen the row to see the form as it now stands.</p>');
+    });
+  });
 
   // Each field saves itself, and says what happened where it happened.
   $$('.sf-field', host).forEach(box => {

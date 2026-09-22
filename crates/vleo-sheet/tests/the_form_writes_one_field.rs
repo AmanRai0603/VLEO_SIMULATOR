@@ -178,3 +178,78 @@ fn a_commented_out_assignment_is_not_mistaken_for_the_real_one() {
         "the commented-out line is a note and must survive"
     );
 }
+
+// ── pasting another row's sheet ──────────────────────────────────────────────
+
+fn sheet() -> vleo_sheet::model::Sheet {
+    // The loader is the only thing that builds a Sheet, so a real row is used
+    // rather than a hand-made one: a preview against a fabricated sheet would
+    // prove the preview agrees with the fabrication.
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent().unwrap().parent().unwrap();
+    let t = vleo_sheet::load::load_all(root).unwrap();
+    t.sheets.get("gnc_alignment_error").unwrap().clone()
+}
+
+#[test]
+fn a_paste_reports_what_would_change_and_writes_nothing() {
+    let sh = sheet();
+    let before = std::fs::read_to_string(sh.dir.join("node.toml")).unwrap();
+    let out = form::preview(&sh, "[maths]\nexpression = \"totally_new = 1\"\n").unwrap();
+    assert!(out.contains("\"field\": \"expression\""), "{out}");
+    assert!(out.contains("totally_new = 1"), "the new value is shown: {out}");
+    assert_eq!(
+        std::fs::read_to_string(sh.dir.join("node.toml")).unwrap(),
+        before,
+        "a preview must never write"
+    );
+}
+
+#[test]
+fn a_pasted_attribution_is_refused_by_name() {
+    // The one that matters. `confirmed_by` IS writable, so without a rule of its
+    // own a paste would carry somebody's name across onto mathematics they have
+    // never read.
+    let out = form::preview(
+        &sheet(),
+        "[maths]\nexpression = \"x = 1\"\nconfirmed_by = \"Someone Else / 2026-01-01\"\n",
+    )
+    .unwrap();
+    assert!(
+        !out.contains("Someone Else"),
+        "a pasted attribution must never appear as a change: {out}"
+    );
+    assert!(
+        out.contains("confirmed_by") && out.contains("not pasted"),
+        "and it must be named as dropped, with the reason: {out}"
+    );
+}
+
+#[test]
+fn a_pasted_structural_key_is_dropped_with_its_reason() {
+    let out = form::preview(&sheet(), "id = \"other\"\norder = 999\nparent = \"l3_x\"\n").unwrap();
+    for k in ["id", "order", "parent"] {
+        assert!(out.contains(k), "{k} must be named: {out}");
+    }
+    assert!(out.contains("renumbers its neighbours"), "with the reason: {out}");
+    assert!(!out.contains("\"field\": \"id\""), "and never as a change: {out}");
+}
+
+#[test]
+fn a_table_the_form_writes_into_is_not_itself_reported_as_dropped() {
+    // `[maths]` and `[output]` are containers the form writes INTO. Reporting
+    // them as "not a field this form writes" told a reader their whole relation
+    // had been ignored when only an extra key beside it had.
+    let out = form::preview(&sheet(), "[maths]\nexpression = \"x = 1\"\nwhatever = 2\n").unwrap();
+    assert!(
+        !out.contains("\"maths — not a field"),
+        "the table itself must not be reported as dropped: {out}"
+    );
+    assert!(out.contains("maths.whatever"), "its unknown key must be: {out}");
+}
+
+#[test]
+fn a_paste_that_is_not_toml_is_refused_rather_than_half_read() {
+    let e = form::preview(&sheet(), "this is not = = toml [[[").unwrap_err();
+    assert!(e.contains("not TOML"), "{e}");
+}
