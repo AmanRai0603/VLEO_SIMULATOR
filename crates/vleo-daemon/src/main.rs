@@ -283,6 +283,11 @@ fn route(
             let id = p.trim_start_matches("/v1/node/");
             node_endpoint(ctx, id)
         }
+        // The declaration form, as `xtask declare` asks it. Read-only: this
+        // says what a row still needs, it does not change one.
+        ("GET", p) if p.starts_with("/v1/declare/") => {
+            declare_endpoint(ctx, p.trim_start_matches("/v1/declare/"))
+        }
         ("POST", "/v1/run") | ("GET", "/v1/run") => ok_json(run_json(params, ctx)),
         ("GET", "/v1/sweep") => ok_json(sweep_json(params, ctx)),
         ("GET", "/v1/probe") => ok_json(probe_json(params)),
@@ -387,6 +392,51 @@ fn module(ctx: &Ctx, name: &str) -> (&'static str, &'static str, Vec<u8>) {
 /// artefacts, seven of them generated. A claim about the layout that the page
 /// asserts from memory is a claim that goes stale the first time the layout
 /// changes, so it is read off the disk instead.
+/// The declaration form for one row — the nine questions, what each is for, and
+/// which are still open.
+///
+/// Read from `node.toml` rather than from the compiled tables, because the form
+/// is about the SOURCE: a field can be blank in the sheet and absent from the
+/// table entirely, and the person filling it in needs to see the blank. It
+/// carries the sheet hash so a later save can prove which version it started
+/// from.
+fn declare_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
+    if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+        return (
+            "400 Bad Request",
+            "text/plain; charset=utf-8",
+            b"not a node identifier".to_vec(),
+        );
+    }
+    // The whole tree, because a sheet is loaded in the context of the tree it
+    // belongs to — its parent and its inputs are resolved against the others.
+    let tree = match vleo_sheet::load::load_all(&ctx.root) {
+        Ok(t) => t,
+        Err(e) => {
+            return (
+                "500 Internal Server Error",
+                "application/json; charset=utf-8",
+                format!("{{\"ok\":false,\"message\":{:?}}}", e).into_bytes(),
+            )
+        }
+    };
+    let Some(sh) = tree.sheets.get(id) else {
+        return (
+            "404 Not Found",
+            "application/json; charset=utf-8",
+            b"{\"ok\":false,\"message\":\"no such node\"}".to_vec(),
+        );
+    };
+    match vleo_sheet::form::json(sh) {
+        Ok(j) => ("200 OK", "application/json; charset=utf-8", j.into_bytes()),
+        Err(e) => (
+            "500 Internal Server Error",
+            "application/json; charset=utf-8",
+            format!("{{\"ok\":false,\"message\":{:?}}}", e).into_bytes(),
+        ),
+    }
+}
+
 fn node_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
     if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
         return (

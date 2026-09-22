@@ -938,31 +938,6 @@ fn cmd_setup(root: &Path) -> Result<(), String> {
 
 // ---------------------------------------------------------------------------
 
-/// The fields the scaffold cannot be emitted without.
-///
-/// Not a style rule. Without a type there is no signature, without a bound
-/// there is no guard, without a reason the guard is deleted by the next person
-/// who finds it awkward, and without a source nothing downstream knows what it
-/// is resting on.
-fn unfilled(sh: &vleo_sheet::model::Sheet) -> Vec<&'static str> {
-    let mut missing = Vec::new();
-    for (name, v) in [
-        ("label", &sh.label),
-        ("question", &sh.question),
-        ("expression", &sh.expression),
-        ("source", &sh.source),
-        ("type", &sh.ty),
-        ("unit", &sh.unit),
-        ("symbol", &sh.symbol),
-        ("reason_lower", &sh.reason_lower),
-        ("reason_upper", &sh.reason_upper),
-    ] {
-        if v.trim().is_empty() {
-            missing.push(name);
-        }
-    }
-    missing
-}
 
 fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
     let tree = load(root)?;
@@ -984,7 +959,7 @@ fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
         // screen. A seeded row is exempt — it has not been started, and its
         // page and metadata say exactly that.
         if !sh.is_seeded() {
-            let missing = unfilled(sh);
+            let missing = vleo_sheet::form::unfilled(sh);
             if !missing.is_empty() {
                 refused.push((sh.id.clone(), missing));
                 continue;
@@ -1323,170 +1298,10 @@ fn deepest_chain(tree: &Tree) -> Vec<String> {
     best
 }
 
-/// The completion questions, and which of them are still open.
-///
-/// The questions are derived from what the generator will need, not composed
-/// freely: a fixed set is repeatable across engineers and nodes, and an open
-/// conversation is not. Each one exists because something downstream cannot be
-/// emitted without it, and this says which thing.
-///
-/// It answers nothing. Agent A drafts from a source, an engineer decides, and
-/// this is the list they are deciding against — the same list `xtask docs`
-/// refuses on, so there is never a question that blocks generation and is not
-/// on this page.
-/// One question on the declaration form.
-///
-/// `open` is taken from `unfilled`, the same function `xtask docs` refuses on,
-/// so the form and the generator can never disagree about what a finished sheet
-/// is. Two lists that must agree are two lists that will not.
-struct Ask {
-    field: &'static str,
-    ask: &'static str,
-    why: &'static str,
-    open: bool,
-}
 
-/// The completion questions, in order, with what each one is for.
-///
-/// `declare` prints this for a person and `declare --json` serves it to the web
-/// face so the browser form asks exactly what the terminal asks. A second copy
-/// of this list in JavaScript would drift the first week somebody added a field.
-fn declare_asks(sh: &vleo_sheet::model::Sheet) -> Result<Vec<Ask>, String> {
-    let spec: Vec<(&str, &str, &str)> = vec![
-        ("label", "what is this row called, in the tree",
-         "the page title and every reference to it"),
-        ("question", "what one question does it answer",
-         "an equation with no question gets reused for the wrong thing"),
-        ("expression", "what is the relation",
-         "the algorithm, and what a reviewer compares against the source"),
-        ("source", "cited where — book, paper, page",
-         "this is the claim everything else rests on"),
-        ("symbol", "what is the answer's symbol",
-         "the binding name in the generated signature"),
-        ("type", "what quantity is it",
-         "the signature; a dimensional error has to fail to compile"),
-        ("unit", "in what unit", "the conversion at every face boundary"),
-        ("reason_lower", "why is the lower bound there",
-         "a guard whose reason is not written gets deleted by the next person"),
-        ("reason_upper", "why is the upper bound there", "the same, at the other end"),
-    ];
-    let blocking = unfilled(sh);
-    let mut out = Vec::new();
-    for (field, ask, why) in spec {
-        let open = blocking.contains(&field);
-        if !open && declare_value(sh, field).trim().is_empty() {
-            return Err(format!(
-                "'{field}' is blank and does not block generation — declare and docs disagree \
-                 about what a finished sheet is"
-            ));
-        }
-        out.push(Ask { field, ask, why, open });
-    }
-    Ok(out)
-}
 
-/// What the sheet currently says for one form field.
-fn declare_value<'a>(sh: &'a vleo_sheet::model::Sheet, field: &str) -> &'a str {
-    match field {
-        "label" => &sh.label,
-        "question" => &sh.question,
-        "expression" => &sh.expression,
-        "source" => &sh.source,
-        "symbol" => &sh.symbol,
-        "type" => &sh.ty,
-        "unit" => &sh.unit,
-        "reason_lower" => &sh.reason_lower,
-        "reason_upper" => &sh.reason_upper,
-        _ => "",
-    }
-}
 
-/// A JSON string body, escaped. Small enough to write than to depend on.
-fn jq(v: &str) -> String {
-    let mut o = String::with_capacity(v.len() + 2);
-    o.push('"');
-    for c in v.chars() {
-        match c {
-            '"' => o.push_str("\\\""),
-            '\\' => o.push_str("\\\\"),
-            '\n' => o.push_str("\\n"),
-            '\r' => o.push_str("\\r"),
-            '\t' => o.push_str("\\t"),
-            c if (c as u32) < 0x20 => o.push_str(&format!("\\u{:04x}", c as u32)),
-            c => o.push(c),
-        }
-    }
-    o.push('"');
-    o
-}
 
-/// The declaration form as data — what `declare` prints, for the web face.
-///
-/// The browser form asks exactly what the terminal asks, because both read
-/// `declare_asks`. `structural` is listed so the form can SHOW those fields and
-/// refuse to edit them: changing a parent or an order moves the tree and
-/// renumbers neighbours, which is a developer's act at a terminal, not a text
-/// box. `sheet_hash` is what a later save sends back to prove it started from
-/// this version.
-fn declare_json(sh: &vleo_sheet::model::Sheet) -> Result<String, String> {
-    let asks = declare_asks(sh)?;
-    let mut o = String::from("{\n");
-    o.push_str(&format!("  \"id\": {},\n", jq(&sh.id)));
-    o.push_str(&format!("  \"label\": {},\n", jq(&sh.label)));
-    o.push_str(&format!(
-        "  \"sheet_hash\": {},\n",
-        jq(&vleo_sheet::short_hex(sh.sheet_hash))
-    ));
-    o.push_str(&format!("  \"criticality\": {},\n", jq(&sh.criticality)));
-    // Shown, never editable here.
-    o.push_str("  \"structural\": {\n");
-    for (k, v) in [
-        ("kind", sh.kind.clone()),
-        ("subsystem", sh.subsystem.clone()),
-        ("parent", sh.parent.clone()),
-        ("owner", sh.owner.clone()),
-        ("tier", sh.tier.clone()),
-        ("state", sh.state.clone()),
-        ("layer", sh.layer.to_string()),
-        ("order", sh.order.to_string()),
-    ] {
-        o.push_str(&format!("    {}: {},\n", jq(k), jq(&v)));
-    }
-    o.truncate(o.trim_end_matches([',', '\n']).len());
-    o.push_str("\n  },\n");
-    // The questions, in the order a person is asked them.
-    o.push_str("  \"fields\": [\n");
-    for (i, a) in asks.iter().enumerate() {
-        o.push_str("    {");
-        o.push_str(&format!("\"field\": {}, ", jq(a.field)));
-        o.push_str(&format!("\"ask\": {}, ", jq(a.ask)));
-        o.push_str(&format!("\"why\": {}, ", jq(a.why)));
-        o.push_str(&format!("\"value\": {}, ", jq(declare_value(sh, a.field))));
-        o.push_str(&format!("\"open\": {}", a.open));
-        o.push_str(if i + 1 == asks.len() { "}\n" } else { "},\n" });
-    }
-    o.push_str("  ],\n");
-    // The derivation and the attribution are not blocking fields for
-    // generation, and they are the two that decide whether the row answers at
-    // all, so they are reported separately rather than mixed into `fields`.
-    let derived = !sh.steps.is_empty() && !sh.theory.is_empty();
-    o.push_str(&format!(
-        "  \"derivation\": {{\"wanted\": {}, \"present\": {}}},\n",
-        !sh.steps.is_empty(),
-        derived
-    ));
-    o.push_str(&format!(
-        "  \"attribution\": {{\"wanted\": {}, \"who\": {}}},\n",
-        !sh.expression.trim().is_empty(),
-        jq(&sh.relation_by)
-    ));
-    o.push_str(&format!(
-        "  \"open\": {}\n",
-        asks.iter().filter(|a| a.open).count()
-    ));
-    o.push_str("}\n");
-    Ok(o)
-}
 
 fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
     let id = args
@@ -1502,7 +1317,7 @@ fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
     })?;
 
     if args.contains(&"--json") {
-        print!("{}", declare_json(sh)?);
+        print!("{}", vleo_sheet::form::json(sh)?);
         return Ok(());
     }
 
@@ -1521,7 +1336,7 @@ fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
     println!("  {}", sh.dir.join("node.toml").display());
     println!();
 
-    let asks = declare_asks(sh)?;
+    let asks = vleo_sheet::form::asks(sh)?;
     let mut open = 0usize;
     for a in &asks {
         if a.open {
@@ -1532,7 +1347,7 @@ fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
             println!(
                 "  \x1b[32m·\x1b[0m  {} = {}",
                 a.field,
-                truncate(declare_value(sh, a.field), 68)
+                truncate(vleo_sheet::form::value(sh, a.field), 68)
             );
         }
     }
