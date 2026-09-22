@@ -697,6 +697,11 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
   .seeded, .hatch {
     background: repeating-linear-gradient(45deg,#232119,#232119 3px,#2b2921 3px,#2b2921 6px);
   }
+  /* The form's inputs sit on --paper, which is already dark here, so only the
+     accent-on-fill cases below need saying. The one thing that does not follow
+     from the tokens is the locked panel: --slate-pale is a dark block in dark
+     mode and reads as a hole in the page, so it takes the card instead. */
+  .sf-locked { background: var(--card); }
   /* A form field inherits the system's light chrome unless told otherwise. */
   input, select, textarea, button { color-scheme: dark; }
   .sweepctl input.bad { background: #2c1a19; }
@@ -758,3 +763,55 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
    than amber: amber is "something here is missing", and nothing is missing in
    the row. What is missing is a wiring decision somewhere else. */
 .banner.unread { border-left-color: var(--teal); }
+
+/* ── the sheet as a form ─────────────────────────────────────────────────────
+   The nine questions `xtask declare` asks, with somewhere to type. Existing
+   tokens only: an open question borrows `--out` because it is the same "this is
+   missing" the rest of the face already uses for an unanswered row, and a
+   refusal borrows it too rather than introducing a red nobody validated. */
+.sheet-tabs { margin: 0 0 10px; }
+.sf-head { font-size: 13px; margin: 0 0 12px; }
+
+.sf-who { margin: 0 0 16px; padding: 10px 12px;
+  border: 1px solid var(--rule); border-radius: 4px; background: var(--card); }
+.sf-who label { display: block; font-size: 12px; color: var(--ink-2); margin-bottom: 4px; }
+
+.sf-field { margin: 0 0 18px; padding-left: 10px;
+  border-left: 2px solid var(--rule-2); }
+/* An open question is the one thing on this form a reader is looking for. */
+.sf-field.open { border-left-color: var(--out); }
+.sf-field label { display: block; font-size: 13px; color: var(--ink);
+  margin-bottom: 5px; cursor: pointer; }
+.sf-mark { display: inline-block; width: 1.1em; font-family: var(--mono);
+  color: var(--ink-3); }
+.sf-field.open .sf-mark { color: var(--out); font-weight: 600; }
+
+.sf-field input[type=text], .sf-field textarea, .sf-who input {
+  width: 100%; box-sizing: border-box; padding: .34rem .45rem;
+  font: inherit; font-size: 13px; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--rule); border-radius: 3px;
+}
+.sf-field textarea { resize: vertical; line-height: 1.45; }
+.sf-field input:focus, .sf-field textarea:focus, .sf-who input:focus {
+  outline: 2px solid var(--teal); outline-offset: -1px; border-color: var(--teal);
+}
+
+/* The consequence, not a tooltip. A field whose consequence is hidden is a
+   field somebody fills with anything to make the form go green. */
+.sf-why { font-size: 11.5px; color: var(--ink-3); margin: 4px 0 0; line-height: 1.5; }
+.sf-save { margin-top: 6px; }
+
+.sf-said { font-size: 12px; margin: 6px 0 0; line-height: 1.5; }
+.sf-said.waiting { color: var(--ink-3); }
+.sf-said.good    { color: var(--both); }
+.sf-said.bad     { color: var(--out); }
+/* A conflict is not the reader's mistake and must not be coloured like one. */
+.sf-said.stale   { color: var(--teal); }
+
+.sf-locked { margin: 22px 0 0; padding: 12px;
+  border: 1px solid var(--rule); border-radius: 4px; background: var(--slate-pale); }
+.sf-locked h4 { font-size: 13px; margin: 0 0 4px; }
+.sf-locked dl { margin: 10px 0 0; font-size: 12px; }
+.sf-locked dt { font-family: var(--mono); color: var(--ink-2); margin-top: 8px; }
+.sf-locked dd { margin: 2px 0 0 0; color: var(--ink-3); line-height: 1.5; }
+.sf-foot { font-size: 11.5px; margin: 14px 0 0; }
