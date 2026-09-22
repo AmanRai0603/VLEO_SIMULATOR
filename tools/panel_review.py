@@ -147,10 +147,20 @@ def render(root=ROOT):
         lp, dp = ref / ("%s.png" % pid), ref / ("%s.dark.png" % pid)
         A("## `%s` — %s" % (pid, s.get("label", "")))
         A("")
-        A("- [ ] light — `%s`%s"
-          % (lp.relative_to(root), "" if lp.exists() else "  **MISSING**"))
-        A("- [ ] dark — `%s`%s"
-          % (dp.relative_to(root), "" if dp.exists() else "  **MISSING**"))
+        # A panel may decline the pixel comparison. Listing its references as
+        # MISSING would read as a defect instead of a decision, and a reviewer
+        # would go looking for a file nobody is going to record.
+        if s.get("pixel_reference", True) is False:
+            A("- **no pixel reference, declared.** %s"
+              % str(s.get("pixel_reference_why", "")).strip())
+            A("")
+            A("  Checks 1, 2, 2b and 4 still run on it. There is no picture to")
+            A("  look at here, so look at the panel itself in the running tool.")
+        else:
+            A("- [ ] light — `%s`%s"
+              % (lp.relative_to(root), "" if lp.exists() else "  **MISSING**"))
+            A("- [ ] dark — `%s`%s"
+              % (dp.relative_to(root), "" if dp.exists() else "  **MISSING**"))
         A("")
         A("<details><summary>what it must show (<code>correct</code>)</summary>")
         A("")

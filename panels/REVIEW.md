@@ -109,8 +109,10 @@ Current: `UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting a loo
 
 ## `closure` — Closure — each requirement against what the record gives it
 
-- [ ] light — `panels/reference/closure.png`
-- [ ] dark — `panels/reference/closure.dark.png`
+- **no pixel reference, declared.** a closure's margin and sense are checked by gate 7d and 7e on the sheet, and check 2b proves this panel reads the closure rather than restating it
+
+  Checks 1, 2, 2b and 4 still run on it. There is no picture to
+  look at here, so look at the panel itself in the running tool.
 
 <details><summary>what it must show (<code>correct</code>)</summary>
 
@@ -226,8 +228,10 @@ Current: `UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting a loo
 
 ## `design` — Design — the window against what the vehicle is built for
 
-- [ ] light — `panels/reference/design.png`
-- [ ] dark — `panels/reference/design.dark.png`
+- **no pixel reference, declared.** every number on it is a row the engine publishes, checked by that row's own fixtures, and check 2b proves the panel reads the engine rather than holding a copy
+
+  Checks 1, 2, 2b and 4 still run on it. There is no picture to
+  look at here, so look at the panel itself in the running tool.
 
 <details><summary>what it must show (<code>correct</code>)</summary>
 
@@ -294,8 +298,10 @@ Current: `UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting a loo
 
 ## `drivers` — Drivers — the five scenarios, against the legacy run
 
-- [ ] light — `panels/reference/drivers.png`
-- [ ] dark — `panels/reference/drivers.dark.png`
+- **no pixel reference, declared.** the twenty-five cells it draws are asserted numerically by tools/mat_parity.py against the MATLAB tool's own saved run, and check 2b proves it reads them from the engine rather than holding them
+
+  Checks 1, 2, 2b and 4 still run on it. There is no picture to
+  look at here, so look at the panel itself in the running tool.
 
 <details><summary>what it must show (<code>correct</code>)</summary>
 
@@ -467,8 +473,10 @@ Current: `UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting a loo
 
 ## `matrix` — The coupling matrix
 
-- [ ] light — `panels/reference/matrix.png`
-- [ ] dark — `panels/reference/matrix.dark.png`
+- **no pixel reference, declared.** it is a layout of the tree, and the tree's shape is checked by xtask graph and assembly validations V12 to V15
+
+  Checks 1, 2, 2b and 4 still run on it. There is no picture to
+  look at here, so look at the panel itself in the running tool.
 
 <details><summary>what it must show (<code>correct</code>)</summary>
 
@@ -495,8 +503,10 @@ Current: `(no confirmed_by field)`
 
 ## `paths` — The path ribbon
 
-- [ ] light — `panels/reference/paths.png`
-- [ ] dark — `panels/reference/paths.dark.png`
+- **no pixel reference, declared.** it draws edges the graph tables already assert; xtask reach checks where every answer goes
+
+  Checks 1, 2, 2b and 4 still run on it. There is no picture to
+  look at here, so look at the panel itself in the running tool.
 
 <details><summary>what it must show (<code>correct</code>)</summary>
 
@@ -820,8 +830,10 @@ Current: `UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting a loo
 
 ## `tree` — The layer tree
 
-- [ ] light — `panels/reference/tree.png`
-- [ ] dark — `panels/reference/tree.dark.png`
+- **no pixel reference, declared.** it is a layout of the tree, and the tree's shape is checked by xtask graph and assembly validations V12 to V15
+
+  Checks 1, 2, 2b and 4 still run on it. There is no picture to
+  look at here, so look at the panel itself in the running tool.
 
 <details><summary>what it must show (<code>correct</code>)</summary>
 

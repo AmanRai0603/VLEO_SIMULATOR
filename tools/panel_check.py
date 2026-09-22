@@ -82,6 +82,14 @@ def spec(path):
             raise SystemExit("%s has no %s — see panels/README.md" % (path.name, need))
     if not (ROOT / d["module"]).is_file():
         raise SystemExit("%s names %s, which does not exist" % (path.name, d["module"]))
+    # Check 3 may be declined, but not silently. A bound needs a reason
+    # everywhere else in this tree and so does a check nobody runs: without one
+    # the field becomes the thing people set when a re-record is inconvenient.
+    if d.get("pixel_reference", True) is False and not d.get("pixel_reference_why"):
+        raise SystemExit(
+            "%s sets pixel_reference = false with no pixel_reference_why. Say what "
+            "covers the picture instead, or record a reference" % path.name
+        )
     return d
 
 
@@ -491,7 +499,10 @@ def check_all(ids=None, record=False):
                 except Exception as e:
                     found.append((d["id"], "3 matches", "could not reach the reference state: %s" % e))
             REFERENCE.mkdir(exist_ok=True)
-            for scheme in ("light", "dark"):
+            # A panel may decline check 3. It is counted and named at the end
+            # rather than passed over, because a check that did not run must not
+            # read like a check that passed.
+            for scheme in (() if d.get("pixel_reference", True) is False else ("light", "dark")):
                 # `emulate_media` is what a reader's system preference looks like
                 # to the page: the shell follows it through CSS and the figures
                 # through the media listener in the face. Both have to be given
@@ -937,7 +948,17 @@ def main():
     for pid, stage, why in found:
         print("  %-10s %-12s %s" % (pid, stage, why))
     n = len(specs())
+    # A DECLINED CHECK IS NAMED. "14 panels, 0 findings" over a set where six of
+    # them never ran check 3 is the summary telling somebody they are covered
+    # when they are not.
+    declined = [spec(x) for x in specs()]
+    declined = [d for d in declined if d.get("pixel_reference", True) is False]
     print("%d panel(s) declared, %d finding(s)" % (n, len(found)))
+    if declined:
+        print("  check 3 declined by %d of them — behaviour is checked, pixels are not:"
+              % len(declined))
+        for d in sorted(declined, key=lambda x: x["id"]):
+            print("    %-10s %s" % (d["id"], d["pixel_reference_why"]))
     return 1 if found else 0
 
 

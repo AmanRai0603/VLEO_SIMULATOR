@@ -25,7 +25,6 @@ proximity rather than from an edge is the failure this panel could have. With
 no row selected there are no arcs, which is correct and is why the reference
 below selects one.
 """
-tolerance = 0.03
 
 # A layer switch clears the selection, and with no selection this panel draws
 # no arcs at all — correctly. A reference taken there would still match if
@@ -34,6 +33,13 @@ reference_state = """
 document.querySelector('.tab[data-layer="3"]').click();
 select(S.disp.filter(d => d.kind === 'node')[2].id);
 """
+
+
+# Check 3, the pixel comparison, is declined for this panel. Checks 1, 2,
+# 2b and 4 still run: it renders, it moves, it reads the engine and it
+# undoes an interaction to the pixel.
+pixel_reference = false
+pixel_reference_why = """it draws edges the graph tables already assert; xtask reach checks where every answer goes"""
 
 [[input]]
 name = "layer"
