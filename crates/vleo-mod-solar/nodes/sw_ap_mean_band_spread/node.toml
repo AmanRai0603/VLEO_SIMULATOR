@@ -69,7 +69,7 @@ fails_when = "it does not, and the source says so about its own number. Geomagne
 
 [[assumption]]
 text = "The residual spread is a usable margin for a non-negative index"
-fails_when = "Ap floors at zero and its residuals are strongly skewed — a quiet rotation cannot undershoot far but an active one can overshoot a long way. A symmetric sigma understates the high tail, which is the tail a design is sized against"
+fails_when = "Ap floors at zero and its residuals are strongly skewed — a quiet rotation cannot undershoot far but an active one can overshoot a long way. A symmetric sigma understates the high tail, which is the tail a design is sized against. MEASURED the same way, and the same correction applies: at 1.28 sigma the Ap band holds 0.9148 to 0.9239 of the exceedances against a normal's 0.8997, so it OVER-covers by 1.5 to 2.4 points rather than understating. Ap's skew is stronger than F10.7's, -0.84 to -1.32 against -0.61 to -1.01, and its far tail is milder: the 99th percentile of exceedance runs 2.53 to 2.87 sigma against F10.7's 2.93 to 3.49. §45"
 
 [[assumption]]
 text = "The 273-day hole in 2017 is interpolated before the rotations are cut"

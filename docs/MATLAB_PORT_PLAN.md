@@ -3345,6 +3345,13 @@ forecast that misses hardest when activity is highest are skewed, and a normal
 multiplier under-covers the high tail — which is the tail a design is sized
 against."* The 361 walk-forward residuals exist. One number is published from them.
 
+**That sentence is half right, and §45 measures which half.** The residuals are
+skewed — every variant agrees, skew −0.6 to −1.3. But at 1.28σ, the multiplier
+those rows actually use, the band holds 0.915 to 0.934 of the exceedances against
+a normal's 0.8997: it **over**-covers. The under-coverage begins past 1.645σ and
+is severe by the 99th percentile, at 2.93 to 3.49σ against a normal's 2.33. The
+three sheets that stated it now say which is which.
+
 *A constraint that shapes this step:* the engine does not read the bundle at
 runtime — measurements become declared values or tables baked into holes. And the
 gate **refuses `[[publishes]]` on a declared row**: *"a declared row states one
@@ -3380,7 +3387,7 @@ is deliberately not in this plan.
 | 4 | **B3.1** the walk-forward script, checked against σ | no | no |
 | 5 | **B1** `sw_kp_driving_slot` — row seeded, evidence measured, §43 | **yes — the value** | yes, downstream: 70 rows, 6 KPIs |
 | 6 | **B2** `sw_band_confidence` — row seeded, evidence measured, §44 | **yes — the value** | yes, if 0.95: 47 rows, no KPI |
-| 7 | **B3.2** the two empirical-quantile rows | **yes — both values** | no |
+| 7 | **B3.2** the two empirical-quantile rows — blocked, question answered §45 | **yes — both values**, after step 4 | no |
 | 8 | **A4** the `thermosphere` panel, 4 views | signature on the reference | no |
 | 9 | **B3.3** the residual view on the `spread` panel | signature on the reference | no |
 
@@ -3641,7 +3648,7 @@ on work nobody had done.*
 | 4 · B3.1 walk-forward | **written, failing its own test, and every candidate for the gap measured and eliminated** — §31.4a |
 | 5 · B1 which Kp slot | **the row exists, seeded, with the evidence measured** — §43; the value needs a person |
 | 6 · B2 band confidence | needs a person |
-| 7 · B3.2 empirical quantiles | **blocked on 31.4** — on `prf_rebuild.m`, which is not here, or on a person |
+| 7 · B3.2 empirical quantiles | **still blocked on 31.4**, and its QUESTION answered scale-free — §45; the rows are deliberately not seeded |
 | 8 · A4 thermosphere panel | ready to build |
 | 9 · B3.3 residual view | blocked with 7 |
 
@@ -3734,7 +3741,7 @@ different places to stand.
 | 4 · B3.1 walk-forward | written, **failing its own test**, every candidate eliminated, §31.4a |
 | 5 · B1 which Kp slot | **needs a person** — the row is seeded and §43 measures what each answer costs; the third view is the picture to decide it from |
 | 6 · B2 band confidence | **the row exists, seeded, with the evidence measured** — §44; the value needs a person |
-| 7 · B3.2 empirical quantiles | blocked on step 4 |
+| 7 · B3.2 empirical quantiles | blocked on step 4; its question answered in §45 |
 | 8 · A4 thermosphere panel | **done**, reference unsigned |
 | 9 · B3.3 residual view | blocked with 7 |
 
@@ -4795,6 +4802,10 @@ declined against a count rather than a preference.
   what each answer costs — 47 rows, no KPI closure, 3.1 to 6.2 per cent of margin
   — and corrects §30 B2's own cost table, which claimed a parity loss that no
   check in this repository would suffer.
+- §30 step 7's two rows: still blocked on step 4, and deliberately not seeded —
+  nobody can decide a measurement that cannot be made. §45 answers the question
+  they exist to settle without them, scale-free, and corrects three sheets: at the
+  multiplier four design rows use, the band OVER-covers rather than under-covers.
 - `agents/lanes.toml`: no lane covers the row count in README.md, AGENTS.md and
   `areas/generators.md`, nor the generated `page.html`/`model.rs`, so the tree
   cannot grow inside any one lane. §43.7. Reported, not fixed — widening a lane
@@ -5292,3 +5303,97 @@ It also did not touch `sw_daily_band_spread` or `sw_ap_daily_band_spread`, the
 because they are measured relative to a sustained level that moved, not because
 their own percentile changed. Whether one row should govern both halves is part of
 what is being decided.
+
+---
+
+## §45 · Step 7, the empirical quantile — still blocked, and its question answered anyway
+
+§30 B3.2 asks for two declared rows, `sw_mean_band_p95` and `sw_ap_mean_band_p95`,
+holding the empirical quantile of the 361 walk-forward residuals. **They stay
+blocked**, for the reason §31.4 gives: the sample is not reproduced, so a quantile
+in sfu would be a quantile of another sample. Nothing here changes that.
+
+But the rows are not the point — they are the vehicle. The question B3 exists to
+settle is one sentence, stated in three sheets and quoted in the script's own
+header: *does the normal multiplier under-cover the high tail, which is the tail a
+design is sized against?* **That question can be answered while σ is unknown, and
+the answer is not the one the sheets gave.**
+
+### 45.1 · Divide σ out and the answer stops depending on σ
+
+A quantile in sfu needs the scale. A **coverage fraction** — what share of the
+design-relevant exceedances a band of z·σ actually holds — does not. It is a
+statement about the residuals' *shape*, and shape is what the claim is about.
+
+`tools/rotation_residuals.py --shape` measures it across the same variants §31.4a
+used, the ones known to move σ:
+
+| F10.7 | σ | at 1.28σ | at 1.645σ | skew |
+|---|---|---|---|---|
+| as written | 14.3139 | 0.9149 | 0.9441 | −0.98 |
+| least squares | 14.3844 | 0.9202 | 0.9495 | −0.97 |
+| no scale | 15.2654 | 0.9229 | 0.9441 | −0.94 |
+| drop 15 (n = 361) | 14.2929 | 0.9197 | 0.9446 | −1.01 |
+| drop 43 | 13.4035 | 0.9339 | 0.9550 | −0.90 |
+| drop 100 | 11.5438 | 0.9203 | 0.9529 | −0.61 |
+| drop 200 | 12.4943 | 0.9261 | 0.9432 | −0.82 |
+
+**σ spans 32 per cent across those rows. The coverage at 1.28σ spans 1.9 points.**
+That is the whole argument for trusting one while §31.4 refuses the other. Ap
+behaves the same way: σ spans 29 per cent, coverage spans 0.9 points.
+
+### 45.2 · At the multiplier the design uses, the band OVER-covers
+
+| | a normal says | F10.7 measured | Ap measured |
+|---|---|---|---|
+| at **1.28σ** — what four design rows use | 0.8997 | **0.9149 – 0.9339** | **0.9148 – 0.9239** |
+| at 1.645σ — §30 B2's alternative | 0.9500 | 0.9432 – 0.9550 | 0.9432 – 0.9521 |
+| 99th percentile of exceedance | 2.33σ | **2.93 – 3.49σ** | **2.53 – 2.87σ** |
+
+Three readings, and they are different statements:
+
+1. **At 1.28σ the multiplier is conservative**, by 1.5 to 3.4 points, in every
+   variant of both channels. It does **not** under-cover.
+2. **At 1.645σ the measurement straddles the normal** — under by 0.7 points at one
+   end of the variants, over by 0.5 at the other. The normal is about right there.
+3. **The heavy tail is real and starts further out.** At the 99th percentile the
+   exceedance runs near 3σ where a normal says 2.33. A design wanting 99 per cent
+   coverage from `centre + 2.33σ` would be badly short.
+
+So the sheets' claim — *"a normal multiplier under-covers the high tail, which is
+the tail a design is sized against"* — is **true of the far tail and false of the
+multiplier those same rows use**. `sw_f107_design_long`, `sw_ap_mean_band_spread`
+and `sw_ap_design_long` now say which is which, with the numbers.
+
+### 45.3 · What this is not
+
+It is **not** the value of either B3.2 row. Those want a quantile in sfu; this is
+a dimensionless fraction, and the two are not interchangeable. The script's
+refusal to print quantiles is untouched and still fires.
+
+It is **this file's walk**, not the study's. No measurement here can fix that, and
+saying "the coverage is stable across our own free parameters" is not the same as
+"the study's residuals have this shape". What it does establish is that the
+correction to the sheets does not rest on the disagreement in §31.4: every variant
+that could be the study's gives the same direction.
+
+### 45.4 · The two rows are deliberately NOT seeded
+
+Steps 5 and 6 seeded their rows, because a seeded row is how this repository says
+*somebody must decide this*. These two are different: nobody can decide them. They
+need a measurement that cannot currently be made, and seeding them would put two
+rows in the tree whose blocker is another row's blocker, reported twice.
+
+`xtask gap` already names what is missing. When §30 step 4 closes — on
+`prf_rebuild.m` or on a decision about what the sheet should say — the rows follow
+in an afternoon, and §45.1's coverage figures become the check on whatever
+quantile they end up holding.
+
+### 45.5 · One thing fixed on the way past
+
+`_sd` existed three times in `rotation_residuals.py`: a local in `why`, an inline
+in `report`, and the one `--shape` needed. They agreed, which is the only reason
+nobody had noticed — and three statements of one fact is exactly how the sheet's
+sense and the hole's sense came to differ elsewhere in this tree. It is one
+definition now, with a case pinning the population convention, because `report`'s
+comparison against 13.4544 and every coverage fraction both divide by it.
