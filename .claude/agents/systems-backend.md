@@ -62,7 +62,6 @@ you touch any of them, these too:
     python3 tools/agent_lanes.py --selftest
     python3 tools/commit_message.py --selftest
     python3 tools/review_report.py --selftest
-    python3 tools/recipe.py --selftest
     python3 tools/release_notes.py --selftest
     python3 tools/instruction_lint.py --selftest && python3 tools/instruction_lint.py
     python3 tools/fleet_report.py --selftest

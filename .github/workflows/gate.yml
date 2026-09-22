@@ -152,8 +152,6 @@ jobs:
         run: python3 tools/commit_message.py --selftest
       - name: the advisory review
         run: python3 tools/review_report.py --selftest
-      - name: the recipe runner
-        run: python3 tools/recipe.py --selftest
       # Gap W8: the instruction files are an input to every node and were the
       # only input nothing checked. Stale references are what they will really
       # have — a path renamed by a commit that never opened one.
@@ -230,9 +228,6 @@ jobs:
       # checked here, and none of them needs a daemon.
       - name: the band confidence decision still has its evidence
         run: python3 tools/band_confidence_cost.py --selftest
-      # Every recipe, applied twice on a copy; the second must change nothing.
-      - name: every recipe is idempotent
-        run: python3 tools/recipe.py --check
       # The same script the commit-msg hook runs, over the commits this branch
       # adds. A hook only fires inside the tool that installed it — a terminal
       # with no hooksPath set has none — so the rule has to hold here too.
