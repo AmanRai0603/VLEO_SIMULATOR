@@ -1,4 +1,4 @@
-<article class="node" data-node="env_f107" data-sheet-hash="34fcca" data-impl-hash="222325">
+<article class="node" data-node="env_f107" data-sheet-hash="34fcca" data-impl-hash="9e1108">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_x_envorbit">Environment and orbit — addition</a></nav>
   <h2>Solar radio flux F10.7, daily</h2>
@@ -116,7 +116,7 @@ pub const SHEET_HASH: u64 = 0x4be050189834fcca;
 
 pub fn evaluate(from_system: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
     // ---- HOLE 1 : carry the system layer's daily flux through unchanged -&gt; Ratio
-    let flux: Ratio = todo!(&quot;hole 1 is empty — the gap pass blocks this node&quot;);
+    let flux: Ratio = from_system;
     // ---- end HOLE 1
 
     // generated · the declared domain of this node's own answer. The
@@ -161,7 +161,6 @@ pub fn evaluate(from_system: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
-<li>hole 1 is empty: carry the system layer's daily flux through unchanged</li>
 <li>no fixture: nothing outside this code has ever agreed with what it computes</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>
