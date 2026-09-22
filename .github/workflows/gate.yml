@@ -108,6 +108,20 @@ jobs:
           cargo run -p xtask -- variables
           git diff --quiet || { echo "::error::a generator is not deterministic"; exit 1; }
 
+      # CODEOWNERS IS GENERATED AND NOTHING REGENERATED IT. Every other generated
+      # artefact is covered by the regeneration diff above; this one was not, so
+      # it drifted silently — 27 solar rows had no path rule at all, and a pull
+      # request touching them routed to nobody for review. A generated file
+      # outside the diff is a generated file that will be wrong.
+      - name: CODEOWNERS is what the layer files say
+        run: |
+          cargo run -p xtask -- codeowners
+          git diff --quiet -- CODEOWNERS || {
+            echo "::error::CODEOWNERS is not what the layer files generate."
+            echo "Run 'cargo run -p xtask -- codeowners' and commit the result."
+            git --no-pager diff --stat -- CODEOWNERS
+            exit 1
+          }
       - name: the gate
         run: cargo run -p xtask -- gate
 

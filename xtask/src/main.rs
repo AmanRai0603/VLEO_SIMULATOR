@@ -1190,6 +1190,109 @@ fn cmd_gap(root: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// Which ring a crate sits in. Lower depends on nothing higher.
+///
+/// The four rings are the repository's one architectural rule, and until now
+/// the only thing enforcing them was the compiler refusing a cycle — which
+/// permits every wrong-direction edge that is not also circular. `vleo-core`
+/// gaining a dependency on `vleo-bus` would compile, and would quietly make the
+/// kernel depend on transport.
+///
+/// `vleo-sheet` sits beside the kernel rather than in the chain: it is what a
+/// sheet MEANS, it reads only units, and both the generators and the daemon
+/// read it. `vleo-data` is reference data and sits at the bus's level.
+fn ring(crate_name: &str) -> Option<(u8, &'static str)> {
+    Some(match crate_name {
+        "vleo-units" => (0, "RING 0 — quantities and portable maths"),
+        "vleo-core" => (1, "RING 1 — the kernel: physics and the relations"),
+        "vleo-sheet" => (1, "beside the kernel — what a sheet means"),
+        "vleo-bus" => (2, "RING 2 — transport"),
+        "vleo-data" => (2, "reference data"),
+        "vleo-modules" => (4, "the facade over every node crate"),
+        "vleo-cli" | "vleo-daemon" | "vleo-ffi" | "vleo-py" | "vleo-wasm" => {
+            (5, "a face")
+        }
+        "xtask" => (5, "the task runner"),
+        n if n.starts_with("vleo-mod-") => (3, "RING 3 — the nodes"),
+        _ => return None,
+    })
+}
+
+/// Every wrong-direction dependency between the workspace's own crates.
+///
+/// Build dependencies count. `vleo-modules` reads `vleo-sheet` in its build
+/// script to emit the tables, and a build-time edge in the wrong direction is
+/// the same defect as a runtime one — it just fails later and more confusingly.
+fn crate_direction(root: &Path) -> Result<Vec<String>, String> {
+    let mut bad = Vec::new();
+    let mut seen = 0usize;
+    let mut dirs: Vec<PathBuf> = fs::read_dir(root.join("crates"))
+        .map_err(|e| format!("crates/: {e}"))?
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .collect();
+    dirs.push(root.join("xtask"));
+    dirs.sort();
+    for d in dirs {
+        let ct = d.join("Cargo.toml");
+        let Ok(text) = fs::read_to_string(&ct) else { continue };
+        let Ok(v) = text.parse::<toml::Value>() else { continue };
+        let Some(name) = v
+            .get("package")
+            .and_then(|p| p.get("name"))
+            .and_then(|n| n.as_str())
+        else {
+            continue;
+        };
+        let Some((mine, what)) = ring(name) else {
+            bad.push(format!(
+                "{name} is in no ring — add it to `ring` and say where it belongs, or the \
+                 direction check silently stops covering it"
+            ));
+            continue;
+        };
+        seen += 1;
+        for table in ["dependencies", "build-dependencies"] {
+            let Some(deps) = v.get(table).and_then(|d| d.as_table()) else {
+                continue;
+            };
+            for dep in deps.keys() {
+                if !dep.starts_with("vleo") {
+                    continue;
+                }
+                let Some((theirs, their_what)) = ring(dep) else {
+                    bad.push(format!("{name} depends on {dep}, which is in no ring"));
+                    continue;
+                };
+                if theirs >= mine {
+                    bad.push(format!(
+                        "{name} ({what}) depends on {dep} ({their_what}) — \
+                         {} and the rings depend inward only{}",
+                        if theirs == mine {
+                            "same ring"
+                        } else {
+                            "that is outward"
+                        },
+                        if table == "build-dependencies" {
+                            ", and a build-time edge is the same defect as a runtime one"
+                        } else {
+                            ""
+                        }
+                    ));
+                }
+            }
+        }
+    }
+    // A check that examined nothing must not report success.
+    if seen < 20 {
+        bad.push(format!(
+            "only {seen} crate(s) were checked, which is fewer than this workspace has — \
+             the direction check is not reading what it claims to"
+        ));
+    }
+    Ok(bad)
+}
+
 fn cmd_graph(root: &Path) -> Result<(), String> {
     let tree = load(root)?;
     let derivation: usize = tree.ordered().iter().map(|s| s.inputs.len()).sum();
@@ -1226,6 +1329,24 @@ fn cmd_graph(root: &Path) -> Result<(), String> {
     );
     for u in unread.iter().take(20) {
         println!("    {u}");
+    }
+
+    // THE CRATE DIRECTION CHECK. The help has named this for as long as the
+    // command has existed and nothing implemented it, so the rings were held up
+    // by the compiler refusing cycles — which allows every wrong-direction edge
+    // that is not also circular.
+    println!();
+    let bad = crate_direction(root)?;
+    if bad.is_empty() {
+        println!("crate direction: every dependency points inward");
+    } else {
+        for b in &bad {
+            println!("  \x1b[31mFAIL\x1b[0m {b}");
+        }
+        return Err(format!(
+            "{} wrong-direction crate dependency(ies)",
+            bad.len()
+        ));
     }
     Ok(())
 }
@@ -1897,8 +2018,10 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
 fn cmd_codeowners(root: &Path) -> Result<(), String> {
     let tree = load(root)?;
     let mut o = String::new();
-    o.push_str("# GENERATED by `cargo xtask codeowners` from the owner field on each layer\n");
-    o.push_str("# group. Ownership is a path rule, not a convention: everyone reads\n");
+    o.push_str("# GENERATED by `cargo xtask codeowners` from the owner field on each NODE\n");
+    o.push_str("# SHEET. It said \"each layer group\" and read node.toml, so changing a\n");
+    o.push_str("# group's owner moved nobody and looked like it had. Ownership is a path\n");
+    o.push_str("# rule, not a convention: everyone reads\n");
     o.push_str("# everything and writes only their own nodes, which is the separation\n");
     o.push_str("# wanted without losing the whole-graph check.\n#\n");
     o.push_str("# The generators, the gate and the shared crates are integrator-owned and\n");
