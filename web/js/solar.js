@@ -21,6 +21,7 @@
 import { $, esc } from './dom.js';
 import { S } from './state.js';
 import { solarRecord, bundleFile, parityFile, engineValues, engineSweep, engineAt,
+  engineProbe, probeSweep,
   engineLevers, centredMean, corr, quantile, num, daysSince2000 } from './record.js';
 import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
   watchScheme, sizeCanvas, cssSize, INK } from './chart.js';
@@ -1686,16 +1687,33 @@ const PANELS = [
           // moving both together is a sustained level. The relation treats the
           // three differently and the three slopes are what says so — measured
           // here, never stated.
+          //
+          // PROBED, NOT RUN, and the difference is the subject of §49. These
+          // three slopes are facts about Jacchia 1971 — true at any design
+          // point — and the flux stopped being a thing the design lets you move
+          // when env_f107 began reading the solar subsystem. A run holding a
+          // computed driver is now refused, correctly; a probe asks the
+          // relation directly, which is what this view was always asking.
+          //
+          // The others are held at the point the design currently sits at, so
+          // the curves pass through the marks drawn beside them.
+          const at = await engineValues(['env_f107', 'env_f107a', 'env_kp']);
+          const si = id => (at[id] && isFinite(at[id].si) ? at[id].si : null);
+          const [f0, fa0, kp0] = [si('env_f107'), si('env_f107a'), si('env_kp')];
+          if (f0 === null || fa0 === null || kp0 === null) return { refused: true };
+
           const N = 24;
           const both = [];
           for (let i = 0; i < N; i++) {
             const x = 60 + (400 - 60) * i / (N - 1);
-            both.push(engineAt('env_exospheric_temperature',
-              { env_f107: x, env_f107a: x }).then(r => ({ x, y: r.si })));
+            both.push(engineProbe('env_exospheric_temperature',
+              { env_f107: x, env_f107a: x, env_kp: kp0 }).then(r => ({ x, y: r.si })));
           }
           const [fast, slow, sust] = await Promise.all([
-            engineSweep('env_exospheric_temperature', 'env_f107', 60, 400, 60),
-            engineSweep('env_exospheric_temperature', 'env_f107a', 60, 400, 60),
+            probeSweep('env_exospheric_temperature', 'env_f107', 60, 400, 60,
+              { env_f107a: fa0, env_kp: kp0 }),
+            probeSweep('env_exospheric_temperature', 'env_f107a', 60, 400, 60,
+              { env_f107: f0, env_kp: kp0 }),
             Promise.all(both),
           ]);
           return { fast, slow, sust };
@@ -1718,11 +1736,11 @@ const PANELS = [
             // put it at 140.6 — two views of one fact disagreeing in the first
             // decimal because one of them had interpolated. Both now run.
             const [sweep, m, k] = await Promise.all([
-              engineSweep('env_exospheric_temperature', 'env_kp', 0, 9, 46,
+              probeSweep('env_exospheric_temperature', 'env_kp', 0, 9, 46,
                 { env_f107: d.f107, env_f107a: d.f107a }),
-              engineAt('env_exospheric_temperature',
+              engineProbe('env_exospheric_temperature',
                 { env_f107: d.f107, env_f107a: d.f107a, env_kp: d.kpMean }),
-              engineAt('env_exospheric_temperature',
+              engineProbe('env_exospheric_temperature',
                 { env_f107: d.f107, env_f107a: d.f107a, env_kp: d.kpPeak }),
             ]);
             return { sc, d, sweep, tMean: m.si, tPeak: k.si };
@@ -1736,19 +1754,25 @@ const PANELS = [
             const d = driversOf(set, sc.k);
             if (d.f107 === null || d.kpMean === null || d.kpPeak === null) return { sc, d };
             const [m, k] = await Promise.all([
-              engineAt('env_exospheric_temperature',
+              engineProbe('env_exospheric_temperature',
                 { env_f107: d.f107, env_f107a: d.f107a, env_kp: d.kpMean }),
-              engineAt('env_exospheric_temperature',
+              engineProbe('env_exospheric_temperature',
                 { env_f107: d.f107, env_f107a: d.f107a, env_kp: d.kpPeak }),
             ]);
             return { sc, d, tMean: m.si, tPeak: k.si };
           }));
           return { pts };
         }
-        // shape: one sweep at the declared point is enough — the geomagnetic
-        // term does not depend on the flux, and showing that it does not is
-        // part of what this view says.
-        return { kp: await engineSweep('env_exospheric_temperature', 'env_kp', 0, 9, 46) };
+        // shape: one sweep at the point the design sits at is enough — the
+        // geomagnetic term does not depend on the flux, and showing that it
+        // does not is part of what this view says.
+        const now = await engineValues(['env_f107', 'env_f107a']);
+        const pick = id => (now[id] && isFinite(now[id].si) ? now[id].si : null);
+        if (pick('env_f107') === null || pick('env_f107a') === null) return { refused: true };
+        return {
+          kp: await probeSweep('env_exospheric_temperature', 'env_kp', 0, 9, 46,
+            { env_f107: pick('env_f107'), env_f107a: pick('env_f107a') }),
+        };
       })();
       THERMO_CACHE[v] = pr;
       return pr;
@@ -2540,10 +2564,17 @@ function thermoSolar(extra, eng, decF, decFa, decKp, now) {
     answer: now === null
       ? { value: '\u2014', of: 'env_exospheric_temperature did not answer' }
       : { value: now.toFixed(0) + ' K',
-          of: 'the sky the tree currently declares, at env_f107 = '
-            + (decF === null ? '—' : decF.toFixed(0)) + ' \u2014 every density below it is downstream'
-            + (si === null ? '' : ', and the subsystem publishes ' + si.toFixed(1) + ' sfu, not '
-              + (decF === null ? '—' : decF.toFixed(0))) },
+          // The caption used to argue §28.2's gap — a declared 150 here and a
+          // computed 104 two panels along, with nothing comparing them. The
+          // gap is closed: env_f107 reads the crossing now. So the caption
+          // says whether the two AGREE, measured on the draw, and it will
+          // start pointing at a discrepancy again the moment one appears.
+          of: 'the sky the subsystem computes, at env_f107 = '
+            + (decF === null ? '—' : decF.toFixed(1)) + ' \u2014 every density below it is downstream'
+            + (si === null || decF === null ? ''
+               : Math.abs(si - decF) < 0.05
+                 ? ', which is what the crossing publishes'
+                 : ', and the crossing publishes ' + si.toFixed(1) + ' sfu \u2014 they should agree') },
     spec: {
       finding: 'the three lines meet only at ' + (decF === null ? '\u2014' : decF.toFixed(0)) +
         ' sfu, where the day and its mean are declared equal, and the sustained slope is ' +
@@ -2577,9 +2608,16 @@ function thermoSolar(extra, eng, decF, decFa, decKp, now) {
             to: Math.max(decF, eng.l3_solar_interface.si),
             label: '', colour: INK.bound, alpha: 0.05 },
         decF === null ? null : { axis: 'x', at: decF,
-          label: 'env_f107 = ' + decF.toFixed(0) + ', what the design is sized on',
+          label: 'env_f107 = ' + decF.toFixed(1) + ', computed from the crossing',
           colour: INK.bound, row: 'env_f107' },
-        !(eng.l3_solar_interface && isFinite(eng.l3_solar_interface.si)) ? null
+        // DRAWN ONLY WHERE IT IS A SECOND PLACE. Since §49 wired env_f107 to
+        // read the crossing the two marks land on the same sfu, and a second
+        // tick labelled "the solar subsystem says 104.1" beside "env_f107 =
+        // 104" reads as a disagreement to a reader who does not know they are
+        // one number. It reappears the moment they part, which is the only
+        // time it says anything.
+        (!(eng.l3_solar_interface && isFinite(eng.l3_solar_interface.si))
+         || decF === null || Math.abs(eng.l3_solar_interface.si - decF) < 0.05) ? null
           // INK.mark, not a series slot. Slot 2 is the green the "81-day mean
           // alone" line is drawn in three inches to the right, and a mark
           // wearing a series' colour invites the reader to pair the two.
@@ -2597,14 +2635,16 @@ function thermoSolar(extra, eng, decF, decFa, decKp, now) {
       ' K per sfu, because the thermosphere cannot fully respond to one day. And the 81-day ' +
       'MEAN moving under a fixed day is worth ' + k(mSlow) + ' — less than the sustained slope, ' +
       'because raising the mean while holding the day shrinks the departure at the same time.\n\n' +
-      'The three cross where the tree declares itself to be: env_f107 and env_f107a are both ' +
-      (decF === null ? '—' : decF.toFixed(0)) + ', so there is no departure there and all three ' +
-      'agree. THAT NUMBER IS A DECLARED CONSTANT with nothing computing it, while the solar ' +
-      'subsystem two panels along publishes ' +
+      'The three cross where the design sits: env_f107 and env_f107a are both ' +
+      (decF === null ? '—' : decF.toFixed(1)) + ', so there is no departure there and all three ' +
+      'agree. THAT NUMBER IS COMPUTED, not declared \u2014 it is what the solar subsystem ' +
+      'publishes for its hot sustained scenario, ' +
       (eng.l3_solar_interface && isFinite(eng.l3_solar_interface.si)
         ? eng.l3_solar_interface.si.toFixed(2) : '—') +
-      ' for its hot sustained scenario. §28.2 is that gap; this is where it is felt, because ' +
-      'every density in this tree is downstream of the temperature this curve gives.' +
+      ' sfu, carried inward through layer 2. §28.2 was the gap where a declared 150 sat here ' +
+      'instead and nothing compared the two; §49 is the wiring that closed it, and this is ' +
+      'where it is felt, because every density in this tree is downstream of the temperature ' +
+      'this curve gives.' +
       (now === null ? '' : ' As the tree stands the answer is ' + now.toFixed(1) + ' K.'),
   };
 }
