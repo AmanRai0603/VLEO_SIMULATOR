@@ -236,8 +236,24 @@ jobs:
       # The same script the commit-msg hook runs, over the commits this branch
       # adds. A hook only fires inside the tool that installed it — a terminal
       # with no hooksPath set has none — so the rule has to hold here too.
+      #
+      # THE COMMITS THIS BRANCH ADDS, which is what the step is called and what
+      # it did not do. It computed the ROOT and checked all of history, so one
+      # bad message anywhere in the past failed every branch forever — and a
+      # message already merged cannot be fixed, because the remedy is rewriting
+      # published history. A check with no recovery path is a check that will
+      # one day be deleted rather than satisfied.
+      #
+      # It found one: the squash commit that merged #44 has an 83-character
+      # line, so `main` itself was red and every pull request after it would
+      # have been. The rule still holds everywhere it can be acted on — the
+      # hook at author time, this step on what a branch adds.
       - name: every commit this branch adds
-        run: python3 tools/commit_message.py --range "$(git rev-list --max-parents=0 HEAD | tail -1)..HEAD"
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          if [ -z "$base" ]; then base=$(git rev-parse HEAD~1 2>/dev/null || git rev-parse HEAD); fi
+          echo "checking $base..HEAD"
+          python3 tools/commit_message.py --range "$base..HEAD"
 
   # The advisory review. It cannot fail the build, and that is the design
   # rather than an oversight: a review that can fail a build is a review people
