@@ -10,7 +10,7 @@
 'use strict';
 
 import { $, $$, esc, plural } from './dom.js';
-import { S, isSeeded, isUndefined, isUnconfirmed } from './state.js';
+import { S, isSeeded, isUndefined, isUnconfirmed, isUnread } from './state.js';
 import { renderRun } from './run.js';
 import { mountRelation } from './relation.js';
 import { mountTheory } from './theory.js';
@@ -220,11 +220,23 @@ function activeBanner(r) {
       'somebody who knows where the relation came from. An agent may never supply mathematics, ' +
       'which is the reason this refusal exists.</span></div>';
   }
+  // Reach and trust are different facts, so both can show. A row can answer
+  // correctly, be read by nobody, AND have nobody's name on its relation; each
+  // is a separate piece of work for a different person.
+  let h = '';
+  if (isUnread(r)) {
+    h += '<div class="banner unread"><b>UNREAD</b> — this row answers and its number reaches ' +
+      'no KPI closure. The tree exists to move twelve of them, and nothing downstream of this ' +
+      'row ends at one, so the answer is computed and the design is not reading it.' +
+      '<span class="muted">Not a defect in the row, and not something the row can fix: a ' +
+      'crossing nothing reads gets wired up, retired, or kept on purpose as a reference beside ' +
+      'the design point. Which one is a decision with a person\'s name on it.</span></div>';
+  }
   if (isUnconfirmed(r)) {
-    return '<div class="banner unconfirmed"><b>UNCONFIRMED</b> — this row answers, and nobody ' +
+    h += '<div class="banner unconfirmed"><b>UNCONFIRMED</b> — this row answers, and nobody ' +
       'has read its relation against its source. It reports <b>1 of 4</b> for mathematics until ' +
       'somebody does. <span class="muted">A citation says the paper exists; ' +
       '<code>[maths] confirmed_by</code> says a person read the relation in it.</span></div>';
   }
-  return '';
+  return h;
 }

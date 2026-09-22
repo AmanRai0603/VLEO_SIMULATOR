@@ -90,6 +90,8 @@ and they are opposite, which is the whole reason the field exists.
     cargo run -p xtask -- status            what exists, what is blocking
     cargo run -p xtask -- active            what answers, what is undefined, and
                                             what is blocked by a named row
+    cargo run -p xtask -- reach             where each answer goes, and which
+                                            reach no KPI closure
     cargo run -p xtask -- gap               what the sheets promised and
                                             nothing covers
     cargo run -p vleo-cli --bin vleo -- run <node>

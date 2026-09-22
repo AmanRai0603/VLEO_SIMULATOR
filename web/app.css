@@ -753,3 +753,8 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
 .banner.unconfirmed { border-left-color: var(--slate); }
 /* The same refusal in the run panel, where it is the reason a control is off. */
 .empty.refuse { border-left: 3px solid var(--out); padding-left: .6rem; }
+
+/* UNREAD — it answers, and the design is not reading the answer. Teal rather
+   than amber: amber is "something here is missing", and nothing is missing in
+   the row. What is missing is a wiring decision somewhere else. */
+.banner.unread { border-left-color: var(--teal); }

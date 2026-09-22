@@ -515,7 +515,8 @@ reporting or regeneration; none of it decides anything.
 |---|---|
 | `cargo run -p xtask -- assemble` | the three assembly generators — the index, the document fragments, the graph tables |
 | `cargo run -p xtask -- status` | counts by layer and by subsystem, and what is blocking |
-| `cargo run -p xtask -- active [<subsystem>]` | which rows answer, which are undefined, and which are blocked by a named row |
+| `cargo run -p xtask -- active [<subsystem>] [--defined]` | which rows answer, which are undefined, and which are blocked by a named row; `--defined` names every function that carries a derivation |
+| `cargo run -p xtask -- reach [<subsystem>]` | where each answer goes — how many reach a KPI closure, and which answer and are read by nothing |
 | `cargo run -p xtask -- gap` | what every sheet promised and nothing yet covers |
 | `cargo run -p xtask -- graph` | the three graphs, their sizes, the deepest chain, and the crate-direction check |
 | `cargo run -p xtask -- variables` | regenerate `docs/VARIABLES.md` — every variable, its unit, its bounds and the reason for each |
@@ -682,6 +683,7 @@ which looks exactly like a hook that passed.
 | "the committed artefacts differ from what the sheets generate" | you edited outside a hole. `cargo run -p xtask -- docs` and look at the diff |
 | a row returns `NotRun` | it has no content yet. `cargo run -p xtask -- status` says how many are like it |
 | a row is written and still does not answer | its relation is stated and never derived. `cargo run -p xtask -- active` says which rows are in that state and how many others are waiting on each |
+| a subsystem looks finished and nothing seems to use it | `cargo run -p xtask -- reach` — a subsystem can answer on every row it has and be wired to nothing. It names the crossing and who reads it |
 | the gate refuses a fixture | a fixture disagreement is a physics disagreement. Take it to the node owner; do not widen the tolerance |
 | a sweep row says `refused` | the value left the declared domain. The message names the bound and its reason |
 | the daemon shows the wrong tree | an old process. It is the sheet hash that would refuse a stale page, but a stale *process* has its own copy — check the port |
@@ -692,6 +694,7 @@ Two commands answer most of it:
 cargo run -p xtask -- gate && cargo test     # must be green
 cargo run -p xtask -- status                 # what exists, what is blocking
 cargo run -p xtask -- active                 # what answers, and what is in the way
+cargo run -p xtask -- reach                  # where the answers go, and which go nowhere
 cargo run -p xtask -- gap                    # what every sheet promised and nothing covers
 ```
 

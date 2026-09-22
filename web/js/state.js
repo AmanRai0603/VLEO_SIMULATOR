@@ -213,6 +213,30 @@ export const isUndefined = r => !!(r && r.fn && !r.derived);
    does NOT silence the row — it is what the mathematics factor is scored on. */
 export const isUnconfirmed = r => !!(r && r.fn && r.derived && !r.by);
 
+/* Does this row ANSWER — the two halves together, and retired excluded.
+
+   A deprecated row still answers, deliberately, so a consumer that has not
+   migrated keeps working. It is not work in progress, so counting it beside
+   the live rows overstates what the tree currently produces: solar read 62
+   here when 55 of its rows are live and 7 are retired. */
+export const answers = r =>
+  !!(r && r.state !== 'empty' && r.state !== 'deprecated' && !isUndefined(r));
+
+/* WHERE THE ANSWER GOES, which is not whether there is one.
+
+   The tree's stated purpose is twelve KPI closures — promises to a customer —
+   and every other row exists to move one of them. A row that answers and
+   reaches none is not wrong and is not a defect in the row: it is work the
+   design is not currently reading. A subsystem can answer on every row it has
+   and be wired to nothing, and nothing on the screen used to say so.
+
+   A CONCLUSION is excluded by kind. An achieved row is a margin and a KPI row
+   is a promise; both are the end of a chain, so having no consumer is what
+   they are for. Marking those would put the best rows in the tree under a
+   warning, which is how a warning stops being read. */
+export const isConclusion = r => !!(r && (r.kind === 'achieved' || r.kind === 'kpi'));
+export const isUnread = r => !!(answers(r) && !isConclusion(r) && !r.kpi_reach);
+
 // Whether the tree lists retired rows. Off by default: a reader opening a
 // subsystem should see the work that is live in it.
 S.showRetired = false;

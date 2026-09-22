@@ -30,6 +30,7 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use vleo_bus::{Case, RunMode};
+use vleo_core::graph::Kind;
 use vleo_modules::{tables, Scratch, Vleo, GROUPS, NODES, RELATIONS, VARS};
 
 fn main() {
@@ -538,8 +539,48 @@ fn version_json(ctx: &Ctx) -> String {
 /// Emitted from the same tables the engine walks, so the picture and the
 /// execution cannot diverge. There is no version of this where the page and the
 /// code disagree.
+/// Which rows reach a KPI closure, and how many rows read each one.
+///
+/// The tree's stated purpose is twelve promises to a customer; every other row
+/// exists to move one of them. So "does this number reach a KPI" is the
+/// end-to-end question, and it is not the same as "does this row answer" — a
+/// subsystem can answer on every row it has and be wired to nothing.
+///
+/// Walked BACKWARDS from the KPIs, once. The forward version — ask each row
+/// whether it can reach one, and memoise — has to seed `false` before recursing
+/// so a declared cycle terminates, and then memoises that provisional `false`
+/// for any row whose real answer arrived later by another edge. It reports a
+/// row inside a cycle as unread when it is read, which is the one direction
+/// this must never be wrong in. `xtask reach` carries the same walk and the
+/// tests that pin it.
+fn reach_and_readers() -> (Vec<bool>, Vec<usize>) {
+    let n = NODES.len();
+    let mut parents: Vec<Vec<usize>> = vec![Vec::new(); n];
+    let mut readers = vec![0usize; n];
+    for (i, d) in NODES.iter().enumerate() {
+        for &v in d.inputs {
+            let p = VARS[v as usize].producer as usize;
+            if p != i {
+                parents[i].push(p);
+                readers[p] += 1;
+            }
+        }
+    }
+    let mut reach = vec![false; n];
+    let mut stack: Vec<usize> = (0..n).filter(|&i| NODES[i].kind == Kind::Kpi).collect();
+    while let Some(i) = stack.pop() {
+        if reach[i] {
+            continue;
+        }
+        reach[i] = true;
+        stack.extend(parents[i].iter().copied());
+    }
+    (reach, readers)
+}
+
 fn index_json() -> String {
     let mut j = Json::new();
+    let (reach, readers) = reach_and_readers();
     j.raw("{");
     j.num_field("nodes", NODES.len() as f64);
     j.key("rows").open_arr();
@@ -573,6 +614,12 @@ fn index_json() -> String {
         // thing that is missing.
         j.bool_field("fn", d.is_function());
         j.bool_field("derived", d.derived);
+        // WHERE THE ANSWER GOES, which is not the same question as whether
+        // there is one. A row can answer perfectly and feed nothing the tool
+        // exists to report, and a face that draws the two identically tells a
+        // reader their subsystem is finished when it is wired to nothing.
+        j.bool_field("kpi_reach", reach[i]);
+        j.num_field("readby", readers[i] as f64);
         // Who read the relation against its source. Not the same claim, and it
         // does not silence the row — it is what the mathematics factor of the
         // credibility vector is scored on. Empty is the normal state.

@@ -9,7 +9,7 @@
 'use strict';
 
 import { $, esc, plural } from './dom.js';
-import { S, LAYERS, CAPTIONS, subtreeNodes, isUndefined } from './state.js';
+import { S, LAYERS, CAPTIONS, subtreeNodes, isUndefined, answers, isUnread } from './state.js';
 import { buildDisplay, relations } from './display.js';
 import { drawTree } from './tree.js';
 import { drawPaths } from './paths.js';
@@ -47,11 +47,13 @@ export function drawStepper() {
     esc(t) + '</span>' + (i < 3 ? '<span class="dash">—</span>' : '')).join('') +
     '<span class="aside">' + S.rows.length + ' rows · ' + S.index.groups.length + ' groups · ' +
     S.index.relations.length + ' declared relations · ' +
-    // How many of them ANSWER. Counted from the graph on this draw, like every
-    // other number in this strip, and put beside the row count because the two
-    // together are the fact — 1395 rows of which 182 answer is a different
+    // How many of them ANSWER, and how many of those the design READS. Counted
+    // from the graph on this draw, like every other number in this strip, and
+    // put beside the row count because the three together are the fact: 1395
+    // rows of which 175 answer and 93 reach a KPI closure is a different
     // programme from 1395 rows.
-    S.rows.filter(x => x.state !== 'empty' && !isUndefined(x)).length + ' answer</span>';
+    S.rows.filter(answers).length + ' answer · ' +
+    S.rows.filter(x => answers(x) && x.kpi_reach).length + ' reach a KPI</span>';
 }
 
 function drawReach(rel) {
@@ -68,6 +70,7 @@ function drawNotes() {
   const st = S.matrixStats;
   const seeded = S.rows.filter(r => r.state === 'empty').length;
   const inactive = S.rows.filter(r => isUndefined(r)).length;
+  const unread = S.rows.filter(isUnread).length;
   const rels = S.index.relations.filter(r => S.dispIndex.has(r.from) || S.dispIndex.has(r.to));
   const put = [
     ['a row', 'One small question, one answer, one folder, one row. The variable id <b>is</b> the node id.'],
@@ -78,6 +81,7 @@ function drawNotes() {
     ['a case', 'A case selects which boxes are in scope. It is never a copy of the tree: a cloned architecture is two architectures that will disagree.'],
     ['seeded', '<b>' + seeded + '</b> of ' + S.rows.length + ' rows are seeded — the folder, the sheet and the row exist, and nothing is specified in them. Running one returns <code>NotRun</code>, by name.'],
     ['inactive', '<b>' + inactive + '</b> rows are written, generated and compiling, and still do not answer: their relation is stated and never derived. Not the same state as seeded, and a different piece of work — a seeded row needs somebody to decide what it is, an inactive one needs somebody to say where its relation came from.'],
+    ['unread', '<b>' + unread + '</b> rows answer, are not a conclusion, and nothing reads them. The tree exists to move <b>' + S.index.rows.filter(r => r.kind === "kpi").length + '</b> KPI closures; a number that reaches none of them is not wrong, it is work the design is not currently reading. That is a wiring decision, not a defect in the row.'],
     ['a relation', '<b>' + rels.length + '</b> of ' + S.index.relations.length + ' declared group relations touch this layer. A relation is stated by the layer file, never inferred from the marks.'],
   ];
   $('#notes').innerHTML = put.map(([k, v]) => '<dt>' + k + '</dt><dd>' + v + '</dd>').join('');
