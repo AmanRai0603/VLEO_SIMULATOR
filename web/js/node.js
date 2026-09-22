@@ -10,7 +10,7 @@
 'use strict';
 
 import { $, $$, esc, plural } from './dom.js';
-import { S, isSeeded } from './state.js';
+import { S, isSeeded, isUndefined, isUnconfirmed } from './state.js';
 import { renderRun } from './run.js';
 import { mountRelation } from './relation.js';
 import { mountTheory } from './theory.js';
@@ -30,6 +30,12 @@ export async function openNode(id) {
   ]);
 
   body.innerHTML =
+    // AND THIS COMES BEFORE EVEN THAT. Whether the row answers is the first
+    // thing a reader needs, because every number further down the page is
+    // either the design's or nobody's and they look identical. It is a banner
+    // rather than a segment: the segments say what the node IS, and this says
+    // what it currently DOES.
+    activeBanner(r) +
     // THE CONTROL COMES BEFORE THE DESCRIPTION, and it is not a numbered
     // segment. The four segments say what this node IS; a declared row is also
     // a thing a reader can move, and that is a different kind of statement. It
@@ -188,4 +194,37 @@ function connectivityHtml(r) {
     '<tr><th>' + esc(k) + '<span class="why">' + esc(why) + '</span></th><td>' +
     (items ? items.join('<br>') : '<span class="muted">' + esc(none) + '</span>') +
     '</td></tr>').join('') + '</tbody></table>';
+}
+
+/**
+ * Whether this row answers, said once and at the top.
+ *
+ * Three cases, and the middle one is the reason this is not a single flag:
+ *
+ *   INACTIVE      a function whose relation is stated and never derived. The
+ *                 engine refuses it, so every number on the rest of the page is
+ *                 an example rather than an answer.
+ *   UNCONFIRMED   derived, and nobody has read the relation against its source.
+ *                 It answers, and reports 1 of 4 for mathematics. Worth saying,
+ *                 not worth withholding.
+ *   an input      a default is a definition. Nothing is drawn: the override
+ *                 control below says everything there is to say about it.
+ */
+function activeBanner(r) {
+  if (isUndefined(r)) {
+    return '<div class="banner inactive"><b>INACTIVE</b> — this row does not answer. ' +
+      'Its relation is stated and never derived, so there is nothing on the sheet a reader can ' +
+      'check it against. The engine refuses it under its own name and everything downstream ' +
+      'blocks on it, named. ' +
+      '<span class="muted">Fixed by a <code>[theory]</code> block on the sheet — written by ' +
+      'somebody who knows where the relation came from. An agent may never supply mathematics, ' +
+      'which is the reason this refusal exists.</span></div>';
+  }
+  if (isUnconfirmed(r)) {
+    return '<div class="banner unconfirmed"><b>UNCONFIRMED</b> — this row answers, and nobody ' +
+      'has read its relation against its source. It reports <b>1 of 4</b> for mathematics until ' +
+      'somebody does. <span class="muted">A citation says the paper exists; ' +
+      '<code>[maths] confirmed_by</code> says a person read the relation in it.</span></div>';
+  }
+  return '';
 }

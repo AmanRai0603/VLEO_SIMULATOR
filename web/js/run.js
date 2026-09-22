@@ -13,7 +13,7 @@
 'use strict';
 
 import { $, $$, esc, fmt } from './dom.js';
-import { S, reachFrom, isSeeded } from './state.js';
+import { S, reachFrom, isSeeded, isUndefined, isUnconfirmed } from './state.js';
 import { withOverrides } from './inputs.js';
 
 export function renderRun(host, r, standalone) {
@@ -22,6 +22,10 @@ export function renderRun(host, r, standalone) {
   const missing = r.in.map(i => S.rows[i].id).filter(x => !known.has(x));
   const closure = reachFrom([r.i], S.producers).size + 1;
   const seeded = isSeeded(r);
+  // Written, generated, compiled, fixtures passing — and it does not answer,
+  // because nothing on its sheet says where the relation came from. The engine
+  // refuses it; this stops the face offering a Run that cannot succeed.
+  const inactive = isUndefined(r);
 
   let h = '';
   if (standalone) {
@@ -42,7 +46,7 @@ export function renderRun(host, r, standalone) {
     S.index.cases.map(c => '<option value="' + esc(c.id) + '"' +
       (c.id === S.engineCase ? ' selected' : '') + ' title="' + esc(c.note) + '">' +
       esc(c.label) + '</option>').join('') + '</select>' +
-    '<button class="ctl run-go"' + (seeded ? ' disabled' : '') + '>run</button>' +
+    '<button class="ctl run-go"' + (seeded || inactive ? ' disabled' : '') + '>run</button>' +
     '<span class="why run-why"></span></div>';
 
   if (seeded) {
@@ -51,13 +55,29 @@ export function renderRun(host, r, standalone) {
       'Six hundred grey rows on day one is not a failure — it is the decomposition, written down ' +
       'before anyone has been told to fill it in.</p>';
   }
+  // Said here rather than only on the disabled button, because the thing a
+  // reader needs is not "this is off" — it is what would turn it on, and by
+  // whom. Nothing in this panel can do it: an agent may never supply
+  // mathematics, which is the reason this refusal exists.
+  if (inactive) {
+    h += '<p class="empty refuse"><b>INACTIVE — this row does not answer.</b> Its relation is ' +
+      'stated and never derived. A function is defined by its derivation, not by its expression ' +
+      'and not by its citation: the expression is one line anybody can type, and a citation says ' +
+      'a paper exists rather than that this relation came out of it.<br><br>' +
+      'To define it, the sheet needs a <code>[theory]</code> block — why it is this relation, what ' +
+      'the answer means, and the steps it comes in. Until then the engine refuses it under its own ' +
+      'name and everything downstream blocks on it, named. The inputs it reads keep their ' +
+      'defaults and stay editable: an input is defined by carrying a value, a function is not.</p>';
+  }
   h += '<div class="run-out"></div>';
   host.innerHTML = h;
 
   // A disabled control that does not say why is a defect.
   const aloneBtn = $('.mode[data-mode="alone"]', host);
-  aloneBtn.disabled = missing.length > 0;
-  aloneBtn.title = missing.length
+  aloneBtn.disabled = missing.length > 0 || inactive;
+  aloneBtn.title = inactive
+    ? 'Disabled: this row has no derivation, so it does not answer in any mode.'
+    : missing.length
     ? 'Disabled: ' + missing.slice(0, 4).join(', ') +
       (missing.length > 4 ? ' and ' + (missing.length - 4) + ' more' : '') + ' ' +
       (missing.length === 1 ? 'has' : 'have') + ' never run. Run the branch instead.'

@@ -9,7 +9,7 @@
 'use strict';
 
 import { $, esc } from './dom.js';
-import { S, subtreeNodes, isSeeded, isDeprecated } from './state.js';
+import { S, subtreeNodes, isSeeded, isDeprecated, isUndefined } from './state.js';
 import { pillClass, ancestorAt } from './display.js';
 
 export function drawTree(disp, rel) {
@@ -34,11 +34,18 @@ export function drawTree(disp, rel) {
       ? '<span class="tri">' + (d.open ? '▾' : '▸') + '</span>' : '';
     const seeded = d.kind === 'node' && isSeeded(d.row);
     const retired = d.kind === 'node' && isDeprecated(d.row);
+    // Inactive, and drawn differently from seeded on purpose. A seeded row is
+    // one nobody has written; this one is written, compiles, has fixtures that
+    // pass, and still does not answer. Reading them as the same state is how a
+    // reader concludes the tool is mostly empty rather than mostly unaccounted
+    // for, and they are different pieces of work.
+    const inactive = d.kind === 'node' && isUndefined(d.row);
     const txt = '<span class="txt' + (seeded ? ' seeded' : '') + (retired ? ' retired' : '') +
-      '">' + esc(d.label) + '</span>';
+      (inactive ? ' inactive' : '') + '">' + esc(d.label) + '</span>';
     const n = d.kind === 'group' && !d.open ? '<span class="tri">' + d.members.length + '</span>' : '';
     const title = d.kind === 'node'
       ? d.row.id + (retired ? ' — DEPRECATED: this row still answers, and nothing should read it.' : '') +
+        (inactive ? ' — INACTIVE: the relation is stated and never derived, so this row does not answer.' : '') +
         (d.row.question ? ' — ' + d.row.question : ' — seeded, not yet specified')
       : d.label + ' — ' + subtreeNodes(d.id).length + ' rows, owner ' + d.owner;
     return '<div class="trow" data-i="' + i + '">' +

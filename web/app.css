@@ -730,3 +730,26 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
   .ovr.bad .ovr-v { border-color: #e88a8a; background: #2c1a19; }
   .ovr-refused td { color: #e88a8a; }
 }
+
+/* INACTIVE — written, generated, compiling, and it does not answer.
+   Deliberately not the seeded treatment: a seeded row is one nobody has
+   written, and reading the two as one state is how a reader concludes the tool
+   is mostly empty rather than mostly unaccounted for. Faded like seeded so it
+   recedes, and underlined rather than italic so the two are distinguishable
+   next to each other in the same tree. */
+.pill .inactive { opacity: .6; text-decoration: underline dotted; text-underline-offset: 3px; }
+
+/* The one-line verdict at the top of a node page. Ruled on the left in the
+   same 3px the tree pills use, so it reads as a property of the row rather
+   than as a message about the page. */
+.banner {
+  border: 1px solid var(--rule); border-left-width: 3px; border-radius: 3px;
+  background: var(--card); padding: .5rem .6rem; margin: 0 0 .7rem;
+  font-size: 12px; line-height: 1.5; color: var(--ink-2);
+}
+.banner b { color: var(--ink); }
+.banner .muted { display: block; margin-top: .35rem; }
+.banner.inactive { border-left-color: var(--out); }
+.banner.unconfirmed { border-left-color: var(--slate); }
+/* The same refusal in the run panel, where it is the reason a control is off. */
+.empty.refuse { border-left: 3px solid var(--out); padding-left: .6rem; }
