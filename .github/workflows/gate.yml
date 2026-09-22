@@ -200,6 +200,11 @@ jobs:
       # reads a value it is predicting, and that the debias is the mean of the
       # residuals already seen. It needs no bundle and no daemon; the walk over
       # the record itself is minutes long and is not run here.
+      # 29 cases now: the estimators against a known AR(2), the walk reading no
+      # value it predicts, the causal debias as an identity, the ONE population
+      # sigma every figure divides by, and the coverage fractions §45 rests on —
+      # scale-free, reading the design-relevant side, and reported as straddling
+      # when a span straddles rather than as one direction.
       - name: the walk-forward checks its own maths
         run: python3 tools/rotation_residuals.py --selftest
       # A theory tab is prose, so it sits outside the sheet hash and nothing
