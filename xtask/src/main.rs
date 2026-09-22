@@ -2832,6 +2832,50 @@ fn cmd_active(root: &Path, args: &[&str]) -> Result<(), String> {
         }
         println!();
     }
+
+    // THE INVERSE, AND IT IS THE ONE PEOPLE ACTUALLY ASK FOR: not what is
+    // missing, but what has been defined. "Has anything been given mathematics
+    // that should not have been" is a fair question to ask of a tree seven
+    // agents write into, and answering it should not require reading git
+    // history — which is what it took the first time somebody asked.
+    let defined: Vec<&&vleo_sheet::model::Sheet> = rows
+        .iter()
+        // Retired excluded, like everywhere else in this command: a deprecated
+        // row still answers, deliberately, but it is not work in progress and
+        // counting it here reads as five more defined functions than there are.
+        .filter(|s| {
+            !s.steps.is_empty() && !s.theory.is_empty() && !s.is_seeded() && s.state != "deprecated"
+        })
+        .collect();
+    if !defined.is_empty() {
+        let mut per: BTreeMap<&str, usize> = BTreeMap::new();
+        for s in &defined {
+            *per.entry(s.subsystem.as_str()).or_default() += 1;
+        }
+        let mut order: Vec<(&&str, &usize)> = per.iter().collect();
+        order.sort_by_key(|(s, n)| (std::cmp::Reverse(**n), **s));
+        println!(
+            "defined — a function whose relation the sheet derives ({} in all):",
+            defined.len()
+        );
+        println!(
+            "  {}",
+            order
+                .iter()
+                .map(|(s, n)| format!("{s} {n}"))
+                .collect::<Vec<_>>()
+                .join(" · ")
+        );
+        if args.contains(&"--defined") {
+            for s in &defined {
+                println!("    {:<42} {}", s.id, s.subsystem);
+            }
+        } else {
+            println!("  --defined names them");
+        }
+        println!();
+    }
+
     println!(
         "{} of {} rows answer. A function is defined by its derivation, not by its\n\
          expression and not by its citation — `cargo xtask declare <node>` says what\n\

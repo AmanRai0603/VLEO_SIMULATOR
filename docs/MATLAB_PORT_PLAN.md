@@ -5700,3 +5700,82 @@ as a deliberate override and a row says the study's answer was considered and no
 used. All three are cheap, and choosing is a design decision with a person's name
 on it. What has changed is that the present state is now reported by the tool on
 every run rather than found by hand once.
+
+
+---
+
+## §48 · Who defined what — the provenance audit
+
+The question, asked directly: *is anything outside solar weather defined that
+should not be?* The suspicion behind it was that an agent had scattered
+mathematics across the tree. This is the measurement, and it says the opposite.
+
+### 48.1 · Method
+
+`db139b2e` is the last of the four founding commits, 2026-09-09, before any
+agent commit exists. Every `node.toml` in that tree was read by **id** rather
+than by path — `c29b69dc` reshuffled every crate on 2026-09-11, so a path
+comparison answers a different question — and each row's `[maths] expression`
+and `[[algorithm.step]]` count compared against the same row today.
+
+### 48.2 · What it found
+
+| | |
+|---|---|
+| rows at the founding commits | 250 |
+| rows now | 1395 |
+| **pre-existing rows whose maths or algorithm changed since** | **1** |
+
+The one is `orbit_mission_duration`: `T_mis = 5` with no algorithm, now
+`T_mis = T_mis_req` with one step. Changed by §20 step 2, which moved the
+mission-length declaration to layer 2 so that one row owns it, and it is an
+input the solar chain reads.
+
+Of the **138** defined functions outside solar weather, **all 138** carried both
+an expression and an algorithm at `db139b2e`, and **0 of 138** have had their
+expression changed since. They are founding work, untouched.
+
+### 48.3 · What the agents added
+
+1145 rows since the founding commits:
+
+| what | how many |
+|---|---|
+| seeded — sheet present, maths and algorithm empty | **1076** |
+| published functions | 43 — **38 solar, 5 `sys_space_environment_*`** (solar's crossing) |
+| published inputs | 19 — 17 solar, 2 `sys_mission_requirements_*` |
+| retired | 7 |
+
+Every published function added is solar weather or the crossing solar publishes
+through. Everything else added is a seeded row, which is the state this document
+means by *"the sheet is there and nothing is specified in it"*.
+
+### 48.4 · The state today
+
+45 functions in the whole tree are defined. Seven are not solar rows:
+
+| row | why it is defined |
+|---|---|
+| `sys_space_environment_{ap,f10_7,f10_7_81day,kp,solar_flux}` | solar's own layer-2 output — the five members of its crossing |
+| `orbit_mission_duration` | an input the solar chain reads |
+| `env_exospheric_temperature` | **the one exception, kept on purpose** |
+
+`env_exospheric_temperature` is neither solar weather nor an input solar needs.
+Its relation is founding work — Jacchia 1971, unchanged — and it answers because
+the theory sweep of §§30–32 wrote its derivation. It stays defined by decision,
+not by oversight: §32's thermosphere panel is built on it and needs it to
+render, and §30 step 3 exists to get a person's name against that relation.
+
+The other **137** produce nothing. They have expressions, citations, filled
+holes and fixtures that pass, and no derivation — so §46's rule silences them,
+and they sit on the tree as sheets. Nothing was deleted to achieve that and
+nothing should be: the mathematics in them is the programme's own, and the day
+somebody writes a derivation for one it starts answering.
+
+### 48.5 · Answerable without git archaeology next time
+
+    cargo run -p xtask -- active --defined
+
+lists every defined function and its subsystem, and the summary line above it
+gives the count per subsystem. The first time this question was asked it took
+reading the repository's history to answer; it should not the second time.

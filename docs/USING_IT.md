@@ -515,7 +515,7 @@ reporting or regeneration; none of it decides anything.
 |---|---|
 | `cargo run -p xtask -- assemble` | the three assembly generators — the index, the document fragments, the graph tables |
 | `cargo run -p xtask -- status` | counts by layer and by subsystem, and what is blocking |
-| `cargo run -p xtask -- active [<subsystem>]` | which rows answer, which are undefined, and which are blocked by a named row |
+| `cargo run -p xtask -- active [<subsystem>] [--defined]` | which rows answer, which are undefined, and which are blocked by a named row; `--defined` names every function that carries a derivation |
 | `cargo run -p xtask -- reach [<subsystem>]` | where each answer goes — how many reach a KPI closure, and which answer and are read by nothing |
 | `cargo run -p xtask -- gap` | what every sheet promised and nothing yet covers |
 | `cargo run -p xtask -- graph` | the three graphs, their sizes, the deepest chain, and the crate-direction check |
