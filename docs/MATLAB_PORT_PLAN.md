@@ -3647,12 +3647,16 @@ on work nobody had done.*
 | 3 · A3 theory | **drafted, its numbers now checked on every run, one wrong magnitude found and fixed** — §31.2a; still unsigned, needs a person |
 | 4 · B3.1 walk-forward | **written, failing its own test, and every candidate for the gap measured and eliminated** — §31.4a |
 | 5 · B1 which Kp slot | **the row exists, seeded, with the evidence measured** — §43; the value needs a person |
-| 6 · B2 band confidence | needs a person |
+| 6 · B2 band confidence | **the row exists, seeded, and §30 B2's own cost table was wrong** — §44; the value needs a person |
 | 7 · B3.2 empirical quantiles | **still blocked on 31.4**, and its QUESTION answered scale-free — §45; the rows are deliberately not seeded |
-| 8 · A4 thermosphere panel | ready to build |
+| 8 · A4 thermosphere panel | **done** — §32, four views, the reference recorded and **unsigned**; an agent may not sign one |
 | 9 · B3.3 residual view | blocked with 7 |
 
-Step 8 is the next one that can be done without a decision.
+This table said "ready to build" against step 8 while §32 below said it was done,
+for three sections. Two statements of one fact, and the stale one was in the
+summary — which is where anybody reads it. Nothing is left in §30 that an agent
+can finish: 3, 5, 6 and 8 each need a person's name or a person's decision, 4
+needs `prf_rebuild.m`, and 7 and 9 wait on 4.
 
 
 ---
@@ -5397,3 +5401,186 @@ nobody had noticed — and three statements of one fact is exactly how the sheet
 sense and the hole's sense came to differ elsewhere in this tree. It is one
 definition now, with a case pinning the population convention, because `report`'s
 comparison against 13.4544 and every coverage fraction both divide by it.
+
+
+---
+
+## §46 · What answers, and what only looked like it did
+
+A number and a placeholder were the same shape on the screen. This section is
+what that cost, how it was cut, and what the tree looks like now.
+
+### 46.1 · The complaint
+
+> *"whatever input is there now I have option to edit and update, but till that
+> any function I haven't defined why those code are running and that output —
+> keep them inactive. Only active what I have defined, and show about them. That
+> is solar weather."*
+
+and, when the first reading of it was wrong:
+
+> *"it's not about number. Till that function is not defined how output can come.
+> Input you can have some default number but not function and output, because
+> once function defined default input is already there so output will come."*
+
+Two halves, and the second one is the part that is easy to get wrong:
+
+- **an input may carry a default.** It is a decision somebody made, the face
+  lets it be edited, and `[value] confirmed_by` says who made it;
+- **a function may not.** A relation nobody has accounted for is not a quiet
+  default, it is an answer the design has never made.
+
+### 46.2 · What the tool did before
+
+    $ vleo run env_exospheric_temperature
+
+      T_inf = 949.603 K
+      credibility 1 of 4, governed by uncertainty
+      4 ran, 0 blocked, 0 cycle sweep(s)
+
+Bold, six significant figures, and nothing on that screen distinguishes it from
+a number somebody worked out. The sheet it came from says, in a comment:
+
+> *A person has NOT read this relation against Jacchia 1971 yet.*
+
+The repository already knew. It said so in a comment, in `xtask declare`, and in
+the gap pass — and printed 949.603 K anyway, because nothing carried the fact as
+far as the resolver.
+
+### 46.3 · Where the line is, and why it is not the signature
+
+The obvious cut is `[maths] confirmed_by` — the field that records a person
+having read the relation against its source. It is the wrong one, and measuring
+it is what showed that:
+
+| | rows | signed |
+|---|---|---|
+| published **inputs** | 130 | 18 |
+| published **functions** | 182 | **2** |
+
+Two. Cut there and the tool answers on 132 of 1395 rows, solar weather included,
+which is not what the request says — solar weather is supposed to be the part
+that works.
+
+What actually separates solar from the rest is the **derivation**: the `[theory]`
+block, which says why the relation is that relation and what its answer means.
+
+| | functions | derived |
+|---|---|---|
+| `vleo-mod-solar` | 38 | **38** |
+| everything else | 144 | 6 |
+
+That is the whole of one subsystem against four per cent of the others, and it
+is not a coincidence: those 38 were written by hand against the MATLAB study,
+one sheet at a time, in §§14–28. The rest were scaffolded.
+
+So the rule is the derivation, and it reads the same way round as the request:
+
+> **A function is defined by its derivation, not by its expression and not by
+> its citation.** The expression is one line anybody can type. A citation says a
+> paper exists; it cannot say the relation came out of it, and a relation an
+> agent invented carries one just as convincingly.
+
+### 46.4 · Two rungs, doing different jobs
+
+The signature did not stop being worth something. It moved to where it belongs:
+
+| the sheet says | the run does |
+|---|---|
+| no derivation | **refuses.** `Fault::Undefined`, under the row's own name, and every reader blocks on it by name |
+| derived, unsigned | **answers**, and scores **1** of 4 for mathematics |
+| derived and signed | answers, and scores 4 |
+
+The second row of that table is a defect fixed on the way past.
+`Factor::Mathematics` scored 4 for any row with an expression and a citation and
+never consulted the signature at all — despite its own docstring saying *"scored
+by the physics review, not by a machine"*. It was scoring the citation, and a
+citation is the one part of a relation an invented one always has.
+
+### 46.5 · One row was standing in front of twenty-six
+
+The first measurement after the rule went in:
+
+    subsystem     active  undefined    blocked   seeded
+    solar             41          0         21        2
+
+Forty-one solar rows answered, twenty-one were blocked, and **none of the twenty-
+one was blocked by a solar row.** All of them waited on one row in another
+subsystem: `orbit_mission_duration`, whose relation is `T_mis = T_mis_req` — a
+pass-through that carries the layer-2 mission length into the subsystems that
+read it.
+
+Its derivation was already written. It was in a comment on `[maths]`:
+
+> *IT RESTATES THE REQUIREMENT, it does not set it. Two rows declaring a mission
+> length is two rows that can disagree…*
+
+A comment is not a field. To everything downstream, a row whose account lives in
+a comment reads exactly like a row nobody accounted for. Moving that paragraph
+into `[theory]` — the relation unchanged, the number unchanged, the confirmation
+unchanged — is the entire fix, and it is worth twenty-one rows:
+
+    subsystem     active  undefined    blocked   seeded
+    solar             62          0          0        2
+    sys                7          0          0        0
+    …
+    total            182        137          0     1076
+
+**Solar weather is the one subsystem with nothing undefined and nothing blocked.**
+Its two remaining rows are `sw_kp_driving_slot` and `sw_band_confidence`, seeded
+by §30 B1 and B2, each waiting on a person's value — which is the state this
+repository uses to say exactly that.
+
+### 46.6 · `xtask active`
+
+    cargo run -p xtask -- active [<subsystem>]
+
+Three states, computed from the sheets so it answers on a tree that cannot run:
+
+- **active** — an input, or a function whose relation the sheet derives, reading
+  only active rows;
+- **undefined** — a function whose relation is stated and never derived. Its own
+  fault, one sheet edit from being fixed;
+- **blocked** — defined in itself, reading something that is not. **Named**,
+  because "not active" without the name is a dead end for whoever has to fix it.
+
+The undefined list is ordered by how many rows wait on each one, so the
+twenty-six-row entry is at the top rather than in alphabetical order somewhere in
+the middle. That ranking is the only reason `orbit_mission_duration` was found.
+
+### 46.7 · Six tests, and what they cost to write
+
+`crates/vleo-modules/tests/undefined_does_not_answer.rs`, over the assembled tree
+rather than a hand-built table — so the day somebody derives `aero_drag_force`
+the row moves from one side of the assertions to the other and nothing needs
+editing.
+
+Every one was checked by breaking what it covers:
+
+| mutation | what went red |
+|---|---|
+| `is_defined` always true (no refusal) | `every_undefined_function_refuses_by_name` |
+| `is_defined` always false (refuse everything) | `an_input_answers_from_its_default`, `a_consumer_blocks_on_a_named_row` |
+| drop the input exemption | the same two |
+| mathematics scored on the citation again | `mathematics_is_scored_on_the_attribution_not_the_citation` |
+| unconfirmed withheld instead of discounted | the same one |
+
+Two of them exist only to stop the others being vacuous: a tree with no derived
+functions would pass `every_undefined_function_refuses_by_name` perfectly.
+
+**The 590 tests that already existed did not move.** The tool went from 303
+answers to 182 and every one of them stayed green, because a fixture calls
+`model::evaluate` directly. That is the right seam — a fixture asks *does this
+code compute what the source says*, which is a question about code, and the
+resolver answers *what is the design's number*, which is not — but it is also a
+measurement of how much of this change nothing was watching.
+
+### 46.8 · What is not done
+
+- **137 functions are undefined**, and each needs a derivation written by
+  somebody who knows where the relation came from. An agent may not supply one:
+  that is rule 1 of `AGENTS.md` and the reason this refusal exists at all.
+- `env_exospheric_temperature` is derived and **unsigned** — it answers, and
+  reports 1 of 4 for mathematics. The signature is §30 step 3's open item.
+- The face still presents an active and an inactive row the same way. The kernel
+  now knows the difference; the shell has not been told.

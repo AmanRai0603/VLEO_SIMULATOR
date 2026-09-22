@@ -170,6 +170,23 @@ pub fn evaluate<T: NodeTable + ?Sized>(
             record_block(ws, &mut blocked, &mut first_fault, node, f);
             continue;
         }
+        // A function nobody derived does not answer.
+        //
+        // It would answer perfectly well — it has an expression, a citation,
+        // filled holes and fixtures that pass. That is exactly the problem: a
+        // relation somebody worked out and a relation somebody typed are the
+        // same shape at this point, and what tells them apart is whether the
+        // sheet says where it came from. So the run refuses here rather than
+        // printing a number the design has never accounted for, and every
+        // consumer blocks on it by name — a refusal is never a substitution.
+        //
+        // An input is exempt. A default is a definition; see
+        // `NodeDef::is_defined`.
+        if !def.is_defined() {
+            let f = Fault::Undefined { node: def.id };
+            record_block(ws, &mut blocked, &mut first_fault, node, f);
+            continue;
+        }
         // Declared values publish themselves; there is nothing to compute.
         //
         // Unless the case supplied one. A case is per-customer values against

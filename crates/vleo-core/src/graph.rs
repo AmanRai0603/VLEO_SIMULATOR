@@ -221,6 +221,27 @@ pub struct NodeDef {
     pub expression: &'static str,
     /// The identifier of a row in `sources/`.
     pub source: &'static str,
+    /// Who supplied this relation, and when — the sheet's `[maths]
+    /// confirmed_by`.
+    ///
+    /// A citation says where a relation was found. This says a person read it
+    /// there. Only the second rules out a relation an agent invented, and an
+    /// invented relation that runs cleanly looks exactly like a cited one — so
+    /// this is what the mathematics factor of the credibility vector is scored
+    /// on, not the citation.
+    ///
+    /// It does not decide whether the row answers. That is `derived`.
+    pub relation_by: &'static str,
+    /// Whether the sheet carries the relation's derivation — its `[theory]`:
+    /// why it is this relation, what the answer means, and the steps it comes
+    /// in.
+    ///
+    /// The prose itself stays on the page; the fact is here, because the fact
+    /// is what decides whether the row answers. A relation that is stated and
+    /// never derived has an expression, a citation and a number it would
+    /// happily print, and nothing a reader can check it against. See
+    /// [`NodeDef::is_defined`] and [`crate::fault::Fault::Undefined`].
+    pub derived: bool,
     /// Each assumption, and the condition under which it stops holding.
     pub assumptions: &'static [(&'static str, &'static str)],
     /// The numbered algorithm. Each step becomes one hole.
@@ -247,6 +268,43 @@ pub struct NodeDef {
     /// its verdict and its provenance — which is what all but a handful of
     /// nodes want.
     pub view: View,
+}
+
+impl NodeDef {
+    /// Is this row a function — something that works a number out — as against
+    /// a row that states one?
+    ///
+    /// Asked of the algorithm rather than of `kind`, because the algorithm is
+    /// the thing that runs. A row with steps has a body; a row without one
+    /// publishes what it was handed.
+    pub fn is_function(&self) -> bool {
+        !self.steps.is_empty()
+    }
+
+    /// Has a person defined it?
+    ///
+    /// The two halves of the tree answer this differently, and they should.
+    ///
+    /// An **input** is defined by carrying a value. A default is a definition:
+    /// somebody chose it, `[value] confirmed_by` says who, and the face lets it
+    /// be edited — that is the whole point of an input.
+    ///
+    /// A **function** is defined by its derivation. Not by its expression,
+    /// which is one line anybody can type, and not by its citation, which says
+    /// a paper exists rather than that this relation came out of it. The
+    /// derivation is the part that says where the relation came from and what
+    /// its answer means, and it is the one thing a reader cannot recover from
+    /// any other field — so a function without it is a relation nobody has
+    /// accounted for, and the number it would print is the scaffold's.
+    ///
+    /// This is deliberately a weaker bar than `relation_by`, which is a second
+    /// person reading the relation against its source. That one is worth
+    /// credibility, not silence: a derived-but-unconfirmed row answers, and
+    /// says on its page that nobody has checked it. A row that is neither does
+    /// not answer at all. See [`crate::fault::Fault::Undefined`].
+    pub fn is_defined(&self) -> bool {
+        !self.is_function() || self.derived
+    }
 }
 
 /// How a node's result is drawn. Declared on the sheet, in the same file as the

@@ -1197,15 +1197,25 @@ pub fn gap_pass(sh: &Sheet, holes: &BTreeMap<u32, String>) -> Vec<String> {
     if sh.assumptions.is_empty() && !sh.is_declared() && sh.steps.len() > 1 {
         g.push("no assumption stated — a multi-step relation always has at least one".into());
     }
-    // A relation nobody explained. Reported as a gap rather than a failure: it
-    // blocks the second review, where somebody has to agree the relation is the
-    // right one, and that reviewer cannot do it from a single line of algebra.
+    // A relation nobody explained. On a function this is not only a review
+    // problem any more: the resolver refuses the row, so the gap and the
+    // silence are the same fact and the message says which one it is. On a
+    // declared value there is no algorithm to derive and the row still answers,
+    // so it stays what it was — a gap against the second review, where somebody
+    // has to agree the relation is the right one and cannot do it from a single
+    // line of algebra.
     if sh.theory.is_empty() && !sh.expression.trim().is_empty() {
-        g.push(
+        g.push(if sh.steps.is_empty() {
             "no theory: the relation is stated but not derived, so a reviewer can check what it \
              computes and not whether it is the right thing to compute"
-                .into(),
-        );
+                .into()
+        } else {
+            "no theory: the relation is stated but not derived — THE ROW DOES NOT ANSWER. A \
+             function is defined by its derivation, not by its expression and not by its \
+             citation, and until one is written every reader of this row is blocked on it \
+             by name"
+                .to_string()
+        });
     }
     g
 }
@@ -1463,7 +1473,8 @@ pub fn tables_rs(tree: &Tree) -> String {
             "    NodeDef {{ id: \"{id}\", label: \"{label}\", subsystem: \"{sub}\", folder: \"{folder}\", \
              parent: \"{par}\", layer: {layer}, order: {order}, crosses_to: \"{crosses}\", \
              kind: {kind}, state: {state}, retirement: Retirement::Live, owner: \"{owner}\", tier: {tier}, \
-             question: \"{q}\", expression: \"{e}\", source: \"{src}\", assumptions: &[{asm}], steps: &[{steps}], \
+             question: \"{q}\", expression: \"{e}\", source: \"{src}\", relation_by: \"{rby}\", derived: {derived}, \
+             assumptions: &[{asm}], steps: &[{steps}], \
              inputs: &[{inputs}], outputs: &[{outputs}], contributes: &[{kpis}], bundles: &[{bundles}], \
              fixtures: &[{fixtures}], sheet_hash: 0x{sh_hash:016x}, impl_hash: 0x{im_hash:016x}, view: {view} }},\n",
             id = esc(&sh.id),
@@ -1481,6 +1492,8 @@ pub fn tables_rs(tree: &Tree) -> String {
             q = esc(&sh.question),
             e = esc(&sh.expression),
             src = esc(&sh.source),
+            rby = esc(&sh.relation_by),
+            derived = !sh.theory.is_empty(),
             asm = assumptions,
             steps = steps,
             inputs = inputs,

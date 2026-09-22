@@ -227,10 +227,24 @@ pub fn score(
     let mut v = CredVec::ZERO;
 
     // Measurable from the sheet.
+    // Stated, cited, and — for a function — signed.
+    //
+    // A citation was doing two jobs here and can only do one. It says where the
+    // relation was found; it cannot say a person read it there, and a relation
+    // an agent invented carries a citation just as convincingly. So a function
+    // whose `[maths] confirmed_by` is blank scores 1, not 4: the mathematics is
+    // written down and nobody has vouched for it.
+    //
+    // This is the second rung, not the first. A function that is never derived
+    // does not reach here at all — the resolver refuses it, because there is
+    // nothing to score. A derived relation that nobody has checked against its
+    // source does reach here, answers, and says 1.
     v.set(
         Factor::Mathematics,
         if def.expression.is_empty() || def.source.is_empty() {
             0
+        } else if def.is_function() && def.relation_by.is_empty() {
+            1
         } else {
             4
         },
