@@ -11,7 +11,7 @@ owner = "environment"
 tier = "A"
 criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1368
+order = 1369
 state = "published"
 
 # No migrated_from and no parity grid. The blend below is prf_design's
@@ -203,7 +203,7 @@ reason_upper = "env_f107's upper bound is 400, above which the exospheric temper
 # against what the producer publishes — which is the only place the
 # whole graph is visible and therefore the only place to ask.
 binding = "today"
-var = "env_f107"
+var = "sw_f107_observed"
 type = "Ratio"
 
 [[input]]

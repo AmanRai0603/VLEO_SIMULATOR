@@ -1,9 +1,9 @@
 // GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
 // regeneration and fails the regeneration diff in the gate.
-//! `env_f107a` — Solar radio flux F10.7, 81-day mean
+//! `sw_f107_observed` — Observed F10.7, the forecast's anchor
 //!
-//! What 81-day mean 10.7 cm radio flux is the design sized to?
+//! What is the 10.7 cm radio flux doing now, for the forecast to start from?
 
 #[path = "model.rs"]
 pub mod model;

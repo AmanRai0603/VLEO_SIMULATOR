@@ -11,7 +11,7 @@ owner = "environment"
 tier = "A"
 criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1370
+order = 1371
 # RETIRED, BECAUSE IT WAS A SECOND NAME FOR ONE NUMBER. Its whole relation is
 # F107A(epoch) = F107_cyc(phase(epoch)), and sw_mean_cycle_level already reads
 # sw_cycle_phase -- so it is already the mean-cycle level AT the mission epoch.

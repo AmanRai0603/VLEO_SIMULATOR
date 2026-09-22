@@ -1,4 +1,4 @@
-<article class="node" data-node="sw_activity_band" data-sheet-hash="0fb263" data-impl-hash="4023f6">
+<article class="node" data-node="sw_activity_band" data-sheet-hash="06f61f" data-impl-hash="4023f6">
 <header class="node-head">
   <nav class="crumb"><a class="xref" data-group="root">VLEO multipayload programme</a> <span class="sep">/</span> <a class="xref" data-group="l3_solar">Solar weather — addition</a></nav>
   <h2>F10.7 activity band</h2>
@@ -45,7 +45,7 @@
 <section class="panel" data-panel="2">
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
-<tr><td>in</td><td><code>f107</code></td><td><a class="xref" data-goto="env_f107">env_f107</a></td><td>Ratio</td><td>-</td></tr>
+<tr><td>in</td><td><code>f107</code></td><td><a class="xref" data-goto="sw_f107_observed">sw_f107_observed</a></td><td>Ratio</td><td>-</td></tr>
 <tr class="out"><td>out</td><td><code>band</code></td><td>sw_activity_band</td><td>Ratio</td><td>-</td></tr>
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
@@ -56,7 +56,7 @@
 </ol>
 <h4>Pseudocode</h4>
 <pre class="pseudo"><code>function sw_activity_band(f107: Ratio) -> Ratio
-    given f107 from env_f107
+    given f107 from sw_f107_observed
     // count how many of the three published edges this flux has reached, and add one
     b ← step 1
 
@@ -111,7 +111,7 @@ use vleo_core::units::*;
 pub const NODE_ID: &amp;str = &quot;sw_activity_band&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a
 /// different one refuses to run rather than showing a stale page.
-pub const SHEET_HASH: u64 = 0x13655a54560fb263;
+pub const SHEET_HASH: u64 = 0xdf9258212406f61f;
 
 pub fn evaluate(f107: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
     // ---- HOLE 1 : count how many of the three published edges this flux has reached, and add one -&gt; Ratio

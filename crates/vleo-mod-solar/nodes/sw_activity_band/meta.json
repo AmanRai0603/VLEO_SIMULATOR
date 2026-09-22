@@ -1,7 +1,7 @@
 {
   "id": "sw_activity_band",
   "state": "published",
-  "sheet_hash": "0fb263",
+  "sheet_hash": "06f61f",
   "impl_hash": "4023f6",
   "owner": "environment",
   "tier": "A",
@@ -11,7 +11,7 @@
   "differential_fill": false,
   "migrated_from": "",
   "holes": 1,
-  "inputs": ["env_f107"],
+  "inputs": ["sw_f107_observed"],
   "contributes": [],
   "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did"]
 }

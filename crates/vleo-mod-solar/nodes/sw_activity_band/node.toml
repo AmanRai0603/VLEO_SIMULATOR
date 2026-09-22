@@ -11,7 +11,7 @@ owner = "environment"
 tier = "A"
 criticality = "minor"   # minor | significant — significant means two reviewers and a differential fill
 layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
-order = 1355
+order = 1356
 state = "published"
 
 # No migrated_from and no parity grid. The relation is four published band
@@ -116,7 +116,7 @@ reason_upper = "there are four bands and the highest is 4, unbounded above in fl
 # against what the producer publishes — which is the only place the
 # whole graph is visible and therefore the only place to ask.
 binding = "f107"
-var = "env_f107"
+var = "sw_f107_observed"
 type = "Ratio"
 
 [[algorithm.step]]
