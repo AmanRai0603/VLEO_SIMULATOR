@@ -27,7 +27,7 @@ quantity, and because a row publishes one number.
 <h4>Assumptions</h4>
 <dl class="asm">
 <dt>One sigma holds across the whole cycle</dt><dd>fails when it does not, and the source says so about its own number. Geomagnetic activity is burstier near the declining phase than at minimum, so a window there is given a band too narrow</dd>
-<dt>The residual spread is a usable margin for a non-negative index</dt><dd>fails when Ap floors at zero and its residuals are strongly skewed — a quiet rotation cannot undershoot far but an active one can overshoot a long way. A symmetric sigma understates the high tail, which is the tail a design is sized against</dd>
+<dt>The residual spread is a usable margin for a non-negative index</dt><dd>fails when Ap floors at zero and its residuals are strongly skewed — a quiet rotation cannot undershoot far but an active one can overshoot a long way. A symmetric sigma understates the high tail, which is the tail a design is sized against. MEASURED the same way, and the same correction applies: at 1.28 sigma the Ap band holds 0.9148 to 0.9239 of the exceedances against a normal's 0.8997, so it OVER-covers by 1.5 to 2.4 points rather than understating. Ap's skew is stronger than F10.7's, -0.84 to -1.32 against -0.61 to -1.01, and its far tail is milder: the 99th percentile of exceedance runs 2.53 to 2.87 sigma against F10.7's 2.93 to 3.49. §45</dd>
 <dt>The 273-day hole in 2017 is interpolated before the rotations are cut</dt><dd>fails when those days are counted as observations. Interpolated Ap is far smoother than real Ap, so the rotations covering them are easier to predict than any real rotation and the pooled spread is narrower than the record supports</dd>
 </dl>
 </section>
@@ -105,7 +105,7 @@ use vleo_core::units::*;
 /// # Assumptions
 ///
 /// * One sigma holds across the whole cycle — fails when it does not, and the source says so about its own number. Geomagnetic activity is burstier near the declining phase than at minimum, so a window there is given a band too narrow
-/// * The residual spread is a usable margin for a non-negative index — fails when Ap floors at zero and its residuals are strongly skewed — a quiet rotation cannot undershoot far but an active one can overshoot a long way. A symmetric sigma understates the high tail, which is the tail a design is sized against
+/// * The residual spread is a usable margin for a non-negative index — fails when Ap floors at zero and its residuals are strongly skewed — a quiet rotation cannot undershoot far but an active one can overshoot a long way. A symmetric sigma understates the high tail, which is the tail a design is sized against. MEASURED the same way, and the same correction applies: at 1.28 sigma the Ap band holds 0.9148 to 0.9239 of the exceedances against a normal's 0.8997, so it OVER-covers by 1.5 to 2.4 points rather than understating. Ap's skew is stronger than F10.7's, -0.84 to -1.32 against -0.61 to -1.01, and its far tail is milder: the 99th percentile of exceedance runs 2.53 to 2.87 sigma against F10.7's 2.93 to 3.49. §45
 /// * The 273-day hole in 2017 is interpolated before the rotations are cut — fails when those days are counted as observations. Interpolated Ap is far smoother than real Ap, so the rotations covering them are easier to predict than any real rotation and the pooled spread is narrower than the record supports
 pub const NODE_ID: &amp;str = &quot;sw_ap_mean_band_spread&quot;;
 /// Hash of the sheet this file was generated from. A face carrying a

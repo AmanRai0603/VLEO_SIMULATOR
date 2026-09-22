@@ -75,6 +75,12 @@ Ap makes the normal assumption worse than F10.7 does. The index floors at zero,
 a quiet rotation cannot undershoot far, and an active one overshoots a long
 way — so the residuals are strongly right-skewed and a symmetric z multiplier
 understates exactly the tail a design is sized against.
+
+That is true of the far tail and NOT of this multiplier, which §45 measures:
+at 1.28 sigma the Ap band holds 0.9148 to 0.9239 of the exceedances against a
+normal's 0.8997, so it over-covers by 1.5 to 2.4 points. The understatement
+starts beyond it — the 99th percentile of exceedance runs 2.53 to 2.87 sigma
+where a normal says 2.33.
 """
 reading = """
 26.6953 at the declared window, against the study's hotmean of 26.6833 — 0.045

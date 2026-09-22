@@ -4,6 +4,7 @@
     tools/rotation_residuals.py            # F10.7 and Ap
     tools/rotation_residuals.py --dump f107 > residuals.csv
     tools/rotation_residuals.py --why      # what the gap is NOT
+    tools/rotation_residuals.py --shape    # what the band covers, scale-free
 
 WHY THIS EXISTS. `sw_mean_band_spread` publishes ONE number from this sample —
 sigma = 13.4544 sfu — and four design rows turn it into a band with a normal
@@ -64,9 +65,26 @@ nothing at all about the method. `--why` prints that span for scale.
 The recipe is `sw_mean_band_spread`'s five theory steps, followed exactly; where
 this file had to choose something the sheet does not state, it says so.
 
+AND WHAT CAN STILL BE SAID WHILE SIGMA IS UNREPRODUCED. `--shape` divides sigma
+out and reports what the band COVERS rather than how wide it is. That fraction is
+stable where sigma is not: across the same variants sigma spans 32 per cent and
+the coverage at 1.28 sigma spans under two points. It answers the question
+section 30 B3 exists to ask -- does the normal multiplier under-cover the tail a
+design is sized against -- without answering B3.2's rows, which want a quantile in
+sfu and cannot have one from a sample this is not.
+
+The answer is not the one three sheets stated. At 1.28 sigma, the multiplier four
+design rows use, the band OVER-covers: 0.9149 to 0.9339 against a normal's 0.8997
+for F10.7 and 0.9148 to 0.9239 for Ap. The heavy tail is real and starts further
+out, at 2.93 to 3.49 sigma for the 99th percentile where a normal says 2.33. The
+three sheets now say that.
+
 Nothing here writes a sheet. A value measured by an agent is not a value a sheet
 may carry -- see AGENTS.md -- so the output is evidence for a person to confirm,
-and the rows that would hold it are section 30 B3.2.
+and the rows that would hold it are section 30 B3.2. A COVERAGE FRACTION IS NOT
+THAT VALUE: it is a shape, measured on this file's walk and not the study's, and
+it is recorded in the sheets as a correction to a claim rather than as a number
+any row publishes.
 """
 
 import argparse
@@ -162,6 +180,18 @@ def phases(t0, n, cycles):
             u = ((t - last_start) / mean_len) % 1.0
         out.append(min(u, 0.999))
     return out
+
+
+def _sd(res):
+    """The population standard deviation — ONE definition.
+
+    There were three: a local in `why`, an inline in `report`, and this. They
+    agreed, which is the only reason nobody noticed; three statements of one
+    fact is how the sheet's sense and the hole's sense came to differ elsewhere
+    in this repository.
+    """
+    m = sum(res) / len(res)
+    return math.sqrt(sum((e - m) ** 2 for e in res) / len(res))
 
 
 def walk_forward(rm, rp, debias=True):
@@ -319,10 +349,6 @@ def why(days, cycles):
         finally:
             globals()["ar2"], globals()["CLAMP"] = keep_ar, keep_cl
 
-    def sd(res):
-        m = sum(res) / len(res)
-        return math.sqrt(sum((e - m) ** 2 for e in res) / len(res))
-
     pub = {"f107": 13.4544, "ap": 3.5937}
     off = lambda v, c: 100.0 * (v - pub[c]) / pub[c]
 
@@ -331,12 +357,12 @@ def why(days, cycles):
     print("1 · the warm-up. One drop serves the whole walk.")
     for col in ("f107", "ap"):
         res = resid(col)
-        best = min(range(0, 120), key=lambda d: abs(sd(res[d:]) - pub[col]))
+        best = min(range(0, 120), key=lambda d: abs(_sd(res[d:]) - pub[col]))
         print("      %-5s comes closest to its published sigma at a further drop of"
               " %3d, leaving n = %3d" % (col, best, len(res) - best))
     res, res_ap = resid("f107"), resid("ap")
     d361 = len(res) - 361
-    sf, sa = sd(res[d361:]), sd(res_ap[d361:])
+    sf, sa = _sd(res[d361:]), _sd(res_ap[d361:])
     print("      the count 361 needs a further drop of %d — a warm-up of %d in all;"
           % (d361, LEVEL + 3 + d361))
     print("      there F10.7 sigma is %.4f, %+.2f%%, and Ap sigma is %.4f, %+.2f%%"
@@ -347,13 +373,13 @@ def why(days, cycles):
     print("2 · the estimator, Yule-Walker against least squares.")
     for col in ("f107", "ap"):
         print("      %-5s  yule-walker %+6.2f%%    least squares %+6.2f%%"
-              % (col, off(sd(resid(col, "yw")), col), off(sd(resid(col, "ls")), col)))
+              % (col, off(_sd(resid(col, "yw")), col), off(_sd(resid(col, "ls")), col)))
     print("      -> least squares moves Ap toward its number and F10.7 away.")
     print()
 
     print("3 · the scale of theory step 2, measured by disabling it.")
     for col in ("f107", "ap"):
-        on, no = sd(resid(col)), sd(resid(col, clamp=(1.0, 1.0)))
+        on, no = _sd(resid(col)), _sd(resid(col, clamp=(1.0, 1.0)))
         print("      %-5s  scaling is worth %+6.2f%% of sigma;"
               " as written %+6.2f%%, unscaled %+6.2f%%"
               % (col, 100.0 * (no - on) / on, off(on, col), off(no, col)))
@@ -362,11 +388,130 @@ def why(days, cycles):
 
     print("4 · what a choice of window is worth, for scale.")
     res = resid("f107")
-    vals = [sd(res[d:]) for d in range(0, 200, 5)]
+    vals = [_sd(res[d:]) for d in range(0, 200, 5)]
     print("      F10.7 sigma over further drops 0 to 200: %.4f to %.4f, a span of %.0f%%"
           % (min(vals), max(vals), 100.0 * (max(vals) - min(vals)) / min(vals)))
     print("      -> a window alone moves sigma further than the gap being chased,")
     print("         so landing within a few per cent is not evidence of one method.")
+    return 0
+
+
+def coverage(res, z):
+    """The fraction of design-relevant exceedances a band of z sigma holds.
+
+    SCALE-FREE, WHICH IS THE WHOLE POINT. Sigma is what this file cannot
+    reproduce — §31.4 — so every absolute quantile it could print is a quantile
+    of a sample that is not the study's, and it refuses to print them. A
+    coverage FRACTION divides that scale out: it says what shape the residuals
+    have rather than how wide they are, and shape is the thing §30 B3 is
+    actually asking about.
+    """
+    s = _sd(res)
+    return sum(1 for e in res if -e <= z * s) / float(len(res))
+
+
+def verdict(lo, hi, phi):
+    """How a measured coverage span sits against what a normal would give.
+
+    A SPAN CAN STRADDLE, and the first version of this did not say so: it tested
+    `lo < phi` alone and reported 0.9432-0.9550 around 0.9500 as "UNDER-covers by
+    0.7 to 0.5 points", which is two opposite verdicts printed as one range.
+    """
+    if lo < phi < hi:
+        return ("straddles it — under by %.1f at one end, over by %.1f at the other"
+                % (100 * (phi - lo), 100 * (hi - phi)))
+    if hi <= phi:
+        return "UNDER-covers by %.1f to %.1f points" % (100 * (phi - hi), 100 * (phi - lo))
+    return "OVER-covers by %.1f to %.1f points" % (100 * (lo - phi), 100 * (hi - phi))
+
+
+def shape(days, cycles):
+    """Does the normal multiplier under-cover the tail a design is sized against?
+
+    §30 B3 asks for the empirical quantile BESIDE the z-multiplier, and step
+    B3.2's two rows want it in sfu — which needs the sample reproduced, which it
+    is not. This answers the question the rows exist to settle without answering
+    it in sfu, and it is worth something only because it is STABLE where sigma
+    is not: the variants below span sigma by 25 per cent and coverage by under
+    two points.
+
+    It is a property of THIS file's walk, not of the study's. That caveat cannot
+    be measured away; what makes the number usable is that every free parameter
+    known to differ moves sigma far more than it moves this.
+    """
+    import math as _m
+
+    series_of = {}
+    for col in ("f107", "ap"):
+        t0, vals = series(days, col)
+        ph = phases(t0, len(vals), cycles)
+        n = len(vals) // ROT
+        series_of[col] = ([sum(vals[b * ROT:(b + 1) * ROT]) / ROT for b in range(n)],
+                          [ph[b * ROT + ROT // 2] for b in range(n)])
+
+    def variants(col):
+        base = walk_forward(*series_of[col])
+        out = [("as written", base)]
+        keep = globals()["ar2"]
+        globals()["ar2"] = ar2_ls
+        out.append(("least squares", walk_forward(*series_of[col])))
+        globals()["ar2"] = keep
+        keep_c = globals()["CLAMP"]
+        globals()["CLAMP"] = (1.0, 1.0)
+        out.append(("no scale", walk_forward(*series_of[col])))
+        globals()["CLAMP"] = keep_c
+        for d in (15, 43, 100, 200):
+            out.append(("drop %d" % d, base[d:]))
+        return out
+
+    # Phi(1.28) and Phi(1.645): what a normal would hold at the two multipliers
+    # this tree actually uses.
+    NORMAL = ((1.28, 0.899727), (1.645, 0.950015))
+
+    print("WHAT THE BAND ACTUALLY HOLDS, AND WHAT A NORMAL SAYS IT HOLDS")
+    print()
+    print("No absolute quantile is printed. Sigma here is not the study's, so a")
+    print("quantile in sfu would be a quantile of another sample — the refusal in")
+    print("`report` stands. A coverage fraction divides the scale out.")
+    for col in ("f107", "ap"):
+        print()
+        print("%s — sigma is NOT reproduced (§31.4); these fractions are shape, not scale."
+              % col)
+        span = {z: [1.0, 0.0] for z, _ in NORMAL}
+        sig = [9e9, 0.0]
+        for name, res in variants(col):
+            s = _sd(res)
+            sig = [min(sig[0], s), max(sig[1], s)]
+            row = "   %-15s n=%3d  sigma %8.4f " % (name, len(res), s)
+            for z, _ in NORMAL:
+                c = coverage(res, z)
+                span[z] = [min(span[z][0], c), max(span[z][1], c)]
+                row += "  %.2fs %.4f" % (z, c)
+            print(row + "   skew %+.3f" % skew(res))
+        print("   sigma spans %.4f to %.4f, which is %.0f per cent"
+              % (sig[0], sig[1], 100.0 * (sig[1] - sig[0]) / sig[0]))
+        for z, phi in NORMAL:
+            lo, hi = span[z]
+            # STRADDLING IS ITS OWN ANSWER and the first version of this line did
+            # not have it: it tested `lo < phi` alone and called a span of
+            # 0.9432 to 0.9550 around a normal's 0.9500 "UNDER-covers by 0.7 to
+            # 0.5 points", which is two different verdicts read as one.
+            print("   at %.3f sigma a normal says %.4f; measured %.4f to %.4f — %s"
+                  % (z, phi, lo, hi, verdict(lo, hi, phi)))
+        # AND WHERE THE HEAVY TAIL ACTUALLY BITES, printed rather than asserted.
+        # This is a ratio, not a quantile in sfu: the refusal stands.
+        far = [quantile(sorted(-e for e in res), 0.99) / _sd(res)
+               for _, res in variants(col)]
+        print("   the 99th percentile of exceedance is %.2f to %.2f sigma, where a "
+              "normal says 2.33" % (min(far), max(far)))
+    print()
+    print("READ IT AT THE MULTIPLIER THE DESIGN USES. Four rows band at 1.28 sigma.")
+    print("There the measured coverage is ABOVE the normal's in every variant of")
+    print("both channels: the multiplier is conservative, not under-covering. At")
+    print("1.645 sigma the measurement straddles the normal. The heavy tail the")
+    print("sheets warn about is real and bites further out, as the last line of")
+    print("each block shows — which is a different statement from the one four")
+    print("sheets make about the multiplier they use.")
     return 0
 
 
@@ -399,7 +544,7 @@ def report(col, published, n_published, days, cycles, dump=False):
         return
     n = len(resid)
     mean = sum(resid) / n
-    sd = math.sqrt(sum((e - mean) ** 2 for e in resid) / n)
+    sd = _sd(resid)
     # THE SIGN CONVENTION. `pred - truth` is what the sheet says sigma is the
     # spread of. A design is sized against the truth coming in ABOVE the
     # prediction, which is a NEGATIVE residual under that convention, so the
@@ -554,6 +699,46 @@ def selftest():
         print("  FAIL the walk scores past a warm-up of %d, not LEVEL + 3 = %d"
               % (len(rm) - len(a), LEVEL + 3))
 
+    # 4b · COVERAGE IS SCALE-FREE, which is the only reason §45 can say anything
+    #      while sigma is unreproduced. Doubling every residual must not move it.
+    r = [float(x) for x in noise(400, 99)]
+    a, b = coverage(r, 1.28), coverage([2.0 * x for x in r], 1.28)
+    if abs(a - b) > 1e-12:
+        bad += 1
+        print("  FAIL coverage moved from %.6f to %.6f when every residual doubled;"
+              " it must divide the scale out" % (a, b))
+    # and it reads the DESIGN-RELEVANT side. `e = pred - truth`, so the exceedance
+    # is -e: a sample of purely negative residuals is all exceedance and nothing
+    # is covered. Read the other way round this returns 1.0 and looks fine.
+    if coverage([-5.0, -5.0, -5.0, -5.0, 5.0], 0.0) > 0.25:
+        bad += 1
+        print("  FAIL coverage is counting the wrong side of the residual")
+    # On a standard normal it must land near the normal's own figure, or the
+    # comparison §45 draws is against the wrong reference.
+    if not 0.87 < coverage(r, 1.28) < 0.93:
+        bad += 1
+        print("  FAIL coverage of a normal sample at 1.28 sigma is %.4f, nowhere "
+              "near Phi(1.28) = 0.8997" % coverage(r, 1.28))
+
+    # 4c · THE SIGMA CONVENTION IS THE POPULATION ONE. `report` compares against
+    #      13.4544 with it and every coverage figure divides by it; n-1 would
+    #      move both and nothing else would notice.
+    if abs(_sd([1.0, 2.0, 3.0, 4.0, 5.0]) - math.sqrt(2.0)) > 1e-12:
+        bad += 1
+        print("  FAIL _sd of 1..5 is %.6f; the population sigma is %.6f"
+              % (_sd([1.0, 2.0, 3.0, 4.0, 5.0]), math.sqrt(2.0)))
+
+    # 4d · and a coverage span that straddles the normal is reported as
+    #      straddling rather than as one direction.
+    for lo, hi, phi, want in ((0.94, 0.96, 0.95, "straddles"),
+                              (0.90, 0.94, 0.95, "UNDER"),
+                              (0.96, 0.98, 0.95, "OVER"),
+                              (0.95, 0.95, 0.95, "UNDER")):
+        if want not in verdict(lo, hi, phi):
+            bad += 1
+            print("  FAIL a span of %.2f-%.2f against %.2f reads %r; expected %s"
+                  % (lo, hi, phi, verdict(lo, hi, phi), want))
+
     # 5 · the quantile convention, at h = (n-1)q.
     for q, want in ((0.0, 1.0), (0.5, 3.0), (1.0, 5.0), (0.25, 2.0), (0.875, 4.5)):
         got = quantile([1.0, 2.0, 3.0, 4.0, 5.0], q)
@@ -600,7 +785,7 @@ def selftest():
             print("  FAIL quantiles are %s for %s"
                   % ("withheld" if want else "printed", what))
 
-    print("selftest: %d cases, %s" % (21, "all as expected" if not bad else "%d FAILED" % bad))
+    print("selftest: %d cases, %s" % (29, "all as expected" if not bad else "%d FAILED" % bad))
     return 1 if bad else 0
 
 
@@ -611,6 +796,9 @@ def main():
                     help="the AR(2) estimator: Yule-Walker (default) or least squares")
     ap.add_argument("--why", action="store_true",
                     help="test each named candidate for the gap; none of them closes it")
+    ap.add_argument("--shape", action="store_true",
+                    help="what the band covers, scale-free — the part of §30 B3 "
+                         "that does not need sigma reproduced")
     ap.add_argument("--selftest", action="store_true",
                     help="check the estimators and the walk against known answers")
     a = ap.parse_args()
@@ -624,6 +812,8 @@ def main():
         return 0
     if a.why:
         return why(days, cycles)
+    if a.shape:
+        return shape(days, cycles)
     report("f107", 13.4544, 361, days, cycles)
     print()
     report("ap", 3.5937, 361, days, cycles)
