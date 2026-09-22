@@ -7,7 +7,7 @@ is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the
 reasons are part of the register rather than a comment in the code.
 
-**1395 rows** — 665 a person picked, 730 worked out. Two thirds of any design tree is
+**1396 rows** — 663 a person picked, 733 worked out. Two thirds of any design tree is
 the first kind: cheaper than a computed node, and not free, because every margin
 in the design is built out of them.
 
@@ -2571,51 +2571,63 @@ A node that consumes density and does not carry this forward is a node whose mar
 
 ### `env_f107` — Solar radio flux F10.7, daily
 
-> How active is the Sun today, on the 10.7 cm radio flux index?
+> What daily 10.7 cm radio flux is the design sized to?
 
 | | |
 |---|---|
 | symbol | `F107` |
 | type | `Ratio` |
 | unit | - |
-| kind | declared |
+| kind | computed |
 | owner | environment |
 | evidence tier | A |
-| relation | `F107 = 150` |
-| source | `noaa_swpc` |
-| declared value | **150** - |
-| confirmed by | A. Rai / 2026-09-01 |
+| relation | `F107 = F107_sys_daily` |
+| source | `orbitt_case_c1` |
 | valid over | 60 … 400 - |
 
 - **lower bound** — below 60 sfu has never been observed; the fit has no support there
 - **upper bound** — above 400 sfu is beyond the largest recorded daily value, so the temperature relation is extrapolated
-- **read by** — `env_exospheric_temperature`, `sw_activity_band`, `sw_central_expectation`
+- **reads** — `sys_space_environment_f10_7`
+- **read by** — `env_exospheric_temperature`
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-Shipped climatology stands in when no solar-drivers bundle is synced, and the run is marked amber.
+The number the density chain is built on. It is no longer declared here: the
+solar-weather subsystem computes it over the mission window and publishes it
+through l3_solar_interface, layer 2 carries it as sys_space_environment_f10_7,
+and this row carries it into the subsystems that read it.
+
+It is a SUSTAINED level over the window, not the flux on a day. What the Sun is
+doing now is a different question and a different row — sw_f107_observed, which
+is what the subsystem's own forecast starts from.
+
 
 ### `env_f107a` — Solar radio flux F10.7, 81-day mean
 
-> Where has the Sun been sitting over the last three solar rotations?
+> What 81-day mean 10.7 cm radio flux is the design sized to?
 
 | | |
 |---|---|
 | symbol | `F107A` |
 | type | `Ratio` |
 | unit | - |
-| kind | declared |
+| kind | computed |
 | owner | environment |
 | evidence tier | A |
-| relation | `F107A = 150` |
-| source | `noaa_swpc` |
-| declared value | **150** - |
-| confirmed by | A. Rai / 2026-09-01 |
+| relation | `F107A = F107bar_sys` |
+| source | `orbitt_case_c1` |
 | valid over | 60 … 400 - |
 
 - **lower bound** — same support limit as the daily value
 - **upper bound** — same support limit as the daily value
+- **reads** — `sys_space_environment_f10_7_81day`
 - **read by** — `env_exospheric_temperature`
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
 
-Separate from the daily value on purpose: the mean sets where the atmosphere sits, the daily value sets how far it is from there today.
+The slow solar term the thermosphere relation weights 3.24 — the dominant one.
+Computed by the solar-weather subsystem over the mission window and carried
+here through layer 2, for the same reason as env_f107: one row owns the answer
+and the rest read it.
+
 
 ### `env_knudsen` — Knudsen number
 
@@ -2641,25 +2653,35 @@ Separate from the daily value on purpose: the mean sets where the atmosphere sit
 
 ### `env_kp` — Planetary geomagnetic index Kp
 
-> How disturbed is the geomagnetic field?
+> What planetary geomagnetic index is the design sized to?
 
 | | |
 |---|---|
 | symbol | `Kp` |
 | type | `Ratio` |
 | unit | - |
-| kind | declared |
+| kind | computed |
 | owner | environment |
 | evidence tier | A |
-| relation | `Kp = 3` |
-| source | `noaa_swpc` |
-| declared value | **3** - |
-| confirmed by | A. Rai / 2026-09-01 |
+| relation | `Kp = Kp_sys` |
+| source | `orbitt_case_c1` |
 | valid over | 0 … 9 - |
 
 - **lower bound** — Kp is defined on 0..9; a negative index is not a quiet day, it is a unit error
 - **upper bound** — Kp is defined on 0..9. This is the guard that catches an Ap value passed in by mistake, which would otherwise return an exospheric temperature of 1e18 K without complaint
+- **reads** — `sys_space_environment_kp`
 - **read by** — `env_density_uncertainty`, `env_exospheric_temperature`, `sw_storm_rate`
+- **evidence** — none. Nothing outside this code has agreed with what it computes, so its validation credibility factor is zero, which governs the whole vector.
+
+The geomagnetic driver of the thermosphere relation, computed by the solar-
+weather subsystem and carried here through layer 2.
+
+WHICH SLOT this is remains open. The subsystem publishes a daily MEAN slot and
+a daily PEAK slot per scenario and they are different numbers; sw_kp_driving_slot
+is the seeded row that will say which one a design is driven by, and it needs a
+person. Until it carries a value this row carries what layer 2 publishes, and
+env_exospheric_temperature's second assumption says so at length.
+
 
 ### `env_local_temperature` — Local kinetic temperature
 
@@ -19681,7 +19703,7 @@ an ordinary design band.
 
 - **lower bound** — there are four bands and the lowest is 1. A zero or negative band means the counting started in the wrong place, which would shift every label by one and still look like a valid answer
 - **upper bound** — there are four bands and the highest is 4, unbounded above in flux — band 4 holds everything from 170 sfu upward, including the record's largest day at 343. A fifth band means an edge was added without the range being updated
-- **reads** — `env_f107`
+- **reads** — `sw_f107_observed`
 - **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
 - **assumes** The bands are a published convention and this row is a lookup, not a measurement — fails when the four levels — low below 90, moderate 90 to 129, elevated 130 to 169, high 170 and above — are the standard NOAA F10.7 activity levels and prf_segment applies exactly these. Nothing here is fitted, so there is nothing in it to be wrong about this record, and equally nothing in it that adapts to this record: prf_segment ALSO offers data-driven terciles of the same quantity, which cut the archive into equal thirds and land in different places. Those are a different row and this is not it.
 - **assumes** A band is an ordinal label carried as a number, and arithmetic on it is meaningless — fails when the answer is 1, 2, 3 or 4 and the gaps between them are not equal in sfu — band 1 spans 26 sfu of observed record, band 4 spans 173. Averaging bands, interpolating between them, or treating band 4 as twice band 2 are all errors this row cannot prevent, because the tree carries one scalar per row and a label has to arrive as one. A consumer that wants a flux wants env_f107 or sw_f107_design.
@@ -20103,7 +20125,7 @@ Counted over 128135 day pairs at the same seventeen leads sw_uncertainty_growth 
 
 - **lower bound** — the answer is a weighted blend of today's F10.7 and a window mean of the analogue, so it cannot leave the interval between them. The analogue is bounded below by 0.324026 x 193.8580 = 62.8 sfu, its smallest shape on its smallest amplitude, and env_f107 by 60 because below 60 sfu has never been observed; the blend therefore floors at 60
 - **upper bound** — env_f107's upper bound is 400, above which the exospheric temperature relation is extrapolated past the largest recorded daily value. The analogue cannot exceed cycle 25's own 81-day peak of 225.1 sfu, and a blend cannot exceed its larger input, so this bound catches a broken weight or a broken table rather than an extreme sky
-- **reads** — `env_f107`, `orbit_mission_duration`, `sys_mission_requirements_mission_epoch`
+- **reads** — `sw_f107_observed`, `orbit_mission_duration`, `sys_mission_requirements_mission_epoch`
 - **read by** — `l3_solar_interface`, `sw_f107_cold_long`, `sw_f107_design`, `sw_f107_design_long`
 - **assumes** Two completed cycles is the whole sample, and eleven of the ninety-three grid points rest on one of them — fails when the record spans cycles 23, 24 and the incomplete 25, so the shape R is a mean of TWO curves and its spread between them is not published by this row. Where the two cycles' differing lengths leave only one of them covering a point — eleven of ninety-three, near the wrap — the value is that one cycle's shape rather than an average. Two cycles cannot establish that a shape repeats; they can only establish what the last two did, and this row says the next one resembles them because that is the best the record supports, not because it is known.
 - **assumes** Outside cycle 25 the amplitude is the mean of TWO completed cycles, and their spread is a factor of 1.41 — fails when cycle 23 peaked at 226.8 sfu and cycle 24 at 160.9, so the 193.9 this row uses for every future cycle is the midpoint of two numbers that differ by 41%. A window reaching past about 2030 is reading a level whose size is that average, and if the next cycle runs like cycle 23 the answer is 17% low, if like cycle 24 it is 17% high. That is an honest estimate rather than a repeat of the current cycle, which is what this row used to do, but two cycles cannot support an uncertainty on it and none is published. The row does not know, and does not claim to know, which kind of cycle comes next.
@@ -20684,6 +20706,42 @@ for months; this says what one day in twenty reaches while sitting there. A
 thermal case and a drag transient are sized on this one, an array and a
 propellant budget on its long sibling, and giving a design only one of the two
 decides for the reader which problem they have.
+
+
+### `sw_f107_observed` — Observed F10.7, the forecast's anchor
+
+> What is the 10.7 cm radio flux doing now, for the forecast to start from?
+
+| | |
+|---|---|
+| symbol | `F107_obs` |
+| type | `Ratio` |
+| unit | - |
+| kind | declared |
+| owner | environment |
+| evidence tier | A |
+| relation | `F107_obs = 150` |
+| source | `noaa_swpc` |
+| declared value | **150** - |
+| confirmed by | A. Rai / 2026-09-01, carried unchanged from env_f107 |
+| valid over | 60 … 400 - |
+
+- **lower bound** — the same floor env_f107 declared and for the same reason: below 60 sfu has never been observed and every relation reading F10.7 has no support there
+- **upper bound** — the same ceiling env_f107 declared: above 400 sfu is beyond the largest recorded daily value, so anything reading it is extrapolating
+- **read by** — `sw_activity_band`, `sw_central_expectation`
+- **assumes** One number stands for the current state of the Sun — fails when the question is asked at a lead short enough for persistence to carry weight. At a lead of days the flux on the day matters, the 27-day decay has barely started, and a round 150 would be doing real work badly. The declared lead range of this tree starts well past that, which is why it does not.
+- **assumes** It is a daily value, not an 81-day mean — fails when it is read as F10.7A. The two are different quantities with different ranges and the thermosphere relation uses both, weighting the mean 3.24 and the daily departure 1.3. sw_f107a_ratio is the row that relates them.
+
+This is the PERSISTENCE ANCHOR and nothing else. It is not the flux the design
+is sized to — that is what the subsystem computes and publishes through
+l3_solar_interface, and what env_f107 now carries into the density chain.
+
+It is worth knowing how little rests on it. The estimator that reads it weights
+it exp(-L / 27 d), which sw_central_expectation's own reading section puts at
+0.00114 at the SHORTEST lead its declared range allows, and at the declared
+five-year mission it is around 5e-30. Measured rather than argued: moving this
+row across its whole declared range, 60 to 400 sfu, leaves
+sw_central_expectation at 86.8497 to six figures.
 
 
 ### `sw_f107a_ratio` — Daily F10.7 scatter about F10.7A
@@ -28758,7 +28816,7 @@ they are separate rows in the subsystem below.
 - **lower bound** — the crossing's own floor, restated. A row that narrowed the range it received would be changing the answer while appearing to relay it
 - **upper bound** — the crossing's own ceiling, restated. This is a single-day value, so it is the one most likely of the pair to approach it
 - **reads** — `l3_solar_interface`
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **read by** — `env_f107`
 - **assumes** It receives and does not compute, and a reader here sees none of the subsystem's limitations — fails when a margin is taken against this number. It stacks a 1.28-sigma band edge on the rotation level with a within-rotation percentile on top, which is nearer a one-in-a-hundred day than a one-in-twenty one, and the two terms are not independent because a disturbed rotation is made of disturbed days. None of that crosses the seam
 - **assumes** It names one member of a fifteen-variable set, and five of them look alike — fails when the wrong member is named. The crossing's f107 column alone holds five values in the same range with the same unit and the same declared domain, and the ap column another five. Assembly checks that the variable EXISTS and that its type matches; nothing checks that it is the one this row meant
 - **assumes** It is the single day and not the sustained level — fails when somebody integrates it over a mission. The sustained level is what sys_space_environment_solar_flux carries, and a drag budget or an array sizing built on a single-day value is designing for a sky the mission does not sit in
@@ -28791,7 +28849,7 @@ they are separate rows in the subsystem below.
 - **lower bound** — the crossing's own floor, restated: an 81-day mean cannot sit below a floor every day of it respects
 - **upper bound** — the crossing's own ceiling, restated: above 400 sfu every consumer of F10.7 is extrapolating
 - **reads** — `l3_solar_interface`
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **read by** — `env_f107a`
 - **assumes** f107bar_hotday is the hot MEAN, not the 81-day mean of the hot day, and the two are different numbers — fails when a reader assumes the name means the latter. It is 104.07 where the hot day is 124.14. A *day scenario is a single day riding on the sustained level beneath it, so its 81-day companion is that sustained level; only the three *mean scenarios have the daily value and the 81-day mean equal. Taking the wrong one puts the atmosphere's background state twenty sfu out
 - **assumes** It pairs with the SINGLE-DAY flux row and not the sustained one — fails when somebody pairs it with sys_space_environment_solar_flux and thinks they have two numbers. That row carries 104.07 and so does this one, because the hot day's 81-day companion IS the hot sustained level — the two rows are the same value seen from two roles. The pair a density model wants is (124.14 daily, 104.07 background); the pair (104.07, 104.07) is the sustained scenario, which is a different case and not wrong, only different
 - **assumes** It receives and does not compute, and a reader here sees none of the subsystem's limitations — fails when a margin is taken against this number. It is a 1.28-sigma band edge — the 90th percentile, while the run is labelled 95 per cent — on a centre that beyond one cycle past cycle 25's maximum is scaled by the mean amplitude of two completed cycles whose peaks differ by 41 per cent
@@ -28827,7 +28885,7 @@ they ARE the window mean, and the two *day scenarios do not.
 - **lower bound** — the crossing's own floor, restated: Kp is defined on 0 to 9 and a negative index is a sign error, not a quiet sky
 - **upper bound** — the crossing's own ceiling, restated: Kp is defined on 0 to 9. This member is the worst slot of the worst day, so it is the one of the ten nearest it — 8.00 at the declared window
 - **reads** — `l3_solar_interface.kp_peak_hotmean`
-- **read by** — nothing yet. Every one of these is a leaf of the design, or an oversight.
+- **read by** — `env_kp`
 - **assumes** It names one of ten Kp members and they span a quiet day to a severe storm — fails when the wrong one is named. The crossing's ten Kp values run from 1.27 to 8.00 at the declared window. All ten are dimensionless, in the same declared domain, and produced by one node, so assembly checks that the variable exists and that its type matches and nothing checks that it is the one this row meant
 - **assumes** The peak slot is a MEDIAN correction, so half the days in its Ap bin exceed it — fails when this is read as a bound. sw_kp_slot_bias measures the median of max_8(Kp) - table(Ap) in nine bins of Ap. The median is the middle of a spread, not its top, and the correction knows only the daily mean and the bin it falls in — not whether the day was one long storm or seven quiet slots and one severe
 - **assumes** It receives and does not compute, and a reader here sees none of the subsystem's limitations — fails when a margin is taken against this number. It rests on an Ap that stacks two one-sided percentiles, a conversion that is a lookup with straight lines between 28 points, and a slot offset measured over one bundle version. None of that crosses the seam
