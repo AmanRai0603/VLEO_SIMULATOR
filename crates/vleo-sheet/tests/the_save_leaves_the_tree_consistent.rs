@@ -568,3 +568,297 @@ fn a_bound_that_crosses_its_partner_is_refused_and_rolled_back() {
         "the sheet must be exactly as it was"
     );
 }
+
+// ── the repeated blocks, against the real tree ───────────────────────────────
+//
+// `the_form_writes_a_repeated_block` covers the textual half. What is here is
+// the half that can only be asked where the tree and the hand-written hole
+// bodies are: an edge that does not resolve, an edge declared twice, and a
+// binding a filled hole uses by name.
+
+/// A published row with one input, one numbered step, and that hole filled.
+const BLOCK_ROW: &str = "sw_ap_design";
+
+fn block_path(root: &Path) -> PathBuf {
+    root.join("crates/vleo-mod-solar/nodes")
+        .join(BLOCK_ROW)
+        .join("node.toml")
+}
+
+#[test]
+fn an_input_a_filled_hole_binds_may_not_be_renamed_or_removed() {
+    // THE GATE CANNOT CATCH THIS. An input's `binding` is a parameter name in
+    // the generated signature and the hole body uses it; change one without the
+    // other and the row stops compiling. The gate never compiles anything, so
+    // the save would report success and leave the workspace broken.
+    let _serial = serially();
+    let root = root();
+    let path = block_path(&root);
+    let before = std::fs::read_to_string(&path).unwrap();
+    let _guard = Restore {
+        path: path.clone(),
+        bytes: before.clone(),
+    };
+    let binding = {
+        let t: toml::Value = before.parse().unwrap();
+        t["input"][0]["binding"].as_str().unwrap().to_string()
+    };
+    let body = std::fs::read_to_string(path.parent().unwrap().join("model.rs")).unwrap();
+    assert!(
+        body.contains(&binding),
+        "this test needs a row whose hole body uses its input's binding"
+    );
+    let h = form::file_hash(&before);
+    for (op, values) in [
+        ("set", vec![("binding", "renamed".to_string())]),
+        ("remove", vec![]),
+    ] {
+        match form::save_block(&root, BLOCK_ROW, "input", op, 0, &values, &h) {
+            Saved::Refused(e) => {
+                assert!(
+                    e.contains("hole"),
+                    "{op}: the refusal must name the hole: {e}"
+                );
+                assert!(e.contains(&binding), "{op}: and the binding it uses: {e}");
+            }
+            Saved::Ok { .. } => panic!("{op} must not be accepted under a filled hole"),
+            Saved::Stale { current } => panic!("unexpectedly stale, current {current}"),
+        }
+    }
+    assert_eq!(
+        std::fs::read_to_string(&path).unwrap(),
+        before,
+        "and nothing was written"
+    );
+}
+
+#[test]
+fn an_edge_declared_twice_is_refused_by_name() {
+    let _serial = serially();
+    let root = root();
+    let path = block_path(&root);
+    let before = std::fs::read_to_string(&path).unwrap();
+    let _guard = Restore {
+        path: path.clone(),
+        bytes: before.clone(),
+    };
+    let existing = {
+        let t: toml::Value = before.parse().unwrap();
+        t["input"][0]["var"].as_str().unwrap().to_string()
+    };
+    let h = form::file_hash(&before);
+    match form::save_block(
+        &root,
+        BLOCK_ROW,
+        "input",
+        "add",
+        0,
+        &[
+            ("binding", "again".to_string()),
+            ("var", existing.clone()),
+            ("type", "Ratio".to_string()),
+        ],
+        &h,
+    ) {
+        Saved::Refused(e) => {
+            assert!(e.contains(&existing), "the refusal must name the row: {e}");
+            assert!(e.contains("already reads"), "{e}");
+        }
+        Saved::Ok { .. } => panic!("two edges the graph cannot tell apart must be refused"),
+        Saved::Stale { current } => panic!("unexpectedly stale, current {current}"),
+    }
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), before);
+}
+
+#[test]
+fn an_edge_to_a_row_that_is_not_there_is_written_gated_and_rolled_back() {
+    // The other shape of failure, and the one with the most to go wrong: the
+    // sheet IS written and the artefacts ARE regenerated before anything
+    // notices, so the whole edit has to come back.
+    let _serial = serially();
+    let root = root();
+    let path = block_path(&root);
+    let before = std::fs::read_to_string(&path).unwrap();
+    let _guard = Restore {
+        path: path.clone(),
+        bytes: before.clone(),
+    };
+    let h = form::file_hash(&before);
+    match form::save_block(
+        &root,
+        BLOCK_ROW,
+        "input",
+        "add",
+        0,
+        &[
+            ("binding", "nope".to_string()),
+            ("var", "no_such_row_anywhere".to_string()),
+            ("type", "Ratio".to_string()),
+        ],
+        &h,
+    ) {
+        Saved::Refused(e) => {
+            assert!(e.contains("names no node"), "the gate's own words: {e}");
+            assert!(
+                e.contains("restored"),
+                "and it says the sheet came back: {e}"
+            );
+        }
+        Saved::Ok { .. } => panic!("an edge to nothing must be refused"),
+        Saved::Stale { current } => panic!("unexpectedly stale, current {current}"),
+    }
+    assert_eq!(
+        std::fs::read_to_string(&path).unwrap(),
+        before,
+        "the sheet must be exactly as it was"
+    );
+}
+
+#[test]
+fn a_theory_step_is_added_and_removed_through_the_whole_transaction() {
+    // The free case: prose that nothing generated depends on structurally, so
+    // it goes in and comes out again.
+    let _serial = serially();
+    let root = root();
+    let path = block_path(&root);
+    let before = std::fs::read_to_string(&path).unwrap();
+    let _guard = Restore {
+        path: path.clone(),
+        bytes: before.clone(),
+    };
+    let had = {
+        let t: toml::Value = before.parse().unwrap();
+        t["theory"]["step"].as_array().unwrap().len()
+    };
+    let h = form::file_hash(&before);
+    match form::save_block(
+        &root,
+        BLOCK_ROW,
+        "theory",
+        "add",
+        0,
+        &[("text", "and one more thing about the ceiling".to_string())],
+        &h,
+    ) {
+        Saved::Ok { .. } => {}
+        Saved::Refused(e) => panic!("a theory step was refused: {e}"),
+        Saved::Stale { current } => panic!("unexpectedly stale, current {current}"),
+    }
+    let after = std::fs::read_to_string(&path).unwrap();
+    let t: toml::Value = after.parse().unwrap();
+    assert_eq!(t["theory"]["step"].as_array().unwrap().len(), had + 1);
+    assert_eq!(
+        t["theory"]["step"][had]["text"].as_str(),
+        Some("and one more thing about the ceiling")
+    );
+
+    let h2 = form::file_hash(&after);
+    match form::save_block(&root, BLOCK_ROW, "theory", "remove", had, &[], &h2) {
+        Saved::Ok { .. } => {}
+        Saved::Refused(e) => panic!("removing it was refused: {e}"),
+        Saved::Stale { current } => panic!("unexpectedly stale, current {current}"),
+    }
+    let t: toml::Value = std::fs::read_to_string(&path).unwrap().parse().unwrap();
+    assert_eq!(t["theory"]["step"].as_array().unwrap().len(), had);
+}
+
+// ── how the answer is drawn ──────────────────────────────────────────────────
+
+#[test]
+fn a_view_is_rewritten_as_one_table_and_a_sweep_over_nothing_is_refused() {
+    let _serial = serially();
+    let root = root();
+    let path = block_path(&root);
+    let before = std::fs::read_to_string(&path).unwrap();
+    let _guard = Restore {
+        path: path.clone(),
+        bytes: before.clone(),
+    };
+    let h = form::file_hash(&before);
+
+    // NOTHING ELSE CHECKS THIS. The gate validates an input's `var` because an
+    // input is an edge; a view's `over` is not one, so a sweep naming a row
+    // that was renamed draws nothing and says nothing about why.
+    match form::save_view(&root, BLOCK_ROW, "line", "no_such_row_anywhere", "60", &h) {
+        Saved::Refused(e) => assert!(e.contains("no row"), "{e}"),
+        _ => panic!("a sweep over a row that is not there must be refused"),
+    }
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), before);
+
+    match form::save_view(&root, BLOCK_ROW, "line", BLOCK_ROW, "60", &h) {
+        Saved::Refused(e) => assert!(e.contains("against itself"), "{e}"),
+        _ => panic!("a row swept against itself must be refused"),
+    }
+
+    // And the real thing, both ways round.
+    match form::save_view(&root, BLOCK_ROW, "line", "orbit_altitude", "60", &h) {
+        Saved::Ok { .. } => {}
+        Saved::Refused(e) => panic!("a real sweep was refused: {e}"),
+        Saved::Stale { current } => panic!("unexpectedly stale, current {current}"),
+    }
+    let t: toml::Value = std::fs::read_to_string(&path).unwrap().parse().unwrap();
+    assert_eq!(t["view"]["kind"].as_str(), Some("line"));
+    assert_eq!(t["view"]["over"].as_str(), Some("orbit_altitude"));
+    assert_eq!(t["view"]["points"].as_integer(), Some(60));
+
+    let h2 = form::file_hash(&std::fs::read_to_string(&path).unwrap());
+    match form::save_view(&root, BLOCK_ROW, "number", "", "", &h2) {
+        Saved::Ok { .. } => {}
+        Saved::Refused(e) => panic!("going back to a number was refused: {e}"),
+        Saved::Stale { current } => panic!("unexpectedly stale, current {current}"),
+    }
+    let back = std::fs::read_to_string(&path).unwrap();
+    let t: toml::Value = back.parse().unwrap();
+    assert_eq!(t["view"]["kind"].as_str(), Some("number"));
+    assert!(
+        t["view"].get("over").is_none(),
+        "a number is not drawn against anything, so the key goes: {back}"
+    );
+}
+
+// ── publishing ───────────────────────────────────────────────────────────────
+
+#[test]
+fn publishing_a_row_that_is_not_ready_says_every_reason_and_writes_nothing() {
+    let _serial = serially();
+    let root = root();
+    let tree = vleo_sheet::load::load_all(&root).unwrap();
+    // A seeded computed row with nothing declared under it: the case the
+    // preconditions exist for. Found rather than named, so this does not break
+    // when somebody finishes the row it happened to pick.
+    let Some(sh) = tree
+        .ordered()
+        .iter()
+        .find(|s| s.is_seeded() && !s.is_declared() && s.inputs.is_empty())
+        .map(|s| (*s).clone())
+    else {
+        return;
+    };
+    let why = form::unpublishable(&sh);
+    assert!(
+        why.iter().any(|w| w.contains("reads something")),
+        "a computed row with no inputs is refused, and told why: {why:?}"
+    );
+    let path = sh.dir.join("node.toml");
+    let before = std::fs::read_to_string(&path).unwrap();
+    let h = form::file_hash(&before);
+    match form::publish(&root, &sh.id, &h) {
+        Saved::Refused(e) => assert!(e.contains("not ready to publish"), "{e}"),
+        _ => panic!("{} must not publish", sh.id),
+    }
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), before);
+}
+
+#[test]
+fn a_row_that_is_already_published_is_not_published_again() {
+    let _serial = serially();
+    let root = root();
+    let path = block_path(&root);
+    let before = std::fs::read_to_string(&path).unwrap();
+    let h = form::file_hash(&before);
+    match form::publish(&root, BLOCK_ROW, &h) {
+        Saved::Refused(e) => assert!(e.contains("already"), "{e}"),
+        _ => panic!("publishing moves a seeded row and nothing else"),
+    }
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), before);
+}

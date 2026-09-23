@@ -1517,6 +1517,24 @@ fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
         );
     }
 
+    // THE STATE, AND WHAT IS BETWEEN THE ROW AND MOVING IT. A row can answer
+    // every question this form asks and still generate nothing, because nothing
+    // is generated from a seeded row at all — which is the one thing about a
+    // sheet that a reader is most likely to get wrong. The reasons are
+    // `form::unpublishable`, the same list the browser shows.
+    println!();
+    if sh.is_seeded() {
+        let why = vleo_sheet::form::unpublishable(sh);
+        if why.is_empty() {
+            println!("  \x1b[33m?\x1b[0m  seeded — nothing is generated from this row yet, and it is ready to publish");
+        } else {
+            println!("  \x1b[33m?\x1b[0m  seeded — nothing is generated from this row yet, and it is not ready:");
+            for w in why {
+                println!("     {w}");
+            }
+        }
+    }
+
     println!();
     if open == 0 {
         println!("0 gaps open · ready to generate — `cargo xtask docs {id}`");
