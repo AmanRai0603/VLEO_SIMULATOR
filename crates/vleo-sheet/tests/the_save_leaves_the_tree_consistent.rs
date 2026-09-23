@@ -52,6 +52,10 @@ fn a_stale_base_is_refused_and_nothing_is_written() {
 fn a_structural_field_is_refused_and_nothing_is_written() {
     let root = root();
     let before = std::fs::read_to_string(sheet_path(&root)).unwrap();
+    let _guard = Restore {
+        path: sheet_path(&root),
+        bytes: before.clone(),
+    };
     let h = hash_now(&root);
     for field in ["order", "parent", "kind", "owner"] {
         match form::save(&root, ROW, field, "99", &h) {
@@ -101,6 +105,10 @@ fn the_relation_is_attributed_to_the_checkout_not_to_a_typed_name() {
     // make the same claim about who did the work.
     let root = root();
     let before = std::fs::read_to_string(sheet_path(&root)).unwrap();
+    let _guard = Restore {
+        path: sheet_path(&root),
+        bytes: before.clone(),
+    };
     let h = hash_now(&root);
     let who = form::git_identity(&root);
     match form::save(&root, ROW, "expression", "e = 2*x", &h) {
@@ -325,5 +333,110 @@ fn a_proposal_with_nothing_edited_does_nothing() {
         String::from_utf8_lossy(&now.stdout).trim(),
         was,
         "a proposal that did nothing must leave the checkout on its own branch"
+    );
+}
+
+// ── what a face must not be able to write ────────────────────────────────────
+
+#[test]
+fn a_type_that_is_not_a_quantity_is_refused_before_anything_is_written() {
+    // THE ONE THAT BROKE THE BUILD. `[output] type` is emitted verbatim into the
+    // generated signature, so `Nonsense` becomes `Result<Nonsense, Fault>` and
+    // the tree stops compiling. The gate passed it — the gate never compiles
+    // anything — so the save reported success on a repository it had broken.
+    let root = root();
+    let before = std::fs::read_to_string(sheet_path(&root)).unwrap();
+    // THE GUARD IS NOT OPTIONAL ON A TEST THAT CALLS `save`. A mutation run is
+    // exactly the case where the refusal does not happen, the write goes
+    // through and the assertion below fails — and without this the broken value
+    // stays in the tree. It did: disabling the type check left `Nonsense` in a
+    // sheet and the workspace would not compile until it was noticed.
+    let _guard = Restore {
+        path: sheet_path(&root),
+        bytes: before.clone(),
+    };
+    let h = hash_now(&root);
+    for bad in ["Nonsense", "length", "Furlong", "", "Result<Length, Fault>"] {
+        match form::save(&root, ROW, "type", bad, &h) {
+            Saved::Refused(e) => assert!(
+                e.contains("quantity") || e.contains("not a field"),
+                "{bad:?} should be refused as a type: {e}"
+            ),
+            _ => panic!("{bad:?} must not be writable as a type"),
+        }
+    }
+    assert_eq!(
+        std::fs::read_to_string(sheet_path(&root)).unwrap(),
+        before,
+        "nothing may be written"
+    );
+    // And a real one is not refused, or the check blocks the work it exists for.
+    assert!(form::value_allowed("type", "Length").is_ok());
+    assert!(form::value_allowed("type", "Ratio").is_ok());
+}
+
+#[test]
+fn a_unit_the_system_does_not_know_is_refused() {
+    // It does not reach the signature, so it does not break the build — it
+    // makes the row claim an answer in a unit nothing can convert at a face
+    // boundary. The gate only ever asked whether the field was blank.
+    let root = root();
+    let _guard = Restore {
+        path: sheet_path(&root),
+        bytes: std::fs::read_to_string(sheet_path(&root)).unwrap(),
+    };
+    let h = hash_now(&root);
+    for bad in ["Furlong", "metre", "m", "Fortnight"] {
+        match form::save(&root, ROW, "unit", bad, &h) {
+            Saved::Refused(e) => assert!(e.contains("unit"), "{bad:?}: {e}"),
+            _ => panic!("{bad:?} must not be writable as a unit"),
+        }
+    }
+    assert!(form::value_allowed("unit", "Metre").is_ok());
+    assert!(form::value_allowed("unit", "Kelvin").is_ok());
+}
+
+#[test]
+fn saving_the_relation_puts_a_name_against_it() {
+    // The identity was verified and then went nowhere, so a relation saved
+    // through the face came out with `confirmed_by` blank — which is what the
+    // field exists to make impossible.
+    let root = root();
+    let path = edit_path(&root);
+    let before = std::fs::read_to_string(&path).unwrap();
+    let _guard = Restore {
+        path: path.clone(),
+        bytes: before.clone(),
+    };
+
+    let who = match form::git_identity(&root) {
+        Ok(w) => w,
+        Err(_) => {
+            eprintln!("skipped: this checkout has no git identity");
+            return;
+        }
+    };
+    if form::refuse_agent_attribution(&root, &who).is_err() {
+        // This container's identity IS an agent, which the save refuses before
+        // it can stamp anything. That path has its own test; this one needs a
+        // person, so it says why it did not run rather than passing quietly.
+        eprintln!("skipped: this checkout's identity ({who}) is an agent");
+        return;
+    }
+    let h = form::file_hash(&before);
+    let original = {
+        let t: toml::Value = before.parse().unwrap();
+        t["maths"]["expression"].as_str().unwrap().to_string()
+    };
+    match form::save(&root, EDIT_ROW, "expression", &format!("{original} "), &h) {
+        Saved::Ok { .. } => {}
+        Saved::Refused(e) => panic!("a person could not save a relation: {e}"),
+        Saved::Stale { .. } => panic!("unexpectedly stale"),
+    }
+    let after: toml::Value = std::fs::read_to_string(&path).unwrap().parse().unwrap();
+    let got = after["maths"]["confirmed_by"].as_str().unwrap_or("");
+    assert!(
+        got.starts_with(&who),
+        "the relation must carry the name of whoever supplied it; got {got:?}"
     );
 }

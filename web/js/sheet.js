@@ -62,17 +62,34 @@ function pasteHtml() {
  * somebody fills with anything to make the form go green, so the consequence
  * sits under the input where it cannot be missed.
  */
-function fieldHtml(f) {
+function fieldHtml(f, choices) {
   const big = f.field === 'question' || f.field.startsWith('reason_');
   const id = 'sf-' + f.field;
+  // A CLOSED SET IS OFFERED, NOT TYPED. `type` is written straight into the
+  // generated signature, so a name that is not a quantity stops the tree
+  // compiling; `unit` decides what converts at a face boundary. The server
+  // refuses both either way — this is so nobody meets that refusal by typing a
+  // plausible word. The options come from the server for the same reason: a
+  // list kept here would drift from the one that does the refusing.
+  const pick = choices && choices[f.field];
+  const control = pick
+    ? '<select id="' + id + '" class="ctl sf-pick">' +
+        (f.value && !pick.includes(f.value)
+          ? '<option value="' + esc(f.value) + '" selected>' + esc(f.value) +
+            ' — not one this system has</option>'
+          : '<option value=""' + (f.value ? '' : ' selected') + '>—</option>') +
+        pick.map(o => '<option value="' + esc(o) + '"' +
+          (o === f.value ? ' selected' : '') + '>' + esc(o) + '</option>').join('') +
+      '</select>'
+    : big
+      ? '<textarea id="' + id + '" rows="3" spellcheck="true">' + esc(f.value) + '</textarea>'
+      : '<input id="' + id + '" type="text" value="' + esc(f.value) + '">';
   return '<div class="sf-field' + (f.open ? ' open' : '') + '" data-field="' + esc(f.field) + '">' +
     '<label for="' + id + '">' +
       '<span class="sf-mark">' + (f.open ? '?' : '·') + '</span>' +
       esc(f.ask) +
     '</label>' +
-    (big
-      ? '<textarea id="' + id + '" rows="3" spellcheck="true">' + esc(f.value) + '</textarea>'
-      : '<input id="' + id + '" type="text" value="' + esc(f.value) + '">') +
+    control +
     '<p class="sf-why"><code>' + esc(f.field) + '</code> — without it: ' + esc(f.why) + '</p>' +
     '<p class="sf-said" hidden></p>' +
   '</div>';
@@ -179,7 +196,7 @@ export async function mountSheetEditor(host, id) {
           '</p>') +
     '</div>' +
     pasteHtml() +
-    d.fields.map(fieldHtml).join('') +
+    d.fields.map(f => fieldHtml(f, d.choices)).join('') +
     lockedHtml(d.structural, LOCKED_WHY) +
     proposeHtml() +
     '<p class="sf-foot muted">Holes are not edited here: a hole body is Rust between ' +
@@ -281,7 +298,7 @@ export async function mountSheetEditor(host, id) {
   // Each field saves itself, and says what happened where it happened.
   $$('.sf-field', host).forEach(box => {
     const field = box.dataset.field;
-    const inp = $('input,textarea', box);
+    const inp = $('input,textarea,select', box);
     const said = $('.sf-said', box);
     const was = inp.value;
     const btn = document.createElement('button');
@@ -289,7 +306,8 @@ export async function mountSheetEditor(host, id) {
     btn.textContent = 'save';
     btn.disabled = true;
     box.insertBefore(btn, said);
-    inp.addEventListener('input', () => { btn.disabled = inp.value === was; });
+    ['input', 'change'].forEach(e =>
+      inp.addEventListener(e, () => { btn.disabled = inp.value === was; }));
 
     btn.addEventListener('click', async () => {
       btn.disabled = true;

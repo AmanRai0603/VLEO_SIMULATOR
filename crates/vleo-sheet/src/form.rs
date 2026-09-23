@@ -212,7 +212,20 @@ pub fn json(sh: &Sheet) -> Result<String, String> {
             if i + 1 == st.len() { "" } else { "," }
         ));
     }
-    o.push_str("  },\n  \"fields\": [\n");
+    o.push_str("  },\n");
+    // THE CLOSED SETS, so the face can offer them instead of a text box. Sent
+    // rather than duplicated in JavaScript: a second copy would drift the first
+    // time a quantity was added, and the drift would be a field the form will
+    // not let anybody choose.
+    o.push_str("  \"choices\": {\n    \"type\": [");
+    for (i, q) in vleo_units::QUANTITIES.iter().enumerate() {
+        o.push_str(&format!("{}{}", if i > 0 { ", " } else { "" }, jq(q)));
+    }
+    o.push_str("],\n    \"unit\": [");
+    for (i, u) in crate::unit_names().iter().enumerate() {
+        o.push_str(&format!("{}{}", if i > 0 { ", " } else { "" }, jq(u)));
+    }
+    o.push_str("]\n  },\n  \"fields\": [\n");
     for (i, a) in asks.iter().enumerate() {
         o.push_str(&format!(
             "    {{\"field\": {}, \"ask\": {}, \"why\": {}, \"value\": {}, \"open\": {}}}{}\n",
@@ -513,6 +526,83 @@ pub fn refuse_agent_attribution(root: &std::path::Path, who: &str) -> Result<(),
     Ok(())
 }
 
+/// Today, as the sheets write it. Through `date` rather than a crate, as xtask
+/// does and for the reason it gives.
+fn today() -> String {
+    std::process::Command::new("date")
+        .arg("+%Y-%m-%d")
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default()
+}
+
+/// Put a name against the relation, replacing whatever was there.
+///
+/// WHEN THE RELATION CHANGES THE ATTRIBUTION MUST MOVE WITH IT. The old name
+/// was against the old mathematics; leaving it on the new attributes work to
+/// somebody who never saw it, which is worse than either having no name or
+/// having the editor's.
+///
+/// `set` replaces a value that is already there and refuses to decide where a
+/// new key belongs. `confirmed_by` has one right place — directly under
+/// `[maths]`, which is where `xtask confirm` puts it — so it is inserted here
+/// when absent and replaced when present.
+fn stamp_relation(text: &str, who: &str) -> Result<String, String> {
+    let stamp = format!("{who} / {}", today());
+    if set(text, "confirmed_by", &stamp).is_ok() {
+        return set(text, "confirmed_by", &stamp);
+    }
+    let header = "\n[maths]\n";
+    let at = text
+        .find(header)
+        .map(|i| i + header.len())
+        .ok_or_else(|| "this sheet has no [maths] section to attribute".to_string())?;
+    Ok(format!(
+        "{}confirmed_by = {stamp:?}   # supplied through the face by this checkout\n{}",
+        &text[..at],
+        &text[at..]
+    ))
+}
+
+/// Whether a value is one this field may hold.
+///
+/// THE GATE DOES NOT DO THIS. It asks whether a field is blank, and a sheet's
+/// `[output] type` is emitted verbatim into the generated signature — so a type
+/// that is not a real quantity produces `Result<Nonsense, Fault>`, which does
+/// not compile. A face with a text box could write that, regenerate, pass the
+/// gate and report success, leaving the repository not building.
+///
+/// The gate cannot catch it because the gate never compiles anything. So it is
+/// caught here, against the same registries the generated code is written
+/// from, before anything is written.
+pub fn value_allowed(field: &str, value: &str) -> Result<(), String> {
+    let v = value.trim();
+    match field {
+        "type" => {
+            if crate::is_quantity_name(v) {
+                Ok(())
+            } else {
+                Err(format!(
+                    "'{v}' is not a quantity this system has. The type is written straight into                      the generated signature, so one that does not exist stops the tree                      compiling. One of: {}",
+                    vleo_units::QUANTITIES.join(", ")
+                ))
+            }
+        }
+        "unit" => {
+            if crate::unit_exists(v) {
+                Ok(())
+            } else {
+                Err(format!(
+                    "'{v}' is not a unit this system knows, so nothing could convert it at a                      face boundary. See vleo_units::Unit for the ones that exist."
+                ))
+            }
+        }
+        _ => Ok(()),
+    }
+}
+
 /// What a save did, or why it did nothing.
 pub enum Saved {
     /// Written, regenerated and gated. Carries the row's new sheet hash.
@@ -557,6 +647,9 @@ pub fn save(root: &std::path::Path, id: &str, field: &str, value: &str, base: &s
     }
     if place(field).is_none() {
         return Saved::Refused(format!("'{field}' is not a field this form writes"));
+    }
+    if let Err(e) = value_allowed(field, value) {
+        return Saved::Refused(e);
     }
     if std::process::Command::new("rustfmt")
         .arg("--version")
@@ -606,6 +699,23 @@ pub fn save(root: &std::path::Path, id: &str, field: &str, value: &str, base: &s
     let after = match set(&before, field, value) {
         Ok(t) => t,
         Err(e) => return Saved::Refused(e),
+    };
+    // AND THE NAME IS WRITTEN, NOT ONLY CHECKED. The identity was verified
+    // above and then went nowhere, so a relation saved through the face came
+    // out with `confirmed_by` still blank — a relation with nobody against it,
+    // indistinguishable from one an agent wrote, which is the exact thing that
+    // field exists to tell apart.
+    let after = if field == "expression" {
+        let who = match git_identity(root) {
+            Ok(w) => w,
+            Err(e) => return Saved::Refused(e),
+        };
+        match stamp_relation(&after, &who) {
+            Ok(t) => t,
+            Err(e) => return Saved::Refused(e),
+        }
+    } else {
+        after
     };
     if let Err(e) = write_atomic(&path, &after) {
         return Saved::Refused(e);

@@ -852,3 +852,6 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
   padding: 6px 8px; overflow-x: auto; color: var(--ink);
   background: var(--paper); border: 1px solid var(--rule); border-radius: 3px; }
 .sf-ident { font-size: 13px; margin: 0 0 4px; }
+
+/* A closed set is offered, not typed. */
+.sf-field select.sf-pick { width: 100%; box-sizing: border-box; font-size: 13px; }
