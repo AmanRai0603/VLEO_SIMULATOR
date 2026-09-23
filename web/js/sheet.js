@@ -112,6 +112,34 @@ const LOCKED_WHY = {
 };
 
 /**
+ * Put the edited rows on a branch.
+ *
+ * A sheet edit is a source change and belongs in history — unlike a run's
+ * inputs, which are a question somebody asked and are never committed. So edits
+ * made here do not sit in a working tree waiting to be noticed: they go onto a
+ * branch of their own, where CODEOWNERS routes them to whoever owns those rows.
+ *
+ * IT COMMITS AND DOES NOT PUSH. Pushing puts the work where other people and
+ * the pipeline see it, under whatever credentials the checkout holds. The
+ * branch and the command come back instead, so the person who made the edits is
+ * the one who shares them.
+ */
+function proposeHtml() {
+  const kinds = ['docs', 'fix', 'feat', 'refactor', 'chore'];
+  return '<details class="sf-propose"><summary>put these edits on a branch</summary>' +
+    '<p class="sf-why">Commits the rows you have changed, on a new branch. It does ' +
+    'not push — you are given the branch and the command.</p>' +
+    '<label for="sf-kind">what kind of change</label>' +
+    '<select id="sf-kind" class="ctl">' +
+      kinds.map(k => '<option value="' + k + '">' + k + '</option>').join('') +
+    '</select>' +
+    '<label for="sf-sum">one line saying what changed and why</label>' +
+    '<input id="sf-sum" type="text" placeholder="reword the lower bound\u2019s reason">' +
+    '<button class="ctl sf-propose-go">commit them to a branch</button>' +
+    '<div class="sf-propose-out"></div></details>';
+}
+
+/**
  * Mount the editor for one row.
  *
  * Saves one field at a time, which is how `xtask confirm` works and for the same
@@ -136,13 +164,24 @@ export async function mountSheetEditor(host, id) {
       : 'every question answered') +
       ' · <span class="muted">a save regenerates this row and runs the gate on it; ' +
       'if the gate refuses, nothing changes</span></p>' +
-    '<div class="sf-who"><label for="sf-by">your name, for anything you attribute' +
-      '</label><input id="sf-by" type="text" placeholder="A. Person" autocomplete="name">' +
-      '<p class="sf-why">An agent may never supply mathematics, and this field is the only ' +
-      'thing that can tell whether one did. The server refuses an agent’s name.</p></div>' +
+    // SHOWN, NOT ASKED FOR. A name typed into a box is a name somebody chose for
+    // that box; this is the one their commits already carry, so the sheet and
+    // the history agree about who did the work.
+    '<div class="sf-who">' +
+      (d.identity
+        ? '<p class="sf-ident">Anything you attribute will be signed <b>' +
+          esc(d.identity) + '</b><span class="muted"> \u2014 this checkout\u2019s ' +
+          '<code>git config user.name</code></span></p>' +
+          '<p class="sf-why">An agent may never supply mathematics, and this is the only ' +
+          'thing that can tell whether one did. A save that changes the relation is refused ' +
+          'if this name is an agent\u2019s.</p>'
+        : '<p class="sf-said bad">' + esc(d.identity_why || 'this checkout has no identity') +
+          '</p>') +
+    '</div>' +
     pasteHtml() +
     d.fields.map(fieldHtml).join('') +
     lockedHtml(d.structural, LOCKED_WHY) +
+    proposeHtml() +
     '<p class="sf-foot muted">Holes are not edited here: a hole body is Rust between ' +
     'numbered markers, and an edit outside one is discarded by the next generation pass.</p>';
 
@@ -185,7 +224,6 @@ export async function mountSheetEditor(host, id) {
     const apply = $('.sf-paste-apply', out);
     if (apply) apply.addEventListener('click', async () => {
       apply.disabled = true;
-      const by = ($('#sf-by', host) || {}).value || '';
       const picked = $$('.sf-diff input:checked', out).map(x => r.changes[+x.dataset.i]);
       const said = [];
       // One at a time, through the same endpoint a typed edit uses. Sequential
@@ -193,7 +231,7 @@ export async function mountSheetEditor(host, id) {
       for (const c of picked) {
         const res = await (await fetch('/v1/sheet/' + encodeURIComponent(id), {
           method: 'POST',
-          body: new URLSearchParams({ field: c.field, value: c.to, base, by }),
+          body: new URLSearchParams({ field: c.field, value: c.to, base }),
         })).json();
         if (res.ok) { base = res.file_hash; said.push(c.field + ' — saved'); }
         else { said.push(c.field + ' — ' + (res.message || 'refused')); break; }
@@ -202,6 +240,42 @@ export async function mountSheetEditor(host, id) {
         '<ul class="sf-applied">' + said.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' +
         '<p class="sf-why">Reopen the row to see the form as it now stands.</p>');
     });
+  });
+
+  const prop = $('.sf-propose-go', host);
+  if (prop) prop.addEventListener('click', async () => {
+    const out = $('.sf-propose-out', host);
+    prop.disabled = true;
+    out.innerHTML = '<p class="sf-said waiting">committing\u2026</p>';
+    let r;
+    try {
+      r = await (await fetch('/v1/propose', {
+        method: 'POST',
+        body: new URLSearchParams({
+          summary: $('#sf-sum', host).value,
+          kind: $('#sf-kind', host).value,
+        }),
+      })).json();
+    } catch (e) {
+      out.innerHTML = '<p class="sf-said bad">' + esc(String(e)) + '</p>';
+      prop.disabled = false; return;
+    }
+    if (!r.ok) {
+      out.innerHTML = '<p class="sf-said ' + (r.nothing ? '' : 'bad') + '">' +
+        esc(r.message || 'refused') + '</p>';
+      prop.disabled = false; return;
+    }
+    // The branch exists. What is left is the person's to do, so it is shown as
+    // something to copy rather than described.
+    out.innerHTML =
+      '<p class="sf-said good">committed ' + esc(r.commit) + ' \u2014 ' +
+        esc(String(r.files)) + ' file(s) on <code>' + esc(r.branch) + '</code></p>' +
+      '<p class="sf-why">To share it:</p><pre class="sf-cmd">' + esc(r.push) + '</pre>' +
+      (r.compare
+        ? '<p class="sf-why">then open it: <a href="' + esc(r.compare) +
+          '" target="_blank" rel="noopener">' + esc(r.compare) + '</a></p>'
+        : '<p class="sf-why">This remote has no pull-request page that could be ' +
+          'linked to, so nothing is guessed here.</p>');
   });
 
   // Each field saves itself, and says what happened where it happened.
@@ -218,14 +292,13 @@ export async function mountSheetEditor(host, id) {
     inp.addEventListener('input', () => { btn.disabled = inp.value === was; });
 
     btn.addEventListener('click', async () => {
-      const by = ($('#sf-by', host) || {}).value || '';
       btn.disabled = true;
       // A save regenerates the row and runs the gate, which takes a moment. An
       // optimistic tick here would be a lie for as long as it takes.
       said.hidden = false;
       said.className = 'sf-said waiting';
       said.textContent = 'writing the sheet, regenerating and gating…';
-      const body = new URLSearchParams({ field, value: inp.value, base, by });
+      const body = new URLSearchParams({ field, value: inp.value, base });
       let res = null;
       try {
         const r = await fetch('/v1/sheet/' + encodeURIComponent(id), { method: 'POST', body });

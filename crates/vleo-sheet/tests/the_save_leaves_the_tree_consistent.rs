@@ -36,7 +36,7 @@ fn hash_now(root: &Path) -> String {
 fn a_stale_base_is_refused_and_nothing_is_written() {
     let root = root();
     let before = std::fs::read_to_string(sheet_path(&root)).unwrap();
-    match form::save(&root, ROW, "unit", "Kelvin", "000000", "A. Person") {
+    match form::save(&root, ROW, "unit", "Kelvin", "000000") {
         Saved::Stale { current } => assert_eq!(current, hash_now(&root)),
         Saved::Ok { .. } => panic!("a stale base must never be written"),
         Saved::Refused(e) => panic!("expected Stale, got refusal: {e}"),
@@ -54,7 +54,7 @@ fn a_structural_field_is_refused_and_nothing_is_written() {
     let before = std::fs::read_to_string(sheet_path(&root)).unwrap();
     let h = hash_now(&root);
     for field in ["order", "parent", "kind", "owner"] {
-        match form::save(&root, ROW, field, "99", &h, "A. Person") {
+        match form::save(&root, ROW, field, "99", &h) {
             Saved::Refused(e) => assert!(
                 e.contains("not editable here"),
                 "{field} should say why: {e}"
@@ -66,31 +66,72 @@ fn a_structural_field_is_refused_and_nothing_is_written() {
 }
 
 #[test]
-fn an_agent_may_not_supply_the_relation_through_this_face_either() {
+fn an_agent_is_refused_whatever_the_face() {
+    // The rule itself, as a function: no git, no files, no checkout. Every name
+    // on the roster and the two generic words, in the shapes a name arrives in.
+    let root = root();
+    for who in ["Claude", "claude opus 5", "hole-filler", "Claude/Opus", "AGENT", "  claude  "] {
+        assert!(
+            form::refuse_agent_attribution(&root, who).is_err(),
+            "'{who}' must never be able to supply mathematics"
+        );
+    }
+    for who in ["", "   "] {
+        let e = form::refuse_agent_attribution(&root, who).unwrap_err();
+        assert!(e.contains("blank"), "a blank attribution is not a way round it: {e}");
+    }
+    // And a person's name is not refused, or the rule would block the work it
+    // exists to make possible.
+    assert!(form::refuse_agent_attribution(&root, "A. Rai").is_ok());
+}
+
+#[test]
+fn the_relation_is_attributed_to_the_checkout_not_to_a_typed_name() {
+    // `save` takes no name. It asks the checkout, so the sheet and the commit
+    // make the same claim about who did the work.
     let root = root();
     let before = std::fs::read_to_string(sheet_path(&root)).unwrap();
     let h = hash_now(&root);
-    for who in ["Claude", "claude opus 5", "hole-filler", "Claude/Opus"] {
-        match form::save(&root, ROW, "expression", "e = 2*x", &h, who) {
-            Saved::Refused(e) => assert!(
-                e.contains("agent") || e.contains("person"),
-                "{who}: {e}"
-            ),
-            _ => panic!("'{who}' must not be able to supply mathematics"),
+    let who = form::git_identity(&root);
+    match form::save(&root, ROW, "expression", "e = 2*x", &h) {
+        Saved::Refused(e) => {
+            // Which is what must happen wherever the checkout's own identity is
+            // an agent's — as it is in the container this was written in, where
+            // `git config user.name` is "Claude".
+            assert!(
+                e.contains("agent") || e.contains("user.name"),
+                "a refusal here must be about the identity: {e}"
+            );
+            assert_eq!(
+                std::fs::read_to_string(sheet_path(&root)).unwrap(),
+                before,
+                "and nothing may be written"
+            );
         }
+        Saved::Ok { .. } => {
+            // A human checkout. Then the name it used must be that checkout's.
+            let w = who.expect("a save that succeeded must have had an identity");
+            assert!(
+                form::refuse_agent_attribution(&root, &w).is_ok(),
+                "it wrote under {w}, which the roster calls an agent"
+            );
+            // Put it back; this test is not here to edit the tree.
+            let h2 = hash_now(&root);
+            let orig = {
+                let t: toml::Value = before.parse().unwrap();
+                t["maths"]["expression"].as_str().unwrap().to_string()
+            };
+            let _ = form::save(&root, ROW, "expression", &orig, &h2);
+            assert_eq!(std::fs::read_to_string(sheet_path(&root)).unwrap(), before);
+        }
+        Saved::Stale { .. } => panic!("unexpectedly stale"),
     }
-    // And a blank attribution is not a way round it.
-    match form::save(&root, ROW, "expression", "e = 2*x", &h, "   ") {
-        Saved::Refused(e) => assert!(e.contains("blank") || e.contains("cannot be blank"), "{e}"),
-        _ => panic!("a blank attribution must be refused"),
-    }
-    assert_eq!(std::fs::read_to_string(sheet_path(&root)).unwrap(), before);
 }
 
 #[test]
 fn an_unknown_node_is_refused() {
     let root = root();
-    match form::save(&root, "no_such_row", "unit", "Kelvin", "abc123", "A. Person") {
+    match form::save(&root, "no_such_row", "unit", "Kelvin", "abc123") {
         Saved::Refused(e) => assert!(e.contains("no node"), "{e}"),
         _ => panic!("must be refused"),
     }
@@ -144,7 +185,7 @@ fn a_good_edit_is_written_regenerated_and_then_put_back() {
     };
 
     // A real change to a real field, with a real person against it.
-    let out = form::save(&root, EDIT_ROW, "reason_lower", "a rewritten reason", &h0, "A. Person");
+    let out = form::save(&root, EDIT_ROW, "reason_lower", "a rewritten reason", &h0);
     let (h1, meaning1, n) = match out {
         Saved::Ok { file_hash, sheet_hash, regenerated } => (file_hash, sheet_hash, regenerated),
         Saved::Stale { current } => panic!("unexpectedly stale, current {current}"),
@@ -175,7 +216,7 @@ fn a_good_edit_is_written_regenerated_and_then_put_back() {
         let t: toml::Value = before.parse().unwrap();
         t["output"]["reason_lower"].as_str().unwrap().to_string()
     };
-    match form::save(&root, EDIT_ROW, "reason_lower", &original, &h1b, "A. Person") {
+    match form::save(&root, EDIT_ROW, "reason_lower", &original, &h1b) {
         Saved::Ok { .. } => {}
         Saved::Stale { current } => panic!("could not restore, current {current}"),
         Saved::Refused(e) => panic!("could not restore: {e}"),
@@ -184,5 +225,44 @@ fn a_good_edit_is_written_regenerated_and_then_put_back() {
         std::fs::read_to_string(&path).unwrap(),
         before,
         "the sheet must be byte-identical to how this test found it"
+    );
+}
+
+// ── putting the edits on a branch ────────────────────────────────────────────
+
+#[test]
+fn a_proposal_with_nothing_edited_does_nothing() {
+    // And says so, rather than making an empty branch. The checkout must be
+    // exactly where it was afterwards — this test runs on whatever branch the
+    // developer is on, so leaving them somewhere else would be the worst thing
+    // it could do.
+    let root = root();
+    let was = std::process::Command::new("git")
+        .arg("-C").arg(&root).args(["rev-parse", "--abbrev-ref", "HEAD"])
+        .output().unwrap();
+    let was = String::from_utf8_lossy(&was.stdout).trim().to_string();
+    // Only meaningful when no node folder is dirty; if one is, this says so
+    // rather than pretending to have tested something.
+    let dirty = std::process::Command::new("git")
+        .arg("-C").arg(&root).args(["status", "--porcelain", "--", "crates"])
+        .output().unwrap();
+    let dirty: Vec<String> = String::from_utf8_lossy(&dirty.stdout)
+        .lines().filter(|l| l.contains("/nodes/")).map(|s| s.to_string()).collect();
+    if !dirty.is_empty() {
+        eprintln!("skipped: a node folder is already edited ({} path(s))", dirty.len());
+        return;
+    }
+    match form::propose(&root, "anything", "docs") {
+        form::Proposed::Nothing => {}
+        form::Proposed::Ok { branch, .. } => panic!("it made a branch: {branch}"),
+        form::Proposed::Refused(e) => panic!("expected Nothing, got: {e}"),
+    }
+    let now = std::process::Command::new("git")
+        .arg("-C").arg(&root).args(["rev-parse", "--abbrev-ref", "HEAD"])
+        .output().unwrap();
+    assert_eq!(
+        String::from_utf8_lossy(&now.stdout).trim(),
+        was,
+        "a proposal that did nothing must leave the checkout on its own branch"
     );
 }

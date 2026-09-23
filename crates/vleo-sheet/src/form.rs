@@ -185,6 +185,14 @@ pub fn json(sh: &Sheet) -> Result<String, String> {
             .unwrap_or_default())
     ));
     o.push_str(&format!("  \"criticality\": {},\n", jq(&sh.criticality)));
+    // Who a save will be attributed to. Shown, never typed: see `git_identity`.
+    match git_identity(&sh.dir) {
+        Ok(w) => o.push_str(&format!("  \"identity\": {},\n", jq(&w))),
+        Err(e) => o.push_str(&format!(
+            "  \"identity\": null,\n  \"identity_why\": {},\n",
+            jq(&e)
+        )),
+    }
     o.push_str("  \"structural\": {\n");
     let st = [
         ("kind", sh.kind.clone()),
@@ -424,6 +432,36 @@ pub fn agent_identities(root: &std::path::Path) -> Vec<String> {
     out
 }
 
+/// Who this checkout says it is, from `git config user.name`.
+///
+/// NOT typed into the form. An attribution a person types is a name they chose
+/// for that box; this is the name their commits already carry, so the sheet and
+/// the history agree about who did it and nobody can put a colleague's name on
+/// their own work by typing it.
+///
+/// It is not authentication and this does not pretend otherwise: anyone who can
+/// edit a checkout can edit its git config. What it removes is the casual case —
+/// typing somebody else's name into a text box — and it makes the sheet's
+/// attribution and the commit's author the same claim rather than two.
+pub fn git_identity(root: &std::path::Path) -> Result<String, String> {
+    let out = std::process::Command::new("git")
+        .args(["-C"])
+        .arg(root)
+        .args(["config", "user.name"])
+        .output()
+        .map_err(|e| format!("git could not be run: {e}"))?;
+    let name = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    if name.is_empty() {
+        return Err(
+            "this checkout has no `git config user.name`, so there is no name to put against \
+             the relation. Set it — `git config user.name \"Your Name\"` — and the sheet will \
+             carry the same name your commits do. Nothing was written."
+                .into(),
+        );
+    }
+    Ok(name)
+}
+
 /// Whether this attribution is an agent's, and so must never be written.
 ///
 /// An agent may never supply mathematics. Stated as a sentence that is a hope;
@@ -496,7 +534,6 @@ pub fn save(
     field: &str,
     value: &str,
     base: &str,
-    by: &str,
 ) -> Saved {
     if let Some(why) = structural(field) {
         return Saved::Refused(format!("'{field}' is not editable here: {why}"));
@@ -536,9 +573,15 @@ pub fn save(
     if base != current {
         return Saved::Stale { current };
     }
-    // An agent may never supply mathematics, at any face.
+    // An agent may never supply mathematics, at any face. The name is the
+    // checkout's own — see `git_identity` — so it is the same one the commit
+    // will carry rather than whatever was typed into a box.
     if field == "expression" || field == "confirmed_by" {
-        if let Err(e) = refuse_agent_attribution(root, by) {
+        let who = match git_identity(root) {
+            Ok(w) => w,
+            Err(e) => return Saved::Refused(e),
+        };
+        if let Err(e) = refuse_agent_attribution(root, &who) {
             return Saved::Refused(e);
         }
     }
@@ -778,4 +821,193 @@ pub fn preview(sh: &Sheet, pasted: &str) -> Result<String, String> {
             .unwrap_or_default())
     ));
     Ok(o)
+}
+
+/// What a proposal did.
+pub enum Proposed {
+    Ok {
+        branch: String,
+        commit: String,
+        files: usize,
+        /// Where to open the pull request, when the remote is one that has a
+        /// page for it. Empty when the remote is not recognised — a guessed URL
+        /// is worse than none.
+        compare: String,
+    },
+    Nothing,
+    Refused(String),
+}
+
+/// Run git in the checkout and give back its stdout, or its stderr as the error.
+fn git(root: &std::path::Path, args: &[&str]) -> Result<String, String> {
+    let out = std::process::Command::new("git")
+        .arg("-C")
+        .arg(root)
+        .args(args)
+        .output()
+        .map_err(|e| format!("git could not be run: {e}"))?;
+    if !out.status.success() {
+        return Err(format!(
+            "git {}: {}",
+            args.join(" "),
+            String::from_utf8_lossy(&out.stderr).trim()
+        ));
+    }
+    Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
+}
+
+/// Put the edited rows on a branch of their own, as one commit.
+///
+/// A sheet edit is a source change and belongs in history — unlike a run's
+/// inputs, which are a question somebody asked and are never committed. So the
+/// face's edits do not sit in the working tree waiting for somebody to notice
+/// them: they go onto a branch, where CODEOWNERS can route them to whoever owns
+/// those rows.
+///
+/// IT COMMITS AND IT DOES NOT PUSH. Pushing is outward-facing: it puts the work
+/// where other people and the pipeline see it, under whatever credentials the
+/// checkout holds, and a background service should not do that on its own. The
+/// branch and the command to push it are returned instead, so the person who
+/// made the edits is the one who shares them.
+///
+/// Only node folders are committed. Whatever else is dirty in the checkout is
+/// somebody's work in progress and is not this function's to sweep up.
+pub fn propose(root: &std::path::Path, summary: &str, kind: &str) -> Proposed {
+    let who = match git_identity(root) {
+        Ok(w) => w,
+        Err(e) => return Proposed::Refused(e),
+    };
+    // Only what the face can have written.
+    let dirty = match git(root, &["status", "--porcelain", "--", "crates"]) {
+        Ok(d) => d,
+        Err(e) => return Proposed::Refused(e),
+    };
+    let paths: Vec<String> = dirty
+        .lines()
+        .filter_map(|l| l.get(3..).map(|p| p.trim().to_string()))
+        .filter(|p| p.contains("/nodes/"))
+        .collect();
+    if paths.is_empty() {
+        return Proposed::Nothing;
+    }
+    // The change type, which the commit-msg hook validates and which decides
+    // how this reads in a log. `docs` is the default because most sheet edits
+    // are a sentence somebody improved; a changed relation is not, and the face
+    // offers the others.
+    let kind = if kind.trim().is_empty() { "docs" } else { kind.trim() };
+    let summary = summary.trim();
+    if summary.is_empty() {
+        return Proposed::Refused(
+            "a proposal needs a one-line summary saying what changed and why. It becomes the \
+             commit subject, and a commit nobody can read in a list is a commit nobody reviews."
+                .into(),
+        );
+    }
+    // The rows touched, for the branch name and the message.
+    let mut rows: Vec<String> = paths
+        .iter()
+        .filter_map(|p| p.split("/nodes/").nth(1))
+        .filter_map(|r| r.split('/').next())
+        .map(|r| r.to_string())
+        .collect();
+    rows.sort();
+    rows.dedup();
+    let started = match git(root, &["rev-parse", "--abbrev-ref", "HEAD"]) {
+        Ok(b) => b,
+        Err(e) => return Proposed::Refused(e),
+    };
+    // NOW, NOT HEAD'S COMMIT DATE. This read `git log -1 --format=%cd` first,
+    // which stamps the branch with when the LAST COMMIT was made — so a branch
+    // created today could be named for a week ago, and two proposals from one
+    // HEAD collided on the same name. The collision was refused rather than
+    // clobbered, but the name was a small lie either way.
+    //
+    // Through `date` rather than a crate, which is how `xtask` stamps a sheet
+    // and for the reason it gives: adding a dependency to print a timestamp is
+    // how a dependency list stops meaning anything.
+    let stamp = std::process::Command::new("date")
+        .arg("+%Y%m%d-%H%M%S")
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default();
+    let branch = format!(
+        "sheet/{}-{}",
+        rows.first().cloned().unwrap_or_else(|| "rows".into()),
+        if stamp.is_empty() { "edit".into() } else { stamp }
+    );
+    if git(root, &["rev-parse", "--verify", &branch]).is_ok() {
+        return Proposed::Refused(format!(
+            "a branch called {branch} already exists — commit or delete it first, rather than \
+             this deciding which one you meant"
+        ));
+    }
+    if let Err(e) = git(root, &["checkout", "-b", &branch]) {
+        return Proposed::Refused(e);
+    }
+    let put_back = |e: String| -> Proposed {
+        // The branch was created and the commit did not happen, so the checkout
+        // goes back where it started rather than sitting on a branch nobody
+        // asked for.
+        //
+        // AND THE INDEX IS UNSTAGED. `git add` has already run by the time a
+        // commit can fail — the repository's own commit-msg hook refusing the
+        // message is exactly how it fails — and leaving the rows staged changes
+        // something the person did not ask to change. They edited files; they
+        // did not stage them.
+        let _ = git(root, &["reset", "--quiet", "HEAD", "--", "crates"]);
+        let _ = git(root, &["checkout", &started]);
+        let _ = git(root, &["branch", "-D", &branch]);
+        Proposed::Refused(e)
+    };
+    for p in &paths {
+        if let Err(e) = git(root, &["add", "--", p]) {
+            return put_back(e);
+        }
+    }
+    // THE SCOPE IS THE CRATE, NOT THE ROW'S PREFIX. A first attempt used the
+    // row id's prefix — `sheet(gnc):` — and the repository's own commit-msg
+    // hook refused both halves: `sheet` is not a change type and `gnc` is not a
+    // scope here. The hook is right and it is the authority; this derives what
+    // it already accepts, from the crate the rows live in.
+    let scope = paths
+        .first()
+        .and_then(|p| p.split('/').nth(1))
+        .and_then(|c| c.strip_prefix("vleo-"))
+        .unwrap_or("tree")
+        .to_string();
+    let body = format!(
+        "{kind}({scope}): {summary}\n\n\
+         Edited through the face, on {} row(s):\n{}\n\n\
+         Every field went through the same gate a terminal edit does, and the\n\
+         row's artefacts were regenerated from the sheet before it was accepted.\n\n\
+         Attributed to {who}, from this checkout's git config user.name.\n",
+        rows.len(),
+        rows.iter().map(|r| format!("  {r}")).collect::<Vec<_>>().join("\n"),
+    );
+    if let Err(e) = git(root, &["commit", "-m", &body]) {
+        return put_back(e);
+    }
+    let commit = git(root, &["rev-parse", "--short", "HEAD"]).unwrap_or_default();
+    // Where to open the pull request, if the remote is somewhere that has one.
+    let remote = git(root, &["remote", "get-url", "origin"]).unwrap_or_default();
+    let compare = remote
+        .strip_suffix(".git")
+        .unwrap_or(&remote)
+        .replace("git@github.com:", "https://github.com/")
+        .replace("git@gitlab.com:", "https://gitlab.com/");
+    let compare = if compare.contains("github.com") {
+        format!("{compare}/compare/{branch}?expand=1")
+    } else if compare.contains("gitlab.com") {
+        format!("{compare}/-/merge_requests/new?merge_request[source_branch]={branch}")
+    } else {
+        String::new()
+    };
+    Proposed::Ok {
+        branch,
+        commit,
+        files: paths.len(),
+        compare,
+    }
 }

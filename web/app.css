@@ -836,3 +836,19 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
 .sf-dropped, .sf-applied { font-size: 11.5px; color: var(--ink-3);
   margin: 4px 0 0; padding-left: 18px; line-height: 1.6; }
 .sf-applied { color: var(--ink-2); }
+
+/* putting the edits on a branch */
+.sf-propose { margin: 20px 0 0; padding: 10px 12px;
+  border: 1px solid var(--rule); border-radius: 4px; background: var(--card); }
+.sf-propose summary { font-size: 13px; cursor: pointer; }
+.sf-propose label { display: block; font-size: 12px; color: var(--ink-2);
+  margin: 10px 0 4px; }
+.sf-propose input[type=text] { width: 100%; box-sizing: border-box;
+  padding: .34rem .45rem; font: inherit; font-size: 13px; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--rule); border-radius: 3px; }
+.sf-propose-go { margin-top: 10px; }
+/* A command to copy, not prose describing one. */
+.sf-cmd { font-family: var(--mono); font-size: 12px; margin: 4px 0 8px;
+  padding: 6px 8px; overflow-x: auto; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--rule); border-radius: 3px; }
+.sf-ident { font-size: 13px; margin: 0 0 4px; }
