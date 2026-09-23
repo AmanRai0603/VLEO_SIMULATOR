@@ -305,6 +305,11 @@ fn a_proposal_with_nothing_edited_does_nothing() {
         );
         return;
     }
+    // Nothing edited, so nothing to propose — and this must hold on a machine
+    // with no `git config user.name` too, which is what a fresh CI runner is.
+    // The first version asked for the identity before looking at what was
+    // dirty, and failed there for a reason that had nothing to do with the
+    // case it was testing.
     match form::propose(&root, "anything", "docs") {
         form::Proposed::Nothing => {}
         form::Proposed::Ok { branch, .. } => panic!("it made a branch: {branch}"),

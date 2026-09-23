@@ -892,11 +892,12 @@ fn git(root: &std::path::Path, args: &[&str]) -> Result<String, String> {
 /// Only node folders are committed. Whatever else is dirty in the checkout is
 /// somebody's work in progress and is not this function's to sweep up.
 pub fn propose(root: &std::path::Path, summary: &str, kind: &str) -> Proposed {
-    let who = match git_identity(root) {
-        Ok(w) => w,
-        Err(e) => return Proposed::Refused(e),
-    };
-    // Only what the face can have written.
+    // WHAT IS EDITED FIRST, WHO IS EDITING SECOND. This asked for the identity
+    // up front, so a checkout with no `git config user.name` — a fresh CI
+    // runner, say — was told to set one when there was nothing to commit in the
+    // first place. Demanding a name to attribute nothing is a worse answer than
+    // saying there is nothing to do, and it is not true that the name was
+    // needed.
     let dirty = match git(root, &["status", "--porcelain", "--", "crates"]) {
         Ok(d) => d,
         Err(e) => return Proposed::Refused(e),
@@ -917,6 +918,11 @@ pub fn propose(root: &std::path::Path, summary: &str, kind: &str) -> Proposed {
         "docs"
     } else {
         kind.trim()
+    };
+    // Now there is something to commit, so there has to be somebody committing.
+    let who = match git_identity(root) {
+        Ok(w) => w,
+        Err(e) => return Proposed::Refused(e),
     };
     let summary = summary.trim();
     if summary.is_empty() {
