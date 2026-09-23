@@ -112,6 +112,22 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
     } else {
         "Answer".to_string()
     };
+    // A ROW WHOSE HOLES ARE NOT FILLED YET IS A NORMAL STATE, not a broken
+    // build. It is what `xtask docs` produces and what `xtask fill` splices
+    // into, and the gap pass reports it by name. Each empty hole returns
+    // `NotRun`, which makes everything after it unreachable — and this
+    // repository builds with `-D warnings`, so without this the ordinary
+    // half-finished row would not compile at all.
+    let unfilled_hole = !sh.steps.is_empty()
+        && sh.steps.iter().any(|st| {
+            holes
+                .get(&st.number)
+                .map(|b| b.trim().is_empty())
+                .unwrap_or(true)
+        });
+    if unfilled_hole {
+        o.push_str("#[allow(unreachable_code, unused_variables)]\n");
+    }
     o.push_str(&format!(
         "pub fn evaluate({args}) -> Result<{ret}, Fault> {{\n"
     ));
@@ -142,28 +158,52 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
                 text = st.text,
                 ty = st.ty
             ));
-            match holes.get(&st.number) {
-                Some(body) if !body.trim().is_empty() => {
-                    for line in dedent(body).lines() {
-                        if line.trim().is_empty() {
-                            o.push('\n');
-                        } else {
-                            o.push_str("    ");
-                            o.push_str(line.trim_end());
-                            o.push('\n');
-                        }
+            let filled = holes
+                .get(&st.number)
+                .filter(|b| !b.trim().is_empty())
+                .map(|b| dedent(b));
+            if let Some(body) = &filled {
+                for line in body.lines() {
+                    if line.trim().is_empty() {
+                        o.push('\n');
+                    } else {
+                        o.push_str("    ");
+                        o.push_str(line.trim_end());
+                        o.push('\n');
                     }
-                }
-                _ => {
-                    o.push_str(&format!(
-                        "    let {b}: {t} = todo!(\"hole {n} is empty — the gap pass blocks this node\");\n",
-                        b = st.binds,
-                        t = st.ty,
-                        n = st.number
-                    ));
                 }
             }
             o.push_str(&format!("    // ---- end HOLE {}\n", st.number));
+            // WHAT AN EMPTY HOLE GETS, AND IT SITS OUTSIDE THE HOLE.
+            //
+            // It returns; it does not panic. This was `todo!()` inside the
+            // markers, and that was wrong twice over.
+            //
+            // A panic in a node takes down whatever called it. The daemon
+            // evaluates every published row to serve a page, so one published
+            // row with an unfilled hole killed the whole tool — on a request
+            // that had nothing to do with that row. The rule it broke is the
+            // fifth: a refusal is never a substitution, and a row with no
+            // content returns `NotRun` UNDER ITS OWN NAME, so a run can print
+            // "n ran, m blocked" and name the blocked. A process that died
+            // names nothing.
+            //
+            // And it was INSIDE the markers, where `read_holes` reads it back
+            // as somebody's body: the placeholder made the hole look filled, so
+            // the next generation preserved it verbatim and the row could never
+            // be regenerated out of that state. Outside the markers the hole
+            // stays genuinely empty, `xtask fill` has somewhere to splice, and
+            // this line is written afresh until a body exists.
+            //
+            // `return` has type `!`, so the binding the rest of this function is
+            // written around still type-checks and nothing else has to know.
+            if filled.is_none() {
+                o.push_str(&format!(
+                    "    let {b}: {t} = return Err(Fault::NotRun {{ node: NODE_ID }});\n",
+                    b = st.binds,
+                    t = st.ty
+                ));
+            }
         }
         sh.steps.last().unwrap().binds.clone()
     };

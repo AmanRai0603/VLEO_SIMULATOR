@@ -151,20 +151,28 @@ fn the_relation_is_attributed_to_the_checkout_not_to_a_typed_name() {
             );
         }
         Saved::Ok { .. } => {
-            // A human checkout. Then the name it used must be that checkout's.
+            // A human checkout. Then the name it used must be that checkout's,
+            // and it must be ON the sheet — not merely checked and discarded.
             let w = who.expect("a save that succeeded must have had an identity");
             assert!(
                 form::refuse_agent_attribution(&root, &w).is_ok(),
                 "it wrote under {w}, which the roster calls an agent"
             );
-            // Put it back; this test is not here to edit the tree.
-            let h2 = hash_now(&root);
-            let orig = {
-                let t: toml::Value = before.parse().unwrap();
-                t["maths"]["expression"].as_str().unwrap().to_string()
-            };
-            let _ = form::save(&root, ROW, "expression", &orig, &h2);
-            assert_eq!(std::fs::read_to_string(sheet_path(&root)).unwrap(), before);
+            let after = std::fs::read_to_string(sheet_path(&root)).unwrap();
+            let v: toml::Value = after.parse().unwrap();
+            let stamped = v["maths"]["confirmed_by"].as_str().unwrap_or_default();
+            assert!(
+                stamped.starts_with(&w),
+                "the relation must carry {w}, not {stamped:?}"
+            );
+            // THE GUARD PUTS IT BACK, not a second save. This branch used to
+            // restore by saving the old expression again, and never ran here —
+            // `git config user.name` was an agent's, so every run took the
+            // refusal above. Under a human name it fails, and correctly: a
+            // relation save also stamps `confirmed_by`, so saving the old
+            // expression back leaves an attribution line the sheet did not have
+            // and the file never returns byte for byte. Only the bytes can
+            // restore the bytes.
         }
         Saved::Stale { .. } => panic!("unexpectedly stale"),
     }
@@ -861,4 +869,124 @@ fn a_row_that_is_already_published_is_not_published_again() {
         _ => panic!("publishing moves a seeded row and nothing else"),
     }
     assert_eq!(std::fs::read_to_string(&path).unwrap(), before);
+}
+
+// ── putting the edits on a branch ────────────────────────────────────────────
+
+/// A throwaway repository shaped like this one, so `propose` can be run for
+/// real without committing anything here.
+///
+/// The bug this exists for could only be seen end to end: `git status
+/// --porcelain` puts the status in two columns and an unstaged modification is
+/// ` M path`, so the path starts at column 3 — and the git helper trimmed BOTH
+/// ends of its output, eating the leading space of the first line only. The
+/// path parsed as `rates/…`, `git add` failed, and the whole proposal was
+/// refused. It survived review because it depends on what the first dirty line
+/// is: an untracked file is `?? path` and works.
+struct Scratch(PathBuf);
+
+impl Drop for Scratch {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
+}
+
+fn scratch_repo(name: &str) -> Option<Scratch> {
+    let dir = std::env::temp_dir().join(format!("vleo-propose-{name}"));
+    let _ = std::fs::remove_dir_all(&dir);
+    let nodes = dir.join("crates/vleo-mod-demo/nodes/demo_row");
+    std::fs::create_dir_all(&nodes).ok()?;
+    let run = |args: &[&str]| {
+        std::process::Command::new("git")
+            .arg("-C")
+            .arg(&dir)
+            .args(args)
+            .output()
+            .ok()
+            .filter(|o| o.status.success())
+    };
+    run(&["init", "--quiet", "-b", "work"])?;
+    run(&["config", "user.email", "nobody@example.invalid"])?;
+    run(&["config", "user.name", "A. Person"])?;
+    // No hooks: this repository's commit-msg hook is what validates a message,
+    // and a scratch clone has not got it. What is under test is the path
+    // parsing, not the hook.
+    std::fs::write(
+        nodes.join("node.toml"),
+        "id = \"demo_row\"\nlabel = \"first\"\n",
+    )
+    .ok()?;
+    run(&["add", "-A"])?;
+    run(&["commit", "--quiet", "-m", "chore(tree): seed"])?;
+    // The shape that broke it: a TRACKED file, modified and not staged, so the
+    // first porcelain line begins with a space.
+    std::fs::write(
+        nodes.join("node.toml"),
+        "id = \"demo_row\"\nlabel = \"second\"\n",
+    )
+    .ok()?;
+    Some(Scratch(dir))
+}
+
+#[test]
+fn a_modified_row_is_committed_to_a_branch_of_its_own() {
+    let Some(s) = scratch_repo("modified") else {
+        return; // no usable git here; the other tests still cover the rest
+    };
+    let root = s.0.clone();
+    match form::propose(&root, "reword the label", "docs") {
+        form::Proposed::Ok {
+            branch,
+            commit,
+            files,
+            ..
+        } => {
+            assert_eq!(files, 1, "one row was edited");
+            assert!(
+                branch.starts_with("sheet/demo_row-"),
+                "named for the row: {branch}"
+            );
+            assert!(!commit.is_empty());
+            // AND THE FILE IS ACTUALLY IN THE COMMIT. "It made a branch" is not
+            // the assertion that matters — the previous version got as far as
+            // creating one and then failed to add anything to it.
+            let out = std::process::Command::new("git")
+                .arg("-C")
+                .arg(&root)
+                .args(["show", "--name-only", "--format=", "HEAD"])
+                .output()
+                .unwrap();
+            let named = String::from_utf8_lossy(&out.stdout);
+            assert!(
+                named.contains("crates/vleo-mod-demo/nodes/demo_row/node.toml"),
+                "the edited row must be in the commit, whole path and all: {named}"
+            );
+        }
+        form::Proposed::Nothing => panic!("a modified row is something to propose"),
+        form::Proposed::Refused(e) => panic!("refused: {e}"),
+    }
+}
+
+#[test]
+fn an_untracked_row_is_committed_too() {
+    // The case that always worked, kept so a fix for one does not break the
+    // other: an untracked file's porcelain line is `?? path`, with no leading
+    // space.
+    let Some(s) = scratch_repo("untracked") else {
+        return;
+    };
+    let root = s.0.clone();
+    std::fs::write(
+        root.join("crates/vleo-mod-demo/nodes/demo_row/page.html"),
+        "<p>generated</p>\n",
+    )
+    .unwrap();
+    match form::propose(&root, "add the page", "docs") {
+        form::Proposed::Ok { files, .. } => assert_eq!(
+            files, 2,
+            "both the modified sheet and the untracked artefact"
+        ),
+        form::Proposed::Nothing => panic!("there was something to propose"),
+        form::Proposed::Refused(e) => panic!("refused: {e}"),
+    }
 }
