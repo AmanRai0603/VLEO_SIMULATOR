@@ -172,7 +172,6 @@ fn write_if_changed(path: &Path, text: &str) -> Result<bool, String> {
 
 // ---------------------------------------------------------------------------
 
-
 /// Today, as the sheets write it.
 fn today() -> String {
     // The sheets carry a plain ISO date and nothing reads it as a timestamp, so
@@ -910,7 +909,6 @@ fn cmd_setup(root: &Path) -> Result<(), String> {
 
 // ---------------------------------------------------------------------------
 
-
 fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
     let tree = load(root)?;
     let only = args.first().copied();
@@ -1209,9 +1207,7 @@ fn ring(crate_name: &str) -> Option<(u8, &'static str)> {
         "vleo-bus" => (2, "RING 2 — transport"),
         "vleo-data" => (2, "reference data"),
         "vleo-modules" => (4, "the facade over every node crate"),
-        "vleo-cli" | "vleo-daemon" | "vleo-ffi" | "vleo-py" | "vleo-wasm" => {
-            (5, "a face")
-        }
+        "vleo-cli" | "vleo-daemon" | "vleo-ffi" | "vleo-py" | "vleo-wasm" => (5, "a face"),
         "xtask" => (5, "the task runner"),
         n if n.starts_with("vleo-mod-") => (3, "RING 3 — the nodes"),
         _ => return None,
@@ -1235,8 +1231,12 @@ fn crate_direction(root: &Path) -> Result<Vec<String>, String> {
     dirs.sort();
     for d in dirs {
         let ct = d.join("Cargo.toml");
-        let Ok(text) = fs::read_to_string(&ct) else { continue };
-        let Ok(v) = text.parse::<toml::Value>() else { continue };
+        let Ok(text) = fs::read_to_string(&ct) else {
+            continue;
+        };
+        let Ok(v) = text.parse::<toml::Value>() else {
+            continue;
+        };
         let Some(name) = v
             .get("package")
             .and_then(|p| p.get("name"))
@@ -1390,11 +1390,6 @@ fn deepest_chain(tree: &Tree) -> Vec<String> {
     }
     best
 }
-
-
-
-
-
 
 fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
     let id = args

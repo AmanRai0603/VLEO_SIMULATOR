@@ -70,7 +70,14 @@ fn an_agent_is_refused_whatever_the_face() {
     // The rule itself, as a function: no git, no files, no checkout. Every name
     // on the roster and the two generic words, in the shapes a name arrives in.
     let root = root();
-    for who in ["Claude", "claude opus 5", "hole-filler", "Claude/Opus", "AGENT", "  claude  "] {
+    for who in [
+        "Claude",
+        "claude opus 5",
+        "hole-filler",
+        "Claude/Opus",
+        "AGENT",
+        "  claude  ",
+    ] {
         assert!(
             form::refuse_agent_attribution(&root, who).is_err(),
             "'{who}' must never be able to supply mathematics"
@@ -78,7 +85,10 @@ fn an_agent_is_refused_whatever_the_face() {
     }
     for who in ["", "   "] {
         let e = form::refuse_agent_attribution(&root, who).unwrap_err();
-        assert!(e.contains("blank"), "a blank attribution is not a way round it: {e}");
+        assert!(
+            e.contains("blank"),
+            "a blank attribution is not a way round it: {e}"
+        );
     }
     // And a person's name is not refused, or the rule would block the work it
     // exists to make possible.
@@ -154,10 +164,23 @@ impl Drop for Restore {
         // The artefacts too: a restored sheet beside artefacts generated from
         // the edit is the half-state this whole path avoids.
         if let Ok(t) = vleo_sheet::load::load_all(
-            self.path.parent().unwrap().parent().unwrap().parent().unwrap()
-                .parent().unwrap().parent().unwrap(),
+            self.path
+                .parent()
+                .unwrap()
+                .parent()
+                .unwrap()
+                .parent()
+                .unwrap()
+                .parent()
+                .unwrap()
+                .parent()
+                .unwrap(),
         ) {
-            if let Some(sh) = t.sheets.values().find(|s| s.dir == self.path.parent().unwrap()) {
+            if let Some(sh) = t
+                .sheets
+                .values()
+                .find(|s| s.dir == self.path.parent().unwrap())
+            {
                 let _ = form::regenerate_for_test(sh, &t);
             }
         }
@@ -169,7 +192,9 @@ impl Drop for Restore {
 const EDIT_ROW: &str = "gnc_alignment_error";
 
 fn edit_path(root: &Path) -> PathBuf {
-    root.join("crates/vleo-mod-acs/nodes").join(EDIT_ROW).join("node.toml")
+    root.join("crates/vleo-mod-acs/nodes")
+        .join(EDIT_ROW)
+        .join("node.toml")
 }
 
 #[test]
@@ -177,7 +202,10 @@ fn a_good_edit_is_written_regenerated_and_then_put_back() {
     let root = root();
     let path = edit_path(&root);
     let before = std::fs::read_to_string(&path).unwrap();
-    let _guard = Restore { path: path.clone(), bytes: before.clone() };
+    let _guard = Restore {
+        path: path.clone(),
+        bytes: before.clone(),
+    };
     let h0 = form::file_hash(&before);
     let meaning0 = {
         let t = vleo_sheet::load::load_all(&root).unwrap();
@@ -187,7 +215,11 @@ fn a_good_edit_is_written_regenerated_and_then_put_back() {
     // A real change to a real field, with a real person against it.
     let out = form::save(&root, EDIT_ROW, "reason_lower", "a rewritten reason", &h0);
     let (h1, meaning1, n) = match out {
-        Saved::Ok { file_hash, sheet_hash, regenerated } => (file_hash, sheet_hash, regenerated),
+        Saved::Ok {
+            file_hash,
+            sheet_hash,
+            regenerated,
+        } => (file_hash, sheet_hash, regenerated),
         Saved::Stale { current } => panic!("unexpectedly stale, current {current}"),
         Saved::Refused(e) => panic!("a good edit was refused: {e}"),
     };
@@ -199,12 +231,21 @@ fn a_good_edit_is_written_regenerated_and_then_put_back() {
         meaning1, meaning0,
         "rewording a bound's reason must not change the node's meaning"
     );
-    assert!(n >= 1, "at least the page and the metadata carry the reason");
+    assert!(
+        n >= 1,
+        "at least the page and the metadata carry the reason"
+    );
     let after = std::fs::read_to_string(&path).unwrap();
     assert!(after.contains("a rewritten reason"));
     assert_eq!(
-        after.lines().filter(|l| l.trim_start().starts_with('#')).count(),
-        before.lines().filter(|l| l.trim_start().starts_with('#')).count(),
+        after
+            .lines()
+            .filter(|l| l.trim_start().starts_with('#'))
+            .count(),
+        before
+            .lines()
+            .filter(|l| l.trim_start().starts_with('#'))
+            .count(),
         "no comment may be lost"
     );
 
@@ -238,18 +279,30 @@ fn a_proposal_with_nothing_edited_does_nothing() {
     // it could do.
     let root = root();
     let was = std::process::Command::new("git")
-        .arg("-C").arg(&root).args(["rev-parse", "--abbrev-ref", "HEAD"])
-        .output().unwrap();
+        .arg("-C")
+        .arg(&root)
+        .args(["rev-parse", "--abbrev-ref", "HEAD"])
+        .output()
+        .unwrap();
     let was = String::from_utf8_lossy(&was.stdout).trim().to_string();
     // Only meaningful when no node folder is dirty; if one is, this says so
     // rather than pretending to have tested something.
     let dirty = std::process::Command::new("git")
-        .arg("-C").arg(&root).args(["status", "--porcelain", "--", "crates"])
-        .output().unwrap();
+        .arg("-C")
+        .arg(&root)
+        .args(["status", "--porcelain", "--", "crates"])
+        .output()
+        .unwrap();
     let dirty: Vec<String> = String::from_utf8_lossy(&dirty.stdout)
-        .lines().filter(|l| l.contains("/nodes/")).map(|s| s.to_string()).collect();
+        .lines()
+        .filter(|l| l.contains("/nodes/"))
+        .map(|s| s.to_string())
+        .collect();
     if !dirty.is_empty() {
-        eprintln!("skipped: a node folder is already edited ({} path(s))", dirty.len());
+        eprintln!(
+            "skipped: a node folder is already edited ({} path(s))",
+            dirty.len()
+        );
         return;
     }
     match form::propose(&root, "anything", "docs") {
@@ -258,8 +311,11 @@ fn a_proposal_with_nothing_edited_does_nothing() {
         form::Proposed::Refused(e) => panic!("expected Nothing, got: {e}"),
     }
     let now = std::process::Command::new("git")
-        .arg("-C").arg(&root).args(["rev-parse", "--abbrev-ref", "HEAD"])
-        .output().unwrap();
+        .arg("-C")
+        .arg(&root)
+        .args(["rev-parse", "--abbrev-ref", "HEAD"])
+        .output()
+        .unwrap();
     assert_eq!(
         String::from_utf8_lossy(&now.stdout).trim(),
         was,

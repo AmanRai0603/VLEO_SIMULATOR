@@ -284,14 +284,22 @@ pub fn place(field: &str) -> Option<(&'static str, &'static str)> {
 /// reader who is told "no" and not "why" goes looking for a way round.
 pub fn structural(field: &str) -> Option<&'static str> {
     Some(match field {
-        "id" | "folder" => "the identifier is the folder and the variable name; renaming it is a move",
+        "id" | "folder" => {
+            "the identifier is the folder and the variable name; renaming it is a move"
+        }
         "parent" => "the parent is the tree's shape — moving a row moves everyone who reads it",
-        "order" => "order decides position among siblings, and the block may be packed solid; \
-                    inserting renumbers its neighbours",
+        "order" => {
+            "order decides position among siblings, and the block may be packed solid; \
+                    inserting renumbers its neighbours"
+        }
         "layer" => "the layer decides which contract the row sits under",
-        "kind" => "kind decides whether the row declares a value or computes one, which changes \
-                   what is generated for it",
-        "subsystem" | "owner" => "ownership is generated into CODEOWNERS and decides who reviews it",
+        "kind" => {
+            "kind decides whether the row declares a value or computes one, which changes \
+                   what is generated for it"
+        }
+        "subsystem" | "owner" => {
+            "ownership is generated into CODEOWNERS and decides who reviews it"
+        }
         "tier" | "state" => "both change what the gate demands of the row",
         _ => return None,
     })
@@ -318,7 +326,9 @@ pub fn set(text: &str, field: &str, value: &str) -> Result<String, String> {
     } else {
         let header = format!("\n[{table}]\n");
         let Some(h) = text.find(&header) else {
-            return Err(format!("this sheet has no [{table}] table to write {key} into"));
+            return Err(format!(
+                "this sheet has no [{table}] table to write {key} into"
+            ));
         };
         let start = h + header.len();
         let end = text[start..]
@@ -354,7 +364,11 @@ pub fn set(text: &str, field: &str, value: &str) -> Result<String, String> {
         return Err(format!(
             "no `{key} =` in {} — this form replaces a value that is already there, it does not \
              decide where a new key belongs",
-            if table.is_empty() { "the sheet's head" } else { table }
+            if table.is_empty() {
+                "the sheet's head"
+            } else {
+                table
+            }
         ));
     }
     if hits.len() > 1 {
@@ -387,7 +401,14 @@ fn toml_quote(v: &str) -> String {
     if v.contains('\n') {
         // A form field that has become multi-line is written as one, so the
         // file stays parseable rather than losing the tail.
-        return format!("\"\"\"\n{}\"\"\"", if v.ends_with('\n') { v.to_string() } else { format!("{v}\n") });
+        return format!(
+            "\"\"\"\n{}\"\"\"",
+            if v.ends_with('\n') {
+                v.to_string()
+            } else {
+                format!("{v}\n")
+            }
+        );
     }
     let mut o = String::from("\"");
     for c in v.chars() {
@@ -470,9 +491,11 @@ pub fn git_identity(root: &std::path::Path) -> Result<String, String> {
 pub fn refuse_agent_attribution(root: &std::path::Path, who: &str) -> Result<(), String> {
     let lower = who.trim().to_lowercase();
     if lower.is_empty() {
-        return Err("an attribution cannot be blank — it takes the name of a person who has \
+        return Err(
+            "an attribution cannot be blank — it takes the name of a person who has \
                     read the relation against its source and is prepared to own it"
-            .into());
+                .into(),
+        );
     }
     for bad in agent_identities(root) {
         if lower == bad
@@ -528,13 +551,7 @@ pub enum Saved {
 /// it is compared and a fallback to unformatted text would leave the tree
 /// failing its own regeneration diff. Refused up front rather than discovered
 /// afterwards.
-pub fn save(
-    root: &std::path::Path,
-    id: &str,
-    field: &str,
-    value: &str,
-    base: &str,
-) -> Saved {
+pub fn save(root: &std::path::Path, id: &str, field: &str, value: &str, base: &str) -> Saved {
     if let Some(why) = structural(field) {
         return Saved::Refused(format!("'{field}' is not editable here: {why}"));
     }
@@ -691,7 +708,9 @@ fn regenerate(sh: &crate::model::Sheet, tree: &crate::load::Tree) -> Result<usiz
             text
         };
         let p = sh.dir.join(name);
-        let same = std::fs::read_to_string(&p).map(|o| o == text).unwrap_or(false);
+        let same = std::fs::read_to_string(&p)
+            .map(|o| o == text)
+            .unwrap_or(false);
         if !same {
             std::fs::write(&p, &text).map_err(|e| format!("{}: {e}", p.display()))?;
             n += 1;
@@ -894,7 +913,11 @@ pub fn propose(root: &std::path::Path, summary: &str, kind: &str) -> Proposed {
     // how this reads in a log. `docs` is the default because most sheet edits
     // are a sentence somebody improved; a changed relation is not, and the face
     // offers the others.
-    let kind = if kind.trim().is_empty() { "docs" } else { kind.trim() };
+    let kind = if kind.trim().is_empty() {
+        "docs"
+    } else {
+        kind.trim()
+    };
     let summary = summary.trim();
     if summary.is_empty() {
         return Proposed::Refused(
@@ -935,7 +958,11 @@ pub fn propose(root: &std::path::Path, summary: &str, kind: &str) -> Proposed {
     let branch = format!(
         "sheet/{}-{}",
         rows.first().cloned().unwrap_or_else(|| "rows".into()),
-        if stamp.is_empty() { "edit".into() } else { stamp }
+        if stamp.is_empty() {
+            "edit".into()
+        } else {
+            stamp
+        }
     );
     if git(root, &["rev-parse", "--verify", &branch]).is_ok() {
         return Proposed::Refused(format!(
@@ -984,7 +1011,10 @@ pub fn propose(root: &std::path::Path, summary: &str, kind: &str) -> Proposed {
          row's artefacts were regenerated from the sheet before it was accepted.\n\n\
          Attributed to {who}, from this checkout's git config user.name.\n",
         rows.len(),
-        rows.iter().map(|r| format!("  {r}")).collect::<Vec<_>>().join("\n"),
+        rows.iter()
+            .map(|r| format!("  {r}"))
+            .collect::<Vec<_>>()
+            .join("\n"),
     );
     if let Err(e) = git(root, &["commit", "-m", &body]) {
         return put_back(e);

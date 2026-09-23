@@ -532,7 +532,9 @@ fn sheet_preview(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static s
 /// be editing.
 fn writes_allowed() -> bool {
     matches!(
-        std::env::var("VLEO_ALLOW_WRITE").unwrap_or_default().as_str(),
+        std::env::var("VLEO_ALLOW_WRITE")
+            .unwrap_or_default()
+            .as_str(),
         "1" | "true" | "yes"
     )
 }
@@ -556,11 +558,7 @@ fn sheet_write(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static str
         (
             status,
             JSON,
-            format!(
-                "{{\"ok\":false,\"message\":{}}}",
-                json::string(&why)
-            )
-            .into_bytes(),
+            format!("{{\"ok\":false,\"message\":{}}}", json::string(&why)).into_bytes(),
         )
     };
     if !writes_allowed() {
@@ -591,13 +589,7 @@ fn sheet_write(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static str
     // checkout's own `git config user.name`, so the sheet and the commit make
     // the same claim about who did it — and nobody puts a colleague's name on
     // their work by typing it into a box.
-    match vleo_sheet::form::save(
-        &ctx.root,
-        id,
-        &decode(field),
-        &decode(value),
-        &decode(base),
-    ) {
+    match vleo_sheet::form::save(&ctx.root, id, &decode(field), &decode(value), &decode(base)) {
         vleo_sheet::form::Saved::Ok {
             file_hash,
             sheet_hash,

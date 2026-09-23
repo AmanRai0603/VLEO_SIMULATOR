@@ -45,7 +45,9 @@ source = "another_table_with_a_source"
 "#;
 
 fn count_comments(s: &str) -> usize {
-    s.lines().filter(|l| l.trim_start().starts_with('#')).count()
+    s.lines()
+        .filter(|l| l.trim_start().starts_with('#'))
+        .count()
 }
 
 #[test]
@@ -66,7 +68,11 @@ fn a_written_field_reads_back_and_every_comment_survives() {
         } else {
             v.get(t).and_then(|x| x.get(k))
         };
-        assert_eq!(got.and_then(|x| x.as_str()), Some(value), "{field} did not read back");
+        assert_eq!(
+            got.and_then(|x| x.as_str()),
+            Some(value),
+            "{field} did not read back"
+        );
         assert_eq!(
             count_comments(&out),
             count_comments(SHEET),
@@ -142,10 +148,7 @@ fn a_multi_line_body_is_refused_rather_than_truncated() {
 
 #[test]
 fn a_duplicated_key_is_refused_rather_than_half_written() {
-    let twice = SHEET.replace(
-        "unit = \"Metre\"",
-        "unit = \"Metre\"\nunit = \"Metre\"",
-    );
+    let twice = SHEET.replace("unit = \"Metre\"", "unit = \"Metre\"\nunit = \"Metre\"");
     let e = form::set(&twice, "unit", "Kelvin").unwrap_err();
     assert!(e.contains("2 times"), "should say how many: {e}");
 }
@@ -186,7 +189,10 @@ fn sheet() -> vleo_sheet::model::Sheet {
     // rather than a hand-made one: a preview against a fabricated sheet would
     // prove the preview agrees with the fabrication.
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent().unwrap().parent().unwrap();
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap();
     let t = vleo_sheet::load::load_all(root).unwrap();
     t.sheets.get("gnc_alignment_error").unwrap().clone()
 }
@@ -197,7 +203,10 @@ fn a_paste_reports_what_would_change_and_writes_nothing() {
     let before = std::fs::read_to_string(sh.dir.join("node.toml")).unwrap();
     let out = form::preview(&sh, "[maths]\nexpression = \"totally_new = 1\"\n").unwrap();
     assert!(out.contains("\"field\": \"expression\""), "{out}");
-    assert!(out.contains("totally_new = 1"), "the new value is shown: {out}");
+    assert!(
+        out.contains("totally_new = 1"),
+        "the new value is shown: {out}"
+    );
     assert_eq!(
         std::fs::read_to_string(sh.dir.join("node.toml")).unwrap(),
         before,
@@ -231,8 +240,14 @@ fn a_pasted_structural_key_is_dropped_with_its_reason() {
     for k in ["id", "order", "parent"] {
         assert!(out.contains(k), "{k} must be named: {out}");
     }
-    assert!(out.contains("renumbers its neighbours"), "with the reason: {out}");
-    assert!(!out.contains("\"field\": \"id\""), "and never as a change: {out}");
+    assert!(
+        out.contains("renumbers its neighbours"),
+        "with the reason: {out}"
+    );
+    assert!(
+        !out.contains("\"field\": \"id\""),
+        "and never as a change: {out}"
+    );
 }
 
 #[test]
@@ -245,7 +260,10 @@ fn a_table_the_form_writes_into_is_not_itself_reported_as_dropped() {
         !out.contains("\"maths — not a field"),
         "the table itself must not be reported as dropped: {out}"
     );
-    assert!(out.contains("maths.whatever"), "its unknown key must be: {out}");
+    assert!(
+        out.contains("maths.whatever"),
+        "its unknown key must be: {out}"
+    );
 }
 
 #[test]

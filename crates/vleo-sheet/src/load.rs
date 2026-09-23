@@ -472,7 +472,11 @@ fn load_layers(tree: &mut Tree) -> Result<(), String> {
 /// so it is read in one place rather than twice.
 fn parse_cycles(v: &toml::Value) -> Vec<CycleSpec> {
     let mut out = Vec::new();
-    for it in v.get("iterate").and_then(|i| i.as_array()).unwrap_or(&vec![]) {
+    for it in v
+        .get("iterate")
+        .and_then(|i| i.as_array())
+        .unwrap_or(&vec![])
+    {
         let Some(it) = it.as_table() else { continue };
         let mut cy = CycleSpec {
             converge_on: s(it.get("converge_on")),
@@ -480,7 +484,11 @@ fn parse_cycles(v: &toml::Value) -> Vec<CycleSpec> {
             max_iter: u(it.get("max_iter")),
             ..Default::default()
         };
-        for n in it.get("nodes").and_then(|n| n.as_array()).unwrap_or(&vec![]) {
+        for n in it
+            .get("nodes")
+            .and_then(|n| n.as_array())
+            .unwrap_or(&vec![])
+        {
             cy.nodes.push(n.as_str().unwrap_or("").to_string());
         }
         for sd in it.get("seed").and_then(|s| s.as_array()).unwrap_or(&vec![]) {
