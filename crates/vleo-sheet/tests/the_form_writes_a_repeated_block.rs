@@ -382,3 +382,52 @@ fn a_view_that_carries_a_comment_or_a_key_it_does_not_know_is_refused() {
         "a number has no row to sweep: {e}"
     );
 }
+
+#[test]
+fn a_block_under_an_empty_table_lands_inside_it() {
+    // The shape a `[theory]` is in the moment it is created: the table exists
+    // and nothing has been written into it, so the next header follows it
+    // immediately. Finding the end of that table by searching for a newline
+    // followed by `[` skips that header — it has no newline in front of it
+    // within the remaining text — and the window swallows the whole of the
+    // NEXT table. A theory step added to such a sheet landed after `[output]`,
+    // which is valid TOML and the wrong place.
+    let s = SHEET.replace("[output]", "[theory]\n[output]");
+    let out = form::block_text(&s, "theory", "add", 0, &v(&[("text", "the first step")])).unwrap();
+    let t = parse(&out);
+    assert_eq!(
+        t["theory"]["step"][0]["text"].as_str(),
+        Some("the first step")
+    );
+    let (theory, step, output) = (
+        out.find("[theory]").unwrap(),
+        out.find("[[theory.step]]").unwrap(),
+        out.find("\n[output]").unwrap(),
+    );
+    assert!(
+        theory < step && step < output,
+        "the step belongs under its own table, before the next one:\n{out}"
+    );
+    // And the table it must not have reached into is untouched.
+    assert_eq!(t["output"]["symbol"].as_str(), Some("y"));
+    assert_eq!(t["output"]["unit"].as_str(), Some("Metre"));
+}
+
+#[test]
+fn a_key_in_an_empty_table_is_not_looked_for_in_the_next_one() {
+    // The same defect seen from the scalar side. With the window running past
+    // the end of `[theory]`, a write to a theory field would search `[output]`
+    // as well — and a key that exists in both would be found in the wrong one.
+    let s = SHEET.replace("[output]", "[theory]\n[output]").replace(
+        "symbol = \"y\"",
+        "symbol = \"y\"\nwhy = \"the output's own why\"",
+    );
+    let out = form::set(&s, "theory_why", "the theory's why").unwrap();
+    let t = parse(&out);
+    assert_eq!(t["theory"]["why"].as_str(), Some("the theory's why"));
+    assert_eq!(
+        t["output"]["why"].as_str(),
+        Some("the output's own why"),
+        "the identically named key in the next table must be untouched"
+    );
+}

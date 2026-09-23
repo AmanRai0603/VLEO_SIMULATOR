@@ -811,20 +811,44 @@ fn opens_prose(rhs: &str) -> bool {
     rhs.starts_with("\"\"\"") && !(rhs.len() >= 6 && rhs.ends_with("\"\"\""))
 }
 
-/// The byte range of one table's body: from just after its header line to just
-/// before the next table header. An empty name means the sheet's head.
+/// The byte range of one table's body: from just after its header line to the
+/// start of the next table header. An empty name means the sheet's head.
+///
+/// BY LINE, NOT BY SEARCHING FOR `"\n["`. That search was wrong in two ways and
+/// one of them showed. A table with an EMPTY body is followed immediately by the
+/// next header, which then sits at offset 0 of the remaining slice with no
+/// newline in front of it — so the search skipped it and the window swallowed
+/// the whole of the following table. A `[theory]` created and not yet written
+/// into is exactly that case, and a theory step added to such a sheet landed
+/// after `[output]` instead of under the table it belongs to. The same search
+/// would also have matched a line beginning `[` inside somebody's paragraph.
+///
+/// `scan` already knows which lines are prose and which are not, so the answer
+/// is to ask it rather than to search the bytes.
 fn window(text: &str, table: &str) -> Option<(usize, usize)> {
-    if table.is_empty() {
-        return Some((0, text.find("\n[").unwrap_or(text.len())));
+    let header = (!table.is_empty()).then(|| format!("[{table}]"));
+    let mut start: Option<usize> = None;
+    for r in scan(text) {
+        if r.prose {
+            continue;
+        }
+        let line = text[r.start..r.end].trim();
+        if !line.starts_with('[') {
+            continue;
+        }
+        match (&header, start) {
+            // The sheet's head runs to the first table header of any kind.
+            (None, _) => return Some((0, r.start)),
+            (Some(h), None) if line == h => start = Some(r.end),
+            (Some(_), Some(s)) => return Some((s, r.start)),
+            _ => {}
+        }
     }
-    let header = format!("\n[{table}]\n");
-    let h = text.find(&header)?;
-    let start = h + header.len();
-    let end = text[start..]
-        .find("\n[")
-        .map(|i| start + i)
-        .unwrap_or(text.len());
-    Some((start, end))
+    match (header, start) {
+        (None, _) => Some((0, text.len())),
+        (Some(_), Some(s)) => Some((s, text.len())),
+        (Some(_), None) => None,
+    }
 }
 
 /// Every assignment of `key` in `table`, as a byte range covering the whole
@@ -1728,6 +1752,14 @@ pub enum Proposed {
 }
 
 /// Run git in the checkout and give back its stdout, or its stderr as the error.
+///
+/// TRAILING WHITESPACE ONLY. This trimmed both ends, and `git status --porcelain`
+/// puts the status in the first two columns — so an unstaged modification is
+/// ` M path`, and trimming the front ate the leading space of the FIRST line
+/// only. `propose` then read the path from column 3 and got `rates/…` instead of
+/// `crates/…`, and `git add` failed on a path that does not exist. It survived
+/// review and a merge because it depends on what the first dirty line happens to
+/// be: an untracked file is `?? path`, which has no leading space and works.
 fn git(root: &std::path::Path, args: &[&str]) -> Result<String, String> {
     let out = std::process::Command::new("git")
         .arg("-C")
@@ -1742,7 +1774,25 @@ fn git(root: &std::path::Path, args: &[&str]) -> Result<String, String> {
             String::from_utf8_lossy(&out.stderr).trim()
         ));
     }
-    Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
+    Ok(String::from_utf8_lossy(&out.stdout).trim_end().to_string())
+}
+
+/// The node-folder paths in a `git status --porcelain` listing.
+///
+/// Porcelain v1 is `XY<space>PATH`: two columns of status, a space, then the
+/// path. The status columns can be blank — an unstaged modification is ` M` —
+/// so the path starts at column 3 and nothing before it may be trimmed away.
+///
+/// A rename is `R  old -> new`, and the path taken is the new one, because that
+/// is the file that exists to be added.
+fn dirty_paths(porcelain: &str) -> Vec<String> {
+    porcelain
+        .lines()
+        .filter(|l| l.len() > 3)
+        .map(|l| l[3..].trim())
+        .map(|p| p.rsplit(" -> ").next().unwrap_or(p).trim().to_string())
+        .filter(|p| p.contains("/nodes/"))
+        .collect()
 }
 
 /// Put the edited rows on a branch of their own, as one commit.
@@ -1772,11 +1822,7 @@ pub fn propose(root: &std::path::Path, summary: &str, kind: &str) -> Proposed {
         Ok(d) => d,
         Err(e) => return Proposed::Refused(e),
     };
-    let paths: Vec<String> = dirty
-        .lines()
-        .filter_map(|l| l.get(3..).map(|p| p.trim().to_string()))
-        .filter(|p| p.contains("/nodes/"))
-        .collect();
+    let paths = dirty_paths(&dirty);
     if paths.is_empty() {
         return Proposed::Nothing;
     }
