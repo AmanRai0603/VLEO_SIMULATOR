@@ -298,6 +298,15 @@ fn route(
         ("POST", p) if p.starts_with("/v1/sheet/") => {
             sheet_write(ctx, p.trim_start_matches("/v1/sheet/"), params)
         }
+        ("POST", p) if p.starts_with("/v1/block/") => {
+            block_write(ctx, p.trim_start_matches("/v1/block/"), params)
+        }
+        ("POST", p) if p.starts_with("/v1/view/") => {
+            view_write(ctx, p.trim_start_matches("/v1/view/"), params)
+        }
+        ("POST", p) if p.starts_with("/v1/publish/") => {
+            publish_write(ctx, p.trim_start_matches("/v1/publish/"), params)
+        }
         ("POST", "/v1/run") | ("GET", "/v1/run") => ok_json(run_json(params, ctx)),
         ("GET", "/v1/sweep") => ok_json(sweep_json(params, ctx)),
         ("GET", "/v1/probe") => ok_json(probe_json(params)),
@@ -589,7 +598,20 @@ fn sheet_write(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static str
     // checkout's own `git config user.name`, so the sheet and the commit make
     // the same claim about who did it — and nobody puts a colleague's name on
     // their work by typing it into a box.
-    match vleo_sheet::form::save(&ctx.root, id, &decode(field), &decode(value), &decode(base)) {
+    said(vleo_sheet::form::save(
+        &ctx.root,
+        id,
+        &decode(field),
+        &decode(value),
+        &decode(base),
+    ))
+}
+
+/// One save's outcome as a response. Four endpoints write a sheet and all four
+/// answer the same three ways, so the shape is here rather than four times.
+fn said(out: vleo_sheet::form::Saved) -> (&'static str, &'static str, Vec<u8>) {
+    const JSON: &str = "application/json; charset=utf-8";
+    match out {
         vleo_sheet::form::Saved::Ok {
             file_hash,
             sheet_hash,
@@ -618,8 +640,175 @@ fn sheet_write(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static str
             )
             .into_bytes(),
         ),
-        vleo_sheet::form::Saved::Refused(why) => refuse("400 Bad Request", why),
+        vleo_sheet::form::Saved::Refused(why) => (
+            "400 Bad Request",
+            JSON,
+            format!("{{\"ok\":false,\"message\":{}}}", json::string(&why)).into_bytes(),
+        ),
     }
+}
+
+/// The two things every sheet-writing endpoint checks first.
+fn may_write(id: &str) -> Option<String> {
+    if !writes_allowed() {
+        return Some(
+            "this daemon is read-only. Start it with VLEO_ALLOW_WRITE=1 in a checkout to edit \
+             sheets from the face."
+                .into(),
+        );
+    }
+    if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+        return Some("not a node identifier".into());
+    }
+    None
+}
+
+/// Add, change or remove one repeated block.
+///
+///     POST /v1/block/<id>
+///     array=input&op=add&index=0&binding=ap&var=sw_ap_design&type=Ratio&base=1f2e3d
+///
+/// A block is not a field. It is added and removed as well as edited, and
+/// `form::save_block` is where the refusals for that live — a step whose hole
+/// holds somebody's Rust, an input a filled hole binds by name, an edge that
+/// closes a loop in the derivation graph.
+fn block_write(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static str, Vec<u8>) {
+    const JSON: &str = "application/json; charset=utf-8";
+    let refuse = |status: &'static str, why: String| -> (&'static str, &'static str, Vec<u8>) {
+        (
+            status,
+            JSON,
+            format!("{{\"ok\":false,\"message\":{}}}", json::string(&why)).into_bytes(),
+        )
+    };
+    if let Some(why) = may_write(id) {
+        return refuse(
+            if writes_allowed() {
+                "400 Bad Request"
+            } else {
+                "403 Forbidden"
+            },
+            why,
+        );
+    }
+    let (Some(name), Some(op), Some(base)) = (
+        param(params, "array"),
+        param(params, "op"),
+        param(params, "base"),
+    ) else {
+        return refuse(
+            "400 Bad Request",
+            "array, op and base are all required".into(),
+        );
+    };
+    let (name, op, base) = (decode(name), decode(op), decode(base));
+    let Some(a) = vleo_sheet::form::array(&name) else {
+        return refuse(
+            "400 Bad Request",
+            format!("'{name}' is not a repeated block this form writes"),
+        );
+    };
+    let index: usize = param(params, "index")
+        .and_then(|i| decode(i).parse().ok())
+        .unwrap_or(0);
+    // The columns come by their own names, so an array with a `type` and a
+    // `text` needs no naming convention on the wire.
+    let mut values: Vec<(&str, String)> = Vec::new();
+    for c in a.columns {
+        if let Some(v) = param(params, c.key) {
+            values.push((c.key, decode(v)));
+        }
+    }
+    // A `set` names the one key it moves, which is not necessarily a column the
+    // request also carries a value for under some other name.
+    if op == "set" {
+        if let Some(k) = param(params, "key") {
+            let k = decode(k);
+            let Some(c) = a.columns.iter().find(|c| c.key == k) else {
+                return refuse(
+                    "400 Bad Request",
+                    format!("'{k}' is not a key of a {} block", a.name),
+                );
+            };
+            let v = values
+                .iter()
+                .find(|(kk, _)| *kk == c.key)
+                .map(|(_, v)| v.clone())
+                .unwrap_or_default();
+            values = vec![(c.key, v)];
+        }
+    }
+    said(vleo_sheet::form::save_block(
+        &ctx.root, id, &name, &op, index, &values, &base,
+    ))
+}
+
+/// Rewrite how the answer is drawn.
+///
+///     POST /v1/view/<id>
+///     kind=line&over=orbit_altitude&points=60&base=1f2e3d
+///
+/// The whole `[view]` table at once, because its kind decides which other keys
+/// exist — see `form::save_view`.
+fn view_write(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static str, Vec<u8>) {
+    const JSON: &str = "application/json; charset=utf-8";
+    if let Some(why) = may_write(id) {
+        return (
+            if writes_allowed() {
+                "400 Bad Request"
+            } else {
+                "403 Forbidden"
+            },
+            JSON,
+            format!("{{\"ok\":false,\"message\":{}}}", json::string(&why)).into_bytes(),
+        );
+    }
+    let (Some(kind), Some(base)) = (param(params, "kind"), param(params, "base")) else {
+        return (
+            "400 Bad Request",
+            JSON,
+            b"{\"ok\":false,\"message\":\"kind and base are required\"}".to_vec(),
+        );
+    };
+    said(vleo_sheet::form::save_view(
+        &ctx.root,
+        id,
+        &decode(kind),
+        &decode(param(params, "over").unwrap_or("")),
+        &decode(param(params, "points").unwrap_or("")),
+        &decode(base),
+    ))
+}
+
+/// Move a seeded row to published.
+///
+///     POST /v1/publish/<id>
+///     base=1f2e3d
+///
+/// An ACTION, not a field. A state decides whether anything is generated from
+/// the row at all, so it has preconditions rather than a text box — see
+/// `form::publish`.
+fn publish_write(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static str, Vec<u8>) {
+    const JSON: &str = "application/json; charset=utf-8";
+    if let Some(why) = may_write(id) {
+        return (
+            if writes_allowed() {
+                "400 Bad Request"
+            } else {
+                "403 Forbidden"
+            },
+            JSON,
+            format!("{{\"ok\":false,\"message\":{}}}", json::string(&why)).into_bytes(),
+        );
+    }
+    let Some(base) = param(params, "base") else {
+        return (
+            "400 Bad Request",
+            JSON,
+            b"{\"ok\":false,\"message\":\"base is required\"}".to_vec(),
+        );
+    };
+    said(vleo_sheet::form::publish(&ctx.root, id, &decode(base)))
 }
 
 fn declare_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {

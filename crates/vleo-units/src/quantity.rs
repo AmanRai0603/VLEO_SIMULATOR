@@ -423,3 +423,56 @@ impl MassFlow {
         self.get() * 1.0e6
     }
 }
+
+/// Every quantity type a sheet may declare, by name.
+///
+/// A sheet's `[output] type` is emitted VERBATIM into the generated signature,
+/// so a name that is not one of these produces Rust that does not compile —
+/// `Result<Nonsense, Fault>`. Nothing checked it: the gate only asked whether
+/// the field was blank, so a face with a text box could write a type that broke
+/// the build and report success.
+///
+/// `quantity!` is invoked once per type and cannot accumulate a list, so this
+/// is maintained beside the invocations and `the_registry_matches_the_types`
+/// fails if the two drift. A registry nothing checks is a registry that is
+/// wrong.
+pub const QUANTITIES: &[&str] = &[
+    "Acceleration",
+    "Angle",
+    "AngularMomentum",
+    "AngularRate",
+    "Area",
+    "Charge",
+    "Current",
+    "DataRate",
+    "DataVolume",
+    "DipoleMoment",
+    "Energy",
+    "Force",
+    "Frequency",
+    "Impulse",
+    "Irradiance",
+    "Length",
+    "MagneticFluxDensity",
+    "Mass",
+    "MassDensity",
+    "MassFlow",
+    "MassFlux",
+    "MolarMass",
+    "Money",
+    "NumberDensity",
+    "Power",
+    "Pressure",
+    "Ratio",
+    "Temperature",
+    "Time",
+    "Torque",
+    "Velocity",
+    "Voltage",
+    "Volume",
+];
+
+/// Whether this is a quantity type a sheet may declare.
+pub fn is_quantity(name: &str) -> bool {
+    QUANTITIES.contains(&name)
+}

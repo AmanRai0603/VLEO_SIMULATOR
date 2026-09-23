@@ -84,6 +84,14 @@ macro_rules! units {
             pub const fn name(self) -> &'static str {
                 match self { $( Unit::$variant => stringify!($variant) ),* }
             }
+            /// Every unit's machine name, in declaration order.
+            ///
+            /// Generated from the same list as the enum, so a face offering
+            /// these and `from_name` accepting them cannot disagree — which a
+            /// hand-kept copy in JavaScript would, the first time a unit was
+            /// added.
+            pub const NAMES: &'static [&'static str] = &[ $( stringify!($variant) ),* ];
+
             /// Parse the machine name. Used by the generators, never at run time.
             pub fn from_name(s: &str) -> Option<Unit> {
                 match s { $( stringify!($variant) => Some(Unit::$variant), )* _ => None }

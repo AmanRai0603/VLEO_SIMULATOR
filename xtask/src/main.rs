@@ -1424,19 +1424,39 @@ fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
     println!("  {}", sh.dir.join("node.toml").display());
     println!();
 
-    let asks = vleo_sheet::form::asks(sh)?;
+    // Grouped, in the order the form asks them, and the same grouping the
+    // browser shows — both read `form::FIELDS`, so a field added to the sheet
+    // appears in both faces or in neither.
+    let asks = vleo_sheet::form::asks(sh);
     let mut open = 0usize;
-    for a in &asks {
-        if a.open {
-            open += 1;
-            println!("  \x1b[33m?\x1b[0m  {}", a.ask);
-            println!("     {} — without it: {}", a.field, a.why);
-        } else {
-            println!(
-                "  \x1b[32m·\x1b[0m  {} = {}",
-                a.field,
-                truncate(vleo_sheet::form::value(sh, a.field), 68)
-            );
+    for g in vleo_sheet::form::groups() {
+        let mine: Vec<&vleo_sheet::form::Ask> = asks
+            .iter()
+            .filter(|a| a.group == g && a.available)
+            .collect();
+        if mine.is_empty() {
+            continue;
+        }
+        println!("  \x1b[2m{g}\x1b[0m");
+        for a in mine {
+            if a.open {
+                open += 1;
+                println!("  \x1b[33m?\x1b[0m  {}", a.ask);
+                println!("     {} — without it: {}", a.field, a.why);
+            } else {
+                let v = vleo_sheet::form::value(sh, a.field);
+                if v.trim().is_empty() {
+                    // Blank and not blocking. It does not stop a scaffold being
+                    // emitted, and saying so is the point: a row can generate,
+                    // compile and still not be finished.
+                    println!(
+                        "  \x1b[36m-\x1b[0m  {} — blank, and does not block",
+                        a.field
+                    );
+                } else {
+                    println!("  \x1b[32m·\x1b[0m  {} = {}", a.field, truncate(&v, 68));
+                }
+            }
         }
     }
 
@@ -1495,6 +1515,24 @@ fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
             sh.steps.len(),
             sh.inputs.len()
         );
+    }
+
+    // THE STATE, AND WHAT IS BETWEEN THE ROW AND MOVING IT. A row can answer
+    // every question this form asks and still generate nothing, because nothing
+    // is generated from a seeded row at all — which is the one thing about a
+    // sheet that a reader is most likely to get wrong. The reasons are
+    // `form::unpublishable`, the same list the browser shows.
+    println!();
+    if sh.is_seeded() {
+        let why = vleo_sheet::form::unpublishable(sh);
+        if why.is_empty() {
+            println!("  \x1b[33m?\x1b[0m  seeded — nothing is generated from this row yet, and it is ready to publish");
+        } else {
+            println!("  \x1b[33m?\x1b[0m  seeded — nothing is generated from this row yet, and it is not ready:");
+            for w in why {
+                println!("     {w}");
+            }
+        }
     }
 
     println!();
