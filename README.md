@@ -122,6 +122,29 @@ moment the row is evaluated.
 
 ## What is in the repository
 
+### Every top-level folder, and what breaks without it
+
+| folder | what it holds | why it is here |
+|---|---|---|
+| `crates/` | the whole Rust workspace: the four rings, the faces, and **1396 node folders** under `crates/vleo-mod-*/nodes/` | this is the tool. Almost every file in the repository is here, and most of those are the per-node artefacts `xtask docs` writes from a sheet |
+| `layers/` | the rows in the tree that are **not** nodes — headings, parents, group edges, subsystem ownership | the decomposition itself. `CODEOWNERS` is generated from it, so moving a branch here moves who reviews what |
+| `tools/` | the Python side: the seeder that built the tree, and every check the pipeline runs that is not `cargo` | the checks that cannot be expressed as a Rust test — screenshots, parity against MATLAB, commit messages, agent lanes. Each proves itself with `--selftest` before it is trusted to decide anything |
+| `web/` | the browser face — one `index.html`, one stylesheet, 17 ES modules | how the tool is read. It talks to `vleo-daemon` over HTTP and holds no physics of its own |
+| `panels/` | 14 declared panel specs, plus `REVIEW.md` and 28 reference screenshots (light and dark) | a figure nobody checked is a figure that silently goes wrong. The spec says what the panel must show; the references are what it looked like when a person last approved it |
+| `docs/` | 13 prose documents and 4 diagrams, indexed under **Reference** below | the written record. `VARIABLES.md` is generated; `MATLAB_PORT_PLAN.md` is the row-by-row account of the port and the longest thing here |
+| `bundles/` | reference data as published sets, each with a manifest, a licence term and a hash | rule 2's external oracle. An expected value may never come from the code under test, so the data it is checked against is versioned and verified rather than fetched |
+| `cases/` | five per-customer value sets against one shared architecture | the architecture is never copied per customer. Five cases, one tree — `n` copies would mean `n` fixes and silent drift |
+| `matlab/` | a thin MATLAB face (`+vleo`) and the study's own published CSV | the tool this was ported from. Its saved run is what `tools/mat_parity.py` compares against |
+| `sources/` | every citation as an object with an id, not as free text | a fixture references `jacchia1971`, never a sentence. Marking a source superseded then lists every row that depended on it, in one query |
+| `cd06/` | `tree.json` — the CD-06 planning document's own node tree, extracted verbatim | where the 1396 rows came from. `tools/seed_tree.py` reads it, so the tree's shape is traceable to the document rather than asserted |
+| `agents/` | `lanes.toml` (which paths each agent may change) and `provenance.toml` (where each definition came from, and its fallback) | seven agents write into this tree. The lane is checked against the diff, not asserted in a prompt |
+| `areas/` | six area files that narrow `AGENTS.md` per area | the nearer file wins, so an area can be stricter than the root without restating it |
+| `xtask/` | the task runner — `gate`, `docs`, `assemble`, `fill`, `ready`, `status` and the rest | the one entry point for everything generated or checked. `cargo run -p xtask -- gate && cargo test` is the command that must be green |
+| `.claude/` | seven agent definitions and four hooks | what each agent is allowed to do and what fires on an edit |
+| `.github/` | the pipeline (`gate.yml`, `nightly.yml`), the dependency bot, the PR template | eight jobs, and the regeneration diff that catches a generated file nobody re-ran |
+| `.devcontainer/` | the Codespace definition and its setup scripts | a fresh clone that runs without a person installing anything |
+| `target/`, `generated/`, `.vleo/` | build output, assembled fragments, the local data store | all three are generated and all three are git-ignored. Nothing here is a source |
+
 ### Four rings, depending inward only
 
 ```

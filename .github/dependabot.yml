@@ -1,13 +1,12 @@
-# Rung one of the escalation ladder: a bot opens the pull request.
+# A bot opens the dependency bump; a person or an agent handles what it cannot.
 #
-# The ladder, from the working model, is three rungs and each fires only when
-# the one below could not:
+# This file used to describe itself as rung one of a three-rung ladder, with a
+# replayed-transform rung between it and a human. That middle rung was built as
+# tools/recipe.py and never held a single recipe, so the ladder it belonged to
+# was a diagram rather than a mechanism, and both are gone. What is left is this
+# bot and the people it opens pull requests for, which is what actually ran.
 #
-#   1  a bot opens the pull request                    this file
-#   2  a transform solved once, replayed               tools/recipes/
-#   3  an agent, only when the first two could not     F diagnoses, I fixes
-#
-# The model names Renovate for this rung. Dependabot is used instead because it
+# Dependabot rather than Renovate, because it
 # runs on this platform with nothing to install, and the three safety settings
 # that actually matter are the same ones and are set below FOR BOTH ECOSYSTEMS:
 # the bot works on its own branch under its own identity, a release must have

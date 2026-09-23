@@ -20,7 +20,6 @@ A mark inside a diagonal box is coupling that subtree owns. A mark outside one
 crosses a boundary and needs an interface. The diagonal is continuous — a gap
 in it means a row was dropped between the tree and the matrix.
 """
-tolerance = 0.02
 
 # Wide enough that the pane fits in one shot. An element screenshot larger than
 # the viewport is stitched, and a transparent pane then composites whatever the
@@ -33,6 +32,13 @@ height = 1600
 # view is six groups and a clean diagonal, which would match even if every mark
 # were dropped.
 reference_state = "document.querySelector('.tab[data-layer=\"3\"]').click()"
+
+
+# Check 3, the pixel comparison, is declined for this panel. Checks 1, 2,
+# 2b and 4 still run: it renders, it moves, it reads the engine and it
+# undoes an interaction to the pixel.
+pixel_reference = false
+pixel_reference_why = """it is a layout of the tree, and the tree's shape is checked by xtask graph and assembly validations V12 to V15"""
 
 [[input]]
 name = "layer"

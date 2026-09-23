@@ -20,6 +20,7 @@
 //!   because assembly has no diff.
 
 pub mod emit;
+pub mod form;
 pub mod gate;
 pub mod load;
 pub mod model;

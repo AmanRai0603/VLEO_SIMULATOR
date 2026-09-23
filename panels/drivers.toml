@@ -78,7 +78,6 @@ confirmed_by = "UNCONFIRMED / re-recorded 2026-09-19, §34 moves 1–9; awaiting
 # them. It is declared rather than inferred so a panel that deliberately offers
 # no interaction does not fail a check for not having one.
 interactive = true
-tolerance = 0.02
 settle_ms = 8000
 
 ready = """(async () => {
@@ -87,6 +86,13 @@ ready = """(async () => {
   const cv = document.querySelector('.row-figure canvas.sw-panel');
   if (!cv) throw new Error('no figure on l3_solar_interface for the drivers panel');
 })()"""
+
+
+# Check 3, the pixel comparison, is declined for this panel. Checks 1, 2,
+# 2b and 4 still run: it renders, it moves, it reads the engine and it
+# undoes an interaction to the pixel.
+pixel_reference = false
+pixel_reference_why = """the twenty-five cells it draws are asserted numerically by tools/mat_parity.py against the MATLAB tool's own saved run, and check 2b proves it reads them from the engine rather than holding them"""
 
 [[input]]
 name = "view"

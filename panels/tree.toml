@@ -20,7 +20,13 @@ One box per visible row. Children sit inside their parent's box and never
 overlap it. The order down the pane is the order the source wrote, not
 alphabetical. Hatching appears on exactly the rows the engine calls seeded.
 """
-tolerance = 0.02
+
+
+# Check 3, the pixel comparison, is declined for this panel. Checks 1, 2,
+# 2b and 4 still run: it renders, it moves, it reads the engine and it
+# undoes an interaction to the pixel.
+pixel_reference = false
+pixel_reference_why = """it is a layout of the tree, and the tree's shape is checked by xtask graph and assembly validations V12 to V15"""
 
 [[input]]
 name = "layer"

@@ -283,6 +283,21 @@ fn route(
             let id = p.trim_start_matches("/v1/node/");
             node_endpoint(ctx, id)
         }
+        // The declaration form, as `xtask declare` asks it. Read-only: this
+        // says what a row still needs, it does not change one.
+        ("GET", p) if p.starts_with("/v1/declare/") => {
+            declare_endpoint(ctx, p.trim_start_matches("/v1/declare/"))
+        }
+        // Put the edited rows on a branch of their own. Commits; does not push.
+        ("POST", "/v1/propose") => sheet_propose(ctx, params),
+        // What a pasted sheet body WOULD change. Writes nothing.
+        ("POST", p) if p.starts_with("/v1/preview/") => {
+            sheet_preview(ctx, p.trim_start_matches("/v1/preview/"), params)
+        }
+        // THE ONE WRITE PATH IN THIS SERVER. One field of one sheet.
+        ("POST", p) if p.starts_with("/v1/sheet/") => {
+            sheet_write(ctx, p.trim_start_matches("/v1/sheet/"), params)
+        }
         ("POST", "/v1/run") | ("GET", "/v1/run") => ok_json(run_json(params, ctx)),
         ("GET", "/v1/sweep") => ok_json(sweep_json(params, ctx)),
         ("GET", "/v1/probe") => ok_json(probe_json(params)),
@@ -387,6 +402,263 @@ fn module(ctx: &Ctx, name: &str) -> (&'static str, &'static str, Vec<u8>) {
 /// artefacts, seven of them generated. A claim about the layout that the page
 /// asserts from memory is a claim that goes stale the first time the layout
 /// changes, so it is read off the disk instead.
+/// The declaration form for one row — the nine questions, what each is for, and
+/// which are still open.
+///
+/// Read from `node.toml` rather than from the compiled tables, because the form
+/// is about the SOURCE: a field can be blank in the sheet and absent from the
+/// table entirely, and the person filling it in needs to see the blank. It
+/// carries the sheet hash so a later save can prove which version it started
+/// from.
+/// Put whatever the face has edited onto a branch, as one commit.
+///
+/// A sheet edit is a source change and belongs in history — unlike a run's
+/// inputs, which are a question somebody asked and are never committed. Behind
+/// the same VLEO_ALLOW_WRITE as the save, because it writes to the repository.
+///
+/// IT DOES NOT PUSH. Pushing puts the work where other people and the pipeline
+/// see it, under whatever credentials the checkout holds; a daemon should not
+/// do that on its own. The branch comes back with the command to push it.
+fn sheet_propose(ctx: &Ctx, params: &str) -> (&'static str, &'static str, Vec<u8>) {
+    const JSON: &str = "application/json; charset=utf-8";
+    if !writes_allowed() {
+        return (
+            "403 Forbidden",
+            JSON,
+            format!(
+                "{{\"ok\":false,\"message\":{}}}",
+                json::string(
+                    "this daemon is read-only. Start it with VLEO_ALLOW_WRITE=1 in a checkout."
+                )
+            )
+            .into_bytes(),
+        );
+    }
+    let summary = param(params, "summary").map(decode).unwrap_or_default();
+    let kind = param(params, "kind").map(decode).unwrap_or_default();
+    match vleo_sheet::form::propose(&ctx.root, &summary, &kind) {
+        vleo_sheet::form::Proposed::Ok {
+            branch,
+            commit,
+            files,
+            compare,
+        } => (
+            "200 OK",
+            JSON,
+            format!(
+                "{{\"ok\":true,\"branch\":{},\"commit\":{},\"files\":{},\"compare\":{},\
+                 \"push\":{}}}",
+                json::string(&branch),
+                json::string(&commit),
+                files,
+                json::string(&compare),
+                json::string(&format!("git push -u origin {branch}"))
+            )
+            .into_bytes(),
+        ),
+        vleo_sheet::form::Proposed::Nothing => (
+            "200 OK",
+            JSON,
+            format!(
+                "{{\"ok\":false,\"nothing\":true,\"message\":{}}}",
+                json::string("no edited row is waiting to be proposed")
+            )
+            .into_bytes(),
+        ),
+        vleo_sheet::form::Proposed::Refused(why) => (
+            "400 Bad Request",
+            JSON,
+            format!("{{\"ok\":false,\"message\":{}}}", json::string(&why)).into_bytes(),
+        ),
+    }
+}
+
+/// What pasting a sheet body into this row would change — and nothing else.
+///
+/// Read-only, deliberately, and separate from the write path. Pasting a
+/// sibling's sheet is how twenty rows that share a pattern get filled quickly,
+/// and it is also how one stale source citation gets dragged through thirty of
+/// them. So the paste is parsed and reported, never applied: a person looks at
+/// the list, then each field goes through the same one-at-a-time save as any
+/// other edit.
+fn sheet_preview(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static str, Vec<u8>) {
+    const JSON: &str = "application/json; charset=utf-8";
+    if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+        return (
+            "400 Bad Request",
+            JSON,
+            b"{\"ok\":false,\"message\":\"not a node identifier\"}".to_vec(),
+        );
+    }
+    let Some(body) = param(params, "body").map(decode) else {
+        return (
+            "400 Bad Request",
+            JSON,
+            b"{\"ok\":false,\"message\":\"nothing pasted\"}".to_vec(),
+        );
+    };
+    let tree = match vleo_sheet::load::load_all(&ctx.root) {
+        Ok(t) => t,
+        Err(e) => {
+            return (
+                "500 Internal Server Error",
+                JSON,
+                format!("{{\"ok\":false,\"message\":{}}}", json::string(&e)).into_bytes(),
+            )
+        }
+    };
+    let Some(sh) = tree.sheets.get(id) else {
+        return (
+            "404 Not Found",
+            JSON,
+            b"{\"ok\":false,\"message\":\"no such node\"}".to_vec(),
+        );
+    };
+    match vleo_sheet::form::preview(sh, &body) {
+        Ok(j) => ("200 OK", JSON, j.into_bytes()),
+        Err(e) => (
+            "400 Bad Request",
+            JSON,
+            format!("{{\"ok\":false,\"message\":{}}}", json::string(&e)).into_bytes(),
+        ),
+    }
+}
+
+/// Whether this daemon may write to the tree at all.
+///
+/// Off unless asked for. A read-only deployment must not become a writable one
+/// because somebody pointed a browser at it: editing a sheet is work in a
+/// checkout, and a daemon serving a built copy of the tool has nothing it should
+/// be editing.
+fn writes_allowed() -> bool {
+    matches!(
+        std::env::var("VLEO_ALLOW_WRITE")
+            .unwrap_or_default()
+            .as_str(),
+        "1" | "true" | "yes"
+    )
+}
+
+/// Change one field of one sheet.
+///
+/// One field per request, which is how `xtask confirm` works and for the same
+/// reason: an edit that changes several things at once is an edit nobody can
+/// read in a diff. The transaction itself is `vleo_sheet::form::save` — the
+/// ordering, the atomic write and the restore-on-failure are tested there,
+/// without an HTTP server in the way.
+///
+///     POST /v1/sheet/<id>
+///     field=unit&value=Kelvin&base=1f2e3d
+///
+/// `base` is the `file_hash` the editor was shown. A stale one is 409 with the
+/// current hash, never an overwrite.
+fn sheet_write(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static str, Vec<u8>) {
+    const JSON: &str = "application/json; charset=utf-8";
+    let refuse = |status: &'static str, why: String| -> (&'static str, &'static str, Vec<u8>) {
+        (
+            status,
+            JSON,
+            format!("{{\"ok\":false,\"message\":{}}}", json::string(&why)).into_bytes(),
+        )
+    };
+    if !writes_allowed() {
+        return refuse(
+            "403 Forbidden",
+            "this daemon is read-only. Start it with VLEO_ALLOW_WRITE=1 in a checkout to \
+             edit sheets from the face."
+                .into(),
+        );
+    }
+    if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+        return refuse("400 Bad Request", "not a node identifier".into());
+    }
+    let (Some(field), Some(value), Some(base)) = (
+        param(params, "field"),
+        param(params, "value"),
+        param(params, "base"),
+    ) else {
+        return refuse(
+            "400 Bad Request",
+            "field, value and base are all required — base is the file_hash the form was \
+             shown, and without it a save cannot tell whether somebody else has edited the \
+             row since"
+                .into(),
+        );
+    };
+    // NO `by` PARAMETER. The name a relation is attributed to comes from this
+    // checkout's own `git config user.name`, so the sheet and the commit make
+    // the same claim about who did it — and nobody puts a colleague's name on
+    // their work by typing it into a box.
+    match vleo_sheet::form::save(&ctx.root, id, &decode(field), &decode(value), &decode(base)) {
+        vleo_sheet::form::Saved::Ok {
+            file_hash,
+            sheet_hash,
+            regenerated,
+        } => (
+            "200 OK",
+            JSON,
+            format!(
+                "{{\"ok\":true,\"file_hash\":{},\"sheet_hash\":{},\"regenerated\":{}}}",
+                json::string(&file_hash),
+                json::string(&sheet_hash),
+                regenerated
+            )
+            .into_bytes(),
+        ),
+        // Not an error the reader caused, and not an overwrite either: somebody
+        // else moved the row. The current hash goes back so the face can show
+        // what it looks like now rather than clobber it.
+        vleo_sheet::form::Saved::Stale { current } => (
+            "409 Conflict",
+            JSON,
+            format!(
+                "{{\"ok\":false,\"stale\":true,\"file_hash\":{},\"message\":\"this row changed \
+                 since the form was opened — reload it and reapply the edit\"}}",
+                json::string(&current)
+            )
+            .into_bytes(),
+        ),
+        vleo_sheet::form::Saved::Refused(why) => refuse("400 Bad Request", why),
+    }
+}
+
+fn declare_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
+    if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+        return (
+            "400 Bad Request",
+            "text/plain; charset=utf-8",
+            b"not a node identifier".to_vec(),
+        );
+    }
+    // The whole tree, because a sheet is loaded in the context of the tree it
+    // belongs to — its parent and its inputs are resolved against the others.
+    let tree = match vleo_sheet::load::load_all(&ctx.root) {
+        Ok(t) => t,
+        Err(e) => {
+            return (
+                "500 Internal Server Error",
+                "application/json; charset=utf-8",
+                format!("{{\"ok\":false,\"message\":{:?}}}", e).into_bytes(),
+            )
+        }
+    };
+    let Some(sh) = tree.sheets.get(id) else {
+        return (
+            "404 Not Found",
+            "application/json; charset=utf-8",
+            b"{\"ok\":false,\"message\":\"no such node\"}".to_vec(),
+        );
+    };
+    match vleo_sheet::form::json(sh) {
+        Ok(j) => ("200 OK", "application/json; charset=utf-8", j.into_bytes()),
+        Err(e) => (
+            "500 Internal Server Error",
+            "application/json; charset=utf-8",
+            format!("{{\"ok\":false,\"message\":{:?}}}", e).into_bytes(),
+        ),
+    }
+}
+
 fn node_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
     if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
         return (

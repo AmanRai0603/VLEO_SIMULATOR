@@ -18,6 +18,11 @@ vleo-bus = { workspace = true, features = ["std"] }
 vleo-core = { workspace = true, features = ["std"] }
 vleo-units = { workspace = true, features = ["std"] }
 vleo-data = { workspace = true }
+# The sheet loader, so a face can be served the declaration form and — once the
+# write path lands — edit a row. This crate is the single implementation of what
+# a sheet means; the alternative was a second copy of the form in JavaScript,
+# which would drift and look complete while doing it.
+vleo-sheet = { workspace = true }
 
 [lints.rust]
 unsafe_code = "forbid"

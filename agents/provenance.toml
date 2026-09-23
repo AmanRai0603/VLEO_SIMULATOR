@@ -201,8 +201,8 @@ verified = "2026-09-11"
 [[replaced]]
 id = "H"
 name = "pipeline"
-replaced_by = ".github/dependabot.yml (rung 1) and tools/recipe.py (rung 2); F diagnoses and I fix at rung 3"
-upstream_if_adopted = "Renovate, if the app is installed. OpenRewrite does NOT apply — no Rust support, tiered licence; the pattern is kept and the tool is not"
+replaced_by = ".github/dependabot.yml opens the bump; a person or an agent fixes what it cannot"
+upstream_if_adopted = "Renovate, if the app is installed"
 must_be = "confined to the bot's own branch"
 verified = "2026-09-11"
 

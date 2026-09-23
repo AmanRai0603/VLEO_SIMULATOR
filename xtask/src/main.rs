@@ -172,35 +172,6 @@ fn write_if_changed(path: &Path, text: &str) -> Result<bool, String> {
 
 // ---------------------------------------------------------------------------
 
-/// Every identity that may never appear in `confirmed_by`.
-///
-/// Read from the file that declares the fleet rather than hard-coded, so an
-/// agent added tomorrow is covered without anybody remembering to come here.
-fn agent_identities(root: &Path) -> Vec<String> {
-    let Ok(text) = fs::read_to_string(root.join("agents/provenance.toml")) else {
-        return Vec::new();
-    };
-    let Ok(v) = text.parse::<toml::Value>() else {
-        return Vec::new();
-    };
-    let mut out = Vec::new();
-    for a in v
-        .get("agent")
-        .and_then(toml::Value::as_array)
-        .into_iter()
-        .flatten()
-    {
-        for k in ["name", "id"] {
-            if let Some(x) = a.get(k).and_then(|x| x.as_str()) {
-                out.push(x.to_lowercase());
-            }
-        }
-    }
-    out.push("claude".into());
-    out.push("agent".into());
-    out
-}
-
 /// Today, as the sheets write it.
 fn today() -> String {
     // The sheets carry a plain ISO date and nothing reads it as a timestamp, so
@@ -296,7 +267,7 @@ fn cmd_confirm(root: &Path, args: &[&str]) -> Result<(), String> {
     // An agent may never supply mathematics. Stated as a sentence it is a hope;
     // this makes it a fact about what can be written to the file.
     let lower = who.to_lowercase();
-    for bad in agent_identities(root) {
+    for bad in vleo_sheet::form::agent_identities(root) {
         if lower == bad
             || lower.starts_with(&format!("{bad} "))
             || lower.contains(&format!("{bad}/"))
@@ -938,32 +909,6 @@ fn cmd_setup(root: &Path) -> Result<(), String> {
 
 // ---------------------------------------------------------------------------
 
-/// The fields the scaffold cannot be emitted without.
-///
-/// Not a style rule. Without a type there is no signature, without a bound
-/// there is no guard, without a reason the guard is deleted by the next person
-/// who finds it awkward, and without a source nothing downstream knows what it
-/// is resting on.
-fn unfilled(sh: &vleo_sheet::model::Sheet) -> Vec<&'static str> {
-    let mut missing = Vec::new();
-    for (name, v) in [
-        ("label", &sh.label),
-        ("question", &sh.question),
-        ("expression", &sh.expression),
-        ("source", &sh.source),
-        ("type", &sh.ty),
-        ("unit", &sh.unit),
-        ("symbol", &sh.symbol),
-        ("reason_lower", &sh.reason_lower),
-        ("reason_upper", &sh.reason_upper),
-    ] {
-        if v.trim().is_empty() {
-            missing.push(name);
-        }
-    }
-    missing
-}
-
 fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
     let tree = load(root)?;
     let only = args.first().copied();
@@ -984,7 +929,7 @@ fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
         // screen. A seeded row is exempt — it has not been started, and its
         // page and metadata say exactly that.
         if !sh.is_seeded() {
-            let missing = unfilled(sh);
+            let missing = vleo_sheet::form::unfilled(sh);
             if !missing.is_empty() {
                 refused.push((sh.id.clone(), missing));
                 continue;
@@ -1243,6 +1188,111 @@ fn cmd_gap(root: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// Which ring a crate sits in. Lower depends on nothing higher.
+///
+/// The four rings are the repository's one architectural rule, and until now
+/// the only thing enforcing them was the compiler refusing a cycle — which
+/// permits every wrong-direction edge that is not also circular. `vleo-core`
+/// gaining a dependency on `vleo-bus` would compile, and would quietly make the
+/// kernel depend on transport.
+///
+/// `vleo-sheet` sits beside the kernel rather than in the chain: it is what a
+/// sheet MEANS, it reads only units, and both the generators and the daemon
+/// read it. `vleo-data` is reference data and sits at the bus's level.
+fn ring(crate_name: &str) -> Option<(u8, &'static str)> {
+    Some(match crate_name {
+        "vleo-units" => (0, "RING 0 — quantities and portable maths"),
+        "vleo-core" => (1, "RING 1 — the kernel: physics and the relations"),
+        "vleo-sheet" => (1, "beside the kernel — what a sheet means"),
+        "vleo-bus" => (2, "RING 2 — transport"),
+        "vleo-data" => (2, "reference data"),
+        "vleo-modules" => (4, "the facade over every node crate"),
+        "vleo-cli" | "vleo-daemon" | "vleo-ffi" | "vleo-py" | "vleo-wasm" => (5, "a face"),
+        "xtask" => (5, "the task runner"),
+        n if n.starts_with("vleo-mod-") => (3, "RING 3 — the nodes"),
+        _ => return None,
+    })
+}
+
+/// Every wrong-direction dependency between the workspace's own crates.
+///
+/// Build dependencies count. `vleo-modules` reads `vleo-sheet` in its build
+/// script to emit the tables, and a build-time edge in the wrong direction is
+/// the same defect as a runtime one — it just fails later and more confusingly.
+fn crate_direction(root: &Path) -> Result<Vec<String>, String> {
+    let mut bad = Vec::new();
+    let mut seen = 0usize;
+    let mut dirs: Vec<PathBuf> = fs::read_dir(root.join("crates"))
+        .map_err(|e| format!("crates/: {e}"))?
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .collect();
+    dirs.push(root.join("xtask"));
+    dirs.sort();
+    for d in dirs {
+        let ct = d.join("Cargo.toml");
+        let Ok(text) = fs::read_to_string(&ct) else {
+            continue;
+        };
+        let Ok(v) = text.parse::<toml::Value>() else {
+            continue;
+        };
+        let Some(name) = v
+            .get("package")
+            .and_then(|p| p.get("name"))
+            .and_then(|n| n.as_str())
+        else {
+            continue;
+        };
+        let Some((mine, what)) = ring(name) else {
+            bad.push(format!(
+                "{name} is in no ring — add it to `ring` and say where it belongs, or the \
+                 direction check silently stops covering it"
+            ));
+            continue;
+        };
+        seen += 1;
+        for table in ["dependencies", "build-dependencies"] {
+            let Some(deps) = v.get(table).and_then(|d| d.as_table()) else {
+                continue;
+            };
+            for dep in deps.keys() {
+                if !dep.starts_with("vleo") {
+                    continue;
+                }
+                let Some((theirs, their_what)) = ring(dep) else {
+                    bad.push(format!("{name} depends on {dep}, which is in no ring"));
+                    continue;
+                };
+                if theirs >= mine {
+                    bad.push(format!(
+                        "{name} ({what}) depends on {dep} ({their_what}) — \
+                         {} and the rings depend inward only{}",
+                        if theirs == mine {
+                            "same ring"
+                        } else {
+                            "that is outward"
+                        },
+                        if table == "build-dependencies" {
+                            ", and a build-time edge is the same defect as a runtime one"
+                        } else {
+                            ""
+                        }
+                    ));
+                }
+            }
+        }
+    }
+    // A check that examined nothing must not report success.
+    if seen < 20 {
+        bad.push(format!(
+            "only {seen} crate(s) were checked, which is fewer than this workspace has — \
+             the direction check is not reading what it claims to"
+        ));
+    }
+    Ok(bad)
+}
+
 fn cmd_graph(root: &Path) -> Result<(), String> {
     let tree = load(root)?;
     let derivation: usize = tree.ordered().iter().map(|s| s.inputs.len()).sum();
@@ -1279,6 +1329,24 @@ fn cmd_graph(root: &Path) -> Result<(), String> {
     );
     for u in unread.iter().take(20) {
         println!("    {u}");
+    }
+
+    // THE CRATE DIRECTION CHECK. The help has named this for as long as the
+    // command has existed and nothing implemented it, so the rings were held up
+    // by the compiler refusing cycles — which allows every wrong-direction edge
+    // that is not also circular.
+    println!();
+    let bad = crate_direction(root)?;
+    if bad.is_empty() {
+        println!("crate direction: every dependency points inward");
+    } else {
+        for b in &bad {
+            println!("  \x1b[31mFAIL\x1b[0m {b}");
+        }
+        return Err(format!(
+            "{} wrong-direction crate dependency(ies)",
+            bad.len()
+        ));
     }
     Ok(())
 }
@@ -1323,17 +1391,6 @@ fn deepest_chain(tree: &Tree) -> Vec<String> {
     best
 }
 
-/// The completion questions, and which of them are still open.
-///
-/// The questions are derived from what the generator will need, not composed
-/// freely: a fixed set is repeatable across engineers and nodes, and an open
-/// conversation is not. Each one exists because something downstream cannot be
-/// emitted without it, and this says which thing.
-///
-/// It answers nothing. Agent A drafts from a source, an engineer decides, and
-/// this is the list they are deciding against — the same list `xtask docs`
-/// refuses on, so there is never a question that blocks generation and is not
-/// on this page.
 fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
     let id = args
         .first()
@@ -1346,6 +1403,11 @@ fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
     let sh = tree.sheets.get(*id).ok_or_else(|| {
         format!("no node '{id}'. `cargo xtask new {id} --like <sibling>` starts one")
     })?;
+
+    if args.contains(&"--json") {
+        print!("{}", vleo_sheet::form::json(sh)?);
+        return Ok(());
+    }
 
     println!(
         "\x1b[1m{}\x1b[0m — {}",
@@ -1362,91 +1424,19 @@ fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
     println!("  {}", sh.dir.join("node.toml").display());
     println!();
 
-    // (field, question, what cannot be emitted without it)
-    let asks: Vec<(&str, &str, &str)> = vec![
-        (
-            "label",
-            "what is this row called, in the tree",
-            "the page title and every reference to it",
-        ),
-        (
-            "question",
-            "what one question does it answer",
-            "an equation with no question gets reused for the wrong thing",
-        ),
-        (
-            "expression",
-            "what is the relation",
-            "the algorithm, and what a reviewer compares against the source",
-        ),
-        (
-            "source",
-            "cited where — book, paper, page",
-            "this is the claim everything else rests on",
-        ),
-        (
-            "symbol",
-            "what is the answer's symbol",
-            "the binding name in the generated signature",
-        ),
-        (
-            "type",
-            "what quantity is it",
-            "the signature; a dimensional error has to fail to compile",
-        ),
-        (
-            "unit",
-            "in what unit",
-            "the conversion at every face boundary",
-        ),
-        (
-            "reason_lower",
-            "why is the lower bound there",
-            "a guard whose reason is not written gets deleted by the next person",
-        ),
-        (
-            "reason_upper",
-            "why is the upper bound there",
-            "the same, at the other end",
-        ),
-    ];
-    let have = |f: &str| -> &str {
-        match f {
-            "label" => &sh.label,
-            "question" => &sh.question,
-            "expression" => &sh.expression,
-            "source" => &sh.source,
-            "symbol" => &sh.symbol,
-            "type" => &sh.ty,
-            "unit" => &sh.unit,
-            "reason_lower" => &sh.reason_lower,
-            "reason_upper" => &sh.reason_upper,
-            _ => "",
-        }
-    };
-
-    // The open set comes from the same function `xtask docs` refuses on, so
-    // there can never be a question that blocks generation and is not on this
-    // page. Two lists that must agree are two lists that will not.
-    let blocking = unfilled(sh);
-    for (field, _, _) in &asks {
-        if !blocking.contains(field) && have(field).trim().is_empty() {
-            return Err(format!(
-                "'{field}' is blank and does not block generation — declare and docs disagree \
-                 about what a finished sheet is"
-            ));
-        }
-    }
-
+    let asks = vleo_sheet::form::asks(sh)?;
     let mut open = 0usize;
-    for (field, ask, why) in &asks {
-        let v = have(field);
-        if blocking.contains(field) {
+    for a in &asks {
+        if a.open {
             open += 1;
-            println!("  \x1b[33m?\x1b[0m  {ask}");
-            println!("     {field} — without it: {why}");
+            println!("  \x1b[33m?\x1b[0m  {}", a.ask);
+            println!("     {} — without it: {}", a.field, a.why);
         } else {
-            println!("  \x1b[32m·\x1b[0m  {field} = {}", truncate(v, 68));
+            println!(
+                "  \x1b[32m·\x1b[0m  {} = {}",
+                a.field,
+                truncate(vleo_sheet::form::value(sh, a.field), 68)
+            );
         }
     }
 
@@ -2023,8 +2013,10 @@ fn cmd_new(root: &Path, args: &[&str]) -> Result<(), String> {
 fn cmd_codeowners(root: &Path) -> Result<(), String> {
     let tree = load(root)?;
     let mut o = String::new();
-    o.push_str("# GENERATED by `cargo xtask codeowners` from the owner field on each layer\n");
-    o.push_str("# group. Ownership is a path rule, not a convention: everyone reads\n");
+    o.push_str("# GENERATED by `cargo xtask codeowners` from the owner field on each NODE\n");
+    o.push_str("# SHEET. It said \"each layer group\" and read node.toml, so changing a\n");
+    o.push_str("# group's owner moved nobody and looked like it had. Ownership is a path\n");
+    o.push_str("# rule, not a convention: everyone reads\n");
     o.push_str("# everything and writes only their own nodes, which is the separation\n");
     o.push_str("# wanted without losing the whole-graph check.\n#\n");
     o.push_str("# The generators, the gate and the shared crates are integrator-owned and\n");

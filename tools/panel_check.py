@@ -82,6 +82,14 @@ def spec(path):
             raise SystemExit("%s has no %s — see panels/README.md" % (path.name, need))
     if not (ROOT / d["module"]).is_file():
         raise SystemExit("%s names %s, which does not exist" % (path.name, d["module"]))
+    # Check 3 may be declined, but not silently. A bound needs a reason
+    # everywhere else in this tree and so does a check nobody runs: without one
+    # the field becomes the thing people set when a re-record is inconvenient.
+    if d.get("pixel_reference", True) is False and not d.get("pixel_reference_why"):
+        raise SystemExit(
+            "%s sets pixel_reference = false with no pixel_reference_why. Say what "
+            "covers the picture instead, or record a reference" % path.name
+        )
     return d
 
 
@@ -491,7 +499,10 @@ def check_all(ids=None, record=False):
                 except Exception as e:
                     found.append((d["id"], "3 matches", "could not reach the reference state: %s" % e))
             REFERENCE.mkdir(exist_ok=True)
-            for scheme in ("light", "dark"):
+            # A panel may decline check 3. It is counted and named at the end
+            # rather than passed over, because a check that did not run must not
+            # read like a check that passed.
+            for scheme in (() if d.get("pixel_reference", True) is False else ("light", "dark")):
                 # `emulate_media` is what a reader's system preference looks like
                 # to the page: the shell follows it through CSS and the figures
                 # through the media listener in the face. Both have to be given
@@ -681,12 +692,45 @@ def _differ(a, b):
     ia = Image.open(io.BytesIO(a)).convert("RGB")
     ib = Image.open(io.BytesIO(b)).convert("RGB")
     if ia.size != ib.size:
-        # A SIZE CHANGE IS ITS OWN FACT, and reporting it as "100% of pixels
-        # differ" tells a reader the picture is unrecognisable when it may be
-        # identical and merely taller. Every panel said 100% when the canvas
-        # aspect was capped, which is true, useless, and indistinguishable from
-        # eight panels having broken at once.
-        return ("size", ia.size, ib.size)
+        # ONE ROW OR COLUMN IS THE SAME SUB-PIXEL ROUNDING THIS ALREADY ABSORBS,
+        # arriving as a size instead of a shift. An element screenshot is
+        # rasterised at the element's position on the page, so a canvas whose
+        # top edge lands on a fractional y is captured one row taller — and
+        # content ABOVE the figure is what moves that edge. The nine alignments
+        # below handle it when the captured size happens to stay put; when the
+        # rounding falls the other way the very same cause shows up as 538
+        # against 539.
+        #
+        # Three panel references were re-recorded for this in one week, twice
+        # for edits that could not touch those panels and once for a tab row on
+        # a page they happen to sit on. Each re-record was bit-identical
+        # bottom-aligned. A check that demands a new reference whenever anything
+        # above a figure grows is a check people learn to re-record rather than
+        # read.
+        #
+        # So a difference of at most one in each direction is compared on the
+        # overlap instead. ANYTHING LARGER IS STILL A SHAPE CHANGE: a picture
+        # that genuinely resized is not this.
+        #
+        # The crop is bottom-and-right aligned because that is the edge that
+        # stays put when a fractional top gains a row — but that choice is NOT
+        # load-bearing and the comment used to imply it was. Cropping the other
+        # corner passes every case here, because the nine alignments below
+        # already absorb the one-pixel difference it makes. Kept because it is
+        # the more truthful crop, not because anything depends on it.
+        dw = ib.size[0] - ia.size[0]
+        dh = ib.size[1] - ia.size[1]
+        if abs(dw) > 1 or abs(dh) > 1:
+            # A SIZE CHANGE IS ITS OWN FACT, and reporting it as "100% of pixels
+            # differ" tells a reader the picture is unrecognisable when it may be
+            # identical and merely taller. Every panel said 100% when the canvas
+            # aspect was capped, which is true, useless, and indistinguishable from
+            # eight panels having broken at once.
+            return ("size", ia.size, ib.size)
+        w = min(ia.size[0], ib.size[0])
+        h = min(ia.size[1], ib.size[1])
+        ia = ia.crop((ia.size[0] - w, ia.size[1] - h, ia.size[0], ia.size[1]))
+        ib = ib.crop((ib.size[0] - w, ib.size[1] - h, ib.size[0], ib.size[1]))
     w, h = ia.size
     best = 1.0
     for dy in (0, -1, 1):
@@ -764,13 +808,54 @@ def _differ_cases():
     if not isinstance(got, float) or got < 0.02:
         bad += 1
         print("  FAIL a line drawn to a different place was reported as %r; a real "
-              "change must survive the alignment" % got)
+              "change must survive the alignment" % (got,))
 
     # A size change stays its own fact and is not a percentage.
     got = _differ(chart, taller)
     if not (isinstance(got, tuple) and got[0] == "size"):
         bad += 1
         print("  FAIL a picture of a different shape was reported as %r" % (got,))
+
+    # ONE ROW TALLER, SAME PICTURE. The sub-pixel rounding above, arriving as a
+    # size rather than a shift: a canvas whose top edge lands on a fractional y
+    # is captured one row taller, and the content is unchanged. Three references
+    # were re-recorded for this in a week.
+    def grown(src, dw, dh, pad=(250, 250, 250)):
+        im = Image.open(io.BytesIO(src)).convert("RGB")
+        out = Image.new("RGB", (im.width + dw, im.height + dh), pad)
+        # Pasted at the bottom-right, which is the edge that stays put when a
+        # fractional top gains a row.
+        out.paste(im, (dw, dh))
+        buf = io.BytesIO(); out.save(buf, "PNG"); return buf.getvalue()
+
+    for label, b in (
+        ("one row taller", grown(chart, 0, 1)),
+        ("one row shorter", grown(chart, 0, -1)),
+        ("one column wider", grown(chart, 1, 0)),
+    ):
+        got = _differ(chart, b)
+        if not isinstance(got, float) or got > 1e-9:
+            bad += 1
+            print("  FAIL a picture %s with identical content was reported as %r; "
+                  "that is the capture rounding, not a change" % (label, got))
+
+    # AND TWO ROWS IS STILL A SHAPE CHANGE. The slack is one, because one is what
+    # the rounding can produce; anything more is a picture that genuinely
+    # resized and must not be waved through.
+    got = _differ(chart, grown(chart, 0, 2))
+    if not (isinstance(got, tuple) and got[0] == "size"):
+        bad += 1
+        print("  FAIL two rows taller was reported as %r; only one row is "
+              "capture rounding" % (got,))
+
+    # A real change inside a one-row-taller capture must still be reported, or
+    # the crop has become a way to hide a defect.
+    got = _differ(chart, grown(moved, 0, 1))
+    if not isinstance(got, float) or got < 0.02:
+        bad += 1
+        # `% got` would UNPACK a tuple here and raise instead of reporting.
+        print("  FAIL a moved line inside a one-row-taller capture was reported "
+              "as %r; the crop must not swallow a real change" % (got,))
     return bad
 
 
@@ -937,7 +1022,17 @@ def main():
     for pid, stage, why in found:
         print("  %-10s %-12s %s" % (pid, stage, why))
     n = len(specs())
+    # A DECLINED CHECK IS NAMED. "14 panels, 0 findings" over a set where six of
+    # them never ran check 3 is the summary telling somebody they are covered
+    # when they are not.
+    declined = [spec(x) for x in specs()]
+    declined = [d for d in declined if d.get("pixel_reference", True) is False]
     print("%d panel(s) declared, %d finding(s)" % (n, len(found)))
+    if declined:
+        print("  check 3 declined by %d of them — behaviour is checked, pixels are not:"
+              % len(declined))
+        for d in sorted(declined, key=lambda x: x["id"]):
+            print("    %-10s %s" % (d["id"], d["pixel_reference_why"]))
     return 1 if found else 0
 
 
