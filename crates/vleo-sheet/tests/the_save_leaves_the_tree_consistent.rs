@@ -27,6 +27,26 @@ fn sheet_path(root: &Path) -> PathBuf {
         .join("node.toml")
 }
 
+/// EVERY TEST IN THIS FILE EDITS THE REAL TREE, so they run one at a time.
+///
+/// Cargo runs the tests in one binary on several threads. Two of these reading a
+/// sheet while a third was mid-edit failed the suite about one run in three, on
+/// an assertion about a sheet the failing test had not touched — the worst kind
+/// of red, because it points at the wrong test.
+///
+/// The lock is held for the whole of each test rather than around each write:
+/// what races is not the write but the read-edit-compare around it, and
+/// `a_proposal_with_nothing_edited_does_nothing` asks whether the WHOLE checkout
+/// is clean, which no other test may be inside.
+fn serially() -> std::sync::MutexGuard<'static, ()> {
+    static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    // A panicking test poisons the mutex, and a poisoned lock would turn one
+    // real failure into ten reported as lock errors. The guard is what is
+    // wanted; the poison says only that an earlier test failed, which is
+    // already being reported.
+    LOCK.lock().unwrap_or_else(|p| p.into_inner())
+}
+
 /// The hash a save must send back — of the file's bytes, not of the meaning.
 fn hash_now(root: &Path) -> String {
     form::file_hash(&std::fs::read_to_string(sheet_path(root)).unwrap())
@@ -34,6 +54,7 @@ fn hash_now(root: &Path) -> String {
 
 #[test]
 fn a_stale_base_is_refused_and_nothing_is_written() {
+    let _serial = serially();
     let root = root();
     let before = std::fs::read_to_string(sheet_path(&root)).unwrap();
     match form::save(&root, ROW, "unit", "Kelvin", "000000") {
@@ -50,6 +71,7 @@ fn a_stale_base_is_refused_and_nothing_is_written() {
 
 #[test]
 fn a_structural_field_is_refused_and_nothing_is_written() {
+    let _serial = serially();
     let root = root();
     let before = std::fs::read_to_string(sheet_path(&root)).unwrap();
     let _guard = Restore {
@@ -71,6 +93,7 @@ fn a_structural_field_is_refused_and_nothing_is_written() {
 
 #[test]
 fn an_agent_is_refused_whatever_the_face() {
+    let _serial = serially();
     // The rule itself, as a function: no git, no files, no checkout. Every name
     // on the roster and the two generic words, in the shapes a name arrives in.
     let root = root();
@@ -101,6 +124,7 @@ fn an_agent_is_refused_whatever_the_face() {
 
 #[test]
 fn the_relation_is_attributed_to_the_checkout_not_to_a_typed_name() {
+    let _serial = serially();
     // `save` takes no name. It asks the checkout, so the sheet and the commit
     // make the same claim about who did the work.
     let root = root();
@@ -148,6 +172,7 @@ fn the_relation_is_attributed_to_the_checkout_not_to_a_typed_name() {
 
 #[test]
 fn an_unknown_node_is_refused() {
+    let _serial = serially();
     let root = root();
     match form::save(&root, "no_such_row", "unit", "Kelvin", "abc123") {
         Saved::Refused(e) => assert!(e.contains("no node"), "{e}"),
@@ -207,6 +232,7 @@ fn edit_path(root: &Path) -> PathBuf {
 
 #[test]
 fn a_good_edit_is_written_regenerated_and_then_put_back() {
+    let _serial = serially();
     let root = root();
     let path = edit_path(&root);
     let before = std::fs::read_to_string(&path).unwrap();
@@ -281,6 +307,7 @@ fn a_good_edit_is_written_regenerated_and_then_put_back() {
 
 #[test]
 fn a_proposal_with_nothing_edited_does_nothing() {
+    let _serial = serially();
     // And says so, rather than making an empty branch. The checkout must be
     // exactly where it was afterwards — this test runs on whatever branch the
     // developer is on, so leaving them somewhere else would be the worst thing
@@ -340,6 +367,7 @@ fn a_proposal_with_nothing_edited_does_nothing() {
 
 #[test]
 fn a_type_that_is_not_a_quantity_is_refused_before_anything_is_written() {
+    let _serial = serially();
     // THE ONE THAT BROKE THE BUILD. `[output] type` is emitted verbatim into the
     // generated signature, so `Nonsense` becomes `Result<Nonsense, Fault>` and
     // the tree stops compiling. The gate passed it — the gate never compiles
@@ -377,6 +405,7 @@ fn a_type_that_is_not_a_quantity_is_refused_before_anything_is_written() {
 
 #[test]
 fn a_unit_the_system_does_not_know_is_refused() {
+    let _serial = serially();
     // It does not reach the signature, so it does not break the build — it
     // makes the row claim an answer in a unit nothing can convert at a face
     // boundary. The gate only ever asked whether the field was blank.
@@ -398,6 +427,7 @@ fn a_unit_the_system_does_not_know_is_refused() {
 
 #[test]
 fn saving_the_relation_puts_a_name_against_it() {
+    let _serial = serially();
     // The identity was verified and then went nowhere, so a relation saved
     // through the face came out with `confirmed_by` blank — which is what the
     // field exists to make impossible.
@@ -438,5 +468,103 @@ fn saving_the_relation_puts_a_name_against_it() {
     assert!(
         got.starts_with(&who),
         "the relation must carry the name of whoever supplied it; got {got:?}"
+    );
+}
+
+#[test]
+fn each_new_shape_survives_the_whole_transaction() {
+    // The form covers more than the nine that block generation, and each of the
+    // extra shapes is written differently: a bound goes in bare, a note has to
+    // be ADDED to a table that has not got the key, and the derivation has to
+    // create the table itself. Every one of those is a way to write a sheet that
+    // no longer loads, so each is driven through the real save — write,
+    // regenerate, gate — rather than through `set` alone.
+    let _serial = serially();
+    let root = root();
+    let path = edit_path(&root);
+    let before = std::fs::read_to_string(&path).unwrap();
+    let _guard = Restore {
+        path: path.clone(),
+        bytes: before.clone(),
+    };
+    assert!(
+        !before.contains("[theory]") && !before.contains("\nnote ="),
+        "this test needs a row that has neither, or it proves nothing about adding them"
+    );
+
+    for (field, value, expect) in [
+        // Bare, and normalised to carry its decimal point.
+        ("lower", "2", "lower = 2.0"),
+        // Added under [question], which has not got the key.
+        (
+            "note",
+            "what this row is not for",
+            "note = \"what this row is not for\"",
+        ),
+        // Added along with the table it lives in.
+        (
+            "theory_why",
+            "because the geometry admits no other reading",
+            "why = \"because the geometry admits no other reading\"",
+        ),
+    ] {
+        let h = form::file_hash(&std::fs::read_to_string(&path).unwrap());
+        match form::save(&root, EDIT_ROW, field, value, &h) {
+            Saved::Ok { .. } => {}
+            Saved::Stale { current } => panic!("{field}: unexpectedly stale, current {current}"),
+            Saved::Refused(e) => panic!("{field} was refused: {e}"),
+        }
+        let after = std::fs::read_to_string(&path).unwrap();
+        assert!(
+            after.contains(expect),
+            "{field}: expected `{expect}` in the sheet, got:\n{after}"
+        );
+        // AND IT STILL LOADS AS THE VALUE THAT WAS SENT. A bound written as a
+        // quoted string parses and the loader reads it back as zero, so "the
+        // file changed" is not the assertion that matters.
+        let t = vleo_sheet::load::load_all(&root).unwrap();
+        let sh = t.sheets.get(EDIT_ROW).unwrap();
+        assert_eq!(
+            form::value(sh, field).trim(),
+            form::normalise(field, value).unwrap().trim(),
+            "{field} did not read back as what was written"
+        );
+    }
+}
+
+#[test]
+fn a_bound_that_crosses_its_partner_is_refused_and_rolled_back() {
+    // The one that the gate catches rather than the form: a lower bound above
+    // the upper is a domain the generated guard can never satisfy, and it is
+    // only wrong in relation to another field. So the sheet IS written, the
+    // artefacts ARE regenerated, and then the whole thing has to come back —
+    // which is the path with the most to go wrong in it.
+    let _serial = serially();
+    let root = root();
+    let path = edit_path(&root);
+    let before = std::fs::read_to_string(&path).unwrap();
+    let _guard = Restore {
+        path: path.clone(),
+        bytes: before.clone(),
+    };
+    let h = form::file_hash(&before);
+    match form::save(&root, EDIT_ROW, "lower", "9999999", &h) {
+        Saved::Refused(e) => {
+            assert!(
+                e.contains("not below the upper"),
+                "the refusal must name what is wrong: {e}"
+            );
+            assert!(
+                e.contains("restored"),
+                "and say the sheet was put back: {e}"
+            );
+        }
+        Saved::Ok { .. } => panic!("a lower bound above the upper must never be accepted"),
+        Saved::Stale { current } => panic!("unexpectedly stale, current {current}"),
+    }
+    assert_eq!(
+        std::fs::read_to_string(&path).unwrap(),
+        before,
+        "the sheet must be exactly as it was"
     );
 }

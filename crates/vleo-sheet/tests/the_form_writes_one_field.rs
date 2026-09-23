@@ -126,12 +126,201 @@ fn an_unknown_field_is_refused_rather_than_appended() {
 }
 
 #[test]
-fn a_key_that_is_not_there_is_refused_rather_than_invented() {
-    // `confirmed_by` is a real field and this sheet has no line for it. The form
-    // replaces a value that exists; deciding where a new key belongs — above or
-    // below the comment explaining the relation — is not its call.
-    let e = form::set(SHEET, "confirmed_by", "A. Person / 2026-01-01").unwrap_err();
-    assert!(e.contains("confirmed_by"), "should name the key: {e}");
+fn a_key_that_is_not_there_is_refused_unless_the_field_says_it_may_be_added() {
+    // `sense` is a real field and this sheet has no line for it. A sense belongs
+    // to a requirement, the gate puts one on every row of that kind, so a row
+    // without one is not one — and inventing it would make this row claim to be
+    // a requirement it is not.
+    let e = form::set(SHEET, "sense", ">=").unwrap_err();
+    assert!(e.contains("sense"), "should name the key: {e}");
+    assert!(
+        e.contains("requirement"),
+        "and say why this row has not got one: {e}"
+    );
+}
+
+#[test]
+fn a_field_that_may_be_added_is_added_under_its_own_table() {
+    // The other half of the rule. Most sheets have no `note` — 124 of 1396 — so
+    // a form that could only replace could never write one, and the question
+    // would be unanswerable through every face.
+    let out = form::set(SHEET, "note", "what this row is not for").unwrap();
+    let v: toml::Value = out.parse().expect("must still be TOML");
+    assert_eq!(
+        v["question"]["note"].as_str(),
+        Some("what this row is not for")
+    );
+    assert_eq!(
+        v["output"]["note"].as_str().map(|s| s.contains("laid-out")),
+        Some(true),
+        "the identically named key under [output] must be untouched"
+    );
+    assert_eq!(
+        count_comments(&out),
+        count_comments(SHEET),
+        "and no comment is lost"
+    );
+}
+
+#[test]
+fn a_missing_theory_table_is_created_where_the_authored_sheets_put_it() {
+    // 1322 of 1396 rows have no [theory] at all, so this is the ordinary case
+    // and not an edge one.
+    let out = form::set(SHEET, "theory_why", "because the ceiling is the bound").unwrap();
+    let v: toml::Value = out.parse().expect("must still be TOML");
+    assert_eq!(
+        v["theory"]["why"].as_str(),
+        Some("because the ceiling is the bound")
+    );
+    let (theory, output) = (
+        out.find("[theory]").expect("a [theory] table"),
+        out.find("[output]").expect("the [output] table"),
+    );
+    assert!(
+        theory < output,
+        "it belongs after [maths] and before [output], where every authored sheet has it"
+    );
+    // And it can be written twice — the second edit replaces rather than adding
+    // a second table.
+    let again = form::set(
+        &out,
+        "theory_reading",
+        "read it as a bound, not a description",
+    )
+    .unwrap();
+    let v: toml::Value = again.parse().unwrap();
+    assert_eq!(
+        v["theory"]["why"].as_str(),
+        Some("because the ceiling is the bound")
+    );
+    assert_eq!(again.matches("[theory]").count(), 1, "one table, not two");
+}
+
+#[test]
+fn a_bound_is_written_bare_and_normalised() {
+    // `lower = "40"` parses as a string and the loader reads it back as zero, so
+    // a guard the whole row rests on would silently become "not below nothing".
+    let s = SHEET.replace(
+        "[output]\n",
+        "[output]\nlower = 0.0\nupper = 1.0   # the declared domain\n",
+    );
+    let out = form::set(&s, "lower", "40").unwrap();
+    assert!(
+        out.contains("lower = 40.0"),
+        "bare, and carrying its decimal point: {out}"
+    );
+    let v: toml::Value = out.parse().unwrap();
+    assert_eq!(v["output"]["lower"].as_float(), Some(40.0));
+
+    let out = form::set(&s, "upper", "140").unwrap();
+    assert!(
+        out.contains("upper = 140.0   # the declared domain"),
+        "and the comment beside it survives: {out}"
+    );
+
+    let e = form::set(&s, "lower", "quite low").unwrap_err();
+    assert!(
+        e.contains("not a number"),
+        "a bound that is not a number is refused, not written: {e}"
+    );
+}
+
+#[test]
+fn a_comment_beside_a_value_survives_the_edit() {
+    // 27 of the fields this form writes carry one, and they are instructions to
+    // whoever fills the row: `# REQUIRED — an agent may never supply mathematics`
+    // sits on the relation of the rows where that matters most.
+    let s = SHEET.replace(
+        "expression = \"y = 2*x\"",
+        "expression = \"y = 2*x\"   # REQUIRED — an agent may never supply mathematics",
+    );
+    let out = form::set(&s, "expression", "y = 3*x").unwrap();
+    assert!(
+        out.contains(
+            "expression = \"y = 3*x\"   # REQUIRED — an agent may never supply mathematics"
+        ),
+        "the instruction must travel with the field it is about: {out}"
+    );
+}
+
+#[test]
+fn a_prose_block_is_replaced_whole_and_not_truncated() {
+    // The shape that was refused outright before. A `[theory]` paragraph is
+    // always a multi-line block, so refusing them meant the derivation could
+    // never be written through a form at all.
+    let s = SHEET.replace(
+        "[output]",
+        "[theory]\nwhy = \"\"\"\nThe first argument.\nOver two lines.\n\"\"\"\nreading = \"short\"\n\n[output]",
+    );
+    let out = form::set(
+        &s,
+        "theory_why",
+        "A different argument.\nAlso over two lines.",
+    )
+    .unwrap();
+    let v: toml::Value = out.parse().expect("must still be TOML");
+    assert_eq!(
+        v["theory"]["why"].as_str(),
+        Some("A different argument.\nAlso over two lines.\n"),
+        "the whole block is replaced"
+    );
+    assert!(
+        !out.contains("The first argument"),
+        "and none of the old one is left as stray TOML: {out}"
+    );
+    assert_eq!(
+        v["theory"]["reading"].as_str(),
+        Some("short"),
+        "its neighbour is untouched"
+    );
+}
+
+#[test]
+fn a_one_line_field_refuses_a_paragraph_and_a_closed_set_refuses_a_label() {
+    let e = form::set(SHEET, "expression", "y = 2*x\nand also y = 3*x").unwrap_err();
+    assert!(e.contains("one line"), "{e}");
+
+    let withsense = SHEET.replace("order = 42", "order = 42\nsense = \">=\"");
+    assert!(form::set(&withsense, "sense", "<=").is_ok());
+    let e = form::set(&withsense, "sense", "less than").unwrap_err();
+    assert!(
+        e.contains("closed set"),
+        "a sense is one of two things, not a phrase: {e}"
+    );
+}
+
+#[test]
+fn the_nine_that_block_generation_are_the_nine() {
+    // `unfilled` and the question list used to be two lists that had to agree,
+    // with an error raised when they did not. They are one list now, so what is
+    // worth asserting is that the list still says nine and says which.
+    let blocking: Vec<&str> = form::FIELDS
+        .iter()
+        .filter(|f| f.blocks)
+        .map(|f| f.field)
+        .collect();
+    assert_eq!(
+        blocking,
+        vec![
+            "label",
+            "question",
+            "expression",
+            "source",
+            "symbol",
+            "type",
+            "unit",
+            "reason_lower",
+            "reason_upper"
+        ],
+        "these are what `docs` refuses to emit a scaffold without"
+    );
+    for f in form::FIELDS {
+        assert!(
+            !f.asked || (!f.ask.is_empty() && !f.why.is_empty() && !f.group.is_empty()),
+            "{}: a question with no stated consequence is one somebody fills with anything",
+            f.field
+        );
+    }
 }
 
 #[test]
@@ -155,15 +344,22 @@ fn a_duplicated_key_is_refused_rather_than_half_written() {
 
 #[test]
 fn a_key_inside_a_multi_line_body_is_never_replaced() {
-    // The real reason the duplicate refusal exists. `note` holds prose, and a
-    // line of prose that happens to look like `unit = ...` is not an
-    // assignment. Replacing it would edit somebody's paragraph and leave the
-    // actual field alone, so two hits refuse.
-    let s = "id = \"x\"\n\n[output]\nnote = \"\"\"\nunit = \"WRONG\"\n\"\"\"\nunit = \"Metre\"\n";
-    let e = form::set(s, "unit", "Kelvin").unwrap_err();
+    // A line of prose that happens to look like `unit = ...` is not an
+    // assignment. The first version of this counted it as one and refused the
+    // edit as ambiguous, which meant a row whose reason mentioned a key could
+    // not have that key changed at all. The blocks are tracked, so the real
+    // assignment is found and the paragraph is left alone.
+    let s = "id = \"x\"\n\n[output]\nreason_lower = \"\"\"\nunit = \"WRONG\" is what an earlier draft said.\n\"\"\"\nunit = \"Metre\"\n";
+    let out = form::set(s, "unit", "Kelvin").unwrap();
+    let v: toml::Value = out.parse().expect("must still be TOML");
+    assert_eq!(
+        v["output"]["unit"].as_str(),
+        Some("Kelvin"),
+        "the assignment is the one outside the block"
+    );
     assert!(
-        e.contains("2 times"),
-        "a key inside a body must make this ambiguous and refuse: {e}"
+        out.contains("unit = \"WRONG\" is what an earlier draft said."),
+        "and the paragraph is somebody's prose, not a field: {out}"
     );
 }
 

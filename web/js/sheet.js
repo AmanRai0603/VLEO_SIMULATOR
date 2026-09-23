@@ -1,14 +1,18 @@
 /*
   The sheet, as a form a person can fill in.
 
-  `xtask declare` asks nine questions and says what each one is for. This is
-  that form in a browser, because most of the people who have to fill a row in
+  `xtask declare` asks the sheet's questions and says what each one is for. This
+  is that form in a browser, because most of the people who have to fill a row in
   are not going to be at a terminal — and a row nobody can fill is a row that
   stays empty.
 
-  The questions are not written here. They come from `/v1/declare/<id>`, which
-  is the same list the terminal prints, so a field added to the sheet appears in
-  both or in neither.
+  The questions are not written here. Neither is the shape of any answer, the
+  order the groups come in, or the reason a locked field is locked. All of it
+  comes from `/v1/declare/<id>`, which is the same list the terminal prints from
+  the same table, so a field added to the sheet appears in both faces or in
+  neither. Nine of the questions block generation; the rest decide whether the
+  row answers at all, and the form does not pretend the second group is optional
+  reading.
 
   WHAT THIS DELIBERATELY CANNOT DO. It cannot add a row, delete one, or touch a
   structural field — the identifier, the parent, the order, the layer, the kind,
@@ -63,27 +67,44 @@ function pasteHtml() {
  * sits under the input where it cannot be missed.
  */
 function fieldHtml(f, choices) {
-  const big = f.field === 'question' || f.field.startsWith('reason_');
   const id = 'sf-' + f.field;
-  // A CLOSED SET IS OFFERED, NOT TYPED. `type` is written straight into the
+  // A CLOSED SET IS OFFERED, NOT TYPED. A `type` goes straight into the
   // generated signature, so a name that is not a quantity stops the tree
-  // compiling; `unit` decides what converts at a face boundary. The server
-  // refuses both either way — this is so nobody meets that refusal by typing a
-  // plausible word. The options come from the server for the same reason: a
-  // list kept here would drift from the one that does the refusing.
-  const pick = choices && choices[f.field];
-  const control = pick
+  // compiling; a `unit` decides what converts at a face boundary; a `sense` read
+  // the wrong way reports a comfortable margin for a spacecraft about to be
+  // destroyed. The server refuses all three either way — this is so nobody meets
+  // that refusal by typing a plausible word.
+  //
+  // WHICH CONTROL IS THE SERVER'S ANSWER, not a guess from the field's name.
+  // This used to test `f.field === 'question' || f.field.startsWith('reason_')`
+  // for "is it a paragraph", which was right for the nine and wrong for every
+  // field added after them: a theory paragraph would have arrived as a one-line
+  // box. The shape comes from the same table that decides how the value is
+  // written into the file.
+  const set = f.shape === 'quantity' ? (choices && choices.type)
+    : f.shape === 'unit' ? (choices && choices.unit)
+    : f.options && f.options.length ? f.options
+    : null;
+  const control = set
     ? '<select id="' + id + '" class="ctl sf-pick">' +
-        (f.value && !pick.includes(f.value)
+        (f.value && !set.includes(f.value)
           ? '<option value="' + esc(f.value) + '" selected>' + esc(f.value) +
             ' — not one this system has</option>'
           : '<option value=""' + (f.value ? '' : ' selected') + '>—</option>') +
-        pick.map(o => '<option value="' + esc(o) + '"' +
+        set.map(o => '<option value="' + esc(o) + '"' +
           (o === f.value ? ' selected' : '') + '>' + esc(o) + '</option>').join('') +
       '</select>'
-    : big
-      ? '<textarea id="' + id + '" rows="3" spellcheck="true">' + esc(f.value) + '</textarea>'
-      : '<input id="' + id + '" type="text" value="' + esc(f.value) + '">';
+    : f.shape === 'prose'
+      ? '<textarea id="' + id + '" rows="' +
+        Math.min(12, Math.max(3, Math.ceil(f.value.length / 90))) +
+        '" spellcheck="true">' + esc(f.value) + '</textarea>'
+      : f.shape === 'number' || f.shape === 'count'
+        // A number box, so a phone offers a number pad and a stray letter is
+        // caught before it is a round trip to the server and back.
+        ? '<input id="' + id + '" class="sf-num" type="number" ' +
+          (f.shape === 'count' ? 'step="1" min="0"' : 'step="any"') +
+          ' value="' + esc(f.value) + '">'
+        : '<input id="' + id + '" type="text" value="' + esc(f.value) + '">';
   return '<div class="sf-field' + (f.open ? ' open' : '') + '" data-field="' + esc(f.field) + '">' +
     '<label for="' + id + '">' +
       '<span class="sf-mark">' + (f.open ? '?' : '·') + '</span>' +
@@ -95,7 +116,13 @@ function fieldHtml(f, choices) {
   '</div>';
 }
 
-/** The fields a face may not write, each with the reason. */
+/**
+ * The fields a face may not write, each with the reason.
+ *
+ * Both halves come from the server. A copy of these sentences lived here and had
+ * already drifted: it still said a `state` "changes what the gate demands",
+ * which is true of a tier and is not why a state may not be typed into a box.
+ */
 function lockedHtml(st, reasons) {
   return '<div class="sf-locked"><h4>Not editable here</h4>' +
     '<p class="muted">These move the tree or renumber a row\'s neighbours, so they are ' +
@@ -105,28 +132,6 @@ function lockedHtml(st, reasons) {
       '<dd>' + esc(reasons[k] || 'structural') + '</dd>').join('') +
     '</dl></div>';
 }
-
-/**
- * Why each structural field is locked.
- *
- * The server holds the same sentences and is what actually refuses; these are
- * for the reader. If the two ever disagree the server wins, and the reader has
- * been told something slightly wrong rather than allowed something harmful.
- */
-const LOCKED_WHY = {
-  id: 'the identifier is the folder and the variable name; renaming it is a move',
-  folder: 'the identifier is the folder and the variable name; renaming it is a move',
-  parent: 'the parent is the tree’s shape — moving a row moves everyone who reads it',
-  order: 'order decides position among siblings, and the block may be packed solid; ' +
-         'inserting renumbers its neighbours',
-  layer: 'the layer decides which contract the row sits under',
-  kind: 'kind decides whether the row declares a value or computes one, which changes ' +
-        'what is generated for it',
-  subsystem: 'ownership is generated into CODEOWNERS and decides who reviews it',
-  owner: 'ownership is generated into CODEOWNERS and decides who reviews it',
-  tier: 'it changes what the gate demands of the row',
-  state: 'it changes what the gate demands of the row',
-};
 
 /**
  * Put the edited rows on a branch.
@@ -177,8 +182,9 @@ export async function mountSheetEditor(host, id) {
 
   host.innerHTML =
     '<p class="sf-head">' + (d.open
-      ? '<b>' + d.open + '</b> of ' + d.fields.length + ' still open'
-      : 'every question answered') +
+      ? '<b>' + d.open + '</b> of ' + d.fields.filter(f => f.available).length +
+        ' still block generation'
+      : 'nothing left that blocks generation') +
       ' · <span class="muted">a save regenerates this row and runs the gate on it; ' +
       'if the gate refuses, nothing changes</span></p>' +
     // SHOWN, NOT ASKED FOR. A name typed into a box is a name somebody chose for
@@ -196,8 +202,30 @@ export async function mountSheetEditor(host, id) {
           '</p>') +
     '</div>' +
     pasteHtml() +
-    d.fields.map(f => fieldHtml(f, d.choices)).join('') +
-    lockedHtml(d.structural, LOCKED_WHY) +
+    // GROUPED, in the order the server gives them. Sixteen questions in one
+    // column is a form people abandon halfway; the groups are the few decisions
+    // the questions actually belong to.
+    d.groups.map(g => {
+      const mine = d.fields.filter(f => f.group === g && f.available);
+      if (!mine.length) return '';
+      const open = mine.filter(f => f.open).length;
+      return '<h4 class="sf-group">' + esc(g) +
+        (open ? ' <span class="sf-group-open">' + open + ' open</span>' : '') + '</h4>' +
+        mine.map(f => fieldHtml(f, d.choices)).join('');
+    }).join('') +
+    // A field the sheet has not got and the form may not add is named rather
+    // than silently missing. A `sense` belongs to a requirement and a declared
+    // number to a row that declares one, so offering either here would be a
+    // question with no right answer — but so is leaving a reader to wonder where
+    // it went.
+    (d.fields.some(f => !f.available)
+      ? '<p class="sf-why sf-absent">Not on this row: ' +
+        d.fields.filter(f => !f.available).map(f => '<code>' + esc(f.field) + '</code>')
+          .join(', ') +
+        '. The sheet has not got the key, and this form does not decide where a new ' +
+        'one belongs \u2014 add it in a checkout and it appears here.</p>'
+      : '') +
+    lockedHtml(d.structural, d.structural_why || {}) +
     proposeHtml() +
     '<p class="sf-foot muted">Holes are not edited here: a hole body is Rust between ' +
     'numbered markers, and an edit outside one is discarded by the next generation pass.</p>';
