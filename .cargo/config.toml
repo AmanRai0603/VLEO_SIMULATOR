@@ -1,0 +1,14 @@
+# The two short forms.
+#
+# `cargo xtask <command>` is written 1347 times in this repository — in every
+# generated file's header, in the runbook, in xtask's own help and its own
+# error messages — and until this file existed not one of them worked: cargo
+# has no such command without an alias, and the alias was never committed. The
+# long form, `cargo run -p xtask -- <command>`, is what AGENTS.md and the manual
+# use, because it works on any machine with no configuration at all. This makes
+# the short form true as well.
+#
+# An alias only adds a name. It sets no flags and changes no build.
+[alias]
+xtask = "run -p xtask --"
+vleo = "run -p vleo-cli --bin vleo --"

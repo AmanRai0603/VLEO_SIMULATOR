@@ -27,6 +27,7 @@
     <button class="nudge" id="prev" title="the layer above">←</button>
     <button class="nudge" id="next" title="the layer below">→</button>
     <button class="tab arch-tab" id="arch-tab" title="the pattern every folder repeats">⌗ Architecture</button>
+    <button class="tab manual-tab" id="manual-tab" title="how to use this tool — in the browser and in a terminal, as a user and as a developer">? Manual</button>
     <button class="tab sel" data-layer="1">1 Management layer</button>
     <button class="tab" data-layer="2">2 The system — tree, connectivity, one node</button>
     <button class="tab" data-layer="3">3 Subsystem</button>
@@ -124,6 +125,15 @@
   <div id="archview" hidden>
     <div id="arch-nav" class="arch-nav"></div>
     <div id="arch-body"></div>
+  </div>
+
+  <!--
+    The manual, about this tool, from docs/manual.toml. Every command it gives
+    is run by the pipeline exactly as written, and every name in it is checked
+    against the code both ways — so it can be followed without being doubted.
+  -->
+  <div id="manualview" hidden>
+    <div id="manual-body"></div>
   </div>
 
   <div id="nodeview" hidden>

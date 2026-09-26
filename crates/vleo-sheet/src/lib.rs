@@ -21,6 +21,7 @@
 
 pub mod emit;
 pub mod form;
+pub mod manual;
 
 /// Whether this names a quantity type a sheet may declare.
 pub fn is_quantity_name(n: &str) -> bool {
