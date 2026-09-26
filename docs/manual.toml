@@ -24,7 +24,8 @@
 # No counts are written here. How many rows there are, how many answer, whether
 # this daemon will accept an edit and whose name an edit will carry — the page
 # asks the running tool, because a number copied into a manual is wrong the day
-# after it is copied. The README proves it: it still says 1329.
+# after it is copied. USING_IT proved it: it said 1329 rows until 26 September
+# 2026, long after the tree reached 1396.
 #
 # Markup in `body` and `say`: blank line = new paragraph, `code`, **bold**.
 
@@ -556,7 +557,11 @@ input that reached it. Two runs with the same chain are the same run, so it is \
 the thing to quote.
 
 `--set` only changes a **declared** number — never a computed one, which would \
-be overwritten the moment it was evaluated — and it never writes the sheet."""
+be overwritten the moment it was evaluated — and it never writes the sheet.
+
+The last two steps use a **closure**, `l3_solar_ach_01`: the room the sustained \
+F10.7 requirement has left once the design flux is taken from it. The launch \
+date is one of the declared numbers behind it, and a time is given in seconds."""
 
 [[layer.section.step]]
 say = "Run a row and everything it needs."
@@ -593,6 +598,18 @@ say = "Every stored case against one row, side by side."
 run = "cargo run -p vleo-cli --bin vleo -- campaign sw_ap_design"
 check = "exits"
 expect = "solar_max"
+
+[[layer.section.step]]
+say = "Run the closure at the declared launch date, 1 January 2027. The answer is the fraction of the requirement still free."
+run = "cargo run -p vleo-cli --bin vleo -- run l3_solar_ach_01"
+check = "exits"
+expect = "M_f107_long = 0.599726"
+
+[[layer.section.step]]
+say = "Slip the launch to November 2032 and nothing else. The room falls from about 60 to 38 per cent, and the chain shows the design flux that moved it."
+run = "cargo run -p vleo-cli --bin vleo -- run l3_solar_ach_01 --set sys_mission_requirements_mission_epoch=1036800000"
+check = "exits"
+expect = "M_f107_long = 0.376314"
 
 
 [[layer.section]]
@@ -726,7 +743,7 @@ run = "cargo run -p xtask -- assemble"
 check = "ci"
 
 [[layer.section.step]]
-say = "The panels render, respond, and still look as a person last approved — light and dark."
+say = "The panels render and respond, and the ones checked on pixels match their stored pictures, light and dark. A stored picture is only as good as whoever looked at it: `panels/REVIEW.md` says who has signed each, and which are still waiting."
 run = "python3 tools/panel_check.py"
 check = "ci"
 
@@ -855,6 +872,16 @@ row and make your change again on top of theirs.
 **The checks refuse a row.** Each failure names the field and the rule. Read \
 that line before anything else; it is almost always the whole answer.
 
+**A row prints INACTIVE and does not answer.** Its relation is written but \
+nobody has derived it: the sheet has no `[theory]` block saying why it is this \
+relation. That is a person's work on the sheet, never something to work around \
+— and every row that reads it is blocked, by name, until it is done. \
+`active` lists each such row and how many rows wait on it.
+
+**A sweep answers no point.** Every point is still recorded, with why: \
+*blocked* when a row on its chain does not answer, or the bound and its reason \
+when the value is outside the declared range of the row being swept.
+
 **A command warns that the hooks are not wired.** Run `setup` once in this \
 checkout.
 
@@ -870,6 +897,12 @@ every value that reached it, with each one's own credibility."""
 say = "Start the tool on another port."
 run = "VLEO_PORT=8080 cargo run --release -p vleo-daemon"
 check = "serves"
+
+[[layer.section.step]]
+say = "Every row that is written but does not answer, and how many rows wait on each."
+run = "cargo run -p xtask -- active"
+check = "exits"
+expect = "undefined — the relation is stated and never derived"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1488,7 +1521,7 @@ who = "developer"
 
 [[folder]]
 name = "panels"
-what = "Each panel's declared spec and the reference images a person last approved, light and dark."
+what = "Each panel's declared spec, the stored pictures it is matched against in light and dark, and REVIEW.md: who has signed each and which are waiting."
 who = "developer"
 
 [[folder]]
