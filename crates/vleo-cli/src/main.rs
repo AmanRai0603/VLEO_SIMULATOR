@@ -71,10 +71,17 @@ fn main() -> ExitCode {
             print_version();
             Ok(())
         }
-        _ => {
+        "help" | "--help" | "-h" => {
             help();
             Ok(())
         }
+        // AN UNKNOWN COMMAND IS REFUSED, NOT ANSWERED WITH HELP. This printed
+        // the help and exited 0 for anything it did not recognise, so a typo —
+        // `vleo rnu sw_ap_design` — looked exactly like a command that had run
+        // and found nothing to say. That is a substitution where the fifth rule
+        // asks for a refusal, and a script checking the exit code would have
+        // carried on as if it had its number.
+        other => Err(format!("unknown command '{other}'. Try `vleo help`.")),
     };
     match r {
         Ok(()) => ExitCode::SUCCESS,
@@ -103,7 +110,9 @@ vleo <command>
   list [<subsystem>]   the rows, their kind, their owner and their state.
   show <node>          the sheet, as the engine holds it.
   cases                the stored cases and what each supplies.
-  selftest             every fixture in the tree, executed against this build.
+  selftest             every fixture declaration in the tree is sound —
+                       provenance outside the code, a positive tolerance.
+                       It does not execute them: `cargo test` does.
   data sync|list|verify
                        reconcile the local store, or say what is in it. A run
                        either has verified data on disk or refuses to start: it

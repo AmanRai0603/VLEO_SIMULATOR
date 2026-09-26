@@ -1,6 +1,6 @@
 [package]
 name = "vleo-sheet"
-description = "BUILD ONLY — reads the sheets and emits everything derived from them. Used by the generators in xtask and by the build scripts, so there is exactly one implementation of what a sheet means. Never present at run time."
+description = "What a sheet means — read, checked, generated from and edited. One implementation, used by the generators in xtask, by the build scripts, and by the daemon for the declaration form and the manual, so no face carries a second copy that could disagree. Not linked into the engine: a run never reads a sheet."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

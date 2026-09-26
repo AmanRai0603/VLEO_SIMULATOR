@@ -274,6 +274,8 @@ fn route(
         // is invisible.
         ("GET", p) if p.starts_with("/js/") => module(ctx, p.trim_start_matches("/js/")),
         ("GET", "/v1/version") => ok_json(version_json(ctx)),
+        // The manual, with what is true of this running copy right now.
+        ("GET", "/v1/manual") => manual_endpoint(ctx),
         ("GET", "/v1/index") => ok_json(index_json()),
         ("GET", p) if p.starts_with("/v1/fragment/") => {
             let id = p.trim_start_matches("/v1/fragment/");
@@ -809,6 +811,108 @@ fn publish_write(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static s
         );
     };
     said(vleo_sheet::form::publish(&ctx.root, id, &decode(base)))
+}
+
+/// The manual the page shows about the tool, and what is true of THIS copy.
+///
+/// The file says how things work. Only the running copy knows whether it will
+/// accept an edit, whose name an edit would carry, and how many rows there are —
+/// and a manual that wrote any of those down would be wrong the day after. So
+/// they are added here, from the same functions that decide them: the write
+/// switch the save path checks, the identity the save path signs with, and the
+/// form's own tables for what a sheet holds and what it locks.
+fn manual_endpoint(ctx: &Ctx) -> (&'static str, &'static str, Vec<u8>) {
+    const JSON: &str = "application/json; charset=utf-8";
+    let m = match vleo_sheet::manual::load(&ctx.root) {
+        Ok(m) => m,
+        // A manual that does not load is reported, not replaced by an empty
+        // one: an empty manual reads as "there is nothing to know".
+        Err(e) => {
+            return (
+                "500 Internal Server Error",
+                JSON,
+                format!("{{\"ok\":false,\"message\":{}}}", json::string(&e)).into_bytes(),
+            )
+        }
+    };
+    use vleo_sheet::form;
+    let (who, who_why, agent) = match form::git_identity(&ctx.root) {
+        Ok(w) => {
+            let agent = form::refuse_agent_attribution(&ctx.root, &w).is_err();
+            (json::string(&w), "null".to_string(), agent)
+        }
+        Err(e) => ("null".to_string(), json::string(&e), false),
+    };
+    let (rows, published, seeded) = match vleo_sheet::load::load_all(&ctx.root) {
+        Ok(t) => {
+            let n = t.sheets.len();
+            let s = t.sheets.values().filter(|s| s.is_seeded()).count();
+            let p = t.sheets.values().filter(|s| s.state == "published").count();
+            (n, p, s)
+        }
+        Err(_) => (0, 0, 0),
+    };
+    let fields: Vec<String> = form::FIELDS
+        .iter()
+        .filter(|f| f.asked)
+        .map(|f| {
+            format!(
+                "{{\"field\":{},\"group\":{},\"ask\":{},\"why\":{},\"shape\":{},\"blocks\":{}}}",
+                json::string(f.field),
+                json::string(f.group),
+                json::string(f.ask),
+                json::string(f.why),
+                json::string(f.shape.name()),
+                f.blocks
+            )
+        })
+        .collect();
+    let arrays: Vec<String> = form::ARRAYS
+        .iter()
+        .map(|a| {
+            format!(
+                "{{\"name\":{},\"label\":{},\"why\":{},\"end_only\":{},\"keys\":[{}]}}",
+                json::string(a.name),
+                json::string(a.label),
+                json::string(a.why),
+                a.blocks == form::Blocks::EndOnly,
+                a.columns
+                    .iter()
+                    .filter(|c| !c.managed)
+                    .map(|c| json::string(c.key))
+                    .collect::<Vec<_>>()
+                    .join(",")
+            )
+        })
+        .collect();
+    let locked: Vec<String> = form::LOCKED
+        .iter()
+        .map(|k| {
+            format!(
+                "{{\"field\":{},\"why\":{}}}",
+                json::string(k),
+                json::string(form::structural(k).unwrap_or(""))
+            )
+        })
+        .collect();
+    let body = format!(
+        "{{\"ok\":true,\"manual\":{},\n\"live\":{{\"writes_allowed\":{},\"identity\":{},\
+         \"identity_why\":{},\"identity_is_agent\":{},\"port\":{},\"rows\":{},\"published\":{},\
+         \"seeded\":{},\"fields\":[{}],\"arrays\":[{}],\"locked\":[{}]}}}}",
+        vleo_sheet::manual::json(&m),
+        writes_allowed(),
+        who,
+        who_why,
+        agent,
+        ctx.port,
+        rows,
+        published,
+        seeded,
+        fields.join(","),
+        arrays.join(","),
+        locked.join(",")
+    );
+    ("200 OK", JSON, body.into_bytes())
 }
 
 fn declare_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {

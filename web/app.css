@@ -92,6 +92,7 @@ select.ctl { padding: .18rem .3rem; }
 /* ---------- stepper ------------------------------------------------------- */
 main { padding: 1.1rem 2.5rem 3rem; }
 #stepper { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .9rem; }
+#stepper[hidden] { display: none; }
 .step { display: inline-flex; align-items: center; gap: .4rem; color: var(--ink-3); font-size: 11px;
   text-transform: uppercase; letter-spacing: .1em; }
 .step .n {
@@ -898,3 +899,101 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
 
 /* A closed set is offered, not typed. */
 .sf-field select.sf-pick { width: 100%; box-sizing: border-box; font-size: 13px; }
+
+/* ─── the manual ────────────────────────────────────────────────────────────
+   A page to read, not a figure: a narrow column for the prose, a sidebar for
+   where you are, and a card at the top saying what is true of THIS copy of the
+   tool before anything tells you to press a button it will refuse. Every colour
+   is a token, so the dark scheme is the one the rest of the face already has. */
+#manualview { max-width: 76rem; }
+.man { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: 2rem; align-items: start; }
+.man-side { position: sticky; top: .75rem; max-height: calc(100vh - 1.5rem); overflow: auto;
+  font-size: 13px; padding-right: .25rem; }
+.man-side-h { font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-3); margin: 1.1rem 0 .4rem; }
+.man-side-h:first-child { margin-top: 0; }
+.man-side-h.cur a { color: var(--ink); font-weight: 600; }
+.man-side-h a { color: var(--ink-2); text-decoration: none; }
+.man-filter { display: flex; gap: .25rem; flex-wrap: wrap; }
+.man-side-note { font-size: 11.5px; color: var(--ink-3); line-height: 1.5; margin: .6rem 0 0; }
+.man-toc { display: flex; flex-direction: column; border-left: 2px solid var(--rule-2);
+  margin: .2rem 0 .4rem; }
+.man-toc a { padding: .22rem .6rem; color: var(--ink-2); text-decoration: none; line-height: 1.35; }
+.man-toc a:hover { color: var(--ink); background: var(--rule-2); }
+
+.man-main { min-width: 0; max-width: 52rem; font-size: 14px; line-height: 1.6; color: var(--ink); }
+.man-main p { margin: .55rem 0; }
+.man-main code { font-family: var(--mono); font-size: .88em; background: var(--rule-2);
+  padding: .05em .3em; border-radius: 3px; white-space: nowrap; }
+.man-h { font-size: 22px; font-weight: 600; margin: 1.2rem 0 .2rem; }
+.man-lede { color: var(--ink-2); }
+.man-layers { display: flex; gap: .35rem; flex-wrap: wrap; margin: 1.1rem 0 0; }
+
+/* What is true of this copy, right now. The first thing on the page. */
+.man-live { border: 1px solid var(--rule); background: var(--card); border-radius: 6px;
+  padding: .8rem 1rem; }
+.man-live-h { font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: .35rem; }
+.man-live-row { padding: .3rem 0 .3rem .7rem; border-left: 3px solid var(--rule); margin: .35rem 0; }
+.man-live-row.good { border-left-color: var(--both); }
+.man-live-row.bad  { border-left-color: var(--out); }
+
+.man-sec { margin: 2rem 0 0; padding-top: 1.2rem; border-top: 1px solid var(--rule-2);
+  scroll-margin-top: .75rem; }
+.man-sec h3 { font-size: 17px; font-weight: 600; margin: 0 0 .3rem; }
+.man-sub { font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3);
+  margin: 1.1rem 0 .3rem; }
+.man-who { font-size: 10.5px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase;
+  vertical-align: middle; padding: .1rem .45rem; border-radius: 10px; margin-left: .4rem;
+  border: 1px solid var(--rule); color: var(--ink-3); }
+.man-who.user { color: var(--in); border-color: var(--in); }
+.man-who.developer { color: var(--teal); border-color: var(--teal); }
+
+.man-steps { margin: .8rem 0 0; padding-left: 1.4rem; }
+.man-step { margin: 0 0 .9rem; padding-left: .2rem; }
+.man-step::marker { color: var(--ink-3); font-family: var(--mono); font-size: 12px; }
+/* A label on the page, drawn the way a key is — the thing to look for. */
+.man-ui { font-family: inherit; font-size: 12.5px; white-space: nowrap; padding: .08rem .45rem;
+  border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 4px;
+  background: var(--card); color: var(--ink); }
+
+/* A command: exactly what to paste, what it will do, and a button to copy it. */
+.man-cmd { margin: .45rem 0 0; }
+/* The copy button sits in the box it copies, never on the note under it. */
+.man-cmd-box { position: relative; }
+.man-cmd pre { margin: 0; padding: .6rem 4.6rem .6rem .75rem; background: var(--card);
+  border: 1px solid var(--rule); border-radius: 5px; overflow-x: auto; }
+.man-cmd pre code { background: none; padding: 0; font-size: 12.5px; white-space: pre; }
+.man-copy { position: absolute; top: .35rem; right: .35rem; font-size: 11.5px; }
+.man-cmd-note { margin-top: .25rem; }
+.man-tag { font-size: 11.5px; color: var(--ink-3); }
+.man-tag::before { content: "● "; }
+.man-tag.ok::before { color: var(--both); }
+.man-tag.writes::before, .man-tag.refuse::before { color: var(--out); }
+.man-tag.serve::before, .man-tag.ci::before { color: var(--teal); }
+
+.man-tablewrap { overflow-x: auto; margin: .8rem 0 0; }
+.man-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.man-table th { text-align: left; font-weight: 500; color: var(--ink-3); font-size: 11.5px;
+  border-bottom: 1px solid var(--rule); padding: .35rem .5rem; }
+.man-table td { border-bottom: 1px solid var(--rule-2); padding: .5rem; vertical-align: top; }
+.man-table td .man-cmd { margin: 0; }
+.man-table .muted { font-size: 12px; margin-top: .15rem; }
+.man-usage { white-space: pre-wrap; word-break: break-word; }
+.man-effect { font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; padding: .05rem .4rem;
+  border-radius: 3px; border: 1px solid var(--rule); color: var(--ink-3); white-space: nowrap; }
+.man-effect.writes { color: var(--out); border-color: var(--out); }
+.man-effect.irreversible { color: var(--paper); background: var(--out); border-color: var(--out); }
+.man-foot { margin: 2.5rem 0 1rem; font-size: 12px; }
+
+/* A phone: the sidebar goes above the text, and the contents list becomes a
+   short scroll rather than a column the text has to wait below. */
+@media (max-width: 760px) {
+  .man { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+  .man-main code, .man-ui { white-space: normal; overflow-wrap: anywhere; }
+  .man-side { position: static; max-height: none; }
+  .man-toc { max-height: 12rem; overflow: auto; }
+  .man-main { font-size: 15px; }
+  .man-cmd pre { padding-right: .75rem; padding-bottom: 2.1rem; }
+  .man-copy { top: auto; bottom: .35rem; }
+}

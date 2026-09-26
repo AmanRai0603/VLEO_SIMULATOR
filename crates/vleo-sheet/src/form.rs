@@ -462,7 +462,7 @@ pub fn value(sh: &Sheet, field: &str) -> String {
 }
 
 /// A JSON string body, escaped. Smaller to write than to depend on.
-fn jq(v: &str) -> String {
+pub(crate) fn jq(v: &str) -> String {
     let mut o = String::with_capacity(v.len() + 2);
     o.push('"');
     for c in v.chars() {
@@ -757,6 +757,24 @@ pub fn file_hash(text: &str) -> String {
 pub fn place(field: &str) -> Option<(&'static str, &'static str)> {
     self::field(field).map(|f| (f.table, f.key))
 }
+
+/// Every field `structural` refuses, in the order a reader meets them.
+///
+/// The list the form shows as locked and the manual lists as locked. It sits
+/// beside `structural` so the two are one edit apart, and a test holds them to
+/// each other: every name here must be refused, with a reason.
+pub const LOCKED: &[&str] = &[
+    "id",
+    "folder",
+    "parent",
+    "order",
+    "layer",
+    "kind",
+    "subsystem",
+    "owner",
+    "tier",
+    "state",
+];
 
 /// The fields a face may never write, and why.
 ///
@@ -1492,6 +1510,15 @@ fn commit_edit(
     after: String,
     whole_tree: bool,
 ) -> Saved {
+    // Which generated files the row had BEFORE the edit. Taken before anything
+    // is written, because it is the answer to "what may a restore delete".
+    let dir = path.parent().unwrap_or(std::path::Path::new("."));
+    let existed: Vec<std::path::PathBuf> = GENERATED
+        .iter()
+        .map(|n| dir.join(n))
+        .filter(|p| p.exists())
+        .collect();
+
     if let Err(e) = write_atomic(path, &after) {
         return Saved::Refused(e);
     }
@@ -1501,8 +1528,23 @@ fn commit_edit(
     // leaves the tree failing its own regeneration check — the exact state this
     // whole path exists to avoid. So the artefacts are regenerated from the
     // restored sheet too.
+    //
+    // AND WHAT THE EDIT GENERATED THAT WAS NOT THERE BEFORE IS REMOVED. A
+    // refused publish showed why: publishing a seeded row makes the generator
+    // write its model, contract, module and evidence for the first time, and
+    // regenerating the restored — still seeded — sheet writes only its page. The
+    // four new files stayed behind under a message saying nothing had changed,
+    // and the next "put these edits on a branch" would have committed them.
+    // Only a generated file the row did not have before is removed; one that
+    // existed is regenerated, which keeps whatever Rust its holes hold.
     let restore = |e: String| -> Saved {
         let _ = write_atomic(path, before);
+        for n in GENERATED {
+            let p = dir.join(n);
+            if p.exists() && !existed.contains(&p) {
+                let _ = std::fs::remove_file(&p);
+            }
+        }
         let put_back = crate::load::load_all(root)
             .ok()
             .and_then(|t| t.sheets.get(id).map(|s| regenerate(s, &t)));
@@ -1559,6 +1601,17 @@ fn commit_edit(
         regenerated: n,
     }
 }
+
+/// Every file the per-row generators write. `regenerate` writes the first four
+/// only for a published row; the last two for every row.
+const GENERATED: &[&str] = &[
+    "model.rs",
+    "contract.rs",
+    "mod.rs",
+    "evidence.rs",
+    "page.html",
+    "meta.json",
+];
 
 /// A temporary file then a rename, so a reader never sees half a sheet.
 fn write_atomic(path: &std::path::Path, text: &str) -> Result<(), String> {

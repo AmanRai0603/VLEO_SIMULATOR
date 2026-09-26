@@ -205,6 +205,8 @@ jobs:
         run: python3 tools/branch_audit.py --selftest
       - name: the input control checks itself
         run: python3 tools/input_check.py --selftest
+      - name: the manual check checks itself
+        run: python3 tools/manual_check.py --selftest
       # The walk-forward that reproduces sw_mean_band_spread's sigma disagrees
       # with the published number, and §31.4 rests on that disagreement being
       # real rather than an arithmetic slip. Its selftest checks the estimators
@@ -391,6 +393,20 @@ jobs:
         run: python3 tools/panel_check.py --selftest
       - name: every declared panel
         run: python3 tools/panel_check.py
+      # The manual in the browser tells people what to paste and what they will
+      # see. `cargo test` already holds every name in it to the code; this holds
+      # every command to what it DOES — run exactly as written, its output
+      # compared with what the manual says, and the working tree compared before
+      # and after, because the page labels those commands safe to run. Here and
+      # not in the gate job because two of them start the release daemon, which
+      # this job has just built, and before the parity step below, which leaves
+      # a daemon holding 7777. `--browser` then follows the browser half on the
+      # real page, clicking the labels the manual names.
+      - name: the manual's commands do what it says
+        run: |
+          python3 tools/manual_check.py --selftest
+          python3 tools/manual_check.py
+          python3 tools/manual_check.py --browser
       # The study's own code is not in this repository — only its published
       # output, seven CSVs. Every solar row that can be compared against that
       # output is re-derived here in Python, independently of the Rust, and the

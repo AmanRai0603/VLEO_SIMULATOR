@@ -990,3 +990,152 @@ fn an_untracked_row_is_committed_too() {
         form::Proposed::Refused(e) => panic!("refused: {e}"),
     }
 }
+
+/// Puts a whole row folder back when this goes out of scope: every file to its
+/// bytes, and every file that was not there removed. `Restore` puts back one
+/// sheet; a publish writes files the row never had.
+struct RestoreFolder {
+    dir: PathBuf,
+    files: Vec<(PathBuf, Vec<u8>)>,
+}
+
+impl RestoreFolder {
+    fn take(dir: &Path) -> RestoreFolder {
+        let files = std::fs::read_dir(dir)
+            .unwrap()
+            .flatten()
+            .map(|e| e.path())
+            .filter(|p| p.is_file())
+            .map(|p| {
+                let b = std::fs::read(&p).unwrap();
+                (p, b)
+            })
+            .collect();
+        RestoreFolder {
+            dir: dir.to_path_buf(),
+            files,
+        }
+    }
+    fn names(dir: &Path) -> Vec<String> {
+        let mut v: Vec<String> = std::fs::read_dir(dir)
+            .unwrap()
+            .flatten()
+            .filter(|e| e.path().is_file())
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .collect();
+        v.sort();
+        v
+    }
+}
+
+impl Drop for RestoreFolder {
+    fn drop(&mut self) {
+        for e in std::fs::read_dir(&self.dir).unwrap().flatten() {
+            if !self.files.iter().any(|(p, _)| *p == e.path()) {
+                let _ = std::fs::remove_file(e.path());
+            }
+        }
+        for (p, b) in &self.files {
+            let _ = std::fs::write(p, b);
+        }
+    }
+}
+
+#[test]
+fn a_refused_publish_leaves_no_file_behind() {
+    // The whole journey that found it: a seeded row filled in completely, with
+    // one disagreement the per-save checks of a seeded row do not look for —
+    // the lower bound above the upper — and then published. Publishing runs
+    // every check, the domain check refuses, and the restore said "nothing
+    // changed" while the model, contract, module and evidence it had just
+    // generated for the first time stayed in the folder.
+    let _serial = serially();
+    let root = root();
+    let row = "sys_attitude_control_sizing_aerodynamic_trim_angle";
+    let tree = vleo_sheet::load::load_all(&root).unwrap();
+    let sh = tree
+        .sheets
+        .get(row)
+        .expect("the seeded row this test fills");
+    assert!(sh.is_seeded(), "this test needs {row} to be seeded");
+    let dir = sh.dir.clone();
+    let _guard = RestoreFolder::take(&dir);
+    let files_before = RestoreFolder::names(&dir);
+
+    // Filled in textually — the same writer the form uses — so the only thing
+    // under test is what publishing does with it.
+    let path = dir.join("node.toml");
+    let mut t = std::fs::read_to_string(&path).unwrap();
+    for (f, v) in [
+        (
+            "question",
+            "At what angle does the aerodynamic moment balance the control authority?",
+        ),
+        (
+            "expression",
+            "alpha_trim = atan2(C_m_delta * delta_max, C_m_alpha)",
+        ),
+        ("source", "larson_wertz"),
+        ("symbol", "alpha_trim"),
+        ("type", "Angle"),
+        ("unit", "Degree"),
+        (
+            "reason_lower",
+            "below this the vehicle is not trimming against the flow",
+        ),
+        (
+            "reason_upper",
+            "above this the panel model is outside its fitted range",
+        ),
+        ("lower", "40"),
+        ("upper", "30"),
+    ] {
+        t = form::set(&t, f, v).unwrap_or_else(|e| panic!("{f}: {e}"));
+    }
+    let s = |v: &str| v.to_string();
+    t = form::block_text(
+        &t,
+        "input",
+        "add",
+        0,
+        &[
+            ("binding", s("h")),
+            ("var", s("orbit_altitude")),
+            ("type", s("Length")),
+        ],
+    )
+    .unwrap();
+    t = form::block_text(
+        &t,
+        "algorithm",
+        "add",
+        0,
+        &[
+            ("text", s("balance the moments")),
+            ("binds", s("out")),
+            ("type", s("Angle")),
+        ],
+    )
+    .unwrap();
+    std::fs::write(&path, &t).unwrap();
+
+    match form::publish(&root, row, &form::file_hash(&t)) {
+        Saved::Refused(e) => assert!(
+            e.contains("domain"),
+            "refused, but not for the crossed bounds: {e}"
+        ),
+        Saved::Ok { .. } => panic!("a row whose lower bound is above its upper was published"),
+        Saved::Stale { current } => panic!("unexpectedly stale, current {current}"),
+    }
+    assert_eq!(
+        RestoreFolder::names(&dir),
+        files_before,
+        "a refused publish must leave the folder holding exactly the files it held"
+    );
+    assert!(
+        std::fs::read_to_string(&path)
+            .unwrap()
+            .contains("state = \"empty\""),
+        "and the row is still seeded"
+    );
+}

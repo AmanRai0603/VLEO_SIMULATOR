@@ -16,6 +16,7 @@ import { drawFigure, drawCaptions, drawStepper, drawStatus, drawFoot } from './f
 import { openNode } from './node.js';
 import { renderRun } from './run.js';
 import { drawArchitecture } from './architecture.js';
+import { renderManual } from './manual.js';
 import { loadOverrides, overrideCount, clearAllOverrides, clearOverride,
          fromSI, onOverrideChange } from './inputs.js';
 
@@ -42,6 +43,18 @@ async function boot() {
   $('#howto-steps').innerHTML = HOWTO.map(t => '<li>' + t + '</li>').join('');
   wire();
   setLayer(1);
+  // A link to the manual opens it — `#manual`, or `#manual/<section>` to land
+  // on the one step somebody was sent to read.
+  const openFromHash = () => {
+    const h = location.hash.match(/^#manual(?:\/([\w-]+))?$/);
+    if (h) setManual(h[1]);
+  };
+  openFromHash();
+  // AND WHEN ONLY THE HASH CHANGES. A manual link pasted into a tab that already
+  // has the tool open does not reload the page, so without this it changed the
+  // address and nothing else — the reader was left where they were, told by the
+  // address bar that they were somewhere they were not.
+  window.addEventListener('hashchange', openFromHash);
 }
 
 function fillSubsys() {
@@ -63,15 +76,20 @@ export function draw() {
   $('#nodeview').hidden = v !== 'node';
   $('#runview').hidden  = v !== 'run';
   $('#archview').hidden = v !== 'arch';
-  $('#caption-a').hidden = $('#caption-b').hidden = (v === 'node' || v === 'arch');
+  $('#manualview').hidden = v !== 'manual';
+  $('#caption-a').hidden = $('#caption-b').hidden = (v === 'node' || v === 'arch' || v === 'manual');
+  // The stepper walks a person through reading the TREE; on the manual it
+  // would be a second set of instructions beside the first.
+  $('#stepper').hidden = v === 'manual';
   $('#controls').style.display = v === 'layer' && S.layer !== 4 ? '' : 'none';
-  $('#caserow').style.display = v === 'arch' || S.layer === 4 ? 'none' : '';
+  $('#caserow').style.display = v === 'arch' || v === 'manual' || S.layer === 4 ? 'none' : '';
   $('#subsys-grp').style.display = S.layer === 3 ? '' : 'none';
   $('#concept-grp').style.display = S.layer === 1 ? '' : 'none';
 
   $('#arch-tab').classList.toggle('sel', v === 'arch');
+  $('#manual-tab').classList.toggle('sel', v === 'manual');
   $$('.tab[data-layer]').forEach(b =>
-    b.classList.toggle('sel', v !== 'arch' && +b.dataset.layer === S.layer));
+    b.classList.toggle('sel', v !== 'arch' && v !== 'manual' && +b.dataset.layer === S.layer));
   $$('.ctl.sz').forEach(b => b.classList.toggle('sel', b.dataset.size === S.size));
   $$('.ctl.case').forEach(b => b.classList.toggle('sel', b.dataset.case === S.caseSel));
   $$('.ctl.cpt').forEach(b => b.classList.toggle('sel', b.dataset.concept === S.concept));
@@ -83,6 +101,7 @@ export function draw() {
   drawFoot();
 
   if (v === 'arch') { drawArchitecture(); drawStatus([]); return; }
+  if (v === 'manual') { drawStatus([]); return; }
   if (v === 'run')  { drawRunView(); drawStatus([]); return; }
   if (v === 'node') { drawStatus(S.disp); return; }
   drawStatus(drawFigure());
@@ -178,6 +197,18 @@ function setLayer(n) {
   draw();
 }
 
+/**
+ * Open the manual — at a layer or a section when one is named.
+ *
+ * Rendered once per visit rather than on every draw: it is a page to read, and
+ * redrawing it under a person's scroll position would lose their place.
+ */
+function setManual(target) {
+  S.view = 'manual';
+  draw();
+  renderManual($('#manual-body'), target);
+}
+
 function setArch(section) {
   S.view = 'arch';
   if (section) S.arch = section;
@@ -240,6 +271,7 @@ async function open(id) {
 
 function wire() {
   $('#arch-tab').onclick = () => setArch();
+  $('#manual-tab').onclick = () => { history.replaceState(null, '', '#manual'); setManual(); };
   $$('.tab[data-layer]').forEach(b => b.onclick = () => setLayer(+b.dataset.layer));
   $('#prev').onclick = () => setLayer(Math.max(1, S.layer - 1));
   $('#next').onclick = () => setLayer(Math.min(4, S.layer + 1));
