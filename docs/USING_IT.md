@@ -7,6 +7,16 @@ you would actually meet it.
 
 Everything below was run against this repository. The outputs are real.
 
+**The manual in the tool is the reference; this page is the walkthrough.**
+Start the tool and press **? Manual** at the top of the page, or open
+`http://127.0.0.1:7777/#manual`. It lists every task, in the browser and in the
+terminal, for a user and for a developer, with each command ready to copy, and
+it says what cannot be done by hand and what to do instead. It is tested
+against the code, so a command or button it names exists. This page
+does something the manual does not: it drives the tool through worked examples
+and shows what it printed, and it explains why the tool behaves as it does.
+Where the two differ on a name or a flag, the manual is the one that is checked.
+
 ---
 
 ## 1 · Ten minutes
@@ -15,19 +25,20 @@ Everything below was run against this repository. The outputs are real.
 cargo run --release -p vleo-daemon        # the tool, at http://127.0.0.1:7777
 ```
 
-Open it. You get the tree on the left and a panel on the right. Four layers:
+Open it. You get the tree on the left and a panel on the right, and **? Manual**
+in the row of tabs above them. Four layers:
 
 | layer | what it holds | rows | of those, written |
 |---|---|---|---|
 | 1 | management — the programme's own view | 174 | 0 |
-| 2 | the system — what the spacecraft must do | 319 | 1 |
-| 3 | subsystem — seventeen of them | 878 | 292 |
+| 2 | the system — what the spacecraft must do | 321 | 7 |
+| 3 | subsystem — seventeen of them | 901 | 313 |
 | 4 | the run — what a single evaluation produced | — | — |
 
 `cargo run -p xtask -- status` prints that table, and a second one by
-subsystem. Today 293 of 1371 rows carry content and 1078 are seeded shape
-waiting to be filled — which is the state this tool is designed to be useful
-in, not a defect. One subsystem is written all the way through, solar weather
+subsystem. On 26 September 2026 320 of 1396 rows carry content and 1076 are
+seeded shape waiting to be filled — which is the state this tool is designed to
+be useful in, not a defect. One subsystem is written all the way through, solar weather
 at 42 of 42, and section 2b drives it.
 
 Each subsystem reaches the layer above through exactly one node — seventeen
@@ -704,6 +715,7 @@ cargo run -p xtask -- gap                    # what every sheet promised and not
 
 | you want | read |
 |---|---|
+| how to do any one thing, in the browser or the terminal, and what cannot be done by hand | **? Manual**, in the tool — source `docs/manual.toml` |
 | why the four rings, and what may depend on what | `docs/ARCHITECTURE.md` |
 | who decides what, and which changes need two reviewers | `docs/WORK_MODEL.md` |
 | what each agent actually produced when it was first used | `docs/AGENT_EVIDENCE.md` |

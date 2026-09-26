@@ -54,6 +54,20 @@ with networking disabled.
 It binds `127.0.0.1` and takes the first free port from 7777 upward, printing
 the one it got. Set `VLEO_PORT` to pin it.
 
+**The tool carries its own manual.** Press **? Manual** at the top of the page,
+or open `/#manual` (a single section is `/#manual/<section>`, such as
+`/#manual/term-run`). It covers the browser and the terminal, can be filtered
+to what a user does or what a developer does, and lists what cannot be done by
+hand with why and what to do instead. Every command has a copy button. A card
+at its top says whether the copy you opened accepts edits and whose name they
+will be signed with. Its source is `docs/manual.toml`, and it is tested
+against the code: `cargo test` fails on a command, route, variable, folder or
+button it names that does not exist, or one the code has that it leaves out,
+and the pipeline runs every command it calls safe, exactly as written.
+
+The tool starts read-only. To edit sheets from the browser, start it with
+`VLEO_ALLOW_WRITE=1 cargo run --release -p vleo-daemon`.
+
 To change an input and watch the answer move —
 [`docs/USING_IT.md` §2b](docs/USING_IT.md) drives it end to end on the solar
 rows: only declared numbers can be set, the tool refuses a computed one by
@@ -129,9 +143,9 @@ moment the row is evaluated.
 | `crates/` | the whole Rust workspace: the four rings, the faces, and **1396 node folders** under `crates/vleo-mod-*/nodes/` | this is the tool. Almost every file in the repository is here, and most of those are the per-node artefacts `xtask docs` writes from a sheet |
 | `layers/` | the rows in the tree that are **not** nodes — headings, parents, group edges, subsystem ownership | the decomposition itself. `CODEOWNERS` is generated from it, so moving a branch here moves who reviews what |
 | `tools/` | the Python side: the seeder that built the tree, and every check the pipeline runs that is not `cargo` | the checks that cannot be expressed as a Rust test — screenshots, parity against MATLAB, commit messages, agent lanes. Each proves itself with `--selftest` before it is trusted to decide anything |
-| `web/` | the browser face — one `index.html`, one stylesheet, 17 ES modules | how the tool is read. It talks to `vleo-daemon` over HTTP and holds no physics of its own |
+| `web/` | the browser face — one `index.html`, one stylesheet, 19 ES modules, the manual among them | how the tool is read. It talks to `vleo-daemon` over HTTP and holds no physics of its own |
 | `panels/` | 14 declared panel specs, plus `REVIEW.md` and 28 reference screenshots (light and dark) | a figure nobody checked is a figure that silently goes wrong. The spec says what the panel must show; the references are what it looked like when a person last approved it |
-| `docs/` | 13 prose documents and 4 diagrams, indexed under **Reference** below | the written record. `VARIABLES.md` is generated; `MATLAB_PORT_PLAN.md` is the row-by-row account of the port and the longest thing here |
+| `docs/` | 13 prose documents, 4 diagrams, and `manual.toml` — the source of the manual in the tool — indexed under **Reference** below | the written record. `VARIABLES.md` is generated; `MATLAB_PORT_PLAN.md` is the row-by-row account of the port and the longest thing here |
 | `bundles/` | reference data as published sets, each with a manifest, a licence term and a hash | rule 2's external oracle. An expected value may never come from the code under test, so the data it is checked against is versioned and verified rather than fetched |
 | `cases/` | five per-customer value sets against one shared architecture | the architecture is never copied per customer. Five cases, one tree — `n` copies would mean `n` fixes and silent drift |
 | `matlab/` | a thin MATLAB face (`+vleo`) and the study's own published CSV | the tool this was ported from. Its saved run is what `tools/mat_parity.py` compares against |
@@ -143,6 +157,7 @@ moment the row is evaluated.
 | `.claude/` | seven agent definitions and four hooks | what each agent is allowed to do and what fires on an edit |
 | `.github/` | the pipeline (`gate.yml`, `nightly.yml`), the dependency bot, the PR template | eight jobs, and the regeneration diff that catches a generated file nobody re-ran |
 | `.devcontainer/` | the Codespace definition and its setup scripts | a fresh clone that runs without a person installing anything |
+| `.cargo/` | two command aliases: `cargo xtask …` and `cargo vleo …` | short forms of `cargo run -p xtask -- …` and `cargo run -p vleo-cli --bin vleo -- …`. The manual writes out the long forms, and both work in any checkout |
 | `target/`, `generated/`, `.vleo/` | build output, assembled fragments, the local data store | all three are generated and all three are git-ignored. Nothing here is a source |
 
 ### Four rings, depending inward only
@@ -536,7 +551,8 @@ showing an optimum near 300 km](docs/img/sweep.png)
 
 | | |
 |---|---|
-| [`docs/USING_IT.md`](docs/USING_IT.md) | the page to read first — running it, filling a row, what each agent will and will not do |
+| **? Manual**, in the tool | the place to start. Every task in the browser and in the terminal, for a user and for a developer, what cannot be done by hand, and every command, route, setting and folder. Source: [`docs/manual.toml`](docs/manual.toml) |
+| [`docs/USING_IT.md`](docs/USING_IT.md) | the worked walkthrough, with real outputs — running it, changing an input, filling a row, what each agent will and will not do |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | why the rings are shaped the way they are |
 | [`docs/NODE_AUTHORING.md`](docs/NODE_AUTHORING.md) | the sheet, field by field |
 | [`docs/WORK_MODEL.md`](docs/WORK_MODEL.md) | who decides what, and which changes need two reviewers |
