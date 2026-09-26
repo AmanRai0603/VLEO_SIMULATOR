@@ -13,23 +13,25 @@ selected row for every node it feeds](docs/img/tool.png)
 
 ## Status
 
-Measured on `main`, 15 September 2026. Every figure here is produced by a
-command in this repository, named beside it where it is not obvious.
+Measured on `main`, 26 September 2026. Every figure here is produced by a
+command in this repository, named beside it where it is not obvious. The tool's
+own manual shows the live counts for the copy you are running.
 
 | | |
 |---|---|
-| rows in the tree | 1396 across four layers — 320 written, 1076 seeded |
-| layer 1 · management | 174 rows, from CD-06 verbatim |
-| layer 2 · the system | 319 rows, from CD-06 verbatim |
-| layer 3 · subsystem | 878 rows across 17 subsystems |
+| rows in the tree | 1396 across four layers — 320 written, 1076 seeded (`xtask status`) |
+| layer 1 · management | 174 rows, from CD-06 |
+| layer 2 · the system | 321 rows, from CD-06 |
+| layer 3 · subsystem | 901 rows in 18 groups — 16 subsystems and 2 additions |
 | of the 320 written | 130 declared values · 172 computed · 12 KPI closures · 1 requirement · 5 achieved |
-| declared edges | 495 derivation · 298 contribution · 179 relation |
+| of the 320 written, which answer | 176 answer · 137 do not yet, because the relation is stated and never derived · 7 retired (`xtask active`) |
+| declared edges | 555 derivation · 298 contribution · 179 relation (`xtask graph`) |
 | crates | 31 — 20 node crates, 11 engine and face crates |
 | faces | browser · daemon · command line · C ABI · Python wheel · MATLAB |
-| deepest declared chain | 25 nodes, solar flux to cost per year |
-| 80-point sweep of the whole graph | 59–61 ms, three runs, release build, through the daemon |
+| deepest declared chain | 33 nodes, mission duration to cost per year — declared, not yet runnable end to end |
+| 80-point sweep through the daemon | 36–37 ms, three runs, release build — the sustained solar closure against launch date. A sweep of thrust-to-drag or of cost per year answers none of its points today, and records every refusal |
 | nodes past every machine check | 16 of 320, waiting on a person — see [Where it stands](#where-it-stands) |
-| declared panels | 11, each with a reference a person vouched for |
+| declared panels | 14 — 3 structural, 11 solar-weather. 8 are matched against stored pictures, light and dark; none of the 11 solar panels has been signed by a person yet (`panels/REVIEW.md`) |
 
 ---
 
@@ -72,7 +74,8 @@ To change an input and watch the answer move —
 [`docs/USING_IT.md` §2b](docs/USING_IT.md) drives it end to end on the solar
 rows: only declared numbers can be set, the tool refuses a computed one by
 name, and moving the launch date from 2027 to late 2032 takes the design flux
-from 200.14 to 258.23 sfu and stops the closure passing.
+from 200.14 to 258.23 sfu and cuts the sustained F10.7 closure's margin from 60
+to 38 per cent.
 
 ### In a Codespace, or any devcontainer
 
@@ -96,36 +99,42 @@ checkout, so running the tool never makes the working tree look dirty.
 
 ### From the command line
 
+Written here as `vleo`. From a checkout it is
+`cargo run -p vleo-cli --bin vleo -- …`, or `cargo vleo …` for short.
+
 ```
-vleo list prop                     # the rows in a subsystem
-vleo show prop_capture_efficiency  # the sheet, as the engine holds it
-vleo run prop_capture_efficiency   # evaluate it and everything it needs
-vleo sweep prop_capture_efficiency --over prop_throat_area --from 0.005 --to 0.02
-vleo campaign kpi_thrust_margin    # every stored case against one row
+vleo list solar                    # the rows in a subsystem
+vleo show sw_ap_design             # the sheet, as the engine holds it
+vleo run sw_ap_design              # evaluate it and everything it needs
+vleo sweep sw_ap_design --over sw_storm_design_level --from 1 --to 3 --points 3
+vleo campaign l3_solar_ach_01      # every stored case against one row
 vleo cases                         # what each customer case supplies
-vleo selftest                      # every fixture in the tree, this build
+vleo selftest                      # every fixture declaration in the tree is sound
 vleo data sync | list | verify     # the reference-data store
 ```
 
 A run prints the number, the chain behind it, its credibility and what refused:
 
 ```
-prop_capture_efficiency — Intake collection efficiency
-  What fraction of the flow entering the mouth actually reaches the thruster?
+sw_ap_design — Ap design value
+  What daily Ap is this design built to survive?
 
-  eta_c = 0.409091 -
-  credibility 0 of 4, governed by validation
+  Ap_design = 132.000 -
+  credibility 1 of 4, governed by mathematics
 
-  15 ran, 0 blocked, 0 cycle sweep(s)
+  2 ran, 0 blocked, 0 cycle sweep(s)
 
   provenance
-    data   solar-drivers@2026.09.04#54784567db11b868
-    kernel b29a9e · graph b3eb04 · case f56b9a · chain 93eca7
+    data   solar-drivers@2026.09.04#54784567db11b868 · solar-weather@2026.09.14#f3557eb8443bfdaa
+    kernel 1ad1ae · graph adb684 · case abf96b · chain 075c5d
+    mode branch · endpoint local-cli
 ```
 
 `n ran, m blocked` is always printed and the blocked rows are always named. A
 row with no content yet returns `NotRun` under its own name rather than a
-substituted default. The chain hash identifies the exact number: two runs with
+substituted default. So does a written row whose relation is stated but has
+never been derived, and the run prints `INACTIVE — the relation is stated and
+never derived` with what the sheet still needs. The chain hash identifies the exact number: two runs with
 the same chain hash are the same run.
 
 `--set` applies only to rows whose number a person declared. On a computed row
@@ -144,7 +153,7 @@ moment the row is evaluated.
 | `layers/` | the rows in the tree that are **not** nodes — headings, parents, group edges, subsystem ownership | the decomposition itself. `CODEOWNERS` is generated from it, so moving a branch here moves who reviews what |
 | `tools/` | the Python side: the seeder that built the tree, and every check the pipeline runs that is not `cargo` | the checks that cannot be expressed as a Rust test — screenshots, parity against MATLAB, commit messages, agent lanes. Each proves itself with `--selftest` before it is trusted to decide anything |
 | `web/` | the browser face — one `index.html`, one stylesheet, 19 ES modules, the manual among them | how the tool is read. It talks to `vleo-daemon` over HTTP and holds no physics of its own |
-| `panels/` | 14 declared panel specs, plus `REVIEW.md` and 28 reference screenshots (light and dark) | a figure nobody checked is a figure that silently goes wrong. The spec says what the panel must show; the references are what it looked like when a person last approved it |
+| `panels/` | 14 declared panel specs, plus `REVIEW.md` and 16 reference screenshots — light and dark for the 8 panels checked on pixels | a figure nobody checked is a figure that silently goes wrong. The spec says what the panel must show; the references are what it looked like when a person last approved it |
 | `docs/` | 13 prose documents, 4 diagrams, and `manual.toml` — the source of the manual in the tool — indexed under **Reference** below | the written record. `VARIABLES.md` is generated; `MATLAB_PORT_PLAN.md` is the row-by-row account of the port and the longest thing here |
 | `bundles/` | reference data as published sets, each with a manifest, a licence term and a hash | rule 2's external oracle. An expected value may never come from the code under test, so the data it is checked against is versioned and verified rather than fetched |
 | `cases/` | five per-customer value sets against one shared architecture | the architecture is never copied per customer. Five cases, one tree — `n` copies would mean `n` fixes and silent drift |
@@ -179,8 +188,8 @@ in a node.
 | layer | holds | rows |
 |---|---|---|
 | 1 management | the programme's own view | 174 |
-| 2 the system | what the spacecraft must do | 319 |
-| 3 subsystem | seventeen of them | 836 |
+| 2 the system | what the spacecraft must do | 321 |
+| 3 subsystem | sixteen subsystems and two additions | 901 |
 | 4 the run | what a single evaluation produced | — |
 
 Each subsystem reaches the layer above through exactly one `l3_*_interface`
@@ -395,18 +404,25 @@ perfectly and matches yesterday's reference every time. It has caught exactly
 that here — a forecast view offered in a control list and read nowhere in the
 code, which drew the neighbouring view's picture when chosen.
 
-Eleven panels are declared: three structural diagrams and the eight
-solar-weather tabs. The third check is the one no machine can complete, so each
+Fourteen panels are declared: three structural diagrams and eleven
+solar-weather tabs. Six of them decline the pixel check and each says what
+checks it instead; the other eight are matched against stored pictures, light
+and dark. The third check is the one no machine can complete, so each solar
 spec carries `confirmed_by` — the name of the person who looked at the stored
-picture and agreed with it. Nothing enforces that field, which is exactly why it
-is written by hand; a reference nobody looked at is a snapshot of a bug.
+picture and agreed with it. Today all eleven read `UNCONFIRMED`: their pictures
+were re-recorded on 19 and 21 September and are waiting on a person, and
+`panels/REVIEW.md` is the reading list. Nothing enforces that field, which is
+exactly why it is written by hand; a reference nobody looked at is a snapshot
+of a bug.
 
 ### The solar-weather view
 
-One subsystem is written through rather than sampled: solar weather, 42 rows of
-42. Beside the tree sits an eight-tab view of the record those rows argue about
-— repeatability, pattern, segmentation, predict, forecast, design, climate and
-density — recomputed from the bundle on every change.
+One subsystem is written through rather than sampled: solar weather. Of its 65
+rows, 56 answer, 2 are still seeded and 7 are retired, and none is written but
+undefined. Beside the tree sits an eleven-tab view of the record those rows
+argue about — repeatability, pattern, segmentation, predict, forecast, drivers,
+design, closure, thermosphere, climate and density — recomputed from the bundle
+on every change.
 
 It reads the bundle the engine reads, byte for byte, through
 `GET /v1/bundle/<name>/<file>`, which serves a verified bundle's own files and
@@ -473,15 +489,20 @@ achievable and the nightly check becomes one people learn to ignore.
 ## Where it stands
 
 The tree is built and mostly empty, which is the state it is designed to be
-useful in. 320 rows of 1396 have content, and `xtask ready` reports 16 of those
-320 past every machine stage and waiting on a person. It names what holds the
-other 281:
+useful in. 320 rows of 1396 have content. Of those, 176 answer. 137 are written
+but do not answer yet: their relation is stated and has never been derived —
+the sheet has no `[theory]` block saying why it is this relation — so they
+return `NotRun` by name with that reason, and `xtask active` lists each one
+with how many rows wait on it. The other 7 are retired.
+
+`xtask ready` reports 16 of the 320 past every machine stage and waiting on a
+person. It names what holds the other 304:
 
 ```
-276  the relation has nobody's name against it
-250  other
-120  no fixture — nothing outside this code has agreed with it
-  5  significant, with fewer than two checks behind it
+297  the relation has nobody's name against it
+246  other
+124  no fixture — nothing outside this code has agreed with it
+  7  significant, with fewer than two checks behind it
 ```
 
 Almost every relation in the tree came from transcribing CD-06 or from building
@@ -490,30 +511,31 @@ rather than reporting rows as ready. A machine cannot supply the missing thing
 and does not pretend to: what it can do is refuse to call a row finished while
 the thing is missing, and count how many rows that is.
 
-Three rows refuse at the reference case, and each refusal is a declared limit
-working:
+Most of the design's long chains pass through an undefined row, so they are
+blocked today, and each run says which rows and why:
 
-| row | the refusal, as printed |
+| row | as printed at the reference case |
 |---|---|
-| `aero_ao_fluence` | `F_AO = 2.02e27` is above the declared upper limit of `1e26` — "above 1e26 atoms per square metre no known external material survives, so the design is not a design" |
-| `pay_geolocation_error` | `e_geo = 0.00477 m` is below the declared lower limit of `0.01 m` — "below a centimetre no time-difference system in this design performs that well" |
-| `kpi_geolocation` | blocked, because the row above it refused. A KPI whose input did not run is unknown, and says so |
+| `kpi_thrust_margin` | `63 ran, 36 blocked` — `aero_frontal_area`, `env_number_density` and 34 more, each "the relation is stated and never derived" |
+| `kpi_geolocation` | `5 ran, 3 blocked` — `pay_toa_uncertainty`, `pay_geolocation_error`, and the KPI itself |
+| `aero_ao_fluence` | `30 ran, 4 blocked` — `orbit_radius`, `orbit_velocity`, `env_atomic_oxygen_density`, and the row itself |
 
-Each prints `n ran, m blocked` with the blocked row named and the bound, the
-value and the reason beside it.
-
-Thrust-to-drag does not close at this design point. The tool reports that rather
-than being tuned until it does.
+So thrust-to-drag is unknown at this design point. It neither closes nor fails,
+and the tool reports it as unknown rather than guessing. The sweep below was
+recorded on 15 September, before undefined relations stopped answering, when
+thrust-to-drag did not close at this design point. The same sweep today answers
+none of its 80 points: each is recorded as blocked, or as outside the altitude
+row's declared range.
 
 ![An 80-point sweep of thrust-to-drag against altitude over the whole graph,
-showing an optimum near 300 km](docs/img/sweep.png)
+showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.png)
 
 ---
 
 ## What this is not
 
 - **Not validated.** No relation has been through a physics review. Credibility
-  is reported per run and is currently governed by validation for every row.
+  is reported per run, with the factor that governs it named.
 - **Not a trajectory propagator.** Nothing here propagates an orbit, converts
   between frames or forms a state transition matrix. `ADOPTION.lock` names the
   libraries to adopt on the first node that needs one, and why they are not

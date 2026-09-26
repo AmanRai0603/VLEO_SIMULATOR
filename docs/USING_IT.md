@@ -32,17 +32,18 @@ in the row of tabs above them. Four layers:
 |---|---|---|---|
 | 1 | management — the programme's own view | 174 | 0 |
 | 2 | the system — what the spacecraft must do | 321 | 7 |
-| 3 | subsystem — seventeen of them | 901 | 313 |
+| 3 | subsystem — sixteen subsystems and two additions | 901 | 313 |
 | 4 | the run — what a single evaluation produced | — | — |
 
 `cargo run -p xtask -- status` prints that table, and a second one by
 subsystem. On 26 September 2026 320 of 1396 rows carry content and 1076 are
 seeded shape waiting to be filled — which is the state this tool is designed to
-be useful in, not a defect. One subsystem is written all the way through, solar weather
-at 42 of 42, and section 2b drives it.
+be useful in, not a defect. One subsystem is written all the way through, solar
+weather — 56 of its 65 rows answer, 2 are still seeded and 7 are retired — and
+section 2b drives it.
 
-Each subsystem reaches the layer above through exactly one node — seventeen
-`l3_*_interface` rows for the seventeen subsystems, and three customer rows
+Each subsystem reaches the layer above through exactly one node — eighteen
+`l3_*_interface` rows for the eighteen groups in layer 3, and three customer rows
 from management into the system layer. That is what lets you answer "where did
 this number come from" by walking upwards without ever leaving the tree, and
 what stops a change in one subsystem reaching another by an unnoticed side
@@ -68,8 +69,9 @@ prop_throat_area — Intake throat area
   1 ran, 0 blocked, 0 cycle sweep(s)
 
   provenance
-    data   solar-drivers@2026.09.04#54784567db11b868
-    kernel b29a9e · graph b3eb04 · case 9663b2 · chain 434916
+    data   solar-drivers@2026.09.04#54784567db11b868 · solar-weather@2026.09.14#f3557eb8443bfdaa
+    kernel 1ad1ae · graph adb684 · case 9663b2 · chain 28e13d
+    mode branch · endpoint local-cli
 ```
 
 Three things there are worth knowing on day one.
@@ -77,7 +79,10 @@ Three things there are worth knowing on day one.
 **"1 ran, 0 blocked"** is always printed, including the blocked count and the
 names. A row that has no content yet does not vanish and does not substitute a
 default — it comes back as `NotRun` with its own name on it. Most of the tree
-is like that today, which is exactly why the blocked count is never hidden.
+is like that today, which is exactly why the blocked count is never hidden. A
+written row whose relation nobody has derived yet does the same, and says so:
+`INACTIVE — the relation is stated and never derived`, with what the sheet still
+needs. `cargo run -p xtask -- active` lists every row in that state.
 
 **"credibility 1 of 4"** is the lowest of eight factors, and it names which one
 is governing. It is never stored anywhere — it is worked out fresh from the
@@ -94,21 +99,21 @@ the same run. This is the thing to quote in a report.
 Change one number and watch what moves:
 
 ```
-vleo run prop_capture_efficiency --set prop_throat_area=0.5
+vleo run sw_ap_design --set sw_storm_design_level=2
+  Ap_design = 80.0000 -
 ```
 
 Sweep it instead:
 
 ```
-vleo sweep prop_capture_efficiency --over prop_throat_area --from 0.005 --to 0.02 --points 4
+vleo sweep sw_ap_design --over sw_storm_design_level --from 1 --to 3 --points 3
 
-# prop_capture_efficiency against prop_throat_area — 4 points
-# A_out              prop_capture_efficiency note
-0.00500000           0.264705882              ok
-0.0100000            0.409090909              ok
-0.0150000            0.500000000              ok
-0.0200000            0.562500000              ok
-# 4 ran, 0 refused. Refusals are recorded, never dropped.
+# sw_ap_design against sw_storm_design_level — 3 points
+# G_design           sw_ap_design           note
+1.00000              48.0000000               ok
+2.00000              80.0000000               ok
+3.00000              132.000000               ok
+# 3 ran, 0 refused. Refusals are recorded, never dropped.
 ```
 
 You can only set a number a person declared. Ask for one the tool works out and
@@ -124,12 +129,12 @@ numbers it reads instead — `vleo show env_density_uncertainty` lists them.
 `vleo show <node>` lists what a row reads, so the message is a pointer rather
 than a dead end.
 
-Run every stored case against a row, or every fixture in the tree against this
-build:
+Run every stored case against a row, or check that every fixture declaration in
+the tree is sound — `cargo test` is what executes them:
 
 ```
 vleo cases              # what customers' cases supply
-vleo campaign kpi_thrust_margin
+vleo campaign l3_solar_ach_01
 vleo selftest
 ```
 
@@ -187,26 +192,32 @@ because one flies the declining half of cycle 25 and the other flies into the
 next maximum. A `Time` crosses the interface in **seconds** whatever unit the
 sheet declares it in, which is why the epoch is 852076800 and not 9862.
 
-### It changes whether the design closes
+### It changes how much room the design has
 
-`l3_solar_ach_01` is what the subsystem hands upward, against a requirement of
-250:
+`l3_solar_ach_01` is what the subsystem hands upward: the room the sustained
+F10.7 requirement of 260 has left, against the long-window design flux.
 
 ```
 $ vleo run l3_solar_ach_01 --set sys_mission_requirements_mission_epoch=1036800000
-  sw_f107_design    258.230
-  l3_solar_ach_01   258.230
+  M_f107_long = 0.376314 -
+
+  the chain behind this number
+    l3_solar_req_01                               260.000 -          cred 1
+    sw_f107_design_long                           162.158 -          cred 0
+    l3_solar_ach_01                              0.376314 -          cred 0
 ```
 
-At the declared epoch the achieved side is 200.14 against 250 and the closure
-passes with 24.9 per cent of room. Slip the launch to late 2032 and it is
-258.23 against the same 250, and it does not pass. Nothing was tuned to make
-that happen and nothing hides it.
+At the declared epoch the long-window flux is 104.07 and the margin is 60 per
+cent. Slip the launch to late 2032 and the flux is 162.16 and the margin 38 per
+cent — more than a third of the room gone from one date, with nothing else
+changed. It still passes: none of the five solar closures fails at any of the
+three launch dates above, and the tool does not pretend otherwise. Nothing was
+tuned to make that happen and nothing hides it.
 
 ### Mission length is not monotone, and that is the point
 
 ```
-$ for y in 0.5 2 5 10 15; do vleo run sw_f107_design --set orbit_mission_duration=...; done
+$ for y in 0.5 2 5 10 15; do vleo run sw_f107_design --set sys_mission_requirements_mission_duration=...; done
 ```
 
 | mission | `F107_design` |
@@ -226,7 +237,7 @@ paid to notice.
 ### The same thing with a picture
 
 `cargo run --release -p vleo-daemon`, then **Solar weather** beside the tree.
-Eight tabs over the record the rows argue about, every control recomputing from
+Eleven tabs over the record the rows argue about, every control recomputing from
 the bundle:
 
 - **Design** — the return curve against what the vehicle is built for, with the
@@ -333,7 +344,7 @@ docs: 1 node(s), 6 artefact(s) written
 ```
 
 Six generators run, and none of them reads another row — which is what makes
-1329 rows 1329 independent pieces of work rather than one large one.
+1396 rows 1396 independent pieces of work rather than one large one.
 
 While any field is still open it refuses instead, names them, and writes
 nothing:
@@ -456,10 +467,12 @@ and free. When it says `1 of 1 … waiting on H2`, the node has earned a review.
 Across the whole tree it counts what is holding rather than listing every row:
 
 ```
-ready: 0 of 250 node(s) have passed every machine stage and are waiting on H2
-250 held, by what is holding them:
-    250  the relation has nobody's name against it
-    120  no fixture — nothing outside this code has agreed with it
+ready: 16 of 320 node(s) have passed every machine stage and are waiting on H2
+304 held, by what is holding them:
+    297  the relation has nobody's name against it
+    246  other
+    124  no fixture — nothing outside this code has agreed with it
+      7  significant, with fewer than two checks behind it
 ```
 
 Then commit. The message form is checked (§6).
@@ -543,9 +556,10 @@ regeneration diff in the pipeline catches it if you forget.
 ### Putting a name against a relation
 
 `cargo run -p xtask -- confirm --list` prints every written relation with nobody's
-name against it, grouped by the owner who owes one. Today that is **138 of the
-138 computed rows** — every declared value already carries a confirmation and no
-relation does, which is why `ready` holds the whole written tree.
+name against it, grouped by the owner who owes one. On 26 September that is
+**183 of the 185 published rows that carry a relation** — every declared value
+already carries a confirmation and only two relations do, which is why `ready`
+holds almost the whole written tree.
 
 `cargo run -p xtask -- confirm <node> --by "<your name>"` puts one there. It
 prints the question, the relation, the source, the assumptions and the declared
@@ -583,9 +597,11 @@ number chosen and not about those rows. A survivor with a fixture is a finding:
 something claims to check this and does not. A survivor with no fixture is a gap
 already counted against that row, and is reported as a count rather than named.
 
-Over the whole tree today: 18 of 138 written computed rows are mutated and all
-18 are killed. The other 120 have no fixture. Nothing in the tree has evidence
-that fails to catch an error larger than the evidence's own claim.
+Over the whole tree on 26 September: 183 rows are mutated, and all 59 that
+have a fixture are killed. The other 124 have no fixture. Two rows with several
+outputs, `l3_solar_interface` and `sw_kp_scenarios`, cannot be perturbed this
+way and are named as such. Nothing in the tree has evidence that fails to catch
+an error larger than the evidence's own claim.
 
 `cargo run -p xtask -- differential <node>` runs every body recorded for a hole
 against that node's evidence. Bodies are recorded by `fill --by <agent>`, which
