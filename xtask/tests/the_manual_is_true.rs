@@ -252,6 +252,14 @@ fn command_ok(line: &str, k: &Known) -> Result<(), String> {
                 }
             }
             ["cargo", "run", "--release", "-p", "vleo-daemon"] => {}
+            // A build names crates, and each must be one.
+            ["cargo", "build", rest @ ..] => {
+                for w in rest.windows(2).filter(|w| w[0] == "-p") {
+                    if !k.crates.contains(w[1]) {
+                        return Err(format!("`{line}`: there is no crate '{}'", w[1]));
+                    }
+                }
+            }
             ["cargo", "test"] | ["cargo", "fmt", ..] | ["cargo", "clippy", ..] => {}
             ["cargo", "test", "-p", krate] => {
                 if !k.crates.contains(*krate) {

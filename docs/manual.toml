@@ -73,6 +73,9 @@ say = "Open the address it printed, normally `http://127.0.0.1:7777`."
 [[layer.section.step]]
 say = "In a Codespace there is nothing to type: the tool is already running and port 7777 opens as a preview."
 
+[[layer.section.step]]
+say = "From a kit — the zip the developers share, with no repository — run `start.bat` on Windows or `./start.sh` on macOS and Linux. It opens the page itself; `START_HERE.md` in the folder says the rest."
+
 
 [[layer.section]]
 id = "browser-roles"
@@ -953,6 +956,35 @@ why = "stamps `release` on every unreleased node version, sets the version in Ca
 
 
 [[layer.section]]
+id = "term-kit"
+title = "Share the tool with the team"
+who = "developer"
+kind = "how-to"
+answer = "The team gets a kit, not the repository: the two programs beside exactly the files they read, with START_HERE.md on top. They use it and send back node forms; you apply them, release, and share the next kit."
+body = """
+The daemon reads the web face, the tree and every node's page at run time, so \
+the programs alone do not run. `xtask kit` puts them beside exactly those files \
+— no git history, no generators, no kernel source — in `dist/vleo-<version>/`, \
+with `START_HERE.md` (from `docs/TEAM_GUIDE.md`), `start.sh`, `start.bat` and \
+`VERSION`. Zip it and share it. A kit runs on the platform that built it; the \
+release pipeline builds one for Linux, macOS and Windows and attaches each to \
+the release. The team's case and results live under `~/.vleo/`, outside the \
+kit, so the next one replaces the folder without losing either. The whole \
+loop is in `docs/SHARING.md`."""
+
+[[layer.section.step]]
+say = "Build the two programs the kit carries."
+run = "cargo build --release -p vleo-daemon -p vleo-cli"
+check = "exits"
+
+[[layer.section.step]]
+say = "Assemble the kit in `dist/vleo-<version>/` — then zip that folder and share it."
+run = "cargo run -p xtask -- kit"
+check = "writes"
+why = "writes dist/vleo-<version>/, which git ignores"
+
+
+[[layer.section]]
 id = "term-evidence"
 title = "Is the evidence real?"
 who = "developer"
@@ -1534,6 +1566,14 @@ effect = "writes"
 
 [[command]]
 tool = "xtask"
+name = "kit"
+usage = "kit [--bin <dir>] [--out <dir>]"
+what = "The tool as a team member gets it: the two release-built programs beside exactly the files they read, with START_HERE.md, start.sh, start.bat and VERSION, in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
 name = "derisk"
 usage = "derisk"
 what = "Write the de-risking narrative — docs/DERISK_NARRATIVE.md and docs/derisking.csv — from every node's `[[version]]` record and the risk register. Generated, never edited."
@@ -1871,6 +1911,11 @@ what = "Where saved results are kept — the Results page and `vleo run --save` 
 default = "$HOME/.vleo/results"
 
 [[env]]
+name = "VLEO_ROOT"
+what = "Where the daemon finds the web face, the tree and its pages. Unset, it looks upward from where it was started, then from beside its own program — which is how a kit runs with no checkout."
+default = "found"
+
+[[env]]
 name = "VLEO_PORT"
 what = "The first port the daemon tries. It takes the first free one of sixteen from there."
 default = "7777"
@@ -2056,6 +2101,14 @@ what = "Who does what: the team that uses the tool and the developers who mainta
 [[doc]]
 path = "docs/EXPLAINING.md"
 what = "How the tool explains itself: the rules every page, form, result, figure and document follows — answer first, said simply, where it breaks — and what checks each."
+
+[[doc]]
+path = "docs/SHARING.md"
+what = "How the team gets the tool without the repository: build a kit, share it, take node forms back, release the next one."
+
+[[doc]]
+path = "docs/TEAM_GUIDE.md"
+what = "What a team member reads first — START_HERE.md in every kit: start the tool, use it, ask for a change with a node form, take a new version."
 
 [[doc]]
 path = "docs/DERISKING.md"

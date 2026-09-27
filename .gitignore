@@ -18,3 +18,7 @@ __pycache__
 # it opens empty -- and bundles/ is the tracked copy, the one with a manifest
 # and a provenance line.
 /.vleo/
+
+# A kit built by `cargo run -p xtask -- kit`: the tool as the team gets it.
+# Built, zipped and shared — never committed.
+/dist/
