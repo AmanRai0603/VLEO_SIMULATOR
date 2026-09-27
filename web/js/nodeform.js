@@ -85,6 +85,15 @@ export async function checkForm(out, name, html) {
         (i.why ? '<div class="nform-why">' + esc(i.why) + '</div>' : '') + '</td></tr>').join('') +
       '</tbody></table></div>'
     : '<p>The form changes nothing in the node.</p>';
+  // WHY IT IS CHANGING (docs/DERISKING.md): which decisions the form moves,
+  // and whether its record is complete enough to become a version.
+  if (r.about) {
+    h += '<h4>Why it is changing</h4><p>The form moves: <b>' + esc(r.about) + '</b>. ' + (r.version
+      ? 'Its record is complete — it becomes <b>version ' + r.version + '</b> of the node.'
+      : '<b>Its record is not complete</b>, so those changes are withheld and only the wording would go in.') +
+      '</p>' + (r.derisk && r.derisk.length ? '<dl class="nform-dr">' + r.derisk.map(d =>
+        '<dt>' + esc(d.ask) + '</dt><dd>' + esc(d.said) + '</dd>').join('') + '</dl>' : '');
+  }
   if (r.interfaces && r.interfaces.length) {
     h += '<h4>Interfaces — what each input reads</h4><div class="ri-wrap"><table class="fx"><tbody>' +
       r.interfaces.map(i => '<tr class="nform-' + (i.why ? 'refused' : 'apply') + '"><td>' +

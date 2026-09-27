@@ -1570,6 +1570,28 @@ fn form_check(ctx: &Ctx, params: &str) -> String {
     j.str_field("ai", &f.ai);
     j.close_obj();
     j.bool_field("base_current", p.base_current);
+    // Why it is changing: the decisions the form moves, whether it becomes a
+    // version, and the record it carries — so a filler sees, before sending,
+    // what the developers will see.
+    j.str_field("about", &p.about.join(", "));
+    j.num_field("version", p.version.map(f64::from).unwrap_or(0.0));
+    j.key("derisk").open_arr();
+    let mut first = true;
+    for (k, ask, _) in vleo_sheet::template::DERISK {
+        let v = f.derisk.get(k);
+        if v.trim().is_empty() {
+            continue;
+        }
+        if !first {
+            j.raw(",");
+        }
+        first = false;
+        j.raw("{");
+        j.str_field("ask", ask);
+        j.str_field("said", v);
+        j.close_obj();
+    }
+    j.close_arr();
     j.num_field("applicable", p.applicable() as f64);
     j.num_field("blocked", p.blocked() as f64);
     j.key("items").open_arr();

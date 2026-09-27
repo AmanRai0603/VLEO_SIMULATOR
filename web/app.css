@@ -1051,3 +1051,7 @@ table.risks td { vertical-align: top; }
   margin: .3rem 0 .6rem; border-radius: 0 3px 3px 0; }
 .man-answer .af-k { display: block; }
 .dx-how-to { color: var(--teal); border-color: var(--teal); }
+.nform-dr { display: grid; grid-template-columns: max-content 1fr; gap: .1rem .8rem; }
+.nform-dr dt { color: var(--ink-3); }
+.nform-dr dd { margin: 0; }
+@media (max-width: 640px) { .nform-dr { grid-template-columns: 1fr; } }

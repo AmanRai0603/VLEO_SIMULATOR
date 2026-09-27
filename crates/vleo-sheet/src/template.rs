@@ -483,6 +483,24 @@ fn schema(sh: Option<&Sheet>, tree: &Tree) -> String {
         ));
     }
     o.push_str("\n  ],\n");
+    // Every work a relation may cite, so a source is picked by its id and the
+    // one typed that is not listed yet is seen as such while filling.
+    o.push_str("  \"sources\": [");
+    for (i, s) in tree
+        .sources
+        .values()
+        .filter(|s| s.status == "current")
+        .enumerate()
+    {
+        o.push_str(&format!(
+            "{}\n    [{}, {}, {}]",
+            if i > 0 { "," } else { "" },
+            js(&s.id),
+            js(&s.title),
+            js(&s.where_)
+        ));
+    }
+    o.push_str("\n  ],\n");
     o.push_str(&format!("  \"kinds\": {},\n", js_list(KINDS)));
     o.push_str("  \"fields\": [\n");
     let f: Vec<&'static form::Field> = match sh {
@@ -1135,6 +1153,10 @@ fn plan_new(tree: &Tree, f: Form, n: NewNode) -> Plan {
     // has tested yet, and the one thing the record needs from the start is what
     // would break it.
     let missing = f.derisk.missing(true);
+    p.about = vec!["node"];
+    if missing.is_empty() {
+        p.version = Some(1);
+    }
     p.items.push(Item {
         what: "de-risking · version 1".into(),
         from: String::new(),
@@ -1314,10 +1336,47 @@ pub fn today() -> String {
 /// sheet, numbered, dated, and `next` until a release stamps it.
 fn plan_form_as(root: &Path, f: Form, first: bool) -> Result<Plan, String> {
     let tree = crate::load::load_all(root).map_err(|e| format!("the tree does not load: {e}"))?;
-    if let Some(n) = f.new.clone() {
-        return Ok(plan_new(&tree, f, n));
+    let unlisted = sources_unlisted(&tree, &f);
+    let mut p = plan_form_on(&tree, f, first)?;
+    p.open.extend(unlisted);
+    Ok(p)
+}
+
+/// Every reference the form cites that `sources/` does not list yet. Not a
+/// refusal — whoever filled the form names the work, and the developer adds its
+/// entry before the row is published — but said at the check, because the gate
+/// refuses a published row whose source does not resolve (V8).
+fn sources_unlisted(tree: &Tree, f: &Form) -> Vec<String> {
+    let mut cited: Vec<(String, String)> = Vec::new();
+    let was = f.original.fields.get("source").map(String::as_str);
+    if let Some(s) = f.filled.fields.get("source") {
+        if Some(s.as_str()) != was || f.new.is_some() {
+            cited.push(("the relation".into(), s.trim().to_string()));
+        }
     }
-    let p = plan_edits(&tree, f.clone())?;
+    for (i, k) in f.known.iter().enumerate() {
+        cited.push((
+            format!("known value {}", i + 1),
+            k.source.trim().to_string(),
+        ));
+    }
+    cited
+        .into_iter()
+        .filter(|(_, s)| !s.is_empty() && !tree.sources.contains_key(s))
+        .map(|(what, s)| {
+            format!(
+                "{what} cites '{s}', which is not in sources/sources.toml — add its [[source]] \
+                 (id, title, where, status, used_for) before the row is published"
+            )
+        })
+        .collect()
+}
+
+fn plan_form_on(tree: &Tree, f: Form, first: bool) -> Result<Plan, String> {
+    if let Some(n) = f.new.clone() {
+        return Ok(plan_new(tree, f, n));
+    }
+    let p = plan_edits(tree, f.clone())?;
     let mut about: Vec<&'static str> = p
         .items
         .iter()
@@ -1336,7 +1395,7 @@ fn plan_form_as(root: &Path, f: Form, first: bool) -> Result<Plan, String> {
         return Ok(p);
     }
     let missing = f.derisk.missing(first);
-    let risk_bad = risk_problems(&tree, &f.derisk);
+    let risk_bad = risk_problems(tree, &f.derisk);
     if missing.is_empty() && risk_bad.is_none() {
         let mut p = p;
         let sh = &tree.sheets[&f.node];
@@ -1411,7 +1470,7 @@ fn plan_form_as(root: &Path, f: Form, first: bool) -> Result<Plan, String> {
         }
     }
     g.filled.view = f.original.view.clone();
-    let mut q = plan_edits(&tree, g)?;
+    let mut q = plan_edits(tree, g)?;
     let why = match (&risk_bad, missing.is_empty()) {
         (Some(r), true) => r.clone(),
         (r, _) => format!(
@@ -1894,6 +1953,10 @@ button:disabled { opacity: .45; cursor: default; }
 .nf-why { color: var(--ink3); font-size: 13px; margin: 2px 0 6px; }
 .nf-was { color: var(--ink3); font-size: 12px; margin-top: 4px; white-space: pre-wrap; }
 .nf-was.nf-bad { color: var(--warn); font-weight: 600; }
+.nf-srcbox { display: block; }
+.nf-srcbox input { width: 100%; }
+.nf-src { margin-top: 4px; }
+.nf-src.bad { color: var(--warn); }
 .nf-tag { font: 11px var(--mono); padding: 0 6px; border-radius: 3px; margin-left: 6px; vertical-align: 1px;
   border: 1px solid var(--rule); color: var(--ink3); font-weight: 400; }
 .nf-tag.req { color: var(--warn); border-color: var(--warn); }
@@ -2092,7 +2155,8 @@ const PAGE_JS: &str = r#"'use strict';
   // the same field-to-kind table, sent from the tool.
   function decisions() {
     const kinds = new Set();
-    if (DATA.new) kinds.add('node');
+    // A new node is one decision, and its first version says so.
+    if (DATA.new) return ['node'];
     for (const f of SCHEMA.fields) {
       if (SCHEMA.about[f.field] && S(ORIG.fields[f.field]) !== S(DATA.fields[f.field])) kinds.add(SCHEMA.about[f.field]);
     }
@@ -2115,9 +2179,9 @@ const PAGE_JS: &str = r#"'use strict';
     st.className = 'nf-dr-state' + (kinds.length && miss.length ? ' bad' : '');
     st.textContent = !kinds.length
       ? 'Your changes so far are wording only: no record is needed for them.'
-      : 'Your changes move: ' + kinds.join(', ') + '. ' + (miss.length
+      : (DATA.new ? 'A new node. ' : 'Your changes move: ' + kinds.join(', ') + '. ') + (miss.length
         ? 'Still to answer below: ' + miss.map(k => (SCHEMA.derisk.find(d => d[0] === k) || [k, k])[1]).join('; ') +
-          ' — without them the developers apply only your wording.'
+          (DATA.new ? ' — a new node is not built without them.' : ' — without them the developers apply only your wording.')
         : 'The record is complete: this becomes version ' + (SCHEMA.version + 1) + ' of the node.');
   }
 
@@ -2137,6 +2201,23 @@ const PAGE_JS: &str = r#"'use strict';
       el = document.createElement('input'); el.type = 'text'; el.value = value;
       if (shape === 'number' || shape === 'count') el.inputMode = 'decimal';
       if (shape === 'row') el.setAttribute('list', 'nf-rows');
+      if (/(^| )source$/.test(aria || '')) {
+        el.setAttribute('list', 'nf-sources');
+        const hint = document.createElement('div'); hint.className = 'nf-why nf-src';
+        const say = () => {
+          const v = el.value.trim(), s = SOURCES.get(v);
+          hint.textContent = !v ? 'pick one of the ' + SOURCES.size + ' works in sources/, or name a new one'
+            : s ? s[1] + ' — ' + s[2]
+            : 'not in sources/ yet: say the full reference here or in the notes, and the developers add its entry before the row is published';
+          hint.classList.toggle('bad', !!v && !s);
+        };
+        el.addEventListener('input', say);
+        const box = document.createElement('span'); box.className = 'nf-srcbox';
+        box.appendChild(el); box.appendChild(hint); say();
+        el.setAttribute('aria-label', aria || '');
+        el.addEventListener('input', () => { onchange(el.value); paintCount(); });
+        return box;
+      }
     }
     el.setAttribute('aria-label', aria || '');
     el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => { onchange(el.value); paintCount(); });
@@ -2269,6 +2350,10 @@ const PAGE_JS: &str = r#"'use strict';
   dl.innerHTML = (SCHEMA.rows || []).map(r => '<option value="' + esc(r[0]) + '">' + esc(r[1]) + ' — ' +
     esc(r[2] || '') + ' ' + esc(r[3] || '') + '</option>').join('');
   document.body.appendChild(dl);
+  const SOURCES = new Map((SCHEMA.sources || []).map(r => [r[0], r]));
+  const ds = document.createElement('datalist'); ds.id = 'nf-sources';
+  ds.innerHTML = (SCHEMA.sources || []).map(r => '<option value="' + esc(r[0]) + '">' + esc(r[1]) + '</option>').join('');
+  document.body.appendChild(ds);
   // A field that belongs to one kind of node, shown only on that kind.
   const ONLY = { sense: ['required'], declared_value: ['declared', 'required'] };
   const main = $('#nf');

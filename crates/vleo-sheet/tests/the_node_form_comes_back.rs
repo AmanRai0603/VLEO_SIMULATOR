@@ -584,3 +584,70 @@ fn a_risk_move_must_name_a_registered_risk() {
     );
     assert!(matches!(verdict_of(&p, "upper"), Verdict::Refused(_)));
 }
+
+#[test]
+fn a_row_with_no_plain_words_yet_takes_them_from_its_form() {
+    // Every row but the worked example has no [explain] table. The form's first
+    // explanatory question must still be answerable on every one of them.
+    let tree = load_all(&root()).unwrap();
+    let sh = tree.sheets.get(ROW).unwrap();
+    assert!(
+        sh.explain.is_empty(),
+        "{ROW} already has plain words; pick a row without"
+    );
+    let html = edit(&form_for(ROW), DATA, |t| {
+        set_field(
+            t,
+            "explain_simply",
+            "How strong a storm the design is built to ride through.",
+        );
+        set_field(
+            t,
+            "explain_breaks",
+            "It is one level for the whole mission.",
+        );
+    });
+    let p = template::plan(&root(), &html).unwrap();
+    assert_eq!(
+        verdict_of(&p, "explain_simply"),
+        Verdict::Apply,
+        "{:?}",
+        p.items
+    );
+    assert_eq!(verdict_of(&p, "explain_breaks"), Verdict::Apply);
+    assert!(p.version.is_none(), "wording recorded a version");
+    let text = p.text.unwrap();
+    let v: toml::Value = text.parse().expect("the sheet no longer reads");
+    assert_eq!(
+        v["explain"]["simply"].as_str(),
+        Some("How strong a storm the design is built to ride through.")
+    );
+    assert!(
+        text.find("[explain]").unwrap() < text.find("[maths]").unwrap(),
+        "the plain words are not beside the question"
+    );
+}
+
+#[test]
+fn a_source_not_listed_yet_is_said_at_the_check_and_does_not_stop_it() {
+    let tree = load_all(&root()).unwrap();
+    let listed = tree.sources.keys().next().unwrap().clone();
+    for (cited, open) in [
+        ("the_book_nobody_listed_2031", true),
+        (listed.as_str(), false),
+    ] {
+        let html = with_record(&edit(&form_for(ROW), DATA, |t| {
+            set_field(t, "source", cited)
+        }));
+        let p = template::plan(&root(), &html).unwrap();
+        assert_eq!(verdict_of(&p, "source"), Verdict::Apply, "{:?}", p.items);
+        assert_eq!(
+            p.open
+                .iter()
+                .any(|o| o.contains(cited) && o.contains("sources/sources.toml")),
+            open,
+            "{cited}: {:?}",
+            p.open
+        );
+    }
+}

@@ -1043,13 +1043,30 @@ fn has_key(text: &str, table: &str, key: &str) -> Option<(usize, usize)> {
 
 /// Add a table the sheet has not got, in the place the authored sheets put it.
 ///
-/// Only `[theory]` is ever missing — `[question]`, `[maths]`, `[output]` and
-/// `[view]` are on all 1396 rows — so this creates that one and refuses the
-/// rest. A missing `[output]` is a malformed sheet and inventing it here would
-/// hide that.
+/// Only `[theory]` and `[explain]` are ever missing — `[question]`, `[maths]`,
+/// `[output]` and `[view]` are on all 1396 rows — so this creates those two and
+/// refuses the rest. A missing `[output]` is a malformed sheet and inventing it
+/// here would hide that.
 fn ensure_table(text: &str, table: &str) -> Result<String, String> {
     if window(text, table).is_some() {
         return Ok(text.to_string());
+    }
+    // THE ROW SAID SIMPLY goes straight after its question, which is where a
+    // reader meets it on the page (docs/EXPLAINING.md, E2). Without this, every
+    // row but the one that already had the table refused its own first
+    // plain-words answer — which is every row a form was ever sent for.
+    if table == "explain" {
+        let (_, end) = window(text, "question").ok_or_else(|| {
+            "this sheet has no [question] table to put [explain] after".to_string()
+        })?;
+        let mut o = String::with_capacity(text.len() + 64);
+        o.push_str(text[..end].trim_end_matches('\n'));
+        o.push_str(
+            "\n\n# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the\n\
+             # sheet hash.\n[explain]\n",
+        );
+        o.push_str(text[end..].trim_start_matches('\n'));
+        return Ok(o);
     }
     if table != "theory" {
         return Err(format!(
