@@ -1063,7 +1063,7 @@ fn ensure_table(text: &str, table: &str) -> Result<String, String> {
         o.push_str(text[..end].trim_end_matches('\n'));
         o.push_str(
             "\n\n# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the\n\
-             # sheet hash.\n[explain]\n",
+             # sheet hash.\n[explain]\n\n",
         );
         o.push_str(text[end..].trim_start_matches('\n'));
         return Ok(o);
@@ -1082,7 +1082,7 @@ fn ensure_table(text: &str, table: &str) -> Result<String, String> {
     o.push_str(text[..end].trim_end_matches('\n'));
     o.push_str(
         "\n\n# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a\n\
-         # sentence here does not invalidate a generated artefact.\n[theory]\n",
+         # sentence here does not invalidate a generated artefact.\n[theory]\n\n",
     );
     o.push_str(text[end..].trim_start_matches('\n'));
     Ok(o)

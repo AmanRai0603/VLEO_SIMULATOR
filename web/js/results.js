@@ -111,8 +111,9 @@ async function view(el, host, all) {
     // WHAT IT RESTS ON. A result keeps the version of every row it ran
     // through; a row whose record has moved on since is a belief this result
     // rested on that has broken — so it is said here, beside the number.
-    (r.moved.length ? '<p class="run-stale">' + r.moved.map(m => '<b><code>' + esc(m.node) + '</code> was at ' +
-      'version ' + m.then + ' when this ran, and is now at ' + m.now + '</b>').join('; ') + ' — a belief this ' +
+    (r.moved.length ? '<p class="run-stale">' + r.moved.map(m => '<b><code>' + esc(m.node) + '</code> ' + (m.then
+      ? 'was at version ' + m.then + ' when this ran, and is now at ' + m.now
+      : 'had no recorded belief when this ran, and is now at version ' + m.now) + '</b>').join('; ') + ' — a belief this ' +
       'result rested on has broken since. Run it again to see what the new version says, and open the row\'s ' +
       '<i>de-risking</i> tab for why it changed.</p>' : '') +
     (r.versions.length ? '<p class="muted">rests on ' + r.versions.map(v => '<a class="xref" data-goto="' +

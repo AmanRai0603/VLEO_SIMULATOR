@@ -651,3 +651,54 @@ fn a_source_not_listed_yet_is_said_at_the_check_and_does_not_stop_it() {
         );
     }
 }
+
+#[test]
+fn a_known_value_is_requested_in_si_by_binding_as_fixtures_hold_it() {
+    // The form asks for the answer in the node's unit and the inputs as a
+    // person writes them; fixtures.toml holds SI, by binding. Pasted as typed,
+    // 70.2 degrees was 70.2 radians.
+    let html = edit(
+        &new_form(
+            "orbit_new_angle",
+            "l3_x_envorbit",
+            "computed",
+            Some(("orbit_radius", "Length")),
+        ),
+        DATA,
+        |t| {
+            set_field(t, "unit", "Degree");
+            let mut k = toml::Table::new();
+            for (key, v) in [
+                ("label", "400 km"),
+                ("inputs", "orbit_radius = 6778.137 km"),
+                ("expected", "70.2179"),
+                ("tolerance", "1e-4"),
+                ("provenance", "independent-derivation"),
+                ("source", "larson_wertz"),
+            ] {
+                k.insert(key.into(), toml::Value::String(v.into()));
+            }
+            t.insert("known_value".into(), toml::Value::Array(vec![k.into()]));
+        },
+    );
+    let p = template::plan(&root(), &html).unwrap();
+    let req = template::fixture_request(&p.form);
+    let v: toml::Value = req.parse().expect("the request is not TOML");
+    let fx = &v["fixture"][0];
+    let expect = fx["expect"].as_float().unwrap();
+    assert!((expect - 70.2179f64.to_radians()).abs() < 1e-9, "{req}");
+    assert_eq!(fx["inputs"]["x"].as_float(), Some(6_778_137.0), "{req}");
+    // Unreadable inputs are left for the person, never half-converted.
+    let html = edit(&html, DATA, |t| {
+        let k = t["known_value"].as_array_mut().unwrap()[0]
+            .as_table_mut()
+            .unwrap();
+        k.insert(
+            "inputs".into(),
+            toml::Value::String("orbit_radius = 6778".into()),
+        );
+    });
+    let req = template::fixture_request(&template::plan(&root(), &html).unwrap().form);
+    let v: toml::Value = req.parse().unwrap();
+    assert!(v["fixture"][0].get("inputs").is_none(), "{req}");
+}

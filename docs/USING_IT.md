@@ -397,7 +397,19 @@ why it is changing — the decisions it moves: model
   …
   → recorded as version 1, released with the next release
 
+still for the developer to settle:
+  · known value 1 cites 'NOAA Space Weather Scales, the G2 row: Kp 6, ap 80', which is not in sources/sources.toml — …
+
 3 change(s) can be applied, 0 cannot.
+…
+[[fixture]]
+label = "G2 storm"
+expect = 80
+tolerance = 1e-6
+provenance = "published-source"
+source = "NOAA Space Weather Scales, the G2 row: Kp 6, ap 80"
+inputs = { g_level = 2.0 }
+# the form gave the inputs as: sw_storm_design_level = 2
 ```
 
 The assumption is a decision about the model, so the form had to say why it
@@ -415,11 +427,20 @@ a new node — sw_ap_design_margin under l3_solar, a computed row — a node for
   APPLY    label                        «» → «Ap design margin over the storm level»
   …
   APPLY    input 1 · added              «» → «binding = ap, var = sw_ap_design, type = Ratio»
+  APPLY    algorithm 1 · added          «» → «text = Divide the design Ap by the storm level., binds = margin, type…»
+  APPLY    de-risking · version 1       «» → «sw_ap_design is the design Ap at the declared storm level, so their r…»
 
 interfaces — what each input reads:
   connects ap               ← sw_ap_design                       Ratio in One
 
-16 change(s) can be applied, 0 cannot.
+why it is changing — the decisions it moves: node
+  …
+  → recorded as version 1, released with the next release
+
+still for the developer to settle:
+  · the relation cites 'derived here from sw_ap_design', which is not in sources/sources.toml — …
+
+17 change(s) can be applied, 0 cannot.
 ```
 
 Intake compares three versions — the node when the form was made, what the
@@ -433,7 +454,12 @@ are REFUSED: a person derives them. A numbered step removed from the middle is
 refused, because each number is a hole holding somebody's Rust.
 
 A form that does not pass goes back to whoever filled it with those lines. It is
-never fixed up on the way in.
+never fixed up on the way in. What is *still for the developer to settle* does
+not stop it: a work cited that `sources/` does not list yet is added there
+before the row is published (the gate refuses it then, V8), and a known value
+is printed as the `[[fixture]]` it would be — the answer converted from the
+node's unit to SI, the inputs to the node's own binding names — ready for
+§3.9, or the inputs left as a comment where one does not say its unit.
 
 ### 3.3 Apply it
 
@@ -444,9 +470,14 @@ $ cargo run -p xtask -- intake docs/examples/new-node.node-form.html --apply
 
 For an existing node `--apply` writes `node.toml`. For a new node it builds the
 folder in its place in the tree, on the shape of a sibling of the same kind —
-deliberately not a copy, because a copy drags a stale source citation through
-thirty rows — writes the form into it, and gates the **whole tree**, because a
-new row changes what the tree connects. Either way it regenerates and gates as
+the closest one: under the same group, and with the same id prefix where there
+is one — deliberately not a copy, because a copy drags a stale source citation
+through thirty rows. What the form does not ask (subsystem, owner, criticality,
+tier) it takes from that sibling and lists for you to confirm; what is the
+sibling's own (its history, its risks, the KPIs it contributes to) it does not
+take at all. It writes the form into it, makes room in the tree's order (every
+later row's `order` moves up one, which regenerates nothing), and gates the
+**whole tree**, because a new row changes what the tree connects. Either way it regenerates and gates as
 one edit, or puts everything back. It stamps your name on any relation it
 changes, and refuses while anything is blocked unless you add `--partial`.
 Known values in the form are printed as `[[fixture]]` blocks for §3.9; they are

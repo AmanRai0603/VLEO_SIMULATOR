@@ -376,7 +376,7 @@ fn cmd_intake(root: &Path, args: &[&str]) -> Result<(), String> {
             // its tier, what reference data it reads.
             let made = fs::read_to_string(dir.join("node.toml")).unwrap_or_default();
             let mut p2 = p2;
-            for key in ["criticality", "tier", "bundles"] {
+            for key in ["subsystem", "owner", "criticality", "tier", "bundles"] {
                 if let Some(l) = made
                     .lines()
                     .find(|l| l.trim_start().starts_with(&format!("{key} = ")))
@@ -386,6 +386,16 @@ fn cmd_intake(root: &Path, args: &[&str]) -> Result<(), String> {
                         l.split('#').next().unwrap_or(l).trim()
                     ));
                 }
+            }
+            if load(root)?
+                .sheets
+                .get(&like)
+                .is_some_and(|l| !l.kpis.is_empty())
+            {
+                p2.open.push(format!(
+                    "it contributes to no KPI: {like}'s [contributes] is {like}'s own contract \
+                     edge and is not inherited — add one if this row should move a KPI"
+                ));
             }
             print_plan(&p2);
             match template::apply(root, &p2) {
@@ -564,10 +574,15 @@ fn build_new_node(
             .into_iter()
             .filter(|s| under(s, &scope) && s.state != "deprecated")
             .collect();
+        // The closest shape: a row of the same kind, under the same group, whose
+        // id begins as the new one does — `orbit_…` is built on an `orbit_` row,
+        // not on whichever row of the group happens to come last, and so takes
+        // that row's subsystem and owner rather than a neighbour's.
+        let stem = |id: &str| id.split('_').next().unwrap_or("").to_string();
         if let Some(s) = rows
             .iter()
             .filter(|s| s.kind == n.kind)
-            .max_by_key(|s| (s.parent == n.parent, s.order))
+            .max_by_key(|s| (s.parent == n.parent, stem(&s.id) == stem(&n.id), s.order))
         {
             like = Some(*s);
             break;
@@ -2369,13 +2384,18 @@ fn clone_sheet(sheet: &str, id: &str, folder: &str, src_order: u32) -> (String, 
     // changed, its risks are registered once, on it, and its plain-words
     // explanation is about its own relation — so each is dropped whole, not
     // blanked: a new row starts with no history, and says its first belief on
-    // its own form.
+    // its own form. Nor is what it CONTRIBUTES to: a KPI the sibling feeds is
+    // a contract edge of the sibling's, and a new row that inherited it claimed
+    // to move a KPI nobody had asked it to.
     let mut dropped = false;
     for line in sheet.lines() {
         let l = line.trim_start();
         if l.starts_with('[') {
             section = l.to_string();
-            dropped = matches!(l, "[[version]]" | "[[risk]]" | "[explain]");
+            dropped = matches!(
+                l,
+                "[[version]]" | "[[risk]]" | "[explain]" | "[contributes]"
+            );
         }
         if dropped {
             continue;

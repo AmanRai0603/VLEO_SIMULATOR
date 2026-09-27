@@ -79,7 +79,10 @@ how the work below, taken together, has de-risked the programme.
 
 A saved result records the version of every row it ran through. When one of those rows moves to a
 new version, the result says so — in the Results view, the report and `vleo result` — because a
-number computed on a belief that has since broken is not the number it looks like.
+number computed on a belief that has since broken is not the number it looks like. A row that had
+no recorded belief when the result was saved counts too: its first version is a belief the result
+rested on without anyone having written it down. (A result saved before the tool recorded versions
+at all cannot say, and does not.)
 
 ### D6 · The narrative is generated, never written
 

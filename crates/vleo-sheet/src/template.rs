@@ -1863,12 +1863,33 @@ pub fn apply(root: &Path, p: &Plan) -> Saved {
 /// The known-good values a form supplied, as `[[fixture]]` blocks for the
 /// person who records fixtures. Never written to the sheet by this module: an
 /// expected value is recorded by a person, with where it came from.
+///
+/// IN THE FIXTURE'S UNITS, NOT THE FORM'S. The form asks for the answer in the
+/// node's unit and the inputs as a person writes them (`orbit_altitude = 250
+/// km`); `fixtures.toml` holds SI, keyed by the node's own binding names. Pasted
+/// as typed, 70.2 degrees became 70.2 radians. So each value is converted here
+/// and what the form said stays beside it as a comment; whatever cannot be read
+/// is left as the comment alone, for the person recording it.
 pub fn fixture_request(f: &Form) -> String {
+    let unit = f
+        .filled
+        .fields
+        .get("unit")
+        .and_then(|u| vleo_units::Unit::from_name(u.trim()));
+    let inputs = f.filled.arrays.get("input").cloned().unwrap_or_default();
     let mut o = String::new();
     for k in &f.known {
         o.push_str("[[fixture]]\n");
         o.push_str(&format!("label = {}\n", tq(&k.label)));
-        o.push_str(&format!("expect = {}\n", k.expected.trim()));
+        let said = k.expected.trim();
+        match (said.parse::<f64>(), unit) {
+            (Ok(v), Some(u)) if u.si_factor() != 1.0 => o.push_str(&format!(
+                "expect = {}   # the form said {said} {}\n",
+                v * u.si_factor(),
+                u.symbol()
+            )),
+            _ => o.push_str(&format!("expect = {said}\n")),
+        }
         o.push_str(&format!(
             "tolerance = {}\n",
             if k.tolerance.trim().is_empty() {
@@ -1879,12 +1900,59 @@ pub fn fixture_request(f: &Form) -> String {
         ));
         o.push_str(&format!("provenance = {}\n", tq(&k.provenance)));
         o.push_str(&format!("source = {}\n", tq(&k.source)));
-        o.push_str(&format!(
-            "# inputs, as the form gave them: {}\n\n",
-            k.inputs
-        ));
+        match fixture_inputs(&k.inputs, &inputs) {
+            Some(t) => o.push_str(&format!(
+                "inputs = {{ {t} }}\n# the form gave the inputs as: {}\n\n",
+                k.inputs
+            )),
+            None => o.push_str(&format!(
+                "# inputs = {{ … }} in SI, by binding name, each with its unit — the form \
+                 gave: {}\n\n",
+                k.inputs
+            )),
+        }
     }
     o
+}
+
+/// `orbit_radius = 6778.137 km, …` as `r = 6778137.0, …`: each name is a
+/// binding or the row a binding reads, each value a number and a unit symbol.
+/// `None` unless every one of them reads, so nothing half-converted is offered.
+fn fixture_inputs(said: &str, inputs: &[BTreeMap<String, String>]) -> Option<String> {
+    let mut out = Vec::new();
+    for part in said
+        .split([',', ';'])
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+    {
+        let (name, rest) = part.split_once('=')?;
+        let name = name.trim();
+        let (binding, ty) = inputs.iter().find_map(|i| {
+            let b = i.get("binding").map(|b| b.trim()).unwrap_or("");
+            let v = i.get("var").map(|v| v.trim()).unwrap_or("");
+            let t = i.get("type").map(|t| t.trim()).unwrap_or("");
+            (name == b || name == v).then(|| (b.to_string(), t))
+        })?;
+        let mut w = rest.split_whitespace();
+        let value: f64 = w.next()?.parse().ok()?;
+        let sym = w.collect::<Vec<_>>().join(" ");
+        // A bare number is a unit only where there is none to name: a Ratio.
+        // Anywhere else `6778` could be metres or kilometres, and is not read.
+        let factor = if sym.is_empty() {
+            if ty != "Ratio" {
+                return None;
+            }
+            1.0
+        } else {
+            vleo_units::Unit::NAMES
+                .iter()
+                .filter_map(|n| vleo_units::Unit::from_name(n))
+                .find(|u| u.symbol() == sym)?
+                .si_factor()
+        };
+        out.push(format!("{binding} = {:?}", value * factor));
+    }
+    (!out.is_empty()).then(|| out.join(", "))
 }
 
 // ---------------------------------------------------------------------------
@@ -2325,7 +2393,7 @@ const PAGE_JS: &str = r#"'use strict';
         const rm = document.createElement('button'); rm.type = 'button'; rm.textContent = 'remove';
         rm.onclick = () => { rows.splice(i, 1); draw(); paintCount(); };
         b.firstChild.appendChild(rm);
-        const cols = [['label', 'what case this is'], ['inputs', 'the inputs it holds at, e.g. orbit_altitude = 250 km'],
+        const cols = [['label', 'what case this is'], ['inputs', 'the inputs it holds at, each with its unit — e.g. orbit_altitude = 250 km'],
           ['expected', 'the answer, in the node\'s unit'], ['tolerance', 'how close counts, as a fraction (default 1e-6)'],
           ['provenance', 'where it comes from'], ['source', 'the reference — book, paper, page, or who measured it']];
         for (const [k, ask] of cols) {

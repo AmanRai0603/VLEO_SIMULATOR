@@ -124,8 +124,8 @@ fn a_result_keeps_the_beliefs_it_rests_on_and_says_when_one_breaks() {
     let (s, _, _) = a_result();
     let with = |n: u32| {
         csv(&s).replace(
-            "#! ran ",
-            &format!("#! versions {id}=v{n}@{rel} other_row=v1@0.1.0\n#! ran "),
+            "#! versions none\n",
+            &format!("#! versions {id}=v{n}@{rel} other_row=v1@0.1.0\n"),
         )
     };
     let current = read(&with(now)).unwrap();
@@ -158,4 +158,30 @@ fn a_result_keeps_the_beliefs_it_rests_on_and_says_when_one_breaks() {
     assert!(
         page.find("Answer first").unwrap() < page.find("Every value the run returned").unwrap()
     );
+}
+
+#[test]
+fn a_row_whose_first_belief_came_after_the_result_is_a_belief_that_moved() {
+    // A run through rows with no recorded version says so — `#! versions none`
+    // — so a row's first version after it is a belief the result rested on
+    // without anyone having written it down, and that has moved since. A
+    // result saved before the tool recorded beliefs says nothing either way.
+    let (id, now, _) = vleo_modules::tables::NODE_VERSIONS[0];
+    let (s, _, _) = a_result();
+    let text = csv(&s);
+    assert!(text.contains("#! versions none\n"), "{text}");
+    let with_row = text.replace(
+        "section,id,name,value,unit,si,credibility,governing,note\n",
+        &format!(
+            "section,id,name,value,unit,si,credibility,governing,note\noutput,{id},x,1,-,1,1,x,\n"
+        ),
+    );
+    let then = read(&with_row).unwrap();
+    assert_eq!(
+        vleo_modules::results::moved_since(&then),
+        vec![(id.to_string(), 0, now)]
+    );
+    assert!(html(&then).contains("had no recorded belief when this ran"));
+    let before_beliefs = read(&with_row.replace("#! versions none\n", "")).unwrap();
+    assert!(vleo_modules::results::moved_since(&before_beliefs).is_empty());
 }

@@ -71,6 +71,10 @@ pub struct Saved {
     /// The recorded version of every node the run went through that has one,
     /// with the release that carried it: `(node, version, release)`.
     pub versions: Vec<(String, u32, String)>,
+    /// Whether the result says which versions it rested on at all — a
+    /// `#! versions` line, empty or not. One saved before the tool recorded
+    /// beliefs has none, and nothing can be said about what has moved since.
+    pub versions_known: bool,
 }
 
 impl Saved {
@@ -158,6 +162,7 @@ pub fn from_run(r: &vleo_bus::Results, supply: &[(String, f64)], saved: &str, na
             s.versions.push((o.id.clone(), n, rel.to_string()));
         }
     }
+    s.versions_known = true;
     for b in &r.blocked {
         s.blocked.push(Row {
             id: b.id.clone(),
@@ -183,15 +188,38 @@ pub fn node_version(id: &str) -> Option<(u32, &'static str)> {
 /// The nodes whose record has moved past the version a result ran on:
 /// `(node, then, now)`. Each is a belief the result rested on that has since
 /// broken, as far as this build knows.
+///
+/// A row the run went through with no recorded version then rested on a belief
+/// nobody had written down: its first version since is version 0 moving to 1.
+/// That is only known for a result that says which versions it rested on.
 pub fn moved_since(s: &Saved) -> Vec<(String, u32, u32)> {
-    s.versions
+    if !s.versions_known {
+        return Vec::new();
+    }
+    let recorded = s.versions.iter().map(|(id, n, _)| (id.as_str(), *n));
+    let unrecorded = s
+        .outputs
         .iter()
-        .filter_map(|(id, then, _)| {
+        .filter(|o| !s.versions.iter().any(|(id, _, _)| *id == o.id))
+        .map(|o| (o.id.as_str(), 0));
+    recorded
+        .chain(unrecorded)
+        .filter_map(|(id, then)| {
             node_version(id)
-                .filter(|(now, _)| now > then)
-                .map(|(now, _)| (id.clone(), *then, now))
+                .filter(|(now, _)| *now > then)
+                .map(|(now, _)| (id.to_string(), then, now))
         })
         .collect()
+}
+
+/// How a moved belief is said: `…had no recorded belief when this ran, and is
+/// now at version 1` or `…was at version 2 when this ran, and is now at 3`.
+pub fn moved_words(then: u32, now: u32) -> String {
+    if then == 0 {
+        format!("had no recorded belief when this ran, and is now at version {now}")
+    } else {
+        format!("was at version {then} when this ran, and is now at {now}")
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -241,14 +269,20 @@ pub fn csv(s: &Saved) -> String {
         "#! ran {}\n#! blocked {}\n",
         s.ran, s.blocked_count
     ));
-    if !s.versions.is_empty() {
+    if s.versions_known {
         o.push_str(&format!(
             "#! versions {}\n",
-            s.versions
-                .iter()
-                .map(|(id, n, r)| format!("{id}=v{n}@{r}"))
-                .collect::<Vec<_>>()
-                .join(" ")
+            if s.versions.is_empty() {
+                // Said, not left out: none recorded is itself a record, and a
+                // row's first version after this is a belief that moved.
+                "none".to_string()
+            } else {
+                s.versions
+                    .iter()
+                    .map(|(id, n, r)| format!("{id}=v{n}@{r}"))
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            }
         ));
     }
     o.push_str("section,id,name,value,unit,si,credibility,governing,note\n");
@@ -321,6 +355,7 @@ pub fn read(text: &str) -> Result<Saved, String> {
                 "ran" => s.ran = v.parse().unwrap_or(0),
                 "blocked" => s.blocked_count = v.parse().unwrap_or(0),
                 "versions" => {
+                    s.versions_known = true;
                     s.versions = v
                         .split_whitespace()
                         .filter_map(|x| {
@@ -506,20 +541,20 @@ pub fn html(s: &Saved) -> String {
                     .join(", "))
             )
         },
-        if s.versions.is_empty() {
-            "No node it ran through has a recorded belief yet.".to_string()
-        } else if moved.is_empty() {
-            format!(
-                "It rests on {} recorded node version{}, none since replaced.",
-                s.versions.len(),
-                if s.versions.len() == 1 { "" } else { "s" }
-            )
-        } else {
+        if !moved.is_empty() {
             format!(
                 "<b>{} belief{} it rests on {} since broken</b> — see where it breaks.",
                 moved.len(),
                 if moved.len() == 1 { "" } else { "s" },
                 if moved.len() == 1 { "has" } else { "have" }
+            )
+        } else if s.versions.is_empty() {
+            "No node it ran through had a recorded belief when it was saved.".to_string()
+        } else {
+            format!(
+                "It rests on {} recorded node version{}, none since replaced.",
+                s.versions.len(),
+                if s.versions.len() == 1 { "" } else { "s" }
             )
         },
         if s.name.is_empty() {
@@ -566,11 +601,10 @@ pub fn html(s: &Saved) -> String {
     }
     for (id, then, now) in &moved {
         o.push_str(&format!(
-            "<li><b><code>{}</code> was at version {} when this ran, and is now at {}</b>: a belief \
-             this result rested on has broken since. Run it again to see what the new version says.</li>",
+            "<li><b><code>{}</code> {}</b>: a belief this result rested on has broken since. Run \
+             it again to see what the new version says.</li>",
             he(id),
-            then,
-            now
+            moved_words(*then, *now)
         ));
     }
     if !s.versions.is_empty() {

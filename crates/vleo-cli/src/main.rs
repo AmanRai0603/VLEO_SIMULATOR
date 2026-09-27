@@ -793,8 +793,9 @@ fn cmd_result(args: &[&str]) -> Result<(), String> {
     }
     for (id, then, now) in vleo_modules::results::moved_since(&s) {
         println!(
-            "  \x1b[33m{id} was at version {then} when this ran and is now at {now}\x1b[0m — a belief \
-             it rested on has broken since; run it again to see what the new version says"
+            "  \x1b[33m{id} {}\x1b[0m — a belief it rested on has broken since; run it again to \
+             see what the new version says",
+            vleo_modules::results::moved_words(then, now)
         );
     }
     println!("\n  {} input(s) changed from their defaults:", s.changed());

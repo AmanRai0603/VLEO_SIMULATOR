@@ -39,6 +39,10 @@ button:disabled { opacity: .45; cursor: default; }
 .nf-why { color: var(--ink3); font-size: 13px; margin: 2px 0 6px; }
 .nf-was { color: var(--ink3); font-size: 12px; margin-top: 4px; white-space: pre-wrap; }
 .nf-was.nf-bad { color: var(--warn); font-weight: 600; }
+.nf-srcbox { display: block; }
+.nf-srcbox input { width: 100%; }
+.nf-src { margin-top: 4px; }
+.nf-src.bad { color: var(--warn); }
 .nf-tag { font: 11px var(--mono); padding: 0 6px; border-radius: 3px; margin-left: 6px; vertical-align: 1px;
   border: 1px solid var(--rule); color: var(--ink3); font-weight: 400; }
 .nf-tag.req { color: var(--warn); border-color: var(--warn); }
@@ -1634,6 +1638,35 @@ an assistant, give it this file and ask it to edit only the block marked
     ["l3_navsense", "Navigation sensing", 3],
     ["l3_solar", "Solar weather — addition", 3]
   ],
+  "sources": [
+    ["ccsds122", "CCSDS 122.0-B — Image data compression", "CCSDS, 2017"],
+    ["ccsds131", "CCSDS 131.0-B — TM synchronization and channel coding", "CCSDS, 2021"],
+    ["ciaaw2021", "CIAAW — Standard atomic weights", "IUPAC, 2021"],
+    ["codata2018", "CODATA 2018 recommended values of the fundamental physical constants", "NIST, 2019"],
+    ["doornbos2011", "Doornbos, E. — Thermospheric density and wind determination from satellite dynamics", "TU Delft, 2011"],
+    ["ecss_e_st_10_02", "ECSS-E-ST-10-02C — Verification", "ESA-ESTEC, 2018"],
+    ["ecss_e_st_50", "ECSS-E-ST-50-05C — Radio frequency and modulation", "ESA-ESTEC, 2011"],
+    ["iaga_kp_ap", "Bartels, J. — The standardized index Ks and the planetary index Kp, with the ap equivalent-amplitude table", "IATME Bulletin 12b, IUGG Publication Office, 1949; the 28-point table as published by IAGA and distributed by GFZ Potsdam"],
+    ["igrf2020", "International Geomagnetic Reference Field, 13th generation", "IAGA, 2020"],
+    ["iso24113", "ISO 24113 — Space systems: space debris mitigation requirements", "ISO, 2019"],
+    ["itu_p618", "ITU-R P.618 — Propagation data and prediction methods for earth-space telecommunication systems", "ITU, 2023"],
+    ["itu_sa1862", "ITU-R SA.1862 — Frequency bands for Earth exploration-satellite service downlinks", "ITU, 2010"],
+    ["jacchia1971", "Jacchia, L. G. — Revised static models of the thermosphere and exosphere with empirical temperature profiles", "SAO Special Report 332, 1971"],
+    ["larson_wertz", "Wertz, J. R., Everett, D. F. and Puschell, J. J. — Space Mission Engineering: The New SMAD", "Microcosm Press, 2011"],
+    ["matlab_legacy", "Orbitt Space — legacy MATLAB feasibility tool, 364 files", "internal, 2025"],
+    ["modtran_ref", "At-aperture radiance reference case, mid-latitude summer, 30 degree solar zenith", "MODTRAN 6 run, 2026-08-14"],
+    ["moe2005", "Moe, K. and Moe, M. M. — Gas-surface interactions and satellite drag coefficients", "Planetary and Space Science 53, 2005"],
+    ["nasa_cer", "NASA Cost Estimating Handbook, version 4.0", "NASA, 2015"],
+    ["nist_asd", "NIST Atomic Spectra Database, ionisation energies", "NIST, 2023"],
+    ["noaa_swpc", "NOAA Space Weather Prediction Center — solar and geomagnetic indices", "NOAA, retrieved 2026-09-01"],
+    ["orbitt_case_c1", "Orbitt Space — VLEO multipayload reference case C1", "internal, 2026-09-01"],
+    ["orbitt_case_c2", "Orbitt Space — VLEO multipayload reference case C2", "internal, 2026-09-01"],
+    ["romano2021", "Romano, F. et al. — Intake design for an atmosphere-breathing electric propulsion system", "Acta Astronautica, 2021"],
+    ["sentman1961", "Sentman, L. H. — Free molecule flow theory and its application to the determination of aerodynamic forces", "Lockheed LMSC-448514, 1961"],
+    ["us_std_1976", "U.S. Standard Atmosphere, 1976", "NOAA-S/T 76-1562"],
+    ["vallado2013", "Vallado, D. A. — Fundamentals of Astrodynamics and Applications, 4th edition", "Microcosm Press, 2013"],
+    ["wgs84", "NIMA TR8350.2 — World Geodetic System 1984", "3rd edition, 2000"]
+  ],
   "kinds": ["computed", "declared", "required", "achieved", "kpi"],
   "fields": [
     {"field": "label", "group": "the row", "ask": "what is this row called, in the tree", "why": "the page title and every reference to it", "shape": "line", "options": [], "required": true, "relation": false},
@@ -2037,7 +2070,8 @@ text = "We would like to run the sweep over the storm level once this is in."
   // the same field-to-kind table, sent from the tool.
   function decisions() {
     const kinds = new Set();
-    if (DATA.new) kinds.add('node');
+    // A new node is one decision, and its first version says so.
+    if (DATA.new) return ['node'];
     for (const f of SCHEMA.fields) {
       if (SCHEMA.about[f.field] && S(ORIG.fields[f.field]) !== S(DATA.fields[f.field])) kinds.add(SCHEMA.about[f.field]);
     }
@@ -2060,8 +2094,9 @@ text = "We would like to run the sweep over the storm level once this is in."
     st.className = 'nf-dr-state' + (kinds.length && miss.length ? ' bad' : '');
     st.textContent = !kinds.length
       ? 'Your changes so far are wording only: no record is needed for them.'
-      : 'Your changes move: ' + kinds.join(', ') + '. ' + (miss.length
-        ? 'Still to answer below: ' + miss.join(', ') + ' — without them the developers apply only your wording.'
+      : (DATA.new ? 'A new node. ' : 'Your changes move: ' + kinds.join(', ') + '. ') + (miss.length
+        ? 'Still to answer below: ' + miss.map(k => (SCHEMA.derisk.find(d => d[0] === k) || [k, k])[1]).join('; ') +
+          (DATA.new ? ' — a new node is not built without them.' : ' — without them the developers apply only your wording.')
         : 'The record is complete: this becomes version ' + (SCHEMA.version + 1) + ' of the node.');
   }
 
@@ -2081,6 +2116,23 @@ text = "We would like to run the sweep over the storm level once this is in."
       el = document.createElement('input'); el.type = 'text'; el.value = value;
       if (shape === 'number' || shape === 'count') el.inputMode = 'decimal';
       if (shape === 'row') el.setAttribute('list', 'nf-rows');
+      if (/(^| )source$/.test(aria || '')) {
+        el.setAttribute('list', 'nf-sources');
+        const hint = document.createElement('div'); hint.className = 'nf-why nf-src';
+        const say = () => {
+          const v = el.value.trim(), s = SOURCES.get(v);
+          hint.textContent = !v ? 'pick one of the ' + SOURCES.size + ' works in sources/, or name a new one'
+            : s ? s[1] + ' — ' + s[2]
+            : 'not in sources/ yet: say the full reference here or in the notes, and the developers add its entry before the row is published';
+          hint.classList.toggle('bad', !!v && !s);
+        };
+        el.addEventListener('input', say);
+        const box = document.createElement('span'); box.className = 'nf-srcbox';
+        box.appendChild(el); box.appendChild(hint); say();
+        el.setAttribute('aria-label', aria || '');
+        el.addEventListener('input', () => { onchange(el.value); paintCount(); });
+        return box;
+      }
     }
     el.setAttribute('aria-label', aria || '');
     el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => { onchange(el.value); paintCount(); });
@@ -2188,7 +2240,7 @@ text = "We would like to run the sweep over the storm level once this is in."
         const rm = document.createElement('button'); rm.type = 'button'; rm.textContent = 'remove';
         rm.onclick = () => { rows.splice(i, 1); draw(); paintCount(); };
         b.firstChild.appendChild(rm);
-        const cols = [['label', 'what case this is'], ['inputs', 'the inputs it holds at, e.g. orbit_altitude = 250 km'],
+        const cols = [['label', 'what case this is'], ['inputs', 'the inputs it holds at, each with its unit — e.g. orbit_altitude = 250 km'],
           ['expected', 'the answer, in the node\'s unit'], ['tolerance', 'how close counts, as a fraction (default 1e-6)'],
           ['provenance', 'where it comes from'], ['source', 'the reference — book, paper, page, or who measured it']];
         for (const [k, ask] of cols) {
@@ -2213,6 +2265,10 @@ text = "We would like to run the sweep over the storm level once this is in."
   dl.innerHTML = (SCHEMA.rows || []).map(r => '<option value="' + esc(r[0]) + '">' + esc(r[1]) + ' — ' +
     esc(r[2] || '') + ' ' + esc(r[3] || '') + '</option>').join('');
   document.body.appendChild(dl);
+  const SOURCES = new Map((SCHEMA.sources || []).map(r => [r[0], r]));
+  const ds = document.createElement('datalist'); ds.id = 'nf-sources';
+  ds.innerHTML = (SCHEMA.sources || []).map(r => '<option value="' + esc(r[0]) + '">' + esc(r[1]) + '</option>').join('');
+  document.body.appendChild(ds);
   // A field that belongs to one kind of node, shown only on that kind.
   const ONLY = { sense: ['required'], declared_value: ['declared', 'required'] };
   const main = $('#nf');
