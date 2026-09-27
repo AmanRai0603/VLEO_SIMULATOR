@@ -11,6 +11,12 @@
 //! email or a chat. It can be filled by hand or by an assistant, because the
 //! content is a plain TOML block inside the file that either can edit.
 //!
+//! A NEW NODE ARRIVES THE SAME WAY. `xtask form --new` writes a blank form that
+//! also asks where the node goes — its parent in the tree and its kind — and
+//! lists every row in the tree, so what it reads can be named rather than
+//! guessed. Intake checks every interface a form declares: each input must be a
+//! row the tree has, carrying the quantity the form says it expects.
+//!
 //! The filled file goes to the developers. `xtask intake <file>` reads it and
 //! says, field by field, what it would change in `node.toml`; `--apply` writes
 //! it through the same transaction every other edit takes — regenerate, gate,
@@ -90,10 +96,26 @@ pub struct Known {
     pub source: String,
 }
 
+/// Where a new node goes, as its form asks it.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct NewNode {
+    pub id: String,
+    /// The group in the tree it hangs under.
+    pub parent: String,
+    pub kind: String,
+}
+
+/// The kinds a new node may be. Each is built on the shape of an existing row
+/// of the same kind, so a kind the tree does not hold yet cannot be asked for.
+pub const KINDS: &[&str] = &["computed", "declared", "required", "achieved", "kpi"];
+
 /// A filled form, read back.
 #[derive(Clone, Debug, Default)]
 pub struct Form {
+    /// The node it is for; empty on a form for a node that does not exist yet.
     pub node: String,
+    /// Set on a form for a new node.
+    pub new: Option<NewNode>,
     /// The file hash of `node.toml` the form was made from.
     pub base: String,
     pub name: String,
@@ -210,22 +232,42 @@ fn content_toml(c: &Content, o: &mut String) {
 }
 
 /// The data block of a fresh form: the node as it is, nobody's name yet.
-fn data_toml(sh: &Sheet, base: &str, c: &Content) -> String {
+fn data_toml(node: &str, base: &str, c: &Content, new: bool) -> String {
     let mut o = String::new();
     o.push_str(&format!("format = {}\n", tq(FORMAT)));
-    o.push_str(&format!("node = {}\nbase = {}\n", tq(&sh.id), tq(base)));
+    o.push_str(&format!("node = {}\nbase = {}\n", tq(node), tq(base)));
+    if new {
+        o.push_str("\n[new]\nid = \"\"\nparent = \"\"\nkind = \"computed\"\n");
+    }
     o.push_str("\n[filled_by]\nname = \"\"\nteam = \"\"\ndate = \"\"\nai = \"none\"\n");
     content_toml(c, &mut o);
     o.push_str("\n[notes]\ntext = \"\"\n");
     o
 }
 
-fn original_toml(sh: &Sheet, base: &str, c: &Content) -> String {
+fn original_toml(node: &str, base: &str, c: &Content, new: bool) -> String {
     let mut o = String::new();
     o.push_str(&format!("format = {}\n", tq(FORMAT)));
-    o.push_str(&format!("node = {}\nbase = {}\n", tq(&sh.id), tq(base)));
+    o.push_str(&format!("node = {}\nbase = {}\n", tq(node), tq(base)));
+    if new {
+        o.push_str("\n[new]\nid = \"\"\nparent = \"\"\nkind = \"computed\"\n");
+    }
     content_toml(c, &mut o);
     o
+}
+
+/// A new node's content before anybody has said anything: every question
+/// blank, drawn as a number.
+fn blank() -> Content {
+    let mut c = Content::default();
+    for f in FIELDS.iter().filter(|f| f.asked) {
+        c.fields.insert(f.field.to_string(), String::new());
+    }
+    for a in ARRAYS {
+        c.arrays.insert(a.name.to_string(), Vec::new());
+    }
+    c.view = Some(("number".into(), String::new(), "0".into()));
+    c
 }
 
 // ---------------------------------------------------------------------------
@@ -252,32 +294,76 @@ fn js_list(items: &[&str]) -> String {
 }
 
 /// What the page needs besides the content: every question, why it is asked,
-/// how its answer is shaped, and what the node is. Written, never read back.
-fn schema(sh: &Sheet, tree: &Tree) -> String {
+/// how its answer is shaped, what the node is, and every row in the tree it
+/// could read. Written, never read back. `sh` is `None` on a new node's form.
+fn schema(sh: Option<&Sheet>, tree: &Tree) -> String {
+    let id = sh.map(|s| s.id.as_str()).unwrap_or("");
     let feeds: Vec<&str> = tree
         .ordered()
         .into_iter()
-        .filter(|s| s.inputs.iter().any(|i| i.var == sh.id))
+        .filter(|s| !id.is_empty() && s.inputs.iter().any(|i| i.var == id))
         .map(|s| s.id.as_str())
         .collect();
-    let reads: Vec<&str> = sh.inputs.iter().map(|i| i.var.as_str()).collect();
+    let reads: Vec<&str> = sh
+        .map(|s| s.inputs.iter().map(|i| i.var.as_str()).collect())
+        .unwrap_or_default();
     let mut o = String::from("{\n");
+    let get = |f: fn(&Sheet) -> &str| sh.map(f).unwrap_or("");
     for (k, v) in [
-        ("node", sh.id.as_str()),
-        ("label", sh.label.as_str()),
-        ("kind", sh.kind.as_str()),
-        ("subsystem", sh.subsystem.as_str()),
-        ("owner", sh.owner.as_str()),
-        ("state", sh.state.as_str()),
-        ("parent", sh.parent.as_str()),
+        ("node", id),
+        ("label", get(|s| &s.label)),
+        ("kind", get(|s| &s.kind)),
+        ("subsystem", get(|s| &s.subsystem)),
+        ("owner", get(|s| &s.owner)),
+        ("state", get(|s| &s.state)),
+        ("parent", get(|s| &s.parent)),
         ("format", FORMAT),
     ] {
         o.push_str(&format!("  {}: {},\n", js(k), js(v)));
     }
+    o.push_str(&format!("  \"new\": {},\n", sh.is_none()));
     o.push_str(&format!("  \"reads\": {},\n", js_list(&reads)));
     o.push_str(&format!("  \"feeds\": {},\n", js_list(&feeds)));
+    // EVERY ROW, so an input is chosen from what exists and its quantity is seen
+    // before it is wired: the interface is decided on the form, not discovered
+    // at intake.
+    o.push_str("  \"rows\": [");
+    for (i, r) in tree
+        .ordered()
+        .into_iter()
+        .filter(|r| r.state != "deprecated")
+        .enumerate()
+    {
+        o.push_str(&format!(
+            "{}\n    [{}, {}, {}, {}]",
+            if i > 0 { "," } else { "" },
+            js(&r.id),
+            js(&r.label),
+            js(&r.ty),
+            js(&r.unit)
+        ));
+    }
+    o.push_str("\n  ],\n");
+    // Where a new node may go: every group, with its layer, in tree order.
+    o.push_str("  \"groups\": [");
+    let mut groups: Vec<&crate::model::Group> = tree.groups.values().collect();
+    groups.sort_by_key(|g| (g.layer, g.order));
+    for (i, g) in groups.iter().enumerate() {
+        o.push_str(&format!(
+            "{}\n    [{}, {}, {}]",
+            if i > 0 { "," } else { "" },
+            js(&g.id),
+            js(&g.label),
+            g.layer
+        ));
+    }
+    o.push_str("\n  ],\n");
+    o.push_str(&format!("  \"kinds\": {},\n", js_list(KINDS)));
     o.push_str("  \"fields\": [\n");
-    let f = offered(sh);
+    let f: Vec<&'static form::Field> = match sh {
+        Some(sh) => offered(sh),
+        None => FIELDS.iter().filter(|f| f.asked).collect(),
+    };
     for (i, x) in f.iter().enumerate() {
         o.push_str(&format!(
             "    {{\"field\": {}, \"group\": {}, \"ask\": {}, \"why\": {}, \"shape\": {}, \
@@ -333,7 +419,12 @@ fn schema(sh: &Sheet, tree: &Tree) -> String {
         js_list(AI_HELP)
     ));
     o.push_str("  \"fixtures\": [");
-    for (i, fx) in sh.fixtures.iter().enumerate() {
+    for (i, fx) in sh
+        .map(|s| s.fixtures.as_slice())
+        .unwrap_or(&[])
+        .iter()
+        .enumerate()
+    {
         let inputs = fx
             .inputs
             .iter()
@@ -361,25 +452,50 @@ pub fn document(sh: &Sheet, tree: &Tree) -> String {
     let base = std::fs::read_to_string(sh.dir.join("node.toml"))
         .map(|t| form::file_hash(&t))
         .unwrap_or_default();
-    let c = content(sh);
-    let title = format!("{} — node form", sh.label);
-    let mut o = String::with_capacity(64 * 1024);
-    o.push_str("<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n");
-    o.push_str("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
-    o.push_str(&format!("<title>{}</title>\n", he(&title)));
-    o.push_str("<style>\n");
-    o.push_str(PAGE_CSS);
-    o.push_str("</style>\n</head>\n<body>\n");
-    o.push_str(&format!(
-        "<header class=\"nf-head\">\n<p class=\"nf-kicker\">VLEO design tool · node form</p>\n\
-         <h1>{}</h1>\n<p class=\"nf-id\"><code>{}</code> · {} · {} · owner {} · {}</p>\n",
+    let head = format!(
+        "<h1>{}</h1>\n<p class=\"nf-id\"><code>{}</code> · {} · {} · owner {} · {}</p>\n",
         he(&sh.label),
         he(&sh.id),
         he(&sh.kind),
         he(&sh.subsystem),
         he(&sh.owner),
         he(&sh.state)
-    ));
+    );
+    page(
+        &format!("{} — node form", sh.label),
+        &head,
+        &schema(Some(sh), tree),
+        &original_toml(&sh.id, &base, &content(sh), false),
+        &data_toml(&sh.id, &base, &content(sh), false),
+    )
+}
+
+/// The form for a node that does not exist yet: every question blank, and
+/// where it goes asked first.
+pub fn document_new(tree: &Tree) -> String {
+    let c = blank();
+    page(
+        "A new node — node form",
+        "<h1>A new node</h1>\n<p class=\"nf-id\">a request for a node the design does not have \
+         yet — where it goes, what it asks, and what it reads</p>\n",
+        &schema(None, tree),
+        &original_toml("", "", &c, true),
+        &data_toml("", "", &c, true),
+    )
+}
+
+fn page(title: &str, head: &str, schema: &str, original: &str, data: &str) -> String {
+    let mut o = String::with_capacity(160 * 1024);
+    o.push_str("<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n");
+    o.push_str("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
+    o.push_str(&format!("<title>{}</title>\n", he(title)));
+    o.push_str("<style>\n");
+    o.push_str(PAGE_CSS);
+    o.push_str("</style>\n</head>\n<body>\n");
+    o.push_str(
+        "<header class=\"nf-head\">\n<p class=\"nf-kicker\">VLEO design tool · node form</p>\n",
+    );
+    o.push_str(head);
     o.push_str(INTRO_HTML);
     o.push_str("</header>\n");
     o.push_str(
@@ -391,21 +507,22 @@ pub fn document(sh: &Sheet, tree: &Tree) -> String {
     o.push_str("<main id=\"nf\"></main>\n");
     o.push_str(&format!(
         "<script type=\"application/json\" id=\"vleo-node-schema\">\n{}</script>\n",
-        schema(sh, tree)
+        schema
     ));
     o.push_str(&format!(
         "<!-- The node as it was when this form was made. Do not edit: the developers compare \
          it with the node as it is when the form comes back, so a change made meanwhile is not \
          overwritten. -->\n<script type=\"application/toml\" id=\"{ORIGINAL_ID}\">\n{}</script>\n",
-        original_toml(sh, &base, &c)
+        original
     ));
     o.push_str(&format!(
         "<!-- THE FORM'S CONTENT. This block is what the developers read. Fill it on the page \
          above, or edit it here directly — by hand, or with an assistant: it is TOML, one key \
          per question, and [[input]], [[algorithm]], [[theory]], [[assumption]] and \
          [[known_value]] repeat. Say in [filled_by] ai = \"none\", \"wording\" or \"relation\" \
-         how an assistant helped. -->\n<script type=\"application/toml\" id=\"{DATA_ID}\">\n{}</script>\n",
-        data_toml(sh, &base, &c)
+         how an assistant helped. On a new node's form, [new] says where it goes: its id, the \
+         group it hangs under, and its kind. -->\n<script type=\"application/toml\" id=\"{DATA_ID}\">\n{}</script>\n",
+        data
     ));
     o.push_str("<script>\n");
     o.push_str(PAGE_JS);
@@ -494,7 +611,12 @@ pub fn read(html: &str) -> Result<Form, String> {
         ));
     }
     let node = text_of(d.get("node"));
-    if node.is_empty() || text_of(g.get("node")) != node {
+    let new = d.get("new").map(|n| NewNode {
+        id: text_of(n.get("id")).trim().to_string(),
+        parent: text_of(n.get("parent")).trim().to_string(),
+        kind: text_of(n.get("kind")).trim().to_string(),
+    });
+    if (node.is_empty() && new.is_none()) || text_of(g.get("node")) != node {
         return Err(format!(
             "the form names node '{node}' in its content and '{}' in its original — one of them \
              has been edited, and which node this is for cannot be trusted",
@@ -543,6 +665,7 @@ pub fn read(html: &str) -> Result<Form, String> {
         filled: content_of(&d),
         known,
         node,
+        new,
     })
 }
 
@@ -560,6 +683,82 @@ pub enum Verdict {
     Conflict(String),
     /// Cannot be applied, and why.
     Refused(String),
+}
+
+/// One input a form declares, against the row it names.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Interface {
+    pub binding: String,
+    pub var: String,
+    /// The quantity the form says it expects.
+    pub want: String,
+    /// The row's own quantity and unit, when the row exists.
+    pub have: String,
+    pub unit: String,
+    pub label: String,
+    /// Why it does not connect, or empty when it does.
+    pub why: String,
+}
+
+impl Interface {
+    pub fn ok(&self) -> bool {
+        self.why.is_empty()
+    }
+}
+
+/// Every input row, checked against the tree: does it name a row, and does
+/// that row carry the quantity the form expects?
+pub fn interfaces(tree: &Tree, rows: &[BTreeMap<String, String>]) -> Vec<Interface> {
+    rows.iter()
+        .map(|r| {
+            let get = |k: &str| r.get(k).cloned().unwrap_or_default();
+            let (binding, var, want) = (get("binding"), get("var"), get("type"));
+            let mut i = Interface {
+                binding,
+                var: var.clone(),
+                want: want.clone(),
+                have: String::new(),
+                unit: String::new(),
+                label: String::new(),
+                why: String::new(),
+            };
+            // A row's own answer, or one of the extra variables a row publishes
+            // as `<row>.<name>`.
+            let found = tree
+                .sheets
+                .get(&var)
+                .map(|s| (s.ty.clone(), s.unit.clone(), s.label.clone()))
+                .or_else(|| {
+                    let (row, member) = var.split_once('.')?;
+                    let s = tree.sheets.get(row)?;
+                    s.publishes
+                        .iter()
+                        .find(|p| p.id == member)
+                        .map(|p| (p.ty.clone(), p.unit.clone(), p.label.clone()))
+                });
+            match found {
+                None if var.is_empty() => i.why = "names no row".into(),
+                None => {
+                    i.why = format!(
+                        "there is no row '{var}' in the tree. An input reads a row that exists; a \
+                         row that is needed first comes in on its own form"
+                    )
+                }
+                Some((ty, unit, label)) => {
+                    i.have = ty.clone();
+                    i.unit = unit;
+                    i.label = label;
+                    if !want.is_empty() && !ty.is_empty() && want != ty {
+                        i.why = format!(
+                            "'{var}' is a {ty}, and the form expects a {want}. The two sides of an \
+                             edge must agree on the quantity, or assembly refuses it"
+                        );
+                    }
+                }
+            }
+            i
+        })
+        .collect()
 }
 
 #[derive(Clone, Debug)]
@@ -587,6 +786,14 @@ pub struct Plan {
     /// Whether an applied change adds, removes or re-points an input — an edge,
     /// so the whole graph is checked, not only this row.
     pub edges: bool,
+    /// Every input the form declares, checked against the tree — when the form
+    /// declares or changes any.
+    pub interfaces: Vec<Interface>,
+    /// Set on a new node's form: where it goes.
+    pub new: Option<NewNode>,
+    /// What a new node is still missing, or took from the row it was built on
+    /// rather than from the form. Reported, for the developer to settle.
+    pub open: Vec<String>,
 }
 
 impl Plan {
@@ -602,6 +809,205 @@ impl Plan {
             .filter(|i| matches!(i.verdict, Verdict::Conflict(_) | Verdict::Refused(_)))
             .count()
     }
+}
+
+/// Whether a proposed id can be a row's id: lowercase words joined by
+/// underscores, starting with a letter, and short enough to read.
+pub fn valid_id(id: &str) -> bool {
+    let mut c = id.chars();
+    matches!(c.next(), Some('a'..='z'))
+        && id.len() <= 64
+        && id
+            .chars()
+            .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '_')
+}
+
+/// What a new node's form asks for, checked before anything exists: where it
+/// goes, what it is, what it reads. Nothing is built here — `xtask intake
+/// --apply` builds the node on the shape of an existing row of the same kind,
+/// then applies the form to it with `plan_onto`.
+fn plan_new(tree: &Tree, f: Form, n: NewNode) -> Plan {
+    let mut p = Plan::default();
+    let assisted = f.ai == "relation";
+    let place = |what: &str, v: &str, why: Option<String>| Item {
+        what: what.into(),
+        from: String::new(),
+        to: v.into(),
+        verdict: why.map(Verdict::Refused).unwrap_or(Verdict::Apply),
+    };
+    p.items.push(place(
+        "new · id",
+        &n.id,
+        if !valid_id(&n.id) {
+            Some("an id is lowercase words joined by underscores, starting with a letter".into())
+        } else if tree.sheets.contains_key(&n.id) || tree.groups.contains_key(&n.id) {
+            Some(format!("'{}' is already in the tree", n.id))
+        } else {
+            None
+        },
+    ));
+    p.items.push(place(
+        "new · parent",
+        &n.parent,
+        match tree.groups.get(&n.parent) {
+            None => Some(format!(
+                "'{}' is not a group in the tree. The form lists every group; a new group is a \
+                 developer's decision about the tree's shape",
+                n.parent
+            )),
+            Some(_) => None,
+        },
+    ));
+    p.items.push(place(
+        "new · kind",
+        &n.kind,
+        if !KINDS.contains(&n.kind.as_str()) {
+            Some(format!("a node is one of {}", KINDS.join(", ")))
+        } else if !tree.sheets.values().any(|s| s.kind == n.kind) {
+            Some(format!("no {} row exists to take the shape from", n.kind))
+        } else {
+            None
+        },
+    ));
+    for fld in FIELDS.iter().filter(|x| x.asked) {
+        let v = f.filled.fields.get(fld.field).cloned().unwrap_or_default();
+        if v.trim().is_empty() {
+            if fld.blocks {
+                p.open
+                    .push(format!("`{}` is not answered — {}", fld.field, fld.ask));
+            }
+            continue;
+        }
+        let verdict = if assisted && RELATION_FIELDS.contains(&fld.field) {
+            Verdict::Refused(
+                "the form says an assistant helped with the relation; a developer derives it"
+                    .into(),
+            )
+        } else {
+            match form::normalise(fld.field, &v) {
+                Ok(_) => Verdict::Apply,
+                Err(e) => Verdict::Refused(e),
+            }
+        };
+        p.items.push(Item {
+            what: fld.field.to_string(),
+            from: String::new(),
+            to: v,
+            verdict,
+        });
+    }
+    for a in ARRAYS {
+        for (i, row) in f
+            .filled
+            .arrays
+            .get(a.name)
+            .into_iter()
+            .flatten()
+            .enumerate()
+        {
+            let missing: Vec<&str> = a
+                .columns
+                .iter()
+                .filter(|c| c.required && !c.managed)
+                .filter(|c| row.get(c.key).map(|v| v.trim().is_empty()).unwrap_or(true))
+                .map(|c| c.key)
+                .collect();
+            let verdict = if assisted && RELATION_ARRAYS.contains(&a.name) {
+                Verdict::Refused(
+                    "an assistant helped with the relation; a developer derives it".into(),
+                )
+            } else if !missing.is_empty() {
+                Verdict::Refused(format!("a {} block needs {}", a.name, missing.join(", ")))
+            } else {
+                Verdict::Apply
+            };
+            p.items.push(Item {
+                what: format!("{} {} · added", a.name, i + 1),
+                from: String::new(),
+                to: a
+                    .columns
+                    .iter()
+                    .filter(|c| !c.managed)
+                    .filter_map(|c| {
+                        row.get(c.key)
+                            .filter(|v| !v.is_empty())
+                            .map(|v| format!("{} = {}", c.key, short(v)))
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                verdict,
+            });
+        }
+    }
+    let ins = f.filled.arrays.get("input").cloned().unwrap_or_default();
+    p.interfaces = interfaces(tree, &ins);
+    let bad: Vec<&Interface> = p.interfaces.iter().filter(|i| !i.ok()).collect();
+    for it in p
+        .items
+        .iter_mut()
+        .filter(|it| it.what.starts_with("input "))
+    {
+        if !bad.is_empty() && it.verdict == Verdict::Apply {
+            it.verdict = Verdict::Refused("an input does not connect — see the interfaces".into());
+        }
+    }
+    p.new = Some(n);
+    p.form = f;
+    p
+}
+
+/// Plan a new node's form onto the node just built for it: the form's content
+/// against the fresh row, as though the form had been made from it.
+///
+/// The row was built on the shape of `like`, and a blank on the form is not an
+/// answer: where the form says nothing and the row holds its model's value — a
+/// quantity, a unit, a bound — the value is KEPT, and said, so the developer
+/// confirms it rather than finding it later.
+pub fn plan_onto(root: &Path, f: &Form, id: &str, like: &str) -> Result<Plan, String> {
+    let tree = crate::load::load_all(root).map_err(|e| format!("the tree does not load: {e}"))?;
+    let sh = tree
+        .sheets
+        .get(id)
+        .ok_or_else(|| format!("the new node '{id}' is not in the tree"))?;
+    let now = content(sh);
+    let mut g = f.clone();
+    g.node = id.to_string();
+    g.new = None;
+    g.base = std::fs::read_to_string(sh.dir.join("node.toml"))
+        .map(|t| form::file_hash(&t))
+        .unwrap_or_default();
+    let mut kept = Vec::new();
+    for (k, v) in now.fields.iter() {
+        let filled = g.filled.fields.entry(k.clone()).or_default();
+        if filled.trim().is_empty() && !v.trim().is_empty() {
+            *filled = v.clone();
+            kept.push(format!(
+                "`{k}` was not on the form; it is «{}», taken from {like} — confirm it or change it",
+                short(v)
+            ));
+        }
+    }
+    // A numbered step keeps the number the new row gives it.
+    for a in ARRAYS {
+        for (i, row) in g
+            .filled
+            .arrays
+            .entry(a.name.to_string())
+            .or_default()
+            .iter_mut()
+            .enumerate()
+        {
+            for c in a.columns.iter().filter(|c| c.managed) {
+                row.insert(c.key.to_string(), (i + 1).to_string());
+            }
+        }
+    }
+    g.filled.view = g.filled.view.clone().or(now.view.clone());
+    g.original = now;
+    let mut p = plan_form(root, g)?;
+    p.open.extend(kept);
+    p.edges = true;
+    Ok(p)
 }
 
 /// Two field values as the sheet would hold them: a bound of `40` and `40.0`
@@ -627,8 +1033,15 @@ fn short(v: &str) -> String {
 
 /// Work out what a filled form would do to its node. Writes nothing.
 pub fn plan(root: &Path, html: &str) -> Result<Plan, String> {
-    let f = read(html)?;
+    plan_form(root, read(html)?)
+}
+
+/// The same, for a form already read.
+pub fn plan_form(root: &Path, f: Form) -> Result<Plan, String> {
     let tree = crate::load::load_all(root).map_err(|e| format!("the tree does not load: {e}"))?;
+    if let Some(n) = f.new.clone() {
+        return Ok(plan_new(&tree, f, n));
+    }
     let sh = tree.sheets.get(&f.node).ok_or_else(|| {
         format!(
             "there is no node '{}' in this tree. A form never adds a node: a new row is a \
@@ -692,6 +1105,19 @@ pub fn plan(root: &Path, html: &str) -> Result<Plan, String> {
         });
     }
 
+    // EVERY INPUT CHECKED, WHEN THE INPUTS CHANGE. An input the tree does not
+    // have, or of another quantity than the row it names, refuses the input
+    // changes by name — here, rather than at the gate as a failed assembly —
+    // and everything else on the form still goes in.
+    let (o_in, n_in) = (
+        f.original.arrays.get("input").cloned().unwrap_or_default(),
+        f.filled.arrays.get("input").cloned().unwrap_or_default(),
+    );
+    let inputs_bad = o_in != n_in && {
+        p.interfaces = interfaces(&tree, &n_in);
+        p.interfaces.iter().any(|i| !i.ok())
+    };
+
     // The repeated blocks: each one as a whole, and then row by row.
     for a in ARRAYS {
         let empty = Vec::new();
@@ -724,6 +1150,19 @@ pub fn plan(root: &Path, html: &str) -> Result<Plan, String> {
             });
             continue;
         }
+        if a.name == "input" && inputs_bad {
+            p.items.push(Item {
+                what: a.name.to_string(),
+                from: format!("{} block(s)", o.len()),
+                to: format!("{} block(s)", n.len()),
+                verdict: Verdict::Refused(
+                    "an input does not connect — see the interfaces. None of the input changes \
+                     is applied until every one does"
+                        .into(),
+                ),
+            });
+            continue;
+        }
         if assisted && RELATION_ARRAYS.contains(&a.name) {
             p.items.push(Item {
                 what: a.name.to_string(),
@@ -745,7 +1184,13 @@ pub fn plan(root: &Path, html: &str) -> Result<Plan, String> {
         // edited by hand or by an assistant is held to the same.
         if a.blocks == Blocks::EndOnly {
             if let Some(key) = a.columns.iter().find(|col| col.managed).map(|col| col.key) {
-                if (0..o.len().min(n.len())).any(|i| o[i].get(key) != n[i].get(key)) {
+                // A row with no number says nothing about where it was: only a
+                // number that differs is a move.
+                let moved = (0..o.len().min(n.len())).any(|i| {
+                    n[i].get(key).map(|v| !v.is_empty()).unwrap_or(false)
+                        && o[i].get(key) != n[i].get(key)
+                });
+                if moved {
                     p.items.push(Item {
                         what: a.name.to_string(),
                         from: format!("{} block(s)", o.len()),
@@ -1037,6 +1482,7 @@ button:disabled { opacity: .45; cursor: default; }
 .nf-q label { display: block; font-weight: 600; }
 .nf-why { color: var(--ink3); font-size: 13px; margin: 2px 0 6px; }
 .nf-was { color: var(--ink3); font-size: 12px; margin-top: 4px; white-space: pre-wrap; }
+.nf-was.nf-bad { color: var(--warn); font-weight: 600; }
 .nf-tag { font: 11px var(--mono); padding: 0 6px; border-radius: 3px; margin-left: 6px; vertical-align: 1px;
   border: 1px solid var(--rule); color: var(--ink3); font-weight: 400; }
 .nf-tag.req { color: var(--warn); border-color: var(--warn); }
@@ -1181,6 +1627,7 @@ const PAGE_JS: &str = r#"'use strict';
 
   function toToml() {
     let o = 'format = ' + tq(SCHEMA.format) + '\nnode = ' + tq(DATA.node) + '\nbase = ' + tq(DATA.base) + '\n';
+    if (DATA.new) o += '\n[new]\nid = ' + tq(DATA.new.id) + '\nparent = ' + tq(DATA.new.parent) + '\nkind = ' + tq(DATA.new.kind) + '\n';
     const by = DATA.filled_by;
     o += '\n[filled_by]\nname = ' + tq(by.name) + '\nteam = ' + tq(by.team) + '\ndate = ' + tq(by.date) +
       '\nai = ' + tq(by.ai || 'none') + '\n';
@@ -1203,6 +1650,8 @@ const PAGE_JS: &str = r#"'use strict';
   // ---- what changed, against the node as the form was made -------------
   function changes() {
     const out = [];
+    if (DATA.new && ORIG.new) for (const k of ['id', 'parent', 'kind'])
+      if (S(DATA.new[k]) !== S(ORIG.new[k])) out.push('new node ' + k);
     for (const f of SCHEMA.fields) {
       const a = S(ORIG.fields[f.field]), b = S(DATA.fields[f.field]);
       if (a !== b) out.push(f.field);
@@ -1235,6 +1684,7 @@ const PAGE_JS: &str = r#"'use strict';
     } else {
       el = document.createElement('input'); el.type = 'text'; el.value = value;
       if (shape === 'number' || shape === 'count') el.inputMode = 'decimal';
+      if (shape === 'row') el.setAttribute('list', 'nf-rows');
     }
     el.setAttribute('aria-label', aria || '');
     el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => { onchange(el.value); paintCount(); });
@@ -1281,13 +1731,32 @@ const PAGE_JS: &str = r#"'use strict';
         rm.title = rm.disabled ? 'Only the last can be removed: each is numbered, and the number is a place in the generated code.' : '';
         rm.onclick = () => { rows.splice(i, 1); draw(); paintCount(); };
         b.firstChild.appendChild(rm);
+        const hint = document.createElement('div'); hint.className = 'nf-was';
+        // WHAT THIS INPUT CONNECTS TO, as it is typed: the row, its quantity and
+        // unit — and a warning when the quantity is not the one expected.
+        const paintHint = () => {
+          if (a.name !== 'input') return;
+          const row = ROWS.get(S(r.var));
+          hint.className = 'nf-was' + (row && S(r.type) && row[2] && row[2] !== S(r.type) ? ' nf-bad' : '');
+          hint.textContent = !S(r.var) ? 'choose a row from the list' : !row
+            ? 'there is no row "' + S(r.var) + '" in the tree — a row that is needed first comes in on its own form'
+            : 'reads ' + row[1] + ' — a ' + (row[2] || '?') + ' in ' + (row[3] || '?') +
+              (S(r.type) && row[2] && row[2] !== S(r.type) ? ', NOT the ' + S(r.type) + ' this block expects' : '');
+        };
         for (const c of a.columns) {
           const col = document.createElement('div'); col.className = 'nf-col';
           if (c.managed) { col.innerHTML = '<span>' + esc(c.key) + ': ' + esc(r[c.key] || '(assigned on apply)') + '</span>'; b.appendChild(col); continue; }
           col.innerHTML = '<span>' + esc(c.ask || c.key) + (c.required ? ' <span class="nf-tag req">needed</span>' : '') + '</span>';
-          col.appendChild(control(c.shape, [], S(r[c.key]), v => { r[c.key] = v; }, a.name + ' ' + (i + 1) + ' ' + c.key));
+          col.appendChild(control(c.shape, [], S(r[c.key]), v => {
+            r[c.key] = v;
+            if (a.name === 'input' && c.key === 'var' && !S(r.type) && ROWS.get(v)) {
+              r.type = ROWS.get(v)[2]; draw(); return;
+            }
+            paintHint();
+          }, a.name + ' ' + (i + 1) + ' ' + c.key));
           b.appendChild(col);
         }
+        if (a.name === 'input') { b.appendChild(hint); paintHint(); }
         wrap.appendChild(b);
       });
       const add = document.createElement('button'); add.type = 'button';
@@ -1341,6 +1810,13 @@ const PAGE_JS: &str = r#"'use strict';
   }
 
   // ---- the page --------------------------------------------------------
+  const ROWS = new Map((SCHEMA.rows || []).map(r => [r[0], r]));
+  const dl = document.createElement('datalist'); dl.id = 'nf-rows';
+  dl.innerHTML = (SCHEMA.rows || []).map(r => '<option value="' + esc(r[0]) + '">' + esc(r[1]) + ' — ' +
+    esc(r[2] || '') + ' ' + esc(r[3] || '') + '</option>').join('');
+  document.body.appendChild(dl);
+  // A field that belongs to one kind of node, shown only on that kind.
+  const ONLY = { sense: ['required'], declared_value: ['declared', 'required'] };
   const main = $('#nf');
   main.innerHTML = '<div class="nf-bar"><button type="button" class="nf-primary" id="nf-save">save a filled copy</button>' +
     '<button type="button" id="nf-print">print</button><span class="nf-count" id="nf-count"></span></div>';
@@ -1358,6 +1834,42 @@ const PAGE_JS: &str = r#"'use strict';
   ai.appendChild(control('choice', SCHEMA.ai_help, S(DATA.filled_by.ai || 'none'), v => { DATA.filled_by.ai = v; }, 'ai'));
   g.appendChild(ai); who.appendChild(g); main.appendChild(who);
 
+  if (SCHEMA.new) {
+    DATA.new = DATA.new || { id: '', parent: '', kind: 'computed' };
+    const w = document.createElement('section');
+    w.innerHTML = '<h2>Where it goes</h2><p class="nf-why">A new node hangs under one group of the tree, in one ' +
+      'of its four layers, and is one kind of row. The developers check this first: where a node sits decides ' +
+      'who owns it and what it may read.</p>';
+    const g3 = document.createElement('div'); g3.className = 'nf-grid2';
+    const idq = document.createElement('div'); idq.className = 'nf-q';
+    idq.innerHTML = '<label>its id <span class="nf-tag req">needed</span></label><div class="nf-why">lowercase words ' +
+      'joined by underscores, starting with a letter — e.g. <code>pay_sensor_mass</code>. It is the answer\'s name ' +
+      'everywhere in the design.</div>';
+    idq.appendChild(control('line', [], S(DATA.new.id), v => { DATA.new.id = v; }, 'new id')); g3.appendChild(idq);
+    const kq = document.createElement('div'); kq.className = 'nf-q';
+    kq.innerHTML = '<label>what kind of row <span class="nf-tag req">needed</span></label><div class="nf-why">computed ' +
+      '— worked out from what it reads · declared — a number somebody chose · required — a bound the design must ' +
+      'meet · achieved — what the design reaches against one · kpi — a figure the programme reports</div>';
+    kq.appendChild(control('choice', SCHEMA.kinds, S(DATA.new.kind || 'computed'), v => { DATA.new.kind = v; paintKind(); }, 'new kind'));
+    g3.appendChild(kq); w.appendChild(g3);
+    const pq = document.createElement('div'); pq.className = 'nf-q';
+    pq.innerHTML = '<label>under which group <span class="nf-tag req">needed</span></label><div class="nf-why">every ' +
+      'group of the tree, by layer: 1 management · 2 the system · 3 subsystem · 4 the run</div>';
+    const sel = document.createElement('select'); sel.setAttribute('aria-label', 'new parent');
+    sel.innerHTML = '<option value=""></option>' + SCHEMA.groups.map(g => '<option value="' + esc(g[0]) + '"' +
+      (g[0] === S(DATA.new.parent) ? ' selected' : '') + '>Layer ' + g[2] + ' · ' + esc(g[1]) + ' (' + esc(g[0]) + ')</option>').join('');
+    sel.addEventListener('change', () => { DATA.new.parent = sel.value; paintCount(); });
+    pq.appendChild(sel); w.appendChild(pq);
+    main.appendChild(w);
+  }
+  function paintKind() {
+    const kind = DATA.new ? S(DATA.new.kind) : SCHEMA.kind;
+    for (const [f, kinds] of Object.entries(ONLY)) {
+      const box = document.querySelector('.nf-q[data-field="' + f + '"]');
+      if (box) box.hidden = kinds.indexOf(kind) < 0;
+    }
+  }
+
   const ctx = document.createElement('section');
   ctx.innerHTML = '<h2>This node</h2><dl class="nf-ctx"><dt>id</dt><dd>' + esc(SCHEMA.node) + '</dd><dt>kind</dt><dd>' +
     esc(SCHEMA.kind) + '</dd><dt>subsystem</dt><dd>' + esc(SCHEMA.subsystem) + ' — owner ' + esc(SCHEMA.owner) +
@@ -1365,7 +1877,7 @@ const PAGE_JS: &str = r#"'use strict';
     '</dd><dt>feeds</dt><dd>' + (esc(SCHEMA.feeds.join(', ')) || 'nothing yet') + '</dd></dl>' +
     '<p class="nf-muted">Its place in the tree, its kind and its owner are not on this form: moving a node is a ' +
     'developer\'s decision, taken in the repository.</p>';
-  main.appendChild(ctx);
+  if (!SCHEMA.new) main.appendChild(ctx);
 
   const groups = [];
   for (const f of SCHEMA.fields) if (groups.indexOf(f.group) < 0) groups.push(f.group);
@@ -1397,6 +1909,7 @@ const PAGE_JS: &str = r#"'use strict';
   nq.appendChild(control('prose', [], S(DATA.notes.text), v => { DATA.notes.text = v; }, 'notes'));
   notes.appendChild(nq); main.appendChild(notes);
 
+  paintKind();
   $('#nf-print').onclick = () => window.print();
   $('#nf-save').onclick = () => {
     if (!S(DATA.filled_by.date)) DATA.filled_by.date = new Date().toISOString().slice(0, 10);
@@ -1406,7 +1919,7 @@ const PAGE_JS: &str = r#"'use strict';
     const html = PRISTINE.slice(0, at + open.length) + '\n' + toToml() + PRISTINE.slice(end);
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-    a.download = SCHEMA.node + '.node-form.html';
+    a.download = (SCHEMA.new ? 'new-' + (S(DATA.new.id) || 'node') : SCHEMA.node) + '.node-form.html';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   };

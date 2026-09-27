@@ -1,0 +1,2156 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A new node — node form</title>
+<style>
+:root { --paper:#faf9f5; --card:#ffffff; --ink:#1f1e1b; --ink2:#55524a; --ink3:#8a867b;
+  --rule:#dedbd2; --accent:#6b3fa0; --accent-pale:#efe8f7; --warn:#a4262c; --warn-pale:#fbeeee;
+  --ok:#2f6b3a; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+@media (prefers-color-scheme: dark) { :root { --paper:#1b1a18; --card:#23221f; --ink:#ecebe6;
+  --ink2:#c4c1b8; --ink3:#8f8b80; --rule:#3a3833; --accent:#b99ae0; --accent-pale:#2e2638;
+  --warn:#ef8a8a; --warn-pale:#3a2323; --ok:#8fcf99; } }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 0 16px 64px; background: var(--paper); color: var(--ink);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.nf-head, main { max-width: 920px; margin: 0 auto; }
+.nf-kicker { font: 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent);
+  margin: 28px 0 4px; }
+h1 { font-size: 26px; margin: 0 0 4px; }
+h2 { font-size: 18px; margin: 32px 0 6px; border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
+code, .nf-id { font-family: var(--mono); font-size: 13px; }
+.nf-id { color: var(--ink2); margin: 0 0 12px; }
+.nf-intro { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 18px; }
+.nf-intro li { margin: 4px 0; }
+.nf-muted { color: var(--ink3); font-size: 13px; }
+.nf-warn { color: var(--warn); background: var(--warn-pale); padding: 10px 14px; border-radius: 6px; }
+.nf-bar { position: sticky; top: 0; z-index: 5; background: var(--paper); border-bottom: 1px solid var(--rule);
+  padding: 10px 0; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+button { font: 13px var(--mono); padding: 6px 12px; border: 1px solid var(--rule); border-radius: 4px;
+  background: var(--card); color: var(--ink); cursor: pointer; }
+button:hover { border-color: var(--ink3); }
+button.nf-primary { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+button:disabled { opacity: .45; cursor: default; }
+.nf-count { font: 13px var(--mono); color: var(--ink2); }
+.nf-q { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; margin: 10px 0; }
+.nf-q.changed { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.nf-q label { display: block; font-weight: 600; }
+.nf-why { color: var(--ink3); font-size: 13px; margin: 2px 0 6px; }
+.nf-was { color: var(--ink3); font-size: 12px; margin-top: 4px; white-space: pre-wrap; }
+.nf-was.nf-bad { color: var(--warn); font-weight: 600; }
+.nf-tag { font: 11px var(--mono); padding: 0 6px; border-radius: 3px; margin-left: 6px; vertical-align: 1px;
+  border: 1px solid var(--rule); color: var(--ink3); font-weight: 400; }
+.nf-tag.req { color: var(--warn); border-color: var(--warn); }
+.nf-tag.rel { color: var(--accent); border-color: var(--accent); }
+input, textarea, select { width: 100%; font: 14px var(--mono); color: var(--ink); background: var(--paper);
+  border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px; }
+textarea { min-height: 70px; resize: vertical; }
+.nf-block { border: 1px dashed var(--rule); border-radius: 6px; padding: 8px 12px; margin: 8px 0; }
+.nf-block-h { display: flex; justify-content: space-between; align-items: center; font: 12px var(--mono);
+  color: var(--ink3); }
+.nf-block .nf-col { margin: 6px 0; }
+.nf-block .nf-col span { font-size: 13px; color: var(--ink2); }
+.nf-ctx { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 14px; }
+.nf-ctx dt { color: var(--ink3); }
+.nf-ctx dd { margin: 0; font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
+table.nf-fx { border-collapse: collapse; width: 100%; font-size: 13px; }
+table.nf-fx td, table.nf-fx th { border-bottom: 1px solid var(--rule); padding: 4px 6px; text-align: left;
+  vertical-align: top; overflow-wrap: anywhere; }
+.nf-changes li { margin: 3px 0; }
+.nf-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 640px) { .nf-grid2 { grid-template-columns: 1fr; } .nf-ctx { grid-template-columns: 1fr; } }
+@media print { .nf-bar { display: none; } }
+</style>
+</head>
+<body>
+<header class="nf-head">
+<p class="nf-kicker">VLEO design tool · node form</p>
+<h1>A new node</h1>
+<p class="nf-id">a request for a node the design does not have yet — where it goes, what it asks, and what it reads</p>
+<section class="nf-intro">
+<p><b>This is a form for one node of the design, and it is the whole of it</b> — it needs no
+connection and nothing installed. Change what should change, say who you are, and save a filled
+copy. Send the saved file to the developer team: they check it, apply it to the node, and the next
+release of the tool carries your change, where you can run it with your own inputs.</p>
+<ol>
+<li>Fill in what you know. Each question says <i>why</i> it is asked; a question you cannot
+answer, leave as it is.</li>
+<li>Say who filled it, and whether an assistant helped. If one helped with the <b>relation</b>
+itself — the equation, its steps or its derivation — say so: those are then derived by a developer
+rather than taken from the form.</li>
+<li>Known-good values — an answer you know at given inputs, and where it comes from — go under
+<i>known values</i>. They are recorded by a person, with their source, and never guessed.</li>
+<li>Press <b>save a filled copy</b> and send that file. You can reopen it and carry on.</li>
+</ol>
+<p class="nf-muted">To fill it with an assistant, give it this file and ask it to edit only the
+block marked <code>vleo-node-form</code> near the end: plain TOML, one line per answer.</p>
+</section>
+</header>
+<noscript><p class="nf-warn">This page fills itself in with JavaScript. Without it, open this file in a text editor and edit the block marked <code>vleo-node-form</code> near the end — it is plain TOML, and every question is asked in the comments above it.</p></noscript>
+<main id="nf"></main>
+<script type="application/json" id="vleo-node-schema">
+{
+  "node": "",
+  "label": "",
+  "kind": "",
+  "subsystem": "",
+  "owner": "",
+  "state": "",
+  "parent": "",
+  "format": "vleo-node-form/1",
+  "new": true,
+  "reads": [],
+  "feeds": [],
+  "rows": [
+    ["aero_accommodation", "Energy accommodation coefficient", "Ratio", "One"],
+    ["aero_ao_fluence", "Atomic oxygen fluence", "Ratio", "One"],
+    ["aero_appendage_area", "Appendage frontal area", "Area", "SquareMetre"],
+    ["aero_ballistic_coefficient", "Ballistic coefficient", "Ratio", "One"],
+    ["aero_body_diameter", "Body diameter", "Length", "Metre"],
+    ["aero_body_length", "Body length", "Length", "Metre"],
+    ["aero_cp_cm_offset", "Centre of pressure to centre of mass offset", "Length", "Metre"],
+    ["aero_drag_acceleration", "Drag deceleration", "Acceleration", "MetrePerSecond2"],
+    ["aero_drag_coefficient", "Drag coefficient", "Ratio", "One"],
+    ["aero_drag_force", "Drag force", "Force", "Millinewton"],
+    ["aero_dynamic_pressure", "Dynamic pressure", "Pressure", "Pascal"],
+    ["aero_frontal_area", "Total frontal area", "Area", "SquareMetre"],
+    ["aero_speed_ratio", "Molecular speed ratio", "Ratio", "One"],
+    ["aero_torque", "Aerodynamic disturbance torque", "Torque", "NewtonMetre"],
+    ["com_antenna_diameter", "Spacecraft antenna diameter", "Length", "Metre"],
+    ["com_antenna_efficiency", "Antenna aperture efficiency", "Ratio", "One"],
+    ["com_antenna_gain", "Spacecraft antenna gain", "Ratio", "Decibel"],
+    ["com_atmospheric_loss", "Atmospheric and polarisation loss", "Ratio", "One"],
+    ["com_cn0", "Carrier to noise density ratio", "Ratio", "Decibel"],
+    ["com_contact_time", "Maximum contact time per pass", "Time", "Minute"],
+    ["com_daily_volume", "Daily downlink capacity", "DataVolume", "Gigabit"],
+    ["com_data_rate", "Achievable downlink data rate", "DataRate", "MegabitPerSecond"],
+    ["com_doppler", "Doppler shift at closest approach", "Frequency", "Megahertz"],
+    ["com_ebn0", "Achieved energy per bit over noise density", "Ratio", "Decibel"],
+    ["com_eirp", "Effective isotropic radiated power", "Ratio", "Decibel"],
+    ["com_frequency", "Downlink carrier frequency", "Frequency", "Gigahertz"],
+    ["com_g_over_t", "Ground station figure of merit", "Ratio", "Decibel"],
+    ["com_gs_antenna_diameter", "Ground station antenna diameter", "Length", "Metre"],
+    ["com_gs_gain", "Ground station antenna gain", "Ratio", "Decibel"],
+    ["com_gs_noise_temperature", "Ground station antenna noise temperature", "Temperature", "Kelvin"],
+    ["com_implementation_loss", "Implementation loss", "Ratio", "One"],
+    ["com_line_loss", "Transmit line loss", "Ratio", "One"],
+    ["com_link_margin", "Link margin", "Ratio", "Decibel"],
+    ["com_link_margin_required", "Required link margin", "Ratio", "One"],
+    ["com_pass_volume", "Data volume per pass", "DataVolume", "Gigabit"],
+    ["com_passes_per_day", "Usable passes per day", "Ratio", "One"],
+    ["com_path_loss", "Free space path loss", "Ratio", "Decibel"],
+    ["com_required_ebn0", "Required energy per bit over noise density", "Ratio", "One"],
+    ["com_system_noise_temperature", "System noise temperature", "Temperature", "Kelvin"],
+    ["com_tx_power", "Transmitter radio-frequency output power", "Power", "Watt"],
+    ["cost_annual_operations", "Annual operations cost", "Money", "MillionUsDollar"],
+    ["cost_bus_recurring", "Bus recurring cost, first unit", "Money", "MillionUsDollar"],
+    ["cost_inflation", "Annual inflation rate", "Ratio", "One"],
+    ["cost_launch_per_satellite", "Launch cost per satellite", "Money", "MillionUsDollar"],
+    ["cost_learning_slope", "Production learning curve slope", "Ratio", "One"],
+    ["cost_non_recurring", "Non-recurring engineering cost", "Money", "MillionUsDollar"],
+    ["cost_payload_recurring", "Payload recurring cost, first unit", "Money", "MillionUsDollar"],
+    ["cost_per_year", "Cost per operational year", "Money", "MillionUsDollar"],
+    ["cost_production", "Production run cost", "Money", "MillionUsDollar"],
+    ["cost_programme", "Total programme cost", "Money", "MillionUsDollar"],
+    ["cost_replacement_avoided", "Replacement cost avoided", "Money", "MillionUsDollar"],
+    ["env_atomic_oxygen_density", "Atomic oxygen number density", "NumberDensity", "PerCubicMetre"],
+    ["env_chamber_temperature", "Intake chamber gas temperature", "Temperature", "Kelvin"],
+    ["env_density_uncertainty", "Density model uncertainty", "Ratio", "One"],
+    ["env_exospheric_temperature", "Exospheric temperature", "Temperature", "Kelvin"],
+    ["env_f107", "Solar radio flux F10.7, daily", "Ratio", "One"],
+    ["env_f107a", "Solar radio flux F10.7, 81-day mean", "Ratio", "One"],
+    ["env_knudsen", "Knudsen number", "Ratio", "One"],
+    ["env_kp", "Planetary geomagnetic index Kp", "Ratio", "One"],
+    ["env_local_temperature", "Local kinetic temperature", "Temperature", "Kelvin"],
+    ["env_magnetic_field", "Geomagnetic flux density", "MagneticFluxDensity", "Tesla"],
+    ["env_mass_density", "Atmospheric mass density", "MassDensity", "KgPerCubicMetre"],
+    ["env_mean_free_path", "Mean free path", "Length", "Metre"],
+    ["env_mean_molar_mass", "Mean molar mass of the local gas", "MolarMass", "KgPerMol"],
+    ["env_number_density", "Total number density", "NumberDensity", "PerCubicMetre"],
+    ["env_scale_height", "Density scale height", "Length", "Kilometre"],
+    ["env_wall_temperature", "Spacecraft surface temperature", "Temperature", "Kelvin"],
+    ["gnc_alignment_error", "Payload to sensor alignment error", "Angle", "Arcsecond"],
+    ["gnc_along_track_error", "Along-track prediction error after one day", "Length", "Metre"],
+    ["gnc_control_error", "Attitude control error", "Angle", "Arcsecond"],
+    ["gnc_dump_time", "Momentum dump interval", "Time", "Minute"],
+    ["gnc_gdop", "Geometric dilution of precision", "Ratio", "One"],
+    ["gnc_gravity_gradient_torque", "Gravity gradient torque", "Torque", "NewtonMetre"],
+    ["gnc_ground_pointing_error", "Ground pointing error", "Length", "Metre"],
+    ["gnc_inertia_max", "Largest principal moment of inertia", "Ratio", "One"],
+    ["gnc_inertia_min", "Smallest principal moment of inertia", "Ratio", "One"],
+    ["gnc_magnetic_latitude", "Magnetic latitude", "Angle", "Degree"],
+    ["gnc_magnetic_torque", "Residual dipole torque", "Torque", "NewtonMetre"],
+    ["gnc_magnetorquer_dipole", "Magnetorquer dipole required", "DipoleMoment", "AmpereSquareMetre"],
+    ["gnc_momentum_storage", "Momentum storage required", "AngularMomentum", "NewtonMetreSecond"],
+    ["gnc_nav_position_error", "Navigation position error", "Length", "Metre"],
+    ["gnc_pointing_error", "Pointing error, three sigma", "Angle", "Arcsecond"],
+    ["gnc_residual_dipole", "Residual magnetic dipole", "DipoleMoment", "AmpereSquareMetre"],
+    ["gnc_sensor_noise", "Attitude sensor noise", "Angle", "Arcsecond"],
+    ["gnc_solar_torque", "Solar radiation pressure torque", "Torque", "NewtonMetre"],
+    ["gnc_thermal_distortion", "Thermal distortion error", "Angle", "Arcsecond"],
+    ["gnc_total_disturbance", "Total disturbance torque", "Torque", "NewtonMetre"],
+    ["gnc_user_range_error", "GNSS user range error", "Length", "Metre"],
+    ["kpi_availability", "Service availability — closure", "Ratio", "One"],
+    ["kpi_availability_required", "Service availability — required", "Ratio", "One"],
+    ["kpi_cost_per_year", "Cost per operational year — closure", "Ratio", "One"],
+    ["kpi_cost_per_year_required", "Cost per operational year — required", "Money", "MillionUsDollar"],
+    ["kpi_data_volume", "Daily downlink volume — closure", "Ratio", "One"],
+    ["kpi_data_volume_required", "Daily downlink volume — required", "DataVolume", "Gigabit"],
+    ["kpi_geolocation", "Emitter geolocation accuracy — closure", "Ratio", "One"],
+    ["kpi_geolocation_required", "Emitter geolocation accuracy — required", "Length", "Metre"],
+    ["kpi_gsd", "Ground sample distance — closure", "Ratio", "One"],
+    ["kpi_gsd_required", "Ground sample distance — required", "Length", "Metre"],
+    ["kpi_latency", "End to end latency — closure", "Ratio", "One"],
+    ["kpi_latency_required", "End to end latency — required", "Time", "Minute"],
+    ["kpi_mass_margin", "Mass margin — closure", "Ratio", "One"],
+    ["kpi_mass_margin_required", "Mass margin — required", "Ratio", "One"],
+    ["kpi_power_margin", "Power margin — closure", "Ratio", "One"],
+    ["kpi_power_margin_required", "Power margin — required", "Ratio", "One"],
+    ["kpi_revisit", "Mean revisit time — closure", "Ratio", "One"],
+    ["kpi_revisit_required", "Mean revisit time — required", "Time", "Hour"],
+    ["kpi_service_lifetime", "Service lifetime — closure", "Ratio", "One"],
+    ["kpi_service_lifetime_required", "Service lifetime — required", "Time", "Year"],
+    ["kpi_thermal_margin", "Thermal margin — closure", "Ratio", "One"],
+    ["kpi_thermal_margin_required", "Thermal margin — required", "Temperature", "Kelvin"],
+    ["kpi_thrust_margin", "Thrust to drag closure — closure", "Ratio", "One"],
+    ["kpi_thrust_margin_required", "Thrust to drag closure — required", "Ratio", "One"],
+    ["l3_acs_ach_01", "Achieved — Attitude deadband", "", ""],
+    ["l3_acs_ach_02", "Achieved — Slew rate capability", "", ""],
+    ["l3_acs_ach_03", "Achieved — Magnetic dipole authority", "", ""],
+    ["l3_acs_ach_04", "Achieved — Control bandwidth", "", ""],
+    ["l3_acs_ach_05", "Achieved — Settling time", "", ""],
+    ["l3_acs_ach_06", "Achieved — Control torque authority", "", ""],
+    ["l3_acs_ach_07", "Achieved — Momentum storage capacity", "", ""],
+    ["l3_acs_ach_08", "Achieved — Momentum dumping frequency", "", ""],
+    ["l3_acs_ach_09", "Achieved — Aerodynamic trim angle", "", ""],
+    ["l3_acs_interface", "Attitude control sizing — subsystem interface", "", ""],
+    ["l3_acs_req_01", "Required — Attitude deadband", "", ""],
+    ["l3_acs_req_02", "Required — Slew rate capability", "", ""],
+    ["l3_acs_req_03", "Required — Magnetic dipole authority", "", ""],
+    ["l3_acs_req_04", "Required — Control bandwidth", "", ""],
+    ["l3_acs_req_05", "Required — Settling time", "", ""],
+    ["l3_acs_req_06", "Required — Control torque authority", "", ""],
+    ["l3_acs_req_07", "Required — Momentum storage capacity", "", ""],
+    ["l3_acs_req_08", "Required — Momentum dumping frequency", "", ""],
+    ["l3_acs_req_09", "Required — Aerodynamic trim angle", "", ""],
+    ["l3_atthw_ach_01", "Achieved — Number of reaction wheels", "", ""],
+    ["l3_atthw_ach_02", "Achieved — Wheel speed limit", "", ""],
+    ["l3_atthw_ach_03", "Achieved — Star tracker accuracy", "", ""],
+    ["l3_atthw_ach_04", "Achieved — Gyro drift", "", ""],
+    ["l3_atthw_ach_05", "Achieved — Earth magnetic field", "", ""],
+    ["l3_atthw_ach_06", "Achieved — Aerodynamic torque", "", ""],
+    ["l3_atthw_ach_07", "Achieved — Gravity gradient torque", "", ""],
+    ["l3_atthw_ach_08", "Achieved — Solar radiation torque", "", ""],
+    ["l3_atthw_ach_09", "Achieved — First mode frequency", "", ""],
+    ["l3_atthw_interface", "Attitude hardware — subsystem interface", "", ""],
+    ["l3_atthw_n_01", "Attitude hardware · internal — to be named (1)", "", ""],
+    ["l3_atthw_n_02", "Attitude hardware · internal — to be named (2)", "", ""],
+    ["l3_atthw_n_03", "Attitude hardware · internal — to be named (3)", "", ""],
+    ["l3_atthw_n_04", "Attitude hardware · internal — to be named (4)", "", ""],
+    ["l3_atthw_n_05", "Attitude hardware · internal — to be named (5)", "", ""],
+    ["l3_atthw_n_06", "Attitude hardware · internal — to be named (6)", "", ""],
+    ["l3_atthw_n_07", "Attitude hardware · internal — to be named (7)", "", ""],
+    ["l3_atthw_n_08", "Attitude hardware · internal — to be named (8)", "", ""],
+    ["l3_atthw_n_09", "Attitude hardware · internal — to be named (9)", "", ""],
+    ["l3_atthw_n_10", "Attitude hardware · internal — to be named (10)", "", ""],
+    ["l3_atthw_n_11", "Attitude hardware · internal — to be named (11)", "", ""],
+    ["l3_atthw_n_12", "Attitude hardware · internal — to be named (12)", "", ""],
+    ["l3_atthw_n_13", "Attitude hardware · internal — to be named (13)", "", ""],
+    ["l3_atthw_n_14", "Attitude hardware · internal — to be named (14)", "", ""],
+    ["l3_atthw_n_15", "Attitude hardware · internal — to be named (15)", "", ""],
+    ["l3_atthw_n_16", "Attitude hardware · internal — to be named (16)", "", ""],
+    ["l3_atthw_n_17", "Attitude hardware · internal — to be named (17)", "", ""],
+    ["l3_atthw_n_18", "Attitude hardware · internal — to be named (18)", "", ""],
+    ["l3_atthw_n_19", "Attitude hardware · internal — to be named (19)", "", ""],
+    ["l3_atthw_n_20", "Attitude hardware · internal — to be named (20)", "", ""],
+    ["l3_atthw_n_21", "Attitude hardware · internal — to be named (21)", "", ""],
+    ["l3_atthw_n_22", "Attitude hardware · internal — to be named (22)", "", ""],
+    ["l3_atthw_n_23", "Attitude hardware · internal — to be named (23)", "", ""],
+    ["l3_atthw_req_01", "Required — Number of reaction wheels", "", ""],
+    ["l3_atthw_req_02", "Required — Wheel speed limit", "", ""],
+    ["l3_atthw_req_03", "Required — Star tracker accuracy", "", ""],
+    ["l3_atthw_req_04", "Required — Gyro drift", "", ""],
+    ["l3_atthw_req_05", "Required — Earth magnetic field", "", ""],
+    ["l3_atthw_req_06", "Required — Aerodynamic torque", "", ""],
+    ["l3_atthw_req_07", "Required — Gravity gradient torque", "", ""],
+    ["l3_atthw_req_08", "Required — Solar radiation torque", "", ""],
+    ["l3_atthw_req_09", "Required — First mode frequency", "", ""],
+    ["l3_fsw_ach_01", "Achieved — Processor throughput", "", ""],
+    ["l3_fsw_ach_02", "Achieved — Memory size", "", ""],
+    ["l3_fsw_ach_03", "Achieved — Clock distribution accuracy", "", ""],
+    ["l3_fsw_interface", "Flight software — subsystem interface", "", ""],
+    ["l3_fsw_n_01", "Flight software · internal — to be named (1)", "", ""],
+    ["l3_fsw_n_02", "Flight software · internal — to be named (2)", "", ""],
+    ["l3_fsw_n_03", "Flight software · internal — to be named (3)", "", ""],
+    ["l3_fsw_n_04", "Flight software · internal — to be named (4)", "", ""],
+    ["l3_fsw_n_05", "Flight software · internal — to be named (5)", "", ""],
+    ["l3_fsw_n_06", "Flight software · internal — to be named (6)", "", ""],
+    ["l3_fsw_n_07", "Flight software · internal — to be named (7)", "", ""],
+    ["l3_fsw_n_08", "Flight software · internal — to be named (8)", "", ""],
+    ["l3_fsw_n_09", "Flight software · internal — to be named (9)", "", ""],
+    ["l3_fsw_n_10", "Flight software · internal — to be named (10)", "", ""],
+    ["l3_fsw_n_11", "Flight software · internal — to be named (11)", "", ""],
+    ["l3_fsw_n_12", "Flight software · internal — to be named (12)", "", ""],
+    ["l3_fsw_n_13", "Flight software · internal — to be named (13)", "", ""],
+    ["l3_fsw_n_14", "Flight software · internal — to be named (14)", "", ""],
+    ["l3_fsw_n_15", "Flight software · internal — to be named (15)", "", ""],
+    ["l3_fsw_n_16", "Flight software · internal — to be named (16)", "", ""],
+    ["l3_fsw_n_17", "Flight software · internal — to be named (17)", "", ""],
+    ["l3_fsw_n_18", "Flight software · internal — to be named (18)", "", ""],
+    ["l3_fsw_n_19", "Flight software · internal — to be named (19)", "", ""],
+    ["l3_fsw_n_20", "Flight software · internal — to be named (20)", "", ""],
+    ["l3_fsw_n_21", "Flight software · internal — to be named (21)", "", ""],
+    ["l3_fsw_n_22", "Flight software · internal — to be named (22)", "", ""],
+    ["l3_fsw_n_23", "Flight software · internal — to be named (23)", "", ""],
+    ["l3_fsw_n_24", "Flight software · internal — to be named (24)", "", ""],
+    ["l3_fsw_n_25", "Flight software · internal — to be named (25)", "", ""],
+    ["l3_fsw_n_26", "Flight software · internal — to be named (26)", "", ""],
+    ["l3_fsw_n_27", "Flight software · internal — to be named (27)", "", ""],
+    ["l3_fsw_n_28", "Flight software · internal — to be named (28)", "", ""],
+    ["l3_fsw_n_29", "Flight software · internal — to be named (29)", "", ""],
+    ["l3_fsw_n_30", "Flight software · internal — to be named (30)", "", ""],
+    ["l3_fsw_n_31", "Flight software · internal — to be named (31)", "", ""],
+    ["l3_fsw_n_32", "Flight software · internal — to be named (32)", "", ""],
+    ["l3_fsw_n_33", "Flight software · internal — to be named (33)", "", ""],
+    ["l3_fsw_n_34", "Flight software · internal — to be named (34)", "", ""],
+    ["l3_fsw_n_35", "Flight software · internal — to be named (35)", "", ""],
+    ["l3_fsw_n_36", "Flight software · internal — to be named (36)", "", ""],
+    ["l3_fsw_n_37", "Flight software · internal — to be named (37)", "", ""],
+    ["l3_fsw_n_38", "Flight software · internal — to be named (38)", "", ""],
+    ["l3_fsw_n_39", "Flight software · internal — to be named (39)", "", ""],
+    ["l3_fsw_n_40", "Flight software · internal — to be named (40)", "", ""],
+    ["l3_fsw_n_41", "Flight software · internal — to be named (41)", "", ""],
+    ["l3_fsw_n_42", "Flight software · internal — to be named (42)", "", ""],
+    ["l3_fsw_n_43", "Flight software · internal — to be named (43)", "", ""],
+    ["l3_fsw_n_44", "Flight software · internal — to be named (44)", "", ""],
+    ["l3_fsw_n_45", "Flight software · internal — to be named (45)", "", ""],
+    ["l3_fsw_req_01", "Required — Processor throughput", "", ""],
+    ["l3_fsw_req_02", "Required — Memory size", "", ""],
+    ["l3_fsw_req_03", "Required — Clock distribution accuracy", "", ""],
+    ["l3_massaero_ach_01", "Achieved — Spacecraft dry mass", "", ""],
+    ["l3_massaero_ach_02", "Achieved — Body shape", "", ""],
+    ["l3_massaero_ach_03", "Achieved — Panel layout", "", ""],
+    ["l3_massaero_ach_04", "Achieved — Panel stiffness", "", ""],
+    ["l3_massaero_ach_05", "Achieved — Accommodation coefficient", "", ""],
+    ["l3_massaero_ach_06", "Achieved — Erosion yield", "", ""],
+    ["l3_massaero_ach_07", "Achieved — Launch load factor", "", ""],
+    ["l3_massaero_ach_08", "Achieved — Mass margin", "", ""],
+    ["l3_massaero_ach_09", "Achieved — Frontal area", "", ""],
+    ["l3_massaero_ach_10", "Achieved — Drag coefficient", "", ""],
+    ["l3_massaero_ach_11", "Achieved — Ballistic coefficient", "", ""],
+    ["l3_massaero_ach_12", "Achieved — Relative velocity", "", ""],
+    ["l3_massaero_ach_13", "Achieved — Drag acceleration", "", ""],
+    ["l3_massaero_ach_14", "Achieved — Centre of pressure offset", "", ""],
+    ["l3_massaero_ach_15", "Achieved — Launch mass", "", ""],
+    ["l3_massaero_ach_16", "Achieved — Centre of mass", "", ""],
+    ["l3_massaero_ach_17", "Achieved — Moments of inertia", "", ""],
+    ["l3_massaero_ach_18", "Achieved — Structural mass fraction", "", ""],
+    ["l3_massaero_ach_19", "Achieved — Erosion depth", "", ""],
+    ["l3_massaero_interface", "Mass and aero — subsystem interface", "", ""],
+    ["l3_massaero_req_01", "Required — Spacecraft dry mass", "", ""],
+    ["l3_massaero_req_02", "Required — Body shape", "", ""],
+    ["l3_massaero_req_03", "Required — Panel layout", "", ""],
+    ["l3_massaero_req_04", "Required — Panel stiffness", "", ""],
+    ["l3_massaero_req_05", "Required — Accommodation coefficient", "", ""],
+    ["l3_massaero_req_06", "Required — Erosion yield", "", ""],
+    ["l3_massaero_req_07", "Required — Launch load factor", "", ""],
+    ["l3_massaero_req_08", "Required — Mass margin", "", ""],
+    ["l3_massaero_req_09", "Required — Frontal area", "", ""],
+    ["l3_massaero_req_10", "Required — Drag coefficient", "", ""],
+    ["l3_massaero_req_11", "Required — Ballistic coefficient", "", ""],
+    ["l3_massaero_req_12", "Required — Relative velocity", "", ""],
+    ["l3_massaero_req_13", "Required — Drag acceleration", "", ""],
+    ["l3_massaero_req_14", "Required — Centre of pressure offset", "", ""],
+    ["l3_massaero_req_15", "Required — Launch mass", "", ""],
+    ["l3_massaero_req_16", "Required — Centre of mass", "", ""],
+    ["l3_massaero_req_17", "Required — Moments of inertia", "", ""],
+    ["l3_massaero_req_18", "Required — Structural mass fraction", "", ""],
+    ["l3_massaero_req_19", "Required — Erosion depth", "", ""],
+    ["l3_multipay_ach_01", "Achieved — Number of payloads", "", ""],
+    ["l3_multipay_ach_02", "Achieved — Boresight separation", "", ""],
+    ["l3_multipay_ach_03", "Achieved — Payload mass fraction", "", ""],
+    ["l3_multipay_ach_04", "Achieved — Accommodation area", "", ""],
+    ["l3_multipay_ach_05", "Achieved — Shared power allocation", "", ""],
+    ["l3_multipay_ach_06", "Achieved — Shared downlink allocation", "", ""],
+    ["l3_multipay_ach_07", "Achieved — Thermal dissipation share", "", ""],
+    ["l3_multipay_ach_08", "Achieved — Simultaneity window", "", ""],
+    ["l3_multipay_ach_09", "Achieved — Operating conflict rate", "", ""],
+    ["l3_multipay_interface", "Multi-payload — subsystem interface", "", ""],
+    ["l3_multipay_n_01", "Multi-payload · internal — to be named (1)", "", ""],
+    ["l3_multipay_n_02", "Multi-payload · internal — to be named (2)", "", ""],
+    ["l3_multipay_n_03", "Multi-payload · internal — to be named (3)", "", ""],
+    ["l3_multipay_n_04", "Multi-payload · internal — to be named (4)", "", ""],
+    ["l3_multipay_n_05", "Multi-payload · internal — to be named (5)", "", ""],
+    ["l3_multipay_n_06", "Multi-payload · internal — to be named (6)", "", ""],
+    ["l3_multipay_n_07", "Multi-payload · internal — to be named (7)", "", ""],
+    ["l3_multipay_n_08", "Multi-payload · internal — to be named (8)", "", ""],
+    ["l3_multipay_n_09", "Multi-payload · internal — to be named (9)", "", ""],
+    ["l3_multipay_n_10", "Multi-payload · internal — to be named (10)", "", ""],
+    ["l3_multipay_n_11", "Multi-payload · internal — to be named (11)", "", ""],
+    ["l3_multipay_n_12", "Multi-payload · internal — to be named (12)", "", ""],
+    ["l3_multipay_n_13", "Multi-payload · internal — to be named (13)", "", ""],
+    ["l3_multipay_n_14", "Multi-payload · internal — to be named (14)", "", ""],
+    ["l3_multipay_n_15", "Multi-payload · internal — to be named (15)", "", ""],
+    ["l3_multipay_n_16", "Multi-payload · internal — to be named (16)", "", ""],
+    ["l3_multipay_n_17", "Multi-payload · internal — to be named (17)", "", ""],
+    ["l3_multipay_n_18", "Multi-payload · internal — to be named (18)", "", ""],
+    ["l3_multipay_n_19", "Multi-payload · internal — to be named (19)", "", ""],
+    ["l3_multipay_req_01", "Required — Number of payloads", "", ""],
+    ["l3_multipay_req_02", "Required — Boresight separation", "", ""],
+    ["l3_multipay_req_03", "Required — Payload mass fraction", "", ""],
+    ["l3_multipay_req_04", "Required — Accommodation area", "", ""],
+    ["l3_multipay_req_05", "Required — Shared power allocation", "", ""],
+    ["l3_multipay_req_06", "Required — Shared downlink allocation", "", ""],
+    ["l3_multipay_req_07", "Required — Thermal dissipation share", "", ""],
+    ["l3_multipay_req_08", "Required — Simultaneity window", "", ""],
+    ["l3_multipay_req_09", "Required — Operating conflict rate", "", ""],
+    ["l3_navod_ach_01", "Achieved — Orbit determination accuracy", "", ""],
+    ["l3_navod_ach_02", "Achieved — Navigation filter rate", "", ""],
+    ["l3_navod_ach_03", "Achieved — Phasing tolerance", "", ""],
+    ["l3_navod_ach_04", "Achieved — Along-track control tolerance", "", ""],
+    ["l3_navod_ach_05", "Achieved — Position error growth", "", ""],
+    ["l3_navod_ach_06", "Achieved — Ephemeris prediction accuracy", "", ""],
+    ["l3_navod_ach_07", "Achieved — Prediction horizon", "", ""],
+    ["l3_navod_ach_08", "Achieved — Ephemeris upload cadence", "", ""],
+    ["l3_navod_ach_09", "Achieved — Orbit determination cycle", "", ""],
+    ["l3_navod_interface", "Navigation & OD — subsystem interface", "", ""],
+    ["l3_navod_n_01", "Navigation & OD · internal — to be named (1)", "", ""],
+    ["l3_navod_n_02", "Navigation & OD · internal — to be named (2)", "", ""],
+    ["l3_navod_n_03", "Navigation & OD · internal — to be named (3)", "", ""],
+    ["l3_navod_n_04", "Navigation & OD · internal — to be named (4)", "", ""],
+    ["l3_navod_n_05", "Navigation & OD · internal — to be named (5)", "", ""],
+    ["l3_navod_n_06", "Navigation & OD · internal — to be named (6)", "", ""],
+    ["l3_navod_n_07", "Navigation & OD · internal — to be named (7)", "", ""],
+    ["l3_navod_n_08", "Navigation & OD · internal — to be named (8)", "", ""],
+    ["l3_navod_n_09", "Navigation & OD · internal — to be named (9)", "", ""],
+    ["l3_navod_n_10", "Navigation & OD · internal — to be named (10)", "", ""],
+    ["l3_navod_n_11", "Navigation & OD · internal — to be named (11)", "", ""],
+    ["l3_navod_n_12", "Navigation & OD · internal — to be named (12)", "", ""],
+    ["l3_navod_n_13", "Navigation & OD · internal — to be named (13)", "", ""],
+    ["l3_navod_n_14", "Navigation & OD · internal — to be named (14)", "", ""],
+    ["l3_navod_n_15", "Navigation & OD · internal — to be named (15)", "", ""],
+    ["l3_navod_n_16", "Navigation & OD · internal — to be named (16)", "", ""],
+    ["l3_navod_n_17", "Navigation & OD · internal — to be named (17)", "", ""],
+    ["l3_navod_n_18", "Navigation & OD · internal — to be named (18)", "", ""],
+    ["l3_navod_n_19", "Navigation & OD · internal — to be named (19)", "", ""],
+    ["l3_navod_req_01", "Required — Orbit determination accuracy", "", ""],
+    ["l3_navod_req_02", "Required — Navigation filter rate", "", ""],
+    ["l3_navod_req_03", "Required — Phasing tolerance", "", ""],
+    ["l3_navod_req_04", "Required — Along-track control tolerance", "", ""],
+    ["l3_navod_req_05", "Required — Position error growth", "", ""],
+    ["l3_navod_req_06", "Required — Ephemeris prediction accuracy", "", ""],
+    ["l3_navod_req_07", "Required — Prediction horizon", "", ""],
+    ["l3_navod_req_08", "Required — Ephemeris upload cadence", "", ""],
+    ["l3_navod_req_09", "Required — Orbit determination cycle", "", ""],
+    ["l3_navsense_ach_01", "Achieved — GNSS solution", "", ""],
+    ["l3_navsense_ach_02", "Achieved — Accelerometer class", "", ""],
+    ["l3_navsense_ach_03", "Achieved — Observed acceleration", "", ""],
+    ["l3_navsense_ach_04", "Achieved — Density estimate", "", ""],
+    ["l3_navsense_ach_05", "Achieved — Scale factor", "", ""],
+    ["l3_navsense_ach_06", "Achieved — Unmodelled acceleration", "", ""],
+    ["l3_navsense_interface", "Navigation sensing — subsystem interface", "", ""],
+    ["l3_navsense_n_01", "Navigation sensing · internal — to be named (1)", "", ""],
+    ["l3_navsense_n_02", "Navigation sensing · internal — to be named (2)", "", ""],
+    ["l3_navsense_n_03", "Navigation sensing · internal — to be named (3)", "", ""],
+    ["l3_navsense_n_04", "Navigation sensing · internal — to be named (4)", "", ""],
+    ["l3_navsense_n_05", "Navigation sensing · internal — to be named (5)", "", ""],
+    ["l3_navsense_n_06", "Navigation sensing · internal — to be named (6)", "", ""],
+    ["l3_navsense_n_07", "Navigation sensing · internal — to be named (7)", "", ""],
+    ["l3_navsense_n_08", "Navigation sensing · internal — to be named (8)", "", ""],
+    ["l3_navsense_n_09", "Navigation sensing · internal — to be named (9)", "", ""],
+    ["l3_navsense_n_10", "Navigation sensing · internal — to be named (10)", "", ""],
+    ["l3_navsense_n_11", "Navigation sensing · internal — to be named (11)", "", ""],
+    ["l3_navsense_n_12", "Navigation sensing · internal — to be named (12)", "", ""],
+    ["l3_navsense_n_13", "Navigation sensing · internal — to be named (13)", "", ""],
+    ["l3_navsense_n_14", "Navigation sensing · internal — to be named (14)", "", ""],
+    ["l3_navsense_n_15", "Navigation sensing · internal — to be named (15)", "", ""],
+    ["l3_navsense_n_16", "Navigation sensing · internal — to be named (16)", "", ""],
+    ["l3_navsense_n_17", "Navigation sensing · internal — to be named (17)", "", ""],
+    ["l3_navsense_n_18", "Navigation sensing · internal — to be named (18)", "", ""],
+    ["l3_navsense_n_19", "Navigation sensing · internal — to be named (19)", "", ""],
+    ["l3_navsense_req_01", "Required — GNSS solution", "", ""],
+    ["l3_navsense_req_02", "Required — Accelerometer class", "", ""],
+    ["l3_navsense_req_03", "Required — Observed acceleration", "", ""],
+    ["l3_navsense_req_04", "Required — Density estimate", "", ""],
+    ["l3_navsense_req_05", "Required — Scale factor", "", ""],
+    ["l3_navsense_req_06", "Required — Unmodelled acceleration", "", ""],
+    ["l3_orbmaint_ach_01", "Achieved — Thrust modulation resolution", "", ""],
+    ["l3_orbmaint_ach_02", "Achieved — Propellant reserve", "", ""],
+    ["l3_orbmaint_ach_03", "Achieved — Collision avoidance delta-v", "", ""],
+    ["l3_orbmaint_ach_04", "Achieved — Station-keeping box", "", ""],
+    ["l3_orbmaint_ach_05", "Achieved — Station-keeping delta-v", "", ""],
+    ["l3_orbmaint_ach_06", "Achieved — Manoeuvre frequency", "", ""],
+    ["l3_orbmaint_ach_07", "Achieved — Manoeuvre duration", "", ""],
+    ["l3_orbmaint_ach_08", "Achieved — Thrust duty limit", "", ""],
+    ["l3_orbmaint_ach_09", "Achieved — Deorbit delta-v", "", ""],
+    ["l3_orbmaint_ach_10", "Achieved — Abort altitude", "", ""],
+    ["l3_orbmaint_interface", "Orbit maintenance — subsystem interface", "", ""],
+    ["l3_orbmaint_n_01", "Orbit maintenance · internal — to be named (1)", "", ""],
+    ["l3_orbmaint_n_02", "Orbit maintenance · internal — to be named (2)", "", ""],
+    ["l3_orbmaint_n_03", "Orbit maintenance · internal — to be named (3)", "", ""],
+    ["l3_orbmaint_n_04", "Orbit maintenance · internal — to be named (4)", "", ""],
+    ["l3_orbmaint_n_05", "Orbit maintenance · internal — to be named (5)", "", ""],
+    ["l3_orbmaint_n_06", "Orbit maintenance · internal — to be named (6)", "", ""],
+    ["l3_orbmaint_n_07", "Orbit maintenance · internal — to be named (7)", "", ""],
+    ["l3_orbmaint_n_08", "Orbit maintenance · internal — to be named (8)", "", ""],
+    ["l3_orbmaint_n_09", "Orbit maintenance · internal — to be named (9)", "", ""],
+    ["l3_orbmaint_n_10", "Orbit maintenance · internal — to be named (10)", "", ""],
+    ["l3_orbmaint_n_11", "Orbit maintenance · internal — to be named (11)", "", ""],
+    ["l3_orbmaint_n_12", "Orbit maintenance · internal — to be named (12)", "", ""],
+    ["l3_orbmaint_n_13", "Orbit maintenance · internal — to be named (13)", "", ""],
+    ["l3_orbmaint_n_14", "Orbit maintenance · internal — to be named (14)", "", ""],
+    ["l3_orbmaint_n_15", "Orbit maintenance · internal — to be named (15)", "", ""],
+    ["l3_orbmaint_n_16", "Orbit maintenance · internal — to be named (16)", "", ""],
+    ["l3_orbmaint_n_17", "Orbit maintenance · internal — to be named (17)", "", ""],
+    ["l3_orbmaint_n_18", "Orbit maintenance · internal — to be named (18)", "", ""],
+    ["l3_orbmaint_n_19", "Orbit maintenance · internal — to be named (19)", "", ""],
+    ["l3_orbmaint_req_01", "Required — Thrust modulation resolution", "", ""],
+    ["l3_orbmaint_req_02", "Required — Propellant reserve", "", ""],
+    ["l3_orbmaint_req_03", "Required — Collision avoidance delta-v", "", ""],
+    ["l3_orbmaint_req_04", "Required — Station-keeping box", "", ""],
+    ["l3_orbmaint_req_05", "Required — Station-keeping delta-v", "", ""],
+    ["l3_orbmaint_req_06", "Required — Manoeuvre frequency", "", ""],
+    ["l3_orbmaint_req_07", "Required — Manoeuvre duration", "", ""],
+    ["l3_orbmaint_req_08", "Required — Thrust duty limit", "", ""],
+    ["l3_orbmaint_req_09", "Required — Deorbit delta-v", "", ""],
+    ["l3_orbmaint_req_10", "Required — Abort altitude", "", ""],
+    ["l3_payload_ach_01", "Achieved — Payload mass", "", ""],
+    ["l3_payload_ach_02", "Achieved — Peak payload power", "", ""],
+    ["l3_payload_ach_03", "Achieved — Average payload power", "", ""],
+    ["l3_payload_ach_04", "Achieved — Payload data rate", "", ""],
+    ["l3_payload_ach_05", "Achieved — Payload dissipation", "", ""],
+    ["l3_payload_ach_06", "Achieved — Payload envelope", "", ""],
+    ["l3_payload_ach_07", "Achieved — Pointing requirement", "", ""],
+    ["l3_payload_ach_08", "Achieved — Pointing knowledge requirement", "", ""],
+    ["l3_payload_ach_09", "Achieved — Alignment stability", "", ""],
+    ["l3_payload_ach_10", "Achieved — Operating temperature range", "", ""],
+    ["l3_payload_ach_11", "Achieved — Field of view keep-out", "", ""],
+    ["l3_payload_ach_12", "Achieved — Payload duty cycle", "", ""],
+    ["l3_payload_interface", "Payload — subsystem interface", "", ""],
+    ["l3_payload_n_01", "Payload · internal — to be named (1)", "", ""],
+    ["l3_payload_n_02", "Payload · internal — to be named (2)", "", ""],
+    ["l3_payload_n_03", "Payload · internal — to be named (3)", "", ""],
+    ["l3_payload_n_04", "Payload · internal — to be named (4)", "", ""],
+    ["l3_payload_n_05", "Payload · internal — to be named (5)", "", ""],
+    ["l3_payload_n_06", "Payload · internal — to be named (6)", "", ""],
+    ["l3_payload_n_07", "Payload · internal — to be named (7)", "", ""],
+    ["l3_payload_n_08", "Payload · internal — to be named (8)", "", ""],
+    ["l3_payload_n_09", "Payload · internal — to be named (9)", "", ""],
+    ["l3_payload_n_10", "Payload · internal — to be named (10)", "", ""],
+    ["l3_payload_n_11", "Payload · internal — to be named (11)", "", ""],
+    ["l3_payload_n_12", "Payload · internal — to be named (12)", "", ""],
+    ["l3_payload_n_13", "Payload · internal — to be named (13)", "", ""],
+    ["l3_payload_n_14", "Payload · internal — to be named (14)", "", ""],
+    ["l3_payload_n_15", "Payload · internal — to be named (15)", "", ""],
+    ["l3_payload_n_16", "Payload · internal — to be named (16)", "", ""],
+    ["l3_payload_n_17", "Payload · internal — to be named (17)", "", ""],
+    ["l3_payload_req_01", "Required — Payload mass", "", ""],
+    ["l3_payload_req_02", "Required — Peak payload power", "", ""],
+    ["l3_payload_req_03", "Required — Average payload power", "", ""],
+    ["l3_payload_req_04", "Required — Payload data rate", "", ""],
+    ["l3_payload_req_05", "Required — Payload dissipation", "", ""],
+    ["l3_payload_req_06", "Required — Payload envelope", "", ""],
+    ["l3_payload_req_07", "Required — Pointing requirement", "", ""],
+    ["l3_payload_req_08", "Required — Pointing knowledge requirement", "", ""],
+    ["l3_payload_req_09", "Required — Alignment stability", "", ""],
+    ["l3_payload_req_10", "Required — Operating temperature range", "", ""],
+    ["l3_payload_req_11", "Required — Field of view keep-out", "", ""],
+    ["l3_payload_req_12", "Required — Payload duty cycle", "", ""],
+    ["l3_pointing_ach_01", "Achieved — Absolute performance error", "", ""],
+    ["l3_pointing_ach_02", "Achieved — Relative performance error", "", ""],
+    ["l3_pointing_ach_03", "Achieved — Absolute knowledge error", "", ""],
+    ["l3_pointing_ach_04", "Achieved — Absolute measurement error", "", ""],
+    ["l3_pointing_ach_05", "Achieved — Control error contribution", "", ""],
+    ["l3_pointing_ach_06", "Achieved — Disturbance torque budget", "", ""],
+    ["l3_pointing_interface", "Pointing error budget — subsystem interface", "", ""],
+    ["l3_pointing_n_01", "Pointing error budget · internal — to be named (1)", "", ""],
+    ["l3_pointing_n_02", "Pointing error budget · internal — to be named (2)", "", ""],
+    ["l3_pointing_n_03", "Pointing error budget · internal — to be named (3)", "", ""],
+    ["l3_pointing_n_04", "Pointing error budget · internal — to be named (4)", "", ""],
+    ["l3_pointing_n_05", "Pointing error budget · internal — to be named (5)", "", ""],
+    ["l3_pointing_n_06", "Pointing error budget · internal — to be named (6)", "", ""],
+    ["l3_pointing_n_07", "Pointing error budget · internal — to be named (7)", "", ""],
+    ["l3_pointing_n_08", "Pointing error budget · internal — to be named (8)", "", ""],
+    ["l3_pointing_n_09", "Pointing error budget · internal — to be named (9)", "", ""],
+    ["l3_pointing_n_10", "Pointing error budget · internal — to be named (10)", "", ""],
+    ["l3_pointing_n_11", "Pointing error budget · internal — to be named (11)", "", ""],
+    ["l3_pointing_n_12", "Pointing error budget · internal — to be named (12)", "", ""],
+    ["l3_pointing_n_13", "Pointing error budget · internal — to be named (13)", "", ""],
+    ["l3_pointing_n_14", "Pointing error budget · internal — to be named (14)", "", ""],
+    ["l3_pointing_n_15", "Pointing error budget · internal — to be named (15)", "", ""],
+    ["l3_pointing_n_16", "Pointing error budget · internal — to be named (16)", "", ""],
+    ["l3_pointing_n_17", "Pointing error budget · internal — to be named (17)", "", ""],
+    ["l3_pointing_n_18", "Pointing error budget · internal — to be named (18)", "", ""],
+    ["l3_pointing_n_19", "Pointing error budget · internal — to be named (19)", "", ""],
+    ["l3_pointing_req_01", "Required — Absolute performance error", "", ""],
+    ["l3_pointing_req_02", "Required — Relative performance error", "", ""],
+    ["l3_pointing_req_03", "Required — Absolute knowledge error", "", ""],
+    ["l3_pointing_req_04", "Required — Absolute measurement error", "", ""],
+    ["l3_pointing_req_05", "Required — Control error contribution", "", ""],
+    ["l3_pointing_req_06", "Required — Disturbance torque budget", "", ""],
+    ["l3_power_ach_01", "Achieved — Cell efficiency", "", ""],
+    ["l3_power_ach_02", "Achieved — Bus power demand", "", ""],
+    ["l3_power_ach_03", "Achieved — Depth of discharge", "", ""],
+    ["l3_power_ach_04", "Achieved — Bus voltage", "", ""],
+    ["l3_power_ach_05", "Achieved — Array degradation", "", ""],
+    ["l3_power_ach_06", "Achieved — SADA angle range", "", ""],
+    ["l3_power_ach_07", "Achieved — Harness loss", "", ""],
+    ["l3_power_ach_08", "Achieved — Power margin", "", ""],
+    ["l3_power_ach_09", "Achieved — PPU power", "", ""],
+    ["l3_power_ach_10", "Achieved — Electrical power", "", ""],
+    ["l3_power_ach_11", "Achieved — Array area", "", ""],
+    ["l3_power_ach_12", "Achieved — Battery capacity", "", ""],
+    ["l3_power_ach_13", "Achieved — End of life power", "", ""],
+    ["l3_power_interface", "Power — subsystem interface", "", ""],
+    ["l3_power_n_01", "Power · internal — to be named (1)", "", ""],
+    ["l3_power_n_02", "Power · internal — to be named (2)", "", ""],
+    ["l3_power_n_03", "Power · internal — to be named (3)", "", ""],
+    ["l3_power_n_04", "Power · internal — to be named (4)", "", ""],
+    ["l3_power_n_05", "Power · internal — to be named (5)", "", ""],
+    ["l3_power_n_06", "Power · internal — to be named (6)", "", ""],
+    ["l3_power_n_07", "Power · internal — to be named (7)", "", ""],
+    ["l3_power_n_08", "Power · internal — to be named (8)", "", ""],
+    ["l3_power_n_09", "Power · internal — to be named (9)", "", ""],
+    ["l3_power_n_10", "Power · internal — to be named (10)", "", ""],
+    ["l3_power_n_11", "Power · internal — to be named (11)", "", ""],
+    ["l3_power_n_12", "Power · internal — to be named (12)", "", ""],
+    ["l3_power_n_13", "Power · internal — to be named (13)", "", ""],
+    ["l3_power_n_14", "Power · internal — to be named (14)", "", ""],
+    ["l3_power_n_15", "Power · internal — to be named (15)", "", ""],
+    ["l3_power_n_16", "Power · internal — to be named (16)", "", ""],
+    ["l3_power_n_17", "Power · internal — to be named (17)", "", ""],
+    ["l3_power_req_01", "Required — Cell efficiency", "", ""],
+    ["l3_power_req_02", "Required — Bus power demand", "", ""],
+    ["l3_power_req_03", "Required — Depth of discharge", "", ""],
+    ["l3_power_req_04", "Required — Bus voltage", "", ""],
+    ["l3_power_req_05", "Required — Array degradation", "", ""],
+    ["l3_power_req_06", "Required — SADA angle range", "", ""],
+    ["l3_power_req_07", "Required — Harness loss", "", ""],
+    ["l3_power_req_08", "Required — Power margin", "", ""],
+    ["l3_power_req_09", "Required — PPU power", "", ""],
+    ["l3_power_req_10", "Required — Electrical power", "", ""],
+    ["l3_power_req_11", "Required — Array area", "", ""],
+    ["l3_power_req_12", "Required — Battery capacity", "", ""],
+    ["l3_power_req_13", "Required — End of life power", "", ""],
+    ["l3_prop_ach_01", "Achieved — Specific impulse", "", ""],
+    ["l3_prop_ach_02", "Achieved — Thruster duty cycle", "", ""],
+    ["l3_prop_ach_03", "Achieved — Intake capture area", "", ""],
+    ["l3_prop_ach_04", "Achieved — PPU efficiency", "", ""],
+    ["l3_prop_ach_05", "Achieved — Thrust vector alignment", "", ""],
+    ["l3_prop_ach_06", "Achieved — Propellant type", "", ""],
+    ["l3_prop_ach_07", "Achieved — Number of thrusters", "", ""],
+    ["l3_prop_ach_08", "Achieved — Throttle range", "", ""],
+    ["l3_prop_ach_09", "Achieved — Thrust authority", "", ""],
+    ["l3_prop_ach_10", "Achieved — Delta-v budget", "", ""],
+    ["l3_prop_ach_11", "Achieved — Propellant mass", "", ""],
+    ["l3_prop_ach_12", "Achieved — Decay rate", "", ""],
+    ["l3_prop_ach_13", "Achieved — Re-entry time unpowered", "", ""],
+    ["l3_prop_ach_14", "Achieved — Total impulse", "", ""],
+    ["l3_prop_ach_15", "Achieved — Thrust to drag ratio", "", ""],
+    ["l3_prop_ach_16", "Achieved — Minimum impulse bit", "", ""],
+    ["l3_prop_ach_17", "Achieved — Tank volume", "", ""],
+    ["l3_prop_ach_18", "Achieved — Compression ratio", "", ""],
+    ["l3_prop_ach_19", "Achieved — Achievable lifetime", "", ""],
+    ["l3_prop_interface", "Propulsion · ICP plasma thruster — subsystem interface", "", ""],
+    ["l3_prop_n_01", "Propulsion · ICP plasma thruster · internal — to be named (1)", "", ""],
+    ["l3_prop_n_02", "Propulsion · ICP plasma thruster · internal — to be named (2)", "", ""],
+    ["l3_prop_n_03", "Propulsion · ICP plasma thruster · internal — to be named (3)", "", ""],
+    ["l3_prop_n_04", "Propulsion · ICP plasma thruster · internal — to be named (4)", "", ""],
+    ["l3_prop_n_05", "Propulsion · ICP plasma thruster · internal — to be named (5)", "", ""],
+    ["l3_prop_n_06", "Propulsion · ICP plasma thruster · internal — to be named (6)", "", ""],
+    ["l3_prop_n_07", "Propulsion · ICP plasma thruster · internal — to be named (7)", "", ""],
+    ["l3_prop_n_08", "Propulsion · ICP plasma thruster · internal — to be named (8)", "", ""],
+    ["l3_prop_n_09", "Propulsion · ICP plasma thruster · internal — to be named (9)", "", ""],
+    ["l3_prop_n_10", "Propulsion · ICP plasma thruster · internal — to be named (10)", "", ""],
+    ["l3_prop_n_11", "Propulsion · ICP plasma thruster · internal — to be named (11)", "", ""],
+    ["l3_prop_n_12", "Propulsion · ICP plasma thruster · internal — to be named (12)", "", ""],
+    ["l3_prop_n_13", "Propulsion · ICP plasma thruster · internal — to be named (13)", "", ""],
+    ["l3_prop_n_14", "Propulsion · ICP plasma thruster · internal — to be named (14)", "", ""],
+    ["l3_prop_n_15", "Propulsion · ICP plasma thruster · internal — to be named (15)", "", ""],
+    ["l3_prop_n_16", "Propulsion · ICP plasma thruster · internal — to be named (16)", "", ""],
+    ["l3_prop_n_17", "Propulsion · ICP plasma thruster · internal — to be named (17)", "", ""],
+    ["l3_prop_n_18", "Propulsion · ICP plasma thruster · internal — to be named (18)", "", ""],
+    ["l3_prop_n_19", "Propulsion · ICP plasma thruster · internal — to be named (19)", "", ""],
+    ["l3_prop_n_20", "Propulsion · ICP plasma thruster · internal — to be named (20)", "", ""],
+    ["l3_prop_n_21", "Propulsion · ICP plasma thruster · internal — to be named (21)", "", ""],
+    ["l3_prop_n_22", "Propulsion · ICP plasma thruster · internal — to be named (22)", "", ""],
+    ["l3_prop_n_23", "Propulsion · ICP plasma thruster · internal — to be named (23)", "", ""],
+    ["l3_prop_n_24", "Propulsion · ICP plasma thruster · internal — to be named (24)", "", ""],
+    ["l3_prop_n_25", "Propulsion · ICP plasma thruster · internal — to be named (25)", "", ""],
+    ["l3_prop_n_26", "Propulsion · ICP plasma thruster · internal — to be named (26)", "", ""],
+    ["l3_prop_n_27", "Propulsion · ICP plasma thruster · internal — to be named (27)", "", ""],
+    ["l3_prop_n_28", "Propulsion · ICP plasma thruster · internal — to be named (28)", "", ""],
+    ["l3_prop_req_01", "Required — Specific impulse", "", ""],
+    ["l3_prop_req_02", "Required — Thruster duty cycle", "", ""],
+    ["l3_prop_req_03", "Required — Intake capture area", "", ""],
+    ["l3_prop_req_04", "Required — PPU efficiency", "", ""],
+    ["l3_prop_req_05", "Required — Thrust vector alignment", "", ""],
+    ["l3_prop_req_06", "Required — Propellant type", "", ""],
+    ["l3_prop_req_07", "Required — Number of thrusters", "", ""],
+    ["l3_prop_req_08", "Required — Throttle range", "", ""],
+    ["l3_prop_req_09", "Required — Thrust authority", "", ""],
+    ["l3_prop_req_10", "Required — Delta-v budget", "", ""],
+    ["l3_prop_req_11", "Required — Propellant mass", "", ""],
+    ["l3_prop_req_12", "Required — Decay rate", "", ""],
+    ["l3_prop_req_13", "Required — Re-entry time unpowered", "", ""],
+    ["l3_prop_req_14", "Required — Total impulse", "", ""],
+    ["l3_prop_req_15", "Required — Thrust to drag ratio", "", ""],
+    ["l3_prop_req_16", "Required — Minimum impulse bit", "", ""],
+    ["l3_prop_req_17", "Required — Tank volume", "", ""],
+    ["l3_prop_req_18", "Required — Compression ratio", "", ""],
+    ["l3_prop_req_19", "Required — Achievable lifetime", "", ""],
+    ["l3_solar_ach_01", "Closure — F10.7, sustained", "Ratio", "One"],
+    ["l3_solar_ach_02", "Closure — F10.7, single day", "Ratio", "One"],
+    ["l3_solar_ach_03", "Closure — Ap, survival", "Ratio", "One"],
+    ["l3_solar_ach_04", "Closure — Ap, sustained", "Ratio", "One"],
+    ["l3_solar_ach_05", "Closure — Ap, single day", "Ratio", "One"],
+    ["l3_solar_interface", "Solar weather — subsystem interface", "Ratio", "One"],
+    ["l3_solar_req_01", "Required — F10.7, sustained", "Ratio", "One"],
+    ["l3_solar_req_02", "Required — F10.7, single day", "Ratio", "One"],
+    ["l3_solar_req_03", "Required — Ap, survival", "Ratio", "One"],
+    ["l3_solar_req_04", "Required — Ap, sustained", "Ratio", "One"],
+    ["l3_solar_req_05", "Required — Ap, single day", "Ratio", "One"],
+    ["l3_struct_ach_01", "Achieved — Bus dimensions", "", ""],
+    ["l3_struct_ach_02", "Achieved — Primary structure material", "", ""],
+    ["l3_struct_ach_03", "Achieved — Panel thickness", "", ""],
+    ["l3_struct_ach_04", "Achieved — Accommodation volume", "", ""],
+    ["l3_struct_interface", "Structure — subsystem interface", "", ""],
+    ["l3_struct_n_01", "Structure · internal — to be named (1)", "", ""],
+    ["l3_struct_n_02", "Structure · internal — to be named (2)", "", ""],
+    ["l3_struct_n_03", "Structure · internal — to be named (3)", "", ""],
+    ["l3_struct_n_04", "Structure · internal — to be named (4)", "", ""],
+    ["l3_struct_n_05", "Structure · internal — to be named (5)", "", ""],
+    ["l3_struct_n_06", "Structure · internal — to be named (6)", "", ""],
+    ["l3_struct_n_07", "Structure · internal — to be named (7)", "", ""],
+    ["l3_struct_n_08", "Structure · internal — to be named (8)", "", ""],
+    ["l3_struct_n_09", "Structure · internal — to be named (9)", "", ""],
+    ["l3_struct_n_10", "Structure · internal — to be named (10)", "", ""],
+    ["l3_struct_n_11", "Structure · internal — to be named (11)", "", ""],
+    ["l3_struct_n_12", "Structure · internal — to be named (12)", "", ""],
+    ["l3_struct_n_13", "Structure · internal — to be named (13)", "", ""],
+    ["l3_struct_n_14", "Structure · internal — to be named (14)", "", ""],
+    ["l3_struct_n_15", "Structure · internal — to be named (15)", "", ""],
+    ["l3_struct_n_16", "Structure · internal — to be named (16)", "", ""],
+    ["l3_struct_n_17", "Structure · internal — to be named (17)", "", ""],
+    ["l3_struct_n_18", "Structure · internal — to be named (18)", "", ""],
+    ["l3_struct_n_19", "Structure · internal — to be named (19)", "", ""],
+    ["l3_struct_n_20", "Structure · internal — to be named (20)", "", ""],
+    ["l3_struct_n_21", "Structure · internal — to be named (21)", "", ""],
+    ["l3_struct_n_22", "Structure · internal — to be named (22)", "", ""],
+    ["l3_struct_n_23", "Structure · internal — to be named (23)", "", ""],
+    ["l3_struct_n_24", "Structure · internal — to be named (24)", "", ""],
+    ["l3_struct_n_25", "Structure · internal — to be named (25)", "", ""],
+    ["l3_struct_n_26", "Structure · internal — to be named (26)", "", ""],
+    ["l3_struct_n_27", "Structure · internal — to be named (27)", "", ""],
+    ["l3_struct_n_28", "Structure · internal — to be named (28)", "", ""],
+    ["l3_struct_n_29", "Structure · internal — to be named (29)", "", ""],
+    ["l3_struct_n_30", "Structure · internal — to be named (30)", "", ""],
+    ["l3_struct_n_31", "Structure · internal — to be named (31)", "", ""],
+    ["l3_struct_n_32", "Structure · internal — to be named (32)", "", ""],
+    ["l3_struct_n_33", "Structure · internal — to be named (33)", "", ""],
+    ["l3_struct_n_34", "Structure · internal — to be named (34)", "", ""],
+    ["l3_struct_n_35", "Structure · internal — to be named (35)", "", ""],
+    ["l3_struct_n_36", "Structure · internal — to be named (36)", "", ""],
+    ["l3_struct_n_37", "Structure · internal — to be named (37)", "", ""],
+    ["l3_struct_n_38", "Structure · internal — to be named (38)", "", ""],
+    ["l3_struct_n_39", "Structure · internal — to be named (39)", "", ""],
+    ["l3_struct_req_01", "Required — Bus dimensions", "", ""],
+    ["l3_struct_req_02", "Required — Primary structure material", "", ""],
+    ["l3_struct_req_03", "Required — Panel thickness", "", ""],
+    ["l3_struct_req_04", "Required — Accommodation volume", "", ""],
+    ["l3_thermal_ach_01", "Achieved — Solar absorptivity", "", ""],
+    ["l3_thermal_ach_02", "Achieved — Emissivity", "", ""],
+    ["l3_thermal_ach_03", "Achieved — MLI layer count", "", ""],
+    ["l3_thermal_ach_04", "Achieved — Equipment temperature limits", "", ""],
+    ["l3_thermal_ach_05", "Achieved — Internal dissipation", "", ""],
+    ["l3_thermal_ach_06", "Achieved — Environmental heat load", "", ""],
+    ["l3_thermal_ach_07", "Achieved — Free-molecular heat flux", "", ""],
+    ["l3_thermal_ach_08", "Achieved — Alpha over epsilon ratio", "", ""],
+    ["l3_thermal_ach_09", "Achieved — Radiator area estimate", "", ""],
+    ["l3_thermal_ach_10", "Achieved — Heater power estimate", "", ""],
+    ["l3_thermal_ach_11", "Achieved — Thermal mass", "", ""],
+    ["l3_thermal_interface", "Thermal — subsystem interface", "", ""],
+    ["l3_thermal_n_01", "Thermal · internal — to be named (1)", "", ""],
+    ["l3_thermal_n_02", "Thermal · internal — to be named (2)", "", ""],
+    ["l3_thermal_n_03", "Thermal · internal — to be named (3)", "", ""],
+    ["l3_thermal_n_04", "Thermal · internal — to be named (4)", "", ""],
+    ["l3_thermal_n_05", "Thermal · internal — to be named (5)", "", ""],
+    ["l3_thermal_n_06", "Thermal · internal — to be named (6)", "", ""],
+    ["l3_thermal_n_07", "Thermal · internal — to be named (7)", "", ""],
+    ["l3_thermal_n_08", "Thermal · internal — to be named (8)", "", ""],
+    ["l3_thermal_n_09", "Thermal · internal — to be named (9)", "", ""],
+    ["l3_thermal_n_10", "Thermal · internal — to be named (10)", "", ""],
+    ["l3_thermal_n_11", "Thermal · internal — to be named (11)", "", ""],
+    ["l3_thermal_req_01", "Required — Solar absorptivity", "", ""],
+    ["l3_thermal_req_02", "Required — Emissivity", "", ""],
+    ["l3_thermal_req_03", "Required — MLI layer count", "", ""],
+    ["l3_thermal_req_04", "Required — Equipment temperature limits", "", ""],
+    ["l3_thermal_req_05", "Required — Internal dissipation", "", ""],
+    ["l3_thermal_req_06", "Required — Environmental heat load", "", ""],
+    ["l3_thermal_req_07", "Required — Free-molecular heat flux", "", ""],
+    ["l3_thermal_req_08", "Required — Alpha over epsilon ratio", "", ""],
+    ["l3_thermal_req_09", "Required — Radiator area estimate", "", ""],
+    ["l3_thermal_req_10", "Required — Heater power estimate", "", ""],
+    ["l3_thermal_req_11", "Required — Thermal mass", "", ""],
+    ["l3_ttc_ach_01", "Achieved — Telemetry rate", "", ""],
+    ["l3_ttc_ach_02", "Achieved — TT&C transmit power", "", ""],
+    ["l3_ttc_ach_03", "Achieved — TT&C frequency band", "", ""],
+    ["l3_ttc_ach_04", "Achieved — TT&C antenna gain", "", ""],
+    ["l3_ttc_ach_05", "Achieved — Downlink rate", "", ""],
+    ["l3_ttc_ach_06", "Achieved — Data volume per orbit", "", ""],
+    ["l3_ttc_ach_07", "Achieved — On-board storage", "", ""],
+    ["l3_ttc_ach_08", "Achieved — TT&C link margin", "", ""],
+    ["l3_ttc_interface", "TT&C and downlink — subsystem interface", "", ""],
+    ["l3_ttc_req_01", "Required — Telemetry rate", "", ""],
+    ["l3_ttc_req_02", "Required — TT&C transmit power", "", ""],
+    ["l3_ttc_req_03", "Required — TT&C frequency band", "", ""],
+    ["l3_ttc_req_04", "Required — TT&C antenna gain", "", ""],
+    ["l3_ttc_req_05", "Required — Downlink rate", "", ""],
+    ["l3_ttc_req_06", "Required — Data volume per orbit", "", ""],
+    ["l3_ttc_req_07", "Required — On-board storage", "", ""],
+    ["l3_ttc_req_08", "Required — TT&C link margin", "", ""],
+    ["l3_x_closure_interface", "Closure and cost — subsystem interface", "", ""],
+    ["l3_x_envorbit_interface", "Environment and orbit — subsystem interface", "", ""],
+    ["mass_avionics", "Avionics mass", "Mass", "Kilogram"],
+    ["mass_comms_hw", "Communications hardware mass", "Mass", "Kilogram"],
+    ["mass_disposal_propellant", "Disposal propellant mass", "Mass", "Kilogram"],
+    ["mass_dry", "Dry mass", "Mass", "Kilogram"],
+    ["mass_gnc_hw", "GNC hardware mass", "Mass", "Kilogram"],
+    ["mass_harness", "Harness and thermal hardware mass", "Mass", "Kilogram"],
+    ["mass_limit", "Mass limit", "Mass", "Kilogram"],
+    ["mass_margin", "Mass margin", "Ratio", "One"],
+    ["mass_payload", "Payload mass", "Mass", "Kilogram"],
+    ["mass_propulsion_hw", "Propulsion hardware mass", "Mass", "Kilogram"],
+    ["mass_structure", "Structure and mechanisms mass", "Mass", "Kilogram"],
+    ["mass_system_margin", "System-level mass margin", "Ratio", "One"],
+    ["mass_wet", "Wet mass", "Mass", "Kilogram"],
+    ["mgt_component_level_eee_part_screening", "EEE part screening", "", ""],
+    ["mgt_component_level_materials_and_processes", "Materials and processes", "", ""],
+    ["mgt_component_level_outgassing_and_contamination", "Outgassing and contamination", "", ""],
+    ["mgt_component_level_part_qualification_and_lot_acceptance", "Part qualification and lot acceptance", "", ""],
+    ["mgt_component_level_radiation_tid_and_see", "Radiation · TID and SEE", "", ""],
+    ["mgt_concept_decision_constellation", "Constellation", "", ""],
+    ["mgt_concept_decision_hosted_payload", "Hosted payload", "", ""],
+    ["mgt_concept_decision_single_satellite", "Single satellite", "", ""],
+    ["mgt_configuration_and_data_baselines", "Baselines", "", ""],
+    ["mgt_configuration_and_data_change_control", "Change control", "", ""],
+    ["mgt_configuration_and_data_data_rights", "Data rights", "", ""],
+    ["mgt_configuration_and_data_document_tree", "Document tree", "", ""],
+    ["mgt_cost_and_price_cost_model_over_the_design", "Cost model over the design", "", ""],
+    ["mgt_cost_and_price_payment_milestones", "Payment milestones", "", ""],
+    ["mgt_cost_and_price_price_to_the_customer", "Price to the customer", "", ""],
+    ["mgt_customer_1_vleo_multipayload", "VLEO Multipayload", "", ""],
+    ["mgt_customer_2_concept_decision_constellation", "Constellation", "", ""],
+    ["mgt_customer_2_concept_decision_hosted_payload", "Hosted payload", "", ""],
+    ["mgt_customer_2_concept_decision_single_satellite", "Single satellite", "", ""],
+    ["mgt_customer_2_cost_and_price_cost_model_over_the_design", "Cost model over the design", "", ""],
+    ["mgt_customer_2_cost_and_price_payment_milestones", "Payment milestones", "", ""],
+    ["mgt_customer_2_cost_and_price_price_to_the_customer", "Price to the customer", "", ""],
+    ["mgt_customer_2_kpi_definition_measurement_method", "Measurement method", "", ""],
+    ["mgt_customer_2_kpi_definition_segment_kpis", "Segment KPIs", "", ""],
+    ["mgt_customer_2_kpi_definition_target_values", "Target values", "", ""],
+    ["mgt_customer_2_requirement_acceptance_criteria", "Acceptance criteria", "", ""],
+    ["mgt_customer_2_requirement_requirement_discussion", "Requirement discussion", "", ""],
+    ["mgt_customer_2_requirement_requirement_document", "Requirement document", "", ""],
+    ["mgt_customer_2_value_proposition_held_internally", "Held internally", "", ""],
+    ["mgt_customer_2_value_proposition_shared_with_the_customer", "Shared with the customer", "", ""],
+    ["mgt_customer_2_value_proposition_the_case_to_proceed", "The case to proceed", "", ""],
+    ["mgt_customer_2_vleo_multipayload", "VLEO Multipayload", "", ""],
+    ["mgt_customer_3_concept_decision_constellation", "Constellation", "", ""],
+    ["mgt_customer_3_concept_decision_hosted_payload", "Hosted payload", "", ""],
+    ["mgt_customer_3_concept_decision_single_satellite", "Single satellite", "", ""],
+    ["mgt_customer_3_cost_and_price_cost_model_over_the_design", "Cost model over the design", "", ""],
+    ["mgt_customer_3_cost_and_price_payment_milestones", "Payment milestones", "", ""],
+    ["mgt_customer_3_cost_and_price_price_to_the_customer", "Price to the customer", "", ""],
+    ["mgt_customer_3_kpi_definition_measurement_method", "Measurement method", "", ""],
+    ["mgt_customer_3_kpi_definition_segment_kpis", "Segment KPIs", "", ""],
+    ["mgt_customer_3_kpi_definition_target_values", "Target values", "", ""],
+    ["mgt_customer_3_requirement_acceptance_criteria", "Acceptance criteria", "", ""],
+    ["mgt_customer_3_requirement_requirement_discussion", "Requirement discussion", "", ""],
+    ["mgt_customer_3_requirement_requirement_document", "Requirement document", "", ""],
+    ["mgt_customer_3_value_proposition_held_internally", "Held internally", "", ""],
+    ["mgt_customer_3_value_proposition_shared_with_the_customer", "Shared with the customer", "", ""],
+    ["mgt_customer_3_value_proposition_the_case_to_proceed", "The case to proceed", "", ""],
+    ["mgt_customer_3_vleo_multipayload", "VLEO Multipayload", "", ""],
+    ["mgt_debris_and_disposal_25_year_rule_and_successor", "25-year rule and successor", "", ""],
+    ["mgt_debris_and_disposal_collision_avoidance_duty", "Collision avoidance duty", "", ""],
+    ["mgt_debris_and_disposal_end_of_life_disposal_plan", "End-of-life disposal plan", "", ""],
+    ["mgt_debris_and_disposal_iso_24113_debris_mitigation", "ISO 24113 · debris mitigation", "", ""],
+    ["mgt_engineering_capacity_concurrent_projects", "Concurrent projects", "", ""],
+    ["mgt_engineering_capacity_team_and_skills", "Team and skills", "", ""],
+    ["mgt_engineering_capacity_tooling_and_the_design_tool", "Tooling and the design tool", "", ""],
+    ["mgt_export_control_end_user_certification", "End-user certification", "", ""],
+    ["mgt_export_control_export_classification", "Export classification", "", ""],
+    ["mgt_export_control_supplier_flow_down", "Supplier flow-down", "", ""],
+    ["mgt_export_control_technology_transfer_control", "Technology transfer control", "", ""],
+    ["mgt_facilities_and_bodies_emc_test_house", "EMC test house", "", ""],
+    ["mgt_facilities_and_bodies_independent_verification_authority", "Independent verification authority", "", ""],
+    ["mgt_facilities_and_bodies_launch_provider_fit_check", "Launch provider fit-check", "", ""],
+    ["mgt_facilities_and_bodies_rf_anechoic_chamber", "RF anechoic chamber", "", ""],
+    ["mgt_facilities_and_bodies_thermal_vacuum_chamber", "Thermal vacuum chamber", "", ""],
+    ["mgt_facilities_and_bodies_vibration_and_shock_facility", "Vibration and shock facility", "", ""],
+    ["mgt_facilities_cleanroom", "Cleanroom", "", ""],
+    ["mgt_facilities_integration_bay", "Integration bay", "", ""],
+    ["mgt_facilities_test_access", "Test access", "", ""],
+    ["mgt_ground_segment_archive_and_delivery", "Archive and delivery", "", ""],
+    ["mgt_ground_segment_data_processing", "Data processing", "", ""],
+    ["mgt_ground_segment_ground_stations", "Ground stations", "", ""],
+    ["mgt_ground_segment_mission_control", "Mission control", "", ""],
+    ["mgt_heritage_flown_hardware", "Flown hardware", "", ""],
+    ["mgt_heritage_lessons_carried_forward", "Lessons carried forward", "", ""],
+    ["mgt_heritage_qualified_designs", "Qualified designs", "", ""],
+    ["mgt_insurance_and_liability_in_orbit_insurance", "In-orbit insurance", "", ""],
+    ["mgt_insurance_and_liability_indemnity_to_the_state", "Indemnity to the state", "", ""],
+    ["mgt_insurance_and_liability_launch_insurance", "Launch insurance", "", ""],
+    ["mgt_insurance_and_liability_third_party_liability", "Third-party liability", "", ""],
+    ["mgt_interface_level_data_protocol_and_command_dictionary", "Data protocol and command dictionary", "", ""],
+    ["mgt_interface_level_electrical_harness_continuity", "Electrical harness continuity", "", ""],
+    ["mgt_interface_level_launch_vehicle_interface_verification", "Launch vehicle interface verification", "", ""],
+    ["mgt_interface_level_mechanical_fit_check_to_the_dispenser", "Mechanical fit check to the dispenser", "", ""],
+    ["mgt_interface_level_payload_to_bus_interface_test", "Payload-to-bus interface test", "", ""],
+    ["mgt_interface_level_rf_compatibility_with_the_ground_segment", "RF compatibility with the ground segment", "", ""],
+    ["mgt_kpi_definition_measurement_method", "Measurement method", "", ""],
+    ["mgt_kpi_definition_segment_kpis", "Segment KPIs", "", ""],
+    ["mgt_kpi_definition_target_values", "Target values", "", ""],
+    ["mgt_launch_and_range_safety_hazardous_material_declaration", "Hazardous material declaration", "", ""],
+    ["mgt_launch_and_range_safety_launch_provider_icd", "Launch provider ICD", "", ""],
+    ["mgt_launch_and_range_safety_payload_safety_review", "Payload safety review", "", ""],
+    ["mgt_launch_and_range_safety_range_safety_approval", "Range safety approval", "", ""],
+    ["mgt_launch_segment_dispenser_and_separation", "Dispenser and separation", "", ""],
+    ["mgt_launch_segment_launch_campaign", "Launch campaign", "", ""],
+    ["mgt_launch_segment_launch_provider", "Launch provider", "", ""],
+    ["mgt_launch_segment_launch_vehicle_interface", "Launch vehicle interface", "", ""],
+    ["mgt_life_cycle_and_gates_phase_a_feasibility", "Phase A · feasibility", "", ""],
+    ["mgt_life_cycle_and_gates_phase_b_preliminary_design", "Phase B · preliminary design", "", ""],
+    ["mgt_life_cycle_and_gates_phase_c_detailed_design", "Phase C · detailed design", "", ""],
+    ["mgt_life_cycle_and_gates_phase_d_build_test_launch", "Phase D · build, test, launch", "", ""],
+    ["mgt_life_cycle_and_gates_phase_e_operations", "Phase E · operations", "", ""],
+    ["mgt_life_cycle_and_gates_phase_f_disposal", "Phase F · disposal", "", ""],
+    ["mgt_life_cycle_and_gates_pre_phase_a_concept", "Pre-Phase A · concept", "", ""],
+    ["mgt_long_lead_items_optics_and_detectors", "Optics and detectors", "", ""],
+    ["mgt_long_lead_items_propulsion_hardware", "Propulsion hardware", "", ""],
+    ["mgt_long_lead_items_radiation_tolerant_parts", "Radiation-tolerant parts", "", ""],
+    ["mgt_make_or_buy_bought_in_scope", "Bought-in scope", "", ""],
+    ["mgt_make_or_buy_in_house_scope", "In-house scope", "", ""],
+    ["mgt_make_or_buy_rationale", "Rationale", "", ""],
+    ["mgt_qualification_approach_acceptance_levels_and_margins", "Acceptance levels and margins", "", ""],
+    ["mgt_qualification_approach_protoflight_approach", "Protoflight approach", "", ""],
+    ["mgt_qualification_approach_qualification_model", "Qualification model", "", ""],
+    ["mgt_qualification_approach_test_matrix_and_coverage", "Test matrix and coverage", "", ""],
+    ["mgt_qualification_approach_verification_by_analysis_review_or_similarity", "Verification by analysis, review or similarity", "", ""],
+    ["mgt_quality_and_product_assurance_as9100_quality_system", "AS9100 · quality system", "", ""],
+    ["mgt_quality_and_product_assurance_ecss_q_product_assurance", "ECSS-Q · product assurance", "", ""],
+    ["mgt_quality_and_product_assurance_non_conformance_handling", "Non-conformance handling", "", ""],
+    ["mgt_quality_and_product_assurance_parts_materials_and_processes", "Parts, materials and processes", "", ""],
+    ["mgt_regulatory_authorisation_liability_convention", "Liability convention", "", ""],
+    ["mgt_regulatory_authorisation_national_space_authorisation", "National space authorisation", "", ""],
+    ["mgt_regulatory_authorisation_operator_licence", "Operator licence", "", ""],
+    ["mgt_regulatory_authorisation_registration_of_the_object", "Registration of the object", "", ""],
+    ["mgt_requirement_acceptance_criteria", "Acceptance criteria", "", ""],
+    ["mgt_requirement_requirement_discussion", "Requirement discussion", "", ""],
+    ["mgt_requirement_requirement_document", "Requirement document", "", ""],
+    ["mgt_review_gates_cdr_critical_design", "CDR · critical design", "", ""],
+    ["mgt_review_gates_dr_decommissioning", "DR · decommissioning", "", ""],
+    ["mgt_review_gates_frr_flight_readiness", "FRR · flight readiness", "", ""],
+    ["mgt_review_gates_mcr_mission_concept", "MCR · mission concept", "", ""],
+    ["mgt_review_gates_mdr_mission_definition", "MDR · mission definition", "", ""],
+    ["mgt_review_gates_orr_operational_readiness", "ORR · operational readiness", "", ""],
+    ["mgt_review_gates_pdr_preliminary_design", "PDR · preliminary design", "", ""],
+    ["mgt_review_gates_plar_post_launch", "PLAR · post-launch", "", ""],
+    ["mgt_review_gates_sir_system_integration", "SIR · system integration", "", ""],
+    ["mgt_review_gates_srr_system_requirements", "SRR · system requirements", "", ""],
+    ["mgt_review_gates_trr_test_readiness", "TRR · test readiness", "", ""],
+    ["mgt_risk_register_regulatory_risk", "Regulatory risk", "", ""],
+    ["mgt_risk_register_schedule_risk", "Schedule risk", "", ""],
+    ["mgt_risk_register_supply_risk", "Supply risk", "", ""],
+    ["mgt_risk_register_technical_risk", "Technical risk", "", ""],
+    ["mgt_schedule_and_critical_path_critical_path", "Critical path", "", ""],
+    ["mgt_schedule_and_critical_path_float_and_slip", "Float and slip", "", ""],
+    ["mgt_schedule_and_critical_path_master_schedule", "Master schedule", "", ""],
+    ["mgt_schedule_and_critical_path_recovery_plan", "Recovery plan", "", ""],
+    ["mgt_space_segment_in_orbit_spares", "In-orbit spares", "", ""],
+    ["mgt_space_segment_the_constellation", "The constellation", "", ""],
+    ["mgt_space_segment_the_spacecraft", "The spacecraft", "", ""],
+    ["mgt_spectrum_and_frequency_coordination_with_incumbents", "Coordination with incumbents", "", ""],
+    ["mgt_spectrum_and_frequency_interference_analysis", "Interference analysis", "", ""],
+    ["mgt_spectrum_and_frequency_itu_filing", "ITU filing", "", ""],
+    ["mgt_spectrum_and_frequency_national_spectrum_licence", "National spectrum licence", "", ""],
+    ["mgt_subsystem_level_emc_and_emi", "EMC and EMI", "", ""],
+    ["mgt_subsystem_level_functional_test", "Functional test", "", ""],
+    ["mgt_subsystem_level_thermal_cycling", "Thermal cycling", "", ""],
+    ["mgt_subsystem_level_thermal_vacuum_bake_out", "Thermal vacuum bake-out", "", ""],
+    ["mgt_subsystem_level_vibration_and_shock", "Vibration and shock", "", ""],
+    ["mgt_suppliers_and_qualification_qualification_status", "Qualification status", "", ""],
+    ["mgt_suppliers_and_qualification_second_sources", "Second sources", "", ""],
+    ["mgt_suppliers_and_qualification_supplier_survey", "Supplier survey", "", ""],
+    ["mgt_system_level_acoustic_and_shock", "Acoustic and shock", "", ""],
+    ["mgt_system_level_alignment_and_boresight", "Alignment and boresight", "", ""],
+    ["mgt_system_level_deployment_and_mechanisms", "Deployment and mechanisms", "", ""],
+    ["mgt_system_level_full_functional_and_performance", "Full functional and performance", "", ""],
+    ["mgt_system_level_leak_and_pressure", "Leak and pressure", "", ""],
+    ["mgt_system_level_magnetic_and_electrostatic_cleanliness", "Magnetic and electrostatic cleanliness", "", ""],
+    ["mgt_system_level_mass_properties_and_balance", "Mass properties and balance", "", ""],
+    ["mgt_system_level_sine_and_random_vibration", "Sine and random vibration", "", ""],
+    ["mgt_system_level_thermal_vacuum_and_thermal_balance", "Thermal vacuum and thermal balance", "", ""],
+    ["mgt_user_segment_service_interface", "Service interface", "", ""],
+    ["mgt_user_segment_tasking_and_delivery", "Tasking and delivery", "", ""],
+    ["mgt_user_segment_user_terminals", "User terminals", "", ""],
+    ["mgt_value_proposition_held_internally", "Held internally", "", ""],
+    ["mgt_value_proposition_shared_with_the_customer", "Shared with the customer", "", ""],
+    ["mgt_value_proposition_the_case_to_proceed", "The case to proceed", "", ""],
+    ["mis_access_area", "Instantaneous access area", "Area", "SquareMetre"],
+    ["mis_availability", "Constellation service availability", "Ratio", "One"],
+    ["mis_coverage_fraction", "Instantaneous coverage fraction", "Ratio", "One"],
+    ["mis_delivery_time", "Delivery time to the customer", "Time", "Minute"],
+    ["mis_latency", "End to end latency", "Time", "Minute"],
+    ["mis_processing_time", "Ground processing time", "Time", "Minute"],
+    ["mis_revisit", "Mean revisit time", "Time", "Hour"],
+    ["mis_satellites", "Number of satellites", "Ratio", "One"],
+    ["mis_satellites_required", "Satellites required for the revisit target", "Ratio", "One"],
+    ["mis_time_to_downlink", "Mean time to next downlink", "Time", "Minute"],
+    ["mis_unit_availability", "Single satellite availability", "Ratio", "One"],
+    ["orbit_altitude", "Orbit altitude", "Length", "Kilometre"],
+    ["orbit_beta_angle", "Beta angle", "Angle", "Degree"],
+    ["orbit_decay_rate", "Orbital decay rate", "Velocity", "MetrePerSecond"],
+    ["orbit_deorbit_delta_v", "Disposal delta-v", "Velocity", "MetrePerSecond"],
+    ["orbit_earth_central_angle", "Earth central half-angle", "Angle", "Degree"],
+    ["orbit_eccentricity", "Orbit eccentricity", "Ratio", "One"],
+    ["orbit_eclipse_fraction", "Eclipse fraction of the orbit", "Ratio", "One"],
+    ["orbit_ground_track_speed", "Ground track speed", "Velocity", "MetrePerSecond"],
+    ["orbit_inclination", "Orbit inclination", "Angle", "Degree"],
+    ["orbit_lifetime_uncontrolled", "Uncontrolled orbital lifetime", "Time", "Day"],
+    ["orbit_makeup_delta_v", "Drag make-up delta-v per year", "Velocity", "MetrePerSecond"],
+    ["orbit_min_elevation", "Minimum useful elevation angle", "Angle", "Degree"],
+    ["orbit_mission_duration", "Mission duration", "Time", "Year"],
+    ["orbit_nodal_regression", "Nodal regression rate", "AngularRate", "DegreePerDay"],
+    ["orbit_period", "Orbital period", "Time", "Minute"],
+    ["orbit_radius", "Geocentric radius", "Length", "Metre"],
+    ["orbit_slant_range", "Slant range at working elevation", "Length", "Kilometre"],
+    ["orbit_sun_sync_inclination", "Sun-synchronous inclination", "Angle", "Degree"],
+    ["orbit_swath_width", "Ground swath width", "Length", "Kilometre"],
+    ["orbit_velocity", "Circular orbital speed", "Velocity", "MetrePerSecond"],
+    ["pay_aperture", "Optical aperture diameter", "Length", "Metre"],
+    ["pay_bits_per_pixel", "Bits per pixel", "Ratio", "One"],
+    ["pay_compression", "Image compression ratio", "Ratio", "One"],
+    ["pay_dwell_time", "Per-sample dwell time", "Time", "Second"],
+    ["pay_focal_length", "Optical focal length", "Length", "Metre"],
+    ["pay_geolocation_error", "RF geolocation error", "Length", "Metre"],
+    ["pay_gsd", "Achieved ground sample distance", "Length", "Metre"],
+    ["pay_gsd_detector", "Detector-limited ground sample", "Length", "Metre"],
+    ["pay_gsd_diffraction", "Diffraction-limited ground sample", "Length", "Metre"],
+    ["pay_pixel_pitch", "Detector pixel pitch", "Length", "Micrometre"],
+    ["pay_pixels_across", "Detector pixels across track", "Ratio", "One"],
+    ["pay_power", "Payload orbit-average power", "Power", "Watt"],
+    ["pay_quantum_efficiency", "Detector quantum efficiency", "Ratio", "One"],
+    ["pay_radiance", "At-aperture spectral radiance", "Ratio", "One"],
+    ["pay_read_noise", "Detector read noise", "Ratio", "One"],
+    ["pay_rf_bandwidth", "Intercept receiver bandwidth", "Frequency", "Megahertz"],
+    ["pay_rf_gdop", "Geolocation geometric dilution", "Ratio", "One"],
+    ["pay_rf_integration", "Intercept integration time", "Time", "Second"],
+    ["pay_rf_snr", "Intercept signal to noise ratio", "Ratio", "One"],
+    ["pay_scene_volume", "Data volume per scene", "DataVolume", "Gigabit"],
+    ["pay_signal_electrons", "Signal electrons per sample", "Ratio", "One"],
+    ["pay_snr", "Optical signal to noise ratio", "Ratio", "One"],
+    ["pay_swath", "Optical swath width", "Length", "Kilometre"],
+    ["pay_toa_uncertainty", "Time of arrival uncertainty", "Time", "Second"],
+    ["pay_transmission", "Optical transmission", "Ratio", "One"],
+    ["pay_wavelength", "Centre wavelength", "Length", "Nanometre"],
+    ["prop_beam_voltage", "Beam accelerating voltage", "Voltage", "Volt"],
+    ["prop_beta_backflow", "Duct back-flow transmission", "Ratio", "One"],
+    ["prop_bus_power", "Propulsion demand on the bus", "Power", "Watt"],
+    ["prop_capture_efficiency", "Intake collection efficiency", "Ratio", "One"],
+    ["prop_chamber_density", "Collection chamber number density", "NumberDensity", "PerCubicMetre"],
+    ["prop_collected_flow", "Collected mass flow", "MassFlow", "MgPerSecond"],
+    ["prop_compression_ratio", "Intake compression ratio", "Ratio", "One"],
+    ["prop_delivered_bus_power", "Propulsion power actually drawn", "Power", "Watt"],
+    ["prop_delivered_thrust", "Thrust actually delivered", "Force", "Millinewton"],
+    ["prop_div_efficiency", "Beam divergence efficiency", "Ratio", "One"],
+    ["prop_double_ion_factor", "Doubly-charged ion correction", "Ratio", "One"],
+    ["prop_eta_geo", "Intake geometric transmission", "Ratio", "One"],
+    ["prop_exhaust_velocity", "Beam exhaust velocity", "Velocity", "MetrePerSecond"],
+    ["prop_incident_flux", "Incident mass flux", "MassFlux", "KgPerSecond"],
+    ["prop_input_power", "Thruster input power", "Power", "Watt"],
+    ["prop_intake_area", "Intake mouth area", "Area", "SquareMetre"],
+    ["prop_ion_flow", "Ionised mass flow", "MassFlow", "MgPerSecond"],
+    ["prop_ionisation_cost", "Energy cost per ion", "Ratio", "One"],
+    ["prop_ionisation_power", "Ionisation power", "Power", "Watt"],
+    ["prop_jet_power", "Jet power", "Power", "Watt"],
+    ["prop_other_losses", "Other thruster losses", "Ratio", "One"],
+    ["prop_ppu_efficiency", "Power processing unit efficiency", "Ratio", "One"],
+    ["prop_specific_impulse", "Specific impulse", "Time", "Second"],
+    ["prop_throat_area", "Intake throat area", "Area", "SquareMetre"],
+    ["prop_throttle", "Propulsion throttle", "Ratio", "One"],
+    ["prop_thrust", "Thrust", "Force", "Millinewton"],
+    ["prop_thrust_to_drag", "Thrust to drag ratio", "Ratio", "One"],
+    ["prop_total_efficiency", "Total propulsion efficiency", "Ratio", "One"],
+    ["prop_utilisation", "Propellant utilisation efficiency", "Ratio", "One"],
+    ["pwr_array_area", "Solar array area", "Area", "SquareMetre"],
+    ["pwr_array_areal_density", "Array areal density", "Ratio", "One"],
+    ["pwr_array_incidence", "Mean solar incidence angle on the array", "Angle", "Degree"],
+    ["pwr_array_mass", "Array mass", "Mass", "Kilogram"],
+    ["pwr_array_power_bol", "Array power, beginning of life", "Power", "Watt"],
+    ["pwr_array_power_eol", "Array power, end of life", "Power", "Watt"],
+    ["pwr_available", "Orbit-average power available", "Power", "Watt"],
+    ["pwr_avionics_load", "Avionics and housekeeping load", "Power", "Watt"],
+    ["pwr_battery_cycles", "Battery charge cycles", "Ratio", "One"],
+    ["pwr_battery_energy", "Battery energy required", "Energy", "WattHour"],
+    ["pwr_battery_mass", "Battery mass", "Mass", "Kilogram"],
+    ["pwr_battery_specific_energy", "Battery specific energy", "Ratio", "One"],
+    ["pwr_cell_derating", "Array temperature derating factor", "Ratio", "One"],
+    ["pwr_cell_efficiency", "Solar cell efficiency", "Ratio", "One"],
+    ["pwr_cell_temperature_coefficient", "Cell power temperature coefficient", "Ratio", "One"],
+    ["pwr_degradation", "Array degradation factor", "Ratio", "One"],
+    ["pwr_degradation_rate", "Annual array degradation rate", "Ratio", "One"],
+    ["pwr_demand", "Total bus power demand", "Power", "Watt"],
+    ["pwr_discharge_efficiency", "Battery discharge path efficiency", "Ratio", "One"],
+    ["pwr_dod", "Battery depth of discharge", "Ratio", "One"],
+    ["pwr_harness_loss", "Harness and distribution loss", "Ratio", "One"],
+    ["pwr_margin", "Power margin", "Ratio", "One"],
+    ["pwr_packing", "Array packing factor", "Ratio", "One"],
+    ["pwr_subsystem_mass", "Power subsystem mass", "Mass", "Kilogram"],
+    ["pwr_thermal_load", "Thermal control load", "Power", "Watt"],
+    ["sw_activity_band", "F10.7 activity band", "Ratio", "One"],
+    ["sw_ap_central_expectation", "Expected Ap over the mission window", "Ratio", "One"],
+    ["sw_ap_cold_long", "Sustained cold Ap to design to", "Ratio", "One"],
+    ["sw_ap_cold_short", "Single-day cold Ap to design to", "Ratio", "One"],
+    ["sw_ap_daily_band_drop", "Within-rotation daily Ap drop", "Ratio", "One"],
+    ["sw_ap_daily_band_spread", "Within-rotation daily Ap spread", "Ratio", "One"],
+    ["sw_ap_design", "Ap design value", "Ratio", "One"],
+    ["sw_ap_design_long", "Sustained Ap to design to", "Ratio", "One"],
+    ["sw_ap_design_short", "Single-day Ap to design to", "Ratio", "One"],
+    ["sw_ap_mean_band_spread", "Ap rotation-forecast residual spread", "Ratio", "One"],
+    ["sw_band_confidence", "Confidence the design band is at", "", ""],
+    ["sw_band_coverage", "Stated band coverage", "Ratio", "One"],
+    ["sw_central_expectation", "F10.7 central expectation at a lead", "Ratio", "One"],
+    ["sw_cycle_phase", "Solar cycle phase", "Ratio", "One"],
+    ["sw_cycle_repeatability", "Cycle-to-cycle repeatability", "Ratio", "One"],
+    ["sw_daily_band_drop", "Within-rotation daily drop", "Ratio", "One"],
+    ["sw_daily_band_spread", "Within-rotation daily spread", "Ratio", "One"],
+    ["sw_design_safe_duration", "How long the design Ap lasts", "Time", "Year"],
+    ["sw_event_duration", "F10.7 burst duration", "Time", "Day"],
+    ["sw_exceedance_duration", "How long one exceedance lasts", "Time", "Day"],
+    ["sw_exceedance_phase", "When in the cycle exceedances fall", "Ratio", "One"],
+    ["sw_exceedance_rate", "Days a year above the design level", "Ratio", "One"],
+    ["sw_f107_cold_long", "Sustained cold F10.7 to design to", "Ratio", "One"],
+    ["sw_f107_cold_short", "Single-day cold F10.7 to design to", "Ratio", "One"],
+    ["sw_f107_design_long", "Sustained F10.7 to design to", "Ratio", "One"],
+    ["sw_f107_design_short", "Single-day F10.7 to design to", "Ratio", "One"],
+    ["sw_f107_observed", "Observed F10.7, the forecast's anchor", "Ratio", "One"],
+    ["sw_f107a_ratio", "Daily F10.7 scatter about F10.7A", "Ratio", "One"],
+    ["sw_forecast_bias", "Issued-outlook F10.7 bias", "Ratio", "One"],
+    ["sw_forecast_skill", "Issued-outlook skill against persistence", "Ratio", "One"],
+    ["sw_horizon_climatology", "F10.7 error from climatology at a lead", "Ratio", "One"],
+    ["sw_horizon_persistence", "F10.7 error from persistence at a lead", "Ratio", "One"],
+    ["sw_kp_driving_slot", "Kp slot the design is driven by", "", ""],
+    ["sw_kp_from_ap", "Kp from daily Ap", "Ratio", "One"],
+    ["sw_kp_scenarios", "Kp in both slots, for all five scenarios", "Ratio", "One"],
+    ["sw_kp_slot_bias", "Kp slot bias, daily peak", "Ratio", "One"],
+    ["sw_mean_band_spread", "Rotation-forecast residual spread", "Ratio", "One"],
+    ["sw_mean_cycle_level", "Mean-cycle F10.7 at a phase", "Ratio", "One"],
+    ["sw_recurrence_lag", "Rotation recurrence lag", "Time", "Day"],
+    ["sw_recurrence_strength", "Rotation recurrence strength", "Ratio", "One"],
+    ["sw_regime", "Geomagnetic regime", "Ratio", "One"],
+    ["sw_semiannual_amplitude", "Semiannual Ap amplitude", "Ratio", "One"],
+    ["sw_spike_threshold", "F10.7 spike threshold", "Ratio", "One"],
+    ["sw_storm_design_level", "Storm level designed for", "Ratio", "One"],
+    ["sw_storm_return_level", "Ap at a storm return period", "Ratio", "One"],
+    ["sw_uncertainty_growth", "F10.7 growth at 95% over a lead", "Ratio", "One"],
+    ["sw_window_peak_level", "F10.7 peak level inside the mission window", "Ratio", "One"],
+    ["sys_attitude_control_sizing_aerodynamic_trim_angle", "Aerodynamic trim angle", "", ""],
+    ["sys_attitude_control_sizing_attitude_deadband", "Attitude deadband", "", ""],
+    ["sys_attitude_control_sizing_control_bandwidth", "Control bandwidth", "", ""],
+    ["sys_attitude_control_sizing_control_torque_authority", "Control torque authority", "", ""],
+    ["sys_attitude_control_sizing_magnetic_dipole_authority", "Magnetic dipole authority", "", ""],
+    ["sys_attitude_control_sizing_momentum_dumping_frequency", "Momentum dumping frequency", "", ""],
+    ["sys_attitude_control_sizing_momentum_storage_capacity", "Momentum storage capacity", "", ""],
+    ["sys_attitude_control_sizing_settling_time", "Settling time", "", ""],
+    ["sys_attitude_control_sizing_slew_rate_capability", "Slew rate capability", "", ""],
+    ["sys_attitude_hardware_aerodynamic_torque", "Aerodynamic torque", "", ""],
+    ["sys_attitude_hardware_earth_magnetic_field", "Earth magnetic field", "", ""],
+    ["sys_attitude_hardware_first_mode_frequency", "First mode frequency", "", ""],
+    ["sys_attitude_hardware_gravity_gradient_torque", "Gravity gradient torque", "", ""],
+    ["sys_attitude_hardware_gyro_drift", "Gyro drift", "", ""],
+    ["sys_attitude_hardware_number_of_reaction_wheels", "Number of reaction wheels", "", ""],
+    ["sys_attitude_hardware_solar_radiation_torque", "Solar radiation torque", "", ""],
+    ["sys_attitude_hardware_star_tracker_accuracy", "Star tracker accuracy", "", ""],
+    ["sys_attitude_hardware_wheel_speed_limit", "Wheel speed limit", "", ""],
+    ["sys_avionics_and_software_clock_distribution_accuracy", "Clock distribution accuracy", "", ""],
+    ["sys_avionics_and_software_memory_size", "Memory size", "", ""],
+    ["sys_avionics_and_software_processor_throughput", "Processor throughput", "", ""],
+    ["sys_comms_service_antenna_beamwidth", "Antenna beamwidth", "", ""],
+    ["sys_comms_service_beam_footprint_diameter", "Beam footprint diameter", "", ""],
+    ["sys_comms_service_devices_per_beam", "Devices per beam", "", ""],
+    ["sys_comms_service_doppler_shift", "Doppler shift", "", ""],
+    ["sys_comms_service_handover_rate", "Handover rate", "", ""],
+    ["sys_comms_service_number_of_beams", "Number of beams", "", ""],
+    ["sys_comms_service_service_carrier_frequency", "Service carrier frequency", "", ""],
+    ["sys_comms_service_service_link_margin", "Service link margin", "", ""],
+    ["sys_comms_service_service_receive_g_t", "Service receive G/T", "", ""],
+    ["sys_comms_service_service_transmit_eirp", "Service transmit EIRP", "", ""],
+    ["sys_comms_service_slant_range", "Slant range", "", ""],
+    ["sys_comms_service_user_throughput", "User throughput", "", ""],
+    ["sys_constellation_trade_output_access_gap_achieved", "Access gap achieved", "", ""],
+    ["sys_constellation_trade_output_collision_probability", "Collision probability", "", ""],
+    ["sys_constellation_trade_output_constellation_size", "Constellation size", "", ""],
+    ["sys_constellation_trade_output_coverage_achieved", "Coverage achieved", "", ""],
+    ["sys_constellation_trade_output_instantaneous_fold", "Instantaneous fold", "", ""],
+    ["sys_constellation_trade_output_inter_satellite_range", "Inter-satellite range", "", ""],
+    ["sys_constellation_trade_output_number_of_planes", "Number of planes", "", ""],
+    ["sys_constellation_trade_output_phasing_factor", "Phasing factor", "", ""],
+    ["sys_constellation_trade_output_raan_spread", "RAAN spread", "", ""],
+    ["sys_constellation_trade_output_revisit_achieved", "Revisit achieved", "", ""],
+    ["sys_constellation_trade_output_satellites_per_plane", "Satellites per plane", "", ""],
+    ["sys_constellation_trade_output_walker_pattern_type", "Walker pattern type", "", ""],
+    ["sys_eo_optical_service_aperture_diameter", "Aperture diameter", "", ""],
+    ["sys_eo_optical_service_detector_ifov", "Detector IFOV", "", ""],
+    ["sys_eo_optical_service_ground_sample_distance", "Ground sample distance", "", ""],
+    ["sys_eo_optical_service_integration_time", "Integration time", "", ""],
+    ["sys_eo_optical_service_motion_smear", "Motion smear", "", ""],
+    ["sys_eo_optical_service_sun_elevation_at_target", "Sun elevation at target", "", ""],
+    ["sys_eo_optical_service_swath_width", "Swath width", "", ""],
+    ["sys_kpi_achieved_comms_access_gap", "Access gap", "", ""],
+    ["sys_kpi_achieved_comms_availability", "Availability", "", ""],
+    ["sys_kpi_achieved_comms_conjunction_rate", "Conjunction rate", "", ""],
+    ["sys_kpi_achieved_comms_contact_time", "Contact time", "", ""],
+    ["sys_kpi_achieved_comms_coverage", "Coverage", "", ""],
+    ["sys_kpi_achieved_comms_delivery_latency", "Delivery latency", "", ""],
+    ["sys_kpi_achieved_comms_devices_per_beam", "Devices per beam", "", ""],
+    ["sys_kpi_achieved_comms_downlink_data_volume", "Downlink data volume", "", ""],
+    ["sys_kpi_achieved_comms_fold", "Fold", "", ""],
+    ["sys_kpi_achieved_comms_handover_rate", "Handover rate", "", ""],
+    ["sys_kpi_achieved_comms_latency", "Latency", "", ""],
+    ["sys_kpi_achieved_comms_link_margin", "Link margin", "", ""],
+    ["sys_kpi_achieved_comms_throughput", "Throughput", "", ""],
+    ["sys_kpi_achieved_comms_time_transfer", "Time transfer", "", ""],
+    ["sys_kpi_achieved_eo_isr_availability", "Availability", "", ""],
+    ["sys_kpi_achieved_eo_isr_cep90", "CEP90", "", ""],
+    ["sys_kpi_achieved_eo_isr_collection_capacity", "Collection capacity", "", ""],
+    ["sys_kpi_achieved_eo_isr_conjunction_rate", "Conjunction rate", "", ""],
+    ["sys_kpi_achieved_eo_isr_contact_time", "Contact time", "", ""],
+    ["sys_kpi_achieved_eo_isr_coverage", "Coverage", "", ""],
+    ["sys_kpi_achieved_eo_isr_delivery_latency", "Delivery latency", "", ""],
+    ["sys_kpi_achieved_eo_isr_downlink_data_volume", "Downlink data volume", "", ""],
+    ["sys_kpi_achieved_eo_isr_dwell_time", "Dwell time", "", ""],
+    ["sys_kpi_achieved_eo_isr_fold", "Fold", "", ""],
+    ["sys_kpi_achieved_eo_isr_gsd", "GSD", "", ""],
+    ["sys_kpi_achieved_eo_isr_image_snr", "Image SNR", "", ""],
+    ["sys_kpi_achieved_eo_isr_intercept_prob", "Intercept prob.", "", ""],
+    ["sys_kpi_achieved_eo_isr_link_margin", "Link margin", "", ""],
+    ["sys_kpi_achieved_eo_isr_min_detectable_eirp", "Min detectable EIRP", "", ""],
+    ["sys_kpi_achieved_eo_isr_revisit", "Revisit", "", ""],
+    ["sys_kpi_achieved_eo_isr_smear", "Smear", "", ""],
+    ["sys_kpi_achieved_eo_isr_swath", "Swath", "", ""],
+    ["sys_kpi_achieved_pnt_access_gap", "Access gap", "", ""],
+    ["sys_kpi_achieved_pnt_availability", "Availability", "", ""],
+    ["sys_kpi_achieved_pnt_cep90", "CEP90", "", ""],
+    ["sys_kpi_achieved_pnt_conjunction_rate", "Conjunction rate", "", ""],
+    ["sys_kpi_achieved_pnt_coverage", "Coverage", "", ""],
+    ["sys_kpi_achieved_pnt_downlink_data_volume", "Downlink data volume", "", ""],
+    ["sys_kpi_achieved_pnt_fix_availability", "Fix availability", "", ""],
+    ["sys_kpi_achieved_pnt_fold", "Fold", "", ""],
+    ["sys_kpi_achieved_pnt_gdop", "GDOP", "", ""],
+    ["sys_kpi_achieved_pnt_integrity_risk", "Integrity risk", "", ""],
+    ["sys_kpi_achieved_pnt_latency", "Latency", "", ""],
+    ["sys_kpi_achieved_pnt_link_margin", "Link margin", "", ""],
+    ["sys_kpi_achieved_pnt_position_accuracy", "Position accuracy", "", ""],
+    ["sys_kpi_achieved_pnt_revisit", "Revisit", "", ""],
+    ["sys_kpi_achieved_pnt_time_to_first_fix", "Time to first fix", "", ""],
+    ["sys_kpi_achieved_pnt_time_to_geolocate", "Time to geolocate", "", ""],
+    ["sys_kpi_achieved_pnt_time_transfer", "Time transfer", "", ""],
+    ["sys_kpi_required_comms_access_gap", "Access gap", "", ""],
+    ["sys_kpi_required_comms_availability", "Availability", "", ""],
+    ["sys_kpi_required_comms_conjunction_rate", "Conjunction rate", "", ""],
+    ["sys_kpi_required_comms_contact_time", "Contact time", "", ""],
+    ["sys_kpi_required_comms_coverage", "Coverage", "", ""],
+    ["sys_kpi_required_comms_delivery_latency", "Delivery latency", "", ""],
+    ["sys_kpi_required_comms_devices_per_beam", "Devices per beam", "", ""],
+    ["sys_kpi_required_comms_downlink_data_volume", "Downlink data volume", "", ""],
+    ["sys_kpi_required_comms_fold", "Fold", "", ""],
+    ["sys_kpi_required_comms_handover_rate", "Handover rate", "", ""],
+    ["sys_kpi_required_comms_latency", "Latency", "", ""],
+    ["sys_kpi_required_comms_link_margin", "Link margin", "", ""],
+    ["sys_kpi_required_comms_throughput", "Throughput", "", ""],
+    ["sys_kpi_required_comms_time_transfer", "Time transfer", "", ""],
+    ["sys_kpi_required_eo_isr_availability", "Availability", "", ""],
+    ["sys_kpi_required_eo_isr_cep90", "CEP90", "", ""],
+    ["sys_kpi_required_eo_isr_collection_capacity", "Collection capacity", "", ""],
+    ["sys_kpi_required_eo_isr_conjunction_rate", "Conjunction rate", "", ""],
+    ["sys_kpi_required_eo_isr_contact_time", "Contact time", "", ""],
+    ["sys_kpi_required_eo_isr_coverage", "Coverage", "", ""],
+    ["sys_kpi_required_eo_isr_delivery_latency", "Delivery latency", "", ""],
+    ["sys_kpi_required_eo_isr_downlink_data_volume", "Downlink data volume", "", ""],
+    ["sys_kpi_required_eo_isr_dwell_time", "Dwell time", "", ""],
+    ["sys_kpi_required_eo_isr_fold", "Fold", "", ""],
+    ["sys_kpi_required_eo_isr_gsd", "GSD", "", ""],
+    ["sys_kpi_required_eo_isr_image_snr", "Image SNR", "", ""],
+    ["sys_kpi_required_eo_isr_intercept_prob", "Intercept prob.", "", ""],
+    ["sys_kpi_required_eo_isr_link_margin", "Link margin", "", ""],
+    ["sys_kpi_required_eo_isr_min_detectable_eirp", "Min detectable EIRP", "", ""],
+    ["sys_kpi_required_eo_isr_revisit", "Revisit", "", ""],
+    ["sys_kpi_required_eo_isr_smear", "Smear", "", ""],
+    ["sys_kpi_required_eo_isr_swath", "Swath", "", ""],
+    ["sys_kpi_required_pnt_access_gap", "Access gap", "", ""],
+    ["sys_kpi_required_pnt_availability", "Availability", "", ""],
+    ["sys_kpi_required_pnt_cep90", "CEP90", "", ""],
+    ["sys_kpi_required_pnt_conjunction_rate", "Conjunction rate", "", ""],
+    ["sys_kpi_required_pnt_coverage", "Coverage", "", ""],
+    ["sys_kpi_required_pnt_downlink_data_volume", "Downlink data volume", "", ""],
+    ["sys_kpi_required_pnt_fix_availability", "Fix availability", "", ""],
+    ["sys_kpi_required_pnt_fold", "Fold", "", ""],
+    ["sys_kpi_required_pnt_gdop", "GDOP", "", ""],
+    ["sys_kpi_required_pnt_integrity_risk", "Integrity risk", "", ""],
+    ["sys_kpi_required_pnt_latency", "Latency", "", ""],
+    ["sys_kpi_required_pnt_link_margin", "Link margin", "", ""],
+    ["sys_kpi_required_pnt_position_accuracy", "Position accuracy", "", ""],
+    ["sys_kpi_required_pnt_revisit", "Revisit", "", ""],
+    ["sys_kpi_required_pnt_time_to_first_fix", "Time to first fix", "", ""],
+    ["sys_kpi_required_pnt_time_to_geolocate", "Time to geolocate", "", ""],
+    ["sys_kpi_required_pnt_time_transfer", "Time transfer", "", ""],
+    ["sys_launch_ground_and_disposal_daily_contact_time", "Daily contact time", "", ""],
+    ["sys_launch_ground_and_disposal_disposal_altitude", "Disposal altitude", "", ""],
+    ["sys_launch_ground_and_disposal_ground_station_network", "Ground station network", "", ""],
+    ["sys_launch_ground_and_disposal_injection_accuracy", "Injection accuracy", "", ""],
+    ["sys_launch_ground_and_disposal_pass_duration", "Pass duration", "", ""],
+    ["sys_launch_ground_and_disposal_passes_per_day", "Passes per day", "", ""],
+    ["sys_launch_ground_and_disposal_satellites_per_launch", "Satellites per launch", "", ""],
+    ["sys_mass_and_aero_accommodation_coefficient", "Accommodation coefficient", "", ""],
+    ["sys_mass_and_aero_ballistic_coefficient", "Ballistic coefficient", "", ""],
+    ["sys_mass_and_aero_body_shape", "Body shape", "", ""],
+    ["sys_mass_and_aero_centre_of_mass", "Centre of mass", "", ""],
+    ["sys_mass_and_aero_centre_of_pressure_offset", "Centre of pressure offset", "", ""],
+    ["sys_mass_and_aero_drag_acceleration", "Drag acceleration", "", ""],
+    ["sys_mass_and_aero_drag_coefficient", "Drag coefficient", "", ""],
+    ["sys_mass_and_aero_erosion_depth", "Erosion depth", "", ""],
+    ["sys_mass_and_aero_erosion_yield", "Erosion yield", "", ""],
+    ["sys_mass_and_aero_frontal_area", "Frontal area", "", ""],
+    ["sys_mass_and_aero_launch_load_factor", "Launch load factor", "", ""],
+    ["sys_mass_and_aero_launch_mass", "Launch mass", "", ""],
+    ["sys_mass_and_aero_mass_margin", "Mass margin", "", ""],
+    ["sys_mass_and_aero_moments_of_inertia", "Moments of inertia", "", ""],
+    ["sys_mass_and_aero_panel_layout", "Panel layout", "", ""],
+    ["sys_mass_and_aero_panel_stiffness", "Panel stiffness", "", ""],
+    ["sys_mass_and_aero_relative_velocity", "Relative velocity", "", ""],
+    ["sys_mass_and_aero_spacecraft_dry_mass", "Spacecraft dry mass", "", ""],
+    ["sys_mass_and_aero_structural_mass_fraction", "Structural mass fraction", "", ""],
+    ["sys_mission_concept_constellation_in_low_orbit", "Constellation in low orbit", "", ""],
+    ["sys_mission_concept_single_large_satellite", "Single large satellite", "", ""],
+    ["sys_mission_requirements_access_gap_requirement", "Access gap requirement", "", ""],
+    ["sys_mission_requirements_availability_requirement", "Availability requirement", "", ""],
+    ["sys_mission_requirements_coverage_latitude_band", "Coverage latitude band", "", ""],
+    ["sys_mission_requirements_coverage_requirement", "Coverage requirement", "", ""],
+    ["sys_mission_requirements_data_latency_requirement", "Data latency requirement", "", ""],
+    ["sys_mission_requirements_launch_window", "Launch window", "", ""],
+    ["sys_mission_requirements_mission_duration", "Mission duration", "Time", "Year"],
+    ["sys_mission_requirements_mission_epoch", "Mission epoch", "Time", "Day"],
+    ["sys_mission_requirements_revisit_requirement", "Revisit requirement", "", ""],
+    ["sys_multi_payload_accommodation_area", "Accommodation area", "", ""],
+    ["sys_multi_payload_boresight_separation", "Boresight separation", "", ""],
+    ["sys_multi_payload_number_of_payloads", "Number of payloads", "", ""],
+    ["sys_multi_payload_operating_conflict_rate", "Operating conflict rate", "", ""],
+    ["sys_multi_payload_payload_mass_fraction", "Payload mass fraction", "", ""],
+    ["sys_multi_payload_shared_downlink_allocation", "Shared downlink allocation", "", ""],
+    ["sys_multi_payload_shared_power_allocation", "Shared power allocation", "", ""],
+    ["sys_multi_payload_simultaneity_window", "Simultaneity window", "", ""],
+    ["sys_multi_payload_thermal_dissipation_share", "Thermal dissipation share", "", ""],
+    ["sys_navigation_and_orbit_determination_along_track_control_tolerance", "Along-track control tolerance", "", ""],
+    ["sys_navigation_and_orbit_determination_ephemeris_prediction_accuracy", "Ephemeris prediction accuracy", "", ""],
+    ["sys_navigation_and_orbit_determination_ephemeris_upload_cadence", "Ephemeris upload cadence", "", ""],
+    ["sys_navigation_and_orbit_determination_navigation_filter_rate", "Navigation filter rate", "", ""],
+    ["sys_navigation_and_orbit_determination_orbit_determination_accuracy", "Orbit determination accuracy", "", ""],
+    ["sys_navigation_and_orbit_determination_orbit_determination_cycle", "Orbit determination cycle", "", ""],
+    ["sys_navigation_and_orbit_determination_phasing_tolerance", "Phasing tolerance", "", ""],
+    ["sys_navigation_and_orbit_determination_position_error_growth", "Position error growth", "", ""],
+    ["sys_navigation_and_orbit_determination_prediction_horizon", "Prediction horizon", "", ""],
+    ["sys_navigation_sensing_accelerometer_class", "Accelerometer class", "", ""],
+    ["sys_navigation_sensing_density_estimate", "Density estimate", "", ""],
+    ["sys_navigation_sensing_gnss_solution", "GNSS solution", "", ""],
+    ["sys_navigation_sensing_observed_acceleration", "Observed acceleration", "", ""],
+    ["sys_navigation_sensing_scale_factor", "Scale factor", "", ""],
+    ["sys_navigation_sensing_unmodelled_acceleration", "Unmodelled acceleration", "", ""],
+    ["sys_orbit_geometry_altitude", "Altitude", "", ""],
+    ["sys_orbit_geometry_eccentricity", "Eccentricity", "", ""],
+    ["sys_orbit_geometry_eclipse_fraction", "Eclipse fraction", "", ""],
+    ["sys_orbit_geometry_inclination", "Inclination", "", ""],
+    ["sys_orbit_geometry_ltan", "LTAN", "", ""],
+    ["sys_orbit_geometry_minimum_elevation", "Minimum elevation", "", ""],
+    ["sys_orbit_geometry_nodal_regression_rate", "Nodal regression rate", "", ""],
+    ["sys_orbit_geometry_off_nadir_angle", "Off-nadir angle", "", ""],
+    ["sys_orbit_geometry_orbital_period", "Orbital period", "", ""],
+    ["sys_orbit_geometry_orbital_velocity", "Orbital velocity", "", ""],
+    ["sys_orbit_geometry_repeat_cycle", "Repeat cycle", "", ""],
+    ["sys_orbit_maintenance_abort_altitude", "Abort altitude", "", ""],
+    ["sys_orbit_maintenance_collision_avoidance_delta_v", "Collision avoidance delta-v", "", ""],
+    ["sys_orbit_maintenance_deorbit_delta_v", "Deorbit delta-v", "", ""],
+    ["sys_orbit_maintenance_manoeuvre_duration", "Manoeuvre duration", "", ""],
+    ["sys_orbit_maintenance_manoeuvre_frequency", "Manoeuvre frequency", "", ""],
+    ["sys_orbit_maintenance_propellant_reserve", "Propellant reserve", "", ""],
+    ["sys_orbit_maintenance_station_keeping_box", "Station-keeping box", "", ""],
+    ["sys_orbit_maintenance_station_keeping_delta_v", "Station-keeping delta-v", "", ""],
+    ["sys_orbit_maintenance_thrust_duty_limit", "Thrust duty limit", "", ""],
+    ["sys_orbit_maintenance_thrust_modulation_resolution", "Thrust modulation resolution", "", ""],
+    ["sys_payload_interface_alignment_stability", "Alignment stability", "", ""],
+    ["sys_payload_interface_average_payload_power", "Average payload power", "", ""],
+    ["sys_payload_interface_field_of_view_keep_out", "Field of view keep-out", "", ""],
+    ["sys_payload_interface_operating_temperature_range", "Operating temperature range", "", ""],
+    ["sys_payload_interface_payload_data_rate", "Payload data rate", "", ""],
+    ["sys_payload_interface_payload_dissipation", "Payload dissipation", "", ""],
+    ["sys_payload_interface_payload_duty_cycle", "Payload duty cycle", "", ""],
+    ["sys_payload_interface_payload_envelope", "Payload envelope", "", ""],
+    ["sys_payload_interface_payload_mass", "Payload mass", "", ""],
+    ["sys_payload_interface_peak_payload_power", "Peak payload power", "", ""],
+    ["sys_payload_interface_pointing_knowledge_requirement", "Pointing knowledge requirement", "", ""],
+    ["sys_payload_interface_pointing_requirement", "Pointing requirement", "", ""],
+    ["sys_pnt_service_clock_stability", "Clock stability", "", ""],
+    ["sys_pnt_service_geometric_dilution", "Geometric dilution", "", ""],
+    ["sys_pnt_service_time_transfer_accuracy", "Time transfer accuracy", "", ""],
+    ["sys_pointing_error_budget_absolute_knowledge_error", "Absolute knowledge error", "", ""],
+    ["sys_pointing_error_budget_absolute_measurement_error", "Absolute measurement error", "", ""],
+    ["sys_pointing_error_budget_absolute_performance_error", "Absolute performance error", "", ""],
+    ["sys_pointing_error_budget_control_error_contribution", "Control error contribution", "", ""],
+    ["sys_pointing_error_budget_disturbance_torque_budget", "Disturbance torque budget", "", ""],
+    ["sys_pointing_error_budget_relative_performance_error", "Relative performance error", "", ""],
+    ["sys_power_array_area", "Array area", "", ""],
+    ["sys_power_array_degradation", "Array degradation", "", ""],
+    ["sys_power_battery_capacity", "Battery capacity", "", ""],
+    ["sys_power_bus_power_demand", "Bus power demand", "", ""],
+    ["sys_power_bus_voltage", "Bus voltage", "", ""],
+    ["sys_power_cell_efficiency", "Cell efficiency", "", ""],
+    ["sys_power_depth_of_discharge", "Depth of discharge", "", ""],
+    ["sys_power_electrical_power", "Electrical power", "", ""],
+    ["sys_power_end_of_life_power", "End of life power", "", ""],
+    ["sys_power_harness_loss", "Harness loss", "", ""],
+    ["sys_power_power_margin", "Power margin", "", ""],
+    ["sys_power_ppu_power", "PPU power", "", ""],
+    ["sys_power_sada_angle_range", "SADA angle range", "", ""],
+    ["sys_propulsion_achievable_lifetime", "Achievable lifetime", "", ""],
+    ["sys_propulsion_compression_ratio", "Compression ratio", "", ""],
+    ["sys_propulsion_decay_rate", "Decay rate", "", ""],
+    ["sys_propulsion_delta_v_budget", "Delta-v budget", "", ""],
+    ["sys_propulsion_intake_capture_area", "Intake capture area", "", ""],
+    ["sys_propulsion_minimum_impulse_bit", "Minimum impulse bit", "", ""],
+    ["sys_propulsion_number_of_thrusters", "Number of thrusters", "", ""],
+    ["sys_propulsion_ppu_efficiency", "PPU efficiency", "", ""],
+    ["sys_propulsion_propellant_mass", "Propellant mass", "", ""],
+    ["sys_propulsion_propellant_type", "Propellant type", "", ""],
+    ["sys_propulsion_re_entry_time_unpowered", "Re-entry time unpowered", "", ""],
+    ["sys_propulsion_specific_impulse", "Specific impulse", "", ""],
+    ["sys_propulsion_tank_volume", "Tank volume", "", ""],
+    ["sys_propulsion_throttle_range", "Throttle range", "", ""],
+    ["sys_propulsion_thrust_authority", "Thrust authority", "", ""],
+    ["sys_propulsion_thrust_to_drag_ratio", "Thrust to drag ratio", "", ""],
+    ["sys_propulsion_thrust_vector_alignment", "Thrust vector alignment", "", ""],
+    ["sys_propulsion_thruster_duty_cycle", "Thruster duty cycle", "", ""],
+    ["sys_propulsion_total_impulse", "Total impulse", "", ""],
+    ["sys_rf_geolocation_service_angle_of_arrival_accuracy", "Angle of arrival accuracy", "", ""],
+    ["sys_rf_geolocation_service_cluster_baseline", "Cluster baseline", "", ""],
+    ["sys_rf_geolocation_service_dwell_time", "Dwell time", "", ""],
+    ["sys_rf_geolocation_service_geolocation_cep90", "Geolocation CEP90", "", ""],
+    ["sys_rf_geolocation_service_timing_synchronisation", "Timing synchronisation", "", ""],
+    ["sys_space_environment_ap", "Ap, sustained", "Ratio", "One"],
+    ["sys_space_environment_atmospheric_density", "Atmospheric density", "", ""],
+    ["sys_space_environment_atomic_oxygen_fluence", "Atomic oxygen fluence", "", ""],
+    ["sys_space_environment_f10_7", "F10.7, sustained daily value", "Ratio", "One"],
+    ["sys_space_environment_f10_7_81day", "F10.7, 81-day mean", "Ratio", "One"],
+    ["sys_space_environment_kp", "Kp, worst slot of the sustained day", "Ratio", "One"],
+    ["sys_space_environment_solar_flux", "Solar flux, sustained", "Ratio", "One"],
+    ["sys_space_environment_thermospheric_wind", "Thermospheric wind", "", ""],
+    ["sys_structure_accommodation_volume", "Accommodation volume", "", ""],
+    ["sys_structure_bus_dimensions", "Bus dimensions", "", ""],
+    ["sys_structure_panel_thickness", "Panel thickness", "", ""],
+    ["sys_structure_primary_structure_material", "Primary structure material", "", ""],
+    ["sys_thermal_alpha_over_epsilon_ratio", "Alpha over epsilon ratio", "", ""],
+    ["sys_thermal_emissivity", "Emissivity", "", ""],
+    ["sys_thermal_environmental_heat_load", "Environmental heat load", "", ""],
+    ["sys_thermal_equipment_temperature_limits", "Equipment temperature limits", "", ""],
+    ["sys_thermal_free_molecular_heat_flux", "Free-molecular heat flux", "", ""],
+    ["sys_thermal_heater_power_estimate", "Heater power estimate", "", ""],
+    ["sys_thermal_internal_dissipation", "Internal dissipation", "", ""],
+    ["sys_thermal_mli_layer_count", "MLI layer count", "", ""],
+    ["sys_thermal_radiator_area_estimate", "Radiator area estimate", "", ""],
+    ["sys_thermal_solar_absorptivity", "Solar absorptivity", "", ""],
+    ["sys_thermal_thermal_mass", "Thermal mass", "", ""],
+    ["sys_tt_and_c_and_downlink_data_volume_per_orbit", "Data volume per orbit", "", ""],
+    ["sys_tt_and_c_and_downlink_downlink_rate", "Downlink rate", "", ""],
+    ["sys_tt_and_c_and_downlink_on_board_storage", "On-board storage", "", ""],
+    ["sys_tt_and_c_and_downlink_telemetry_rate", "Telemetry rate", "", ""],
+    ["sys_tt_and_c_and_downlink_tt_and_c_antenna_gain", "TT&C antenna gain", "", ""],
+    ["sys_tt_and_c_and_downlink_tt_and_c_frequency_band", "TT&C frequency band", "", ""],
+    ["sys_tt_and_c_and_downlink_tt_and_c_link_margin", "TT&C link margin", "", ""],
+    ["sys_tt_and_c_and_downlink_tt_and_c_transmit_power", "TT&C transmit power", "", ""],
+    ["thm_absorbed_albedo", "Absorbed albedo", "Power", "Watt"],
+    ["thm_absorbed_ir", "Absorbed Earth infrared", "Power", "Watt"],
+    ["thm_absorbed_solar", "Absorbed direct solar", "Power", "Watt"],
+    ["thm_absorptivity", "Solar absorptivity", "Ratio", "One"],
+    ["thm_aero_heating", "Free-molecular aerodynamic heating", "Power", "Watt"],
+    ["thm_dissipation", "Heat to reject", "Power", "Watt"],
+    ["thm_emissivity", "Infrared emissivity", "Ratio", "One"],
+    ["thm_equilibrium_temperature", "Equilibrium temperature", "Temperature", "Kelvin"],
+    ["thm_internal_dissipation", "Internal dissipation", "Power", "Watt"],
+    ["thm_margin", "Thermal margin", "Temperature", "Kelvin"],
+    ["thm_radiator_area", "Radiator area", "Area", "SquareMetre"],
+    ["thm_required_radiator_area", "Radiator area required", "Area", "SquareMetre"],
+    ["thm_temperature_limit", "Upper temperature limit", "Temperature", "Kelvin"],
+    ["thm_view_factor", "Earth view factor", "Ratio", "One"]
+  ],
+  "groups": [
+    ["root", "VLEO multipayload programme", 0],
+    ["mgt_orbitt_space", "Orbitt Space", 1],
+    ["mgt_customers", "Customers", 1],
+    ["mgt_customer_1", "Customer 1", 1],
+    ["mgt_requirement", "Requirement", 1],
+    ["mgt_kpi_definition", "KPI definition", 1],
+    ["mgt_concept_decision", "Concept decision", 1],
+    ["mgt_cost_and_price", "Cost & price", 1],
+    ["mgt_value_proposition", "Value proposition", 1],
+    ["mgt_customer_2", "Customer 2", 1],
+    ["mgt_requirement_2", "Requirement", 1],
+    ["mgt_kpi_definition_2", "KPI definition", 1],
+    ["mgt_concept_decision_2", "Concept decision", 1],
+    ["mgt_cost_and_price_2", "Cost & price", 1],
+    ["mgt_value_proposition_2", "Value proposition", 1],
+    ["mgt_customer_3", "Customer 3", 1],
+    ["mgt_requirement_3", "Requirement", 1],
+    ["mgt_kpi_definition_3", "KPI definition", 1],
+    ["mgt_concept_decision_3", "Concept decision", 1],
+    ["mgt_cost_and_price_3", "Cost & price", 1],
+    ["mgt_value_proposition_3", "Value proposition", 1],
+    ["mgt_programme_control", "Programme control", 1],
+    ["mgt_life_cycle_and_gates", "Life cycle & gates", 1],
+    ["mgt_review_gates", "Review gates", 1],
+    ["mgt_schedule_and_critical_path", "Schedule & critical path", 1],
+    ["mgt_risk_register", "Risk register", 1],
+    ["mgt_configuration_and_data", "Configuration & data", 1],
+    ["mgt_mission_segments", "Mission segments", 1],
+    ["mgt_space_segment", "Space segment", 1],
+    ["mgt_launch_segment", "Launch segment", 1],
+    ["mgt_ground_segment", "Ground segment", 1],
+    ["mgt_user_segment", "User segment", 1],
+    ["mgt_standards_and_compliance", "Standards & compliance", 1],
+    ["mgt_regulatory_authorisation", "Regulatory authorisation", 1],
+    ["mgt_spectrum_and_frequency", "Spectrum & frequency", 1],
+    ["mgt_launch_and_range_safety", "Launch & range safety", 1],
+    ["mgt_test_and_verification", "Test & verification", 1],
+    ["mgt_component_level", "Component level", 1],
+    ["mgt_subsystem_level", "Subsystem level", 1],
+    ["mgt_system_level", "System level", 1],
+    ["mgt_interface_level", "Interface level", 1],
+    ["mgt_qualification_approach", "Qualification approach", 1],
+    ["mgt_facilities_and_bodies", "Facilities & bodies", 1],
+    ["mgt_debris_and_disposal", "Debris & disposal", 1],
+    ["mgt_export_control", "Export control", 1],
+    ["mgt_quality_and_product_assurance", "Quality & product assurance", 1],
+    ["mgt_insurance_and_liability", "Insurance & liability", 1],
+    ["mgt_supply_chain", "Supply chain", 1],
+    ["mgt_long_lead_items", "Long-lead items", 1],
+    ["mgt_suppliers_and_qualification", "Suppliers & qualification", 1],
+    ["mgt_make_or_buy", "Make or buy", 1],
+    ["mgt_orbitt_capability", "Orbitt capability", 1],
+    ["mgt_engineering_capacity", "Engineering capacity", 1],
+    ["mgt_facilities", "Facilities", 1],
+    ["mgt_heritage", "Heritage", 1],
+    ["sys_vleo_multipayload", "VLEO multipayload", 2],
+    ["sys_service_level_the_customer_needs", "Service level the customer needs", 2],
+    ["sys_communications", "Communications", 2],
+    ["sys_kpi_required_comms", "KPI required · comms", 2],
+    ["sys_kpi_achieved_comms", "KPI achieved · comms", 2],
+    ["sys_earth_observation_and_isr", "Earth observation & ISR", 2],
+    ["sys_kpi_required_eo_isr", "KPI required · EO / ISR", 2],
+    ["sys_kpi_achieved_eo_isr", "KPI achieved · EO / ISR", 2],
+    ["sys_pnt_and_geolocation", "PNT & geolocation", 2],
+    ["sys_kpi_required_pnt", "KPI required · PNT", 2],
+    ["sys_kpi_achieved_pnt", "KPI achieved · PNT", 2],
+    ["sys_mission_concept", "Mission concept", 2],
+    ["sys_mission_performance", "Mission performance", 2],
+    ["sys_mission_requirements", "Mission requirements", 2],
+    ["sys_orbit_and_environment", "Orbit and environment", 2],
+    ["sys_orbit_geometry", "Orbit geometry", 2],
+    ["sys_constellation_trade_output", "Constellation trade output", 2],
+    ["sys_space_environment", "Space environment", 2],
+    ["sys_launch_ground_and_disposal", "Launch, ground and disposal", 2],
+    ["sys_satellite_system", "Satellite system", 2],
+    ["sys_mass_and_aero", "Mass and aero", 2],
+    ["sys_structure", "Structure", 2],
+    ["sys_multi_payload", "Multi-payload", 2],
+    ["sys_satellite_subsystems", "Satellite subsystems", 2],
+    ["sys_keep_it_in_orbit", "Keep it in orbit", 2],
+    ["sys_propulsion", "Propulsion", 2],
+    ["sys_orbit_maintenance", "Orbit maintenance", 2],
+    ["sys_point_it", "Point it", 2],
+    ["sys_attitude_hardware", "Attitude hardware", 2],
+    ["sys_pointing_error_budget", "Pointing error budget", 2],
+    ["sys_attitude_control_sizing", "Attitude control sizing", 2],
+    ["sys_know_where_it_is", "Know where it is", 2],
+    ["sys_navigation_sensing", "Navigation sensing", 2],
+    ["sys_navigation_and_orbit_determination", "Navigation and orbit determination", 2],
+    ["sys_power_it", "Power it", 2],
+    ["sys_power", "Power", 2],
+    ["sys_keep_it_cool", "Keep it cool", 2],
+    ["sys_thermal", "Thermal", 2],
+    ["sys_command_and_downlink_it", "Command and downlink it", 2],
+    ["sys_avionics_and_software", "Avionics and software", 2],
+    ["sys_tt_and_c_and_downlink", "TT&C and downlink", 2],
+    ["sys_carry_the_payloads", "Carry the payloads", 2],
+    ["sys_payload_interface", "Payload interface", 2],
+    ["sys_service_payloads", "Service payloads", 2],
+    ["sys_eo_optical_service", "EO optical service", 2],
+    ["sys_rf_geolocation_service", "RF geolocation service", 2],
+    ["sys_comms_service", "Comms service", 2],
+    ["sys_pnt_service", "PNT service", 2],
+    ["l3_x_envorbit", "Environment and orbit — addition", 3],
+    ["l3_x_closure", "Closure and cost — addition", 3],
+    ["l3_prop", "Propulsion · ICP plasma thruster", 3],
+    ["l3_massaero", "Mass and aero", 3],
+    ["l3_payload", "Payload", 3],
+    ["l3_power", "Power", 3],
+    ["l3_thermal", "Thermal", 3],
+    ["l3_fsw", "Flight software", 3],
+    ["l3_struct", "Structure", 3],
+    ["l3_atthw", "Attitude hardware", 3],
+    ["l3_orbmaint", "Orbit maintenance", 3],
+    ["l3_acs", "Attitude control sizing", 3],
+    ["l3_navod", "Navigation & OD", 3],
+    ["l3_multipay", "Multi-payload", 3],
+    ["l3_ttc", "TT&C and downlink", 3],
+    ["l3_pointing", "Pointing error budget", 3],
+    ["l3_navsense", "Navigation sensing", 3],
+    ["l3_solar", "Solar weather — addition", 3]
+  ],
+  "kinds": ["computed", "declared", "required", "achieved", "kpi"],
+  "fields": [
+    {"field": "label", "group": "the row", "ask": "what is this row called, in the tree", "why": "the page title and every reference to it", "shape": "line", "options": [], "required": true, "relation": false},
+    {"field": "question", "group": "the row", "ask": "what one question does it answer", "why": "an equation with no question gets reused for the wrong thing", "shape": "prose", "options": [], "required": true, "relation": false},
+    {"field": "note", "group": "the row", "ask": "what does a reader need told that the question does not say", "why": "the sentence under the question on the node's page, and the one place a row can say what it is NOT for", "shape": "prose", "options": [], "required": false, "relation": false},
+    {"field": "expression", "group": "the relation", "ask": "what is the relation", "why": "the algorithm, and what a reviewer compares against the source", "shape": "line", "options": [], "required": true, "relation": true},
+    {"field": "source", "group": "the relation", "ask": "cited where — book, paper, page", "why": "this is the claim everything else rests on", "shape": "line", "options": [], "required": true, "relation": true},
+    {"field": "symbol", "group": "the answer", "ask": "what is the answer's symbol", "why": "the binding name in the generated signature", "shape": "line", "options": [], "required": true, "relation": false},
+    {"field": "type", "group": "the answer", "ask": "what quantity is it", "why": "the signature; a dimensional error has to fail to compile", "shape": "quantity", "options": [], "required": true, "relation": false},
+    {"field": "unit", "group": "the answer", "ask": "in what unit", "why": "the conversion at every face boundary", "shape": "unit", "options": [], "required": true, "relation": false},
+    {"field": "lower", "group": "the answer", "ask": "what is the lowest value this row may return", "why": "the guard the generated code refuses below, and half of what the gate calls this row's domain", "shape": "number", "options": [], "required": false, "relation": false},
+    {"field": "upper", "group": "the answer", "ask": "and the highest", "why": "the same, at the other end. The gate refuses a pair that is not ordered, so these two are decided together", "shape": "number", "options": [], "required": false, "relation": false},
+    {"field": "reason_lower", "group": "the answer", "ask": "why is the lower bound there", "why": "a guard whose reason is not written gets deleted by the next person", "shape": "prose", "options": [], "required": true, "relation": false},
+    {"field": "reason_upper", "group": "the answer", "ask": "why is the upper bound there", "why": "the same, at the other end", "shape": "prose", "options": [], "required": true, "relation": false},
+    {"field": "sense", "group": "the contract", "ask": "which way does this requirement bind", "why": "'<=' means the achieved value must stay under the bound, '>=' that it must reach it. Read the wrong way the closure still computes and still reports a comfortable margin, for a spacecraft that is about to be destroyed", "shape": "choice", "options": ["<=", ">="], "required": false, "relation": false},
+    {"field": "declared_value", "group": "the contract", "ask": "what is the declared number", "why": "a declared row computes nothing and publishes this, converted from the unit above. It is the whole of the row's content", "shape": "number", "options": [], "required": false, "relation": false},
+    {"field": "theory_why", "group": "the derivation", "ask": "why is it this relation and not another", "why": "the relation says what; this says why, and it is what a reviewer reads before deciding whether to believe the number", "shape": "prose", "options": [], "required": false, "relation": true},
+    {"field": "theory_reading", "group": "the derivation", "ask": "how should the answer be read", "why": "a number with no reading gets quoted out of context. This is where a row says what its answer does NOT mean", "shape": "prose", "options": [], "required": false, "relation": true}
+  ],
+  "arrays": [
+    {"name": "input", "label": "what this row reads", "why": "the consumer declares what it expects, and assembly refuses a mismatch against what the producer publishes. It is also the derivation graph: an input is an edge, and the edges are what decide what runs before what", "end_only": false, "relation": false, "columns": [{"key": "binding", "ask": "the name it goes by inside this row", "shape": "line", "required": true, "managed": false}, {"key": "var", "ask": "which row answers it", "shape": "row", "required": true, "managed": false}, {"key": "type", "ask": "the quantity this row expects it to be", "shape": "quantity", "required": true, "managed": false}]},
+    {"name": "algorithm", "label": "the steps", "why": "each step becomes one numbered hole in the generated model, and the hole is where a person writes the few typed lines that compose relations from the kernel. The step's text is the comment above it", "end_only": true, "relation": true, "columns": [{"key": "number", "ask": "", "shape": "count", "required": true, "managed": true}, {"key": "text", "ask": "what this step does", "shape": "prose", "required": true, "managed": false}, {"key": "binds", "ask": "the name its result is bound to", "shape": "line", "required": true, "managed": false}, {"key": "type", "ask": "and its quantity", "shape": "quantity", "required": true, "managed": false}]},
+    {"name": "theory", "label": "how the relation was arrived at", "why": "the expression says what the relation is; these say how it was got to. A relation an agent invented carries a citation just as convincingly, and the derivation is what a reviewer reads instead of taking the citation's word", "end_only": false, "relation": true, "columns": [{"key": "text", "ask": "the step of the argument", "shape": "prose", "required": true, "managed": false}, {"key": "math", "ask": "and the line of maths, if there is one", "shape": "line", "required": false, "managed": false}]},
+    {"name": "assumption", "label": "what has to be true for this to hold", "why": "an assumption nobody wrote down is one nobody can check. Each says what it assumes AND the case it fails in, because an assumption with no failure case is a sentence rather than a warning", "end_only": false, "relation": false, "columns": [{"key": "text", "ask": "what is assumed", "shape": "prose", "required": true, "managed": false}, {"key": "fails_when", "ask": "and when that stops being true", "shape": "prose", "required": true, "managed": false}]}
+  ],
+  "choices": {"type": ["Acceleration", "Angle", "AngularMomentum", "AngularRate", "Area", "Charge", "Current", "DataRate", "DataVolume", "DipoleMoment", "Energy", "Force", "Frequency", "Impulse", "Irradiance", "Length", "MagneticFluxDensity", "Mass", "MassDensity", "MassFlow", "MassFlux", "MolarMass", "Money", "NumberDensity", "Power", "Pressure", "Ratio", "Temperature", "Time", "Torque", "Velocity", "Voltage", "Volume"], "unit": ["One", "Percent", "Decibel", "Count", "Bit", "Metre", "Kilometre", "Micrometre", "Nanometre", "SquareMetre", "CubicMetre", "Kilogram", "Gram", "KgPerMol", "Second", "Minute", "Hour", "Day", "Year", "MetrePerSecond", "KmPerSecond", "MetrePerSecond2", "KgPerSecond", "MgPerSecond", "KgPerCubicMetre", "PerCubicMetre", "Newton", "Millinewton", "Micronewton", "NewtonMetre", "NewtonSecond", "NewtonMetreSecond", "Pascal", "Joule", "WattHour", "Watt", "Kilowatt", "WattPerSquareMetre", "WattPerM2K4", "Kelvin", "Radian", "Degree", "RadianPerSecond", "DegreePerSecond", "DegreePerDay", "Arcsecond", "Volt", "Ampere", "AmpereHour", "Tesla", "AmpereSquareMetre", "Coulomb", "ElectronVolt", "Hertz", "Megahertz", "Gigahertz", "BitPerSecond", "MegabitPerSecond", "Gigabit", "Gigabyte", "UsDollar", "MillionUsDollar"]},
+  "view_kinds": ["number", "line", "bar"],
+  "provenances": ["independent-derivation", "published-source", "independent-tool", "physical-bound"],
+  "ai_help": ["none", "wording", "relation"],
+  "fixtures": [
+  ]
+}
+</script>
+<!-- The node as it was when this form was made. Do not edit: the developers compare it with the node as it is when the form comes back, so a change made meanwhile is not overwritten. -->
+<script type="application/toml" id="vleo-node-original">
+format = "vleo-node-form/1"
+node = ""
+base = ""
+
+[new]
+id = ""
+parent = ""
+kind = "computed"
+
+[fields]
+label = ""
+question = ""
+note = ""
+expression = ""
+source = ""
+symbol = ""
+type = ""
+unit = ""
+lower = ""
+upper = ""
+reason_lower = ""
+reason_upper = ""
+sense = ""
+declared_value = ""
+theory_why = ""
+theory_reading = ""
+
+[view]
+kind = "number"
+over = ""
+points = "0"
+</script>
+<!-- THE FORM'S CONTENT. This block is what the developers read. Fill it on the page above, or edit it here directly — by hand, or with an assistant: it is TOML, one key per question, and [[input]], [[algorithm]], [[theory]], [[assumption]] and [[known_value]] repeat. Say in [filled_by] ai = "none", "wording" or "relation" how an assistant helped. On a new node's form, [new] says where it goes: its id, the group it hangs under, and its kind. -->
+<script type="application/toml" id="vleo-node-form">
+format = "vleo-node-form/1"
+node = ""
+base = ""
+
+[new]
+id = "sw_ap_design_margin"
+parent = "l3_solar"
+kind = "computed"
+
+[filled_by]
+name = "A. Example"
+team = "Solar team"
+date = "2026-09-27"
+ai = "none"
+
+[fields]
+label = "Ap design margin over the storm level"
+question = "How much Ap does the design allow per storm level it is sized for?"
+note = ""
+expression = "margin = Ap_design / G"
+source = "derived here from sw_ap_design"
+symbol = "Ap_per_G"
+type = "Ratio"
+unit = "One"
+lower = "0"
+upper = "200"
+reason_lower = "a margin cannot be negative"
+reason_upper = "above this the design level is not a storm level"
+sense = ""
+declared_value = ""
+theory_why = ""
+theory_reading = ""
+
+[view]
+kind = "number"
+over = ""
+points = "0"
+
+[[input]]
+binding = "ap"
+var = "sw_ap_design"
+type = "Ratio"
+
+[[algorithm]]
+number = "1"
+text = "Divide the design Ap by the storm level."
+binds = "margin"
+type = "Ratio"
+
+[notes]
+text = ""
+</script>
+<script>
+'use strict';
+(function () {
+  // The page exactly as it arrived, before anything is drawn into it. A saved
+  // copy is this with its data block replaced — so the copy is the same form,
+  // not a snapshot of whatever the page happened to be showing.
+  const PRISTINE = '<!doctype html>\n' + document.documentElement.outerHTML;
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  // ---- TOML, the subset these blocks use ---------------------------------
+  function parseToml(src) {
+    const root = {}; let cur = root; let i = 0; const n = src.length;
+    const ws = () => { while (i < n && (src[i] === ' ' || src[i] === '\t')) i++; };
+    const eol = () => { ws(); if (src[i] === '#') while (i < n && src[i] !== '\n') i++; };
+    const fail = m => { throw new Error(m + ' (at character ' + i + ')'); };
+    function esc1() {
+      const c = src[i++];
+      const m = { b: '\b', t: '\t', n: '\n', f: '\f', r: '\r', '"': '"', '\\': '\\' };
+      if (c in m) return m[c];
+      if (c === 'u' || c === 'U') {
+        const len = c === 'u' ? 4 : 8; const h = src.substr(i, len); i += len;
+        return String.fromCodePoint(parseInt(h, 16));
+      }
+      if (c === '\n' || c === ' ' || c === '\t' || c === '\r') { // line-ending backslash
+        while (i < n && /[\s]/.test(src[i])) i++; return '';
+      }
+      fail('bad escape \\' + c);
+    }
+    function value() {
+      if (src.startsWith('"""', i)) {
+        i += 3; if (src[i] === '\n') i++; else if (src.startsWith('\r\n', i)) i += 2;
+        let o = '';
+        while (i < n) {
+          if (src.startsWith('"""', i)) {
+            let q = 3; while (src[i + q] === '"') q++; // up to two quotes may end the value
+            o += '"'.repeat(q - 3); i += q; return o;
+          }
+          const c = src[i++]; o += c === '\\' ? esc1() : c;
+        }
+        fail('unclosed """');
+      }
+      if (src.startsWith("'''", i)) {
+        i += 3; if (src[i] === '\n') i++;
+        const e = src.indexOf("'''", i); if (e < 0) fail("unclosed '''");
+        const o = src.slice(i, e); i = e + 3; return o;
+      }
+      if (src[i] === '"') {
+        i++; let o = '';
+        while (i < n && src[i] !== '"') { if (src[i] === '\n') fail('newline in a string'); const c = src[i++]; o += c === '\\' ? esc1() : c; }
+        i++; return o;
+      }
+      if (src[i] === "'") { const e = src.indexOf("'", i + 1); const o = src.slice(i + 1, e); i = e + 1; return o; }
+      const m = /^[^\s#,\]}]+/.exec(src.slice(i)); if (!m) fail('a value was expected');
+      i += m[0].length; const t = m[0];
+      if (t === 'true') return true; if (t === 'false') return false;
+      const v = Number(t.replace(/_/g, '')); if (!isFinite(v)) fail('not a value: ' + t); return v;
+    }
+    function key() {
+      if (src[i] === '"') return value();
+      const m = /^[A-Za-z0-9_-]+/.exec(src.slice(i)); if (!m) fail('a key was expected');
+      i += m[0].length; return m[0];
+    }
+    function path(close) {
+      const parts = []; for (;;) { ws(); parts.push(key()); ws(); if (src[i] === '.') { i++; continue; } break; }
+      if (!src.startsWith(close, i)) fail('expected ' + close); i += close.length; return parts;
+    }
+    while (i < n) {
+      ws(); const c = src[i];
+      if (c === '\n' || c === '\r') { i++; continue; }
+      if (c === '#') { eol(); continue; }
+      if (src.startsWith('[[', i)) {
+        i += 2; const p = path(']]'); let t = root;
+        for (const k of p.slice(0, -1)) t = t[k] = t[k] || {};
+        const last = p[p.length - 1]; (t[last] = t[last] || []).push(cur = {}); eol(); continue;
+      }
+      if (c === '[') {
+        i++; const p = path(']'); let t = root; for (const k of p) t = t[k] = t[k] || {}; cur = t; eol(); continue;
+      }
+      const k = key(); ws(); if (src[i] !== '=') fail('expected = after ' + k); i++; ws();
+      cur[k] = value(); eol();
+    }
+    return root;
+  }
+  function tq(v) {
+    v = String(v == null ? '' : v);
+    const multi = v.indexOf('\n') >= 0;
+    let o = '';
+    for (let k = 0; k < v.length; k++) {
+      const c = v[k], code = c.charCodeAt(0);
+      if (c === '\\') o += '\\\\';
+      else if (c === '"') o += '\\"';
+      else if (c === '\n') o += multi ? '\n' : '\\n';
+      else if (c === '\t') o += '\\t';
+      else if (c === '\r') o += '\\r';
+      else if (c === '<' && (v[k + 1] === '/' || v[k + 1] === '!')) o += '\\u003C';
+      else if (code < 0x20 || code === 0x7f) o += '\\u' + code.toString(16).toUpperCase().padStart(4, '0');
+      else o += c;
+    }
+    return multi ? '"""\n' + o + '"""' : '"' + o + '"';
+  }
+
+  const SCHEMA = JSON.parse($('#vleo-node-schema').textContent);
+  const ORIG = parseToml($('#vleo-node-original').textContent);
+  let DATA;
+  try { DATA = parseToml($('#vleo-node-form').textContent); }
+  catch (e) {
+    $('#nf').innerHTML = '<p class="nf-warn"><b>The form\'s content block could not be read:</b> ' +
+      esc(e.message) + '. It has been edited into something that is not TOML; fix the block ' +
+      'marked vleo-node-form in a text editor.</p>';
+    return;
+  }
+  DATA.fields = DATA.fields || {}; DATA.filled_by = DATA.filled_by || {}; DATA.notes = DATA.notes || {};
+  ORIG.fields = ORIG.fields || {};
+  const S = v => (v == null ? '' : String(v));
+
+  function toToml() {
+    let o = 'format = ' + tq(SCHEMA.format) + '\nnode = ' + tq(DATA.node) + '\nbase = ' + tq(DATA.base) + '\n';
+    if (DATA.new) o += '\n[new]\nid = ' + tq(DATA.new.id) + '\nparent = ' + tq(DATA.new.parent) + '\nkind = ' + tq(DATA.new.kind) + '\n';
+    const by = DATA.filled_by;
+    o += '\n[filled_by]\nname = ' + tq(by.name) + '\nteam = ' + tq(by.team) + '\ndate = ' + tq(by.date) +
+      '\nai = ' + tq(by.ai || 'none') + '\n';
+    o += '\n[fields]\n';
+    for (const f of SCHEMA.fields) if (f.field in DATA.fields) o += f.field + ' = ' + tq(DATA.fields[f.field]) + '\n';
+    if (DATA.view) o += '\n[view]\nkind = ' + tq(DATA.view.kind) + '\nover = ' + tq(DATA.view.over) +
+      '\npoints = ' + tq(DATA.view.points) + '\n';
+    for (const a of SCHEMA.arrays) for (const r of (DATA[a.name] || [])) {
+      o += '\n[[' + a.name + ']]\n';
+      for (const c of a.columns) if (c.key in r) o += c.key + ' = ' + tq(r[c.key]) + '\n';
+    }
+    for (const r of (DATA.known_value || [])) {
+      o += '\n[[known_value]]\n';
+      for (const k of ['label', 'inputs', 'expected', 'tolerance', 'provenance', 'source']) o += k + ' = ' + tq(r[k]) + '\n';
+    }
+    o += '\n[notes]\ntext = ' + tq(DATA.notes.text) + '\n';
+    return o;
+  }
+
+  // ---- what changed, against the node as the form was made -------------
+  function changes() {
+    const out = [];
+    if (DATA.new && ORIG.new) for (const k of ['id', 'parent', 'kind'])
+      if (S(DATA.new[k]) !== S(ORIG.new[k])) out.push('new node ' + k);
+    for (const f of SCHEMA.fields) {
+      const a = S(ORIG.fields[f.field]), b = S(DATA.fields[f.field]);
+      if (a !== b) out.push(f.field);
+    }
+    for (const a of SCHEMA.arrays) {
+      if (JSON.stringify(ORIG[a.name] || []) !== JSON.stringify(DATA[a.name] || [])) out.push(a.label);
+    }
+    if (ORIG.view && DATA.view && JSON.stringify(ORIG.view) !== JSON.stringify(DATA.view)) out.push('how it is drawn');
+    if ((DATA.known_value || []).length) out.push((DATA.known_value || []).length + ' known value(s)');
+    if (S(DATA.notes.text).trim()) out.push('a note for the developers');
+    return out;
+  }
+  function paintCount() {
+    const c = changes();
+    $('#nf-count').textContent = c.length ? c.length + ' change(s): ' + c.join(', ') : 'nothing changed yet';
+  }
+
+  // ---- controls --------------------------------------------------------
+  function control(shape, options, value, onchange, aria) {
+    let el;
+    const opts = shape === 'quantity' ? SCHEMA.choices.type : shape === 'unit' ? SCHEMA.choices.unit : options;
+    if (opts && opts.length) {
+      el = document.createElement('select');
+      const vals = opts.indexOf(value) >= 0 || value === '' ? opts : [value].concat(opts);
+      el.innerHTML = (value === '' ? '<option value=""></option>' : '') +
+        vals.map(o => '<option' + (o === value ? ' selected' : '') + '>' + esc(o) + '</option>').join('');
+    } else if (shape === 'prose') {
+      el = document.createElement('textarea');
+      el.value = value; el.rows = Math.min(14, Math.max(3, value.split('\n').length + 1));
+    } else {
+      el = document.createElement('input'); el.type = 'text'; el.value = value;
+      if (shape === 'number' || shape === 'count') el.inputMode = 'decimal';
+      if (shape === 'row') el.setAttribute('list', 'nf-rows');
+    }
+    el.setAttribute('aria-label', aria || '');
+    el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => { onchange(el.value); paintCount(); });
+    return el;
+  }
+
+  function question(f) {
+    const box = document.createElement('div');
+    box.className = 'nf-q'; box.dataset.field = f.field;
+    const was = S(ORIG.fields[f.field]);
+    box.innerHTML = '<label>' + esc(f.ask.charAt(0).toUpperCase() + f.ask.slice(1)) +
+      (f.required ? '<span class="nf-tag req">needed</span>' : '') +
+      (f.relation ? '<span class="nf-tag rel">the relation</span>' : '') +
+      ' <span class="nf-tag">' + esc(f.field) + '</span></label>' +
+      '<div class="nf-why">' + esc(f.why) + '</div>';
+    const paint = () => {
+      const now = S(DATA.fields[f.field]);
+      box.classList.toggle('changed', now !== was);
+      let w = box.querySelector('.nf-was');
+      if (now !== was) {
+        if (!w) { w = document.createElement('div'); w.className = 'nf-was'; box.appendChild(w); }
+        w.textContent = 'was: ' + (was || '(blank)');
+      } else if (w) w.remove();
+    };
+    box.appendChild(control(f.shape, f.options, S(DATA.fields[f.field]),
+      v => { DATA.fields[f.field] = v; paint(); }, f.field));
+    paint();
+    return box;
+  }
+
+  function blocks(a) {
+    const wrap = document.createElement('section');
+    const rows = DATA[a.name] = DATA[a.name] || [];
+    const draw = () => {
+      wrap.innerHTML = '<h2>' + esc(a.label.charAt(0).toUpperCase() + a.label.slice(1)) +
+        (a.relation ? ' <span class="nf-tag rel">the relation</span>' : '') + '</h2>' +
+        '<p class="nf-why">' + esc(a.why) + '</p>';
+      rows.forEach((r, i) => {
+        const b = document.createElement('div'); b.className = 'nf-block';
+        const last = i === rows.length - 1;
+        b.innerHTML = '<div class="nf-block-h"><span>' + esc(a.name) + ' ' + (i + 1) + '</span></div>';
+        const rm = document.createElement('button'); rm.type = 'button'; rm.textContent = 'remove';
+        rm.disabled = a.end_only && !last;
+        rm.title = rm.disabled ? 'Only the last can be removed: each is numbered, and the number is a place in the generated code.' : '';
+        rm.onclick = () => { rows.splice(i, 1); draw(); paintCount(); };
+        b.firstChild.appendChild(rm);
+        const hint = document.createElement('div'); hint.className = 'nf-was';
+        // WHAT THIS INPUT CONNECTS TO, as it is typed: the row, its quantity and
+        // unit — and a warning when the quantity is not the one expected.
+        const paintHint = () => {
+          if (a.name !== 'input') return;
+          const row = ROWS.get(S(r.var));
+          hint.className = 'nf-was' + (row && S(r.type) && row[2] && row[2] !== S(r.type) ? ' nf-bad' : '');
+          hint.textContent = !S(r.var) ? 'choose a row from the list' : !row
+            ? 'there is no row "' + S(r.var) + '" in the tree — a row that is needed first comes in on its own form'
+            : 'reads ' + row[1] + ' — a ' + (row[2] || '?') + ' in ' + (row[3] || '?') +
+              (S(r.type) && row[2] && row[2] !== S(r.type) ? ', NOT the ' + S(r.type) + ' this block expects' : '');
+        };
+        for (const c of a.columns) {
+          const col = document.createElement('div'); col.className = 'nf-col';
+          if (c.managed) { col.innerHTML = '<span>' + esc(c.key) + ': ' + esc(r[c.key] || '(assigned on apply)') + '</span>'; b.appendChild(col); continue; }
+          col.innerHTML = '<span>' + esc(c.ask || c.key) + (c.required ? ' <span class="nf-tag req">needed</span>' : '') + '</span>';
+          col.appendChild(control(c.shape, [], S(r[c.key]), v => {
+            r[c.key] = v;
+            if (a.name === 'input' && c.key === 'var' && !S(r.type) && ROWS.get(v)) {
+              r.type = ROWS.get(v)[2]; draw(); return;
+            }
+            paintHint();
+          }, a.name + ' ' + (i + 1) + ' ' + c.key));
+          b.appendChild(col);
+        }
+        if (a.name === 'input') { b.appendChild(hint); paintHint(); }
+        wrap.appendChild(b);
+      });
+      const add = document.createElement('button'); add.type = 'button';
+      add.textContent = 'add ' + (a.end_only ? 'one at the end' : 'one');
+      add.onclick = () => {
+        const r = {}; for (const c of a.columns) r[c.key] = c.managed ? String(rows.length + 1) : '';
+        rows.push(r); draw(); paintCount();
+      };
+      wrap.appendChild(add);
+    };
+    draw();
+    return wrap;
+  }
+
+  function known() {
+    const wrap = document.createElement('section');
+    const rows = DATA.known_value = DATA.known_value || [];
+    const draw = () => {
+      wrap.innerHTML = '<h2>Known values</h2><p class="nf-why">An answer you know at given inputs, and where ' +
+        'it comes from. A developer records it as a check the node must pass — it is never taken from the ' +
+        'tool itself, and never from an assistant.</p>';
+      if (SCHEMA.fixtures.length) {
+        wrap.insertAdjacentHTML('beforeend', '<p class="nf-muted">Already held by:</p><table class="nf-fx"><tr><th>label</th>' +
+          '<th>inputs</th><th>expected</th><th>from</th></tr>' + SCHEMA.fixtures.map(x => '<tr><td>' + esc(x.label) +
+          '</td><td>' + esc(x.inputs) + '</td><td>' + esc(x.expect) + ' ± ' + esc(x.tolerance) + '</td><td>' +
+          esc(x.provenance) + ' — ' + esc(x.source) + '</td></tr>').join('') + '</table>');
+      }
+      rows.forEach((r, i) => {
+        const b = document.createElement('div'); b.className = 'nf-block';
+        b.innerHTML = '<div class="nf-block-h"><span>known value ' + (i + 1) + '</span></div>';
+        const rm = document.createElement('button'); rm.type = 'button'; rm.textContent = 'remove';
+        rm.onclick = () => { rows.splice(i, 1); draw(); paintCount(); };
+        b.firstChild.appendChild(rm);
+        const cols = [['label', 'what case this is'], ['inputs', 'the inputs it holds at, e.g. orbit_altitude = 250 km'],
+          ['expected', 'the answer, in the node\'s unit'], ['tolerance', 'how close counts, as a fraction (default 1e-6)'],
+          ['provenance', 'where it comes from'], ['source', 'the reference — book, paper, page, or who measured it']];
+        for (const [k, ask] of cols) {
+          const col = document.createElement('div'); col.className = 'nf-col';
+          col.innerHTML = '<span>' + esc(ask) + '</span>';
+          col.appendChild(control('line', k === 'provenance' ? SCHEMA.provenances : [], S(r[k]), v => { r[k] = v; }, 'known ' + (i + 1) + ' ' + k));
+          b.appendChild(col);
+        }
+        wrap.appendChild(b);
+      });
+      const add = document.createElement('button'); add.type = 'button'; add.textContent = 'add a known value';
+      add.onclick = () => { rows.push({ label: '', inputs: '', expected: '', tolerance: '', provenance: SCHEMA.provenances[0], source: '' }); draw(); paintCount(); };
+      wrap.appendChild(add);
+    };
+    draw();
+    return wrap;
+  }
+
+  // ---- the page --------------------------------------------------------
+  const ROWS = new Map((SCHEMA.rows || []).map(r => [r[0], r]));
+  const dl = document.createElement('datalist'); dl.id = 'nf-rows';
+  dl.innerHTML = (SCHEMA.rows || []).map(r => '<option value="' + esc(r[0]) + '">' + esc(r[1]) + ' — ' +
+    esc(r[2] || '') + ' ' + esc(r[3] || '') + '</option>').join('');
+  document.body.appendChild(dl);
+  // A field that belongs to one kind of node, shown only on that kind.
+  const ONLY = { sense: ['required'], declared_value: ['declared', 'required'] };
+  const main = $('#nf');
+  main.innerHTML = '<div class="nf-bar"><button type="button" class="nf-primary" id="nf-save">save a filled copy</button>' +
+    '<button type="button" id="nf-print">print</button><span class="nf-count" id="nf-count"></span></div>';
+
+  const who = document.createElement('section');
+  who.innerHTML = '<h2>Who is filling this</h2>';
+  const g = document.createElement('div'); g.className = 'nf-grid2';
+  for (const [k, ask] of [['name', 'your name'], ['team', 'your team or company'], ['date', 'date (filled in on save if blank)']]) {
+    const q = document.createElement('div'); q.className = 'nf-q'; q.innerHTML = '<label>' + esc(ask) + '</label>';
+    q.appendChild(control('line', [], S(DATA.filled_by[k]), v => { DATA.filled_by[k] = v; }, k)); g.appendChild(q);
+  }
+  const ai = document.createElement('div'); ai.className = 'nf-q';
+  ai.innerHTML = '<label>did an assistant help?</label><div class="nf-why">none · wording (the text, not the maths) · ' +
+    'relation (the equation, its steps or its derivation — those are then derived by a developer, not taken from this form)</div>';
+  ai.appendChild(control('choice', SCHEMA.ai_help, S(DATA.filled_by.ai || 'none'), v => { DATA.filled_by.ai = v; }, 'ai'));
+  g.appendChild(ai); who.appendChild(g); main.appendChild(who);
+
+  if (SCHEMA.new) {
+    DATA.new = DATA.new || { id: '', parent: '', kind: 'computed' };
+    const w = document.createElement('section');
+    w.innerHTML = '<h2>Where it goes</h2><p class="nf-why">A new node hangs under one group of the tree, in one ' +
+      'of its four layers, and is one kind of row. The developers check this first: where a node sits decides ' +
+      'who owns it and what it may read.</p>';
+    const g3 = document.createElement('div'); g3.className = 'nf-grid2';
+    const idq = document.createElement('div'); idq.className = 'nf-q';
+    idq.innerHTML = '<label>its id <span class="nf-tag req">needed</span></label><div class="nf-why">lowercase words ' +
+      'joined by underscores, starting with a letter — e.g. <code>pay_sensor_mass</code>. It is the answer\'s name ' +
+      'everywhere in the design.</div>';
+    idq.appendChild(control('line', [], S(DATA.new.id), v => { DATA.new.id = v; }, 'new id')); g3.appendChild(idq);
+    const kq = document.createElement('div'); kq.className = 'nf-q';
+    kq.innerHTML = '<label>what kind of row <span class="nf-tag req">needed</span></label><div class="nf-why">computed ' +
+      '— worked out from what it reads · declared — a number somebody chose · required — a bound the design must ' +
+      'meet · achieved — what the design reaches against one · kpi — a figure the programme reports</div>';
+    kq.appendChild(control('choice', SCHEMA.kinds, S(DATA.new.kind || 'computed'), v => { DATA.new.kind = v; paintKind(); }, 'new kind'));
+    g3.appendChild(kq); w.appendChild(g3);
+    const pq = document.createElement('div'); pq.className = 'nf-q';
+    pq.innerHTML = '<label>under which group <span class="nf-tag req">needed</span></label><div class="nf-why">every ' +
+      'group of the tree, by layer: 1 management · 2 the system · 3 subsystem · 4 the run</div>';
+    const sel = document.createElement('select'); sel.setAttribute('aria-label', 'new parent');
+    sel.innerHTML = '<option value=""></option>' + SCHEMA.groups.map(g => '<option value="' + esc(g[0]) + '"' +
+      (g[0] === S(DATA.new.parent) ? ' selected' : '') + '>Layer ' + g[2] + ' · ' + esc(g[1]) + ' (' + esc(g[0]) + ')</option>').join('');
+    sel.addEventListener('change', () => { DATA.new.parent = sel.value; paintCount(); });
+    pq.appendChild(sel); w.appendChild(pq);
+    main.appendChild(w);
+  }
+  function paintKind() {
+    const kind = DATA.new ? S(DATA.new.kind) : SCHEMA.kind;
+    for (const [f, kinds] of Object.entries(ONLY)) {
+      const box = document.querySelector('.nf-q[data-field="' + f + '"]');
+      if (box) box.hidden = kinds.indexOf(kind) < 0;
+    }
+  }
+
+  const ctx = document.createElement('section');
+  ctx.innerHTML = '<h2>This node</h2><dl class="nf-ctx"><dt>id</dt><dd>' + esc(SCHEMA.node) + '</dd><dt>kind</dt><dd>' +
+    esc(SCHEMA.kind) + '</dd><dt>subsystem</dt><dd>' + esc(SCHEMA.subsystem) + ' — owner ' + esc(SCHEMA.owner) +
+    '</dd><dt>state</dt><dd>' + esc(SCHEMA.state) + '</dd><dt>reads</dt><dd>' + (esc(SCHEMA.reads.join(', ')) || 'nothing') +
+    '</dd><dt>feeds</dt><dd>' + (esc(SCHEMA.feeds.join(', ')) || 'nothing yet') + '</dd></dl>' +
+    '<p class="nf-muted">Its place in the tree, its kind and its owner are not on this form: moving a node is a ' +
+    'developer\'s decision, taken in the repository.</p>';
+  if (!SCHEMA.new) main.appendChild(ctx);
+
+  const groups = [];
+  for (const f of SCHEMA.fields) if (groups.indexOf(f.group) < 0) groups.push(f.group);
+  for (const grp of groups) {
+    const sec = document.createElement('section');
+    sec.innerHTML = '<h2>' + esc(grp.charAt(0).toUpperCase() + grp.slice(1)) + '</h2>';
+    for (const f of SCHEMA.fields.filter(x => x.group === grp)) sec.appendChild(question(f));
+    main.appendChild(sec);
+  }
+  for (const a of SCHEMA.arrays) main.appendChild(blocks(a));
+
+  if (DATA.view) {
+    const v = document.createElement('section');
+    v.innerHTML = '<h2>How the answer is drawn</h2><p class="nf-why">A number, a line over one of its inputs, or bars.</p>';
+    const g2 = document.createElement('div'); g2.className = 'nf-grid2';
+    for (const [k, ask, sh, opts] of [['kind', 'drawn as', 'choice', SCHEMA.view_kinds], ['over', 'over which input (a line), or which row (bars)', 'line', []],
+      ['points', 'how many points along the line', 'count', []]]) {
+      const q = document.createElement('div'); q.className = 'nf-q'; q.innerHTML = '<label>' + esc(ask) + '</label>';
+      q.appendChild(control(sh, opts, S(DATA.view[k]), val => { DATA.view[k] = val; }, 'view ' + k)); g2.appendChild(q);
+    }
+    v.appendChild(g2); main.appendChild(v);
+  }
+  main.appendChild(known());
+
+  const notes = document.createElement('section');
+  notes.innerHTML = '<h2>Anything else the developers should know</h2><p class="nf-why">What you changed and why, what ' +
+    'you were unsure of, what you would like to see when you run it.</p>';
+  const nq = document.createElement('div'); nq.className = 'nf-q';
+  nq.appendChild(control('prose', [], S(DATA.notes.text), v => { DATA.notes.text = v; }, 'notes'));
+  notes.appendChild(nq); main.appendChild(notes);
+
+  paintKind();
+  $('#nf-print').onclick = () => window.print();
+  $('#nf-save').onclick = () => {
+    if (!S(DATA.filled_by.date)) DATA.filled_by.date = new Date().toISOString().slice(0, 10);
+    const open = '<script type="application/toml" id="vleo-node-form">';
+    const at = PRISTINE.indexOf(open);
+    const end = PRISTINE.indexOf('</' + 'script>', at);
+    const html = PRISTINE.slice(0, at + open.length) + '\n' + toToml() + PRISTINE.slice(end);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+    a.download = (SCHEMA.new ? 'new-' + (S(DATA.new.id) || 'node') : SCHEMA.node) + '.node-form.html';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  };
+  paintCount();
+})();
+</script></body></html>

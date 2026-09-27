@@ -27,6 +27,8 @@
     <button class="nudge" id="prev" title="the layer above">←</button>
     <button class="nudge" id="next" title="the layer below">→</button>
     <button class="tab arch-tab" id="arch-tab" title="the pattern every folder repeats">⌗ Architecture</button>
+    <button class="tab forms-tab" id="forms-tab" title="every way something reaches this tool: the inputs, results, and node forms">Forms</button>
+    <button class="tab results-tab" id="results-tab" title="what runs returned, kept on this machine and shown without running">Results</button>
     <button class="tab inputs-tab" id="inputs-tab" title="the one case: every input, its default and the value it runs at — edit, upload or download as CSV">Inputs</button>
     <button class="tab manual-tab" id="manual-tab" title="how to use this tool — in the browser and in a terminal, as a user and as a developer">? Manual</button>
     <button class="tab sel" data-layer="1">1 Management layer</button>
@@ -146,6 +148,16 @@
   -->
   <div id="inputsview" hidden>
     <div id="inputs-body"></div>
+  </div>
+
+  <!-- Saved results: shown as they were, without running. -->
+  <div id="resultsview" hidden>
+    <div id="results-body"></div>
+  </div>
+
+  <!-- The forms: the inputs, results, and node forms, each with its owner. -->
+  <div id="formsview" hidden>
+    <div id="forms-body"></div>
   </div>
 
   <div id="nodeview" hidden>

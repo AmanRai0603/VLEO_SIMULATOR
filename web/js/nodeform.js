@@ -42,12 +42,16 @@ export function mountNodeForm(host, id) {
   $('.nform-up', host).onchange = async e => {
     const f = e.target.files && e.target.files[0];
     e.target.value = '';
-    if (f) await check(host, f.name, await f.text());
+    if (f) await checkForm($('.nform-out', host), f.name, await f.text());
   };
 }
 
-async function check(host, name, html) {
-  const out = $('.nform-out', host);
+/**
+ * A returned form, checked: what it would change, every interface it declares,
+ * what is still open, and the command a developer applies it with. Writes
+ * nothing. Shared by a node's page and the Forms page.
+ */
+export async function checkForm(out, name, html) {
   out.innerHTML = '<p class="muted">reading ' + esc(name) + '…</p>';
   let r;
   try {
@@ -62,10 +66,15 @@ async function check(host, name, html) {
   }
   const by = r.filled_by;
   const tag = { apply: 'will apply', already: 'already so', conflict: 'CONFLICT', refused: 'REFUSED' };
-  let h = '<div class="nform-file"><h4>' + esc(name) + '</h4><p>For <code>' + esc(r.node) + '</code>, ' +
+  const what = r.new
+    ? 'A <b>new node</b>, <code>' + esc(r.new.id || '(no id)') + '</code>, under <code>' +
+      esc(r.new.parent || '(no group)') + '</code>, a ' + esc(r.new.kind) + ' row'
+    : 'For <code>' + esc(r.node) + '</code>';
+  let h = '<div class="nform-file"><h4>' + esc(name) + '</h4><p>' + what + ', ' +
     'filled by <b>' + esc(by.name || 'nobody named') + '</b>' + (by.team ? ' (' + esc(by.team) + ')' : '') +
     (by.date ? ', ' + esc(by.date) : '') + '; assistant: ' + esc(by.ai) + '. ' +
-    (r.base_current ? 'The node is still the version the form was made from.'
+    (r.new ? 'The developers build it in its place in the tree when they apply it.'
+      : r.base_current ? 'The node is still the version the form was made from.'
       : '<b>The node has changed since the form was made</b> — a change to the same thing is a conflict.') +
     '</p>';
   h += r.items.length
@@ -76,6 +85,17 @@ async function check(host, name, html) {
         (i.why ? '<div class="nform-why">' + esc(i.why) + '</div>' : '') + '</td></tr>').join('') +
       '</tbody></table></div>'
     : '<p>The form changes nothing in the node.</p>';
+  if (r.interfaces && r.interfaces.length) {
+    h += '<h4>Interfaces — what each input reads</h4><div class="ri-wrap"><table class="fx"><tbody>' +
+      r.interfaces.map(i => '<tr class="nform-' + (i.why ? 'refused' : 'apply') + '"><td>' +
+        (i.why ? 'REFUSED' : 'connects') + '</td><td><code>' + esc(i.binding) + '</code> ← <code>' +
+        esc(i.var) + '</code></td><td>' + (i.why ? esc(i.why) : esc(i.label) + ' — ' + esc(i.have) + ' in ' +
+        esc(i.unit)) + '</td></tr>').join('') + '</tbody></table></div>';
+  }
+  if (r.open && r.open.length) {
+    h += '<h4>Still for the developer to settle</h4><ul class="nform-open">' +
+      r.open.map(o => '<li>' + esc(o) + '</li>').join('') + '</ul>';
+  }
   h += '<p><b>' + r.applicable + '</b> change(s) can be applied, <b>' + r.blocked + '</b> cannot.</p>';
   if (r.notes && r.notes.trim()) h += '<p class="muted">From the filler: ' + esc(r.notes) + '</p>';
   if (r.known) {

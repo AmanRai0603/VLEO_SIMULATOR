@@ -19,6 +19,8 @@ import { renderRun } from './run.js';
 import { drawArchitecture } from './architecture.js';
 import { renderManual } from './manual.js';
 import { renderCase, preview, saveOverridesToCase, savableOverrides } from './case.js';
+import { renderResults, openResult } from './results.js';
+import { renderForms } from './forms.js';
 import { loadOverrides, overrideCount, clearAllOverrides, clearOverride,
          fromSI, onOverrideChange } from './inputs.js';
 
@@ -83,24 +85,30 @@ export function draw() {
   $('#archview').hidden = v !== 'arch';
   $('#manualview').hidden = v !== 'manual';
   $('#inputsview').hidden = v !== 'inputs';
-  $('#caption-a').hidden = $('#caption-b').hidden =
-    (v === 'node' || v === 'arch' || v === 'manual' || v === 'inputs');
+  $('#resultsview').hidden = v !== 'results';
+  $('#formsview').hidden = v !== 'forms';
+  // The pages that are not the tree: no caption about the tree above them.
+  const page = v === 'node' || v === 'arch' || v === 'manual' || v === 'inputs' ||
+    v === 'results' || v === 'forms';
+  $('#caption-a').hidden = $('#caption-b').hidden = page;
   // The stepper walks a person through reading the TREE; on the manual it
   // would be a second set of instructions beside the first.
-  $('#stepper').hidden = v === 'manual' || v === 'inputs';
+  $('#stepper').hidden = v === 'manual' || v === 'inputs' || v === 'results' || v === 'forms';
   $('#controls').style.display = v === 'layer' && S.layer !== 4 ? '' : 'none';
   // The case bar everywhere a number is shown: which inputs every run is on
   // is the first thing a reader of any number needs.
-  $('#caserow').style.display = v === 'arch' || v === 'manual' || v === 'inputs' ? 'none' : '';
+  $('#caserow').style.display =
+    v === 'arch' || v === 'manual' || v === 'inputs' || v === 'results' || v === 'forms' ? 'none' : '';
   $('#subsys-grp').style.display = S.layer === 3 ? '' : 'none';
   $('#concept-grp').style.display = S.layer === 1 ? '' : 'none';
 
   $('#arch-tab').classList.toggle('sel', v === 'arch');
   $('#manual-tab').classList.toggle('sel', v === 'manual');
   $('#inputs-tab').classList.toggle('sel', v === 'inputs');
+  $('#results-tab').classList.toggle('sel', v === 'results');
+  $('#forms-tab').classList.toggle('sel', v === 'forms');
   $$('.tab[data-layer]').forEach(b =>
-    b.classList.toggle('sel', v !== 'arch' && v !== 'manual' && v !== 'inputs' &&
-                              +b.dataset.layer === S.layer));
+    b.classList.toggle('sel', !page && v !== 'arch' && +b.dataset.layer === S.layer));
   $$('.ctl.sz').forEach(b => b.classList.toggle('sel', b.dataset.size === S.size));
   drawCaseBar();
   $$('.ctl.cpt').forEach(b => b.classList.toggle('sel', b.dataset.concept === S.concept));
@@ -113,7 +121,7 @@ export function draw() {
 
   if (v === 'arch') { drawArchitecture(); drawStatus([]); return; }
   if (v === 'manual') { drawStatus([]); return; }
-  if (v === 'inputs') { drawStatus([]); return; }
+  if (v === 'inputs' || v === 'results' || v === 'forms') { drawStatus([]); return; }
   if (v === 'run')  { drawRunView(); drawStatus([]); return; }
   if (v === 'node') { drawStatus(S.disp); return; }
   drawStatus(drawFigure());
@@ -140,6 +148,21 @@ function drawCaseBar() {
         ? ', ' + d.upgrade.set_aside.length + ' value' + (d.upgrade.set_aside.length === 1 ? '' : 's') +
           ' set aside' : '') : '');
   $('#inputs-tab').textContent = 'Inputs' + (d && d.stored && d.changed ? ' · ' + d.changed : '');
+}
+
+/** Open the Results page, at one result when one is named. */
+async function setResults(file) {
+  if (file) openResult(file);
+  S.view = 'results';
+  draw();
+  await renderResults($('#results-body'));
+}
+
+/** Open the Forms page. */
+function setForms() {
+  S.view = 'forms';
+  draw();
+  renderForms($('#forms-body'));
 }
 
 /** Open the Inputs page. Rendered once per visit, like the manual. */
@@ -362,6 +385,8 @@ function wire() {
   $$('.ctl.sz').forEach(b => b.onclick = () => { S.size = b.dataset.size; draw(); });
   $$('.ctl.cpt').forEach(b => b.onclick = () => { S.concept = b.dataset.concept; draw(); });
   $('#inputs-tab').onclick = () => setInputs();
+  $('#results-tab').onclick = () => setResults();
+  $('#forms-tab').onclick = () => setForms();
   $('#case-inputs').onclick = () => setInputs();
   // An upload from the bar opens the Inputs page and reads the file there, so
   // what it would change is shown before anything is saved.
@@ -378,7 +403,7 @@ function wire() {
   // path that is already known to draw all of them from nothing. The Inputs
   // page redraws itself.
   onCaseChange(() => {
-    if (S.view === 'inputs') { drawCaseBar(); drawStatus([]); return; }
+    if (S.view === 'inputs' || S.view === 'results') { drawCaseBar(); drawStatus([]); return; }
     if (S.view === 'node' && S.selected) { draw(); openNode(S.selected); return; }
     draw();
   });
@@ -427,6 +452,7 @@ function wire() {
     if (x.dataset.goto) goTo(x.dataset.goto);
     else if (x.dataset.group) goToGroup(x.dataset.group);
     else if (x.dataset.inputs !== undefined) setInputs();
+    else if (x.dataset.results !== undefined) setResults(x.dataset.results || null);
   });
 
   document.addEventListener('keydown', e => {

@@ -61,14 +61,17 @@ or open `/#manual` (a single section is `/#manual/<section>`, such as
 `/#manual/term-run`). It covers the browser and the terminal, can be filtered
 to what a user does or what a developer does, and lists what cannot be done by
 hand with why and what to do instead. Every command has a copy button. A card
-at its top says whether the copy you opened accepts edits and whose name they
-will be signed with. Its source is `docs/manual.toml`, and it is tested
+at its top says where this copy keeps the case and the results, and whether a
+case is saved. Its source is `docs/manual.toml`, and it is tested
 against the code: `cargo test` fails on a command, route, variable, folder or
 button it names that does not exist, or one the code has that it leaves out,
 and the pipeline runs every command it calls safe, exactly as written.
 
-The tool starts read-only. To edit sheets from the browser, start it with
-`VLEO_ALLOW_WRITE=1 cargo run --release -p vleo-daemon`.
+**The tool never writes the repository.** The team using it sets the inputs,
+runs, and keeps results — all of it outside the checkout, under `~/.vleo/` —
+and asks for the design to change through a node's form, which the developers
+check, apply and release. There is no edit mode to turn on: a node cannot be
+changed, added or removed from the browser.
 
 To change an input and watch the answer move —
 [`docs/USING_IT.md` §2b](docs/USING_IT.md) drives it end to end on the solar
@@ -153,23 +156,38 @@ no longer be used is set aside by name, with its value, in the file itself. The
 saved case is carried over the first time the updated tool reads it, with the
 old file kept beside it, and the Inputs page says what changed.
 
-**Two forms go out to people who do not have a checkout, and come back.**
+**Three things go out to people who do not have a checkout, and come back.**
+The **Forms** tab has all three in one place.
 
 | form | who fills it | what it changes | applied by |
 |---|---|---|---|
 | the case CSV — *Inputs* | anyone using the tool | the values a run is on | the tool itself, on upload; never git |
-| a node's form — one HTML file per node | whoever should say what that node is | the node's sheet: its question, relation, bounds, steps, assumptions | a developer, `xtask intake <file> --apply`, then git and a release |
+| a result — a CSV, or its HTML report | saved from a run | nothing: it is a record of what a run returned and the inputs it ran on | the tool, on the *Results* tab — shown without running |
+| a node's form — one HTML file per node, or per new node | whoever should say what that node is | the node's sheet: its question, relation, bounds, steps, assumptions — or a new node in its place in the tree | a developer, `xtask intake <file> --apply`, then git and a release |
 
-A node's form is downloaded from the node's page (or `xtask form <node>`). It
-is self-contained: it needs no connection, explains every question and why it is
+**A result is kept, sent and seen again without running.** Save one after a run
+(`vleo run … --save <file.csv>`, or *save this result* in the browser) and the
+tool writes every value returned, every row blocked and every input it ran on
+to one CSV, kept in `~/.vleo/results/` or wherever `VLEO_RESULTS` points. The
+*Results* tab lists them, shows any of them as it was, compares two, downloads
+one as a report page that reads without the tool and carries its CSV inside, and
+can make a result's inputs the case again. `vleo result <file>` does the same
+from a terminal.
+
+A node's form is downloaded from the node's page or the Forms tab (or
+`xtask form <node>`; `xtask form --new` for a node the design does not have
+yet, which also asks where it goes). It is self-contained: it needs no connection, explains every question and why it is
 asked, shows what the node reads and feeds and the known values that hold it,
 and saves a filled copy of itself. It can be filled by hand or by an assistant —
 the content is a plain TOML block. The tool only *checks* a returned form; the
 developer's `intake` compares three versions (the node when the form was made,
 the form, the node now), so a change made meanwhile is a conflict rather than
-overwritten, and a relation an assistant supplied is refused. The next release
-carries what was applied, and the people who filled it run it with their own
-inputs. `docs/examples/` has one filled in a browser.
+overwritten, and a relation an assistant supplied is refused. It checks every
+interface the form declares — each input a row that exists, of the quantity the
+node expects — and for a new node, that the id is free and the parent a group.
+The next release carries what was applied, and the people who filled it run it
+with their own inputs. `docs/examples/` has a filled node form, a filled
+new-node form and a saved result.
 
 `n ran, m blocked` is always printed and the blocked rows are always named. A
 row with no content yet returns `NotRun` under its own name rather than a
@@ -192,19 +210,18 @@ moment the row is evaluated.
 |---|---|---|
 | `crates/` | the whole Rust workspace: the four rings, the faces, and **1396 node folders** under `crates/vleo-mod-*/nodes/` | this is the tool. Almost every file in the repository is here, and most of those are the per-node artefacts `xtask docs` writes from a sheet |
 | `layers/` | the rows in the tree that are **not** nodes — headings, parents, group edges, subsystem ownership | the decomposition itself. `CODEOWNERS` is generated from it, so moving a branch here moves who reviews what |
-| `tools/` | the Python side: the seeder that built the tree, and every check the pipeline runs that is not `cargo` | the checks that cannot be expressed as a Rust test — screenshots, parity against MATLAB, commit messages, agent lanes. Each proves itself with `--selftest` before it is trusted to decide anything |
-| `web/` | the browser face — one `index.html`, one stylesheet, 21 ES modules, the manual among them | how the tool is read. It talks to `vleo-daemon` over HTTP and holds no physics of its own |
+| `tools/` | the Python side: the seeder that built the tree, and every check the pipeline runs that is not `cargo` | the checks that cannot be expressed as a Rust test — screenshots, parity against MATLAB, commit messages, the house rules' own references. Each proves itself with `--selftest` before it is trusted to decide anything |
+| `web/` | the browser face — one `index.html`, one stylesheet, 22 ES modules, the manual among them | how the tool is read. It talks to `vleo-daemon` over HTTP and holds no physics of its own |
 | `panels/` | 14 declared panel specs, plus `REVIEW.md` and 16 reference screenshots — light and dark for the 8 panels checked on pixels | a figure nobody checked is a figure that silently goes wrong. The spec says what the panel must show; the references are what it looked like when a person last approved it |
-| `docs/` | 13 prose documents, 4 diagrams, `manual.toml` — the source of the manual in the tool — and `examples/`, a node form filled in a browser; indexed under **Reference** below | the written record. `VARIABLES.md` is generated; `MATLAB_PORT_PLAN.md` is the row-by-row account of the port and the longest thing here |
+| `docs/` | 12 prose documents, 4 diagrams, `manual.toml` — the source of the manual in the tool — and `examples/`, two filled node forms and a saved result; indexed under **Reference** below | the written record. `VARIABLES.md` is generated; `MATLAB_PORT_PLAN.md` is the row-by-row account of the port and the longest thing here |
 | `bundles/` | reference data as published sets, each with a manifest, a licence term and a hash | rule 2's external oracle. An expected value may never come from the code under test, so the data it is checked against is versioned and verified rather than fetched |
 | `cases/` | the one case, `multipayload.toml` — which inputs are the condition, and so which are the customer's — and `examples/`, case files to copy — one as an older tool wrote it | what a run is on. Its values are not kept here: a case per customer would grow the tree with the order book, so values are uploaded or typed in the tool and saved outside the repository. Gate check V16 refuses a condition that is not a real, settable input |
 | `matlab/` | a thin MATLAB face (`+vleo`) and the study's own published CSV | the tool this was ported from. Its saved run is what `tools/mat_parity.py` compares against |
 | `sources/` | every citation as an object with an id, not as free text | a fixture references `jacchia1971`, never a sentence. Marking a source superseded then lists every row that depended on it, in one query |
 | `cd06/` | `tree.json` — the CD-06 planning document's own node tree, extracted verbatim | where the 1396 rows came from. `tools/seed_tree.py` reads it, so the tree's shape is traceable to the document rather than asserted |
-| `agents/` | `lanes.toml` (which paths each agent may change) and `provenance.toml` (where each definition came from, and its fallback) | seven agents write into this tree. The lane is checked against the diff, not asserted in a prompt |
 | `areas/` | six area files that narrow `AGENTS.md` per area | the nearer file wins, so an area can be stricter than the root without restating it |
-| `xtask/` | the task runner — `gate`, `docs`, `assemble`, `fill`, `ready`, `status` and the rest | the one entry point for everything generated or checked. `cargo run -p xtask -- gate && cargo test` is the command that must be green |
-| `.claude/` | seven agent definitions and four hooks | what each agent is allowed to do and what fires on an edit |
+| `xtask/` | the task runner — `intake`, `publish`, `gate`, `docs`, `assemble`, `fill`, `ready`, `status` and the rest | the one entry point for everything generated or checked. `cargo run -p xtask -- gate && cargo test` is the command that must be green |
+| `.claude/` | four hooks | what fires on an edit made in an assistant's session — the same regeneration and gate anyone's edit goes through |
 | `.github/` | the pipeline (`gate.yml`, `nightly.yml`), the dependency bot, the PR template | eight jobs, and the regeneration diff that catches a generated file nobody re-ran |
 | `.devcontainer/` | the Codespace definition and its setup scripts | a fresh clone that runs without a person installing anything |
 | `.cargo/` | two command aliases: `cargo xtask …` and `cargo vleo …` | short forms of `cargo run -p xtask -- …` and `cargo run -p vleo-cli --bin vleo -- …`. The manual writes out the long forms, and both work in any checkout |
@@ -278,15 +295,16 @@ line at a time, and what the answer does not mean.
 
 ### Who does what
 
-Nothing here is autonomous. The division is fixed and it is the point of the
-whole arrangement: a person decides, a generator derives, an agent does the
-part that is neither a decision nor a derivation.
+Nothing here is autonomous, and the line that matters is between the people who
+**use** the tool and the people who **maintain** it.
 
 | | does | cannot |
 |---|---|---|
-| **a person** | states the question, the relation, its source, the domain and the reason for each bound; derives the known-good numbers; accepts the node | be replaced at any of it — none of it is checkable by machine |
+| **the team** | sets the inputs, runs, keeps and sends results; fills a node's form — or a new node's — when the design should change | change the design from the tool. A form is a request, with a record of who asked and why |
+| **a developer** | checks each form (`xtask intake`), applies it in its layer, publishes, implements the holes, records evidence, gates, releases | apply a form the checker has not passed, or overwrite a change made since the form was drawn |
+| **a person** — either side | states the question, the relation, its source, the domain and the reason for each bound; derives the known-good numbers; accepts the node | be replaced at any of it — none of it is checkable by machine |
 | **a generator** | emits every artefact from the sheet, deterministically | decide anything. It combines and refuses; a decision taken during generation is a decision nobody reviewed |
-| **an agent** | drafts, fills a hole, writes a test, diagnoses a failure | do a person's part, and each is held out of it by a path rule rather than by instruction |
+| **an assistant** | whatever a developer runs it for — a hole body (`fill --by --model` records it), ordinary engineering on the tool | supply a relation: intake refuses a form whose relation an assistant filled, and relation stamping refuses an assistant's name |
 
 Two human decisions per node, and everything between them is a command. If a
 node takes materially longer than that, the template has a defect worth finding
@@ -326,20 +344,23 @@ typed lines per hole, and those are what the five checks below surround.
 
 ### The loop, start to finish
 
-Verified end to end on `main`: a node taken from nothing to "waiting on a
-person", then removed.
+A form arrives; a developer takes it to a release:
 
 ```
-cargo run -p xtask -- new <id> --like <sibling>   # clone the shape, blank the decisions
-cargo run -p xtask -- declare <id>                # the completion questions, and which are open
-#   a person answers them in node.toml
-cargo run -p xtask -- docs <id>                   # refuses while any is open; then six artefacts
-cargo run -p xtask -- fill <id> --hole 1 --body - # the hole body arrives as text, and is spliced
-cargo run -p xtask -- gate <id>                   # twelve checks, in order
+cargo run -p xtask -- intake <form.html>          # the checker: changes, interfaces, conflicts — writes nothing
+cargo run -p xtask -- intake <form.html> --apply  # into its layer; a new node is built in its place
+cargo run -p xtask -- publish <id>                # seeded and filled → published; the code is generated
+cargo run -p xtask -- fill <id> --hole 1 --body - --by "<who>" --model <model>
+cargo run -p xtask -- gate <id>                   # the checks, in order
 cargo run -p xtask -- ready <id>                  # has it earned a person's attention
 cargo test -p vleo-mod-<subsystem>
 ```
 
+then a commit naming whoever filled the form, review, merge, release.
+
+Before forms, the same loop was verified end to end on `main` from the other
+end — a node taken from nothing to "waiting on a person" with `xtask new` and
+`declare`, then removed. `xtask new` still exists for a developer's own row.
 What that run showed, in order:
 
 | stage | what happened |
@@ -364,62 +385,34 @@ Two commands must be green before anything is pushed:
 cargo run -p xtask -- gate && cargo test
 ```
 
-### The seven agents
+### Assistants
 
-Definitions in `.claude/agents/`, lanes in `agents/lanes.toml`, provenance and
-model choice in `agents/provenance.toml`. Each is defined by what it cannot
-change, checked against the diff rather than asserted in its prompt:
+There is no roster of specialised agents. The rules are enforced by the checks —
+the gate, intake, `fill`'s splice, the fixture schema — and those apply to an
+assistant's change exactly as to anyone's, so an assistant needs no lane of its
+own. A developer may use one after a form has passed the checker, for the holes
+and for ordinary engineering on the tool.
 
-```
-tools/agent_lanes.py --agent <name> --since HEAD~1
-```
+Three things hold an assistant out of a person's part mechanically: `fill` is
+the only route into a generated file and refuses a guard, an early return or a
+platform maths call; the fixture schema refuses an expected value whose
+provenance is the code or an assistant; and a relation carries a person's name,
+which intake and relation stamping both refuse to take from an assistant. What
+remains — whether the formula is right — is H1b's job and will not become a
+machine's.
 
-| agent | does | may not | enforced |
-|---|---|---|---|
-| A declaration-drafter | drafts a sheet from a source, raises what must be answered | supply mathematics, a reason or a value | partial |
-| B fixture-recorder | records values a person derived, with provenance | produce an expected value | partial |
-| C hole-filler | returns the body of one numbered hole, as text | write outside the hole; add a guard | full |
-| E test-author | turns a stated property into a test | invent an expected value | partial |
-| F diagnostician | gathers evidence when something moved | fix, or judge acceptability | partial |
-| I systems-backend | generators, gate, kernel plumbing, the faces | edit a sheet or a hole | full |
-| J frontend-visualisation | the web face, panels and figures | invent a style token; ship an unrendered figure | partial |
-
-**Where each sits in the loop.** A is before `declare`, reading a paper into
-sheet fields. B is after a person has derived a known-good number, formatting it
-with its provenance. C is between `docs` and `fill`, returning the hole body as
-text. E extends the evidence beyond the three generated properties. F is not in
-the loop at all — it runs when something moved and nobody expected it. I and J
-work on the tool rather than on the design.
-
-`full` means the machine prevents it. C has no write tool at all: it returns
-hole bodies as text and `xtask fill` is the only route into a generated file,
-refusing a guard, an early return or a platform maths call before anything is
-written.
-
-`partial` and the grades behind it are recorded per lane, with what holds and
-what does not. Agent A cannot be stopped from inventing a formula; a relation
-with nobody's name against it is a gap that blocks review, which is the closest
-mechanical thing to it. Whether the formula is right is H1b's job and will not
-become a machine's.
-
-Four of the seven have never fired here, and that is recorded rather than left
-to be noticed: `agents/provenance.toml` gives each an `expected_from` — the
-point in the work at which it starts — and `tools/fleet_report.py` reads it, so
-an agent silent *before* its own `expected_from` is one waiting for work that
-has not begun, and one silent *past* it is a finding.
-
-Five roster entries are scripts rather than agents, because the work is a fixed
-transform with one right answer: the commit-message rule
+Five jobs are scripts rather than anything with judgement, because the work is
+a fixed transform with one right answer: the commit-message rule
 (`tools/commit_message.py`), the advisory review (`tools/review_report.py`,
 which can never block a merge), the dependency bot (`.github/dependabot.yml`),
 bundle publication (`xtask bundle publish`), and the release pipeline with one
-human approval. A model is the wrong tool for work with no judgement in it.
+human approval.
 
 ### What runs without being asked
 
 | when | what |
 |---|---|
-| a session opens | tree state, what is blocking, whether reference data is present |
+| an assistant's session opens | tree state, what is blocking, whether reference data is present |
 | a sheet or fixture is saved | the gate on that node |
 | a commit message is written | its form, by the same script the pipeline runs |
 | every pull request, and every push to `main` | build, regenerate, gate, test, both profiles, no-std, panels |
@@ -582,12 +575,10 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
   libraries to adopt on the first node that needs one, and why they are not
   dependencies yet.
 - **Not a multi-user service.** One local daemon, one store, no accounts.
-- **The model-family rule separates model tiers, not vendors.** The working
-  model means family in the vendor sense. Every agent here runs one vendor's
-  models, so `fill --by` refusing a second body from the model that wrote the
-  first is the weaker rule, honestly enforced: `agents/provenance.toml` says so
-  rather than claiming the stronger one. Closing it needs a second provider in
-  the harness, which is a decision with a cost, not an oversight.
+- **The model-family rule separates models, not vendors.** `fill --by --model`
+  refuses a second body for a hole from the model that wrote the first, which
+  is the weaker rule honestly enforced: two models from one vendor count as
+  two. Closing it is a developer's choice of assistants, not a check.
 - **Signing is absent, not stubbed.** The release workflow builds and gates but
   does not sign, because no certificate exists yet.
 - **Two faces sit outside the workspace.** `vleo-wasm` and `vleo-py` need
@@ -615,13 +606,12 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
 | | |
 |---|---|
 | **? Manual**, in the tool | the place to start. Every task in the browser and in the terminal, for a user and for a developer, what cannot be done by hand, and every command, route, setting and folder. Source: [`docs/manual.toml`](docs/manual.toml) |
-| [`docs/USING_IT.md`](docs/USING_IT.md) | the worked walkthrough, with real outputs — running it, changing an input, filling a row, what each agent will and will not do |
+| [`docs/USING_IT.md`](docs/USING_IT.md) | the worked walkthrough, with real outputs — running it, changing an input, keeping a result, a form from filling to release |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | why the rings are shaped the way they are |
 | [`docs/NODE_AUTHORING.md`](docs/NODE_AUTHORING.md) | the sheet, field by field |
-| [`docs/WORK_MODEL.md`](docs/WORK_MODEL.md) | who decides what, and which changes need two reviewers |
-| [`docs/AGENT_EVIDENCE.md`](docs/AGENT_EVIDENCE.md) | what each agent produced when it was first used here |
+| [`docs/WORK_MODEL.md`](docs/WORK_MODEL.md) | who does what — the team and the developers, and what crosses between them |
 | [`docs/VARIABLES.md`](docs/VARIABLES.md) | every variable, unit, bound and the reason for it — generated |
-| [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | what to do when the tool is down |
+| [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | a developer's first day, one form from arrival to release, and what to do when the tool is down |
 | [`docs/RELEASE_SETUP.md`](docs/RELEASE_SETUP.md) | tagging, proving and shipping a release |
 | [`docs/MATLAB_PORT_PLAN.md`](docs/MATLAB_PORT_PLAN.md) | how the study was ported, row by row — the record of a finished job |
 | [`docs/DELIVERY_PLAN.md`](docs/DELIVERY_PLAN.md) | what was to be built, in what order |

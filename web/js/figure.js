@@ -103,6 +103,13 @@ export function drawStatus(disp) {
     $('#caserow-note').textContent = r ? 'owner ' + r.owner : '';
     return;
   }
+  if (S.view === 'results' || S.view === 'forms') {
+    $('#status').textContent = S.view === 'results'
+      ? 'Results · what runs returned, shown without running'
+      : 'Forms · the inputs, results, and node forms';
+    $('#caserow-note').textContent = '';
+    return;
+  }
   if (S.view === 'inputs') {
     $('#status').textContent = ['The case', S.saved ? S.saved.label : '', caseTag()]
       .filter(Boolean).join(' · ');

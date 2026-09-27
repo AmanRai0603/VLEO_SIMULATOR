@@ -3,7 +3,9 @@
 The layered interactive document, the browser face, the panels and the figures.
 
 Applies to `web/**`, `docs/img/**`.
-Agent J works here. It may never touch `crates/**`, `xtask/**` or `tools/**`.
+Maintained by the developers. The face reads the design and never writes it:
+no route it calls changes the repository, and a node changes only through its
+form.
 
 ## The document is the GUI
 

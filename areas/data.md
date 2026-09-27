@@ -3,8 +3,8 @@
 Reference data: bundles, hashes, the lockfile, verification and expiry.
 
 Applies to `crates/vleo-data/**`, `bundles/**`.
-Agent K's area — which is a script now, not an agent, because publishing
-without a hash should be impossible rather than forbidden.
+Maintained by the developers, through a script rather than by hand, because
+publishing without a hash should be impossible rather than forbidden.
 
 ## Why there is no database on the physics path
 

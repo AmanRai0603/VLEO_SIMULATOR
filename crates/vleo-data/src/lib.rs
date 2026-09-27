@@ -258,11 +258,6 @@ impl Store {
     }
 }
 
-/// `YYYY-MM-DD`, checked for shape rather than trusted.
-///
-/// No calendar arithmetic: this says the field is a date, not that the date
-/// exists. That is enough to stop `licence_until = "soon"`, which is the
-/// failure worth stopping — it parses as TOML and never expires.
 /// Where the application keeps the saved case: the inputs a person set.
 ///
 /// Beside the reference data and outside the repository, so changing inputs
@@ -283,6 +278,23 @@ pub fn case_path() -> PathBuf {
         .unwrap_or_else(|_| PathBuf::from(".vleo/case/inputs.csv"))
 }
 
+/// Where the application keeps saved results: what runs returned, with the
+/// inputs they ran on. Outside the repository like the case —
+/// `~/.vleo/results/`, or wherever `VLEO_RESULTS` points.
+pub fn results_path() -> PathBuf {
+    if let Ok(p) = std::env::var("VLEO_RESULTS") {
+        return PathBuf::from(p);
+    }
+    std::env::var("HOME")
+        .map(|h| PathBuf::from(h).join(".vleo").join("results"))
+        .unwrap_or_else(|_| PathBuf::from(".vleo/results"))
+}
+
+/// `YYYY-MM-DD`, checked for shape rather than trusted.
+///
+/// No calendar arithmetic: this says the field is a date, not that the date
+/// exists. That is enough to stop `licence_until = "soon"`, which is the
+/// failure worth stopping — it parses as TOML and never expires.
 fn is_iso_date(s: &str) -> bool {
     let b = s.as_bytes();
     b.len() == 10

@@ -1,11 +1,13 @@
 # AGENTS.md
 
-The root instruction file. Everything below applies to every agent and every
-person working in this repository; `areas/*.md` narrow it per area, and the
-nearer file wins on anything they disagree about.
+The root instruction file for the people who maintain this repository — and
+for any assistant a developer runs inside it, which works to exactly the same
+rules. `areas/*.md` narrow it per area, and the nearer file wins on anything
+they disagree about.
 
-This file is reviewed like code, not like documentation. It shapes what seven
-agents produce, so a change to it has the blast radius of a generator change.
+This file is reviewed like code, not like documentation. It decides what every
+change to the design goes through, so a change to it has the blast radius of a
+generator change.
 
 ## What this repository is
 
@@ -17,6 +19,55 @@ computes every number; four rings depend inward only:
 
 The tree is 1396 rows across four layers. Each row is one small question with
 one answer, one folder, and one variable whose id is the row's id.
+
+## Who changes it
+
+**The team uses the tool; the developers maintain it.** A team never edits
+this repository. They set the inputs, run, keep and send results — all of it
+outside the repository, under `~/.vleo/` — and when the design itself is wrong,
+missing or unfinished, the person who knows the answer fills in **the node's
+form** (or the form for a new node) and sends it here. The browser cannot
+change a node, add one or remove one, by design: a change typed into one copy of
+the tool is a change nobody checked, implemented or released.
+
+So every change to the design arrives the same way, and goes through the same
+loop:
+
+    1  CHECK     cargo run -p xtask -- intake <form.html>
+                 what it would change, field by field; every interface it
+                 declares (each input a row that exists, of the quantity the
+                 node expects); what cannot be applied — a conflict with a
+                 change made since, a relation an assistant supplied.
+                 Nothing is written. If it does not pass, it goes back to
+                 whoever filled it, with the lines intake printed.
+    2  APPLY     cargo run -p xtask -- intake <form.html> --apply
+                 into its layer: an existing node's sheet, or a new node built
+                 in its place in the tree. Regenerated and gated as one edit,
+                 or put back entirely.
+    3  PUBLISH   cargo run -p xtask -- publish <node>
+                 a filled seeded row becomes published and its code is
+                 generated, with numbered HOLE blocks.
+    4  IMPLEMENT cargo run -p xtask -- fill <node> --hole <n> --body - \
+                     --by "<who>" --model <model>
+                 the few typed lines per hole, composing kernel relations.
+    5  EVIDENCE  fixtures.toml — values from outside this code, including any
+                 known values the form supplied (intake prints them; it never
+                 writes them).
+    6  GATE      cargo run -p xtask -- gate && cargo test
+    7  RELEASE   commit naming whoever filled the form, review, merge. The
+                 team gets it in the next release, and their saved case carries
+                 over on its own.
+
+**An assistant may help at step 4, and anywhere a developer uses one for
+ordinary engineering** — the generators, the daemon, the faces, the tests. It
+is released on a change only after the form has passed the check at step 1,
+and it works to every rule in this file. There is no roster of specialised
+agents: the checks enforce the rules, not a prompt. What no assistant may do is
+**supply a relation** — intake refuses a form whose relation an assistant
+filled, and relation stamping refuses a checkout whose `git config user.name`
+is an assistant's. `fill --by --model` records who wrote each hole, so a
+significant one written twice by different model families can be compared
+with `xtask differential`.
 
 ## The five rules that do not bend
 
@@ -79,12 +130,16 @@ and they are opposite, which is the whole reason the field exists.
 
 ## The commands
 
+    cargo run -p xtask -- form <node>|--new    a node's form, to send out
+    cargo run -p xtask -- intake <form.html> [--apply [--partial]]
+                                            the checker, then the apply
+    cargo run -p xtask -- publish <node>    seeded and filled → published
     cargo run -p xtask -- declare <node>    the completion questions, and which
                                             are still open
     cargo run -p xtask -- docs [<node>]     the six per-node generators
     cargo run -p xtask -- assemble          the three assembly generators
     cargo run -p xtask -- gate [<node>]     the checks, in order
-    cargo run -p xtask -- fill <node> --hole <n> --body -
+    cargo run -p xtask -- fill <node> --hole <n> --body - [--by <who> --model <model>]
                                             splice one hole body
     cargo run -p xtask -- ready [<node>]    has it earned a person's attention
     cargo run -p xtask -- status            what exists, what is blocking
@@ -94,7 +149,8 @@ and they are opposite, which is the whole reason the field exists.
                                             reach no KPI closure
     cargo run -p xtask -- gap               what the sheets promised and
                                             nothing covers
-    cargo run -p vleo-cli --bin vleo -- run <node>
+    cargo run -p vleo-cli --bin vleo -- run <node> [--save <file.csv>]
+    cargo run -p vleo-cli --bin vleo -- result <file>
 
 One command must be green before anything is pushed:
 
@@ -129,20 +185,3 @@ commit-msg hook and the pipeline run the same script.
 
 Say what you did not do. A report that lists only what worked is a report
 somebody has to re-derive.
-
-## Your lane
-
-Every agent has a list of paths it may change and a list it may never touch,
-in `agents/lanes.toml`. It is checked against the diff, not asserted in a
-prompt:
-
-    tools/agent_lanes.py --agent <name> --since HEAD~1
-
-Each lane also records what actually enforces its prohibition — `full`,
-`partial` or `none`. Read your own before you start. Where it says `none`, a
-person is the only thing between you and a defect, and that is worth knowing.
-
-`agents/provenance.toml` says where each definition came from, who owns it,
-what it falls back to, and which model runs it. A checker never runs the model
-family of the thing it checks: a model given its own reasoning to grade
-approves it. `tools/instruction_lint.py` refuses a pair whose models match.

@@ -1,8 +1,9 @@
 # Using it
 
 This is the page to read first. It is about doing the work — opening the tool,
-filling a row, getting a number you can defend — not about how the system
-checks itself. Where a check matters it is mentioned in one line, at the moment
+running the design on your inputs, keeping what it said, asking for the design
+to change, and, for a developer, taking that request all the way to a release —
+not about how the system checks itself. Where a check matters it is mentioned in one line, at the moment
 you would actually meet it.
 
 Everything below was run against this repository. The outputs are real.
@@ -193,6 +194,37 @@ vleo campaign l3_solar_ach_01 --inputs cases/examples/storm_level_2.csv
 vleo selftest
 ```
 
+### Keeping what a run said
+
+A run worth remembering is saved as a **result**: one CSV with every value it
+returned, every row it blocked on, and every input it ran on.
+
+```
+$ vleo run sw_ap_design --inputs cases/examples/storm_level_2.csv --save storm2.csv
+$ vleo result docs/examples/sw_ap_design.result.csv
+sw_ap_design — a saved result, 2026-09-27T13:29:20Z
+  80  credibility 1 of 4, governed by mathematics
+  2 ran, 0 blocked · mode branch · chain cd9ab9 · kernel 1ad1ae · graph adb684
+
+  1 input(s) changed from their defaults:
+    sw_storm_design_level                2
+
+  2 value(s) returned:
+    sw_storm_design_level                             2       cred 1
+    sw_ap_design                                     80       cred 1
+```
+
+`vleo result` runs nothing: it shows what the run returned when it was saved,
+so it reads the same after any release. `--html <file>` writes it as a report
+page to send to somebody without the tool; the report carries the CSV inside
+it, and uploading either gives the result back whole.
+
+In the browser the same thing is **save this result** under any run, and the
+**Results** tab: every result kept on this machine — under `~/.vleo/results/`,
+or wherever `VLEO_RESULTS` points, never in the checkout — shown as it was,
+compared two at a time with the inputs that differ listed first, downloaded as
+CSV or report, or made the case again with **use its inputs as the case**.
+
 ---
 
 ## 2b · Changing an input and watching the answer move
@@ -311,13 +343,107 @@ is impossible.
 
 ---
 
-## 3 · Filling a row — the loop you will live in
+## 3 · A change to the design, from form to release
 
-A row is a folder. Only one file in it is written by hand.
+Nobody changes the design from the tool. The person who knows what a node should
+say — a payload team, a customer's engineer, a reviewer — fills in **that
+node's form** and sends it to the developers, who check it, apply it, implement
+it and release it. This section follows one form through, first from the side
+that fills it and then from the side that maintains the repository.
+
+### 3.1 The form goes out
+
+In the tool, every node's page has *the node form* tab, and the **Forms** tab
+has every form in one place, including **the form for a new node**. From a
+terminal:
+
+```
+$ cargo run -p xtask -- form sw_ap_design --out sw_ap_design.node-form.html
+$ cargo run -p xtask -- form --new --out new-node.node-form.html
+```
+
+It is one HTML file that opens anywhere with no connection. It asks every
+question in §3.5 with why each is asked, shows what the node reads and feeds and
+the known values that already hold it, lists every row it could read — typing an
+input's row shows what that row is and its quantity — and saves a filled copy of
+itself. The form for a new node also asks where it goes (its parent, and so its
+layer) and what kind of row it is. It can be filled by hand or given to an
+assistant: the content is a plain block of text near the end.
+
+The person who filled it sends the file back. They can check it first on the
+Forms tab — the same checker as below, writing nothing.
+
+### 3.2 It comes back: check it
+
+A developer's first act is the checker. It writes nothing.
+
+```
+$ cargo run -p xtask -- intake docs/examples/sw_ap_design.node-form.html
+sw_ap_design — a node form filled by A. Example (Payload team), 2026-09-27; assistant: none
+  node.toml is still the version the form was made from
+
+  APPLY    note                         «…» → «What the vehicle is built to survive, …»
+  APPLY    assumption 5 · added         «» → «text = The storm level is read on the NOAA G scale, …»
+
+2 change(s) can be applied, 0 cannot.
+```
+
+```
+$ cargo run -p xtask -- intake docs/examples/new-node.node-form.html
+a new node — sw_ap_design_margin under l3_solar, a computed row — a node form filled by A. Example (Solar team), 2026-09-27; assistant: none
+
+  APPLY    new · id                     «» → «sw_ap_design_margin»
+  APPLY    new · parent                 «» → «l3_solar»
+  APPLY    new · kind                   «» → «computed»
+  APPLY    label                        «» → «Ap design margin over the storm level»
+  …
+  APPLY    input 1 · added              «» → «binding = ap, var = sw_ap_design, type = Ratio»
+
+interfaces — what each input reads:
+  connects ap               ← sw_ap_design                       Ratio in One
+
+16 change(s) can be applied, 0 cannot.
+```
+
+Intake compares three versions — the node when the form was made, what the
+filler made of it, and the node now — so a field the repository changed
+meanwhile is a CONFLICT, never overwritten. **Every interface is checked**: an
+input must name a row that exists (or a named output of one), of the quantity
+the node expects, and one that does not says what the row it names actually is.
+For a new node the id must be free and the parent a group. If the filler says an
+assistant helped with the relation, the relation, its steps and its derivation
+are REFUSED: a person derives them. A numbered step removed from the middle is
+refused, because each number is a hole holding somebody's Rust.
+
+A form that does not pass goes back to whoever filled it with those lines. It is
+never fixed up on the way in.
+
+### 3.3 Apply it
+
+```
+$ git switch -c node/sw-ap-design-margin
+$ cargo run -p xtask -- intake docs/examples/new-node.node-form.html --apply
+```
+
+For an existing node `--apply` writes `node.toml`. For a new node it builds the
+folder in its place in the tree, on the shape of a sibling of the same kind —
+deliberately not a copy, because a copy drags a stale source citation through
+thirty rows — writes the form into it, and gates the **whole tree**, because a
+new row changes what the tree connects. Either way it regenerates and gates as
+one edit, or puts everything back. It stamps your name on any relation it
+changes, and refuses while anything is blocked unless you add `--partial`.
+Known values in the form are printed as `[[fixture]]` blocks for §3.9; they are
+never written by intake. Anything the form left blank is printed as still open.
+
+Then `git diff`. From here on the node is the developer's, and the rest of this
+section is the loop you will live in.
+
+A row is a folder. Only one file in it is written by hand — by intake, or in
+your editor:
 
 ```
 crates/vleo-mod-prop/nodes/prop_throat_area/
-  node.toml      ← the sheet. yours.
+  node.toml      ← the sheet. what a form writes.
   model.rs       generated, except the numbered holes
   contract.rs    generated
   evidence.rs    generated — the fixture tests, plus three properties
@@ -327,29 +453,14 @@ crates/vleo-mod-prop/nodes/prop_throat_area/
   page.html      generated
 ```
 
-### 3.1 Start it
+A developer's own structural row, with no form behind it, still starts from a
+sibling: `cargo run -p xtask -- new <id> --like <sibling>`, which blanks every
+field that must be decided again.
+
+### 3.4 Ask what is still open
 
 ```
-cargo run -p xtask -- new prop_intake_mouth --like prop_throat_area
-```
-
-`--like` clones the *shape* of a sibling and blanks everything that must be
-decided again. It is deliberately not a copy — a copy drags a stale source
-citation through thirty rows:
-
-```
-label = ""            # REQUIRED — re-decide, do not inherit
-[question]
-text = ""             # REQUIRED — re-decide, do not inherit
-[maths]
-expression = ""       # REQUIRED — re-decide, do not inherit
-source = ""           # REQUIRED — re-decide, do not inherit
-```
-
-### 3.2 Ask what is still open
-
-```
-cargo run -p xtask -- declare prop_intake_mouth --source papers/romano2021.pdf
+cargo run -p xtask -- declare prop_intake_mouth
 ```
 
 It prints every field that is still blank, with what cannot be emitted without
@@ -367,9 +478,11 @@ it, and stops when there are none:
 The open set is computed from the same list `xtask docs` refuses on, so there
 is never a question that blocks generation and is not on this page.
 
-### 3.3 Fill the sheet
+### 3.5 What the sheet holds
 
-Seven things, and they are all questions a person has to answer:
+Seven things, and they are all questions a person has to answer — which is why
+they are the form's questions, and why a gap left in the form is still open
+here:
 
 | field | what it is | why it is required |
 |---|---|---|
@@ -380,7 +493,7 @@ Seven things, and they are all questions a person has to answer:
 | `lower`, `upper` | where the relation is valid | outside it the answer is a refusal, by name |
 | `reason_lower`, `reason_upper` | why each bound is there | a guard with no written reason gets deleted by whoever next finds it awkward |
 | `value` + `confirmed_by` | for a declared number: who picked it | every margin in the design is built out of these |
-| `[maths] confirmed_by` | who supplied the relation | an agent may never supply mathematics, and without a name nothing can tell whether one did |
+| `[maths] confirmed_by` | who supplied the relation | an assistant may never supply mathematics, and without a name nothing can tell whether one did |
 
 Two more that are decisions rather than drafting:
 
@@ -391,7 +504,17 @@ Two more that are decisions rather than drafting:
 - **`migrated_from`** — set it when the node exists in the MATLAB tool. Its
   numbers then go in `parity.csv` beside the node and never in `fixtures.toml`.
 
-### 3.4 Generate
+### 3.6 Publish and generate
+
+A seeded row, filled, becomes published — and that is what makes its code
+generated:
+
+```
+cargo run -p xtask -- publish prop_intake_mouth
+```
+
+It refuses, naming every reason, while the row is not ready. After that, any
+change to the sheet is regenerated with:
 
 ```
 cargo run -p xtask -- docs prop_intake_mouth
@@ -412,7 +535,7 @@ nothing:
 That refusal is the mechanism. It turns ambiguity from something an implementer
 settles quietly into a blocking item on an engineer's screen.
 
-### 3.5 See what the gate says
+### 3.7 See what the gate says
 
 ```
 cargo run -p xtask -- gate prop_intake_mouth
@@ -434,14 +557,14 @@ Every one names the field. This is the design: an open decision becomes a line
 on your screen rather than something an implementer settles quietly at two in
 the afternoon.
 
-### 3.6 Write the maths
+### 3.8 Write the maths
 
 You do not open `model.rs`. The body of each numbered hole goes in as text:
 
 ```
 echo 'let e: Length = gnc::along_track_error_from_drag(
     Acceleration::new(a.get() * s.get()), Time::from_days(1.0));' \
-  | cargo run -p xtask -- fill prop_intake_mouth --hole 1 --body -
+  | cargo run -p xtask -- fill prop_intake_mouth --hole 1 --body - --by "A. Developer" --model <model>
 ```
 
 `fill` is the only thing in this system that puts text into a generated file.
@@ -449,9 +572,10 @@ It refuses, before writing anything: a hole the sheet does not declare, a body
 carrying its own `HOLE` marker, a guard, an early return, and a platform maths
 call. Then it re-reads the file and proves the body landed.
 
-This is why agent C has no write tool at all. An agent handed the file and told
-not to stray is not constrained, it is asked — and the same applies to a person
-in a hurry.
+So an assistant can write the body — give it the sheet and the hole, take back
+the lines — and never needs the file. An assistant handed the file and told not
+to stray is not constrained, it is asked, and the same applies to a person in a
+hurry. `--by` and `--model` record who wrote the body and with what (§4b).
 
 What the hole looks like once it is in:
 
@@ -464,19 +588,19 @@ pub fn evaluate(a: Acceleration, s: Ratio) -> Result<Length, Fault> {
 ```
 
 Everything outside the markers is regenerated, so an edit there is discarded
-the next time anybody runs `docs`, and the gate catches it before that happens.
-`tools/agent_lanes.py --holes-only HEAD~1` names any `model.rs` line changed
-outside a hole, by anyone.
+the next time anybody runs `docs`, and the gate's regeneration diff catches it
+before that happens, by anyone.
 
 The signature is already correct. `Acceleration`, `Ratio` and `Length` are
 distinct types, so adding a mass to a length does not compile. A hole body is
 usually two or three lines that compose relations already in `vleo-core`.
 
-### 3.7 Get evidence
+### 3.9 Get evidence
 
 A number the code produced is not evidence that the code is right.
 `fixtures.toml` holds values from somewhere else — a paper, a measurement, a
-MATLAB function somebody trusts:
+MATLAB function somebody trusts, or the known values a form supplied, with where
+they came from:
 
 ```toml
 [[fixture]]
@@ -507,7 +631,7 @@ answer. They catch discontinuity, a panic, non-determinism, and a domain
 declared tighter than the physics. They do not catch a relation wrong in shape
 that stays inside its domain — that is what a fixture and H2 are for.
 
-### 3.8 Ask whether a person should look yet
+### 3.10 Ask whether a person should look yet
 
 ```
 cargo run -p xtask -- ready prop_intake_mouth
@@ -530,94 +654,37 @@ ready: 16 of 320 node(s) have passed every machine stage and are waiting on H2
       7  significant, with fewer than two checks behind it
 ```
 
-Then commit. The message form is checked (§6).
+Then commit, naming whoever filled the form. The message form is checked (§7).
+After review and merge, the next release carries the node to the team — and
+their saved case carries over on its own, with any new input at its default.
 
 ---
 
-### 3.9 When the content comes from someone without a checkout
+## 4 · Using an assistant
 
-A payload team, a customer's engineer or a reviewer can say what a node should
-be without touching the repository. Send them the node's form — the page's
-*the node form* tab, or:
+A developer may use any assistant, for anything a developer does — once the form
+has passed the checker. There is no roster of specialised agents, each with its
+own lane: the rules are held by the checks, and the checks apply to an
+assistant's change exactly as to anyone's.
 
-```
-$ cargo run -p xtask -- form sw_ap_design --out sw_ap_design.node-form.html
-```
+| the step | what an assistant can do | what holds it |
+|---|---|---|
+| filling a form | help whoever fills it with the words — the form asks whether it did | intake refuses the relation, its steps and its derivation from a form an assistant helped with |
+| a hole body (§3.8) | return the few typed lines, as text | `fill` is the only way into `model.rs`, refuses a guard, an early return or a platform maths call, and records `--by` and `--model` |
+| evidence (§3.9) | turn a value a person derived into a `[[fixture]]` with its provenance | the schema refuses `self-snapshot` and `agent-generated`: an expected value may never come from the code under test |
+| a relation's name | nothing | relation stamping and `confirm` refuse a name that is an assistant's |
+| the tool itself | ordinary engineering — generators, daemon, faces, tests | the gate, `cargo test`, the regeneration diff and review, as for anyone |
 
-It is one HTML file that opens anywhere, asks the same questions as §3.3 with
-why each is asked, and saves a filled copy of itself. It can be filled by hand
-or given to an assistant. When it comes back:
+They are ordinary help, not oracles. Three things are worth doing every time:
 
-```
-$ cargo run -p xtask -- intake docs/examples/sw_ap_design.node-form.html
-sw_ap_design — a node form filled by A. Example (Payload team), 2026-09-27; assistant: none
-  node.toml is still the version the form was made from
-
-  APPLY    note                         «…» → «What the vehicle is built to survive, …»
-  APPLY    assumption 5 · added         «» → «text = The storm level is read on the NOAA G scale, …»
-
-2 change(s) can be applied, 0 cannot.
-```
-
-Intake compares three versions — the node when the form was made, what the
-filler made of it, and the node now — so a field the repository changed
-meanwhile is a CONFLICT, never overwritten. If the filler says an assistant
-helped with the relation, the relation, its steps and its derivation are
-REFUSED: you derive them. `--apply` writes the rest as one edit, regenerates,
-gates and puts everything back on a refusal, and stamps your name on any
-relation it changes. Known values in the form are printed as `[[fixture]]`
-blocks for whoever records fixtures (§3.7); they are never written by intake.
-Then `git diff`, commit naming the filler, push — and the release after that is
-the one they test with their own inputs.
-
-## 4 · Where the work can be handed off
-
-Seven agents exist. You do not have to use any of them — every step above is
-something you can do yourself — but each one takes a piece that is either
-tedious or easy to get subtly wrong.
-
-The useful way to think about them: **each agent is defined by what it cannot
-do.** That is not a rule written in its prompt, which the same model would be
-deciding whether to make an exception to. It is a list of paths, checked
-against the diff afterwards:
-
-```
-tools/agent_lanes.py --agent hole-filler
-tools/agent_lanes.py --agent test-author --since HEAD~1
-tools/agent_lanes.py --list
-```
-
-| you have | ask | it gives you | it cannot |
-|---|---|---|---|
-| a paper, a measurement, a MATLAB function | **declaration-drafter** | a filled sheet, plus the questions that must be answered first | supply maths, a reason, or a value |
-| expected values a person derived | **fixture-recorder** | those rows with provenance, and which domain edges have no case behind them | produce an expected value itself |
-| a sheet that passed review | **hole-filler** | the few lines inside each numbered hole | write outside a hole, or add a guard |
-| a declared property nothing tests | **test-author** | a property test over the declared domain | invent an expected value |
-| a run that flipped and nobody knows why | **diagnostician** | which node, which change, which margin moved, and the smallest reproducing case | fix anything, or judge acceptability |
-| ordinary engineering on the tool | **systems-backend** | generators, kernel plumbing, the runner, the server | edit a sheet or a hole |
-| the web face or a figure | **frontend-visualisation** | the shell, tree, matrix, panels, plots | invent a style token, or ship a figure nobody rendered |
-
-Two of these were written for this domain (drafter, recorder) and the rest are
-adopted definitions, pinned in this repository rather than referenced upstream.
-
-### What to expect
-
-They are ordinary help, not oracles. The useful pattern is: ask for one step,
-read what came back, run the gate. Three things are worth doing every time:
-
-1. **Run the lane check.** `tools/agent_lanes.py --agent <name> --since HEAD~1`
-   says whether the diff stayed where it was supposed to. The hole-filler's
-   check reads the diff itself, not just the paths, because its lane includes
-   `model.rs` and a path check alone would pass a rewrite of the whole file.
-2. **Look at what it did not do.** A fixture recorder that reports no uncovered
-   edges on a node with two bounds has not looked.
+1. **Read the diff.** `git diff` after an assistant's change, before the gate,
+   so you know what the gate is being asked about.
+2. **Look at what it did not do.** A fixture that covers one edge of a node with
+   two bounds has not looked at the other.
 3. **Check a test can fail.** A test that passes against a deliberately broken
    implementation is not testing anything. Break the hole body, run the test,
    see red, put it back. It takes a minute and it is the difference between
    evidence and decoration.
-
-`docs/AGENT_EVIDENCE.md` records what each one actually produced when it was
-first used here, including the defect that scrutiny found.
 
 ---
 
@@ -660,10 +727,10 @@ reads the sheet back through the loader to prove it landed.
 
 Three things it refuses, and the first is the point of the field:
 
-- **a name that belongs to an agent.** An agent may never supply mathematics,
-  and this field is the only thing that can tell whether one did. The list of
-  refused identities is read from `agents/provenance.toml`, so an agent added
-  tomorrow is covered without anyone remembering to come back here.
+- **a name that belongs to an assistant.** An assistant may never supply
+  mathematics, and this field is the only thing that can tell whether one did.
+  The refused identities are one list in `vleo-sheet`, shared by `confirm`,
+  intake and relation stamping, so the three cannot disagree.
 - **a declared value.** Its confirmation lives under `[value]` and it already
   has one.
 - **a relation that is already confirmed.** Changing an attribution is a review
@@ -695,7 +762,7 @@ way and are named as such. Nothing in the tree has evidence that fails to catch
 an error larger than the evidence's own claim.
 
 `cargo run -p xtask -- differential <node>` runs every body recorded for a hole
-against that node's evidence. Bodies are recorded by `fill --by <agent>`, which
+against that node's evidence. Bodies are recorded by `fill --by <who> --model <model>`, which
 refuses a second body for a hole from the model that wrote the first: two bodies
 from one model are one body written twice, because a model handed its own
 reasoning to check approves it. A significant node refuses an unattributed body
@@ -703,10 +770,9 @@ outright. If two recorded bodies disagree, that is a finding for the node owner
 — at least one reading of the sheet is wrong, or the sheet says less than its
 author thought — and never something to settle by keeping the body that passes.
 
-What neither closes is the vendor half of the rule. Every agent here runs one
-vendor's models, so `--by` separates model tiers and not training; that is
-recorded in `agents/provenance.toml` and it needs a second provider, not more
-code.
+What neither closes is the vendor half of the rule: `--model` separates models,
+not training, so two models from one vendor count as two. Closing it is a
+developer's choice of assistants, not more code.
 
 ---
 
@@ -714,7 +780,7 @@ code.
 
 | when | what | where |
 |---|---|---|
-| you open a session | the tree's state, what is blocking, whether reference data is present | `.claude/hooks/session-start.sh` |
+| an assistant's session opens | the tree's state, what is blocking, whether reference data is present | `.claude/hooks/session-start.sh` |
 | you save a sheet or a fixture file | the gate on that node, refusing the edit if it fails | `.claude/hooks/post-edit.sh` |
 | you save any `.rs` file | formatting | same file |
 | you write a commit message | the message form | `tools/githooks/commit-msg` |
@@ -804,6 +870,9 @@ which looks exactly like a hook that passed.
 | a subsystem looks finished and nothing seems to use it | `cargo run -p xtask -- reach` — a subsystem can answer on every row it has and be wired to nothing. It names the crossing and who reads it |
 | the gate refuses a fixture | a fixture disagreement is a physics disagreement. Take it to the node owner; do not widen the tolerance |
 | a sweep row says `refused` | the value left the declared domain. The message names the bound and its reason |
+| a form's check says CONFLICT | the design changed that field after the form was drawn. Nothing is overwritten: send a fresh form with the answer carried across |
+| a form's check says an interface does not connect | the input names no row, or a row of another quantity. The line names the row and what it actually is |
+| an uploaded case or result is refused | every refused row is named with why. A case is all or nothing; a file from an older release is carried over rather than refused |
 | the daemon shows the wrong tree | an old process. It is the sheet hash that would refuse a stale page, but a stale *process* has its own copy — check the port |
 
 Two commands answer most of it:
@@ -824,8 +893,8 @@ cargo run -p xtask -- gap                    # what every sheet promised and not
 |---|---|
 | how to do any one thing, in the browser or the terminal, and what cannot be done by hand | **? Manual**, in the tool — source `docs/manual.toml` |
 | why the four rings, and what may depend on what | `docs/ARCHITECTURE.md` |
-| who decides what, and which changes need two reviewers | `docs/WORK_MODEL.md` |
-| what each agent actually produced when it was first used | `docs/AGENT_EVIDENCE.md` |
+| who does what — the team and the developers, and what crosses between them | `docs/WORK_MODEL.md` |
+| one form from arrival to release, and a developer's first day | `docs/RUNBOOK.md` |
 | every variable, its unit, its bounds and their reasons | `docs/VARIABLES.md` — generated |
 | the sheet field by field, in full | `docs/NODE_AUTHORING.md` |
 | what to do when the tool is down | `docs/RUNBOOK.md` |

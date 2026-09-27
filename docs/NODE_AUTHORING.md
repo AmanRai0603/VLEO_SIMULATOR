@@ -22,6 +22,26 @@ implementation scaffold, the contract, the module wiring, the test harness, the
 documentation fragment, the metadata, the graph entry and the binding. That is
 the entire point of the design. Write the physics once; get eight artefacts.
 
+## Who writes it, and how it arrives
+
+The sheet below is what a node **is**, and most of it is written by somebody
+who will never open this repository: the person who knows the answer — a
+payload team, a domain engineer, a customer's engineer — fills in **the node's
+form**. That is one HTML file per node (`cargo run -p xtask -- form <node>`, or
+the node's page in the tool), or per new node (`form --new`), which asks every
+question below with *why* it is asked, in the order this page explains them,
+and saves a filled copy of itself.
+
+A developer then runs the checker on it — `cargo run -p xtask -- intake
+<file.html>` — which says what it would change here, field by field, and
+whether every input it declares is a row that exists, of the quantity the node
+expects. `--apply` writes it into this file, regenerates and gates, or puts
+everything back. Everything after that — publishing, the holes, the fixtures —
+is the developer's, and is described below.
+
+So this page is written for both: for whoever fills the form, what each answer
+is for; for the developer, what the loader does with it.
+
 ## The sheet
 
 ```toml
@@ -98,15 +118,15 @@ found by checking one against the other, and most of what was missing belongs
 to `layers/`, `cases/` or `sources/` rather than to a node. What follows is
 everything left that is yours.
 
-`tools/instruction_lint.py` now holds this list against the loader, so a field
-added to a sheet and not explained here fails the lint rather than waiting to be
+`tools/docs_lint.py` now holds this list against the loader, so a field added
+to a sheet and not explained here fails the lint rather than waiting to be
 noticed.
 
 - **`[maths] confirmed_by`** — who supplied the relation, and when. Write it
   with `cargo xtask confirm <node> --by "<your name>"`, which shows you the
-  relation and its source first and refuses a name belonging to an agent. An agent may
-  never supply mathematics, and without a name nothing can tell whether one
-  did. A relation with nobody against it is a gap, so the node cannot reach H2.
+  relation and its source first and refuses a name belonging to an assistant. An
+  assistant may never supply mathematics, and without a name nothing can tell
+  whether one did. A relation with nobody against it is a gap, so the node cannot reach H2.
   It does not make the formula right; it makes it somebody's, which is what H1b
   needs to be a review rather than a reading.
 - **`criticality`** — `minor` or `significant`, defaulting to minor. Significant

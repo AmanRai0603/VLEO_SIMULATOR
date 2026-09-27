@@ -5918,3 +5918,28 @@ arrived at independently.
   before them, so the design chain reports 0 of 4 for validation where it
   reported 1. That is a gap already counted against those rows.
 - `gnc` still reaches no KPI closure at all.
+
+## §50 · The agent roster is gone; forms carry every change
+
+Written 27 September 2026. The sections above are a record and are left as they
+were written, so they still speak of seven agents, their lanes in
+`agents/lanes.toml` and a provenance register. None of that exists any more.
+
+The design is now changed one way only. Whoever knows what a node should say
+fills in that node's form — or the form for a new node — and a developer runs
+the checker on it (`xtask intake`), applies it, publishes, implements the holes
+with or without an assistant (`fill --by --model` records which), records the
+evidence, gates and releases. The browser cannot write the repository at all.
+
+What the lanes were for is held by the checks, which apply to anyone's change:
+`fill` is still the only way into a generated file; the fixture schema still
+refuses `self-snapshot` and `agent-generated`; a relation still carries a
+person's name, and intake and relation stamping both refuse an assistant's.
+§43.7's finding — that adding a row fitted inside no lane — is closed by the
+same change: a new row arrives as a form and a developer builds it.
+
+The checks the old instruction lint made that were not about agents — stale
+path references, row counts in prose, the sheet fields explained in
+`NODE_AUTHORING.md`, the single home of the review policy, `ADOPTION.lock` —
+moved to `tools/docs_lint.py`, which also refuses a house rule that still
+points at the removed machinery.

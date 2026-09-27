@@ -344,3 +344,149 @@ fn applying_writes_regenerates_and_gates_or_puts_everything_back() {
     p2.current_hash = "000000".into();
     assert!(matches!(template::apply(&root(), &p2), Saved::Stale { .. }));
 }
+
+// ---------------------------------------------------------------------------
+// a node the design does not have yet, and the interfaces a form declares
+
+fn new_form(id: &str, parent: &str, kind: &str, input: Option<(&str, &str)>) -> String {
+    let tree = load_all(&root()).unwrap();
+    let html = template::document_new(&tree);
+    edit(&html, DATA, |t| {
+        let mut n = toml::Table::new();
+        for (k, v) in [("id", id), ("parent", parent), ("kind", kind)] {
+            n.insert(k.into(), toml::Value::String(v.into()));
+        }
+        t.insert("new".into(), toml::Value::Table(n));
+        set_field(t, "label", "A new row");
+        set_field(t, "question", "What does the new row answer?");
+        if let Some((var, ty)) = input {
+            let mut r = toml::Table::new();
+            for (k, v) in [("binding", "x"), ("var", var), ("type", ty)] {
+                r.insert(k.into(), toml::Value::String(v.into()));
+            }
+            t.insert("input".into(), toml::Value::Array(vec![r.into()]));
+        }
+    })
+}
+
+#[test]
+fn a_new_nodes_form_is_checked_for_its_place_and_its_interfaces_before_anything_is_built() {
+    let tree = load_all(&root()).unwrap();
+    let producer = tree.sheets.get(ROW).unwrap();
+    let parent = producer.parent.clone();
+
+    let good = template::plan(
+        &root(),
+        &new_form(
+            "a_brand_new_row",
+            &parent,
+            "computed",
+            Some((ROW, &producer.ty)),
+        ),
+    )
+    .unwrap();
+    assert_eq!(good.new.as_ref().unwrap().id, "a_brand_new_row");
+    for w in [
+        "new · id",
+        "new · parent",
+        "new · kind",
+        "label",
+        "input 1 · added",
+    ] {
+        assert_eq!(
+            verdict_of(&good, w),
+            Verdict::Apply,
+            "{w}: {:?}",
+            good.items
+        );
+    }
+    assert!(
+        good.interfaces.len() == 1 && good.interfaces[0].ok(),
+        "{:?}",
+        good.interfaces
+    );
+    assert!(
+        good.text.is_none(),
+        "a new node's plan must not claim a sheet text"
+    );
+    assert!(
+        good.open.iter().any(|o| o.contains("expression")),
+        "{:?}",
+        good.open
+    );
+
+    // Each way the placement can be wrong is refused by name.
+    let taken = template::plan(&root(), &new_form(ROW, &parent, "computed", None)).unwrap();
+    assert!(
+        matches!(verdict_of(&taken, "new · id"), Verdict::Refused(ref w) if w.contains("already"))
+    );
+    let bad_id =
+        template::plan(&root(), &new_form("Not An Id", &parent, "computed", None)).unwrap();
+    assert!(matches!(
+        verdict_of(&bad_id, "new · id"),
+        Verdict::Refused(_)
+    ));
+    let nowhere = template::plan(
+        &root(),
+        &new_form("x_row", "no_such_group", "computed", None),
+    )
+    .unwrap();
+    assert!(matches!(
+        verdict_of(&nowhere, "new · parent"),
+        Verdict::Refused(_)
+    ));
+    let odd = template::plan(&root(), &new_form("x_row", &parent, "banana", None)).unwrap();
+    assert!(matches!(
+        verdict_of(&odd, "new · kind"),
+        Verdict::Refused(_)
+    ));
+
+    // An input that names no row, or a row of another quantity, does not connect.
+    let ghost = template::plan(
+        &root(),
+        &new_form("x_row", &parent, "computed", Some(("no_such_row", "Ratio"))),
+    )
+    .unwrap();
+    assert!(!ghost.interfaces[0].ok() && ghost.interfaces[0].why.contains("no row"));
+    assert!(matches!(
+        verdict_of(&ghost, "input 1 · added"),
+        Verdict::Refused(_)
+    ));
+    let wrong = if producer.ty == "Length" {
+        "Time"
+    } else {
+        "Length"
+    };
+    let mismatch = template::plan(
+        &root(),
+        &new_form("x_row", &parent, "computed", Some((ROW, wrong))),
+    )
+    .unwrap();
+    assert!(
+        mismatch.interfaces[0].why.contains(wrong),
+        "{:?}",
+        mismatch.interfaces
+    );
+}
+
+#[test]
+fn an_input_changed_to_one_that_does_not_connect_is_refused_and_the_rest_still_applies() {
+    let html = edit(&form_for(ROW), DATA, |t| {
+        set_field(t, "note", "Still applies.");
+        let ins = t.get_mut("input").and_then(|a| a.as_array_mut()).unwrap();
+        ins[0]
+            .as_table_mut()
+            .unwrap()
+            .insert("var".into(), toml::Value::String("no_such_row".into()));
+    });
+    let p = template::plan(&root(), &html).unwrap();
+    assert!(
+        matches!(verdict_of(&p, "input"), Verdict::Refused(_)),
+        "{:?}",
+        p.items
+    );
+    assert_eq!(verdict_of(&p, "note"), Verdict::Apply);
+    assert!(p.interfaces.iter().any(|i| !i.ok()));
+    let text = p.text.expect("the note should still apply");
+    assert!(text.contains("Still applies.") && !text.contains("no_such_row"));
+}

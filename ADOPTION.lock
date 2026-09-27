@@ -17,9 +17,6 @@
 #             name does not identify anything
 #   licence   as read, not as assumed. One row in the wider audit turned out to
 #             run a tiered licence rather than being uniformly open
-#
-# The agent definitions have their own register, in agents/provenance.toml,
-# because a vendored prompt needs the same treatment as a vendored library.
 
 [[adopted]]
 name = "toml"

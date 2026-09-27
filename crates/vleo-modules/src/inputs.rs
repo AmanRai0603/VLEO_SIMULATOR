@@ -595,6 +595,10 @@ pub fn check_values(values: &[(String, f64)]) -> Reading {
 }
 
 /// One CSV line into its fields, with quoted fields and doubled quotes.
+pub fn split_csv(line: &str) -> Vec<String> {
+    split(line)
+}
+
 fn split(line: &str) -> Vec<String> {
     let mut out = Vec::new();
     let mut cur = String::new();
@@ -648,6 +652,10 @@ pub mod saved {
     /// the file until the case is next saved, so every face can say what the
     /// update did, and the copy is there to go back to.
     pub fn load(path: &Path) -> Saved {
+        // One request at a time: two reading an old case at once would each
+        // carry it over, keep two copies aside, and one could read the file
+        // while the other was half way through writing it back.
+        let _one = one_at_a_time();
         // No case saved is every input at its default. Said directly rather
         // than by writing the blank template and reading it back, which cost a
         // millisecond on every run the daemon answered.
@@ -688,7 +696,7 @@ pub mod saved {
         let kept = std::fs::write(&backup, &text);
         note.backup = Some(backup.display().to_string());
         let upgraded = csv_with(&r.set, Some(&note));
-        let written = kept.and_then(|_| std::fs::write(path, &upgraded));
+        let written = kept.and_then(|_| write_whole(path, &upgraded));
         let mut reading = read_csv(&upgraded);
         match written {
             Ok(()) => Saved {
@@ -709,6 +717,43 @@ pub mod saved {
                 }
             }
         }
+    }
+
+    /// Save a case — the text of a CSV this module wrote. Under the same lock
+    /// as `load`, and whole: a reader sees the old file or the new one, never
+    /// a file half way through being written.
+    pub fn store(path: &Path, csv: &str) -> std::io::Result<()> {
+        let _one = one_at_a_time();
+        if let Some(dir) = path.parent() {
+            std::fs::create_dir_all(dir)?;
+        }
+        write_whole(path, csv)
+    }
+
+    /// Remove the saved case: every input back to its default. No case saved
+    /// already is not an error.
+    pub fn clear(path: &Path) -> std::io::Result<()> {
+        let _one = one_at_a_time();
+        match std::fs::remove_file(path) {
+            Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e),
+            _ => Ok(()),
+        }
+    }
+
+    fn one_at_a_time() -> std::sync::MutexGuard<'static, ()> {
+        static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+        // A request that panicked while holding it left nothing half done that
+        // the next one needs to know about: every write below is whole.
+        LOCK.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// Written beside itself and renamed over, which replaces it in one step.
+    fn write_whole(path: &Path, text: &str) -> std::io::Result<()> {
+        let mut tmp = path.as_os_str().to_owned();
+        tmp.push(".writing");
+        let tmp = PathBuf::from(tmp);
+        std::fs::write(&tmp, text)?;
+        std::fs::rename(&tmp, path)
     }
 
     /// Beside the case, named for the template it was written for, and never

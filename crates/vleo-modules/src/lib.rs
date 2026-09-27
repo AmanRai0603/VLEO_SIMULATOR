@@ -147,6 +147,7 @@ pub fn case_refusal(case: &vleo_bus::Case) -> Option<String> {
 }
 
 pub mod inputs;
+pub mod results;
 
 impl NodeTable for Vleo {
     fn nodes(&self) -> &[NodeDef] {

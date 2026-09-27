@@ -489,8 +489,31 @@ export function renderResult(host, r, res) {
     esc(res.manifest.case) + ' · endpoint ' + esc(res.manifest.endpoint) +
     (res.manifest.data.length ? ' · data ' + esc(res.manifest.data.join(' ')) : ' · no data bundle') +
     '</div>';
+  // KEEP IT. The run as it stands — these inputs, this engine — saved as a
+  // result the Results page shows again without running, and that can be sent
+  // as a CSV or a report.
+  h += '<div class="runbar res-save-bar"><input class="ctl res-name" placeholder="a name for it (optional)" ' +
+    'aria-label="a name for the result"><button class="ctl res-save">save this result</button>' +
+    '<span class="why res-saved"></span></div>';
   h += sweepControls(r);
   el.innerHTML = h;
+  const save = $('.res-save', el);
+  save.onclick = async () => {
+    const said = $('.res-saved', el);
+    save.disabled = true;
+    said.textContent = 'saving…';
+    const p = withOverrides(new URLSearchParams({ node: r.id, mode: S.mode, label: $('.res-name', el).value }));
+    let out;
+    try {
+      out = await (await fetch('/v1/results/save', { ...POST, body: p.toString() })).json();
+    } catch (e) {
+      out = { ok: false, message: 'the engine did not answer: ' + e };
+    }
+    save.disabled = false;
+    said.innerHTML = out.ok
+      ? 'saved — <button class="ctl xref" data-results="' + esc(out.file) + '">open it in Results</button>'
+      : 'not saved: ' + esc(out.message || 'refused');
+  };
   wireSweep(host, r);
 }
 

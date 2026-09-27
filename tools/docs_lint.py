@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
-"""Check the files that tell agents what to do.
+"""Check the files that tell the people maintaining this repository what to do.
 
-    tools/instruction_lint.py
-    tools/instruction_lint.py --selftest
+    tools/docs_lint.py
+    tools/docs_lint.py --selftest
 
-Agent behaviour is Markdown. That makes it an input to every node, and it is
-the only input in this system that nothing was checking — which is gap W8.
+The house rules are Markdown — AGENTS.md, the area files, CONTRIBUTING.md and
+the work model. That makes them an input to every change, and prose is the one
+input nothing else checks.
 
 The failure these files will actually have is not a contradiction; it is rot.
-They point at `crates/vleo-sheet/src/emit.rs`, at `xtask docs`, at a lane
-called `hole-filler`, and every one of those can be renamed by a commit that
-never opens an instruction file. A stale reference is worse than a missing one:
-it reads as authoritative and sends somebody to a path that no longer exists.
+They point at `crates/vleo-sheet/src/emit.rs`, at `xtask docs`, at a folder
+that was removed, and every one of those can be renamed by a commit that never
+opens an instruction file. A stale reference is worse than a missing one: it
+reads as authoritative and sends somebody to a path that no longer exists.
 
 So the checks here are mostly about references being real, not about prose.
 
@@ -26,9 +27,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-#: The instruction files the working model names, individually. A missing one
-#: is a whole area with no house rules, which is how two agents come to disagree
-#: about what "reviewed" means.
+#: The instruction files, individually. A missing one is a whole area with no
+#: house rules, which is how two people come to disagree about what "reviewed"
+#: means.
 REQUIRED = [
     "AGENTS.md",
     "areas/generators.md",
@@ -37,14 +38,13 @@ REQUIRED = [
     "areas/data.md",
     "areas/numerics.md",
     "areas/release.md",
+    "CONTRIBUTING.md",
+    "docs/WORK_MODEL.md",
 ]
-
-#: Frontmatter every agent definition must carry.
-FRONTMATTER = ["name", "description", "tools", "model"]
 
 #: A path-looking token inside backticks. Two shapes, checked differently:
 #: something with a slash is a path and must resolve exactly; a bare filename
-#: like `model.rs` is a *kind* of file — it appears in 1329 folders — so it is
+#: like `model.rs` is a *kind* of file — it appears in every row's folder — so it is
 #: satisfied by any file of that name anywhere in the tree. Treating the second
 #: as a path is how a lint starts reporting things that are not wrong, and a
 #: lint that cries wolf is a lint people turn off.
@@ -56,10 +56,8 @@ PATHISH = re.compile(
 
 
 def files():
-    """Every instruction file: the required set, plus the agent definitions."""
-    out = [ROOT / r for r in REQUIRED]
-    out += sorted((ROOT / ".claude" / "agents").glob("*.md"))
-    return [p for p in out if p.is_file()]
+    """Every instruction file."""
+    return [p for p in (ROOT / r for r in REQUIRED) if p.is_file()]
 
 
 def _sources():
@@ -78,7 +76,7 @@ def resolves(token):
     """Does this exist, or is it a format the code implements?
 
     A bare filename is a kind of file rather than a location: `model.rs` sits in
-    1329 folders and naming one of them in prose would be worse, not better. So
+    every row's folder and naming one of them in prose would be worse, not better. So
     it is satisfied by any file of that name.
 
     A format with no instance yet — `parity.csv` before the first node is
@@ -119,72 +117,18 @@ def check():
                     "points at %s, which does not exist and which no code names" % token,
                 ))
 
-    # Every agent definition is complete, and every lane has one.
-    try:
-        lanes = tomllib.loads((ROOT / "agents" / "lanes.toml").read_text())["agent"]
-    except Exception as e:
-        bad.append(("agents/lanes.toml", "does not parse: %s" % e))
-        lanes = []
-    defs = {}
-    for p in sorted((ROOT / ".claude" / "agents").glob("*.md")):
+    # The agent roster was removed: every change to the design now arrives as
+    # a node form and is applied by a developer. A rule that still points at a
+    # lane or a definition reads as a control that no longer exists.
+    readers = files() + [ROOT / f for f in ("README.md", "docs/USING_IT.md",
+                                           "docs/NODE_AUTHORING.md", "docs/RUNBOOK.md")
+                         if (ROOT / f).is_file()]
+    for p in readers:
         rel = p.relative_to(ROOT).as_posix()
-        text = p.read_text()
-        if not text.startswith("---\n"):
-            bad.append((rel, "has no frontmatter"))
-            continue
-        head = text.split("---\n", 2)[1]
-        fields = dict(
-            (k.strip(), v.strip())
-            for k, _, v in (l.partition(":") for l in head.splitlines() if ":" in l)
-        )
-        for need in FRONTMATTER:
-            if need not in fields:
-                bad.append((rel, "frontmatter has no '%s'" % need))
-        defs[fields.get("name", p.stem)] = fields
-
-    for lane in lanes:
-        if lane["name"] not in defs:
-            bad.append(("agents/lanes.toml", "%s has a lane and no definition" % lane["name"]))
-        if "enforced_by" not in lane:
-            bad.append(("agents/lanes.toml", "%s does not say what enforces its prohibition" % lane["name"]))
-    for name in defs:
-        if not any(L["name"] == name for L in lanes):
-            bad.append((".claude/agents/%s.md" % name, "has a definition and no lane"))
-
-    # Every definition is registered, with somewhere to fall back to.
-    try:
-        prov = tomllib.loads((ROOT / "agents" / "provenance.toml").read_text())
-    except Exception as e:
-        bad.append(("agents/provenance.toml", "does not parse: %s" % e))
-        prov = {"agent": []}
-    registered = {a["name"] for a in prov.get("agent", [])}
-    for name in defs:
-        if name not in registered:
-            bad.append(("agents/provenance.toml", "%s is not registered — no source, pin, owner or fallback" % name))
-    for a in prov.get("agent", []):
-        for need in ("source", "licence", "owner", "model", "fallback", "verified"):
-            if not a.get(need):
-                bad.append(("agents/provenance.toml", "%s has no %s" % (a["name"], need)))
-        # A checker may not run the family of the thing it checks. A model
-        # handed its own reasoning to grade approves it, which is the whole
-        # reason the working model states this rule twice.
-        if a.get("checks"):
-            other = next((x for x in prov["agent"] if x["name"] == a["checks"]), None)
-            if other is None:
-                bad.append(("agents/provenance.toml", "%s checks %r, which is not an agent" % (a["name"], a["checks"])))
-            elif other.get("model") == a.get("model"):
-                bad.append((
-                    "agents/provenance.toml",
-                    "%s checks %s and both run %r — a checker on the producer's own family "
-                    "approves the producer's own reasoning"
-                    % (a["name"], a["checks"], a.get("model")),
-                ))
-        if a["name"] in defs and defs[a["name"]].get("model") != a.get("model"):
-            bad.append((
-                "agents/provenance.toml",
-                "%s runs %r but the register says %r" % (
-                    a["name"], defs[a["name"]].get("model"), a.get("model")),
-            ))
+        for gone in ("agents/lanes.toml", "agents/provenance.toml", ".claude/agents",
+                     "agent_lanes.py", "instruction_lint.py", "VLEO_ALLOW_WRITE"):
+            if gone in p.read_text():
+                bad.append((rel, "names %s, which was removed" % gone))
 
     # Every command the tool has is named in a document somebody reads. This is
     # the check for the staleness that actually happened: three commands were
@@ -270,6 +214,14 @@ def check():
     return bad
 
 
+def _unname_publish(d):
+    """Take `xtask publish` out of every document that names it."""
+    for f in ("README.md", "AGENTS.md", "docs/USING_IT.md"):
+        p = d / f
+        p.write_text(p.read_text().replace("xtask -- publish", "xtask -- xxpub")
+                     .replace("xtask publish", "xtask xxpub"))
+
+
 def selftest():
     """The lint has to fail on the things it exists to catch."""
     import tempfile, shutil, os
@@ -283,27 +235,11 @@ def selftest():
          lambda d: (d / "AGENTS.md").write_text(
              (d / "AGENTS.md").read_text() + "\nSee `crates/vleo-gone/src/lib.rs`.\n"),
          "does not exist"),
-        ("a lane with no definition",
-         lambda d: (d / "agents" / "lanes.toml").write_text(
-             (d / "agents" / "lanes.toml").read_text()
-             + '\n[[agent]]\nid = "Z"\nname = "ghost"\ndoes = "x"\nwrites = []\nnever = []\n'
-               'may_not = "x"\nenforced_by = "none"\n'),
-         "no definition"),
-        ("an unregistered definition",
-         lambda d: (d / "agents" / "provenance.toml").write_text(
-             (d / "agents" / "provenance.toml").read_text().replace('name = "hole-filler"', 'name = "someone-else"')),
-         "not registered"),
-        ("a model that disagrees with the register",
-         lambda d: (d / ".claude" / "agents" / "hole-filler.md").write_text(
-             (d / ".claude" / "agents" / "hole-filler.md").read_text().replace("model: sonnet", "model: opus")),
-         "the register says"),
-        ("a checker on the producer's family",
-         lambda d: (d / "agents" / "provenance.toml").write_text(
-             (d / "agents" / "provenance.toml").read_text().replace(
-                 'checks = "hole-filler"\nsource = "ADOPT"\nupstream = "the test-generation',
-                 'checks = "hole-filler"\nsource = "ADOPT"\nupstream = "XX the test-generation')
-             .replace('model = "opus"\nwhy_model = "a checker', 'model = "sonnet"\nwhy_model = "a checker')),
-         "approves the producer"),
+        ("a rule pointing at the removed lanes",
+         lambda d: (d / "AGENTS.md").write_text(
+             (d / "AGENTS.md").read_text() + "\nRead your lane in agents/lanes.toml.\n"),
+         "which was removed"),
+        ("an xtask command no document names", _unname_publish, "`xtask publish` exists"),
         ("an adopted row with no licence",
          lambda d: (d / "ADOPTION.lock").write_text(
              (d / "ADOPTION.lock").read_text().replace('licence = "MIT OR Apache-2.0"', 'licence = ""', 1)),

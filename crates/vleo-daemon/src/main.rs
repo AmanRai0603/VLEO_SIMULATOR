@@ -333,6 +333,16 @@ fn route(
             form_file(ctx, p.trim_start_matches("/v1/form/"))
         }
         ("POST", "/v1/form/check") => ok_json(form_check(ctx, params)),
+        // Saved results: what runs returned, with the inputs they ran on, kept
+        // outside the repository. Viewing one runs nothing.
+        ("GET", "/v1/results") => ok_json(results_list()),
+        ("GET", "/v1/result") => ok_json(result_json(params)),
+        ("GET", "/v1/result.csv") => result_file(params, false),
+        ("GET", "/v1/result.html") => result_file(params, true),
+        ("POST", "/v1/results/save") => ok_json(result_save(params, ctx)),
+        ("POST", "/v1/results/upload") => ok_json(result_upload(params)),
+        ("POST", "/v1/results/delete") => ok_json(result_delete(params)),
+        ("POST", "/v1/results/as-case") => ok_json(result_as_case(params)),
         ("GET", p) if p.starts_with("/v1/fragment/") => {
             let id = p.trim_start_matches("/v1/fragment/");
             fragment(ctx, id)
@@ -340,30 +350,6 @@ fn route(
         ("GET", p) if p.starts_with("/v1/node/") => {
             let id = p.trim_start_matches("/v1/node/");
             node_endpoint(ctx, id)
-        }
-        // The declaration form, as `xtask declare` asks it. Read-only: this
-        // says what a row still needs, it does not change one.
-        ("GET", p) if p.starts_with("/v1/declare/") => {
-            declare_endpoint(ctx, p.trim_start_matches("/v1/declare/"))
-        }
-        // Put the edited rows on a branch of their own. Commits; does not push.
-        ("POST", "/v1/propose") => sheet_propose(ctx, params),
-        // What a pasted sheet body WOULD change. Writes nothing.
-        ("POST", p) if p.starts_with("/v1/preview/") => {
-            sheet_preview(ctx, p.trim_start_matches("/v1/preview/"), params)
-        }
-        // THE ONE WRITE PATH IN THIS SERVER. One field of one sheet.
-        ("POST", p) if p.starts_with("/v1/sheet/") => {
-            sheet_write(ctx, p.trim_start_matches("/v1/sheet/"), params)
-        }
-        ("POST", p) if p.starts_with("/v1/block/") => {
-            block_write(ctx, p.trim_start_matches("/v1/block/"), params)
-        }
-        ("POST", p) if p.starts_with("/v1/view/") => {
-            view_write(ctx, p.trim_start_matches("/v1/view/"), params)
-        }
-        ("POST", p) if p.starts_with("/v1/publish/") => {
-            publish_write(ctx, p.trim_start_matches("/v1/publish/"), params)
         }
         ("POST", "/v1/run") | ("GET", "/v1/run") => ok_json(run_json(params, ctx)),
         ("GET", "/v1/sweep") => ok_json(sweep_json(params, ctx)),
@@ -463,420 +449,14 @@ fn module(ctx: &Ctx, name: &str) -> (&'static str, &'static str, Vec<u8>) {
     }
 }
 
-/// What one node's folder actually holds.
-///
-/// The architecture view claims a node is one folder with a fixed set of
-/// artefacts, seven of them generated. A claim about the layout that the page
-/// asserts from memory is a claim that goes stale the first time the layout
-/// changes, so it is read off the disk instead.
-/// The declaration form for one row — the nine questions, what each is for, and
-/// which are still open.
-///
-/// Read from `node.toml` rather than from the compiled tables, because the form
-/// is about the SOURCE: a field can be blank in the sheet and absent from the
-/// table entirely, and the person filling it in needs to see the blank. It
-/// carries the sheet hash so a later save can prove which version it started
-/// from.
-/// Put whatever the face has edited onto a branch, as one commit.
-///
-/// A sheet edit is a source change and belongs in history — unlike a run's
-/// inputs, which are a question somebody asked and are never committed. Behind
-/// the same VLEO_ALLOW_WRITE as the save, because it writes to the repository.
-///
-/// IT DOES NOT PUSH. Pushing puts the work where other people and the pipeline
-/// see it, under whatever credentials the checkout holds; a daemon should not
-/// do that on its own. The branch comes back with the command to push it.
-fn sheet_propose(ctx: &Ctx, params: &str) -> (&'static str, &'static str, Vec<u8>) {
-    const JSON: &str = "application/json; charset=utf-8";
-    if !writes_allowed() {
-        return (
-            "403 Forbidden",
-            JSON,
-            format!(
-                "{{\"ok\":false,\"message\":{}}}",
-                json::string(
-                    "this daemon is read-only. Start it with VLEO_ALLOW_WRITE=1 in a checkout."
-                )
-            )
-            .into_bytes(),
-        );
-    }
-    let summary = param(params, "summary").map(decode).unwrap_or_default();
-    let kind = param(params, "kind").map(decode).unwrap_or_default();
-    match vleo_sheet::form::propose(&ctx.root, &summary, &kind) {
-        vleo_sheet::form::Proposed::Ok {
-            branch,
-            commit,
-            files,
-            compare,
-        } => (
-            "200 OK",
-            JSON,
-            format!(
-                "{{\"ok\":true,\"branch\":{},\"commit\":{},\"files\":{},\"compare\":{},\
-                 \"push\":{}}}",
-                json::string(&branch),
-                json::string(&commit),
-                files,
-                json::string(&compare),
-                json::string(&format!("git push -u origin {branch}"))
-            )
-            .into_bytes(),
-        ),
-        vleo_sheet::form::Proposed::Nothing => (
-            "200 OK",
-            JSON,
-            format!(
-                "{{\"ok\":false,\"nothing\":true,\"message\":{}}}",
-                json::string("no edited row is waiting to be proposed")
-            )
-            .into_bytes(),
-        ),
-        vleo_sheet::form::Proposed::Refused(why) => (
-            "400 Bad Request",
-            JSON,
-            format!("{{\"ok\":false,\"message\":{}}}", json::string(&why)).into_bytes(),
-        ),
-    }
-}
-
-/// What pasting a sheet body into this row would change — and nothing else.
-///
-/// Read-only, deliberately, and separate from the write path. Pasting a
-/// sibling's sheet is how twenty rows that share a pattern get filled quickly,
-/// and it is also how one stale source citation gets dragged through thirty of
-/// them. So the paste is parsed and reported, never applied: a person looks at
-/// the list, then each field goes through the same one-at-a-time save as any
-/// other edit.
-fn sheet_preview(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static str, Vec<u8>) {
-    const JSON: &str = "application/json; charset=utf-8";
-    if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
-        return (
-            "400 Bad Request",
-            JSON,
-            b"{\"ok\":false,\"message\":\"not a node identifier\"}".to_vec(),
-        );
-    }
-    let Some(body) = param(params, "body").map(decode) else {
-        return (
-            "400 Bad Request",
-            JSON,
-            b"{\"ok\":false,\"message\":\"nothing pasted\"}".to_vec(),
-        );
-    };
-    let tree = match vleo_sheet::load::load_all(&ctx.root) {
-        Ok(t) => t,
-        Err(e) => {
-            return (
-                "500 Internal Server Error",
-                JSON,
-                format!("{{\"ok\":false,\"message\":{}}}", json::string(&e)).into_bytes(),
-            )
-        }
-    };
-    let Some(sh) = tree.sheets.get(id) else {
-        return (
-            "404 Not Found",
-            JSON,
-            b"{\"ok\":false,\"message\":\"no such node\"}".to_vec(),
-        );
-    };
-    match vleo_sheet::form::preview(sh, &body) {
-        Ok(j) => ("200 OK", JSON, j.into_bytes()),
-        Err(e) => (
-            "400 Bad Request",
-            JSON,
-            format!("{{\"ok\":false,\"message\":{}}}", json::string(&e)).into_bytes(),
-        ),
-    }
-}
-
-/// Whether this daemon may write to the tree at all.
-///
-/// Off unless asked for. A read-only deployment must not become a writable one
-/// because somebody pointed a browser at it: editing a sheet is work in a
-/// checkout, and a daemon serving a built copy of the tool has nothing it should
-/// be editing.
-fn writes_allowed() -> bool {
-    matches!(
-        std::env::var("VLEO_ALLOW_WRITE")
-            .unwrap_or_default()
-            .as_str(),
-        "1" | "true" | "yes"
-    )
-}
-
-/// Change one field of one sheet.
-///
-/// One field per request, which is how `xtask confirm` works and for the same
-/// reason: an edit that changes several things at once is an edit nobody can
-/// read in a diff. The transaction itself is `vleo_sheet::form::save` — the
-/// ordering, the atomic write and the restore-on-failure are tested there,
-/// without an HTTP server in the way.
-///
-///     POST /v1/sheet/<id>
-///     field=unit&value=Kelvin&base=1f2e3d
-///
-/// `base` is the `file_hash` the editor was shown. A stale one is 409 with the
-/// current hash, never an overwrite.
-fn sheet_write(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static str, Vec<u8>) {
-    const JSON: &str = "application/json; charset=utf-8";
-    let refuse = |status: &'static str, why: String| -> (&'static str, &'static str, Vec<u8>) {
-        (
-            status,
-            JSON,
-            format!("{{\"ok\":false,\"message\":{}}}", json::string(&why)).into_bytes(),
-        )
-    };
-    if !writes_allowed() {
-        return refuse(
-            "403 Forbidden",
-            "this daemon is read-only. Start it with VLEO_ALLOW_WRITE=1 in a checkout to \
-             edit sheets from the face."
-                .into(),
-        );
-    }
-    if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
-        return refuse("400 Bad Request", "not a node identifier".into());
-    }
-    let (Some(field), Some(value), Some(base)) = (
-        param(params, "field"),
-        param(params, "value"),
-        param(params, "base"),
-    ) else {
-        return refuse(
-            "400 Bad Request",
-            "field, value and base are all required — base is the file_hash the form was \
-             shown, and without it a save cannot tell whether somebody else has edited the \
-             row since"
-                .into(),
-        );
-    };
-    // NO `by` PARAMETER. The name a relation is attributed to comes from this
-    // checkout's own `git config user.name`, so the sheet and the commit make
-    // the same claim about who did it — and nobody puts a colleague's name on
-    // their work by typing it into a box.
-    said(vleo_sheet::form::save(
-        &ctx.root,
-        id,
-        &decode(field),
-        &decode(value),
-        &decode(base),
-    ))
-}
-
-/// One save's outcome as a response. Four endpoints write a sheet and all four
-/// answer the same three ways, so the shape is here rather than four times.
-fn said(out: vleo_sheet::form::Saved) -> (&'static str, &'static str, Vec<u8>) {
-    const JSON: &str = "application/json; charset=utf-8";
-    match out {
-        vleo_sheet::form::Saved::Ok {
-            file_hash,
-            sheet_hash,
-            regenerated,
-        } => (
-            "200 OK",
-            JSON,
-            format!(
-                "{{\"ok\":true,\"file_hash\":{},\"sheet_hash\":{},\"regenerated\":{}}}",
-                json::string(&file_hash),
-                json::string(&sheet_hash),
-                regenerated
-            )
-            .into_bytes(),
-        ),
-        // Not an error the reader caused, and not an overwrite either: somebody
-        // else moved the row. The current hash goes back so the face can show
-        // what it looks like now rather than clobber it.
-        vleo_sheet::form::Saved::Stale { current } => (
-            "409 Conflict",
-            JSON,
-            format!(
-                "{{\"ok\":false,\"stale\":true,\"file_hash\":{},\"message\":\"this row changed \
-                 since the form was opened — reload it and reapply the edit\"}}",
-                json::string(&current)
-            )
-            .into_bytes(),
-        ),
-        vleo_sheet::form::Saved::Refused(why) => (
-            "400 Bad Request",
-            JSON,
-            format!("{{\"ok\":false,\"message\":{}}}", json::string(&why)).into_bytes(),
-        ),
-    }
-}
-
-/// The two things every sheet-writing endpoint checks first.
-fn may_write(id: &str) -> Option<String> {
-    if !writes_allowed() {
-        return Some(
-            "this daemon is read-only. Start it with VLEO_ALLOW_WRITE=1 in a checkout to edit \
-             sheets from the face."
-                .into(),
-        );
-    }
-    if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
-        return Some("not a node identifier".into());
-    }
-    None
-}
-
-/// Add, change or remove one repeated block.
-///
-///     POST /v1/block/<id>
-///     array=input&op=add&index=0&binding=ap&var=sw_ap_design&type=Ratio&base=1f2e3d
-///
-/// A block is not a field. It is added and removed as well as edited, and
-/// `form::save_block` is where the refusals for that live — a step whose hole
-/// holds somebody's Rust, an input a filled hole binds by name, an edge that
-/// closes a loop in the derivation graph.
-fn block_write(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static str, Vec<u8>) {
-    const JSON: &str = "application/json; charset=utf-8";
-    let refuse = |status: &'static str, why: String| -> (&'static str, &'static str, Vec<u8>) {
-        (
-            status,
-            JSON,
-            format!("{{\"ok\":false,\"message\":{}}}", json::string(&why)).into_bytes(),
-        )
-    };
-    if let Some(why) = may_write(id) {
-        return refuse(
-            if writes_allowed() {
-                "400 Bad Request"
-            } else {
-                "403 Forbidden"
-            },
-            why,
-        );
-    }
-    let (Some(name), Some(op), Some(base)) = (
-        param(params, "array"),
-        param(params, "op"),
-        param(params, "base"),
-    ) else {
-        return refuse(
-            "400 Bad Request",
-            "array, op and base are all required".into(),
-        );
-    };
-    let (name, op, base) = (decode(name), decode(op), decode(base));
-    let Some(a) = vleo_sheet::form::array(&name) else {
-        return refuse(
-            "400 Bad Request",
-            format!("'{name}' is not a repeated block this form writes"),
-        );
-    };
-    let index: usize = param(params, "index")
-        .and_then(|i| decode(i).parse().ok())
-        .unwrap_or(0);
-    // The columns come by their own names, so an array with a `type` and a
-    // `text` needs no naming convention on the wire.
-    let mut values: Vec<(&str, String)> = Vec::new();
-    for c in a.columns {
-        if let Some(v) = param(params, c.key) {
-            values.push((c.key, decode(v)));
-        }
-    }
-    // A `set` names the one key it moves, which is not necessarily a column the
-    // request also carries a value for under some other name.
-    if op == "set" {
-        if let Some(k) = param(params, "key") {
-            let k = decode(k);
-            let Some(c) = a.columns.iter().find(|c| c.key == k) else {
-                return refuse(
-                    "400 Bad Request",
-                    format!("'{k}' is not a key of a {} block", a.name),
-                );
-            };
-            let v = values
-                .iter()
-                .find(|(kk, _)| *kk == c.key)
-                .map(|(_, v)| v.clone())
-                .unwrap_or_default();
-            values = vec![(c.key, v)];
-        }
-    }
-    said(vleo_sheet::form::save_block(
-        &ctx.root, id, &name, &op, index, &values, &base,
-    ))
-}
-
-/// Rewrite how the answer is drawn.
-///
-///     POST /v1/view/<id>
-///     kind=line&over=orbit_altitude&points=60&base=1f2e3d
-///
-/// The whole `[view]` table at once, because its kind decides which other keys
-/// exist — see `form::save_view`.
-fn view_write(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static str, Vec<u8>) {
-    const JSON: &str = "application/json; charset=utf-8";
-    if let Some(why) = may_write(id) {
-        return (
-            if writes_allowed() {
-                "400 Bad Request"
-            } else {
-                "403 Forbidden"
-            },
-            JSON,
-            format!("{{\"ok\":false,\"message\":{}}}", json::string(&why)).into_bytes(),
-        );
-    }
-    let (Some(kind), Some(base)) = (param(params, "kind"), param(params, "base")) else {
-        return (
-            "400 Bad Request",
-            JSON,
-            b"{\"ok\":false,\"message\":\"kind and base are required\"}".to_vec(),
-        );
-    };
-    said(vleo_sheet::form::save_view(
-        &ctx.root,
-        id,
-        &decode(kind),
-        &decode(param(params, "over").unwrap_or("")),
-        &decode(param(params, "points").unwrap_or("")),
-        &decode(base),
-    ))
-}
-
-/// Move a seeded row to published.
-///
-///     POST /v1/publish/<id>
-///     base=1f2e3d
-///
-/// An ACTION, not a field. A state decides whether anything is generated from
-/// the row at all, so it has preconditions rather than a text box — see
-/// `form::publish`.
-fn publish_write(ctx: &Ctx, id: &str, params: &str) -> (&'static str, &'static str, Vec<u8>) {
-    const JSON: &str = "application/json; charset=utf-8";
-    if let Some(why) = may_write(id) {
-        return (
-            if writes_allowed() {
-                "400 Bad Request"
-            } else {
-                "403 Forbidden"
-            },
-            JSON,
-            format!("{{\"ok\":false,\"message\":{}}}", json::string(&why)).into_bytes(),
-        );
-    }
-    let Some(base) = param(params, "base") else {
-        return (
-            "400 Bad Request",
-            JSON,
-            b"{\"ok\":false,\"message\":\"base is required\"}".to_vec(),
-        );
-    };
-    said(vleo_sheet::form::publish(&ctx.root, id, &decode(base)))
-}
-
 /// The manual the page shows about the tool, and what is true of THIS copy.
 ///
-/// The file says how things work. Only the running copy knows whether it will
-/// accept an edit, whose name an edit would carry, and how many rows there are —
-/// and a manual that wrote any of those down would be wrong the day after. So
-/// they are added here, from the same functions that decide them: the write
-/// switch the save path checks, the identity the save path signs with, and the
-/// form's own tables for what a sheet holds and what it locks.
+/// The file says how things work. Only the running copy knows where its saved
+/// case lives, how far that case is from the defaults, and how many rows there
+/// are — and a manual that wrote any of those down would be wrong the day
+/// after. So they are added here, from the same functions that decide them,
+/// with the node form's own tables for what a form asks and what it cannot
+/// change.
 fn manual_endpoint(ctx: &Ctx) -> (&'static str, &'static str, Vec<u8>) {
     const JSON: &str = "application/json; charset=utf-8";
     let m = match vleo_sheet::manual::load(&ctx.root) {
@@ -892,13 +472,7 @@ fn manual_endpoint(ctx: &Ctx) -> (&'static str, &'static str, Vec<u8>) {
         }
     };
     use vleo_sheet::form;
-    let (who, who_why, agent) = match form::git_identity(&ctx.root) {
-        Ok(w) => {
-            let agent = form::refuse_agent_attribution(&ctx.root, &w).is_err();
-            (json::string(&w), "null".to_string(), agent)
-        }
-        Err(e) => ("null".to_string(), json::string(&e), false),
-    };
+    let case = saved_case();
     let (rows, published, seeded) = match vleo_sheet::load::load_all(&ctx.root) {
         Ok(t) => {
             let n = t.sheets.len();
@@ -952,14 +526,13 @@ fn manual_endpoint(ctx: &Ctx) -> (&'static str, &'static str, Vec<u8>) {
         })
         .collect();
     let body = format!(
-        "{{\"ok\":true,\"manual\":{},\n\"live\":{{\"writes_allowed\":{},\"identity\":{},\
-         \"identity_why\":{},\"identity_is_agent\":{},\"port\":{},\"rows\":{},\"published\":{},\
+        "{{\"ok\":true,\"manual\":{},\n\"live\":{{\"case_path\":{},\"case_stored\":{},\
+         \"case_changed\":{},\"port\":{},\"rows\":{},\"published\":{},\
          \"seeded\":{},\"fields\":[{}],\"arrays\":[{}],\"locked\":[{}]}}}}",
         vleo_sheet::manual::json(&m),
-        writes_allowed(),
-        who,
-        who_why,
-        agent,
+        json::string(&case_path().display().to_string()),
+        case.stored,
+        case.reading.changed,
         ctx.port,
         rows,
         published,
@@ -971,43 +544,12 @@ fn manual_endpoint(ctx: &Ctx) -> (&'static str, &'static str, Vec<u8>) {
     ("200 OK", JSON, body.into_bytes())
 }
 
-fn declare_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
-    if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
-        return (
-            "400 Bad Request",
-            "text/plain; charset=utf-8",
-            b"not a node identifier".to_vec(),
-        );
-    }
-    // The whole tree, because a sheet is loaded in the context of the tree it
-    // belongs to — its parent and its inputs are resolved against the others.
-    let tree = match vleo_sheet::load::load_all(&ctx.root) {
-        Ok(t) => t,
-        Err(e) => {
-            return (
-                "500 Internal Server Error",
-                "application/json; charset=utf-8",
-                format!("{{\"ok\":false,\"message\":{:?}}}", e).into_bytes(),
-            )
-        }
-    };
-    let Some(sh) = tree.sheets.get(id) else {
-        return (
-            "404 Not Found",
-            "application/json; charset=utf-8",
-            b"{\"ok\":false,\"message\":\"no such node\"}".to_vec(),
-        );
-    };
-    match vleo_sheet::form::json(sh) {
-        Ok(j) => ("200 OK", "application/json; charset=utf-8", j.into_bytes()),
-        Err(e) => (
-            "500 Internal Server Error",
-            "application/json; charset=utf-8",
-            format!("{{\"ok\":false,\"message\":{:?}}}", e).into_bytes(),
-        ),
-    }
-}
-
+/// What one node's folder actually holds.
+///
+/// The architecture view claims a node is one folder with a fixed set of
+/// artefacts, seven of them generated. A claim about the layout that the page
+/// asserts from memory is a claim that goes stale the first time the layout
+/// changes, so it is read off the disk instead.
 fn node_endpoint(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
     if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
         return (
@@ -1571,6 +1113,15 @@ fn form_file(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
             )
         }
     };
+    // `new` is the form for a node the design does not have yet. No row can
+    // be called that: an id names an answer, and `new` names none.
+    if id == "new" {
+        return (
+            "200 OK",
+            "text/html; charset=utf-8",
+            vleo_sheet::template::document_new(&tree).into_bytes(),
+        );
+    }
     match tree.sheets.get(&id) {
         Some(sh) => (
             "200 OK",
@@ -1583,6 +1134,259 @@ fn form_file(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
             format!("no node '{id}'").into_bytes(),
         ),
     }
+}
+
+// ---------------------------------------------------------------------------
+// saved results
+
+/// Now, as a result records it: UTC, to the second. Through `date` rather than a
+/// crate, as xtask stamps its dates.
+fn now_utc() -> String {
+    std::process::Command::new("date")
+        .args(["-u", "+%Y-%m-%dT%H:%M:%SZ"])
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default()
+}
+
+fn results_dir() -> PathBuf {
+    vleo_data::results_path()
+}
+
+fn rows_json(j: &mut Json, key: &str, rows: &[vleo_modules::results::Row]) {
+    j.key(key).open_arr();
+    for (k, r) in rows.iter().enumerate() {
+        if k > 0 {
+            j.raw(",");
+        }
+        j.raw("{");
+        j.str_field("id", &r.id);
+        j.str_field("name", &r.name);
+        j.str_field("value", &r.value);
+        j.str_field("unit", &r.unit);
+        match r.si {
+            Some(v) => j.num_field("si", v),
+            None => j.key("si").raw("null"),
+        };
+        j.str_field("credibility", &r.credibility);
+        j.str_field("governing", &r.governing);
+        j.str_field("note", &r.note);
+        j.close_obj();
+    }
+    j.close_arr();
+}
+
+fn result_head(j: &mut Json, s: &vleo_modules::results::Saved) {
+    j.str_field("target", &s.target);
+    j.str_field("name", &s.name);
+    j.str_field("saved", &s.saved);
+    j.str_field("mode", &s.mode);
+    j.str_field("chain", &s.chain);
+    j.str_field("kernel", &s.kernel);
+    j.str_field("graph", &s.graph);
+    j.str_field("template", &s.template);
+    j.bool_field(
+        "template_current",
+        s.template == vleo_modules::inputs::template(),
+    );
+    j.str_field("data", &s.data.join(" "));
+    j.num_field("ran", s.ran as f64);
+    j.num_field("blocked", s.blocked_count as f64);
+    j.num_field("changed", s.changed() as f64);
+    match s.answer() {
+        Some(a) => {
+            j.key("answer").raw("{");
+            j.str_field("value", &a.value);
+            j.str_field("unit", &a.unit);
+            j.close_obj();
+        }
+        None => {
+            j.key("answer").raw("null");
+        }
+    }
+}
+
+/// Every saved result, newest first — and any file that no longer reads,
+/// named with why rather than left out of the list.
+fn results_list() -> String {
+    let (good, bad) = vleo_modules::results::store::list(&results_dir());
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.str_field("path", &results_dir().display().to_string());
+    j.key("results").open_arr();
+    for (k, (file, s)) in good.iter().enumerate() {
+        if k > 0 {
+            j.raw(",");
+        }
+        j.raw("{");
+        j.str_field("file", file);
+        result_head(&mut j, s);
+        j.close_obj();
+    }
+    j.close_arr();
+    j.key("unreadable").open_arr();
+    for (k, (file, why)) in bad.iter().enumerate() {
+        if k > 0 {
+            j.raw(",");
+        }
+        j.raw("{");
+        j.str_field("file", file);
+        j.str_field("why", why);
+        j.close_obj();
+    }
+    j.close_arr();
+    j.raw("}");
+    j.0
+}
+
+fn failed(message: &str) -> String {
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", false);
+    j.str_field("message", message);
+    j.raw("}");
+    j.0
+}
+
+/// One saved result, whole.
+fn result_json(params: &str) -> String {
+    let name = param(params, "name").map(decode).unwrap_or_default();
+    let s = match vleo_modules::results::store::open(&results_dir(), &name) {
+        Ok(s) => s,
+        Err(e) => return failed(&e),
+    };
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.str_field("file", &name);
+    result_head(&mut j, &s);
+    rows_json(&mut j, "inputs", &s.inputs);
+    rows_json(&mut j, "outputs", &s.outputs);
+    rows_json(&mut j, "blocked_rows", &s.blocked);
+    j.raw("}");
+    j.0
+}
+
+fn result_file(params: &str, report: bool) -> (&'static str, &'static str, Vec<u8>) {
+    let name = param(params, "name").map(decode).unwrap_or_default();
+    match vleo_modules::results::store::open(&results_dir(), &name) {
+        Ok(s) if report => (
+            "200 OK",
+            "text/html; charset=utf-8",
+            vleo_modules::results::html(&s).into_bytes(),
+        ),
+        Ok(s) => (
+            "200 OK",
+            "text/csv; charset=utf-8",
+            vleo_modules::results::csv(&s).into_bytes(),
+        ),
+        Err(e) => ("404 Not Found", "text/plain; charset=utf-8", e.into_bytes()),
+    }
+}
+
+/// Run a row on the saved case — with whatever the request sets on top — and
+/// keep what it returned.
+fn result_save(params: &str, ctx: &Ctx) -> String {
+    if let Some(why) = case_refused(params, ctx) {
+        return failed(&why);
+    }
+    let case = build_case(params, ctx);
+    let mut scratch = Scratch::new();
+    let r = match vleo_modules::evaluate(&case, &mut scratch) {
+        Ok(r) => r,
+        Err(f) => return failed(&format!("{f}")),
+    };
+    let label = param(params, "label").map(decode).unwrap_or_default();
+    let s = vleo_modules::results::from_run(&r, &case.supply, &now_utc(), label.trim());
+    match vleo_modules::results::store::save(&results_dir(), &s) {
+        Ok(file) => {
+            let mut j = Json::new();
+            j.raw("{");
+            j.bool_field("ok", true);
+            j.str_field("file", &file);
+            result_head(&mut j, &s);
+            j.raw("}");
+            j.0
+        }
+        Err(e) => failed(&e),
+    }
+}
+
+/// Keep a result somebody sent — its CSV, or the report page it rides in.
+fn result_upload(params: &str) -> String {
+    let text = param(params, "csv").map(decode).unwrap_or_default();
+    let s = match vleo_modules::results::read(&vleo_modules::results::unwrap_report(&text)) {
+        Ok(s) => s,
+        Err(e) => return failed(&e),
+    };
+    match vleo_modules::results::store::save(&results_dir(), &s) {
+        Ok(file) => {
+            let mut j = Json::new();
+            j.raw("{");
+            j.bool_field("ok", true);
+            j.str_field("file", &file);
+            result_head(&mut j, &s);
+            j.raw("}");
+            j.0
+        }
+        Err(e) => failed(&e),
+    }
+}
+
+fn result_delete(params: &str) -> String {
+    let name = param(params, "name").map(decode).unwrap_or_default();
+    match vleo_modules::results::store::remove(&results_dir(), &name) {
+        Ok(()) => "{\"ok\":true}".to_string(),
+        Err(e) => failed(&e),
+    }
+}
+
+/// A result's inputs, made the saved case: checked like any other case, saved
+/// only when every value still applies, and carried over first when the result
+/// was saved against another set of inputs.
+fn result_as_case(params: &str) -> String {
+    let name = param(params, "name").map(decode).unwrap_or_default();
+    let s = match vleo_modules::results::store::open(&results_dir(), &name) {
+        Ok(s) => s,
+        Err(e) => return failed(&e),
+    };
+    let r = vleo_modules::inputs::check_values(&s.case_values());
+    let mut j = Json::new();
+    j.raw("{");
+    if !r.ok() {
+        j.bool_field("ok", false);
+        j.str_field(
+            "message",
+            &format!(
+                "the case was not changed: {} of the result's inputs no longer apply to this tree",
+                r.refused.len()
+            ),
+        );
+        reading_json(&mut j, &r);
+        j.raw("}");
+        return j.0;
+    }
+    let path = case_path();
+    let written = if r.set.is_empty() {
+        vleo_modules::inputs::saved::clear(&path)
+    } else {
+        vleo_modules::inputs::saved::store(&path, &vleo_modules::inputs::csv(&r.set))
+    };
+    match written {
+        Ok(()) => {
+            j.bool_field("ok", true);
+            reading_json(&mut j, &r);
+        }
+        Err(e) => {
+            j.bool_field("ok", false);
+            j.str_field("message", &format!("{}: {e}", path.display()));
+        }
+    }
+    j.raw("}");
+    j.0
 }
 
 /// What a filled form would change in its node. Writes nothing.
@@ -1608,6 +1412,41 @@ fn form_check(ctx: &Ctx, params: &str) -> String {
     let f = &p.form;
     j.bool_field("ok", true);
     j.str_field("node", &f.node);
+    match &p.new {
+        Some(n) => {
+            j.key("new").raw("{");
+            j.str_field("id", &n.id);
+            j.str_field("parent", &n.parent);
+            j.str_field("kind", &n.kind);
+            j.close_obj();
+        }
+        None => {
+            j.key("new").raw("null");
+        }
+    }
+    j.key("interfaces").open_arr();
+    for (k, i) in p.interfaces.iter().enumerate() {
+        if k > 0 {
+            j.raw(",");
+        }
+        j.raw("{");
+        j.str_field("binding", &i.binding);
+        j.str_field("var", &i.var);
+        j.str_field("have", &i.have);
+        j.str_field("unit", &i.unit);
+        j.str_field("label", &i.label);
+        j.str_field("why", &i.why);
+        j.close_obj();
+    }
+    j.close_arr();
+    j.key("open").open_arr();
+    for (k, o) in p.open.iter().enumerate() {
+        if k > 0 {
+            j.raw(",");
+        }
+        j.push_string(o);
+    }
+    j.close_arr();
     j.key("filled_by").raw("{");
     j.str_field("name", &f.name);
     j.str_field("team", &f.team);
@@ -1730,11 +1569,7 @@ fn inputs_save(params: &str) -> String {
         return j.0;
     }
     let path = case_path();
-    let written = path
-        .parent()
-        .map(std::fs::create_dir_all)
-        .unwrap_or(Ok(()))
-        .and_then(|_| std::fs::write(&path, vleo_modules::inputs::csv(&r.set)));
+    let written = vleo_modules::inputs::saved::store(&path, &vleo_modules::inputs::csv(&r.set));
     match written {
         Ok(()) => {
             j.bool_field("ok", true);
@@ -1758,11 +1593,8 @@ fn inputs_reset() -> String {
     let path = case_path();
     let mut j = Json::new();
     j.raw("{");
-    match std::fs::remove_file(&path) {
+    match vleo_modules::inputs::saved::clear(&path) {
         Ok(()) => {
-            j.bool_field("ok", true);
-        }
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
             j.bool_field("ok", true);
         }
         Err(e) => {

@@ -89,6 +89,7 @@ fn main() -> ExitCode {
         "show" => cmd_show(&rest),
         "cases" => cmd_cases(),
         "inputs" => cmd_inputs(&rest),
+        "result" => cmd_result(&rest),
         "selftest" => cmd_selftest(),
         "data" => cmd_data(&rest),
         "version" => {
@@ -121,13 +122,15 @@ fn help() {
         "\
 vleo <command>
 
-  run <node> [--inputs <file.csv> | --defaults] [--mode alone|branch|all] [--set id=value ...]
+  run <node> [--inputs <file.csv> | --defaults] [--mode alone|branch|all] [--set id=value ...] [--save <file.csv>]
                        evaluate one node and everything it needs. Prints the
                        value, its provenance and every node that was blocked —
                        always n ran, m blocked, and the blocked ones named.
                        The inputs are the saved case — the one the browser
                        saves — unless --inputs names a CSV or --defaults asks
                        for the design as declared; --set has the last word.
+                       --save keeps the whole run and the inputs it ran on as
+                       a result file — see `result`.
   sweep <node> --over <input> --from <a> --to <b> [--points n] [--inputs <file.csv> | --defaults]
                        a behaviour sweep. Refused points are recorded, never
                        dropped: a sweep in which some rows quietly used a
@@ -142,6 +145,10 @@ vleo <command>
   inputs [--inputs <file.csv> | --defaults]
                        every input as a CSV — group, id, value, unit, default,
                        range. Fill in `value` and pass the file with --inputs.
+  result <file> [--html <out.html>]
+                       a saved result, shown as it was — nothing runs. Reads the
+                       CSV `run --save` writes, or the report page it rides in;
+                       --html writes that report, to send to someone.
   selftest             every fixture declaration in the tree is sound —
                        provenance outside the code, a positive tolerance.
                        It does not execute them: `cargo test` does.
@@ -321,6 +328,14 @@ fn cmd_run(args: &[&str]) -> Result<(), String> {
     let case = build_case(node, args)?;
     let mut scratch = Scratch::new();
     let results = vleo_modules::evaluate(&case, &mut scratch).map_err(|f| f.to_string())?;
+
+    // KEPT, when asked: the whole run and the inputs it ran on, as a result
+    // file the browser's Results page and `vleo result` read back unchanged.
+    if let Some(path) = opt(args, "--save") {
+        let s = vleo_modules::results::from_run(&results, &case.supply, &now_utc(), "");
+        std::fs::write(path, vleo_modules::results::csv(&s)).map_err(|e| format!("{path}: {e}"))?;
+        eprintln!("saved the result to {path}");
+    }
 
     let idx = Vleo::find(node).unwrap();
     let def = &NODES[idx as usize];
@@ -704,6 +719,86 @@ fn cmd_cases() -> Result<(), String> {
         }
         if let Some(b) = &u.backup {
             println!("  the case as it was: {b}");
+        }
+    }
+    Ok(())
+}
+
+/// Now, as a result records it: UTC, to the second.
+fn now_utc() -> String {
+    std::process::Command::new("date")
+        .args(["-u", "+%Y-%m-%dT%H:%M:%SZ"])
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default()
+}
+
+/// A saved result, as it was when it was saved. Runs nothing: a result read
+/// back is a record, and running it again would be a different result.
+fn cmd_result(args: &[&str]) -> Result<(), String> {
+    let file = *args
+        .first()
+        .ok_or("usage: vleo result <file> [--html <out.html>]")?;
+    let text = std::fs::read_to_string(file).map_err(|e| format!("{file}: {e}"))?;
+    let s = vleo_modules::results::read(&vleo_modules::results::unwrap_report(&text))?;
+    if let Some(out) = opt(args, "--html") {
+        std::fs::write(out, vleo_modules::results::html(&s)).map_err(|e| format!("{out}: {e}"))?;
+        eprintln!("wrote the report to {out}");
+    }
+    let unit = |u: &str| {
+        if u == "-" {
+            String::new()
+        } else {
+            format!(" {u}")
+        }
+    };
+    println!(
+        "\x1b[1m{}\x1b[0m — a saved result{}, {}",
+        s.target,
+        if s.name.is_empty() {
+            String::new()
+        } else {
+            format!(" «{}»", s.name)
+        },
+        s.saved
+    );
+    match s.answer() {
+        Some(a) => println!(
+            "  \x1b[1m{}{}\x1b[0m  credibility {} of 4, governed by {}",
+            a.value,
+            unit(&a.unit),
+            a.credibility,
+            a.governing
+        ),
+        None => println!("  not computed on that run"),
+    }
+    println!(
+        "  {} ran, {} blocked · mode {} · chain {} · kernel {} · graph {}",
+        s.ran, s.blocked_count, s.mode, s.chain, s.kernel, s.graph
+    );
+    if s.template != vleo_modules::inputs::template() {
+        println!("  saved against another set of inputs than this tree has — its values are shown as they were");
+    }
+    println!("\n  {} input(s) changed from their defaults:", s.changed());
+    for r in s.inputs.iter().filter(|r| r.note == "changed") {
+        println!("    {:<36} {}{}", r.id, r.value, unit(&r.unit));
+    }
+    println!("\n  {} value(s) returned:", s.outputs.len());
+    for r in &s.outputs {
+        println!(
+            "    {:<36} {:>14}{:<6} cred {}",
+            r.id,
+            r.value,
+            unit(&r.unit),
+            r.credibility
+        );
+    }
+    if !s.blocked.is_empty() {
+        println!("\n  {} could not run:", s.blocked.len());
+        for r in &s.blocked {
+            println!("    {:<36} {}", r.id, r.note);
         }
     }
     Ok(())

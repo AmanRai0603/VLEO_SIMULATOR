@@ -451,6 +451,43 @@ mod on_disk {
     }
 
     #[test]
+    fn an_old_case_read_by_many_at_once_is_carried_over_once_and_read_whole() {
+        // The page asks for the case from several requests at once when it
+        // opens. Each one reading the old file and carrying it over by itself
+        // kept a copy aside per request, and one could read the case while
+        // another was half way through writing it back — and say nothing was
+        // set aside, or that no input was new.
+        let i = an_input();
+        let path = scratch("many");
+        let old = format!(
+            "{OLD}id,value\n{},{}\ngone_since,4\n",
+            i.id,
+            i.shown(i.default)
+        );
+        for _ in 0..20 {
+            for e in std::fs::read_dir(path.parent().unwrap()).unwrap().flatten() {
+                std::fs::remove_file(e.path()).unwrap();
+            }
+            std::fs::write(&path, &old).unwrap();
+            let readers: Vec<_> = (0..8)
+                .map(|_| {
+                    let p = path.clone();
+                    std::thread::spawn(move || load(&p))
+                })
+                .collect();
+            for r in readers {
+                let s = r.join().unwrap();
+                assert!(s.error.is_none(), "{:?}", s.error);
+                let u = s.reading.upgrade.expect("a reader saw no carry-over");
+                assert_eq!(u.set_aside.len(), 1, "a reader saw {:?}", u.set_aside);
+                assert!(!u.new.is_empty(), "a reader was told no input is new");
+            }
+            let copies = std::fs::read_dir(path.parent().unwrap()).unwrap().count();
+            assert_eq!(copies, 2, "the old case was carried over more than once");
+        }
+    }
+
+    #[test]
     fn a_saved_case_with_a_row_that_no_longer_applies_still_runs_whole() {
         // Current template, one row edited by hand into nonsense: the rest
         // applies, the bad row is set aside by name, and the file as it was is

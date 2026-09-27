@@ -4,7 +4,8 @@ Packaging, the installer, the wheel, the release workflow and the daemon
 packaging.
 
 Applies to `.github/workflows/release.yml`, packaging manifests.
-Agent L's area — a pipeline now, not an agent.
+A pipeline, maintained by the developers. A release is how every applied form
+reaches the team.
 
 ## Two things this area may never do
 

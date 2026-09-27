@@ -152,7 +152,8 @@ pub struct Route {
     pub method: String,
     pub path: String,
     pub what: String,
-    /// Refused unless the daemon was started with `VLEO_ALLOW_WRITE=1`.
+    /// Would write the repository. No route may; kept so a manual that says
+    /// one does is caught by name rather than silently read.
     pub writes: bool,
 }
 
