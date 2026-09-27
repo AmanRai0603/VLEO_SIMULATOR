@@ -92,7 +92,7 @@ export function draw() {
   // The pages that are not the tree: no caption about the tree above them.
   const page = v === 'node' || v === 'arch' || v === 'manual' || v === 'inputs' ||
     v === 'results' || v === 'forms';
-  $('#caption-a').hidden = $('#caption-b').hidden = page;
+  $('#caption-a').hidden = page;
   // The stepper walks a person through reading the TREE; on the manual it
   // would be a second set of instructions beside the first.
   $('#stepper').hidden = v === 'manual' || v === 'inputs' || v === 'results' || v === 'forms';

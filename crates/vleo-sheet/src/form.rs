@@ -384,6 +384,20 @@ pub const FIELDS: &[Field] = &[
         asked: true,
         insert: true,
     },
+    // Not asked: intake writes the filler's name here whenever a form changes
+    // the plain words, so the page can say whose words they are.
+    Field {
+        field: "explain_by",
+        table: "explain",
+        key: "by",
+        shape: Shape::Line,
+        group: "said simply",
+        ask: "who wrote the plain words",
+        why: "the page names who said it, so a draft is never read as the owner's word",
+        blocks: false,
+        asked: false,
+        insert: true,
+    },
 ];
 
 /// One field of the form, by name.
@@ -501,6 +515,7 @@ pub fn value(sh: &Sheet, field: &str) -> String {
         "explain_simply" => sh.explain.simply.clone(),
         "explain_breaks" => sh.explain.breaks.clone(),
         "explain_wrong" => sh.explain.wrong.clone(),
+        "explain_by" => sh.explain.by.clone(),
         _ => String::new(),
     }
 }

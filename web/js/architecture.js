@@ -13,7 +13,7 @@
 */
 'use strict';
 
-import { $, esc, plural } from './dom.js';
+import { $, esc, plural, answerFirst } from './dom.js';
 import { S, subtreeAll, subsystemLayers } from './state.js';
 
 export const SECTIONS = [
@@ -29,7 +29,11 @@ export function drawArchitecture() {
     '<button class="ctl arch' + (k === S.arch ? ' sel' : '') + '" data-arch="' + k + '">' +
     (i + 1) + ' · ' + esc(label) + '</button>').join('');
   const draw = { node: secNode, conn: secConn, layers: secLayers, tree: secTree, rings: secRings };
-  $('#arch-body').innerHTML = (draw[S.arch] || secNode)();
+  $('#arch-body').innerHTML = answerFirst('Every row of the design is the same folder: one sheet written ' +
+    'by hand, and everything else generated from it. Rows connect only through the inputs they declare, ' +
+    'and each layer reaches the one above through a single interface row.',
+    ['The five sections below go from one node, to how nodes connect, to layers, to the whole tree, to the code rings.'],
+    'explanation') + (draw[S.arch] || secNode)();
 }
 
 // ---------------------------------------------------------------------------

@@ -86,15 +86,22 @@ function findRoots() {
   }
 }
 
+// Each layer's answer first, then what to hold on to while reading it, and the
+// kind of reading it is (docs/EXPLAINING.md, E1 and E8).
 export const CAPTIONS = {
-  1: ['Who wants what, what it costs, and what the programme has promised.',
-      'One architecture, one case. A customer changes its inputs, never the tree.'],
-  2: ['The system: what it is made of, and what reads what.',
-      'Its row is what a node feeds. Its column is what feeds it.'],
-  3: ['One subsystem layer, decomposed until every row is a question one person can answer.',
-      'Exactly one row in each layer crosses upward. That row is the whole interface.'],
-  4: ['The run. One case, one chain hash, one set of numbers.',
-      'A refusal is a value. Nothing here is a magic number the caller may forget to check.'],
+  1: ['The programme\'s own view: who wants what, what it costs, and what the programme has promised.',
+      ['One architecture, one case. A customer changes its inputs, never the tree.',
+       'Open a box to see its rows; click a row to read it.'], 'reference'],
+  2: ['The system: what the spacecraft is made of, and which part reads which.',
+      ['Its row is what a node feeds. Its column is what feeds it.',
+       'Select a row: amber is what it feeds, violet what feeds it.'], 'reference'],
+  3: ['One subsystem, broken down until every row is a question one person can answer.',
+      ['Exactly one row in each layer crosses upward. That row is the whole interface.',
+       'Pick the subsystem in the <b>layer</b> list above.'], 'reference'],
+  4: ['The run: pick a row, run it on your case, and read its answer with every row it needed.',
+      ['One case, one chain hash, one set of numbers.',
+       'A refusal is shown by name, never swapped for a number.',
+       'Save the result to keep it with the inputs it ran on.'], 'how-to'],
 };
 
 export const HOWTO = [

@@ -24,7 +24,7 @@
 */
 'use strict';
 
-import { $, $$, esc, fmt, plural } from './dom.js';
+import { $, $$, esc, fmt, plural, answerFirst } from './dom.js';
 import { S, loadSaved, caseChanged } from './state.js';
 import { clearOverride, isInput } from './inputs.js';
 
@@ -108,8 +108,11 @@ export async function renderCase(host) {
   const all = d.inputs;
   const count = g => all.filter(i => i.group === g).length;
   const changedIn = g => all.filter(i => i.group === g && i.value !== null && i.value !== i.default).length;
-  let h = '<div class="node-head"><h2>' + esc(d.label) + ' — the inputs</h2>' +
-    '<p class="ident">' + esc(d.note) + '</p></div>';
+  let h = '<div class="node-head"><h2>' + esc(d.label) + ' — the inputs</h2></div>' +
+    answerFirst('Your case: every number the design runs on. Change any of them here, or download the ' +
+      'CSV, edit it and upload it back — it is kept on this machine and never changes the design.',
+      [esc(d.note), 'Customer inputs are what the customer chooses; condition inputs are the world it flies in.',
+       'A run always uses the saved case unless you set a value just for that run.'], 'how-to');
 
   h += '<div class="case-state">' + stateLine(d) + '</div>';
   h += '<div class="runbar case-actions">' +

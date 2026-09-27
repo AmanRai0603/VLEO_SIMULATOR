@@ -1051,6 +1051,8 @@ table.risks td { vertical-align: top; }
   margin: .3rem 0 .6rem; border-radius: 0 3px 3px 0; }
 .man-answer .af-k { display: block; }
 .dx-how-to { color: var(--teal); border-color: var(--teal); }
+.dx-reference { color: var(--ink2, #555); border-color: currentColor; }
+.view-af { margin: .4rem 0 .8rem; }
 .nform-dr { display: grid; grid-template-columns: max-content 1fr; gap: .1rem .8rem; }
 .nform-dr dt { color: var(--ink-3); }
 .nform-dr dd { margin: 0; }

@@ -519,6 +519,8 @@ fn an_input_changed_to_one_that_does_not_connect_is_refused_and_the_rest_still_a
 
 #[test]
 fn a_change_to_what_a_node_computes_says_why_or_only_its_wording_goes_in() {
+    // Whatever versions the row already records; the next one follows them.
+    let had = load_all(&root()).unwrap().sheets[ROW].versions.len();
     // A new bound and a new note, with nothing said about why.
     let html = edit(&form_for(ROW), DATA, |t| {
         set_field(t, "upper", "450.0");
@@ -542,23 +544,25 @@ fn a_change_to_what_a_node_computes_says_why_or_only_its_wording_goes_in() {
     );
     let text = p.text.clone().unwrap();
     assert!(text.contains("A reworded note.") && !text.contains("upper = 450.0"));
-    assert!(
-        !text.contains("[[version]]"),
+    assert_eq!(
+        text.matches("[[version]]").count(),
+        had,
         "a version was recorded without its reason"
     );
     assert_eq!(p.about, vec!["output"]);
 
-    // The same changes with the reason: both go in, and version 1 is recorded
-    // with what moved, the relation as it now stands, and `next` for a release.
+    // The same changes with the reason: both go in, and the next version is
+    // recorded with what moved, the relation as it now stands, and `next` for a
+    // release.
     let p = template::plan(&root(), &with_record(&html)).unwrap();
     assert_eq!(verdict_of(&p, "upper"), Verdict::Apply, "{:?}", p.items);
-    assert_eq!(p.version, Some(1));
+    assert_eq!(p.version, Some(had as u32 + 1));
     let text = p.text.unwrap();
     let sheet: toml::Value = text
         .parse()
         .expect("the sheet with its version still reads");
-    let v = &sheet["version"][0];
-    assert_eq!(v["n"].as_integer(), Some(1));
+    let v = &sheet["version"][had];
+    assert_eq!(v["n"].as_integer(), Some(had as i64 + 1));
     assert_eq!(v["release"].as_str(), Some("next"));
     assert_eq!(v["about"][0].as_str(), Some("output"));
     assert_eq!(v["learned"].as_str(), Some("it did not hold above G3"));
@@ -587,25 +591,51 @@ fn a_risk_move_must_name_a_registered_risk() {
 
 #[test]
 fn a_row_with_no_plain_words_yet_takes_them_from_its_form() {
-    // Every row but the worked example has no [explain] table. The form's first
-    // explanatory question must still be answerable on every one of them.
+    // A sheet with no [explain] table yet: the form's first explanatory answer
+    // makes one, beside the question. Every published row has one now, so the
+    // table is taken off a real sheet's text to see it made again.
     let tree = load_all(&root()).unwrap();
     let sh = tree.sheets.get(ROW).unwrap();
-    assert!(
-        sh.explain.is_empty(),
-        "{ROW} already has plain words; pick a row without"
+    let full = std::fs::read_to_string(sh.dir.join("node.toml")).unwrap();
+    let mut bare = String::new();
+    let mut skip = false;
+    for line in full.lines() {
+        let l = line.trim_start();
+        if l.starts_with('[') {
+            skip = l == "[explain]";
+        }
+        if !skip && !l.starts_with("# SAID SIMPLY") && !l.starts_with("# sheet hash.") {
+            bare.push_str(line);
+            bare.push('\n');
+        }
+    }
+    assert!(!bare.contains("[explain]"));
+    let text = vleo_sheet::form::set(&bare, "explain_simply", "What the row works out.").unwrap();
+    let v: toml::Value = text.parse().expect("the sheet no longer reads");
+    assert_eq!(
+        v["explain"]["simply"].as_str(),
+        Some("What the row works out.")
     );
+    assert!(
+        text.find("[explain]").unwrap() < text.find("[maths]").unwrap(),
+        "the plain words are not beside the question"
+    );
+
+    // Through a form: the change applies, records no version, and names whose
+    // words these are — taken from the form's filler.
     let html = edit(&form_for(ROW), DATA, |t| {
         set_field(
             t,
             "explain_simply",
-            "How strong a storm the design is built to ride through.",
+            "What the row works out, in plain words.",
         );
-        set_field(
-            t,
-            "explain_breaks",
-            "It is one level for the whole mission.",
-        );
+        set_field(t, "explain_breaks", "Where that stops being true.");
+        let who = t
+            .get_mut("filled_by")
+            .and_then(|b| b.as_table_mut())
+            .unwrap();
+        who.insert("name".into(), toml::Value::String("R. Kumar".into()));
+        who.insert("team".into(), toml::Value::String("Solar".into()));
     });
     let p = template::plan(&root(), &html).unwrap();
     assert_eq!(
@@ -616,16 +646,12 @@ fn a_row_with_no_plain_words_yet_takes_them_from_its_form() {
     );
     assert_eq!(verdict_of(&p, "explain_breaks"), Verdict::Apply);
     assert!(p.version.is_none(), "wording recorded a version");
-    let text = p.text.unwrap();
-    let v: toml::Value = text.parse().expect("the sheet no longer reads");
+    let v: toml::Value = p.text.unwrap().parse().unwrap();
     assert_eq!(
         v["explain"]["simply"].as_str(),
-        Some("How strong a storm the design is built to ride through.")
+        Some("What the row works out, in plain words.")
     );
-    assert!(
-        text.find("[explain]").unwrap() < text.find("[maths]").unwrap(),
-        "the plain words are not beside the question"
-    );
+    assert_eq!(v["explain"]["by"].as_str(), Some("R. Kumar (Solar)"));
 }
 
 #[test]

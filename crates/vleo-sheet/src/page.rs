@@ -112,6 +112,12 @@ pub fn fragment(
             for para in paragraphs(&sh.explain.simply) {
                 o.push_str(&format!("<p class=\"simply d-lr\">{}</p>\n", h(para)));
             }
+            if !sh.explain.by.is_empty() {
+                o.push_str(&format!(
+                    "<p class=\"by d-lr\">In plain words by {}.</p>\n",
+                    h(&sh.explain.by)
+                ));
+            }
         }
         o.push_str("<h4 class=\"st-h\"><span class=\"st-n\">2</span>Now the real thing</h4>\n");
         o.push_str(&format!("<p class=\"question\">{}</p>\n", h(&sh.question)));
