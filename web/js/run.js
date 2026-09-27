@@ -92,7 +92,7 @@ export function renderRun(host, r, standalone) {
   }
   // Said here rather than only on the disabled button, because the thing a
   // reader needs is not "this is off" — it is what would turn it on, and by
-  // whom. Nothing in this panel can do it: an agent may never supply
+  // whom. Nothing in this panel can do it: an assistant may never supply
   // mathematics, which is the reason this refusal exists.
   if (inactive) {
     h += '<p class="empty refuse"><b>INACTIVE — this row does not answer.</b> Its relation is ' +

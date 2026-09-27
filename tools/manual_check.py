@@ -336,6 +336,10 @@ def idle_connection_blocks(port):
 # the way through.
 WALK_COMPUTED = "sw_ap_design"
 WALK_DECLARED = "sw_storm_design_level"
+# The row whose de-risking record is the worked example, and the register row
+# holding the risk its versions moved.
+WALK_RECORD = "sw_central_expectation"
+WALK_REGISTER = "mgt_risk_register_technical_risk"
 WALK_SUBSYS = "l3_solar"
 
 
@@ -671,6 +675,8 @@ def browser_walk():
                 offline = browser.new_page()
                 offline.goto(blank.as_uri())
                 offline.wait_for_selector(".nf-q[data-field=note]")
+                assert "wording only" in offline.locator("#nf-dr-state").inner_text(), \
+                    "the form does not say that no record is needed yet"
                 offline.fill("input[aria-label=name]", "the manual check")
                 offline.locator(".nf-q[data-field=note] textarea").fill("A note from the walk.")
                 with offline.expect_download() as dl2:
@@ -793,6 +799,47 @@ def browser_walk():
                 untouched("checking a form")
             ok("the Forms page offers a row's form and a new node's, and checks a filled one — writing nothing",
                forms_page)
+
+            # HOW DEEP, AND WHY IT CHANGED. The depth switch shows and hides
+            # the blocks the page marks; the record reads newest first; and a
+            # risk it moved leads to the register row, whose conclusion is read
+            # from the whole tree.
+            print("\nhow deep, and why it changed")
+
+            def depth_switch():
+                open_row(WALK_RECORD)
+                simply = page.locator("#node-body .simply").first
+                predict = page.locator("#node-body .predict").first
+                assert simply.is_visible() and not predict.is_visible(), "Read is not the default depth"
+                page.locator("#depth .dp", has_text=U("browser-derisk", 1)).click()
+                assert predict.is_visible(), "Learn does not ask for a prediction"
+                page.locator("#depth .dp", has_text="Expert").click()
+                assert not simply.is_visible(), "Expert still shows the plain words"
+                page.locator("#depth .dp", has_text="Read").click()
+                assert simply.is_visible()
+            ok("Learn asks for a prediction, Expert drops the plain words, Read is the default", depth_switch)
+
+            def record_and_conclusion():
+                open_row(WALK_RECORD)
+                page.locator("#node-body .tabs .tab", has_text="de-risking").click()
+                panel = page.locator('#node-body [data-panel="2"]')
+                said = panel.inner_text()
+                assert "Rests on" in said and said.index("v3") < said.index("v1"), \
+                    f"the record is not newest first: {said[:200]}"
+                panel.locator("a.xref", has_text="R-01").first.click()
+                page.wait_for_timeout(500)
+                page.locator(f'.mcell.diag[data-open="{WALK_REGISTER}"]').first.click()
+                page.wait_for_selector("#nodeview:not([hidden]) .sheet-tabs")
+                page.locator("#node-body .tabs .tab", has_text="de-risking").click()
+                page.wait_for_selector(".derisk-rollup table.risks")
+                roll = page.locator(".derisk-rollup").inner_text()
+                # The heading is set in capitals by the stylesheet; the words are the manual's.
+                assert U("browser-derisk", 3).lower() in roll.lower() and "L2" in roll \
+                    and WALK_RECORD in roll, \
+                    f"the register row does not conclude what the work did: {' | '.join(roll.splitlines())[:400]}"
+                untouched("reading the record")
+            ok("a row's record reads newest first, and its risk leads to the register's conclusion",
+               record_and_conclusion)
 
             def no_way_to_edit():
                 open_row(WALK_COMPUTED)

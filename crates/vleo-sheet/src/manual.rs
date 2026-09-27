@@ -123,6 +123,12 @@ pub struct Section {
     pub id: String,
     pub title: String,
     pub who: Who,
+    /// What kind of reading the section is (docs/EXPLAINING.md E8): one or
+    /// more of `KINDS`, joined by ` + `.
+    pub kind: String,
+    /// The section's answer, first (E1): one or two sentences that stand on
+    /// their own.
+    pub answer: String,
     pub body: String,
     pub steps: Vec<Step>,
 }
@@ -197,6 +203,23 @@ pub struct Manual {
 }
 
 /// Where the manual lives.
+/// The four kinds of documentation (Diátaxis): a section is one, or says
+/// which two it combines.
+pub const KINDS: &[&str] = &["tutorial", "how-to", "reference", "explanation"];
+
+fn kind(v: &toml::Value, at: &str) -> Result<String, String> {
+    let k = need(v, "kind", at)?;
+    for part in k.split('+').map(str::trim) {
+        if !KINDS.contains(&part) {
+            return Err(format!(
+                "{at}: kind = \"{k}\" — one of {}, or two joined by +",
+                KINDS.join(", ")
+            ));
+        }
+    }
+    Ok(k)
+}
+
 pub fn path(root: &Path) -> std::path::PathBuf {
     root.join("docs").join("manual.toml")
 }
@@ -326,6 +349,10 @@ pub fn parse(text: &str) -> Result<Manual, String> {
                 id: sid.clone(),
                 title: need(sec, "title", &at)?,
                 who: who(sec, &at)?,
+                kind: kind(sec, &at)?,
+                answer: need(sec, "answer", &at).map_err(|e| {
+                    format!("{e} — every section opens with its answer (docs/EXPLAINING.md E1)")
+                })?,
                 body: s(sec, "body").unwrap_or_default(),
                 steps,
             });
@@ -492,14 +519,18 @@ pub fn json(m: &Manual) -> String {
             jq(&l.id),
             jq(&l.title),
             jq(&l.lede),
-            arr(&l.sections, |s| format!(
-                "{{\"id\":{},\"title\":{},\"who\":{},\"body\":{},\"steps\":{}}}",
+            arr(&l.sections, |s| {
+                format!(
+                "{{\"id\":{},\"title\":{},\"who\":{},\"kind\":{},\"answer\":{},\"body\":{},\"steps\":{}}}",
                 jq(&s.id),
                 jq(&s.title),
                 jq(s.who.name()),
+                jq(&s.kind),
+                jq(&s.answer),
                 jq(&s.body),
                 steps(&s.steps)
-            ))
+            )
+            })
         )
     });
     format!(

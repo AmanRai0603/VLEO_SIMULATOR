@@ -781,6 +781,22 @@ fn cmd_result(args: &[&str]) -> Result<(), String> {
     if s.template != vleo_modules::inputs::template() {
         println!("  saved against another set of inputs than this tree has — its values are shown as they were");
     }
+    if !s.versions.is_empty() {
+        println!(
+            "  rests on: {}",
+            s.versions
+                .iter()
+                .map(|(id, n, rel)| format!("{id} v{n} ({rel})"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+    }
+    for (id, then, now) in vleo_modules::results::moved_since(&s) {
+        println!(
+            "  \x1b[33m{id} was at version {then} when this ran and is now at {now}\x1b[0m — a belief \
+             it rested on has broken since; run it again to see what the new version says"
+        );
+    }
     println!("\n  {} input(s) changed from their defaults:", s.changed());
     for r in s.inputs.iter().filter(|r| r.note == "changed") {
         println!("    {:<36} {}{}", r.id, r.value, unit(&r.unit));

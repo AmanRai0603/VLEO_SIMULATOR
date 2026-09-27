@@ -127,6 +127,10 @@ export async function openNode(id) {
       // controls that walk it, so mounting late costs the reader nothing.
       const th = p && $('.theory-walk', p);
       if (th && !th.dataset.mounted) { th.dataset.mounted = '1'; mountTheory(th); }
+      // A risk-register row concludes what the whole tree has done to its
+      // risks, which no single sheet holds: asked for when the tab opens.
+      const dr = p && $('.derisk-rollup', p);
+      if (dr && !dr.dataset.mounted) { dr.dataset.mounted = '1'; mountRollup(dr); }
     };
   });
 
@@ -241,7 +245,7 @@ function activeBanner(r) {
       'check it against. The engine refuses it under its own name and everything downstream ' +
       'blocks on it, named. ' +
       '<span class="muted">Fixed by a <code>[theory]</code> block on the sheet — written by ' +
-      'somebody who knows where the relation came from. An agent may never supply mathematics, ' +
+      'somebody who knows where the relation came from. An assistant may never supply mathematics, ' +
       'which is the reason this refusal exists.</span></div>';
   }
   // Reach and trust are different facts, so both can show. A row can answer
@@ -263,4 +267,32 @@ function activeBanner(r) {
       '<code>[maths] confirmed_by</code> says a person read the relation in it.</span></div>';
   }
   return h;
+}
+
+/**
+ * The conclusion a risk-register row draws: each of its risks, where it was
+ * registered and where it stands now, and every node version that moved it
+ * with what was learned — read from the whole tree's records.
+ */
+async function mountRollup(host) {
+  const d = await fetch('/v1/derisk').then(x => x.json()).catch(() => null);
+  if (!d || !d.ok) { host.innerHTML = '<p class="empty">The engine did not answer.</p>'; return; }
+  const mine = d.register.filter(r => r.row === host.dataset.row);
+  const moved = mine.filter(r => r.moves.length).length;
+  host.innerHTML =
+    '<h4>What the work below has done to them</h4>' +
+    '<p class="af-q">' + (mine.length
+      ? plural(mine.length, 'risk') + ' registered here; ' + moved + ' moved by recorded work, ' +
+        mine.filter(r => r.now === 'closed').length + ' closed.'
+      : 'Nothing registered here yet.') + '</p>' +
+    '<p class="muted">Across the tree: ' + plural(d.changes, 'recorded change') + ', and ' + d.versioned +
+      ' of ' + d.published + ' published rows state what they rest on.</p>' +
+    (mine.length
+      ? '<table class="fx risks"><thead><tr><th>risk</th><th>registered</th><th>now</th><th>moved by</th></tr></thead><tbody>' +
+        mine.map(r => '<tr><td><b>' + esc(r.id) + '</b> ' + esc(r.title) + '</td><td>' + esc(r.registered) +
+          '</td><td><b>' + esc(r.now) + '</b></td><td>' + (r.moves.length ? r.moves.map(m =>
+            '<div><a class="xref" data-goto="' + esc(m.node) + '">' + esc(m.node) + '</a> v' + m.n + ' · ' +
+            esc(m.date) + ' · <b>' + esc(m.what) + '</b><div class="muted">' + esc(m.learned) + '</div></div>').join('')
+            : '<span class="muted">nothing yet</span>') + '</td></tr>').join('') + '</tbody></table>'
+      : '');
 }

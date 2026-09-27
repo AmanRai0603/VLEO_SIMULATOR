@@ -1,5 +1,9 @@
 # Using it
 
+> **Answer first.** The walkthrough, with real outputs: run the design on your inputs, keep and send results, ask for a node to change, and — as a developer — take that request to a release. The manual in the tool is the reference; this is the worked tour.
+>
+> **Kind:** tutorial · **For:** everyone
+
 This is the page to read first. It is about doing the work — opening the tool,
 running the design on your inputs, keeping what it said, asking for the design
 to change, and, for a developer, taking that request all the way to a release —
@@ -336,7 +340,7 @@ the bundle:
   because it is still running.
 
 Open any solar row from the tree and its node page carries the same argument in
-ten tabs, including **the relation, moving**: the input crosses its declared
+eleven tabs, including **the relation, moving** and **de-risking**: the input crosses its declared
 domain, the answer moves, and the guards are drawn as the walls they are. That
 animation is the engine's own sweep, so a picture that disagrees with the row
 is impossible.
@@ -384,9 +388,22 @@ sw_ap_design — a node form filled by A. Example (Payload team), 2026-09-27; as
 
   APPLY    note                         «…» → «What the vehicle is built to survive, …»
   APPLY    assumption 5 · added         «» → «text = The storm level is read on the NOAA G scale, …»
+  APPLY    de-risking · version 1       «» → «model — Adds the assumption that the level is a NOAA G-scale level, …»
 
-2 change(s) can be applied, 0 cannot.
+why it is changing — the decisions it moves: model
+  what did we believe                      That the storm level needed no scale named: …
+  what did we test                         Compared the row's thresholds with the NOAA Space Weather Scales …
+  what do we now know                      The thresholds are the NOAA scale's exactly, but nothing on the row …
+  …
+  → recorded as version 1, released with the next release
+
+3 change(s) can be applied, 0 cannot.
 ```
+
+The assumption is a decision about the model, so the form had to say why it
+changes — and it does, so the change goes in with its version. Without the
+*why it is changing* answers, intake would apply only the note and name the
+assumption as withheld (§3.11).
 
 ```
 $ cargo run -p xtask -- intake docs/examples/new-node.node-form.html
@@ -657,6 +674,27 @@ ready: 16 of 320 node(s) have passed every machine stage and are waiting on H2
 Then commit, naming whoever filled the form. The message form is checked (§7).
 After review and merge, the next release carries the node to the team — and
 their saved case carries over on its own, with any new input at its default.
+
+### 3.11 Why it changed, and the release that ships it
+
+If the form moved what the node computes, intake appended a `[[version]]` to
+the sheet — what we believed, what we tested, what we now know, what changed,
+what the node rests on now and what would break it — marked `next`. Without
+that record, intake applied only the form's wording and named every decision
+it withheld. `sw_central_expectation` carries three real versions as the worked
+example; its *de-risking* tab reads them newest first, and the *Technical
+risk* row under the risk register shows the risk they moved.
+
+```
+cargo run -p xtask -- derisk            # docs/DERISK_NARRATIVE.md and docs/derisking.csv
+cargo run -p xtask -- release 0.2.0     # every `next` stamped 0.2.0; the workspace set to 0.2.0
+cargo run -p xtask -- release 0.2.0 --check
+```
+
+The release pipeline runs the last line and refuses while any version is still
+`next`. A result saved before the release keeps the versions it ran on, and
+from then on says which of its beliefs have broken since. The rules are in
+`docs/DERISKING.md`.
 
 ---
 

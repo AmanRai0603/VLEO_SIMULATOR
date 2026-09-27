@@ -192,7 +192,12 @@ function liveHtml(L) {
 
 function sectionHtml(s, d) {
   return '<section class="man-sec" id="man-' + esc(s.id) + '" data-who="' + esc(s.who) + '">' +
-    '<h3>' + esc(s.title) + ' <span class="man-who ' + esc(s.who) + '">' + esc(WHO[s.who]) + '</span></h3>' +
+    '<h3>' + esc(s.title) + ' <span class="man-who ' + esc(s.who) + '">' + esc(WHO[s.who]) + '</span>' +
+      ' <span class="dx' + s.kind.split(' + ').map(k => ' dx-' + esc(k)).join('') + '" title="what kind of reading this is">' +
+      esc(s.kind) + '</span></h3>' +
+    // ANSWER FIRST (docs/EXPLAINING.md E1): the section in a sentence or two,
+    // before the reasons and the steps.
+    '<p class="man-answer"><span class="af-k">Answer first</span> ' + inline(s.answer) + '</p>' +
     md(s.body) +
     (s.steps.length ? '<ol class="man-steps">' + s.steps.map(stepHtml).join('') + '</ol>' : '') +
     extra(s.id, d) +

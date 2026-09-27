@@ -1,5 +1,9 @@
 # VLEO Integrated Design Tool
 
+> **Answer first.** A design tool for a very-low-Earth-orbit multipayload spacecraft: one kernel computes every number, a team runs it on its own inputs and asks for changes through node forms, and developers check, apply and release them. Start the tool with `cargo run --release -p vleo-daemon` and press ? Manual.
+>
+> **Kind:** explanation + reference · **For:** everyone
+
 A design tool for a very-low-Earth-orbit multipayload spacecraft with
 air-breathing electric propulsion. One kernel computes every number in the
 design; every page, panel, test and contract is generated from the same
@@ -211,9 +215,9 @@ moment the row is evaluated.
 | `crates/` | the whole Rust workspace: the four rings, the faces, and **1396 node folders** under `crates/vleo-mod-*/nodes/` | this is the tool. Almost every file in the repository is here, and most of those are the per-node artefacts `xtask docs` writes from a sheet |
 | `layers/` | the rows in the tree that are **not** nodes — headings, parents, group edges, subsystem ownership | the decomposition itself. `CODEOWNERS` is generated from it, so moving a branch here moves who reviews what |
 | `tools/` | the Python side: the seeder that built the tree, and every check the pipeline runs that is not `cargo` | the checks that cannot be expressed as a Rust test — screenshots, parity against MATLAB, commit messages, the house rules' own references. Each proves itself with `--selftest` before it is trusted to decide anything |
-| `web/` | the browser face — one `index.html`, one stylesheet, 22 ES modules, the manual among them | how the tool is read. It talks to `vleo-daemon` over HTTP and holds no physics of its own |
+| `web/` | the browser face — one `index.html`, one stylesheet, 23 ES modules, the manual among them | how the tool is read. It talks to `vleo-daemon` over HTTP and holds no physics of its own |
 | `panels/` | 14 declared panel specs, plus `REVIEW.md` and 16 reference screenshots — light and dark for the 8 panels checked on pixels | a figure nobody checked is a figure that silently goes wrong. The spec says what the panel must show; the references are what it looked like when a person last approved it |
-| `docs/` | 12 prose documents, 4 diagrams, `manual.toml` — the source of the manual in the tool — and `examples/`, two filled node forms and a saved result; indexed under **Reference** below | the written record. `VARIABLES.md` is generated; `MATLAB_PORT_PLAN.md` is the row-by-row account of the port and the longest thing here |
+| `docs/` | 15 prose documents — two of them generated from the sheets, VARIABLES.md and the de-risking narrative — 4 diagrams, `manual.toml` — the source of the manual in the tool — and `examples/`, two filled node forms and a saved result; indexed under **Reference** below | the written record. `VARIABLES.md` is generated; `MATLAB_PORT_PLAN.md` is the row-by-row account of the port and the longest thing here |
 | `bundles/` | reference data as published sets, each with a manifest, a licence term and a hash | rule 2's external oracle. An expected value may never come from the code under test, so the data it is checked against is versioned and verified rather than fetched |
 | `cases/` | the one case, `multipayload.toml` — which inputs are the condition, and so which are the customer's — and `examples/`, case files to copy — one as an older tool wrote it | what a run is on. Its values are not kept here: a case per customer would grow the tree with the order book, so values are uploaded or typed in the tool and saved outside the repository. Gate check V16 refuses a condition that is not a real, settable input |
 | `matlab/` | a thin MATLAB face (`+vleo`) and the study's own published CSV | the tool this was ported from. Its saved run is what `tools/mat_parity.py` compares against |
@@ -279,7 +283,12 @@ regeneration diff.
 ![One node: its tabs, its answer, the eight credibility factors with the
 lowest governing, and the evidence that executed](docs/img/node.png)
 
-Ten tabs, and two of them are derived rather than written. **Pseudocode** is
+Eleven tabs, under an **Answer first** box, and each says what kind of reading
+it is — explanation, reference, or something to try. The first reads the row
+the way `docs/EXPLAINING.md` lays out every explanation: said simply, the real
+thing with its source, where the simple version breaks, the common wrong idea,
+try it. **De-risking** says what the row rests on and every version before it.
+Two of the tabs are derived rather than written. **Pseudocode** is
 built from the sheet and not from the Rust, so it states what was specified
 rather than what one compiler made of it. **The relation, moving** animates the
 node's own relation across its declared domain, drawing the engine's sweep so a
@@ -356,7 +365,14 @@ cargo run -p xtask -- ready <id>                  # has it earned a person's att
 cargo test -p vleo-mod-<subsystem>
 ```
 
-then a commit naming whoever filled the form, review, merge, release.
+then a commit naming whoever filled the form, review, merge, and a release —
+`cargo run -p xtask -- release <version>` stamps every node version recorded
+since the last one, and `cargo run -p xtask -- derisk` regenerates the
+de-risking narrative. A change that moves what a node computes carries its
+reason — which belief broke — and becomes a numbered version of that node; see
+[`docs/DERISKING.md`](docs/DERISKING.md). Every page, form, result and document
+follows [`docs/EXPLAINING.md`](docs/EXPLAINING.md): answer first, said simply,
+the real thing, where it breaks.
 
 Before forms, the same loop was verified end to end on `main` from the other
 end — a node taken from nothing to "waiting on a person" with `xtask new` and
@@ -609,6 +625,8 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
 | [`docs/USING_IT.md`](docs/USING_IT.md) | the worked walkthrough, with real outputs — running it, changing an input, keeping a result, a form from filling to release |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | why the rings are shaped the way they are |
 | [`docs/NODE_AUTHORING.md`](docs/NODE_AUTHORING.md) | the sheet, field by field |
+| [`docs/EXPLAINING.md`](docs/EXPLAINING.md) | how the tool explains itself — the rules every page, form, result, figure and document follows, and what checks each |
+| [`docs/DERISKING.md`](docs/DERISKING.md) | why the design is what it is — beliefs, versions, the risk register, releases; the generated narrative is [`docs/DERISK_NARRATIVE.md`](docs/DERISK_NARRATIVE.md) |
 | [`docs/WORK_MODEL.md`](docs/WORK_MODEL.md) | who does what — the team and the developers, and what crosses between them |
 | [`docs/VARIABLES.md`](docs/VARIABLES.md) | every variable, unit, bound and the reason for it — generated |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | a developer's first day, one form from arrival to release, and what to do when the tool is down |

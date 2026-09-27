@@ -55,6 +55,18 @@ PATHISH = re.compile(
 )
 
 
+#: The four kinds of documentation (Diátaxis), docs/EXPLAINING.md E8.
+KINDS = ["tutorial", "how-to", "reference", "explanation"]
+
+
+def documents():
+    """Every document a person reads: docs/, the top-level three, and the areas."""
+    out = sorted((ROOT / "docs").glob("*.md"))
+    out += [ROOT / f for f in ("README.md", "AGENTS.md", "CONTRIBUTING.md")]
+    out += sorted((ROOT / "areas").glob("*.md"))
+    return [p for p in out if p.is_file()]
+
+
 def files():
     """Every instruction file."""
     return [p for p in (ROOT / r for r in REQUIRED) if p.is_file()]
@@ -164,6 +176,8 @@ def check():
             "owner", "tier", "criticality", "migrated_from", "parity_tolerance", "sense",
             "note", "contributes",
             "fails_when", "state",
+            "explain", "simply", "breaks", "wrong", "version", "believed", "tested",
+            "learned", "rests_on", "breaks_if", "risk", "since",
         }
         text = authoring.read_text()
         for f in sorted(AUTHOR_FIELDS):
@@ -200,6 +214,42 @@ def check():
         t = p.read_text()
         if "| reviewers |" in t or "| how many reviewers |" in t.lower():
             bad.append((rel, "restates the review policy — CONTRIBUTING.md is its one home"))
+
+    # THE EXPLANATION STANDARD, docs/EXPLAINING.md. Every document opens with
+    # its answer (E1) and says what kind of reading it is (E8), in its first
+    # block — so a reader knows in two lines whether this is the page they
+    # need. A document that has to be read to the end to learn what it is for
+    # is the failure these two lines exist to prevent.
+    for p in documents():
+        rel = p.relative_to(ROOT).as_posix()
+        head = p.read_text().splitlines()[:16]
+        if not any(l.startswith("> **Answer first.**") for l in head):
+            bad.append((rel, "does not open with its answer — `> **Answer first.** …` in its first block (E1)"))
+        kinds = [l for l in head if l.startswith("> **Kind:**")]
+        if not kinds:
+            bad.append((rel, "does not say what kind of reading it is — `> **Kind:** … · **For:** …` (E8)"))
+        else:
+            k = kinds[0][len("> **Kind:**"):].split("·")[0].strip()
+            for part in (x.strip() for x in k.split("+")):
+                if part not in KINDS:
+                    bad.append((rel, "kind «%s» is not one of %s (E8)" % (part, ", ".join(KINDS))))
+
+    # Every figure says where its picture stops being true (E4). The panels'
+    # words live beside their code in web/js/solar.js, so the check reads them
+    # there: each panel's `id` has a `breaks` before the next panel begins.
+    solar = ROOT / "web" / "js" / "solar.js"
+    if solar.is_file():
+        src = solar.read_text()
+        at = src.find("const PANELS = [")
+        if at >= 0:
+            end = src.find("\n];", at)
+            body = src[at:end if end > 0 else len(src)]
+            starts = [m.start() for m in re.finditer(r"\n    id: '([a-z0-9_-]+)',", body)]
+            for i, s in enumerate(starts):
+                block = body[s: starts[i + 1] if i + 1 < len(starts) else len(body)]
+                pid = re.match(r"\n    id: '([a-z0-9_-]+)',", block).group(1)
+                if "\n    breaks: '" not in block:
+                    bad.append(("web/js/solar.js", "the panel «%s» does not say where its picture stops being true (E4)" % pid))
 
     # Adopted libraries carry the two fields that exist because of real failures.
     try:
@@ -240,6 +290,18 @@ def selftest():
              (d / "AGENTS.md").read_text() + "\nRead your lane in agents/lanes.toml.\n"),
          "which was removed"),
         ("an xtask command no document names", _unname_publish, "`xtask publish` exists"),
+        ("a document that does not open with its answer",
+         lambda d: (d / "docs" / "RUNBOOK.md").write_text(
+             (d / "docs" / "RUNBOOK.md").read_text().replace("> **Answer first.**", "> Answer:")),
+         "does not open with its answer"),
+        ("a document of no known kind",
+         lambda d: (d / "docs" / "ARCHITECTURE.md").write_text(
+             (d / "docs" / "ARCHITECTURE.md").read_text().replace("**Kind:** explanation", "**Kind:** story")),
+         "kind «story»"),
+        ("a figure that does not say where it breaks",
+         lambda d: (d / "web" / "js" / "solar.js").write_text(
+             re.sub(r"\n    breaks: '[^\n]*", "", (d / "web" / "js" / "solar.js").read_text(), count=1)),
+         "does not say where its picture stops being true"),
         ("an adopted row with no licence",
          lambda d: (d / "ADOPTION.lock").write_text(
              (d / "ADOPTION.lock").read_text().replace('licence = "MIT OR Apache-2.0"', 'licence = ""', 1)),

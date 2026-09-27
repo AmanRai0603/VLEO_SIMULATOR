@@ -27,6 +27,10 @@
 # copied. USING_IT proved it: it said 1329 rows until 26 September 2026, long
 # after the tree reached 1396.
 #
+# Every section says what kind of reading it is (`kind`: tutorial, how-to,
+# reference or explanation) and opens with its `answer` — docs/EXPLAINING.md,
+# E1 and E8. The parser refuses a section without either.
+#
 # Markup in `body` and `say`: blank line = new paragraph, `code`, **bold**.
 
 
@@ -45,6 +49,8 @@ which the developers check, apply and release."""
 id = "browser-open"
 title = "Open the tool"
 who = "everyone"
+kind = "how-to"
+answer = "Start the tool with one command and open the address it prints. It never writes the repository: what you keep — the case and your results — stays on your machine under ~/.vleo."
 body = """
 The tool is one program on your own machine. It serves this page and computes \
 every number on it, from one address, with no internet and no database. It \
@@ -72,6 +78,8 @@ say = "In a Codespace there is nothing to type: the tool is already running and 
 id = "browser-roles"
 title = "Who does what"
 who = "everyone"
+kind = "explanation"
+answer = "The team uses the tool and never changes the design in it; when a node should change, the person who knows fills in its form. The developers check each form, apply it, implement it and release it."
 body = """
 The tool has two kinds of people around it, and the line between them is the \
 line between *using* the design and *changing* it.
@@ -100,6 +108,8 @@ why."""
 id = "browser-find"
 title = "Find your way around"
 who = "user"
+kind = "tutorial"
+answer = "The design is a tree of rows in four layers, drawn with its connections on one grid. Pick a layer, open a group, click a row to open its page."
 body = """
 The design is a tree of rows in four layers. Each row asks one small question \
 and has one answer. The tabs across the top are the layers, plus the \
@@ -141,6 +151,8 @@ ui = "⌗ Architecture"
 id = "browser-read"
 title = "Read a row"
 who = "user"
+kind = "explanation"
+answer = "A row's page opens with its answer first, then says it simply, then the real relation and its source, then where the simple version breaks. Every claim says whether it is sourced, derived or declared, and the depth switch chooses how much is shown."
 body = """
 A row's page answers four questions, in order.
 
@@ -150,9 +162,14 @@ A row's page answers four questions, in order.
 **What it is joined to** — the rows it reads, the rows that read it, and which \
 customer targets it feeds.
 
-**What it says** — the sheet itself: its question, its relation and where that \
-came from, its answer's unit and allowed range, and the reason for each bound. \
-Beside it is the node's **form**, for when what it says should change.
+**What it says** — the sheet itself, laid out the same way on every row: an \
+**Answer first** box, then the row **said simply**, then **the real thing** — \
+its relation and where that came from — then **where the simple version \
+breaks**, and the wrong idea readers most often bring. Every claim is marked \
+*sourced*, *derived* or *declared*, and every tab says whether it is an \
+explanation, a reference or something to try. The **de-risking** tab says what \
+the row rests on and why it changed. Beside the sheet is the node's **form**, \
+for when what it says should change.
 
 **The picture** — for the rows that have one, the figure the claim is argued \
 from.
@@ -185,6 +202,8 @@ ui = "↑ back to the layer"
 id = "browser-inputs"
 title = "Set the inputs — the case"
 who = "user"
+kind = "how-to"
+answer = "Every run is on one case: its inputs, set on the Inputs page or uploaded as a CSV and saved outside the repository. A file is shown before it is saved, refused whole if any row is bad, and carried over when the tool is updated."
 body = """
 There is **one case**, the multipayload design, and every run, sweep and figure \
 in the tool is for it. What changes from one customer to the next, or from one \
@@ -262,6 +281,8 @@ ui = "keep the carried-over case"
 id = "browser-run"
 title = "Run a row, and ask “what if”"
 who = "user"
+kind = "how-to"
+answer = "Run any computed row on the case, or change an input first to ask what if. A run always says how many rows ran and names every one that was blocked."
 body = """
 Every computed row can be evaluated on the spot, on its own page or from the \
 **4 The run** tab.
@@ -335,6 +356,8 @@ ui = "the declared defaults as well, one line each"
 id = "browser-results"
 title = "Keep a result, send it, and see it again without running"
 who = "user"
+kind = "how-to"
+answer = "Save a run as a result, and see it again later without running anything — or send it as a CSV or a report page. A result keeps the node versions it rested on, and says when one of those beliefs has broken since."
 body = """
 A run is worth keeping when somebody will ask about it later. **Save** it and \
 the tool writes one CSV: every value the run returned with its unit, its \
@@ -386,6 +409,8 @@ ui = "use its inputs as the case"
 id = "browser-nodeform"
 title = "Ask for a node to change, or for a new one"
 who = "user"
+kind = "how-to"
+answer = "To change a node, or ask for a new one, download its form, fill it anywhere and send it to the developers. If the change moves what the node computes, the form also says why: which belief broke, what was tested and what we now know."
 body = """
 Every node has a **form**: one self-contained HTML file that needs no \
 connection and nothing installed. It explains itself, asks every question the \
@@ -404,6 +429,13 @@ of row it is.
 the form says, as you type, what that row is and its quantity. A developer's \
 first check is exactly this: that every input is a row, of the quantity the \
 node expects.
+
+**Why it is changing.** A change to what the node computes — an input, the \
+output, the model, the maths, the algorithm, how it is drawn — also says which \
+belief broke: what we believed, what we tested, what we now know, what \
+changes, and what the node rests on now. The form says as you type which \
+decisions your changes move and what is still to answer; without it the \
+developers apply only your wording. Wording alone needs none of it.
 
 Send the filled file to the developers. **This page can check it first** — \
 what it would change in the node, every interface it declares, and what \
@@ -435,9 +467,59 @@ ui = "check a filled form…"
 
 
 [[layer.section]]
+id = "browser-derisk"
+title = "Why a node changes — its beliefs, versions and risks"
+who = "user"
+kind = "explanation"
+answer = "A node changes only because a belief it rested on broke, and every change records what we believed, what we tested, what we now know and what changed. The risk-register rows of the management layer conclude, from every node's record, how that work has moved the programme's risks."
+body = """
+Every decision in the design rests on a belief — that this relation holds here, \
+that this input is the one that matters, that this picture shows what it \
+claims. A node changes only when one of those beliefs **breaks**: somebody \
+tested it and learned otherwise. So a node's page has a **de-risking** tab. It \
+says what the node rests on now and what would break it, then every version \
+before it, newest first: what we believed, what we tested, what we now know, \
+what it cost, what changed, and which risks that moved.
+
+`sw_central_expectation` — the centre of the F10.7 design value — carries its \
+real history as the worked example: three versions, each replaced because a \
+test showed its belief did not hold.
+
+**The conclusion is drawn in the management layer.** A risk is registered once, \
+on one of the four risk-register rows — technical, schedule, supply, \
+regulatory — and moved only by node versions. Each of those rows' pages lists \
+its risks, where each started and where it stands now, and every version \
+across the tree that moved it. That is how the work below, taken together, \
+has de-risked the programme; `docs/DERISK_NARRATIVE.md` is the same thing as a \
+document, and `docs/derisking.csv` as a spreadsheet.
+
+**A saved result keeps the versions it rested on.** When one of those rows has \
+moved on since, the result says so beside its number.
+
+**How deep a page goes is yours to choose.** The switch at the top — **Learn**, \
+**Read**, **Expert** — shows the same pages at three depths: Learn keeps every \
+step and asks you to predict before you run; Read shows the answer, the plain \
+words and the real thing; Expert keeps the answer, the relation, the limits and \
+the reference. How every page is laid out, and why, is in `docs/EXPLAINING.md`."""
+
+[[layer.section.step]]
+say = "Choose how deep the pages go. Learn adds a prediction to make before each run."
+ui = "Learn"
+
+[[layer.section.step]]
+say = "Open a row and its de-risking tab: what it rests on now, and every version before it."
+
+[[layer.section.step]]
+say = "Open a risk-register row under the management layer's risk register: its risks, and what the work below has done to them."
+ui = "What the work below has done to them"
+
+
+[[layer.section]]
 id = "browser-limits"
 title = "What the browser will not do"
 who = "everyone"
+kind = "reference"
+answer = "The browser never changes the design. Each thing it will not do has a place it is done instead, and for a team that place is almost always a node's form."
 body = """
 The browser never changes the design: not a field, not a row, not the tree. \
 That is not to keep anybody out. A change to the design has to be checked \
@@ -467,6 +549,8 @@ against the programs themselves."""
 id = "term-setup"
 title = "Set up a copy"
 who = "developer"
+kind = "how-to"
+answer = "Install Rust, clone, wire the hooks once and fill the reference-data store once. Then the gate and the tests are the one command that must be green."
 body = """
 The only thing to install is Rust; the exact version is pinned in \
 `rust-toolchain.toml` and fetched on first use. There is no database and no \
@@ -515,6 +599,8 @@ expect = "KPI closures declared"
 id = "term-look"
 title = "Look around"
 who = "user"
+kind = "how-to"
+answer = "Everything the browser shows, the terminal prints: the rows, a sheet, the case, what answers and what reaches a customer target."
 body = """
 Everything the browser shows, the terminal can print. `vleo` is the \
 command-line face of the engine; `xtask` is the project's own tool for the tree \
@@ -572,6 +658,8 @@ expect = "kernel"
 id = "term-run"
 title = "Run, change an input, sweep, keep the result"
 who = "user"
+kind = "how-to"
+answer = "Run a row on the case, on a CSV of your own or on the declared defaults, change a declared input with --set, sweep one, and keep a run as a result file."
 body = """
 The examples use the storm row `sw_ap_design`: *what daily Ap is this design \
 built to survive?* It reads one declared number, the storm level designed for, \
@@ -686,6 +774,8 @@ expect = "M_f107_long = 0.376314"
 id = "term-nodeform"
 title = "Take in a node form — check it first"
 who = "developer"
+kind = "how-to"
+answer = "A developer's first act on a filled form is the checker, which writes nothing: what it would change, every interface it declares, what cannot be applied, and whether its reason is complete. Then --apply writes it as one edit, or not at all."
 body = """
 Every change to the design arrives as a node's form, filled by whoever knew the \
 answer. A developer's first act on one is to **check** it, and nothing is \
@@ -747,6 +837,8 @@ why = "it writes the node's sheet — or builds a new node's folder — and rege
 id = "term-fill"
 title = "Implement a node — the developer's loop"
 who = "developer"
+kind = "how-to"
+answer = "After a form is applied: publish the row so its code is generated, write the Rust in each numbered slot, add evidence from outside this code, and check it. Every step names exactly what is still open."
 body = """
 A row is a folder, and **only `node.toml` in it is written by hand** — by a \
 form's intake, or in your editor. Every other file is generated from it; an \
@@ -816,9 +908,56 @@ why = "writes your name and today's date against the relation on the row's sheet
 
 
 [[layer.section]]
+id = "term-derisk"
+title = "Record why it changed, and cut a release"
+who = "developer"
+kind = "how-to"
+answer = "Every applied change appends a version to its node; the narrative is regenerated from all of them; and a release stamps every unreleased version with the release that ships it."
+body = """
+A form that moves what a node computes carries its reason — what we believed, \
+what we tested, what we now know, what changed, and what the node rests on now. \
+Intake checks the record with everything else: without it, only the form's \
+wording is applied and every decision is **withheld**, by name; with it, the \
+changes go in and a `[[version]]` is appended to the sheet, numbered and marked \
+`next`. The kinds of decision it moved are read off what the form changed, \
+never asked. A risk move names a risk registered on a risk-register row, or the \
+record is refused.
+
+The narrative is generated from every node's record: \
+`docs/DERISK_NARRATIVE.md` to read and `docs/derisking.csv` for a spreadsheet, \
+in the columns of the quarterly de-risking narrative. The pipeline regenerates \
+both and fails on a difference.
+
+A release names the beliefs it ships. `xtask release <version>` stamps every \
+`next` with the release, sets the workspace version and regenerates; the \
+release pipeline runs `release <version> --check` and refuses while any version \
+is unstamped. Why, and the rules, are in `docs/DERISKING.md`."""
+
+[[layer.section.step]]
+say = "Regenerate the narrative. On a tree whose narrative is committed, nothing is written."
+run = "cargo run -p xtask -- derisk"
+check = "exits"
+expect = "nothing to write"
+
+[[layer.section.step]]
+say = "A saved result says which node versions it rests on — and, if one has moved on since, that a belief it rested on has broken."
+run = "cargo run -p vleo-cli --bin vleo -- result docs/examples/sw_ap_design.result.csv"
+check = "exits"
+expect = "a saved result"
+
+[[layer.section.step]]
+say = "Cut a release: every unreleased version stamped, the workspace version set, everything regenerated. Then gate, commit and tag."
+run = "cargo run -p xtask -- release <version>"
+check = "writes"
+why = "stamps `release` on every unreleased node version, sets the version in Cargo.toml and Cargo.lock, and regenerates"
+
+
+[[layer.section]]
 id = "term-evidence"
 title = "Is the evidence real?"
 who = "developer"
+kind = "how-to"
+answer = "Two commands ask whether the tests are worth anything: every fixture declaration is sound, and a perturbed answer is caught by the row's own tests."
 body = """
 A test that passes against a broken implementation is not testing anything. Two \
 commands ask that question directly."""
@@ -845,6 +984,8 @@ expect = "mutant(s) killed"
 id = "term-push"
 title = "Before you push, and how to release"
 who = "developer"
+kind = "how-to"
+answer = "Run the pipeline's checks before pushing: the gate and every test first, then formatting, lints, the assembly validations and the panels. A change from a form names who filled it."
 body = """
 The pipeline runs all of these on every push; running them first saves a round \
 trip. The first is the one that must be green.
@@ -893,6 +1034,8 @@ expect = "scopes:"
 id = "term-data"
 title = "Reference data"
 who = "developer"
+kind = "how-to"
+answer = "Reference data arrives by an explicit sync as published, hashed sets; a run has verified data on disk or refuses to start."
 body = """
 The engine never fetches anything while it runs. Reference data arrives by an \
 explicit sync beforehand, as published sets with a manifest, a licence term and \
@@ -926,6 +1069,8 @@ why = "writes a new bundle and its manifest under bundles/, permanently"
 id = "term-regen"
 title = "Regenerate what is generated"
 who = "developer"
+kind = "how-to"
+answer = "Generated files are regenerated from their sources and committed; the pipeline fails if they differ from what the sources give."
 body = """
 Some files are written by the tool from others and never by hand. The pipeline \
 regenerates each one and fails if the result differs from what was committed, \
@@ -954,6 +1099,8 @@ why = "rewrites docs/VARIABLES.md"
 id = "term-http"
 title = "Talk to the running tool from a script"
 who = "developer"
+kind = "reference"
+answer = "Everything the page does is plain HTTP to the daemon, in SI units, and a script can do the same. No route writes the repository."
 body = """
 Everything the page does, it does over plain HTTP to the daemon, and so can a \
 script. Every value crossing that boundary is in SI units; a face converts for \
@@ -990,6 +1137,8 @@ expect = "layers"
 id = "term-wrong"
 title = "When something goes wrong"
 who = "everyone"
+kind = "reference"
+answer = "The usual failures, each with what it means and what to do. Almost every refusal names the field and the rule, and that line is usually the whole answer."
 body = """
 **The tool will not start: nothing was free.** It tries sixteen ports from 7777 \
 upward. Something else is holding them — often an earlier copy of the tool. \
@@ -1056,6 +1205,8 @@ What is in the repository, why each part is there, and what breaks without it.""
 id = "code-shape"
 title = "The shape of it"
 who = "developer"
+kind = "explanation"
+answer = "One kernel computes every number; everything else is arranged in rings that depend inward only. A row is one folder, and only its node.toml is written by hand."
 body = """
 **One kernel computes every number.** Everything else is arranged in rings \
 that depend inward only: quantities and portable maths (`vleo-units`), then the \
@@ -1086,6 +1237,8 @@ reasoning behind the architecture is in `docs/ARCHITECTURE.md`."""
 id = "code-folders"
 title = "Every top-level folder"
 who = "everyone"
+kind = "reference"
+answer = "Every folder and file at the top of the repository, and what it holds — checked against the repository both ways."
 body = """
 Every folder and file the repository tracks at its top level is below, with \
 what it holds — the list is checked against the repository itself, so nothing \
@@ -1095,6 +1248,8 @@ is missing from it and nothing in it is gone."""
 id = "code-docs"
 title = "Where to read next"
 who = "everyone"
+kind = "reference"
+answer = "Every document under docs/, and what it is for — checked against the folder both ways."
 body = """
 Every document under `docs/`, and what it is for. Also checked against the \
 folder, both ways."""
@@ -1114,6 +1269,8 @@ enforces them."""
 id = "ref-xtask"
 title = "xtask — the tree's own tool"
 who = "developer"
+kind = "reference"
+answer = "The project's own tool for the tree: generate, check, take in forms, record and release."
 body = """
 `cargo run -p xtask -- <command>`, or `cargo xtask <command>`. `help` prints \
 the same list with each command's reasons."""
@@ -1122,6 +1279,8 @@ the same list with each command's reasons."""
 id = "ref-vleo"
 title = "vleo — the engine from the command line"
 who = "user"
+kind = "reference"
+answer = "The engine from the command line: run, sweep, compare cases, and read results."
 body = """
 `cargo run -p vleo-cli --bin vleo -- <command>`, or `cargo vleo <command>`."""
 
@@ -1129,6 +1288,8 @@ body = """
 id = "ref-routes"
 title = "HTTP routes"
 who = "developer"
+kind = "reference"
+answer = "Every route the daemon answers. None writes the repository; the few that save anything save the case or a result, outside it."
 body = """
 Served by the daemon on `127.0.0.1`. **None writes the repository.** The few \
 that save anything save the case or a result, both kept outside it under \
@@ -1138,6 +1299,8 @@ that save anything save the case or a result, both kept outside it under \
 id = "ref-env"
 title = "Settings"
 who = "everyone"
+kind = "reference"
+answer = "The environment variables the tool reads. None is required."
 body = """
 Environment variables the tool and its checks read. None is required."""
 
@@ -1145,6 +1308,8 @@ Environment variables the tool and its checks read. None is required."""
 id = "ref-sheet"
 title = "What a node form asks"
 who = "user"
+kind = "reference"
+answer = "Every question a node form asks and every list it holds, read live from the table the form is built from."
 body = """
 Every question a node's form asks and every list it holds — read live from the \
 table the form itself is built from, so this cannot describe a form that no \
@@ -1154,6 +1319,8 @@ longer exists."""
 id = "ref-locked"
 title = "What a node form does not change"
 who = "everyone"
+kind = "reference"
+answer = "The fields that move a row in the tree or change who owns it. No form carries them; a developer changes them in a reviewed commit."
 body = """
 The fields that move a row in the tree or change who owns it. A node's form \
 does not carry them, so no filled form can change them; a developer does, in a \
@@ -1362,6 +1529,22 @@ tool = "xtask"
 name = "publish"
 usage = "publish <node>"
 what = "Move a filled, seeded row to published, so its code is generated and its slots can be written. Refuses, naming every reason, while it is not ready."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "derisk"
+usage = "derisk"
+what = "Write the de-risking narrative — docs/DERISK_NARRATIVE.md and docs/derisking.csv — from every node's `[[version]]` record and the risk register. Generated, never edited."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "release"
+usage = "release <version> [--check]"
+what = "Stamp every node version still marked `next` with this release, set the workspace version and regenerate. `--check` refuses while anything is unstamped — the release pipeline runs it."
 who = "developer"
 effect = "writes"
 
@@ -1600,6 +1783,11 @@ what = "What a filled node form would change, and every interface it declares: `
 
 [[route]]
 method = "GET"
+path = "/v1/derisk"
+what = "Every registered risk, where it stands and every node version that moved it — the conclusion the risk-register rows draw — and the version each recorded node is at."
+
+[[route]]
+method = "GET"
 path = "/v1/results"
 what = "Every result kept on this machine, newest first, and where they are kept."
 
@@ -1748,7 +1936,7 @@ who = "developer"
 
 [[folder]]
 name = "docs"
-what = "The written record, this manual's source, manual.toml, and examples/: a filled node form, a filled new-node form and a saved result, to read and to run the commands above on."
+what = "The written record, this manual's source, manual.toml, the generated de-risking narrative and its spreadsheet, derisking.csv, and examples/: a filled node form, a filled new-node form and a saved result, to read and to run the commands above on."
 who = "everyone"
 
 [[folder]]
@@ -1864,6 +2052,18 @@ what = "The rings, the layers and the reasoning behind them."
 [[doc]]
 path = "docs/WORK_MODEL.md"
 what = "Who does what: the team that uses the tool and the developers who maintain it, and what crosses between them."
+
+[[doc]]
+path = "docs/EXPLAINING.md"
+what = "How the tool explains itself: the rules every page, form, result, figure and document follows — answer first, said simply, where it breaks — and what checks each."
+
+[[doc]]
+path = "docs/DERISKING.md"
+what = "Why the design is what it is: beliefs, versions, the de-risking record every change carries, the risk register and releases."
+
+[[doc]]
+path = "docs/DERISK_NARRATIVE.md"
+what = "Every recorded change by release, and every risk as it stands. Generated by xtask derisk, with docs/derisking.csv beside it for a spreadsheet."
 
 [[doc]]
 path = "docs/VARIABLES.md"

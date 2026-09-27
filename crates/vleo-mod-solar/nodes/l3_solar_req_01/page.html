@@ -4,22 +4,39 @@
   <h2>Required — F10.7, sustained</h2>
   <p class="ident"><code>l3_solar_req_01</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
+<section class="answer-first">
+<p class="af-k">Answer first</p>
+<p class="af-q">What sustained F10.7 must this design operate in, for as long as the mission lasts?</p>
+<p class="af-a"><b>260</b> <span class="claim claim-declared" title="a number a person chose, and put their name against">declared · A. Rai / 2026-09-16</span></p>
+<ul class="af-points">
+<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li><b>Holds</b> from 60 to 400 — outside it the row refuses, by name.</li>
+<li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · orbitt_case_c1</span></li>
+</ul>
+</section>
 <div class="tabs" role="tablist">
-  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab sel" data-tab="0">said simply, then the real thing</button>
   <button role="tab" class="tab" data-tab="1">theory</button>
-  <button role="tab" class="tab" data-tab="2">interface</button>
-  <button role="tab" class="tab" data-tab="3">algorithm</button>
-  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
-  <button role="tab" class="tab" data-tab="5">generated code</button>
-  <button role="tab" class="tab" data-tab="6">evidence</button>
-  <button role="tab" class="tab" data-tab="7">flags</button>
-  <button role="tab" class="tab" data-tab="8">credibility</button>
-  <button role="tab" class="tab" data-tab="9">design space</button>
+  <button role="tab" class="tab" data-tab="2">de-risking</button>
+  <button role="tab" class="tab" data-tab="3">interface</button>
+  <button role="tab" class="tab" data-tab="4">algorithm</button>
+  <button role="tab" class="tab" data-tab="5">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="6">generated code</button>
+  <button role="tab" class="tab" data-tab="7">evidence</button>
+  <button role="tab" class="tab" data-tab="8">flags</button>
+  <button role="tab" class="tab" data-tab="9">credibility</button>
+  <button role="tab" class="tab" data-tab="10">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
+<div class="station">
+<h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
+<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">What sustained F10.7 must this design operate in, for as long as the mission lasts?</p>
-<p class="maths"><code>F107_req = 260 sfu, above the record's largest 27-day mean of 252.67</code></p>
+<p class="maths"><code>F107_req = 260 sfu, above the record's largest 27-day mean of 252.67</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · orbitt_case_c1</span></p>
 <p class="src">Source <b>orbitt_case_c1</b> — Orbitt Space — VLEO multipayload reference case C1 <span class="where">internal, 2026-09-01</span></p>
+<p class="declared">Declared: <b>260</b> <span class="claim claim-declared" title="a number a person chose, and put their name against">declared · A. Rai / 2026-09-16</span></p>
 <p class="note">The headline requirement of the five, and the first `required` row written
 anywhere in this repository — no other subsystem has one, so the shape here is
 the shape the other sixteen will copy. It is a ceiling the environment must not
@@ -34,15 +51,23 @@ array is sized on the sustained level, a thermal transient on the day. This row
 is now the sustained half and req_02 is the single day, so the duplication is
 gone and two different commitments are stated instead of one commitment twice.
 </p>
-<h4>Assumptions</h4>
+<h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<h5>Assumptions, and where each stops holding</h5>
 <dl class="asm">
 <dt>260 is the record's hottest sustained rotation rounded up, and the SATELLITE-ERA record is not the sun's history</dt><dd>fails when the record is read as the sun's history. 260 is anchored at 252.67 sfu, the largest 27-day mean in 28.2 years of SATELLITE-ERA record, centred 2024-08-13. Cycle 19 in the late 1950s ran higher than anything in that record, so a design meant to operate through a cycle-19 maximum needs a larger number and the rounding to 260 buys seven sfu against it. The anchor is at least checkable, which its predecessor was not: 250 was the next round number above whatever the chain happened to give, so it moved with the design rather than with the sky and its headroom drifted from 9.6 per cent to 140 without anything being wrong.</dd>
 <dt>It is a ceiling on the DRIVER and says nothing about what the driver does to the vehicle</dt><dd>fails when the requirement is read as a survivability statement. F10.7 is an index of solar radio flux; what a spacecraft actually feels is the density that flux produces at its altitude, through a model this subsystem does not own. A design that meets F10.7 &lt;= 250 and is sized on a density model with the wrong drag coefficient has met this requirement and will still deorbit early. The closure this row takes part in is on the environment, and the environment is only the first half.</dd>
 <dt>One number for the whole mission, with no epoch and no phase in it</dt><dd>fails when the mission slips. The record runs 64 to 343 sfu across a cycle, so the flux a mission sees depends on where in the cycle it flies; the declared epoch of 2027-01-01 sits at phase 0.619, past maximum on the declining side. A mission starting in 2030 would sit near minimum and 250 would be enormously conservative. The requirement does not move with the epoch and is not meant to — it is the vehicle's capability, and the sky's variation belongs on the achieved side.</dd>
 </dl>
+<p class="muted">Outside <code>60 … 400</code> the row refuses rather than answers: the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement; the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable.</p>
+<h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
+<p class="d-l predict">Before you run it: what do you expect the answer to be, roughly, and which input do you expect to move it most? Write it down — then run, and compare. A guess that was wrong is the most useful thing on this page.</p>
+<p class="d-lr muted">Run it from the panel beside this page, on your own inputs, or open <i>the relation, moving</i> to watch the answer cross its range.</p>
+</div>
 </section>
 <section class="panel" data-panel="1">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <p class="why">A requirement is not a prediction and not a capability: it is a commitment, and its purpose is to be checkable against something measured. This row commits the design to surviving a solar flux, and the checking partner is l3_solar_ach_01, which reports what the record actually presents. The pair is the closure, and the whole reason a requirement lives on its own row — rather than being inferred from the design value — is that a commitment which silently tracked the design could never be violated and would therefore never be a requirement.</p>
+<p class="muted">Each line below is <span class="claim claim-derived" title="worked here from sourced relations">derived</span> from the one before, ending at the relation — which is <span class="claim claim-sourced" title="stated in the cited work">sourced · orbitt_case_c1</span>.</p>
 <div class="theory-walk" data-steps="5">
 <ol class="derive">
 <li><span class="dt">Start from what a requirement row must be able to do: be violated. If the committed number were computed from the design value it would track every change to the design and would always pass, which makes the closure a tautology. So the value is DECLARED — a person's number with their name against it — and the sense says which side of it is safe.</span><code class="dm">F107 &lt;= F107_req (sense: &lt;=)</code></li>
@@ -59,6 +84,11 @@ The anchor is the hottest sustained sky the record holds at the timescale this r
 <p class="maths concl">which is the relation this node states: <code>F107_req = 260 sfu, above the record's largest 27-day mean of 252.67</code></p>
 </section>
 <section class="panel" data-panel="2">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
+<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
@@ -66,7 +96,8 @@ The anchor is the hottest sustained sky the record holds at the timescale this r
 </tbody></table>
 <p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="l3_solar_ach_01">l3_solar_ach_01</a></p>
 </section>
-<section class="panel" data-panel="3">
+<section class="panel" data-panel="4">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
 <p>This is a declared value: <b>260</b> -, confirmed by <b>A. Rai / 2026-09-16</b>.</p>
 <h4>Pseudocode</h4>
@@ -88,12 +119,14 @@ The anchor is the hottest sustained sky the record holds at the timescale this r
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="5">
+<p class="dx dx-tutorial" title="learn by doing: try it and watch">tutorial</p>
 <div class="relation-host" data-node="l3_solar_req_01" data-lo="60" data-hi="400" data-symbol="F107_req_long">
 <p class="muted">asking the engine…</p>
 </div>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="6">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -159,10 +192,12 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="7">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="8">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 60 — the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement</li>
@@ -171,17 +206,21 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="8">
+<section class="panel" data-panel="9">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="l3_solar_req_01"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="9">
+<section class="panel" data-panel="10">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p>Valid over <code>60 &hellip; 400</code> -.</p>
 <ul class="guards"><li>lower — the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement</li><li>upper — the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
+<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
+<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
 <li>significant, and one fixture or none — a significant node is the one that gets a second independent check, which is the whole reason for the word</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

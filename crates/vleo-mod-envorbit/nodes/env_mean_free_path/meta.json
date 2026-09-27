@@ -13,5 +13,5 @@
   "holes": 1,
   "inputs": ["env_number_density"],
   "contributes": [],
-  "gaps": ["the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did", "no fixture: nothing outside this code has ever agreed with what it computes", "no theory: the relation is stated but not derived — THE ROW DOES NOT ANSWER. A function is defined by its derivation, not by its expression and not by its citation, and until one is written every reader of this row is blocked on it by name"]
+  "gaps": ["not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)", "no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)", "the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did", "no fixture: nothing outside this code has ever agreed with what it computes", "no theory: the relation is stated but not derived — THE ROW DOES NOT ANSWER. A function is defined by its derivation, not by its expression and not by its citation, and until one is written every reader of this row is blocked on it by name"]
 }

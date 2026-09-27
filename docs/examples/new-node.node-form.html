@@ -1,5 +1,6 @@
 <!doctype html>
-<html lang="en"><head>
+<html lang="en">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>A new node — node form</title>
@@ -42,6 +43,15 @@ button:disabled { opacity: .45; cursor: default; }
   border: 1px solid var(--rule); color: var(--ink3); font-weight: 400; }
 .nf-tag.req { color: var(--warn); border-color: var(--warn); }
 .nf-tag.rel { color: var(--accent); border-color: var(--accent); }
+.nf-tag.dr { color: var(--ok); border-color: var(--ok); }
+.nf-answer { font-size: 15px; }
+.nf-dr { border: 1px solid var(--ok); border-radius: 6px; padding: 4px 14px 10px; margin: 18px 0; }
+.nf-dr h2 { border-bottom-color: var(--ok); }
+.nf-dr-state { font: 13px var(--mono); padding: 6px 10px; border-radius: 4px; background: var(--accent-pale); }
+.nf-dr-state.bad { background: var(--warn-pale); color: var(--warn); }
+.nf-ex { font-size: 13px; color: var(--ink2); }
+.nf-ex dt { font-weight: 600; margin-top: 4px; }
+.nf-ex dd { margin: 0 0 0 12px; }
 input, textarea, select { width: 100%; font: 14px var(--mono); color: var(--ink); background: var(--paper);
   border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px; }
 textarea { min-height: 70px; resize: vertical; }
@@ -68,22 +78,31 @@ table.nf-fx td, table.nf-fx th { border-bottom: 1px solid var(--rule); padding: 
 <h1>A new node</h1>
 <p class="nf-id">a request for a node the design does not have yet — where it goes, what it asks, and what it reads</p>
 <section class="nf-intro">
-<p><b>This is a form for one node of the design, and it is the whole of it</b> — it needs no
-connection and nothing installed. Change what should change, say who you are, and save a filled
-copy. Send the saved file to the developer team: they check it, apply it to the node, and the next
-release of the tool carries your change, where you can run it with your own inputs.</p>
+<p class="nf-answer"><b>Answer first.</b> This file asks for one node of the design to change — or
+for a new one — and it is the whole of the request: it needs no connection and nothing installed.
+Fill in what you know, say why it is changing, save a copy and send it to the developers. They
+check it, apply it, and the next release of the tool carries it, where you run it on your own
+inputs.</p>
 <ol>
-<li>Fill in what you know. Each question says <i>why</i> it is asked; a question you cannot
-answer, leave as it is.</li>
-<li>Say who filled it, and whether an assistant helped. If one helped with the <b>relation</b>
-itself — the equation, its steps or its derivation — say so: those are then derived by a developer
-rather than taken from the form.</li>
-<li>Known-good values — an answer you know at given inputs, and where it comes from — go under
-<i>known values</i>. They are recorded by a person, with their source, and never guessed.</li>
-<li>Press <b>save a filled copy</b> and send that file. You can reopen it and carry on.</li>
+<li><b>What is asked.</b> Every question the node answers, in the order it is read: what it is
+called and asks, <i>said simply</i>, the relation and where it comes from, the answer and its
+bounds, the derivation, and <i>where the simple version breaks</i>. Each question says why it is
+asked. Leave what you cannot answer as it is.</li>
+<li><b>Why it is changing.</b> A node changes because a belief broke. If your changes move what
+the node computes — an input, the output, the model, the maths, the algorithm, how it is drawn —
+the section <i>Why it is changing</i> must say what was believed, what was tested, what we now
+know and what changes. Without it the developers apply only your wording. A worked example is in
+that section.</li>
+<li><b>What is not yours to change here.</b> Where the node sits in the tree, its kind and its
+owner are the developers'. If an assistant helped with the <b>relation</b> itself — the equation,
+its steps or its derivation — say so: those are then derived by a developer, never taken from the
+form. Known values go under <i>known values</i>, with their source; they are recorded by a person.</li>
 </ol>
-<p class="nf-muted">To fill it with an assistant, give it this file and ask it to edit only the
-block marked <code>vleo-node-form</code> near the end: plain TOML, one line per answer.</p>
+<p class="nf-muted">Tags: <span class="nf-tag req">needed</span> blocks the node until answered ·
+<span class="nf-tag rel">the relation</span> never taken from an assistant ·
+<span class="nf-tag dr">decision</span> moving it needs <i>why it is changing</i>. To fill it with
+an assistant, give it this file and ask it to edit only the block marked
+<code>vleo-node-form</code> near the end: plain TOML, one line per answer.</p>
 </section>
 </header>
 <noscript><p class="nf-warn">This page fills itself in with JavaScript. Without it, open this file in a text editor and edit the block marked <code>vleo-node-form</code> near the end — it is plain TOML, and every question is asked in the comments above it.</p></noscript>
@@ -1620,6 +1639,7 @@ block marked <code>vleo-node-form</code> near the end: plain TOML, one line per 
     {"field": "label", "group": "the row", "ask": "what is this row called, in the tree", "why": "the page title and every reference to it", "shape": "line", "options": [], "required": true, "relation": false},
     {"field": "question", "group": "the row", "ask": "what one question does it answer", "why": "an equation with no question gets reused for the wrong thing", "shape": "prose", "options": [], "required": true, "relation": false},
     {"field": "note", "group": "the row", "ask": "what does a reader need told that the question does not say", "why": "the sentence under the question on the node's page, and the one place a row can say what it is NOT for", "shape": "prose", "options": [], "required": false, "relation": false},
+    {"field": "explain_simply", "group": "said simply", "ask": "say it simply: what does this row work out, and why does it matter — in plain words, with no symbol and no word a newcomer would have to look up", "why": "the first thing on the node's page. A reader who cannot yet read the relation reads this, and a writer who cannot write it has found a gap in their own understanding (docs/EXPLAINING.md, E2)", "shape": "prose", "options": [], "required": false, "relation": false},
     {"field": "expression", "group": "the relation", "ask": "what is the relation", "why": "the algorithm, and what a reviewer compares against the source", "shape": "line", "options": [], "required": true, "relation": true},
     {"field": "source", "group": "the relation", "ask": "cited where — book, paper, page", "why": "this is the claim everything else rests on", "shape": "line", "options": [], "required": true, "relation": true},
     {"field": "symbol", "group": "the answer", "ask": "what is the answer's symbol", "why": "the binding name in the generated signature", "shape": "line", "options": [], "required": true, "relation": false},
@@ -1632,18 +1652,32 @@ block marked <code>vleo-node-form</code> near the end: plain TOML, one line per 
     {"field": "sense", "group": "the contract", "ask": "which way does this requirement bind", "why": "'<=' means the achieved value must stay under the bound, '>=' that it must reach it. Read the wrong way the closure still computes and still reports a comfortable margin, for a spacecraft that is about to be destroyed", "shape": "choice", "options": ["<=", ">="], "required": false, "relation": false},
     {"field": "declared_value", "group": "the contract", "ask": "what is the declared number", "why": "a declared row computes nothing and publishes this, converted from the unit above. It is the whole of the row's content", "shape": "number", "options": [], "required": false, "relation": false},
     {"field": "theory_why", "group": "the derivation", "ask": "why is it this relation and not another", "why": "the relation says what; this says why, and it is what a reviewer reads before deciding whether to believe the number", "shape": "prose", "options": [], "required": false, "relation": true},
-    {"field": "theory_reading", "group": "the derivation", "ask": "how should the answer be read", "why": "a number with no reading gets quoted out of context. This is where a row says what its answer does NOT mean", "shape": "prose", "options": [], "required": false, "relation": true}
+    {"field": "theory_reading", "group": "the derivation", "ask": "how should the answer be read", "why": "a number with no reading gets quoted out of context. This is where a row says what its answer does NOT mean", "shape": "prose", "options": [], "required": false, "relation": true},
+    {"field": "explain_breaks", "group": "where it breaks", "ask": "where does the simple version stop being true", "why": "every simplification is wrong somewhere, and saying where is what makes it safe to use. Unwritten, the plain words get quoted as the physics (E4)", "shape": "prose", "options": [], "required": false, "relation": false},
+    {"field": "explain_wrong", "group": "where it breaks", "ask": "what do people commonly get wrong about this, and what is true instead", "why": "the gap most readers share. Named and corrected on the page, it is not rediscovered by each of them (E5). Leave it blank if there is none", "shape": "prose", "options": [], "required": false, "relation": false}
   ],
   "arrays": [
     {"name": "input", "label": "what this row reads", "why": "the consumer declares what it expects, and assembly refuses a mismatch against what the producer publishes. It is also the derivation graph: an input is an edge, and the edges are what decide what runs before what", "end_only": false, "relation": false, "columns": [{"key": "binding", "ask": "the name it goes by inside this row", "shape": "line", "required": true, "managed": false}, {"key": "var", "ask": "which row answers it", "shape": "row", "required": true, "managed": false}, {"key": "type", "ask": "the quantity this row expects it to be", "shape": "quantity", "required": true, "managed": false}]},
     {"name": "algorithm", "label": "the steps", "why": "each step becomes one numbered hole in the generated model, and the hole is where a person writes the few typed lines that compose relations from the kernel. The step's text is the comment above it", "end_only": true, "relation": true, "columns": [{"key": "number", "ask": "", "shape": "count", "required": true, "managed": true}, {"key": "text", "ask": "what this step does", "shape": "prose", "required": true, "managed": false}, {"key": "binds", "ask": "the name its result is bound to", "shape": "line", "required": true, "managed": false}, {"key": "type", "ask": "and its quantity", "shape": "quantity", "required": true, "managed": false}]},
-    {"name": "theory", "label": "how the relation was arrived at", "why": "the expression says what the relation is; these say how it was got to. A relation an agent invented carries a citation just as convincingly, and the derivation is what a reviewer reads instead of taking the citation's word", "end_only": false, "relation": true, "columns": [{"key": "text", "ask": "the step of the argument", "shape": "prose", "required": true, "managed": false}, {"key": "math", "ask": "and the line of maths, if there is one", "shape": "line", "required": false, "managed": false}]},
+    {"name": "theory", "label": "how the relation was arrived at", "why": "the expression says what the relation is; these say how it was got to. A relation an assistant invented carries a citation just as convincingly, and the derivation is what a reviewer reads instead of taking the citation's word", "end_only": false, "relation": true, "columns": [{"key": "text", "ask": "the step of the argument", "shape": "prose", "required": true, "managed": false}, {"key": "math", "ask": "and the line of maths, if there is one", "shape": "line", "required": false, "managed": false}]},
     {"name": "assumption", "label": "what has to be true for this to hold", "why": "an assumption nobody wrote down is one nobody can check. Each says what it assumes AND the case it fails in, because an assumption with no failure case is a sentence rather than a warning", "end_only": false, "relation": false, "columns": [{"key": "text", "ask": "what is assumed", "shape": "prose", "required": true, "managed": false}, {"key": "fails_when", "ask": "and when that stops being true", "shape": "prose", "required": true, "managed": false}]}
   ],
   "choices": {"type": ["Acceleration", "Angle", "AngularMomentum", "AngularRate", "Area", "Charge", "Current", "DataRate", "DataVolume", "DipoleMoment", "Energy", "Force", "Frequency", "Impulse", "Irradiance", "Length", "MagneticFluxDensity", "Mass", "MassDensity", "MassFlow", "MassFlux", "MolarMass", "Money", "NumberDensity", "Power", "Pressure", "Ratio", "Temperature", "Time", "Torque", "Velocity", "Voltage", "Volume"], "unit": ["One", "Percent", "Decibel", "Count", "Bit", "Metre", "Kilometre", "Micrometre", "Nanometre", "SquareMetre", "CubicMetre", "Kilogram", "Gram", "KgPerMol", "Second", "Minute", "Hour", "Day", "Year", "MetrePerSecond", "KmPerSecond", "MetrePerSecond2", "KgPerSecond", "MgPerSecond", "KgPerCubicMetre", "PerCubicMetre", "Newton", "Millinewton", "Micronewton", "NewtonMetre", "NewtonSecond", "NewtonMetreSecond", "Pascal", "Joule", "WattHour", "Watt", "Kilowatt", "WattPerSquareMetre", "WattPerM2K4", "Kelvin", "Radian", "Degree", "RadianPerSecond", "DegreePerSecond", "DegreePerDay", "Arcsecond", "Volt", "Ampere", "AmpereHour", "Tesla", "AmpereSquareMetre", "Coulomb", "ElectronVolt", "Hertz", "Megahertz", "Gigahertz", "BitPerSecond", "MegabitPerSecond", "Gigabit", "Gigabyte", "UsDollar", "MillionUsDollar"]},
   "view_kinds": ["number", "line", "bar"],
   "provenances": ["independent-derivation", "published-source", "independent-tool", "physical-bound"],
   "ai_help": ["none", "wording", "relation"],
+  "derisk": [
+    ["believed", "what did we believe", "the belief the node rested on before this change — the thing that turned out not to hold, or not to hold well enough"],
+    ["tested", "what did we test", "the analysis, comparison, measurement or review that tested it — with where it is written down"],
+    ["learned", "what do we now know", "the result: what was wrong or incomplete in the previous version. This is the issue the change fixes"],
+    ["cost", "what did it cost", "time, money or effort — so the value of de-risking can be weighed. Optional"],
+    ["changed", "what changes, and what it gains", "what this version does differently from the one before, and the benefit — including any change to the plan"],
+    ["risks", "which risks does it open, move or close", "one per line: `R-01 L5->L4`, `R-09 closed`, `R-12 opened`. The ids are those registered on the risk-register rows of the management layer. Optional"],
+    ["rests_on", "what does the node rest on now", "the belief this version stands on — what is assumed to hold"],
+    ["breaks_if", "what would break that", "the observation that would make this version wrong in turn, so the next change is watched for rather than stumbled on"]
+  ],
+  "about": {"label": "node", "question": "node", "expression": "math", "source": "model", "symbol": "output", "type": "output", "unit": "output", "lower": "output", "upper": "output", "reason_lower": "output", "reason_upper": "output", "sense": "output", "declared_value": "input", "input": "input", "algorithm": "algorithm", "assumption": "model", "view": "visualisation"},
+  "version": 0,
   "fixtures": [
   ]
 }
@@ -1663,6 +1697,7 @@ kind = "computed"
 label = ""
 question = ""
 note = ""
+explain_simply = ""
 expression = ""
 source = ""
 symbol = ""
@@ -1676,13 +1711,15 @@ sense = ""
 declared_value = ""
 theory_why = ""
 theory_reading = ""
+explain_breaks = ""
+explain_wrong = ""
 
 [view]
 kind = "number"
 over = ""
 points = "0"
 </script>
-<!-- THE FORM'S CONTENT. This block is what the developers read. Fill it on the page above, or edit it here directly — by hand, or with an assistant: it is TOML, one key per question, and [[input]], [[algorithm]], [[theory]], [[assumption]] and [[known_value]] repeat. Say in [filled_by] ai = "none", "wording" or "relation" how an assistant helped. On a new node's form, [new] says where it goes: its id, the group it hangs under, and its kind. -->
+<!-- THE FORM'S CONTENT. This block is what the developers read. Fill it on the page above, or edit it here directly — by hand, or with an assistant: it is TOML, one key per question, and [[input]], [[algorithm]], [[theory]], [[assumption]] and [[known_value]] repeat. Say in [filled_by] ai = "none", "wording" or "relation" how an assistant helped, and in [derisk] why the node is changing: what we believed, what we tested, what we now know, what changes, and what it rests on now. On a new node's form, [new] says where it goes: its id, the group it hangs under, and its kind. -->
 <script type="application/toml" id="vleo-node-form">
 format = "vleo-node-form/1"
 node = ""
@@ -1732,6 +1769,16 @@ number = "1"
 text = "Divide the design Ap by the storm level."
 binds = "margin"
 type = "Ratio"
+
+[derisk]
+believed = ""
+tested = ""
+learned = ""
+cost = ""
+changed = "first version: how much Ap the design allows per storm level it is sized for"
+risks = ""
+rests_on = "sw_ap_design is the design Ap at the declared storm level, so their ratio is the Ap allowed per level."
+breaks_if = "The design Ap stops being proportional across storm levels — the G scale's ap thresholds are not evenly spaced — so a ratio read at one level misleads at another."
 
 [notes]
 text = ""
@@ -1850,6 +1897,7 @@ text = ""
     return;
   }
   DATA.fields = DATA.fields || {}; DATA.filled_by = DATA.filled_by || {}; DATA.notes = DATA.notes || {};
+  DATA.derisk = DATA.derisk || {};
   ORIG.fields = ORIG.fields || {};
   const S = v => (v == null ? '' : String(v));
 
@@ -1871,6 +1919,8 @@ text = ""
       o += '\n[[known_value]]\n';
       for (const k of ['label', 'inputs', 'expected', 'tolerance', 'provenance', 'source']) o += k + ' = ' + tq(r[k]) + '\n';
     }
+    o += '\n[derisk]\n';
+    for (const [k] of SCHEMA.derisk) o += k + ' = ' + tq(DATA.derisk[k]) + '\n';
     o += '\n[notes]\ntext = ' + tq(DATA.notes.text) + '\n';
     return o;
   }
@@ -1889,12 +1939,40 @@ text = ""
     }
     if (ORIG.view && DATA.view && JSON.stringify(ORIG.view) !== JSON.stringify(DATA.view)) out.push('how it is drawn');
     if ((DATA.known_value || []).length) out.push((DATA.known_value || []).length + ' known value(s)');
+    if (SCHEMA.derisk.some(([k]) => S(DATA.derisk[k]).trim())) out.push('why it is changing');
     if (S(DATA.notes.text).trim()) out.push('a note for the developers');
     return out;
+  }
+  // WHICH DECISIONS THE FORM MOVES, as the developers' intake will see them:
+  // the same field-to-kind table, sent from the tool.
+  function decisions() {
+    const kinds = new Set();
+    if (DATA.new) kinds.add('node');
+    for (const f of SCHEMA.fields) {
+      if (SCHEMA.about[f.field] && S(ORIG.fields[f.field]) !== S(DATA.fields[f.field])) kinds.add(SCHEMA.about[f.field]);
+    }
+    for (const a of SCHEMA.arrays) {
+      if (SCHEMA.about[a.name] && JSON.stringify(ORIG[a.name] || []) !== JSON.stringify(DATA[a.name] || [])) kinds.add(SCHEMA.about[a.name]);
+    }
+    if (ORIG.view && DATA.view && JSON.stringify(ORIG.view) !== JSON.stringify(DATA.view)) kinds.add('visualisation');
+    return [...kinds];
+  }
+  function recordMissing() {
+    const need = DATA.new ? ['rests_on', 'breaks_if'] : ['believed', 'tested', 'learned', 'changed', 'rests_on', 'breaks_if'];
+    return need.filter(k => !S(DATA.derisk[k]).trim());
   }
   function paintCount() {
     const c = changes();
     $('#nf-count').textContent = c.length ? c.length + ' change(s): ' + c.join(', ') : 'nothing changed yet';
+    const st = $('#nf-dr-state');
+    if (!st) return;
+    const kinds = decisions(), miss = recordMissing();
+    st.className = 'nf-dr-state' + (kinds.length && miss.length ? ' bad' : '');
+    st.textContent = !kinds.length
+      ? 'Your changes so far are wording only: no record is needed for them.'
+      : 'Your changes move: ' + kinds.join(', ') + '. ' + (miss.length
+        ? 'Still to answer below: ' + miss.join(', ') + ' — without them the developers apply only your wording.'
+        : 'The record is complete: this becomes version ' + (SCHEMA.version + 1) + ' of the node.');
   }
 
   // ---- controls --------------------------------------------------------
@@ -1926,6 +2004,8 @@ text = ""
     box.innerHTML = '<label>' + esc(f.ask.charAt(0).toUpperCase() + f.ask.slice(1)) +
       (f.required ? '<span class="nf-tag req">needed</span>' : '') +
       (f.relation ? '<span class="nf-tag rel">the relation</span>' : '') +
+      (SCHEMA.about[f.field] ? '<span class="nf-tag dr" title="changing it needs why it is changing">' +
+        esc(SCHEMA.about[f.field]) + '</span>' : '') +
       ' <span class="nf-tag">' + esc(f.field) + '</span></label>' +
       '<div class="nf-why">' + esc(f.why) + '</div>';
     const paint = () => {
@@ -2128,6 +2208,37 @@ text = ""
     }
     v.appendChild(g2); main.appendChild(v);
   }
+  // ---- why it is changing: the de-risking record ----------------------
+  const dr = document.createElement('section'); dr.className = 'nf-dr';
+  dr.innerHTML = '<h2>Why it is changing</h2><p class="nf-why">' + (SCHEMA.new
+    ? 'A new node is a belief nobody has tested yet. Say what it rests on and what would break it — the ' +
+      'rest can wait for the first time it changes.'
+    : 'A node changes because a belief broke: somebody tested it and learned otherwise. The answers here ' +
+      'become version ' + (SCHEMA.version + 1) + ' of this node, and one row of the programme\'s ' +
+      'de-risking narrative. Wording alone needs none of it.') + '</p><p class="nf-dr-state" id="nf-dr-state"></p>';
+  for (const [k, ask, why] of SCHEMA.derisk) {
+    if (SCHEMA.new && ['believed', 'tested', 'learned', 'cost'].indexOf(k) >= 0) continue;
+    const q = document.createElement('div'); q.className = 'nf-q'; q.dataset.derisk = k;
+    q.innerHTML = '<label>' + esc(ask.charAt(0).toUpperCase() + ask.slice(1)) + '</label><div class="nf-why">' + esc(why) + '</div>';
+    q.appendChild(control(k === 'cost' ? 'line' : 'prose', [], S(DATA.derisk[k]), v => { DATA.derisk[k] = v; }, 'why ' + k));
+    dr.appendChild(q);
+  }
+  dr.insertAdjacentHTML('beforeend', '<details class="nf-ex"><summary>A worked example ' +
+    '<span class="nf-tag">illustrative — not this node</span></summary><dl>' +
+    '<dt>What we believed</dt><dd>That the drag coefficient could be bounded from modelling alone, without ' +
+    'reconciliation against flight decay data.</dd>' +
+    '<dt>What we tested</dt><dd>Free-molecular gas-surface interaction runs against two density models, ' +
+    'cross-checked against published on-orbit decay in the 350–380 km band.</dd>' +
+    '<dt>What we now know</dt><dd>The 1-sigma band narrowed from 28% to 19%, but the residual is dominated by ' +
+    'energy accommodation, which only flight data will settle. Ground work alone will not reach the 15% target.</dd>' +
+    '<dt>What it cost</dt><dd>$310k</dd>' +
+    '<dt>What changes, and what it gains</dt><dd>Propellant margin held at 30% to CDR rather than released; the ' +
+    'air-breathing propulsion decision moved to Q2-27.</dd>' +
+    '<dt>Risks</dt><dd>R-09 closed · R-01 L5-&gt;L4</dd>' +
+    '<dt>Rests on now</dt><dd>The 19% band, until flight decay data exists.</dd>' +
+    '<dt>Would break if</dt><dd>The first flight decay residual falls outside the 19% band.</dd></dl></details>');
+  main.appendChild(dr);
+
   main.appendChild(known());
 
   const notes = document.createElement('section');
@@ -2153,4 +2264,6 @@ text = ""
   };
   paintCount();
 })();
-</script></body></html>
+</script>
+</body>
+</html>

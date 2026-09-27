@@ -335,6 +335,7 @@ fn route(
         ("POST", "/v1/form/check") => ok_json(form_check(ctx, params)),
         // Saved results: what runs returned, with the inputs they ran on, kept
         // outside the repository. Viewing one runs nothing.
+        ("GET", "/v1/derisk") => ok_json(derisk_json(ctx)),
         ("GET", "/v1/results") => ok_json(results_list()),
         ("GET", "/v1/result") => ok_json(result_json(params)),
         ("GET", "/v1/result.csv") => result_file(params, false),
@@ -1195,6 +1196,32 @@ fn result_head(j: &mut Json, s: &vleo_modules::results::Saved) {
     j.num_field("ran", s.ran as f64);
     j.num_field("blocked", s.blocked_count as f64);
     j.num_field("changed", s.changed() as f64);
+    // The node versions it rests on, and those whose record has moved on
+    // since: each a belief the result rested on that has broken.
+    j.key("versions").open_arr();
+    for (i, (id, n, rel)) in s.versions.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        j.raw("{");
+        j.str_field("node", id);
+        j.num_field("n", *n as f64);
+        j.str_field("release", rel);
+        j.close_obj();
+    }
+    j.close_arr();
+    j.key("moved").open_arr();
+    for (i, (id, then, now)) in vleo_modules::results::moved_since(s).iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        j.raw("{");
+        j.str_field("node", id);
+        j.num_field("then", *then as f64);
+        j.num_field("now", *now as f64);
+        j.close_obj();
+    }
+    j.close_arr();
     match s.answer() {
         Some(a) => {
             j.key("answer").raw("{");
@@ -1313,6 +1340,95 @@ fn result_save(params: &str, ctx: &Ctx) -> String {
         }
         Err(e) => failed(&e),
     }
+}
+
+/// Why the design is what it is: every registered risk, where it stands and
+/// every node version that moved it — the conclusion the risk-register rows
+/// draw — and the version each node is at.
+///
+/// Read from the sheets on each request rather than held: the daemon never
+/// writes a sheet, and a developer applying forms beside a running copy
+/// should see the register move without a restart.
+fn derisk_json(ctx: &Ctx) -> String {
+    let tree = match vleo_sheet::load::load_all(&ctx.root) {
+        Ok(t) => t,
+        Err(e) => return failed(&format!("the tree does not load: {e}")),
+    };
+    let reg = vleo_sheet::derisk::register(&tree);
+    let (changes, _) = vleo_sheet::derisk::narrative(&tree);
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.num_field("changes", changes.len() as f64);
+    j.num_field(
+        "published",
+        tree.sheets.values().filter(|s| !s.is_seeded()).count() as f64,
+    );
+    j.num_field(
+        "versioned",
+        tree.sheets
+            .values()
+            .filter(|s| !s.versions.is_empty())
+            .count() as f64,
+    );
+    j.key("register").open_arr();
+    for (i, r) in reg.iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        j.raw("{");
+        for (k, v) in [
+            ("id", &r.id),
+            ("title", &r.title),
+            ("owner", &r.owner),
+            ("why", &r.why),
+            ("row", &r.row),
+            ("row_label", &r.row_label),
+            ("registered", &r.registered),
+            ("now", &r.now),
+        ] {
+            j.str_field(k, v);
+        }
+        j.key("moves").open_arr();
+        for (m_i, m) in r.moves.iter().enumerate() {
+            if m_i > 0 {
+                j.raw(",");
+            }
+            j.raw("{");
+            j.str_field("node", &m.node);
+            j.str_field("label", &m.label);
+            j.num_field("n", m.n as f64);
+            j.str_field("date", &m.date);
+            j.str_field("release", &m.release);
+            j.str_field("what", &m.what);
+            j.str_field("learned", &m.learned);
+            j.close_obj();
+        }
+        j.close_arr();
+        j.close_obj();
+    }
+    j.close_arr();
+    j.key("nodes").raw("{");
+    let mut first = true;
+    for sh in tree.ordered() {
+        let Some(v) = sh.versions.last() else {
+            continue;
+        };
+        if !first {
+            j.raw(",");
+        }
+        first = false;
+        j.push_string(&sh.id);
+        j.raw(":{");
+        j.num_field("n", v.n as f64);
+        j.str_field("release", &v.release);
+        j.str_field("rests_on", &v.rests_on);
+        j.str_field("learned", &v.learned);
+        j.close_obj();
+    }
+    j.raw("}");
+    j.raw("}");
+    j.0
 }
 
 /// Keep a result somebody sent — its CSV, or the report page it rides in.

@@ -68,6 +68,8 @@ fn main() -> ExitCode {
         "form" => cmd_form(&root, &rest),
         "intake" => cmd_intake(&root, &rest),
         "publish" => cmd_publish(&root, &rest),
+        "derisk" => cmd_derisk(&root, &rest),
+        "release" => cmd_release(&root, &rest),
         "help" | "--help" | "-h" => {
             help();
             Ok(())
@@ -176,6 +178,15 @@ cargo xtask <command>
   publish <node>     move a filled, seeded row to published, so its model,
                      contract and evidence are generated and its holes can be
                      written. Refuses, naming every reason, while it is not ready.
+  derisk             write docs/DERISK_NARRATIVE.md and docs/derisking.csv — every
+                     recorded change, in the columns of the de-risking narrative,
+                     and every registered risk as it stands. Generated from the
+                     sheets' [[version]] and [[risk]] records, never edited.
+  release <version> [--check]
+                     stamp every node version still marked `next` with this
+                     release, set the workspace version, and regenerate. The
+                     node's record then says which release carried each belief.
+                     --check refuses while anything is unstamped or newer.
   variables          write docs/VARIABLES.md — every variable in the tree, its
                      unit, its range, the reason for each bound, and what reads
                      it. Generated, because a register maintained by hand is a
@@ -468,6 +479,25 @@ fn print_plan(p: &vleo_sheet::template::Plan) {
             }
         }
     }
+    if !p.about.is_empty() {
+        let f = &p.form;
+        println!(
+            "\nwhy it is changing — the decisions it moves: {}",
+            p.about.join(", ")
+        );
+        for (k, ask, _) in vleo_sheet::template::DERISK {
+            let v = f.derisk.get(k);
+            if !v.trim().is_empty() {
+                println!("  {:<40} {}", ask, clip(v));
+            }
+        }
+        match p.version {
+            Some(n) => println!("  → recorded as version {n}, released with the next release"),
+            None => println!(
+                "  → no version recorded: the record is incomplete, so these decisions are withheld"
+            ),
+        }
+    }
     if !p.open.is_empty() {
         println!("\nstill for the developer to settle:");
         for o in &p.open {
@@ -757,7 +787,7 @@ fn cmd_confirm(root: &Path, args: &[&str]) -> Result<(), String> {
         return Err("--by is empty".into());
     }
 
-    // An agent may never supply mathematics. Stated as a sentence it is a hope;
+    // An assistant may never supply mathematics. Stated as a sentence it is a hope;
     // this makes it a fact about what can be written to the file.
     let lower = who.to_lowercase();
     for bad in vleo_sheet::form::agent_identities(root) {
@@ -766,7 +796,7 @@ fn cmd_confirm(root: &Path, args: &[&str]) -> Result<(), String> {
             || lower.contains(&format!("{bad}/"))
         {
             return Err(format!(
-                "refused: '{who}' is an agent. An agent may never supply mathematics, and this \
+                "refused: '{who}' is an assistant's name. An assistant may never supply mathematics, and this \
                  field is the only thing that can tell whether one did. It takes the name of a \
                  person who has read the relation against its source and is prepared to own it. \
                  Nothing was written."
@@ -979,7 +1009,7 @@ fn cmd_differential(root: &Path, args: &[&str]) -> Result<(), String> {
     let fills = read_fills(&sh.dir);
     if fills.is_empty() {
         return Err(format!(
-            "no fills recorded for '{id}'. `cargo xtask fill --by <agent>` records one; \
+            "no fills recorded for '{id}'. `cargo xtask fill --by <who> --model <model>` records one; \
              without a record there is nothing to compare and saying so is the only \
              honest answer"
         ));
@@ -1931,7 +1961,9 @@ fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
         println!("  \x1b[33m?\x1b[0m  where this relation came from — and THE ROW DOES NOT ANSWER until it is here");
         println!("     [theory] why, reading, and a [[theory.step]] per step. A function is");
         println!("     defined by its derivation, not by its expression and not by its citation:");
-        println!("     a relation an agent invented carries a citation just as convincingly, and");
+        println!(
+            "     a relation an assistant invented carries a citation just as convincingly, and"
+        );
         println!("     the expression is one line anybody can type. Until this is written the");
         println!("     resolver refuses the row and every reader of it blocks by name.");
     } else if !sh.steps.is_empty() {
@@ -1943,7 +1975,9 @@ fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
     if sh.expression.trim().is_empty() {
     } else if sh.relation_by.trim().is_empty() {
         println!("  \x1b[33m?\x1b[0m  who supplied this relation, and when");
-        println!("     [maths] confirmed_by — an agent may never supply mathematics, and without");
+        println!(
+            "     [maths] confirmed_by — an assistant may never supply mathematics, and without"
+        );
         println!("     a name nothing can tell whether one did. It does not make the formula");
         println!("     right; it makes it somebody's, which is what H1b needs to be a review.");
     } else {
@@ -2331,10 +2365,20 @@ fn clone_sheet(sheet: &str, id: &str, folder: &str, src_order: u32) -> (String, 
     // algorithm, so the key alone is not enough to decide.
     let mut section = String::new();
     let mut carried: Vec<String> = Vec::new();
+    // THE SIBLING'S RECORD IS NOT INHERITED. Its versions say why the SIBLING
+    // changed, its risks are registered once, on it, and its plain-words
+    // explanation is about its own relation — so each is dropped whole, not
+    // blanked: a new row starts with no history, and says its first belief on
+    // its own form.
+    let mut dropped = false;
     for line in sheet.lines() {
         let l = line.trim_start();
         if l.starts_with('[') {
             section = l.to_string();
+            dropped = matches!(l, "[[version]]" | "[[risk]]" | "[explain]");
+        }
+        if dropped {
+            continue;
         }
         // A comment block is prose about the SIBLING, and there is no way to tell
         // its row-specific sentences from the template's generic ones. So it is
@@ -2669,11 +2713,164 @@ fn cmd_bundle(root: &Path, args: &[&str]) -> Result<(), String> {
 /// Generated from the sheets, like everything else. A register maintained by
 /// hand drifts from the tree within a week, and then it is worse than absent:
 /// somebody will trust it.
+/// The de-risking narrative: every recorded change and every risk, laid out
+/// from the sheets. Two files, one to read and one for a spreadsheet.
+fn cmd_derisk(root: &Path, _args: &[&str]) -> Result<(), String> {
+    let tree = load(root)?;
+    let md = vleo_sheet::derisk::narrative_md(&tree);
+    let csv = vleo_sheet::derisk::narrative_csv(&tree);
+    let a = write_if_changed(&root.join("docs/DERISK_NARRATIVE.md"), &md)?;
+    let b = write_if_changed(&root.join("docs/derisking.csv"), &csv)?;
+    let (changes, starts) = vleo_sheet::derisk::narrative(&tree);
+    let reg = vleo_sheet::derisk::register(&tree);
+    println!(
+        "derisk: {} change(s), {} starting belief(s), {} risk(s) registered, {} open — {}",
+        changes.len(),
+        starts.len(),
+        reg.len(),
+        reg.iter().filter(|r| r.now != "closed").count(),
+        if a || b {
+            "docs/DERISK_NARRATIVE.md and docs/derisking.csv written"
+        } else {
+            "nothing to write"
+        }
+    );
+    Ok(())
+}
+
+/// The workspace version, as `Cargo.toml` states it.
+fn workspace_version(root: &Path) -> Result<String, String> {
+    let text =
+        fs::read_to_string(root.join("Cargo.toml")).map_err(|e| format!("Cargo.toml: {e}"))?;
+    let v: toml::Value = text.parse().map_err(|e| format!("Cargo.toml: {e}"))?;
+    v.get("workspace")
+        .and_then(|w| w.get("package"))
+        .and_then(|p| p.get("version"))
+        .and_then(|x| x.as_str())
+        .map(str::to_string)
+        .ok_or_else(|| "Cargo.toml has no [workspace.package] version".into())
+}
+
+/// A RELEASE STAMPS THE BELIEFS IT CARRIES. Every node version recorded since
+/// the last release says `next`; this names them with the release that ships
+/// them, so a node's page and a saved result can say which release first held
+/// each belief — and why the one before it was replaced.
+fn cmd_release(root: &Path, args: &[&str]) -> Result<(), String> {
+    use vleo_sheet::derisk::{release_key, stamp, NEXT};
+    let v = args
+        .iter()
+        .find(|a| !a.starts_with("--"))
+        .copied()
+        .ok_or("usage: xtask release <version> [--check] — e.g. `release 0.2.0`")?;
+    let key = release_key(v)
+        .filter(|_| v != NEXT)
+        .ok_or_else(|| format!("«{v}» is not a version: three numbers, like 0.2.0"))?;
+    let now = workspace_version(root)?;
+    let now_key =
+        release_key(&now).ok_or_else(|| format!("Cargo.toml's version «{now}» is not x.y.z"))?;
+    if key < now_key {
+        return Err(format!(
+            "{v} is older than the workspace's {now}; a release only moves forward"
+        ));
+    }
+    let tree = load(root)?;
+    let mut newer = Vec::new();
+    let mut pending = Vec::new();
+    for sh in tree.ordered() {
+        for ver in &sh.versions {
+            if ver.release == NEXT {
+                pending.push(format!("{} v{}", sh.id, ver.n));
+            } else if release_key(&ver.release) > Some(key) {
+                newer.push(format!("{} v{} says {}", sh.id, ver.n, ver.release));
+            }
+        }
+    }
+    if !newer.is_empty() {
+        return Err(format!(
+            "these versions already name a later release than {v}: {}",
+            newer.join(", ")
+        ));
+    }
+    if args.contains(&"--check") {
+        if v != now {
+            return Err(format!("the workspace says {now}, and the release is {v}. Run `cargo xtask release {v}` and commit"));
+        }
+        if !pending.is_empty() {
+            return Err(format!(
+                "{} version(s) are still `next`, so this release would ship beliefs it does not name: {}. \
+                 Run `cargo xtask release {v}` and commit",
+                pending.len(),
+                pending.join(", ")
+            ));
+        }
+        println!("release {v}: every node version is stamped, and the workspace says {v}");
+        return Ok(());
+    }
+    let mut stamped = 0;
+    let mut nodes = 0;
+    for sh in tree.ordered() {
+        if !sh.versions.iter().any(|x| x.release == NEXT) {
+            continue;
+        }
+        let path = sh.dir.join("node.toml");
+        let text = fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+        let (out, n) = stamp(&text, v);
+        if n > 0 {
+            fs::write(&path, out).map_err(|e| format!("{}: {e}", path.display()))?;
+            stamped += n;
+            nodes += 1;
+        }
+    }
+    if v != now {
+        let path = root.join("Cargo.toml");
+        let text = fs::read_to_string(&path).map_err(|e| format!("Cargo.toml: {e}"))?;
+        let mut in_pkg = false;
+        let mut done = false;
+        let mut out = String::with_capacity(text.len());
+        for line in text.split_inclusive('\n') {
+            let l = line.trim();
+            if l.starts_with('[') {
+                in_pkg = l == "[workspace.package]";
+            }
+            if in_pkg && !done && l.starts_with("version") && l.contains('=') {
+                out.push_str(&format!("version = \"{v}\"\n"));
+                done = true;
+            } else {
+                out.push_str(line);
+            }
+        }
+        fs::write(&path, out).map_err(|e| format!("Cargo.toml: {e}"))?;
+        // The lock file names the workspace's own version; cargo rewrites it,
+        // offline, the moment anything asks it about the workspace.
+        let st = std::process::Command::new("cargo")
+            .args(["metadata", "--offline", "--format-version", "1"])
+            .current_dir(root)
+            .stdout(std::process::Stdio::null())
+            .status()
+            .map_err(|e| format!("cargo metadata: {e}"))?;
+        if !st.success() {
+            return Err("cargo could not update Cargo.lock for the new version".into());
+        }
+    }
+    cmd_docs(root, &[])?;
+    cmd_derisk(root, &[])?;
+    println!(
+        "release {v}: {stamped} version(s) stamped on {nodes} node(s); workspace {now} -> {v}.\n\
+         Next: `cargo run -p xtask -- gate && cargo test`, commit, then tag v{v}."
+    );
+    Ok(())
+}
+
 fn cmd_variables(root: &Path) -> Result<(), String> {
     let tree = load(root)?;
     let mut o = String::new();
     o.push_str("<!-- GENERATED by `cargo xtask variables`. Do not edit: the sheets are the source. -->\n\n");
     o.push_str("# The variable register\n\n");
+    o.push_str(
+        "> **Answer first.** Every variable in the tree — its unit, the range it is declared \
+         valid over, the reason for each bound, and what reads it. Generated from the sheets.\n>\n\
+         > **Kind:** reference · **For:** everyone\n\n",
+    );
     o.push_str("Every row in the tree, with the unit it publishes in, the range over which it\n");
     o.push_str("is declared valid, and the reason for each bound. A guard whose reason is not\n");
     o.push_str("written down gets deleted by the next person who finds it awkward, so the\n");

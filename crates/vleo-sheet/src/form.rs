@@ -168,6 +168,21 @@ pub const FIELDS: &[Field] = &[
         insert: true,
     },
     Field {
+        field: "explain_simply",
+        table: "explain",
+        key: "simply",
+        shape: Shape::Prose,
+        group: "said simply",
+        ask: "say it simply: what does this row work out, and why does it matter — in plain \
+              words, with no symbol and no word a newcomer would have to look up",
+        why: "the first thing on the node's page. A reader who cannot yet read the relation \
+              reads this, and a writer who cannot write it has found a gap in their own \
+              understanding (docs/EXPLAINING.md, E2)",
+        blocks: false,
+        asked: true,
+        insert: true,
+    },
+    Field {
         field: "expression",
         table: "maths",
         key: "expression",
@@ -343,6 +358,32 @@ pub const FIELDS: &[Field] = &[
         asked: true,
         insert: true,
     },
+    Field {
+        field: "explain_breaks",
+        table: "explain",
+        key: "breaks",
+        shape: Shape::Prose,
+        group: "where it breaks",
+        ask: "where does the simple version stop being true",
+        why: "every simplification is wrong somewhere, and saying where is what makes it \
+              safe to use. Unwritten, the plain words get quoted as the physics (E4)",
+        blocks: false,
+        asked: true,
+        insert: true,
+    },
+    Field {
+        field: "explain_wrong",
+        table: "explain",
+        key: "wrong",
+        shape: Shape::Prose,
+        group: "where it breaks",
+        ask: "what do people commonly get wrong about this, and what is true instead",
+        why: "the gap most readers share. Named and corrected on the page, it is not \
+              rediscovered by each of them (E5). Leave it blank if there is none",
+        blocks: false,
+        asked: true,
+        insert: true,
+    },
 ];
 
 /// One field of the form, by name.
@@ -457,6 +498,9 @@ pub fn value(sh: &Sheet, field: &str) -> String {
         "declared_value" => sh.value.map(|v| format!("{v:?}")).unwrap_or_default(),
         "theory_why" => sh.theory.why.clone(),
         "theory_reading" => sh.theory.reading.clone(),
+        "explain_simply" => sh.explain.simply.clone(),
+        "explain_breaks" => sh.explain.breaks.clone(),
+        "explain_wrong" => sh.explain.wrong.clone(),
         _ => String::new(),
     }
 }
@@ -732,6 +776,20 @@ pub(crate) fn array_rows(sh: &Sheet, a: &Array) -> Vec<Vec<(&'static str, String
                 ]
             })
             .collect(),
+        "risk" => sh
+            .risks
+            .iter()
+            .map(|r| {
+                vec![
+                    ("id", r.id.clone()),
+                    ("title", r.title.clone()),
+                    ("level", r.level.clone()),
+                    ("owner", r.owner.clone()),
+                    ("since", r.since.clone()),
+                    ("why", r.why.clone()),
+                ]
+            })
+            .collect(),
         _ => Vec::new(),
     }
 }
@@ -919,7 +977,7 @@ fn assignments(text: &str, table: &str, key: &str) -> Vec<(usize, usize, String)
 /// The comment after a value, so replacing the value keeps it.
 ///
 /// 27 of the fields this form writes carry one, and they are not decoration:
-/// `# REQUIRED — an agent may never supply mathematics` sits on the relation of
+/// `# REQUIRED — an assistant may never supply mathematics` sits on the relation of
 /// the rows where that matters most. A save that dropped it would remove the
 /// instruction from the one place the next person reads.
 ///
@@ -1206,9 +1264,9 @@ pub fn git_identity(root: &std::path::Path) -> Result<String, String> {
     Ok(name)
 }
 
-/// Whether this attribution is an agent's, and so must never be written.
+/// Whether this attribution is an assistant's, and so must never be written.
 ///
-/// An agent may never supply mathematics. Stated as a sentence that is a hope;
+/// An assistant may never supply mathematics. Stated as a sentence that is a hope;
 /// here it is a fact about what can reach the file — and it has to hold at every
 /// face, or the browser becomes the way round a rule the terminal enforces.
 pub fn refuse_agent_attribution(root: &std::path::Path, who: &str) -> Result<(), String> {
@@ -1226,7 +1284,7 @@ pub fn refuse_agent_attribution(root: &std::path::Path, who: &str) -> Result<(),
             || lower.contains(&format!("{bad}/"))
         {
             return Err(format!(
-                "refused: '{who}' is an agent. An agent may never supply mathematics, and this \
+                "refused: '{who}' is an assistant's name. An assistant may never supply mathematics, and this \
                  field is the only thing that can tell whether one did. It takes the name of a \
                  person who has read the relation against its source and is prepared to own it. \
                  Nothing was written."
@@ -1391,7 +1449,7 @@ pub enum Saved {
 ///   2  `base` is the hash the editor started from — a stale one is refused
 ///      rather than overwritten, which is what makes two editors safe
 ///   3  an edit to the relation carries an attribution, and that attribution is
-///      not an agent's
+///      not an assistant's
 ///   4  the sheet is written atomically: a temporary file, then a rename, so a
 ///      reader never sees half a sheet
 ///   5  the row's artefacts are regenerated and the gate is run on it
@@ -1432,7 +1490,7 @@ pub fn save(root: &std::path::Path, id: &str, field: &str, value: &str, base: &s
     if base != current {
         return Saved::Stale { current };
     }
-    // An agent may never supply mathematics, at any face. The name is the
+    // An assistant may never supply mathematics, at any face. The name is the
     // checkout's own — see `git_identity` — so it is the same one the commit
     // will carry rather than whatever was typed into a box.
     if field == "expression" || field == "confirmed_by" {
@@ -1452,7 +1510,7 @@ pub fn save(root: &std::path::Path, id: &str, field: &str, value: &str, base: &s
     // AND THE NAME IS WRITTEN, NOT ONLY CHECKED. The identity was verified
     // above and then went nowhere, so a relation saved through the face came
     // out with `confirmed_by` still blank — a relation with nobody against it,
-    // indistinguishable from one an agent wrote, which is the exact thing that
+    // indistinguishable from one an assistant wrote, which is the exact thing that
     // field exists to tell apart.
     let after = if field == "expression" {
         let who = match git_identity(root) {
@@ -1716,6 +1774,16 @@ pub struct Array {
     pub blocks: Blocks,
     /// The table a first block goes after, when the sheet has none yet.
     pub after: &'static str,
+    /// The group whose rows alone carry this block, or empty for every row.
+    /// A risk is registered on a risk-register row and nowhere else.
+    pub only_under: &'static str,
+}
+
+impl Array {
+    /// Whether this block belongs on this row's form.
+    pub fn applies(&self, sh: &Sheet) -> bool {
+        self.only_under.is_empty() || sh.parent == self.only_under
+    }
 }
 
 /// EVERY REPEATED BLOCK THIS FORM WRITES.
@@ -1752,6 +1820,7 @@ pub const ARRAYS: &[Array] = &[
         ],
         blocks: Blocks::Free,
         after: "output",
+        only_under: "",
     },
     Array {
         name: "algorithm",
@@ -1792,13 +1861,14 @@ pub const ARRAYS: &[Array] = &[
         ],
         blocks: Blocks::EndOnly,
         after: "output",
+        only_under: "",
     },
     Array {
         name: "theory",
         path: "theory.step",
         label: "how the relation was arrived at",
         why: "the expression says what the relation is; these say how it was got to. A \
-              relation an agent invented carries a citation just as convincingly, and the \
+              relation an assistant invented carries a citation just as convincingly, and the \
               derivation is what a reviewer reads instead of taking the citation's word",
         columns: &[
             Column {
@@ -1818,6 +1888,7 @@ pub const ARRAYS: &[Array] = &[
         ],
         blocks: Blocks::Free,
         after: "theory",
+        only_under: "",
     },
     Array {
         name: "assumption",
@@ -1849,6 +1920,62 @@ pub const ARRAYS: &[Array] = &[
         // `insert_point` still prefers the derivation when there is one, so the
         // reading order of an authored sheet is kept where it exists.
         after: "maths",
+        only_under: "",
+    },
+    Array {
+        name: "risk",
+        path: "risk",
+        label: "the risks this row registers",
+        why: "a risk is registered once, here, and moved only by node versions — a risk is \
+              reduced because something was tested, and the version that tested it is the \
+              record of how. Which risk-register row holds a risk says what kind it is",
+        columns: &[
+            Column {
+                key: "id",
+                shape: Shape::Line,
+                ask: "its id: R- and a number, never reused",
+                required: true,
+                managed: false,
+            },
+            Column {
+                key: "title",
+                shape: Shape::Line,
+                ask: "what could go wrong, in a line",
+                required: true,
+                managed: false,
+            },
+            Column {
+                key: "level",
+                shape: Shape::Choice(crate::derisk::LEVELS),
+                ask: "how serious it is now, L1 (least) to L5",
+                required: true,
+                managed: false,
+            },
+            Column {
+                key: "owner",
+                shape: Shape::Line,
+                ask: "who owns it",
+                required: true,
+                managed: false,
+            },
+            Column {
+                key: "since",
+                shape: Shape::Line,
+                ask: "registered on (YYYY-MM-DD)",
+                required: true,
+                managed: false,
+            },
+            Column {
+                key: "why",
+                shape: Shape::Prose,
+                ask: "what it would cost if it happened",
+                required: true,
+                managed: false,
+            },
+        ],
+        blocks: Blocks::Free,
+        after: "maths",
+        only_under: crate::derisk::REGISTER,
     },
 ];
 

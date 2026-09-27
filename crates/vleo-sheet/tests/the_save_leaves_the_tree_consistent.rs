@@ -142,7 +142,7 @@ fn the_relation_is_attributed_to_the_checkout_not_to_a_typed_name() {
             // an agent's — as it is in the container this was written in, where
             // `git config user.name` is "Claude".
             assert!(
-                e.contains("agent") || e.contains("user.name"),
+                e.contains("assistant") || e.contains("user.name"),
                 "a refusal here must be about the identity: {e}"
             );
             assert_eq!(

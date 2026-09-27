@@ -108,3 +108,54 @@ fn results_are_kept_listed_and_removed_and_a_path_is_never_followed() {
     assert!(store::list(&dir).0.is_empty());
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn a_result_keeps_the_beliefs_it_rests_on_and_says_when_one_breaks() {
+    // The only rows with a recorded history read a reference-data bundle, and
+    // whether a bundle is on this machine is not what is being tested. So the
+    // record is written into a result the way `from_run` writes it — one
+    // `#! versions` line — and read back.
+    let (id, now, rel) = vleo_modules::tables::NODE_VERSIONS
+        .iter()
+        .copied()
+        .find(|(_, n, _)| *n >= 2)
+        .expect("no node with two recorded versions");
+    assert_eq!(vleo_modules::results::node_version(id), Some((now, rel)));
+    let (s, _, _) = a_result();
+    let with = |n: u32| {
+        csv(&s).replace(
+            "#! ran ",
+            &format!("#! versions {id}=v{n}@{rel} other_row=v1@0.1.0\n#! ran "),
+        )
+    };
+    let current = read(&with(now)).unwrap();
+    assert_eq!(
+        current.versions,
+        vec![
+            (id.to_string(), now, rel.to_string()),
+            ("other_row".into(), 1, "0.1.0".into())
+        ]
+    );
+    assert!(vleo_modules::results::moved_since(&current).is_empty());
+    assert_eq!(
+        read(&csv(&current)).unwrap(),
+        current,
+        "the versions did not survive a round trip"
+    );
+
+    // Saved when the row was one version behind: the belief has broken since,
+    // and the report says so in its first lines.
+    let old = read(&with(now - 1)).unwrap();
+    assert_eq!(
+        vleo_modules::results::moved_since(&old),
+        vec![(id.to_string(), now - 1, now)]
+    );
+    let page = html(&old);
+    assert!(
+        page.contains("since broken"),
+        "the report does not say a belief broke"
+    );
+    assert!(
+        page.find("Answer first").unwrap() < page.find("Every value the run returned").unwrap()
+    );
+}

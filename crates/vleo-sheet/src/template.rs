@@ -31,7 +31,7 @@
 //! meantime is never overwritten: a field the form changed that the repository
 //! also changed is a CONFLICT, named, and left for a person.
 //!
-//! AN AGENT MAY NEVER SUPPLY MATHEMATICS, at any face. The form asks whether an
+//! AN ASSISTANT MAY NEVER SUPPLY MATHEMATICS, at any face. The form asks whether an
 //! assistant helped, and how. Where it helped with the relation, every change
 //! to the relation, its steps and its derivation is refused and reported — a
 //! developer derives it, or it does not go in. Known-good values are never
@@ -109,6 +109,120 @@ pub struct NewNode {
 /// of the same kind, so a kind the tree does not hold yet cannot be asked for.
 pub const KINDS: &[&str] = &["computed", "declared", "required", "achieved", "kpi"];
 
+/// Why a node is changing: the de-risking record the form carries, one row of
+/// the narrative. See `crate::derisk`.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Derisk {
+    pub believed: String,
+    pub tested: String,
+    pub learned: String,
+    pub cost: String,
+    pub changed: String,
+    /// Risk moves, one per line or separated by `;`.
+    pub risks: String,
+    pub rests_on: String,
+    pub breaks_if: String,
+}
+
+/// The record's questions, in the order the form asks them: key, question,
+/// and why it is asked. One list, read by the page and by intake.
+pub const DERISK: &[(&str, &str, &str)] = &[
+    (
+        "believed",
+        "what did we believe",
+        "the belief the node rested on before this change — \
+      the thing that turned out not to hold, or not to hold well enough",
+    ),
+    (
+        "tested",
+        "what did we test",
+        "the analysis, comparison, measurement or review that tested \
+      it — with where it is written down",
+    ),
+    (
+        "learned",
+        "what do we now know",
+        "the result: what was wrong or incomplete in the previous \
+      version. This is the issue the change fixes",
+    ),
+    (
+        "cost",
+        "what did it cost",
+        "time, money or effort — so the value of de-risking can be \
+      weighed. Optional",
+    ),
+    (
+        "changed",
+        "what changes, and what it gains",
+        "what this version does differently from the \
+      one before, and the benefit — including any change to the plan",
+    ),
+    (
+        "risks",
+        "which risks does it open, move or close",
+        "one per line: `R-01 L5->L4`, \
+      `R-09 closed`, `R-12 opened`. The ids are those registered on the risk-register rows of \
+      the management layer. Optional",
+    ),
+    (
+        "rests_on",
+        "what does the node rest on now",
+        "the belief this version stands on — what is \
+      assumed to hold",
+    ),
+    (
+        "breaks_if",
+        "what would break that",
+        "the observation that would make this version wrong in \
+      turn, so the next change is watched for rather than stumbled on",
+    ),
+];
+
+impl Derisk {
+    pub fn get(&self, k: &str) -> &str {
+        match k {
+            "believed" => &self.believed,
+            "tested" => &self.tested,
+            "learned" => &self.learned,
+            "cost" => &self.cost,
+            "changed" => &self.changed,
+            "risks" => &self.risks,
+            "rests_on" => &self.rests_on,
+            "breaks_if" => &self.breaks_if,
+            _ => "",
+        }
+    }
+    /// The risk moves, as written.
+    pub fn moves(&self) -> Vec<String> {
+        self.risks
+            .split(['\n', ';'])
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+            .collect()
+    }
+    /// What the record is missing: everything on a change; only what the node
+    /// rests on and what would break it on a node's first version.
+    pub fn missing(&self, first: bool) -> Vec<&'static str> {
+        let need: &[&str] = if first {
+            &["rests_on", "breaks_if"]
+        } else {
+            &[
+                "believed",
+                "tested",
+                "learned",
+                "changed",
+                "rests_on",
+                "breaks_if",
+            ]
+        };
+        need.iter()
+            .copied()
+            .filter(|k| self.get(k).trim().is_empty())
+            .collect()
+    }
+}
+
 /// A filled form, read back.
 #[derive(Clone, Debug, Default)]
 pub struct Form {
@@ -127,6 +241,8 @@ pub struct Form {
     pub original: Content,
     pub filled: Content,
     pub known: Vec<Known>,
+    /// Why the node is changing.
+    pub derisk: Derisk,
 }
 
 /// The fields this form puts to a person for this sheet: asked, and either on
@@ -146,7 +262,7 @@ pub fn content(sh: &Sheet) -> Content {
         c.fields
             .insert(f.field.to_string(), form::value(sh, f.field));
     }
-    for a in ARRAYS {
+    for a in ARRAYS.iter().filter(|a| a.applies(sh)) {
         let rows = form::array_rows(sh, a)
             .into_iter()
             .map(|r| {
@@ -154,7 +270,12 @@ pub fn content(sh: &Sheet) -> Content {
                     .map(|(k, v)| (k.to_string(), v))
                     .collect::<BTreeMap<_, _>>()
             })
-            .collect();
+            .collect::<Vec<_>>();
+        // A block only some rows carry is written only where it has rows, and
+        // read back only where it is written — so absent and empty agree.
+        if !a.only_under.is_empty() && rows.is_empty() {
+            continue;
+        }
         c.arrays.insert(a.name.to_string(), rows);
     }
     c.view = view_of(&sh.view);
@@ -241,6 +362,10 @@ fn data_toml(node: &str, base: &str, c: &Content, new: bool) -> String {
     }
     o.push_str("\n[filled_by]\nname = \"\"\nteam = \"\"\ndate = \"\"\nai = \"none\"\n");
     content_toml(c, &mut o);
+    o.push_str("\n[derisk]\n");
+    for (k, _, _) in DERISK {
+        o.push_str(&format!("{k} = \"\"\n"));
+    }
     o.push_str("\n[notes]\ntext = \"\"\n");
     o
 }
@@ -380,7 +505,14 @@ fn schema(sh: Option<&Sheet>, tree: &Tree) -> String {
         ));
     }
     o.push_str("  ],\n  \"arrays\": [\n");
-    for (i, a) in ARRAYS.iter().enumerate() {
+    let arrays: Vec<&form::Array> = ARRAYS
+        .iter()
+        .filter(|a| match sh {
+            Some(sh) => a.applies(sh),
+            None => a.only_under.is_empty(),
+        })
+        .collect();
+    for (i, a) in arrays.iter().enumerate() {
         o.push_str(&format!(
             "    {{\"name\": {}, \"label\": {}, \"why\": {}, \"end_only\": {}, \"relation\": {}, \
              \"columns\": [",
@@ -403,7 +535,7 @@ fn schema(sh: Option<&Sheet>, tree: &Tree) -> String {
         }
         o.push_str(&format!(
             "]}}{}\n",
-            if i + 1 == ARRAYS.len() { "" } else { "," }
+            if i + 1 == arrays.len() { "" } else { "," }
         ));
     }
     o.push_str("  ],\n");
@@ -417,6 +549,43 @@ fn schema(sh: Option<&Sheet>, tree: &Tree) -> String {
         js_list(form::VIEW_KINDS),
         js_list(PROVENANCES),
         js_list(AI_HELP)
+    ));
+    // WHY IT IS CHANGING: the record's questions, and which kind of decision
+    // each field and block is, so the page can say as it is filled which
+    // decisions the form moves — and so whether it needs the record.
+    o.push_str("  \"derisk\": [");
+    for (i, (k, ask, why)) in DERISK.iter().enumerate() {
+        o.push_str(&format!(
+            "{}\n    [{}, {}, {}]",
+            if i > 0 { "," } else { "" },
+            js(k),
+            js(ask),
+            js(why)
+        ));
+    }
+    o.push_str("\n  ],\n  \"about\": {");
+    let named: Vec<&str> = FIELDS
+        .iter()
+        .map(|f| f.field)
+        .chain(ARRAYS.iter().map(|a| a.name))
+        .chain(["view"])
+        .collect();
+    let mut first = true;
+    for n in named {
+        if let Some(a) = crate::derisk::about_of(n) {
+            o.push_str(&format!(
+                "{}{}: {}",
+                if first { "" } else { ", " },
+                js(n),
+                js(a)
+            ));
+            first = false;
+        }
+    }
+    o.push_str("},\n");
+    o.push_str(&format!(
+        "  \"version\": {},\n",
+        sh.map(crate::derisk::current).unwrap_or(0)
     ));
     o.push_str("  \"fixtures\": [");
     for (i, fx) in sh
@@ -520,7 +689,8 @@ fn page(title: &str, head: &str, schema: &str, original: &str, data: &str) -> St
          above, or edit it here directly — by hand, or with an assistant: it is TOML, one key \
          per question, and [[input]], [[algorithm]], [[theory]], [[assumption]] and \
          [[known_value]] repeat. Say in [filled_by] ai = \"none\", \"wording\" or \"relation\" \
-         how an assistant helped. On a new node's form, [new] says where it goes: its id, the \
+         how an assistant helped, and in [derisk] why the node is changing: what we believed, \
+         what we tested, what we now know, what changes, and what it rests on now. On a new node's form, [new] says where it goes: its id, the \
          group it hangs under, and its kind. -->\n<script type=\"application/toml\" id=\"{DATA_ID}\">\n{}</script>\n",
         data
     ));
@@ -561,6 +731,10 @@ fn content_of(v: &toml::Value) -> Content {
         }
     }
     for a in ARRAYS {
+        // A block only some rows carry is absent, not empty, on every other.
+        if !a.only_under.is_empty() && v.get(a.name).is_none() {
+            continue;
+        }
         let rows = v
             .get(a.name)
             .and_then(|x| x.as_array())
@@ -654,7 +828,20 @@ pub fn read(html: &str) -> Result<Form, String> {
                 .collect()
         })
         .unwrap_or_default();
+    let dr = d.get("derisk");
+    let dget = |k: &str| text_of(dr.and_then(|x| x.get(k)));
+    let derisk = Derisk {
+        believed: dget("believed"),
+        tested: dget("tested"),
+        learned: dget("learned"),
+        cost: dget("cost"),
+        changed: dget("changed"),
+        risks: dget("risks"),
+        rests_on: dget("rests_on"),
+        breaks_if: dget("breaks_if"),
+    };
     Ok(Form {
+        derisk,
         base: text_of(g.get("base")),
         name: text_of(by.and_then(|b| b.get("name"))),
         team: text_of(by.and_then(|b| b.get("team"))),
@@ -794,6 +981,11 @@ pub struct Plan {
     /// What a new node is still missing, or took from the row it was built on
     /// rather than from the form. Reported, for the developer to settle.
     pub open: Vec<String>,
+    /// The version this form would record, when it changes what the node
+    /// computes and says why.
+    pub version: Option<u32>,
+    /// The kinds of decision the form's changes move.
+    pub about: Vec<&'static str>,
 }
 
 impl Plan {
@@ -939,6 +1131,31 @@ fn plan_new(tree: &Tree, f: Form, n: NewNode) -> Plan {
             });
         }
     }
+    // A NEW NODE SAYS WHAT IT RESTS ON. Its first version is a belief nobody
+    // has tested yet, and the one thing the record needs from the start is what
+    // would break it.
+    let missing = f.derisk.missing(true);
+    p.items.push(Item {
+        what: "de-risking · version 1".into(),
+        from: String::new(),
+        to: short(&f.derisk.rests_on),
+        verdict: if missing.is_empty() {
+            Verdict::Apply
+        } else {
+            Verdict::Refused(format!(
+                "a new node says what it rests on and what would break it — missing: {}",
+                missing.join(", ")
+            ))
+        },
+    });
+    if let Some(bad) = risk_problems(tree, &f.derisk) {
+        p.items.push(Item {
+            what: "de-risking · risks".into(),
+            from: String::new(),
+            to: f.derisk.risks.clone(),
+            verdict: Verdict::Refused(bad),
+        });
+    }
     let ins = f.filled.arrays.get("input").cloned().unwrap_or_default();
     p.interfaces = interfaces(tree, &ins);
     let bad: Vec<&Interface> = p.interfaces.iter().filter(|i| !i.ok()).collect();
@@ -1004,7 +1221,7 @@ pub fn plan_onto(root: &Path, f: &Form, id: &str, like: &str) -> Result<Plan, St
     }
     g.filled.view = g.filled.view.clone().or(now.view.clone());
     g.original = now;
-    let mut p = plan_form(root, g)?;
+    let mut p = plan_form_as(root, g, true)?;
     p.open.extend(kept);
     p.edges = true;
     Ok(p)
@@ -1038,10 +1255,195 @@ pub fn plan(root: &Path, html: &str) -> Result<Plan, String> {
 
 /// The same, for a form already read.
 pub fn plan_form(root: &Path, f: Form) -> Result<Plan, String> {
+    plan_form_as(root, f, false)
+}
+
+/// Which kind of decision a plan item moves, from what it names: a field, a
+/// block and its place, or the view.
+fn item_about(what: &str) -> Option<&'static str> {
+    let head = what.split([' ', '·']).next().unwrap_or("");
+    crate::derisk::about_of(head)
+}
+
+/// What is wrong with the risk moves a record names, if anything.
+fn risk_problems(tree: &Tree, d: &Derisk) -> Option<String> {
+    let known: std::collections::BTreeSet<&str> = tree
+        .sheets
+        .values()
+        .flat_map(|s| s.risks.iter().map(|r| r.id.as_str()))
+        .collect();
+    let mut bad = Vec::new();
+    for m in d.moves() {
+        match crate::derisk::parse_move(&m) {
+            Err(e) => bad.push(e),
+            Ok((id, _)) if !known.contains(id.as_str()) => bad.push(format!(
+                "{id} is not registered — a risk is registered first, on a risk-register row's form"
+            )),
+            Ok(_) => {}
+        }
+    }
+    (!bad.is_empty()).then(|| bad.join("; "))
+}
+
+/// Today, as YYYY-MM-DD, from the system clock. No calendar library: the
+/// days-to-civil conversion is eleven lines and has been for decades.
+pub fn today() -> String {
+    let secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+    let z = secs.div_euclid(86_400) + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = yoe + era * 400 + i64::from(m <= 2);
+    format!("{y:04}-{m:02}-{d:02}")
+}
+
+/// A form, planned; `first` when it is a new node's first version.
+///
+/// EVERY CHANGE TO WHAT A NODE COMPUTES SAYS WHICH BELIEF BROKE. A form whose
+/// changes move a decision — an input, the output, the model, the maths, the
+/// algorithm, how it is drawn — and does not carry a complete de-risking record
+/// has those changes WITHHELD, each named, and only its wording goes in. With a
+/// complete record, the changes go in and a `[[version]]` is appended to the
+/// sheet, numbered, dated, and `next` until a release stamps it.
+fn plan_form_as(root: &Path, f: Form, first: bool) -> Result<Plan, String> {
     let tree = crate::load::load_all(root).map_err(|e| format!("the tree does not load: {e}"))?;
     if let Some(n) = f.new.clone() {
         return Ok(plan_new(&tree, f, n));
     }
+    let p = plan_edits(&tree, f.clone())?;
+    let mut about: Vec<&'static str> = p
+        .items
+        .iter()
+        .filter(|i| i.verdict == Verdict::Apply)
+        .filter_map(|i| item_about(&i.what))
+        .collect();
+    // A NEW NODE IS ONE DECISION. Everything on its form differs from the row
+    // it was built on, but none of it replaces a belief: the node itself is
+    // what is new, and its first version says so.
+    if first {
+        about = vec!["node"];
+    }
+    about.sort_by_key(|a| crate::derisk::ABOUT.iter().position(|x| x == a));
+    about.dedup();
+    if about.is_empty() {
+        return Ok(p);
+    }
+    let missing = f.derisk.missing(first);
+    let risk_bad = risk_problems(&tree, &f.derisk);
+    if missing.is_empty() && risk_bad.is_none() {
+        let mut p = p;
+        let sh = &tree.sheets[&f.node];
+        let n = crate::derisk::current(sh) + 1;
+        let applied = |field: &str| {
+            p.items
+                .iter()
+                .any(|i| i.what == field && i.verdict == Verdict::Apply)
+        };
+        let pick = |field: &str, now: &str| {
+            if applied(field) {
+                f.filled.fields.get(field).cloned().unwrap_or_default()
+            } else {
+                now.to_string()
+            }
+        };
+        let v = crate::model::Version {
+            n,
+            release: crate::derisk::NEXT.into(),
+            date: if crate::derisk::date_ok(f.date.trim()) {
+                f.date.trim().to_string()
+            } else {
+                today()
+            },
+            by: if f.team.trim().is_empty() {
+                f.name.trim().to_string()
+            } else {
+                format!("{} ({})", f.name.trim(), f.team.trim())
+            },
+            about: about.iter().map(|a| a.to_string()).collect(),
+            believed: f.derisk.believed.trim().to_string(),
+            tested: f.derisk.tested.trim().to_string(),
+            learned: f.derisk.learned.trim().to_string(),
+            cost: f.derisk.cost.trim().to_string(),
+            changed: if f.derisk.changed.trim().is_empty() && first {
+                "first version".into()
+            } else {
+                f.derisk.changed.trim().to_string()
+            },
+            risks: f.derisk.moves(),
+            rests_on: f.derisk.rests_on.trim().to_string(),
+            breaks_if: f.derisk.breaks_if.trim().to_string(),
+            relation: pick("expression", &sh.expression),
+            source: pick("source", &sh.source),
+        };
+        let base = p.text.clone().unwrap_or_else(|| {
+            std::fs::read_to_string(sh.dir.join("node.toml")).unwrap_or_default()
+        });
+        p.text = Some(format!("{}{}", base, crate::derisk::version_toml(&v)));
+        p.items.push(Item {
+            what: format!("de-risking · version {n}"),
+            from: String::new(),
+            to: format!("{} — {}", about.join(", "), short(&v.changed)),
+            verdict: Verdict::Apply,
+        });
+        p.version = Some(n);
+        p.about = about;
+        return Ok(p);
+    }
+    // Withheld: plan again with every decision put back as it was, so only the
+    // wording is applied, and name each change that is waiting for its reason.
+    let mut g = f.clone();
+    for (k, v) in f.original.fields.iter() {
+        if crate::derisk::about_of(k).is_some() {
+            g.filled.fields.insert(k.clone(), v.clone());
+        }
+    }
+    for a in ARRAYS {
+        if crate::derisk::about_of(a.name).is_some() {
+            let o = f.original.arrays.get(a.name).cloned().unwrap_or_default();
+            g.filled.arrays.insert(a.name.to_string(), o);
+        }
+    }
+    g.filled.view = f.original.view.clone();
+    let mut q = plan_edits(&tree, g)?;
+    let why = match (&risk_bad, missing.is_empty()) {
+        (Some(r), true) => r.clone(),
+        (r, _) => format!(
+            "this form changes {} and does not say which belief broke — the de-risking record \
+             is missing: {}{}",
+            about.join(", "),
+            missing.join(", "),
+            r.as_ref().map(|r| format!("; and {r}")).unwrap_or_default()
+        ),
+    };
+    for it in p.items.into_iter().filter(|i| i.verdict == Verdict::Apply) {
+        if item_about(&it.what).is_some() {
+            q.items.push(Item {
+                verdict: Verdict::Refused("withheld until the form says why it changes".into()),
+                ..it
+            });
+        }
+    }
+    q.items.push(Item {
+        what: "de-risking".into(),
+        from: String::new(),
+        to: String::new(),
+        verdict: Verdict::Refused(why),
+    });
+    q.interfaces = p.interfaces;
+    q.about = about;
+    q.form = f;
+    Ok(q)
+}
+
+/// The form's edits to an existing node, without the de-risking record.
+fn plan_edits(tree: &Tree, f: Form) -> Result<Plan, String> {
     let sh = tree.sheets.get(&f.node).ok_or_else(|| {
         format!(
             "there is no node '{}' in this tree. A form never adds a node: a new row is a \
@@ -1081,7 +1483,7 @@ pub fn plan_form(root: &Path, f: Form) -> Result<Plan, String> {
             ))
         } else if assisted && RELATION_FIELDS.contains(&fld.field) {
             Verdict::Refused(
-                "the form says an assistant helped with the relation, and an agent may never \
+                "the form says an assistant helped with the relation, and an assistant may never \
                  supply mathematics. A developer derives it, or it does not go in"
                     .into(),
             )
@@ -1114,7 +1516,7 @@ pub fn plan_form(root: &Path, f: Form) -> Result<Plan, String> {
         f.filled.arrays.get("input").cloned().unwrap_or_default(),
     );
     let inputs_bad = o_in != n_in && {
-        p.interfaces = interfaces(&tree, &n_in);
+        p.interfaces = interfaces(tree, &n_in);
         p.interfaces.iter().any(|i| !i.ok())
     };
 
@@ -1380,7 +1782,7 @@ pub fn apply(root: &Path, p: &Plan) -> Saved {
     }
     // THE RELATION CARRIES THE NAME OF WHOEVER APPLIES IT. The form's filler is
     // recorded in the commit; the sheet names the developer who confirmed the
-    // relation by applying it — and refuses if that identity is an agent's.
+    // relation by applying it — and refuses if that identity is an assistant's.
     let after = if p.relation {
         let who = match form::git_identity(root) {
             Ok(w) => w,
@@ -1430,22 +1832,31 @@ pub fn fixture_request(f: &Form) -> String {
 // the page
 
 const INTRO_HTML: &str = r#"<section class="nf-intro">
-<p><b>This is a form for one node of the design, and it is the whole of it</b> — it needs no
-connection and nothing installed. Change what should change, say who you are, and save a filled
-copy. Send the saved file to the developer team: they check it, apply it to the node, and the next
-release of the tool carries your change, where you can run it with your own inputs.</p>
+<p class="nf-answer"><b>Answer first.</b> This file asks for one node of the design to change — or
+for a new one — and it is the whole of the request: it needs no connection and nothing installed.
+Fill in what you know, say why it is changing, save a copy and send it to the developers. They
+check it, apply it, and the next release of the tool carries it, where you run it on your own
+inputs.</p>
 <ol>
-<li>Fill in what you know. Each question says <i>why</i> it is asked; a question you cannot
-answer, leave as it is.</li>
-<li>Say who filled it, and whether an assistant helped. If one helped with the <b>relation</b>
-itself — the equation, its steps or its derivation — say so: those are then derived by a developer
-rather than taken from the form.</li>
-<li>Known-good values — an answer you know at given inputs, and where it comes from — go under
-<i>known values</i>. They are recorded by a person, with their source, and never guessed.</li>
-<li>Press <b>save a filled copy</b> and send that file. You can reopen it and carry on.</li>
+<li><b>What is asked.</b> Every question the node answers, in the order it is read: what it is
+called and asks, <i>said simply</i>, the relation and where it comes from, the answer and its
+bounds, the derivation, and <i>where the simple version breaks</i>. Each question says why it is
+asked. Leave what you cannot answer as it is.</li>
+<li><b>Why it is changing.</b> A node changes because a belief broke. If your changes move what
+the node computes — an input, the output, the model, the maths, the algorithm, how it is drawn —
+the section <i>Why it is changing</i> must say what was believed, what was tested, what we now
+know and what changes. Without it the developers apply only your wording. A worked example is in
+that section.</li>
+<li><b>What is not yours to change here.</b> Where the node sits in the tree, its kind and its
+owner are the developers'. If an assistant helped with the <b>relation</b> itself — the equation,
+its steps or its derivation — say so: those are then derived by a developer, never taken from the
+form. Known values go under <i>known values</i>, with their source; they are recorded by a person.</li>
 </ol>
-<p class="nf-muted">To fill it with an assistant, give it this file and ask it to edit only the
-block marked <code>vleo-node-form</code> near the end: plain TOML, one line per answer.</p>
+<p class="nf-muted">Tags: <span class="nf-tag req">needed</span> blocks the node until answered ·
+<span class="nf-tag rel">the relation</span> never taken from an assistant ·
+<span class="nf-tag dr">decision</span> moving it needs <i>why it is changing</i>. To fill it with
+an assistant, give it this file and ask it to edit only the block marked
+<code>vleo-node-form</code> near the end: plain TOML, one line per answer.</p>
 </section>
 "#;
 
@@ -1487,6 +1898,15 @@ button:disabled { opacity: .45; cursor: default; }
   border: 1px solid var(--rule); color: var(--ink3); font-weight: 400; }
 .nf-tag.req { color: var(--warn); border-color: var(--warn); }
 .nf-tag.rel { color: var(--accent); border-color: var(--accent); }
+.nf-tag.dr { color: var(--ok); border-color: var(--ok); }
+.nf-answer { font-size: 15px; }
+.nf-dr { border: 1px solid var(--ok); border-radius: 6px; padding: 4px 14px 10px; margin: 18px 0; }
+.nf-dr h2 { border-bottom-color: var(--ok); }
+.nf-dr-state { font: 13px var(--mono); padding: 6px 10px; border-radius: 4px; background: var(--accent-pale); }
+.nf-dr-state.bad { background: var(--warn-pale); color: var(--warn); }
+.nf-ex { font-size: 13px; color: var(--ink2); }
+.nf-ex dt { font-weight: 600; margin-top: 4px; }
+.nf-ex dd { margin: 0 0 0 12px; }
 input, textarea, select { width: 100%; font: 14px var(--mono); color: var(--ink); background: var(--paper);
   border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px; }
 textarea { min-height: 70px; resize: vertical; }
@@ -1622,6 +2042,7 @@ const PAGE_JS: &str = r#"'use strict';
     return;
   }
   DATA.fields = DATA.fields || {}; DATA.filled_by = DATA.filled_by || {}; DATA.notes = DATA.notes || {};
+  DATA.derisk = DATA.derisk || {};
   ORIG.fields = ORIG.fields || {};
   const S = v => (v == null ? '' : String(v));
 
@@ -1643,6 +2064,8 @@ const PAGE_JS: &str = r#"'use strict';
       o += '\n[[known_value]]\n';
       for (const k of ['label', 'inputs', 'expected', 'tolerance', 'provenance', 'source']) o += k + ' = ' + tq(r[k]) + '\n';
     }
+    o += '\n[derisk]\n';
+    for (const [k] of SCHEMA.derisk) o += k + ' = ' + tq(DATA.derisk[k]) + '\n';
     o += '\n[notes]\ntext = ' + tq(DATA.notes.text) + '\n';
     return o;
   }
@@ -1661,12 +2084,41 @@ const PAGE_JS: &str = r#"'use strict';
     }
     if (ORIG.view && DATA.view && JSON.stringify(ORIG.view) !== JSON.stringify(DATA.view)) out.push('how it is drawn');
     if ((DATA.known_value || []).length) out.push((DATA.known_value || []).length + ' known value(s)');
+    if (SCHEMA.derisk.some(([k]) => S(DATA.derisk[k]).trim())) out.push('why it is changing');
     if (S(DATA.notes.text).trim()) out.push('a note for the developers');
     return out;
+  }
+  // WHICH DECISIONS THE FORM MOVES, as the developers' intake will see them:
+  // the same field-to-kind table, sent from the tool.
+  function decisions() {
+    const kinds = new Set();
+    if (DATA.new) kinds.add('node');
+    for (const f of SCHEMA.fields) {
+      if (SCHEMA.about[f.field] && S(ORIG.fields[f.field]) !== S(DATA.fields[f.field])) kinds.add(SCHEMA.about[f.field]);
+    }
+    for (const a of SCHEMA.arrays) {
+      if (SCHEMA.about[a.name] && JSON.stringify(ORIG[a.name] || []) !== JSON.stringify(DATA[a.name] || [])) kinds.add(SCHEMA.about[a.name]);
+    }
+    if (ORIG.view && DATA.view && JSON.stringify(ORIG.view) !== JSON.stringify(DATA.view)) kinds.add('visualisation');
+    return [...kinds];
+  }
+  function recordMissing() {
+    const need = DATA.new ? ['rests_on', 'breaks_if'] : ['believed', 'tested', 'learned', 'changed', 'rests_on', 'breaks_if'];
+    return need.filter(k => !S(DATA.derisk[k]).trim());
   }
   function paintCount() {
     const c = changes();
     $('#nf-count').textContent = c.length ? c.length + ' change(s): ' + c.join(', ') : 'nothing changed yet';
+    const st = $('#nf-dr-state');
+    if (!st) return;
+    const kinds = decisions(), miss = recordMissing();
+    st.className = 'nf-dr-state' + (kinds.length && miss.length ? ' bad' : '');
+    st.textContent = !kinds.length
+      ? 'Your changes so far are wording only: no record is needed for them.'
+      : 'Your changes move: ' + kinds.join(', ') + '. ' + (miss.length
+        ? 'Still to answer below: ' + miss.map(k => (SCHEMA.derisk.find(d => d[0] === k) || [k, k])[1]).join('; ') +
+          ' — without them the developers apply only your wording.'
+        : 'The record is complete: this becomes version ' + (SCHEMA.version + 1) + ' of the node.');
   }
 
   // ---- controls --------------------------------------------------------
@@ -1698,6 +2150,8 @@ const PAGE_JS: &str = r#"'use strict';
     box.innerHTML = '<label>' + esc(f.ask.charAt(0).toUpperCase() + f.ask.slice(1)) +
       (f.required ? '<span class="nf-tag req">needed</span>' : '') +
       (f.relation ? '<span class="nf-tag rel">the relation</span>' : '') +
+      (SCHEMA.about[f.field] ? '<span class="nf-tag dr" title="changing it needs why it is changing">' +
+        esc(SCHEMA.about[f.field]) + '</span>' : '') +
       ' <span class="nf-tag">' + esc(f.field) + '</span></label>' +
       '<div class="nf-why">' + esc(f.why) + '</div>';
     const paint = () => {
@@ -1900,6 +2354,37 @@ const PAGE_JS: &str = r#"'use strict';
     }
     v.appendChild(g2); main.appendChild(v);
   }
+  // ---- why it is changing: the de-risking record ----------------------
+  const dr = document.createElement('section'); dr.className = 'nf-dr';
+  dr.innerHTML = '<h2>Why it is changing</h2><p class="nf-why">' + (SCHEMA.new
+    ? 'A new node is a belief nobody has tested yet. Say what it rests on and what would break it — the ' +
+      'rest can wait for the first time it changes.'
+    : 'A node changes because a belief broke: somebody tested it and learned otherwise. The answers here ' +
+      'become version ' + (SCHEMA.version + 1) + ' of this node, and one row of the programme\'s ' +
+      'de-risking narrative. Wording alone needs none of it.') + '</p><p class="nf-dr-state" id="nf-dr-state"></p>';
+  for (const [k, ask, why] of SCHEMA.derisk) {
+    if (SCHEMA.new && ['believed', 'tested', 'learned', 'cost'].indexOf(k) >= 0) continue;
+    const q = document.createElement('div'); q.className = 'nf-q'; q.dataset.derisk = k;
+    q.innerHTML = '<label>' + esc(ask.charAt(0).toUpperCase() + ask.slice(1)) + '</label><div class="nf-why">' + esc(why) + '</div>';
+    q.appendChild(control(k === 'cost' ? 'line' : 'prose', [], S(DATA.derisk[k]), v => { DATA.derisk[k] = v; }, 'why ' + k));
+    dr.appendChild(q);
+  }
+  dr.insertAdjacentHTML('beforeend', '<details class="nf-ex"><summary>A worked example ' +
+    '<span class="nf-tag">illustrative — not this node</span></summary><dl>' +
+    '<dt>What we believed</dt><dd>That the drag coefficient could be bounded from modelling alone, without ' +
+    'reconciliation against flight decay data.</dd>' +
+    '<dt>What we tested</dt><dd>Free-molecular gas-surface interaction runs against two density models, ' +
+    'cross-checked against published on-orbit decay in the 350–380 km band.</dd>' +
+    '<dt>What we now know</dt><dd>The 1-sigma band narrowed from 28% to 19%, but the residual is dominated by ' +
+    'energy accommodation, which only flight data will settle. Ground work alone will not reach the 15% target.</dd>' +
+    '<dt>What it cost</dt><dd>$310k</dd>' +
+    '<dt>What changes, and what it gains</dt><dd>Propellant margin held at 30% to CDR rather than released; the ' +
+    'air-breathing propulsion decision moved to Q2-27.</dd>' +
+    '<dt>Risks</dt><dd>R-09 closed · R-01 L5-&gt;L4</dd>' +
+    '<dt>Rests on now</dt><dd>The 19% band, until flight decay data exists.</dd>' +
+    '<dt>Would break if</dt><dd>The first flight decay residual falls outside the 19% band.</dd></dl></details>');
+  main.appendChild(dr);
+
   main.appendChild(known());
 
   const notes = document.createElement('section');

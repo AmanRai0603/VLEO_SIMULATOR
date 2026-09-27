@@ -157,6 +157,56 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
             });
         }
     }
+    if let Some(ex) = t.get("explain").and_then(|x| x.as_table()) {
+        sh.explain.simply = reflow(&s(ex.get("simply")));
+        sh.explain.breaks = reflow(&s(ex.get("breaks")));
+        sh.explain.wrong = reflow(&s(ex.get("wrong")));
+    }
+    let strings = |v: Option<&toml::Value>| -> Vec<String> {
+        v.and_then(|x| x.as_array())
+            .map(|xs| {
+                xs.iter()
+                    .filter_map(|x| x.as_str())
+                    .map(str::to_string)
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    for v in t
+        .get("version")
+        .and_then(|v| v.as_array())
+        .unwrap_or(&vec![])
+    {
+        let Some(v) = v.as_table() else { continue };
+        sh.versions.push(Version {
+            n: u(v.get("n")),
+            release: s(v.get("release")),
+            date: s(v.get("date")),
+            by: s(v.get("by")),
+            about: strings(v.get("about")),
+            believed: reflow(&s(v.get("believed"))),
+            tested: reflow(&s(v.get("tested"))),
+            learned: reflow(&s(v.get("learned"))),
+            cost: s(v.get("cost")),
+            changed: reflow(&s(v.get("changed"))),
+            risks: strings(v.get("risks")),
+            rests_on: reflow(&s(v.get("rests_on"))),
+            breaks_if: reflow(&s(v.get("breaks_if"))),
+            relation: s(v.get("relation")),
+            source: s(v.get("source")),
+        });
+    }
+    for r in t.get("risk").and_then(|r| r.as_array()).unwrap_or(&vec![]) {
+        let Some(r) = r.as_table() else { continue };
+        sh.risks.push(Risk {
+            id: s(r.get("id")),
+            title: s(r.get("title")),
+            level: s(r.get("level")),
+            owner: s(r.get("owner")),
+            since: s(r.get("since")),
+            why: reflow(&s(r.get("why"))),
+        });
+    }
     for a in t
         .get("assumption")
         .and_then(|a| a.as_array())

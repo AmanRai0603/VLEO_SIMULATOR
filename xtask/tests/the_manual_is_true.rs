@@ -624,7 +624,7 @@ fn the_checks_refuse_what_they_exist_to_refuse() {
 
 #[test]
 fn a_malformed_manual_is_refused_by_name() {
-    let ok = "[[layer]]\nid=\"l\"\ntitle=\"L\"\n[[layer.section]]\nid=\"s\"\ntitle=\"S\"\nwho=\"user\"\n";
+    let ok = "[[layer]]\nid=\"l\"\ntitle=\"L\"\n[[layer.section]]\nid=\"s\"\ntitle=\"S\"\nwho=\"user\"\nkind=\"how-to\"\nanswer=\"A.\"\n";
     manual::parse(ok).expect("the minimal manual loads");
     for (bad, says) in [
         // A command whose check is not stated.
@@ -639,7 +639,11 @@ fn a_malformed_manual_is_refused_by_name() {
         // A "cannot" with nowhere to go instead.
         (format!("{ok}[[cannot]]\nplace=\"browser\"\nwhat=\"x\"\nwhy=\"y\"\nwho=\"user\"\n"), "instead"),
         // Two sections one link cannot tell apart.
-        (format!("{ok}[[layer.section]]\nid=\"s\"\ntitle=\"T\"\nwho=\"user\"\n"), "twice"),
+        (format!("{ok}[[layer.section]]\nid=\"s\"\ntitle=\"T\"\nwho=\"user\"\nkind=\"reference\"\nanswer=\"A.\"\n"), "twice"),
+        // A section that does not open with its answer (docs/EXPLAINING.md E1).
+        (ok.replace("answer=\"A.\"\n", ""), "answer"),
+        // A section that does not say what kind of reading it is (E8).
+        (ok.replace("kind=\"how-to\"", "kind=\"story\""), "kind"),
         // A reader nobody is.
         (ok.replace("who=\"user\"", "who=\"manager\""), "who"),
     ] {

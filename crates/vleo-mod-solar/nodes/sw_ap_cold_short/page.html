@@ -4,21 +4,37 @@
   <h2>Single-day cold Ap to design to</h2>
   <p class="ident"><code>sw_ap_cold_short</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
+<section class="answer-first">
+<p class="af-k">Answer first</p>
+<p class="af-q">How quiet can a single day of Ap be inside the mission window?</p>
+<p class="af-a">Ap_cold_short — computed on the inputs you run, never stored: run it beside this page.</p>
+<ul class="af-points">
+<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li><b>Holds</b> from 0 to 400 — outside it the row refuses, by name.</li>
+<li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></li>
+</ul>
+</section>
 <div class="tabs" role="tablist">
-  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab sel" data-tab="0">said simply, then the real thing</button>
   <button role="tab" class="tab" data-tab="1">theory</button>
-  <button role="tab" class="tab" data-tab="2">interface</button>
-  <button role="tab" class="tab" data-tab="3">algorithm</button>
-  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
-  <button role="tab" class="tab" data-tab="5">generated code</button>
-  <button role="tab" class="tab" data-tab="6">evidence</button>
-  <button role="tab" class="tab" data-tab="7">flags</button>
-  <button role="tab" class="tab" data-tab="8">credibility</button>
-  <button role="tab" class="tab" data-tab="9">design space</button>
+  <button role="tab" class="tab" data-tab="2">de-risking</button>
+  <button role="tab" class="tab" data-tab="3">interface</button>
+  <button role="tab" class="tab" data-tab="4">algorithm</button>
+  <button role="tab" class="tab" data-tab="5">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="6">generated code</button>
+  <button role="tab" class="tab" data-tab="7">evidence</button>
+  <button role="tab" class="tab" data-tab="8">flags</button>
+  <button role="tab" class="tab" data-tab="9">credibility</button>
+  <button role="tab" class="tab" data-tab="10">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
+<div class="station">
+<h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
+<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">How quiet can a single day of Ap be inside the mission window?</p>
-<p class="maths"><code>Ap_cold_short = Ap_cold_long - dAp_day_low</code></p>
+<p class="maths"><code>Ap_cold_short = Ap_cold_long - dAp_day_low</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></p>
 <p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
 <p class="note">The quietest of the five scenarios, and the one that comes nearest a declared
 bound anywhere in this subsystem: at the declared window it lands at Ap 6.9,
@@ -30,19 +46,27 @@ a standard deviation has no sides, and its daily tails are forty-two per cent
 apart because percentiles of a truncated sample are. Three facts that disagree
 about shape meet in one subtraction here.
 </p>
-<h4>Assumptions</h4>
+<h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<h5>Assumptions, and where each stops holding</h5>
 <dl class="asm">
 <dt>The result stays above zero, and nothing in the arithmetic ensures it</dt><dd>fails when the sustained quiet level is small. With this subsystem's level-conditioned drop the crossing is at a sustained Ap near 15.6, and the declared window's 17.50 clears it by under two units of level. The guard refuses rather than publishing a negative index, which is right, but it means this row is the one most likely in the subsystem to fire on an ordinary input rather than on a mistake</dd>
 <dt>The two spreads stack rather than combine</dt><dd>fails when a reader takes the result as a 95 per cent day. Stacking a 10th-percentile rotation level with a 5th-percentile day inside it is nearer a 1-in-100 day than a 1-in-20 one, assuming independence — and a quiet rotation is made of quiet days, so they are not independent. The study does this and the port reproduces it; the number is conservative and its label is wrong</dd>
 <dt>The quiet day is not the disturbed day mirrored</dt><dd>fails when somebody builds it by negating sw_ap_design_short's daily term. Two things make that wrong. The tails differ by a factor of two to three at every level; and the two rows read the table at DIFFERENT LEVELS, Ap 17.50 here against 26.70 there, so the terms are 12.56 and 63.85 — a factor of five. Mirroring would put this scenario at Ap -46, which is not a sky</dd>
 <dt>The daily drop measured before the window applies inside it</dt><dd>fails when the window spans a different part of the cycle. Ap's within-rotation variability peaks in the DECLINING phase, when coronal holes are largest and high-speed streams recur, rather than at maximum. A drop measured on one phase is the wrong depth for another</dd>
 </dl>
+<p class="muted">Outside <code>0 … 400</code> the row refuses rather than answers: Ap floors at zero — a perfectly quiet day is Ap 0 and there is nothing below it. This is the row in the subsystem closest to its own floor, seven units clear at the declared window, and the only one where the guard is likely to fire on an ordinary input rather than on a mistake; 400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all. On the QUIETEST of the five scenarios a value anywhere near it means a sign is wrong somewhere in the chain above.</p>
+<h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
+<p class="d-l predict">Before you run it: what do you expect the answer to be, roughly, and which input do you expect to move it most? Write it down — then run, and compare. A guess that was wrong is the most useful thing on this page.</p>
+<p class="d-lr muted">Run it from the panel beside this page, on your own inputs, or open <i>the relation, moving</i> to watch the answer cross its range.</p>
+</div>
 </section>
 <section class="panel" data-panel="1">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <p class="why">The two spreads are of different things and they stack rather than combine. sw_ap_mean_band_spread is how wrong the pattern is about the LEVEL a rotation's Ap sits at — a forecast error. sw_ap_daily_band_drop is how far a day falls below the rotation it belongs to — the field's own variability, measured on days that already happened. A day is quiet because its rotation is quiet AND because it is a quiet day within that rotation, so the design level for a quiet day is the sustained quiet level with the daily drop taken off.</p>
 <p class="why">Two things about this row are specific to Ap rather than inherited from its F10.7 counterpart.</p>
 <p class="why">The first is how much of the answer the daily term is. From 17.50 down to 4.93 is a drop of twelve and a half units on a level of seventeen and a half — seventy-two per cent of the level. On F10.7 the same construction moves 69.63 to 65.24, six per cent. For the quiet Ap case the within-rotation term is not a correction to the rotation level, it is most of the answer.</p>
 <p class="why">The second is the floor. Ap cannot be negative. A symmetric band already ignores that, and stacking a daily drop on top of it makes the crossing close: with this subsystem's measured spread and its level-conditioned drop, a sustained quiet level below about 15.6 puts this row at or under zero. The declared window's 17.50 clears it by under two units of LEVEL, which is under five units of ANSWER. That is the narrowest margin to a declared bound anywhere in this subsystem, and a deep-minimum window would fail the guard here — correctly, because what the arithmetic would otherwise publish is not a geomagnetic index.</p>
+<p class="muted">Each line below is <span class="claim claim-derived" title="worked here from sourced relations">derived</span> from the one before, ending at the relation — which is <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span>.</p>
 <div class="theory-walk" data-steps="3">
 <ol class="derive">
 <li><span class="dt">Take the sustained cold Ap level: the centre less 1.28 standard deviations of the rotation-forecast residual.</span><code class="dm">Ap_cold_long = sw_ap_cold_long</code></li>
@@ -57,6 +81,11 @@ about shape meet in one subtraction here.
 <p class="maths concl">which is the relation this node states: <code>Ap_cold_short = Ap_cold_long - dAp_day_low</code></p>
 </section>
 <section class="panel" data-panel="2">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
+<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr><td>in</td><td><code>sustained</code></td><td><a class="xref" data-goto="sw_ap_cold_long">sw_ap_cold_long</a></td><td>Ratio</td><td>-</td></tr>
@@ -65,7 +94,8 @@ about shape meet in one subtraction here.
 </tbody></table>
 <p class="consumers"><b>2</b> nodes read this: <a class="xref" data-goto="l3_solar_interface">l3_solar_interface</a>, <a class="xref" data-goto="sw_kp_scenarios">sw_kp_scenarios</a></p>
 </section>
-<section class="panel" data-panel="3">
+<section class="panel" data-panel="4">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <ol class="algo">
 <li><span class="step">subtract the within-rotation daily Ap drop from the sustained cold level</span> <span class="binds">→ <code>single_day: Ratio</code></span></li>
 </ol>
@@ -91,12 +121,14 @@ about shape meet in one subtraction here.
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="5">
+<p class="dx dx-tutorial" title="learn by doing: try it and watch">tutorial</p>
 <div class="relation-host" data-node="sw_ap_cold_short" data-lo="0" data-hi="400" data-symbol="Ap_cold_short">
 <p class="muted">asking the engine…</p>
 </div>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="6">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -161,7 +193,8 @@ pub fn evaluate(sustained: Ratio, daily: Ratio) -&gt; Result&lt;Ratio, Fault&gt;
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="7">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
 <tr data-fixture="17.4955 minus 10.5889 — the pair this row was handed before sw_ap_daily_band_drop was conditioned on level. The conditioned drop at Ap 17.50 is 12.56, so the published answer is 4.93 rather than 6.91"><td>17.4955 minus 10.5889 — the pair this row was handed before sw_ap_daily_band_drop was conditioned on level. The conditioned drop at Ap 17.50 is 12.56, so the published answer is 4.93 rather than 6.91</td><td class="num">6.9065794711</td><td class="num">0.0000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
 <tr data-fixture="round numbers, checkable without a calculator — 50 - 10"><td>round numbers, checkable without a calculator — 50 - 10</td><td class="num">40</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
@@ -169,7 +202,8 @@ pub fn evaluate(sustained: Ratio, daily: Ratio) -&gt; Result&lt;Ratio, Fault&gt;
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="8">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 0 — Ap floors at zero — a perfectly quiet day is Ap 0 and there is nothing below it. This is the row in the subsystem closest to its own floor, seven units clear at the declared window, and the only one where the guard is likely to fire on an ordinary input rather than on a mistake</li>
@@ -179,17 +213,21 @@ pub fn evaluate(sustained: Ratio, daily: Ratio) -&gt; Result&lt;Ratio, Fault&gt;
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="8">
+<section class="panel" data-panel="9">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_ap_cold_short"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="9">
+<section class="panel" data-panel="10">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p>Valid over <code>0 &hellip; 400</code> -.</p>
 <ul class="guards"><li>lower — Ap floors at zero — a perfectly quiet day is Ap 0 and there is nothing below it. This is the row in the subsystem closest to its own floor, seven units clear at the declared window, and the only one where the guard is likely to fire on an ordinary input rather than on a mistake</li><li>upper — 400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all. On the QUIETEST of the five scenarios a value anywhere near it means a sign is wrong somewhere in the chain above</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
+<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
+<li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

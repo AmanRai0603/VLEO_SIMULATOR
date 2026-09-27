@@ -90,6 +90,7 @@ jobs:
         run: |
           cargo run -p xtask -- docs
           cargo run -p xtask -- variables
+          cargo run -p xtask -- derisk
           if ! git diff --quiet; then
             echo "::error::the committed artefacts differ from what the sheets generate."
             echo "Run 'cargo run -p xtask -- docs' and commit the result."
@@ -104,8 +105,10 @@ jobs:
         run: |
           cargo run -p xtask -- docs
           cargo run -p xtask -- variables
+          cargo run -p xtask -- derisk
           cargo run -p xtask -- docs
           cargo run -p xtask -- variables
+          cargo run -p xtask -- derisk
           git diff --quiet || { echo "::error::a generator is not deterministic"; exit 1; }
 
       # CODEOWNERS IS GENERATED AND NOTHING REGENERATED IT. Every other generated

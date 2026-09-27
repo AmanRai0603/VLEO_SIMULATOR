@@ -1,5 +1,9 @@
 # Contributing
 
+> **Answer first.** Changes to the design come in as node forms and go out as reviewed pull requests, one form per pull request, with the number of reviewers set by what changed. The table below is the only statement of that rule.
+>
+> **Kind:** reference + how-to · **For:** developers
+
 ## The shape of the work
 
 Contributions to the design come from the team that uses the tool, as **node
@@ -71,6 +75,11 @@ policies within a month, and they had already begun to differ.
   their reasons attached; one added by hand has no reason and will be deleted.
 - **Apply a form `xtask intake` has not passed.** A conflict goes back to
   whoever filled it; it is never resolved by overwriting the change made since.
+- **Apply a change to what a node computes without its reason.** Intake
+  withholds it; a hand edit that skips intake still owes the node a
+  `[[version]]` saying which belief broke (`docs/DERISKING.md`).
+- **Edit a recorded version.** A version is a record; a correction is the next
+  version.
 - **Let an assistant supply a relation.** It may write a hole's body; the
   relation comes from the form and carries a person's name.
 - **Skip, disable or quarantine a test to get green.**

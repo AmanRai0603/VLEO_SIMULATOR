@@ -1,5 +1,9 @@
 # areas/faces.md
 
+> **Answer first.** Every face crosses the boundary in SI and converts only for display; none writes the repository.
+>
+> **Kind:** reference + explanation · **For:** developers
+
 The command line, the daemon, the WebAssembly binding, the C ABI and the Python
 wheel — the doors onto one kernel.
 

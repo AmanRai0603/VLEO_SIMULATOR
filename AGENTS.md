@@ -1,5 +1,9 @@
 # AGENTS.md
 
+> **Answer first.** The rules that do not bend, and the developer's loop: every change to the design arrives as a node form, is checked, applied with its de-risking record, implemented, gated and released. An assistant may help with the code; it never supplies a relation.
+>
+> **Kind:** reference · **For:** developers and any assistant they run
+
 The root instruction file for the people who maintain this repository — and
 for any assistant a developer runs inside it, which works to exactly the same
 rules. `areas/*.md` narrow it per area, and the nearer file wins on anything
@@ -43,7 +47,10 @@ loop:
     2  APPLY     cargo run -p xtask -- intake <form.html> --apply
                  into its layer: an existing node's sheet, or a new node built
                  in its place in the tree. Regenerated and gated as one edit,
-                 or put back entirely.
+                 or put back entirely. A change that moves a decision appends
+                 its [[version]] — what we believed, what we tested, what we
+                 now know, what changed; without that record, only the form's
+                 wording goes in (docs/DERISKING.md).
     3  PUBLISH   cargo run -p xtask -- publish <node>
                  a filled seeded row becomes published and its code is
                  generated, with numbered HOLE blocks.
@@ -54,9 +61,12 @@ loop:
                  known values the form supplied (intake prints them; it never
                  writes them).
     6  GATE      cargo run -p xtask -- gate && cargo test
-    7  RELEASE   commit naming whoever filled the form, review, merge. The
-                 team gets it in the next release, and their saved case carries
-                 over on its own.
+    7  RELEASE   commit naming whoever filled the form, review, merge; then
+                 cargo run -p xtask -- derisk      (the narrative, regenerated)
+                 cargo run -p xtask -- release <version>
+                 stamps every version still `next` with the release that ships
+                 it. The team gets it in that release, and their saved case
+                 carries over on its own.
 
 **An assistant may help at step 4, and anywhere a developer uses one for
 ordinary engineering** — the generators, the daemon, the faces, the tests. It
@@ -128,6 +138,22 @@ nobody builds the Sun, and a solar requirement is the worst sky the design can
 sustain, closing when the achieved sky stays under it. Both senses are correct
 and they are opposite, which is the whole reason the field exists.
 
+## Two standards every change is held to
+
+**Every change says which belief broke** — `docs/DERISKING.md`. A node changes
+because something tested one of its beliefs and it did not hold; the change
+records what we believed, what we tested, what we now know, what it cost, what
+changed and which risks it moved, and every version says what it rests on and
+what would break it. Risks are registered once, on the risk-register rows of the
+management layer, and moved only by versions. The gate refuses a malformed
+record (`versions`, V17, V18); the gap pass holds a row that has none.
+
+**Everything that teaches, teaches the same way** — `docs/EXPLAINING.md`. Answer
+first; then said simply; then the real thing with its source; then where the
+simple version breaks. Every claim says whether it is sourced, derived, declared
+or illustrative, and every block what kind of reading it is. Node pages, forms,
+results, the manual, figures and these documents are all held to it by check.
+
 ## The commands
 
     cargo run -p xtask -- form <node>|--new    a node's form, to send out
@@ -149,6 +175,10 @@ and they are opposite, which is the whole reason the field exists.
                                             reach no KPI closure
     cargo run -p xtask -- gap               what the sheets promised and
                                             nothing covers
+    cargo run -p xtask -- derisk            the de-risking narrative, regenerated
+    cargo run -p xtask -- release <version> [--check]
+                                            stamp every `next` version; set the
+                                            workspace version
     cargo run -p vleo-cli --bin vleo -- run <node> [--save <file.csv>]
     cargo run -p vleo-cli --bin vleo -- result <file>
 

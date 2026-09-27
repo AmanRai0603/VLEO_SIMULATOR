@@ -1,5 +1,9 @@
 # areas/generators.md
 
+> **Answer first.** The schema, the generators, the node form and the gate: one defect here is in every row at once, so every change here needs two reviewers.
+>
+> **Kind:** reference + explanation · **For:** developers
+
 The schema, the nine generators, the gate and the golden corpus.
 
 Applies to `crates/vleo-sheet/**`, `xtask/**`, `tools/**`.

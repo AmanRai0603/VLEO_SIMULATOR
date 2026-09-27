@@ -1,5 +1,9 @@
 # areas/release.md
 
+> **Answer first.** The release pipeline builds, gates and packages; one person approves; and it never changes branch protection or signs without a certificate.
+>
+> **Kind:** reference + explanation · **For:** developers
+
 Packaging, the installer, the wheel, the release workflow and the daemon
 packaging.
 

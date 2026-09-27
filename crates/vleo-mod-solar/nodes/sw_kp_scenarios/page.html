@@ -4,21 +4,37 @@
   <h2>Kp in both slots, for all five scenarios</h2>
   <p class="ident"><code>sw_kp_scenarios</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
+<section class="answer-first">
+<p class="af-k">Answer first</p>
+<p class="af-q">What Kp does each of the five driver scenarios carry, in the mean slot and in the peak slot?</p>
+<p class="af-a">Kp_peak_hotday — computed on the inputs you run, never stored: run it beside this page.</p>
+<ul class="af-points">
+<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li><b>Holds</b> from 0 to 9 — outside it the row refuses, by name.</li>
+<li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · iaga_kp_ap</span></li>
+</ul>
+</section>
 <div class="tabs" role="tablist">
-  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab sel" data-tab="0">said simply, then the real thing</button>
   <button role="tab" class="tab" data-tab="1">theory</button>
-  <button role="tab" class="tab" data-tab="2">interface</button>
-  <button role="tab" class="tab" data-tab="3">algorithm</button>
-  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
-  <button role="tab" class="tab" data-tab="5">generated code</button>
-  <button role="tab" class="tab" data-tab="6">evidence</button>
-  <button role="tab" class="tab" data-tab="7">flags</button>
-  <button role="tab" class="tab" data-tab="8">credibility</button>
-  <button role="tab" class="tab" data-tab="9">design space</button>
+  <button role="tab" class="tab" data-tab="2">de-risking</button>
+  <button role="tab" class="tab" data-tab="3">interface</button>
+  <button role="tab" class="tab" data-tab="4">algorithm</button>
+  <button role="tab" class="tab" data-tab="5">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="6">generated code</button>
+  <button role="tab" class="tab" data-tab="7">evidence</button>
+  <button role="tab" class="tab" data-tab="8">flags</button>
+  <button role="tab" class="tab" data-tab="9">credibility</button>
+  <button role="tab" class="tab" data-tab="10">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
+<div class="station">
+<h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
+<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">What Kp does each of the five driver scenarios carry, in the mean slot and in the peak slot?</p>
-<p class="maths"><code>Kp_slot(s) = kp_from_ap(Ap_s) + dKp_slot(Ap_s), for each of the five scenarios and each of the two slots</code></p>
+<p class="maths"><code>Kp_slot(s) = kp_from_ap(Ap_s) + dKp_slot(Ap_s), for each of the five scenarios and each of the two slots</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · iaga_kp_ap</span></p>
 <p class="src">Source <b>iaga_kp_ap</b> — Bartels, J. — The standardized index Ks and the planetary index Kp, with the ap equivalent-amplitude table <span class="where">IATME Bulletin 12b, IUGG Publication Office, 1949; the 28-point table as published by IAGA and distributed by GFZ Potsdam</span></p>
 <p class="note">Ten numbers, and they are the last two columns of the study's driver product.
 Every relation behind them already existed on its own row in this subsystem; what
@@ -31,19 +47,27 @@ conversion run on a daily mean lands ABOVE the mean of the eight slots and well
 BELOW the peak. A design sized on the conversion alone is sized on a sky quieter
 than the record's, and on exactly the days a drag design is sized by.
 </p>
-<h4>Assumptions</h4>
+<h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<h5>Assumptions, and where each stops holding</h5>
 <dl class="asm">
 <dt>The offsets are medians over nine bins of Ap and nothing else</dt><dd>fails when the day is unusual in a way Ap does not capture. The correction knows the daily mean and the bin it falls in; it does not know whether the day was one long storm or eight quiet slots and one severe one, and those have the same Ap and very different peaks. The median is the middle of that spread, so half of the days in any bin exceed the peak this row publishes</dd>
 <dt>The tables are clamped at both ends rather than extrapolated</dt><dd>fails when a scenario's Ap falls outside them. The scale runs to ap 400 and the bias bins to a centre of 255, so a hot day above that reads the last bin's offset. This tree's hot Ap day is 90.55, inside both; the study's driver sets never exceeded 42. A scenario multiplier applied to a disturbed day would reach the clamp silently</dd>
 <dt>Both slot corrections are measured on the record and belong to a bundle version</dt><dd>fails when the bundle moves. They are medians over bundles/solar-weather@2026.09.14 and must be re-measured when it does. They live in vleo-core, which is the second and third pieces of measured data in a kernel whose own comment used to say SOLAR_CYCLE_SHAPE was the only one — that claim is now wrong and the kernel says so</dd>
 <dt>This row composes and does not measure, so its errors are its constituents' errors</dt><dd>fails when a reader looks here for the physics. The scale is sw_kp_from_ap's, both offsets are sw_kp_mean_bias's and sw_kp_slot_bias's, and the five Ap values are the design rows'. What this row owns is the composition and the choice of five points, and its parity grid is the only place all three are checked together</dd>
 </dl>
+<p class="muted">Outside <code>0 … 9</code> the row refuses rather than answers: Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky; Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400. This member is the worst slot of the worst day, so it is the one of the ten most likely to reach it.</p>
+<h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
+<p class="d-l predict">Before you run it: what do you expect the answer to be, roughly, and which input do you expect to move it most? Write it down — then run, and compare. A guess that was wrong is the most useful thing on this page.</p>
+<p class="d-lr muted">Run it from the panel beside this page, on your own inputs, or open <i>the relation, moving</i> to watch the answer cross its range.</p>
+</div>
 </section>
 <section class="panel" data-panel="1">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <p class="why">Three relations, composed, at five points.</p>
 <p class="why">The published IAGA scale turns a daily Ap into a Kp. It is a lookup and not a formula, and it is concave — ap grows roughly geometrically with Kp — which is the whole reason the slot corrections exist. Run on a DAILY MEAN Ap the scale returns a value that sits above the mean of the day's eight three-hourly Kp and far below its peak, by Jensen's inequality, and both offsets are measurable on the record rather than arguable from the shape.</p>
 <p class="why">sw_kp_mean_bias and sw_kp_slot_bias measure them, in nine bins of Ap, as the median of mean_8(Kp) - table(Ap) and of max_8(Kp) - table(Ap). Both tables now live in vleo-core beside the scale, because more than one caller reads each: those two rows at one Ap, and this row at five.</p>
 <p class="why">What this row adds is nothing but the composition and the five points. That is deliberately thin — a row that did more would be doing physics its own constituents already own — and the value of it is that the ten numbers exist as variables the crossing can relay, rather than as a relation nothing downstream can evaluate.</p>
+<p class="muted">Each line below is <span class="claim claim-derived" title="worked here from sourced relations">derived</span> from the one before, ending at the relation — which is <span class="claim claim-sourced" title="stated in the cited work">sourced · iaga_kp_ap</span>.</p>
 <div class="theory-walk" data-steps="4">
 <ol class="derive">
 <li><span class="dt">Take each scenario's daily Ap. Five of them, from the five rows that compute them.</span><code class="dm">Ap_s for s in {nominal, hotmean, coldmean, hotday, coldday}</code></li>
@@ -59,6 +83,11 @@ than the record's, and on exactly the days a drag design is sized by.
 <p class="maths concl">which is the relation this node states: <code>Kp_slot(s) = kp_from_ap(Ap_s) + dKp_slot(Ap_s), for each of the five scenarios and each of the two slots</code></p>
 </section>
 <section class="panel" data-panel="2">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
+<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr><td>in</td><td><code>ap_nominal</code></td><td><a class="xref" data-goto="sw_ap_central_expectation">sw_ap_central_expectation</a></td><td>Ratio</td><td>-</td></tr>
@@ -80,7 +109,8 @@ than the record's, and on exactly the days a drag design is sized by.
 <p class="muted">This node answers with a set: <b>10</b> variables in all. The first is the answer the node is named for; the rest are read by name.</p>
 <p class="consumers"><b>1</b> node read this: <a class="xref" data-goto="l3_solar_interface">l3_solar_interface</a></p>
 </section>
-<section class="panel" data-panel="3">
+<section class="panel" data-panel="4">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <ol class="algo">
 <li><span class="step">convert each scenario's Ap to Kp on the published scale and add the measured slot offset, for both slots</span> <span class="binds">→ <code>set: Answer</code></span></li>
 </ol>
@@ -109,12 +139,14 @@ than the record's, and on exactly the days a drag design is sized by.
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="5">
+<p class="dx dx-tutorial" title="learn by doing: try it and watch">tutorial</p>
 <div class="relation-host" data-node="sw_kp_scenarios" data-lo="0" data-hi="9" data-symbol="Kp_peak_hotday">
 <p class="muted">asking the engine…</p>
 </div>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="6">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -319,7 +351,8 @@ pub fn evaluate(ap_nominal: Ratio, ap_hotmean: Ratio, ap_coldmean: Ratio, ap_hot
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="7">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
 <tr data-fixture="the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94"><td>the primary: the worst slot of the worst day. ap 90 is a bin centre, so the peak offset 1.7469 is exact and only the scale is interpolated, between Kp 6 at ap 80 and Kp 19/3 at ap 94</td><td class="num">7.9850088183</td><td class="num">0.000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
 <tr data-fixture="ap 12.5, a bin centre. The scale interpolates between Kp 8/3 at ap 12 and Kp 3 at ap 15; the mean offset -0.0976 is exact"><td>ap 12.5, a bin centre. The scale interpolates between Kp 8/3 at ap 12 and Kp 3 at ap 15; the mean offset -0.0976 is exact</td><td class="num">2.6245833333</td><td class="num">0.000000001</td><td>independent-derivation</td><td>iaga_kp_ap</td></tr>
@@ -334,7 +367,8 @@ pub fn evaluate(ap_nominal: Ratio, ap_hotmean: Ratio, ap_coldmean: Ratio, ap_hot
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="8">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 0 — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky</li>
@@ -344,17 +378,21 @@ pub fn evaluate(ap_nominal: Ratio, ap_hotmean: Ratio, ap_coldmean: Ratio, ap_hot
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="8">
+<section class="panel" data-panel="9">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_kp_scenarios"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="9">
+<section class="panel" data-panel="10">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p>Valid over <code>0 &hellip; 9</code> -.</p>
 <ul class="guards"><li>lower — Kp is defined on 0 to 9 and the scale's first point is Kp 0 at ap 0; a negative index is a sign error, not a quiet sky</li><li>upper — Kp is defined on 0 to 9 and the scale's last point is Kp 9 at ap 400. This member is the worst slot of the worst day, so it is the one of the ten most likely to reach it</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
+<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
+<li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

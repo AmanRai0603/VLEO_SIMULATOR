@@ -1,5 +1,9 @@
 # Runbook
 
+> **Answer first.** A developer's first day, then one node form taken from arrival to release — check, apply, publish, implement, evidence, gate, review — and what to do when the gate refuses.
+>
+> **Kind:** how-to · **For:** developers
+
 Written from a node that was actually built, not from a specification. Every
 step below was performed.
 

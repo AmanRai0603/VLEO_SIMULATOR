@@ -4,37 +4,62 @@
   <h2>Expected Ap over the mission window</h2>
   <p class="ident"><code>sw_ap_central_expectation</code> · <span class="kind kind-declared">declared</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
+<section class="answer-first">
+<p class="af-k">Answer first</p>
+<p class="af-q">What daily planetary Ap should the mission window be expected to sit at?</p>
+<p class="af-a"><b>22.095389</b> <span class="claim claim-declared" title="a number a person chose, and put their name against">declared · A. Rai / 2026-09-16</span></p>
+<ul class="af-points">
+<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li><b>Holds</b> from 1 to 40 — outside it the row refuses, by name.</li>
+<li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></li>
+</ul>
+</section>
 <div class="tabs" role="tablist">
-  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab sel" data-tab="0">said simply, then the real thing</button>
   <button role="tab" class="tab" data-tab="1">theory</button>
-  <button role="tab" class="tab" data-tab="2">interface</button>
-  <button role="tab" class="tab" data-tab="3">algorithm</button>
-  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
-  <button role="tab" class="tab" data-tab="5">generated code</button>
-  <button role="tab" class="tab" data-tab="6">evidence</button>
-  <button role="tab" class="tab" data-tab="7">flags</button>
-  <button role="tab" class="tab" data-tab="8">credibility</button>
-  <button role="tab" class="tab" data-tab="9">design space</button>
+  <button role="tab" class="tab" data-tab="2">de-risking</button>
+  <button role="tab" class="tab" data-tab="3">interface</button>
+  <button role="tab" class="tab" data-tab="4">algorithm</button>
+  <button role="tab" class="tab" data-tab="5">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="6">generated code</button>
+  <button role="tab" class="tab" data-tab="7">evidence</button>
+  <button role="tab" class="tab" data-tab="8">flags</button>
+  <button role="tab" class="tab" data-tab="9">credibility</button>
+  <button role="tab" class="tab" data-tab="10">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
+<div class="station">
+<h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
+<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">What daily planetary Ap should the mission window be expected to sit at?</p>
-<p class="maths"><code>Ap_central = the last rotation forecast, held forward = 22.0954</code></p>
+<p class="maths"><code>Ap_central = the last rotation forecast, held forward = 22.0954</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></p>
 <p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
+<p class="declared">Declared: <b>22.095389</b> <span class="claim claim-declared" title="a number a person chose, and put their name against">declared · A. Rai / 2026-09-16</span></p>
 <p class="note">Every other Ap row in this subsystem answers an EXTREME — what recurs once
 per mission, what G level to survive, how often a threshold is crossed. None of
 them says what the window sits at on an ordinary day, and a band needs a centre
 before it can have edges.
 </p>
-<h4>Assumptions</h4>
+<h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<h5>Assumptions, and where each stops holding</h5>
 <dl class="asm">
 <dt>The level the sun was last at is the level it will be at</dt><dd>fails when the window is long or far out. This carries no cycle trend at all: the same number is published for a window opening next month and one opening in 2032, and over a 365-day window the sun demonstrably moves</dd>
 <dt>A rotation-mean level stands in for a daily level</dt><dd>fails when a design reads it as a day. It is the mean of 27 days; half the days in the window are above it by construction, which is what sw_ap_daily_band_spread exists to say</dd>
 <dt>The phase past the cycle table is an extrapolation</dt><dd>fails when it is read as measured. The last rotations sit past cycle 25's tabulated end and their phase wraps on the mean length of three cycles, one of which is incomplete</dd>
 </dl>
+<p class="muted">Outside <code>1 … 40</code> the row refuses rather than answers: below 1 the level is beneath anything the record holds over a rotation: the quietest of 381 rotations in bundles/solar-weather@2026.09.14 has a mean Ap of 1.48. The bound WAS 0, carrying a reason about DAILY Ap — a single quiet day really is Ap 0 — which is the wrong quantity for this row. A rotation mean of 0 needs 27 consecutive Ap-0 days and the record has never held two; above 40 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun. This row is a rotation-scale level, and the largest rotation mean of Ap in the 381 rotations of bundles/solar-weather@2026.09.14 is 36.96; the bound WAS 80, which is more than twice a level the sun has never reached over a rotation.</p>
+<h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
+<p class="d-l predict">Before you run it: what do you expect the answer to be, roughly, and which input do you expect to move it most? Write it down — then run, and compare. A guess that was wrong is the most useful thing on this page.</p>
+<p class="d-lr muted">Run it from the panel beside this page, on your own inputs, or open <i>the relation, moving</i> to watch the answer cross its range.</p>
+</div>
 </section>
 <section class="panel" data-panel="1">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <p class="why">The window this tool designs for opens after the record ends, so there is no observation of it and no forecast reaching it. What the study does, and what is done here, is to hold the LAST rotation forecast forward: the pattern's estimate of the level the sun is at when the record stops, carried across the window unchanged.</p>
 <p class="why">That is a weak statement and it is meant to be. It says the mission will sit where the sun was last seen sitting, and its whole uncertainty is sw_ap_mean_band_spread. It does not decline with the cycle, it does not rise into the next maximum, and a window opening five years out gets the same centre as one opening next month.</p>
+<p class="muted">Each line below is <span class="claim claim-derived" title="worked here from sourced relations">derived</span> from the one before, ending at the relation — which is <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span>.</p>
 <div class="theory-walk" data-steps="2">
 <ol class="derive">
 <li><span class="dt">Cut the record into 27-day rotations and predict each from the ones before it, by the method sw_ap_mean_band_spread describes.</span><code class="dm">pred(b) from rotations 1..b-1</code></li>
@@ -46,6 +71,11 @@ before it can have edges.
 <p class="maths concl">which is the relation this node states: <code>Ap_central = the last rotation forecast, held forward = 22.0954</code></p>
 </section>
 <section class="panel" data-panel="2">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
+<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr class="muted"><td colspan="5">Inputs and outputs are declared. Units are not — a unit is a decision.</td></tr>
@@ -53,7 +83,8 @@ before it can have edges.
 </tbody></table>
 <p class="consumers"><b>4</b> nodes read this: <a class="xref" data-goto="l3_solar_interface">l3_solar_interface</a>, <a class="xref" data-goto="sw_ap_cold_long">sw_ap_cold_long</a>, <a class="xref" data-goto="sw_ap_design_long">sw_ap_design_long</a>, <a class="xref" data-goto="sw_kp_scenarios">sw_kp_scenarios</a></p>
 </section>
-<section class="panel" data-panel="3">
+<section class="panel" data-panel="4">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="empty">No steps yet. Each step becomes one hole in the generated code.</p>
 <p>This is a declared value: <b>22.095389</b> -, confirmed by <b>A. Rai / 2026-09-16</b>.</p>
 <h4>Pseudocode</h4>
@@ -75,12 +106,14 @@ before it can have edges.
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="5">
+<p class="dx dx-tutorial" title="learn by doing: try it and watch">tutorial</p>
 <div class="relation-host" data-node="sw_ap_central_expectation" data-lo="1" data-hi="40" data-symbol="Ap_central">
 <p class="muted">asking the engine…</p>
 </div>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="6">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -137,10 +170,12 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="7">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="empty">No known-good numbers yet. A number from our own code does not count.</p>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="8">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 1 — below 1 the level is beneath anything the record holds over a rotation: the quietest of 381 rotations in bundles/solar-weather@2026.09.14 has a mean Ap of 1.48. The bound WAS 0, carrying a reason about DAILY Ap — a single quiet day really is Ap 0 — which is the wrong quantity for this row. A rotation mean of 0 needs 27 consecutive Ap-0 days and the record has never held two</li>
@@ -149,14 +184,20 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="8">
+<section class="panel" data-panel="9">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_ap_central_expectation"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="9">
+<section class="panel" data-panel="10">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p>Valid over <code>1 &hellip; 40</code> -.</p>
 <ul class="guards"><li>lower — below 1 the level is beneath anything the record holds over a rotation: the quietest of 381 rotations in bundles/solar-weather@2026.09.14 has a mean Ap of 1.48. The bound WAS 0, carrying a reason about DAILY Ap — a single quiet day really is Ap 0 — which is the wrong quantity for this row. A rotation mean of 0 needs 27 consecutive Ap-0 days and the record has never held two</li><li>upper — above 40 the value exceeds anything the record supports for this quantity, so it is an arithmetic error rather than an active sun. This row is a rotation-scale level, and the largest rotation mean of Ap in the 381 rotations of bundles/solar-weather@2026.09.14 is 36.96; the bound WAS 80, which is more than twice a level the sun has never reached over a rotation</li></ul>
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
+<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

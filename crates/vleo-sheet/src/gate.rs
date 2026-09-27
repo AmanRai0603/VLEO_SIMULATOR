@@ -105,6 +105,19 @@ impl Check {
     }
 }
 
+/// The record of why the node is what it is — every version complete, in
+/// order, with a reason. A version is a record, so a malformed one is refused
+/// rather than noted: a de-risking narrative with holes in it reads as though
+/// nothing was risked.
+fn versions_check(sh: &Sheet) -> Check {
+    let bad = crate::derisk::version_problems(sh);
+    if bad.is_empty() {
+        Check::pass("versions")
+    } else {
+        Check::fail("versions", bad.join("; "))
+    }
+}
+
 /// The per-node checks.
 pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     let mut out = Vec::new();
@@ -139,6 +152,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         } else {
             Check::fail("parent", format!("'{}' is not a group", sh.parent))
         });
+        out.push(versions_check(sh));
         let gaps = emit::gap_pass(sh, &holes);
         out.push(if gaps.is_empty() {
             Check::pass("gap-pass")
@@ -147,6 +161,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         });
         return out;
     }
+    out.push(versions_check(sh));
 
     // 1 — the sheet validates; no required field is blank.
     let mut missing = Vec::new();
@@ -652,6 +667,26 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
 /// visible, which is why they belong here and not in a per-node gate.
 pub fn validate_tree(tree: &Tree) -> Vec<Check> {
     let mut out = Vec::new();
+
+    // V17 — the risk register is well formed: every risk registered once, on
+    //       a row of the register, with a level, an owner and what it would
+    //       cost.
+    // V18 — every risk a version moves is a registered one. A risk that
+    //       exists only in a version's record is a risk nobody owns.
+    let reg = crate::derisk::register_problems(tree);
+    let (moves, rest): (Vec<String>, Vec<String>) = reg
+        .into_iter()
+        .partition(|m| m.contains("no risk-register row registers"));
+    out.push(if rest.is_empty() {
+        Check::pass("V17 the risk register is well formed")
+    } else {
+        Check::fail("V17 the risk register is well formed", rest.join("; "))
+    });
+    out.push(if moves.is_empty() {
+        Check::pass("V18 every risk moved is registered")
+    } else {
+        Check::fail("V18 every risk moved is registered", moves.join("; "))
+    });
 
     // V1 — every edge endpoint names a row that exists.
     let mut dangling = Vec::new();

@@ -1134,6 +1134,24 @@ pub fn gap_pass(sh: &Sheet, holes: &BTreeMap<u32, String>) -> Vec<String> {
         );
         return g;
     }
+    // The explanation standard and the de-risking record, docs/EXPLAINING.md
+    // and docs/DERISKING.md. Both are open gaps rather than failures: a row
+    // that computes correctly and cannot yet be explained plainly, or has not
+    // said what it rests on, is unfinished rather than broken.
+    if sh.explain.simply.trim().is_empty() || sh.explain.breaks.trim().is_empty() {
+        g.push(
+            "not said simply, or not where the simple version breaks — a reader who cannot \
+             follow the relation has nothing to hold on to (E2)"
+                .into(),
+        );
+    }
+    if sh.versions.is_empty() {
+        g.push(
+            "no belief recorded — what does this row rest on, and what would break it? Its \
+             next change will need to say which belief broke (D1)"
+                .into(),
+        );
+    }
     if sh.question.trim().is_empty() {
         g.push(
             "no question stated — an equation with no question gets reused for the wrong thing"
@@ -1151,7 +1169,7 @@ pub fn gap_pass(sh: &Sheet, holes: &BTreeMap<u32, String>) -> Vec<String> {
     }
     if !sh.expression.trim().is_empty() && sh.relation_by.trim().is_empty() {
         g.push(
-            "the relation has nobody's name against it — an agent may never supply \
+            "the relation has nobody's name against it — an assistant may never supply \
              mathematics, and without an attribution nothing can tell whether one did"
                 .into(),
         );
@@ -1395,6 +1413,26 @@ pub fn tables_rs(tree: &Tree) -> String {
     o.push_str("use vleo_core::graph::{Kind, Limit, NodeDef, Retirement, State, VarDef, View};\n");
     o.push_str("use vleo_core::units::Unit;\n\n");
     o.push_str(&format!("pub const NODE_COUNT: usize = {n};\n"));
+    // The version each node's record has reached, and the release that
+    // carried it — every node that has one. A saved result keeps the versions
+    // it ran through, so when a belief it rested on breaks, the result can say
+    // so rather than go on looking current. Outside the graph hash, like the
+    // record it is read from.
+    o.push_str(
+        "/// Each recorded node's current version and the release that carried it.\n\
+         pub static NODE_VERSIONS: &[(&str, u32, &str)] = &[\n",
+    );
+    for sh in sheets.iter() {
+        if let Some(v) = sh.versions.last() {
+            o.push_str(&format!(
+                "    (\"{}\", {}, \"{}\"),\n",
+                esc(&sh.id),
+                v.n,
+                esc(&v.release)
+            ));
+        }
+    }
+    o.push_str("];\n");
     o.push_str(&format!(
         "/// One per row, plus the extras declared by rows whose answer is a set.\n\
          pub const VAR_COUNT: usize = {};\n",

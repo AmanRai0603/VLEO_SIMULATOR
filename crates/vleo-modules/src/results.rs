@@ -68,6 +68,9 @@ pub struct Saved {
     pub inputs: Vec<Row>,
     pub outputs: Vec<Row>,
     pub blocked: Vec<Row>,
+    /// The recorded version of every node the run went through that has one,
+    /// with the release that carried it: `(node, version, release)`.
+    pub versions: Vec<(String, u32, String)>,
 }
 
 impl Saved {
@@ -150,6 +153,11 @@ pub fn from_run(r: &vleo_bus::Results, supply: &[(String, f64)], saved: &str, na
             ..Default::default()
         });
     }
+    for o in &s.outputs {
+        if let Some((n, rel)) = node_version(&o.id) {
+            s.versions.push((o.id.clone(), n, rel.to_string()));
+        }
+    }
     for b in &r.blocked {
         s.blocked.push(Row {
             id: b.id.clone(),
@@ -161,6 +169,29 @@ pub fn from_run(r: &vleo_bus::Results, supply: &[(String, f64)], saved: &str, na
         });
     }
     s
+}
+
+/// A node's current recorded version and the release that carried it, as
+/// this build of the tool knows it.
+pub fn node_version(id: &str) -> Option<(u32, &'static str)> {
+    crate::tables::NODE_VERSIONS
+        .iter()
+        .find(|(n, _, _)| *n == id)
+        .map(|(_, v, r)| (*v, *r))
+}
+
+/// The nodes whose record has moved past the version a result ran on:
+/// `(node, then, now)`. Each is a belief the result rested on that has since
+/// broken, as far as this build knows.
+pub fn moved_since(s: &Saved) -> Vec<(String, u32, u32)> {
+    s.versions
+        .iter()
+        .filter_map(|(id, then, _)| {
+            node_version(id)
+                .filter(|(now, _)| now > then)
+                .map(|(now, _)| (id.clone(), *then, now))
+        })
+        .collect()
 }
 
 // ---------------------------------------------------------------------------
@@ -210,6 +241,16 @@ pub fn csv(s: &Saved) -> String {
         "#! ran {}\n#! blocked {}\n",
         s.ran, s.blocked_count
     ));
+    if !s.versions.is_empty() {
+        o.push_str(&format!(
+            "#! versions {}\n",
+            s.versions
+                .iter()
+                .map(|(id, n, r)| format!("{id}=v{n}@{r}"))
+                .collect::<Vec<_>>()
+                .join(" ")
+        ));
+    }
     o.push_str("section,id,name,value,unit,si,credibility,governing,note\n");
     for (section, rows) in [
         ("input", &s.inputs),
@@ -279,6 +320,16 @@ pub fn read(text: &str) -> Result<Saved, String> {
                 "data" => s.data = v.split_whitespace().map(str::to_string).collect(),
                 "ran" => s.ran = v.parse().unwrap_or(0),
                 "blocked" => s.blocked_count = v.parse().unwrap_or(0),
+                "versions" => {
+                    s.versions = v
+                        .split_whitespace()
+                        .filter_map(|x| {
+                            let (id, rest) = x.split_once("=v")?;
+                            let (n, rel) = rest.split_once('@')?;
+                            Some((id.to_string(), n.parse().ok()?, rel.to_string()))
+                        })
+                        .collect()
+                }
                 _ => {}
             }
             continue;
@@ -395,22 +446,88 @@ pub fn html(s: &Saved) -> String {
         "<title>{} — result</title>\n<style>\n{REPORT_CSS}</style>\n</head>\n<body>\n",
         he(&s.target)
     ));
+    // ANSWER FIRST (docs/EXPLAINING.md E1): the number, then the three things
+    // a reader needs before trusting it — how credible it is and what holds it
+    // down, what could not run, and what it was run on. Then it said simply,
+    // then where it breaks, then the reference tables.
+    let target = s.answer();
+    let label = target.map(|a| a.name.as_str()).unwrap_or(s.target.as_str());
+    let changed_inputs: Vec<&Row> = s.inputs.iter().filter(|r| r.note == "changed").collect();
+    let ran_line = format!(
+        "<b>{} ran, {} blocked</b>{}.",
+        s.ran,
+        s.blocked_count,
+        if s.blocked.is_empty() {
+            String::new()
+        } else {
+            format!(
+                " — {}",
+                he(&s
+                    .blocked
+                    .iter()
+                    .map(|b| b.id.as_str())
+                    .take(4)
+                    .collect::<Vec<_>>()
+                    .join(", "))
+            )
+        }
+    );
+    let moved = moved_since(s);
     o.push_str(&format!(
         "<header><p class=\"k\">VLEO design tool · saved result</p><h1>{}</h1>\n\
-         <p class=\"answer\">{}</p>\n<p class=\"m\">{}saved {} · {} ran, {} blocked · mode {} · \
-         chain <code>{}</code> · kernel <code>{}</code> · graph <code>{}</code>{}</p>\n\
-         <p class=\"m\">{} of {} inputs changed from their defaults. This page is a record: it \
-         shows what the run returned when it was saved, and nothing here runs again.</p></header>\n",
+         <section class=\"af\"><p class=\"afk\">Answer first</p><p class=\"answer\">{}</p>\n<ul>\
+         <li>{}</li><li>{}</li><li>{}</li><li>{}</li></ul></section>\n\
+         <p class=\"m\">{}saved {} · mode {} · chain <code>{}</code> · kernel <code>{}</code> · \
+         graph <code>{}</code>{}. This page is a record: it shows what the run returned when it was \
+         saved, and nothing here runs again.</p></header>\n",
         he(&s.target),
         answer,
+        match target {
+            Some(a) => format!(
+                "Credibility <b>{} of 4</b>, held down by <b>{}</b> — the weakest of eight factors.",
+                he(&a.credibility),
+                he(&a.governing)
+            ),
+            None => "The target did not answer on this run; see what could not run.".to_string(),
+        },
+        ran_line,
+        if changed_inputs.is_empty() {
+            format!("Run on the declared defaults: none of {} inputs changed.", s.inputs.len())
+        } else {
+            format!(
+                "Run on <b>{} of {}</b> inputs changed from their defaults: {}.",
+                changed_inputs.len(),
+                s.inputs.len(),
+                he(&changed_inputs
+                    .iter()
+                    .take(4)
+                    .map(|r| format!("{} = {} {}", r.id, r.value, if r.unit == "-" { "" } else { &r.unit }))
+                    .collect::<Vec<_>>()
+                    .join(", "))
+            )
+        },
+        if s.versions.is_empty() {
+            "No node it ran through has a recorded belief yet.".to_string()
+        } else if moved.is_empty() {
+            format!(
+                "It rests on {} recorded node version{}, none since replaced.",
+                s.versions.len(),
+                if s.versions.len() == 1 { "" } else { "s" }
+            )
+        } else {
+            format!(
+                "<b>{} belief{} it rests on {} since broken</b> — see where it breaks.",
+                moved.len(),
+                if moved.len() == 1 { "" } else { "s" },
+                if moved.len() == 1 { "has" } else { "have" }
+            )
+        },
         if s.name.is_empty() {
             String::new()
         } else {
             format!("<b>{}</b> · ", he(&s.name))
         },
         he(&s.saved),
-        s.ran,
-        s.blocked_count,
         he(&s.mode),
         he(&s.chain),
         he(&s.kernel),
@@ -419,12 +536,57 @@ pub fn html(s: &Saved) -> String {
             String::new()
         } else {
             format!(" · data {}", he(&s.data.join(", ")))
-        },
-        s.changed(),
-        s.inputs.len()
+        }
     ));
+    o.push_str(&format!(
+        "<section><h2>Said simply <span class=\"dx\">explanation</span></h2><p>On {} inputs, \
+         <b>{}</b> comes out at <b>{}</b>. Every number below was worked out by the tool from the \
+         relations its rows cite <span class=\"claim\">derived</span>, on inputs that are either a \
+         row's declared default <span class=\"claim\">declared</span> or a value this case set.</p></section>\n",
+        if changed_inputs.is_empty() { "the declared" } else { "this case's" },
+        he(label),
+        answer
+    ));
+    o.push_str("<section><h2>Where it breaks <span class=\"dx\">explanation</span></h2><ul>");
+    if let Some(a) = target {
+        o.push_str(&format!(
+            "<li>The answer is only as credible as its weakest factor: <b>{}</b>.</li>",
+            he(&a.governing)
+        ));
+    }
+    if s.blocked.is_empty() {
+        o.push_str("<li>Nothing on its chain was blocked.</li>");
+    } else {
+        o.push_str(&format!(
+            "<li>{} row{} could not run, and nothing that needed {} does — listed below with why.</li>",
+            s.blocked.len(),
+            if s.blocked.len() == 1 { "" } else { "s" },
+            if s.blocked.len() == 1 { "it" } else { "them" }
+        ));
+    }
+    for (id, then, now) in &moved {
+        o.push_str(&format!(
+            "<li><b><code>{}</code> was at version {} when this ran, and is now at {}</b>: a belief \
+             this result rested on has broken since. Run it again to see what the new version says.</li>",
+            he(id),
+            then,
+            now
+        ));
+    }
+    if !s.versions.is_empty() {
+        o.push_str(&format!(
+            "<li>The node versions it rests on: {}.</li>",
+            he(&s
+                .versions
+                .iter()
+                .map(|(id, n, r)| format!("{id} v{n} ({r})"))
+                .collect::<Vec<_>>()
+                .join(", "))
+        ));
+    }
+    o.push_str("</ul></section>\n");
     let table = |title: &str, rows: &[&Row], cols: &[&str], cells: &dyn Fn(&Row) -> Vec<String>| {
-        let mut t = format!("<section><h2>{title}</h2>");
+        let mut t = format!("<section><h2>{title} <span class=\"dx\">reference</span></h2>");
         if rows.is_empty() {
             t.push_str("<p class=\"m\">none</p></section>\n");
             return t;
@@ -454,10 +616,9 @@ pub fn html(s: &Saved) -> String {
             he(&r.governing),
         ]
     };
-    let changed: Vec<&Row> = s.inputs.iter().filter(|r| r.note == "changed").collect();
     o.push_str(&table(
         "Inputs changed from their defaults",
-        &changed,
+        &changed_inputs,
         &["input", "name", "ran at"],
         &|r| {
             vec![
@@ -539,6 +700,10 @@ table { width: 100%; border-collapse: collapse; font-size: 13px; background: var
 th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--rule); vertical-align: top; overflow-wrap: anywhere; }
 th { font-weight: 500; color: var(--ink2); }
 details { margin-top: 24px; }
+.af { border-left: 3px solid var(--accent); padding: 4px 14px 8px; margin: 10px 0; background: var(--card); }
+.afk { font: 11px ui-monospace, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 6px 0 0; }
+.af ul { margin: 4px 0; padding-left: 18px; font-size: 14px; }
+.dx, .claim { font: 10.5px ui-monospace, Menlo, monospace; border: 1px solid var(--rule); border-radius: 3px; padding: 0 5px; color: var(--ink2); font-weight: 400; vertical-align: 2px; }
 ";
 
 // ---------------------------------------------------------------------------

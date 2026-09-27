@@ -4,21 +4,37 @@
   <h2>Closure — Ap, sustained</h2>
   <p class="ident"><code>l3_solar_ach_04</code> · <span class="kind kind-achieved">achieved</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
+<section class="answer-first">
+<p class="af-k">Answer first</p>
+<p class="af-q">How much room does the sustained Ap requirement have left?</p>
+<p class="af-a">M_ap_long — computed on the inputs you run, never stored: run it beside this page.</p>
+<ul class="af-points">
+<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li><b>Holds</b> from -10 to 1 — outside it the row refuses, by name.</li>
+<li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></li>
+</ul>
+</section>
 <div class="tabs" role="tablist">
-  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab sel" data-tab="0">said simply, then the real thing</button>
   <button role="tab" class="tab" data-tab="1">theory</button>
-  <button role="tab" class="tab" data-tab="2">interface</button>
-  <button role="tab" class="tab" data-tab="3">algorithm</button>
-  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
-  <button role="tab" class="tab" data-tab="5">generated code</button>
-  <button role="tab" class="tab" data-tab="6">evidence</button>
-  <button role="tab" class="tab" data-tab="7">flags</button>
-  <button role="tab" class="tab" data-tab="8">credibility</button>
-  <button role="tab" class="tab" data-tab="9">design space</button>
+  <button role="tab" class="tab" data-tab="2">de-risking</button>
+  <button role="tab" class="tab" data-tab="3">interface</button>
+  <button role="tab" class="tab" data-tab="4">algorithm</button>
+  <button role="tab" class="tab" data-tab="5">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="6">generated code</button>
+  <button role="tab" class="tab" data-tab="7">evidence</button>
+  <button role="tab" class="tab" data-tab="8">flags</button>
+  <button role="tab" class="tab" data-tab="9">credibility</button>
+  <button role="tab" class="tab" data-tab="10">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
+<div class="station">
+<h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
+<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">How much room does the sustained Ap requirement have left?</p>
-<p class="maths"><code>M_ap_long = closure(Ap_req_long, Ap_long, AtMost).margin</code></p>
+<p class="maths"><code>M_ap_long = closure(Ap_req_long, Ap_long, AtMost).margin</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></p>
 <p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
 <p class="note">An achieved row restates the subsystem's conclusion on the side of the
 comparison the closure reads. It computes nothing of its own, and it exists
@@ -26,16 +42,24 @@ rather than the closure reading sw_ap_design_long directly so that the
 comparison binds two rows of the same shape at the same layer — visible on the
 tree instead of an edge somebody has to trace.
 </p>
-<h4>Assumptions</h4>
+<h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<h5>Assumptions, and where each stops holding</h5>
 <dl class="asm">
 <dt>It inherits every limitation of the row it restates, and a closure reading it sees none of them</dt><dd>fails when a margin is computed from this row against a capability. The centre beneath it is a cycle analogue scaled, beyond one cycle past cycle 25's maximum, by the mean amplitude of two completed cycles whose peaks differ by 41 per cent; the band is 1.28 sigma, which is the 90th percentile and not the 95 per cent the run is labelled; and the residuals it is a sigma of are skewed. None of that travels across the closure, and the margin looks like a clean number either way</dd>
 <dt>It restates the sustained level and not one of its two siblings</dt><dd>fails when somebody reads it as the other. The subsystem publishes three Ap conclusions — 26.70 sustained, 41.70 for the worst day of the design band, 158.38 for the one storm expected in the mission — and they answer three different questions. Restating the wrong one would move this closure from passing to failing or back without anything in the tree noticing</dd>
 <dt>Nothing compares this row with its requirement automatically</dt><dd>fails when a reader assumes the tree checks the closure. The pairing is a convention the matrix draws; `sense` is declared on the requirement row and the gate checks only that it is present. The Ap storm closure beside this one, l3_solar_req_03 against l3_solar_ach_03, currently FAILS at 158.38 against 150 and nothing in the tree says so</dd>
 </dl>
+<p class="muted">Outside <code>-10 … 1</code> the row refuses rather than answers: a margin of -10 is a requirement exceeded by eleven times its own value. Below that the comparison has stopped being a design margin and become a sign that one side is in the wrong unit, and it should refuse rather than report a number nobody will read as a fraction; 1 is the whole of the requirement: an achieved value of zero against a positive bound. A margin above 1 under this sense would mean the achieved value is negative, which none of these drivers can be.</p>
+<h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
+<p class="d-l predict">Before you run it: what do you expect the answer to be, roughly, and which input do you expect to move it most? Write it down — then run, and compare. A guess that was wrong is the most useful thing on this page.</p>
+<p class="d-lr muted">Run it from the panel beside this page, on your own inputs, or open <i>the relation, moving</i> to watch the answer cross its range.</p>
+</div>
 </section>
 <section class="panel" data-panel="1">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <p class="why">A closure is a comparison between what is required and what is achieved, and it is only checkable if both sides are rows. The requirement side is l3_solar_req_04, a declared commitment about the vehicle; this is the achieved side, and it is an identity on sw_ap_design_long.</p>
 <p class="why">Which of the subsystem's Ap conclusions it restates is the whole content of the row, because the subsystem has three that a reader could mistake for each other: the sustained level, the worst day of the design band, and the one storm the mission is expected to meet. This one is the sustained level. Its siblings are sw_ap_design_short and sw_storm_return_level, and at the declared window the three are 26.70, 41.70 and 158.38 — far enough apart that restating the wrong one would move a closure from passing to failing or back.</p>
+<p class="muted">Each line below is <span class="claim claim-derived" title="worked here from sourced relations">derived</span> from the one before, ending at the relation — which is <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span>.</p>
 <div class="theory-walk" data-steps="3">
 <ol class="derive">
 <li><span class="dt">The closure to be made checkable is sustained Ap achieved against sustained Ap required. Both sides must be rows, at the same layer, in the same quantity and unit, or the comparison is not something the tree can verify.</span></li>
@@ -48,6 +72,11 @@ tree instead of an edge somebody has to trace.
 <p class="maths concl">which is the relation this node states: <code>M_ap_long = closure(Ap_req_long, Ap_long, AtMost).margin</code></p>
 </section>
 <section class="panel" data-panel="2">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
+<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr><td>in</td><td><code>ach</code></td><td><a class="xref" data-goto="sw_ap_design_long">sw_ap_design_long</a></td><td>Ratio</td><td>-</td></tr>
@@ -56,7 +85,8 @@ tree instead of an edge somebody has to trace.
 </tbody></table>
 <p class="consumers"><b>0</b> nodes read this: nothing yet.</p>
 </section>
-<section class="panel" data-panel="3">
+<section class="panel" data-panel="4">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <ol class="algo">
 <li><span class="step">compare achieved against required in the declared sense and return the signed fractional margin</span> <span class="binds">→ <code>m: Ratio</code></span></li>
 </ol>
@@ -82,12 +112,14 @@ tree instead of an edge somebody has to trace.
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="5">
+<p class="dx dx-tutorial" title="learn by doing: try it and watch">tutorial</p>
 <div class="relation-host" data-node="l3_solar_ach_04" data-lo="-10" data-hi="1" data-symbol="M_ap_long">
 <p class="muted">asking the engine…</p>
 </div>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="6">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -149,7 +181,8 @@ pub fn evaluate(ach: Ratio, req: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="7">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
 <tr data-fixture="the sustained hot Ap against the Ap 48 commitment"><td>the sustained hot Ap against the Ap 48 commitment</td><td class="num">0.443847702083333</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
 <tr data-fixture="exactly on the bound, where the margin must be zero and the closure still closed"><td>exactly on the bound, where the margin must be zero and the closure still closed</td><td class="num">0</td><td class="num">0.000000000001</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
@@ -157,7 +190,8 @@ pub fn evaluate(ach: Ratio, req: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="8">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below -10 — a margin of -10 is a requirement exceeded by eleven times its own value. Below that the comparison has stopped being a design margin and become a sign that one side is in the wrong unit, and it should refuse rather than report a number nobody will read as a fraction</li>
@@ -167,17 +201,21 @@ pub fn evaluate(ach: Ratio, req: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="8">
+<section class="panel" data-panel="9">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="l3_solar_ach_04"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="9">
+<section class="panel" data-panel="10">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p>Valid over <code>-10 &hellip; 1</code> -.</p>
 <ul class="guards"><li>lower — a margin of -10 is a requirement exceeded by eleven times its own value. Below that the comparison has stopped being a design margin and become a sign that one side is in the wrong unit, and it should refuse rather than report a number nobody will read as a fraction</li><li>upper — 1 is the whole of the requirement: an achieved value of zero against a positive bound. A margin above 1 under this sense would mean the achieved value is negative, which none of these drivers can be</li></ul>
 <div class="sweep" data-over="orbit_mission_duration" data-points="60" data-y="l3_solar_ach_04"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a> over 60 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
+<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
+<li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

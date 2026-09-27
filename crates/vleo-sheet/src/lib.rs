@@ -19,6 +19,7 @@
 //!   refuse. A decision taken during assembly is a decision nobody reviewed,
 //!   because assembly has no diff.
 
+pub mod derisk;
 pub mod emit;
 pub mod form;
 pub mod manual;

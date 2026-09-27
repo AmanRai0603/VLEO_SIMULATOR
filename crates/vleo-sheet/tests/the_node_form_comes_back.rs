@@ -55,6 +55,32 @@ fn set_field(t: &mut toml::Table, field: &str, v: &str) {
         .insert(field.into(), toml::Value::String(v.into()));
 }
 
+/// Say why the node is changing, as a filler would.
+fn with_record(html: &str) -> String {
+    edit(html, DATA, |t| {
+        let mut d = toml::Table::new();
+        for (k, v) in [
+            (
+                "believed",
+                "that the old relation held across the storm scale",
+            ),
+            (
+                "tested",
+                "compared against the NOAA scale table, docs/MATLAB_PORT_PLAN.md",
+            ),
+            ("learned", "it did not hold above G3"),
+            ("cost", "half a day"),
+            ("changed", "the relation, which now holds across the scale"),
+            ("risks", ""),
+            ("rests_on", "the NOAA G-scale thresholds"),
+            ("breaks_if", "NOAA revises the scale"),
+        ] {
+            d.insert(k.into(), toml::Value::String(v.into()));
+        }
+        t.insert("derisk".into(), toml::Value::Table(d));
+    })
+}
+
 fn verdict_of(p: &template::Plan, what: &str) -> Verdict {
     p.items
         .iter()
@@ -128,9 +154,9 @@ fn a_change_is_applied_unless_the_repository_changed_it_too() {
 
 #[test]
 fn a_relation_an_assistant_supplied_is_refused_and_a_persons_is_applied() {
-    let changed = edit(&form_for(ROW), DATA, |t| {
+    let changed = with_record(&edit(&form_for(ROW), DATA, |t| {
         set_field(t, "expression", "Ap_design(G) = a different relation")
-    });
+    }));
     let p = template::plan(&root(), &changed).unwrap();
     assert_eq!(verdict_of(&p, "expression"), Verdict::Apply);
     assert!(
@@ -161,7 +187,7 @@ fn a_numbered_step_removed_from_the_middle_is_refused_and_the_last_is_not() {
         .into_iter()
         .find(|s| s.steps.len() >= 2 && s.state == "published")
         .expect("no published row with two algorithm steps");
-    let html = template::document(sh, &tree);
+    let html = with_record(&template::document(sh, &tree));
     let drop = |at: usize| {
         edit(&html, DATA, |t| {
             t.get_mut("algorithm")
@@ -489,4 +515,72 @@ fn an_input_changed_to_one_that_does_not_connect_is_refused_and_the_rest_still_a
     assert!(p.interfaces.iter().any(|i| !i.ok()));
     let text = p.text.expect("the note should still apply");
     assert!(text.contains("Still applies.") && !text.contains("no_such_row"));
+}
+
+#[test]
+fn a_change_to_what_a_node_computes_says_why_or_only_its_wording_goes_in() {
+    // A new bound and a new note, with nothing said about why.
+    let html = edit(&form_for(ROW), DATA, |t| {
+        set_field(t, "upper", "450.0");
+        set_field(t, "note", "A reworded note.");
+    });
+    let p = template::plan(&root(), &html).unwrap();
+    assert_eq!(
+        verdict_of(&p, "note"),
+        Verdict::Apply,
+        "wording is never withheld"
+    );
+    assert!(
+        matches!(verdict_of(&p, "upper"), Verdict::Refused(ref w) if w.contains("withheld")),
+        "{:?}",
+        p.items
+    );
+    assert!(
+        matches!(verdict_of(&p, "de-risking"), Verdict::Refused(ref w) if w.contains("output") && w.contains("believed")),
+        "{:?}",
+        p.items
+    );
+    let text = p.text.clone().unwrap();
+    assert!(text.contains("A reworded note.") && !text.contains("upper = 450.0"));
+    assert!(
+        !text.contains("[[version]]"),
+        "a version was recorded without its reason"
+    );
+    assert_eq!(p.about, vec!["output"]);
+
+    // The same changes with the reason: both go in, and version 1 is recorded
+    // with what moved, the relation as it now stands, and `next` for a release.
+    let p = template::plan(&root(), &with_record(&html)).unwrap();
+    assert_eq!(verdict_of(&p, "upper"), Verdict::Apply, "{:?}", p.items);
+    assert_eq!(p.version, Some(1));
+    let text = p.text.unwrap();
+    let sheet: toml::Value = text
+        .parse()
+        .expect("the sheet with its version still reads");
+    let v = &sheet["version"][0];
+    assert_eq!(v["n"].as_integer(), Some(1));
+    assert_eq!(v["release"].as_str(), Some("next"));
+    assert_eq!(v["about"][0].as_str(), Some("output"));
+    assert_eq!(v["learned"].as_str(), Some("it did not hold above G3"));
+    assert!(v["relation"].as_str().unwrap().contains("Ap_design"));
+}
+
+#[test]
+fn a_risk_move_must_name_a_registered_risk() {
+    let html = with_record(&edit(&form_for(ROW), DATA, |t| {
+        set_field(t, "upper", "450.0")
+    }));
+    let html = edit(&html, DATA, |t| {
+        t.get_mut("derisk")
+            .and_then(|d| d.as_table_mut())
+            .unwrap()
+            .insert("risks".into(), toml::Value::String("R-9999 closed".into()));
+    });
+    let p = template::plan(&root(), &html).unwrap();
+    assert!(
+        matches!(verdict_of(&p, "de-risking"), Verdict::Refused(ref w) if w.contains("not registered")),
+        "{:?}",
+        p.items
+    );
+    assert!(matches!(verdict_of(&p, "upper"), Verdict::Refused(_)));
 }

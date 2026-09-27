@@ -985,3 +985,69 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
   .man-cmd pre { padding-right: .75rem; padding-bottom: 2.1rem; }
   .man-copy { top: auto; bottom: .35rem; }
 }
+
+/* ---------- the explanation standard (docs/EXPLAINING.md) ----------------- */
+/* Depth: `d-l` only to a learner, `d-lr` to a learner and a reader. */
+html:not([data-depth="learn"]) .d-l { display: none; }
+html[data-depth="expert"] .d-lr { display: none; }
+#depth { float: right; margin-top: -2.1rem; }
+#depth .lbl { color: var(--ink-3); margin-right: .3rem; }
+
+/* Answer first: the node in four lines, before any tab. */
+.answer-first { border-left: 3px solid var(--both); background: var(--both-pale);
+  padding: .5rem .9rem .6rem; margin: .6rem 0 .8rem; border-radius: 0 3px 3px 0; }
+.af-k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--both);
+  margin: 0 0 .2rem; }
+.af-q { font-weight: 600; margin: 0 0 .25rem; }
+.af-a { margin: 0 0 .3rem; }
+.af-points { margin: .2rem 0 0; padding-left: 1.1rem; }
+.af-points li { margin: .1rem 0; }
+
+/* The station: say it simply, the real thing, where it breaks, the wrong idea, try it. */
+.station .st-h { display: flex; align-items: center; gap: .45rem; margin: .9rem 0 .3rem;
+  font-size: 12px; }
+.st-n { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--in-pale); color: var(--in); font-size: 10.5px; }
+.simply { font-size: 13px; }
+.breaks, .wrong { border-left: 2px solid var(--out); padding-left: .6rem; }
+.wrong { border-left-color: #a4262c; }
+.predict { background: var(--in-pale); padding: .4rem .6rem; border-radius: 3px; }
+
+/* The kind of each tab (Diátaxis), and the kind of each claim. */
+.dx { display: inline-block; font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+  padding: 0 .4rem; border-radius: 2px; margin: 0 0 .4rem; border: 1px solid var(--rule);
+  color: var(--ink-3); }
+.dx-explanation { color: var(--in); border-color: var(--in); }
+.dx-tutorial { color: var(--out); border-color: var(--out); }
+.claim { display: inline-block; font-size: 10.5px; padding: 0 .35rem; border-radius: 2px;
+  border: 1px solid var(--rule); color: var(--ink-2); white-space: nowrap; vertical-align: 1px; }
+.claim-sourced { border-color: var(--teal); color: var(--teal); }
+.claim-derived { border-color: var(--in); color: var(--in); }
+.claim-declared { border-color: var(--out); color: var(--out); }
+.claim-illustrative { border-style: dashed; }
+
+/* De-risking: the belief a node rests on, and every version before it. */
+.belief { border: 1px solid var(--both); border-radius: 3px; padding: .4rem .7rem; margin: 0 0 .6rem; }
+.belief p { margin: .15rem 0; }
+.belief-h { color: var(--both); }
+ol.versions { padding-left: 1.2rem; }
+li.version { margin: 0 0 .7rem; }
+.version-h { margin: 0 0 .2rem; }
+.version-h .about { color: var(--in); }
+li.version dl { display: grid; grid-template-columns: max-content 1fr; gap: .1rem .8rem; margin: 0; }
+li.version dt { color: var(--ink-3); }
+li.version dd { margin: 0; }
+table.risks td { vertical-align: top; }
+@media (max-width: 640px) {
+  li.version dl { grid-template-columns: 1fr; }
+  #depth { float: none; margin: .3rem 0 0; display: inline-block; }
+}
+@media (prefers-color-scheme: dark) {
+  .wrong { border-left-color: #ef8a8a; }
+}
+
+/* The manual: each section's answer, first, and its kind. */
+.man-answer { border-left: 3px solid var(--both); background: var(--both-pale); padding: .35rem .7rem;
+  margin: .3rem 0 .6rem; border-radius: 0 3px 3px 0; }
+.man-answer .af-k { display: block; }
+.dx-how-to { color: var(--teal); border-color: var(--teal); }

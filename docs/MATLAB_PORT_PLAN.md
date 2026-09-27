@@ -1,5 +1,9 @@
 # Bringing the MATLAB tool across
 
+> **Answer first.** The row-by-row record of porting the MATLAB tool into this one: what was there, what was ported, where the port departed and why. A record, kept as written; its last section says what has changed since.
+>
+> **Kind:** explanation · **For:** developers
+
 Written after reading the uploaded `VLEO_Tool` end to end — every contract,
 every area README, and the purpose line of every model function. It plans the
 work; it does not do any of it.

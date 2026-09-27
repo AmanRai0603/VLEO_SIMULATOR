@@ -1,5 +1,9 @@
 # areas/data.md
 
+> **Answer first.** Reference data arrives as published, hashed bundles synced before a run; the physics path never reads a database or the network.
+>
+> **Kind:** reference + explanation · **For:** developers
+
 Reference data: bundles, hashes, the lockfile, verification and expiry.
 
 Applies to `crates/vleo-data/**`, `bundles/**`.

@@ -1,5 +1,9 @@
 # Work model
 
+> **Answer first.** The team uses the tool and the developers maintain it, and only three things cross between them: a node form in, a release out, and results anyone can keep. Inside the developers' side the work divides by what goes wrong, and nine decisions stop for a person.
+>
+> **Kind:** explanation · **For:** everyone
+
 Who does what: the team that uses the tool, the developers who maintain it,
 and exactly what crosses between them.
 

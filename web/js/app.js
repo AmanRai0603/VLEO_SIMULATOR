@@ -21,6 +21,7 @@ import { renderManual } from './manual.js';
 import { renderCase, preview, saveOverridesToCase, savableOverrides } from './case.js';
 import { renderResults, openResult } from './results.js';
 import { renderForms } from './forms.js';
+import { initDepth } from './depth.js';
 import { loadOverrides, overrideCount, clearAllOverrides, clearOverride,
          fromSI, onOverrideChange } from './inputs.js';
 
@@ -28,6 +29,7 @@ import { loadOverrides, overrideCount, clearAllOverrides, clearOverride,
 // boot
 
 async function boot() {
+  initDepth();
   try {
     await load();
   } catch (e) {

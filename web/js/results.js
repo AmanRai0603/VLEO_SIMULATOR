@@ -100,6 +100,7 @@ async function view(el, host, all) {
   const q = encodeURIComponent(PAGE.open);
   let h = '<section class="res-one"><h3><code>' + esc(r.target) + '</code>' +
     (r.name ? ' — ' + esc(r.name) : '') + '</h3>' +
+    '<p class="af-k">Answer first</p>' +
     '<div class="answer">' + esc(answerText(r)) + '</div>' +
     '<p class="run-for">saved ' + esc(r.saved) + ' · ' + r.ran + ' ran, ' + r.blocked + ' blocked · mode ' +
       esc(r.mode) + ' · <b>' + plural(r.changed, 'input') + ' changed</b> from the defaults</p>' +
@@ -107,6 +108,15 @@ async function view(el, host, all) {
       esc(r.graph) + (r.data ? ' · data ' + esc(r.data) : '') + '</p>' +
     (r.template_current ? '' : '<p class="run-stale">Saved against another set of inputs than this tool ' +
       'has now. It is shown as it was; loading its inputs as the case carries them over.</p>') +
+    // WHAT IT RESTS ON. A result keeps the version of every row it ran
+    // through; a row whose record has moved on since is a belief this result
+    // rested on that has broken — so it is said here, beside the number.
+    (r.moved.length ? '<p class="run-stale">' + r.moved.map(m => '<b><code>' + esc(m.node) + '</code> was at ' +
+      'version ' + m.then + ' when this ran, and is now at ' + m.now + '</b>').join('; ') + ' — a belief this ' +
+      'result rested on has broken since. Run it again to see what the new version says, and open the row\'s ' +
+      '<i>de-risking</i> tab for why it changed.</p>' : '') +
+    (r.versions.length ? '<p class="muted">rests on ' + r.versions.map(v => '<a class="xref" data-goto="' +
+      esc(v.node) + '">' + esc(v.node) + '</a> v' + v.n + ' (' + esc(v.release) + ')').join(', ') + '</p>' : '') +
     '<div class="runbar res-do">' +
       '<a class="ctl" href="/v1/result.csv?name=' + q + '" download="' + esc(PAGE.open) + '">download CSV</a>' +
       '<a class="ctl" href="/v1/result.html?name=' + q + '" download="' + esc(PAGE.open.replace(/\.csv$/, '.html')) +
