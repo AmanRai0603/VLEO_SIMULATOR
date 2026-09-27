@@ -104,7 +104,9 @@ def quant(sorted_, q):
 # the engine
 
 def run_node(port, node, sets=()):
-    q = [("node", node), ("mode", "branch"), ("case", "c1")]
+    # At the declared defaults, which are the reference design the MATLAB
+    # study was run at — never at whatever case is saved on this machine.
+    q = [("node", node), ("mode", "branch"), ("inputs", "defaults")]
     q += [("set", f"{k}:{v!r}") for k, v in sets]
     body = urllib.parse.urlencode(q).encode()
     req = urllib.request.Request(f"http://localhost:{port}/v1/run", data=body,

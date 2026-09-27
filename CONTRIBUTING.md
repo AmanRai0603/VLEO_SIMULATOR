@@ -1,16 +1,29 @@
 # Contributing
 
+> **Answer first.** Changes to the design come in as node forms and go out as reviewed pull requests, one form per pull request, with the number of reviewers set by what changed. The table below is the only statement of that rule.
+>
+> **Kind:** reference + how-to · **For:** developers
+
 ## The shape of the work
 
-A branch is **a set of node folders**. Because every artefact is derived from
-those folders, a branch fully determines its own document and its own engine —
-so checking one out and running it is one command rather than a procedure.
+Contributions to the design come from the team that uses the tool, as **node
+forms** — one HTML file per node, or per new node, filled by whoever knows the
+answer. The developers maintain the repository: check each form, apply it,
+implement and evidence it, and release. The loop is in [`AGENTS.md`](AGENTS.md);
+the team's side of it is in the tool's own Manual tab.
+
+A branch is **a set of node folders**, usually one form's worth. Because every
+artefact is derived from those folders, a branch fully determines its own
+document and its own engine — so checking one out and running it is one command
+rather than a procedure.
 
     git switch node/prop-intake-throat
     cargo run -p xtask -- docs && cargo run --release -p vleo-daemon
 
-One node per pull request, ideally. A pull request touching thirty node folders
-is a pull request nobody can review.
+One form per pull request, ideally. A pull request touching thirty node folders
+is a pull request nobody can review. Name whoever filled the form in the
+commit, and attach the filled form, or the output of `xtask intake` on it, to
+the pull request — it is the record of what was asked for.
 
 ## Two reviews, and the author is not eligible for either
 
@@ -35,13 +48,13 @@ policies within a month, and they had already begun to differ.
 
 | change | reviewers | why |
 |---|---|---|
-| a generator, the gate, `vleo-sheet`, or a `tools/` script | two | a defect there reaches all 1329 rows at once |
+| a generator, the gate, `vleo-sheet`, or a `tools/` script | two | a defect there reaches all 1396 rows at once |
 | `vleo-units` or `vleo-core` | two | everything reads them |
-| an instruction file — `AGENTS.md`, `areas/*.md`, an agent definition | two | it shapes what every agent produces, so it is reviewed like code |
+| an instruction file — `AGENTS.md`, `areas/*.md` | two | it decides what every change to the design goes through, so it is reviewed like code |
 | **a tolerance** | two | the commonest way a gate stops meaning anything is somebody widening one to get green, so a tolerance change is a gate change |
 | publishing a licensed bundle | two | publication is irreversible by design |
 | moving a branch in `layers/` | two | the tree is the decomposition, and moving a branch moves everyone's work |
-| a node sheet | H1a completeness, then H1b physics | above |
+| a node sheet — a form applied, or a new node | H1a completeness, then H1b physics | above |
 | fixtures and filled holes | H2, after the machine stages pass | above |
 | anything else | one | ordinary blast radius |
 
@@ -60,10 +73,20 @@ policies within a month, and they had already begun to differ.
   refuses it.
 - **Add a guard by hand.** Guards are generated from the declared domain with
   their reasons attached; one added by hand has no reason and will be deleted.
+- **Apply a form `xtask intake` has not passed.** A conflict goes back to
+  whoever filled it; it is never resolved by overwriting the change made since.
+- **Apply a change to what a node computes without its reason.** Intake
+  withholds it; a hand edit that skips intake still owes the node a
+  `[[version]]` saying which belief broke (`docs/DERISKING.md`).
+- **Edit a recorded version.** A version is a record; a correction is the next
+  version.
+- **Let an assistant supply a relation.** It may write a hole's body; the
+  relation comes from the form and carries a person's name.
 - **Skip, disable or quarantine a test to get green.**
 
 ## Before asking for review
 
+    cargo run -p xtask -- intake <form>   # the form passes the checker
     cargo run -p xtask -- gate <node>     # the checks, in order
     cargo run -p xtask -- docs            # must leave no diff
     cargo test                            # the evidence

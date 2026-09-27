@@ -105,6 +105,19 @@ impl Check {
     }
 }
 
+/// The record of why the node is what it is — every version complete, in
+/// order, with a reason. A version is a record, so a malformed one is refused
+/// rather than noted: a de-risking narrative with holes in it reads as though
+/// nothing was risked.
+fn versions_check(sh: &Sheet) -> Check {
+    let bad = crate::derisk::version_problems(sh);
+    if bad.is_empty() {
+        Check::pass("versions")
+    } else {
+        Check::fail("versions", bad.join("; "))
+    }
+}
+
 /// The per-node checks.
 pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     let mut out = Vec::new();
@@ -139,6 +152,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         } else {
             Check::fail("parent", format!("'{}' is not a group", sh.parent))
         });
+        out.push(versions_check(sh));
         let gaps = emit::gap_pass(sh, &holes);
         out.push(if gaps.is_empty() {
             Check::pass("gap-pass")
@@ -147,6 +161,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         });
         return out;
     }
+    out.push(versions_check(sh));
 
     // 1 — the sheet validates; no required field is blank.
     let mut missing = Vec::new();
@@ -653,6 +668,26 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
 pub fn validate_tree(tree: &Tree) -> Vec<Check> {
     let mut out = Vec::new();
 
+    // V17 — the risk register is well formed: every risk registered once, on
+    //       a row of the register, with a level, an owner and what it would
+    //       cost.
+    // V18 — every risk a version moves is a registered one. A risk that
+    //       exists only in a version's record is a risk nobody owns.
+    let reg = crate::derisk::register_problems(tree);
+    let (moves, rest): (Vec<String>, Vec<String>) = reg
+        .into_iter()
+        .partition(|m| m.contains("no risk-register row registers"));
+    out.push(if rest.is_empty() {
+        Check::pass("V17 the risk register is well formed")
+    } else {
+        Check::fail("V17 the risk register is well formed", rest.join("; "))
+    });
+    out.push(if moves.is_empty() {
+        Check::pass("V18 every risk moved is registered")
+    } else {
+        Check::fail("V18 every risk moved is registered", moves.join("; "))
+    });
+
     // V1 — every edge endpoint names a row that exists.
     let mut dangling = Vec::new();
     for sh in tree.ordered() {
@@ -952,6 +987,66 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
         Check::pass("V15 one label per row in a group")
     } else {
         Check::fail("V15 one label per row in a group", twins.join(", "))
+    });
+
+    // V16 — the case supplies only what a run can take, and its groups name
+    //       only real inputs.
+    //
+    // A value in `cases/` aimed at a row that is not declared is overwritten
+    // the moment that row is evaluated, and the run reports the design's number
+    // as though the file had been applied. That happened: two stored skies set
+    // three rows that later became computed, and from then on "solar maximum"
+    // returned the plain design under a storm's name. A key naming no row at
+    // all was worse — the generator dropped it before the engine saw it.
+    //
+    // The Condition list is held to the same standard. It decides which half
+    // of the Inputs page and of every uploaded CSV an input sits in, and a
+    // name that is not a declared, published input would be a heading over
+    // nothing — or, after a rename, an input quietly moved to Customer.
+    let mut badcase = Vec::new();
+    for c in tree.cases.values() {
+        let mut check = |what: &str, k: &str| match tree.sheets.get(k) {
+            None => badcase.push(format!("{} {what} {}, which is not a row", c.id, k)),
+            Some(sh) if !sh.is_declared() => badcase.push(format!(
+                "{} {what} {}, which is {} — a run overwrites it, so it would change \
+                 nothing. Only a declared input can be set",
+                c.id, k, sh.kind
+            )),
+            Some(sh) if sh.state != "published" => badcase.push(format!(
+                "{} {what} {}, which is {} rather than published",
+                c.id,
+                k,
+                if sh.is_seeded() {
+                    "seeded"
+                } else {
+                    sh.state.as_str()
+                }
+            )),
+            Some(_) => {}
+        };
+        for (k, _) in &c.supply {
+            check("supplies", k);
+        }
+        for k in &c.conditions {
+            check("lists as a condition", k);
+        }
+        let mut seen = BTreeSet::new();
+        for k in &c.conditions {
+            if !seen.insert(k.as_str()) {
+                badcase.push(format!("{} lists {} as a condition twice", c.id, k));
+            }
+        }
+    }
+    if tree.cases.is_empty() {
+        badcase.push("cases/ holds no case, and every face runs one by default".into());
+    }
+    out.push(if badcase.is_empty() {
+        Check::pass("V16 the case supplies only what a run can take")
+    } else {
+        Check::fail(
+            "V16 the case supplies only what a run can take",
+            badcase.join(", "),
+        )
     });
 
     // V13 — the browser face offers only rows it can actually answer.

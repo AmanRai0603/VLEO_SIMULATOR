@@ -25,6 +25,17 @@ lands outside its own declared domain: raising sw_mean_band_spread past about
 That is the design answering, not the tool failing, so it is reported as a
 finding with its bound rather than as an error.
 
+A GUARD NAMED IN ADVANCE IS NOT A FINDING, AND IS STILL PRINTED. Some of
+these refusals are the design saying exactly what its sheets say it will: the
+row that refuses carries a written reason describing this very situation.
+MATLAB_PORT_PLAN §42.2a argues two of them through and concludes they must not
+be chased by moving a bound. They are listed in ACKNOWLEDGED below, each keyed to
+the input, the row that refuses, the side of its bound, and a phrase of that
+row's own reason — and checked against the refusal the engine actually returns
+on every run. A different row refusing, the other side of a bound, or the reason
+rewritten, and the acknowledgement no longer matches: the finding is back. So
+this list cannot quietly absorb a new defect; it can only name old guards.
+
 A PERTURBATION IS NOT A PROOF. Where a row is read through a table that clamps —
 sw_recurrence_lag above lead 26, sw_storm_design_level between its integer G
 levels — a value moved a little way returns the same answer, and reading that as
@@ -48,13 +59,51 @@ HOST = os.environ.get("VLEO_DAEMON", "http://localhost:7777")
 PROBE = 9
 
 
+# Refusals that are the design working, each argued in MATLAB_PORT_PLAN §42.2a.
+# (input moved, row that refuses, side of its bound, a phrase of its own reason)
+ACKNOWLEDGED = [
+    ("sw_mean_band_spread", "sw_f107_cold_long", "lower",
+     "the band is wider than the sky"),
+    ("sw_ap_central_expectation", "sw_ap_cold_long", "lower",
+     "a symmetric band subtracted from a small centre"),
+    ("sw_ap_central_expectation", "sw_ap_cold_short", "lower",
+     "likely to fire on an ordinary input rather than on a mistake"),
+]
+
+
+def side_of(message):
+    """Which bound a refusal broke, from the engine's own wording."""
+    if "below the declared lower limit" in message:
+        return "lower"
+    if "above the declared upper limit" in message:
+        return "upper"
+    return ""
+
+
+def classify(input_id, roots):
+    """Split the refusals that took a branch down into acknowledged guards and
+    the rest. `roots` is [(row, message)]. No roots at all is never
+    acknowledged: a branch that broke with nothing named as the cause is the
+    one thing here that is certainly a finding."""
+    known, unknown = [], []
+    for row, msg in roots:
+        hit = next((a for a in ACKNOWLEDGED
+                    if a[0] == input_id and a[1] == row and a[2] == side_of(msg)
+                    and a[3] in msg), None)
+        (known if hit else unknown).append((row, hit[3] if hit else msg))
+    return known, unknown if roots else [("(nothing named)", "a branch broke with no refusal behind it")]
+
+
 def get(path):
     with urllib.request.urlopen(HOST + path, timeout=300) as r:
         return json.load(r)
 
 
 def run(node, mode, sets=None):
-    p = [("node", node), ("mode", mode), ("case", "nominal")]
+    # At the declared defaults, whatever case the person running the daemon
+    # has saved: an audit of the tree is a statement about the sheets, and a
+    # saved case is somebody's design, not the tree's.
+    p = [("node", node), ("mode", mode), ("inputs", "defaults")]
     for k, v in sets or []:
         p.append(("set", "%s:%.17g" % (k, v)))
     req = urllib.request.Request(HOST + "/v1/run",
@@ -115,6 +164,7 @@ def audit(sub=None):
     BB = {b["id"]: b for b in base["blocked"]}
 
     findings = []
+    guarded = []
     name = sub or "the whole tree"
     print("%s — %d rows, %d published, %d editable" % (name, len(rows), len(pub), len(inputs)))
 
@@ -141,6 +191,7 @@ def audit(sub=None):
         # Walk the declared range rather than nudging: see the note at the top.
         moved, broke, seen_any = set(), set(), False
         held = []                 # where in the range every branch still answered
+        roots = {}                # row -> message, for each refusal that took a branch down
         lo, hi = r["lo"], r["hi"]
         for k in range(PROBE):
             x = lo + (hi - lo) * k / (PROBE - 1)
@@ -158,6 +209,12 @@ def audit(sub=None):
                     broke.add(i)
                     lost_here = True
             held.append(not lost_here)
+            if lost_here:
+                # The rows that refused HERE and not at the declared values:
+                # the cause, rather than the rows blocked behind it.
+                for b in res["blocked"]:
+                    if b["kind"] != "blocked" and b["id"] not in BB:
+                        roots.setdefault(b["id"], b["message"])
         print("   %-38s %6d %7d %6d %6d"
               % (r["id"][:38], read_by, len(heads), len(moved), len(broke)))
 
@@ -182,17 +239,30 @@ def audit(sub=None):
             where = ("only at the bottom of its range" if held and held[0] and not held[-1]
                      else "only at the top of its range" if held and held[-1] and not held[0]
                      else "in part of its range")
-            findings.append((r["id"],
-                             "%d branch(es) go from a number to blocked inside its own "
-                             "declared range %g … %g — every branch answers %s, at %d of "
-                             "%d sampled points (%s)"
-                             % (len(broke), lo, hi, where, ok_n, n,
-                                ", ".join(sorted(broke)[:3]))))
+            said = ("%d branch(es) go from a number to blocked inside its own "
+                    "declared range %g … %g — every branch answers %s, at %d of "
+                    "%d sampled points (%s)"
+                    % (len(broke), lo, hi, where, ok_n, n, ", ".join(sorted(broke)[:3])))
+            known, unknown = classify(r["id"], sorted(roots.items()))
+            if unknown:
+                findings.append((r["id"], said + "; refused first by " +
+                                 ", ".join(row for row, _ in unknown)))
+            else:
+                guarded.append((r["id"], said, known))
 
     print()
     print("FINDINGS: %d" % len(findings))
     for i, w in findings:
         print("   %-40s %s" % (i[:40], w))
+    # Printed every time, not hidden: that these hold is itself worth reading,
+    # and a reader who disagrees with §42.2a should see what they disagree with.
+    print()
+    print("GUARDS NAMED IN ADVANCE: %d — each refusal matches its own row's written "
+          "reason (MATLAB_PORT_PLAN §42.2a)" % len(guarded))
+    for i, w, known in guarded:
+        print("   %-40s %s" % (i[:40], w))
+        for row, phrase in known:
+            print("   %-40s   %s refuses at its bound: \"…%s…\"" % ("", row, phrase))
     # A finding is something for a person to read, not a reason to fail a build:
     # every one of them above is a true statement about the design.
     return 0
@@ -236,8 +306,32 @@ def selftest():
         bad += 1
         print("  FAIL the probe misses the integer levels of a lookup row")
 
+    # The acknowledgement matches only the guard it names. Each way a new
+    # defect could look like an old guard must come back as a finding.
+    msg = ("sw_f107_cold_long: F107_cold_long = 29.2 - is below the declared lower limit of 60 - "
+           "— ... says the band is wider than the sky, which happens ...")
+    ack = [
+        ([("sw_f107_cold_long", msg)], True, "the guard §42.2a names"),
+        ([("sw_f107_cold_long", msg.replace("wider than the sky", "too wide"))], False,
+         "the reason rewritten"),
+        ([("sw_f107_cold_long", msg.replace("below the declared lower", "above the declared upper"))],
+         False, "the other side of the bound"),
+        ([("sw_f107_cold_short", msg)], False, "a different row refusing"),
+        ([("sw_f107_cold_long", msg), ("env_density", "env_density: out of domain")], False,
+         "an acknowledged guard beside one that is not"),
+        ([], False, "a branch that broke with nothing named"),
+    ]
+    for roots, want, why in ack:
+        known, unknown = classify("sw_mean_band_spread", roots)
+        if (not unknown) != want:
+            bad += 1
+            print("  FAIL %s: acknowledged=%s" % (why, not unknown))
+    if classify("sw_ap_central_expectation", [("sw_f107_cold_long", msg)])[1] == []:
+        bad += 1
+        print("  FAIL a guard acknowledged for one input was accepted for another")
+
     print("selftest: %d cases, %s"
-          % (len(cases) + 3, "all as expected" if not bad else "%d FAILED" % bad))
+          % (len(cases) + 3 + len(ack) + 1, "all as expected" if not bad else "%d FAILED" % bad))
     return 1 if bad else 0
 
 

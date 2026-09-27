@@ -235,6 +235,8 @@ const PANELS = [
     label: 'Repeatability',
     draws: 'The mean cycle against every cycle the record holds, stacked on phase.',
     asks: 'How much of F10.7 does the cycle explain — and does one cycle repeat the last?',
+    // Where the picture stops being true (docs/EXPLAINING.md E4).
+    breaks: 'Two completed cycles are the whole sample the mean is drawn from, and cycle 25 is still running: the mean shape is a two-cycle average, not a law, and says nothing about how big the next cycle will be.',
     controls: [
       { k: 'view', label: 'view', opts: [['stack', 'the mean cycle'], ['storm', 'storm scale by cycle']] },
       // The storm-scale view is stormScale(rec): it takes the record and
@@ -346,6 +348,8 @@ const PANELS = [
     label: 'Pattern',
     draws: 'The autocorrelation of the detrended record against lag, and its harmonics.',
     asks: 'At what lag does the solar rotation come back, and how strongly?',
+    // Where the picture stops being true (docs/EXPLAINING.md E4).
+    breaks: 'Autocorrelation shows that a recurrence exists and at what lag, not how large the next spike will be; beyond a few rotations the curve sits inside the band chance alone would give.',
     // THE DETREND WINDOW AND THE MAXIMUM LAG WERE CONTROLS AND ARE NOW THE
     // PICTURE. Nine settings of two knobs drew nine curves that differ in
     // exactly the way a reader wants to compare, and a control is the one
@@ -521,6 +525,8 @@ const PANELS = [
     label: 'Segmentation',
     draws: 'Where the record actually sits, and the boundaries the study cut it at.',
     asks: 'Quiet, active or storm — and how much of the record is each?',
+    // Where the picture stops being true (docs/EXPLAINING.md E4).
+    breaks: 'The cuts are the study’s boundaries, not physical thresholds: a day either side of a cut is not a different sky.',
     controls: [
       { k: 'view', label: 'view', opts: [['hist', 'where the record sits'], ['phase', 'regime against cycle phase']] },
       // regimeByPhase(rec) reads neither of these.
@@ -610,6 +616,8 @@ const PANELS = [
     label: 'Predict',
     draws: 'How far the flux moves over a lead, at a percentile.',
     asks: 'How far ahead is F10.7 knowable, and what does the band cost?',
+    // Where the picture stops being true (docs/EXPLAINING.md E4).
+    breaks: 'These are percentiles of changes the record has already seen, pooled across the whole cycle: a change larger than any in the record is not in this picture, and neither is where in the cycle a mission starts.',
     // THE PERCENTILE AND THE SPAN WERE CONTROLS AND ARE NOW THE PICTURE.
     //
     // Four percentiles behind a knob is four pictures of one quantity that
@@ -781,6 +789,8 @@ const PANELS = [
     label: 'Forecast',
     draws: 'The issued 27-day outlook, scored against what arrived.',
     asks: 'Is the published forecast worth more than assuming nothing changes?',
+    // Where the picture stops being true (docs/EXPLAINING.md E4).
+    breaks: 'It scores the outlook as it was issued over the record’s span; a forecast method changed since, or a cycle unlike these, is not scored here.',
     needs: ['forecast_issued.csv'],
     controls: [
       // 'by calendar year' was offered here for a while and read nowhere, so
@@ -994,6 +1004,8 @@ const PANELS = [
     label: 'Drivers',
     draws: 'The five design scenarios this subsystem publishes, against the legacy run’s own.',
     asks: 'What does this subsystem hand upward, and does it agree with the study it ports?',
+    // Where the picture stops being true (docs/EXPLAINING.md E4).
+    breaks: 'Agreement with the legacy tool is agreement between two implementations, not with the sky: where they differ the picture says by how much, not which one is right.',
     controls: [
       { k: 'view', label: 'view', opts: [['set', 'one quantity across the scenarios'],
         ['parity', 'all twenty-five, against the legacy run']] },
@@ -1215,6 +1227,8 @@ const PANELS = [
     label: 'Design',
     draws: 'The design window: what the record expects against what the vehicle is built for.',
     asks: 'Will the design be exceeded, and if so beyond what mission length?',
+    // Where the picture stops being true (docs/EXPLAINING.md E4).
+    breaks: 'The return curve extends the record’s worst days; beyond the longest span the record covers, the curve is a fit rather than an observation.',
     controls: [
       { k: 'v', label: 'driver', opts: [['ap', 'Ap — return period'], ['f107', 'F10.7 — lead and confidence']] },
       // THE G SCALE IS GEOMAGNETIC. G1 to G3 is a storm scale and F10.7 has no
@@ -1422,6 +1436,8 @@ const PANELS = [
     label: 'Closure',
     draws: 'Each requirement against what the record gives it, and the margin between them.',
     asks: 'Does the design close against the sky, and what spends the margin fastest?',
+    // Where the picture stops being true (docs/EXPLAINING.md E4).
+    breaks: 'The margin is swept against one decision at a time, every other held at its case value: two decisions moving together can spend it faster than either line shows.',
     controls: [
       { k: 'pair', label: 'closure', opts: [
         ['01', 'F10.7 — sustained'],
@@ -1668,6 +1684,8 @@ const PANELS = [
     label: 'Thermosphere',
     draws: 'The exospheric temperature the drivers produce, and what moves it.',
     asks: 'How hot does the sky this subsystem publishes make the upper thermosphere?',
+    // Where the picture stops being true (docs/EXPLAINING.md E4).
+    breaks: 'Jacchia 1971 is an empirical fit to the sky of its time, so these are a model’s temperatures; the density a drag calculation needs is a further step this tree has not taken.',
     controls: [
       { k: 'view', label: 'view', opts: [
         ['solar', 'against the flux'],
@@ -1796,6 +1814,8 @@ const PANELS = [
     label: 'Climate',
     draws: 'The long run: the record by year, and the season inside the year.',
     asks: 'What is the context a single mission sits inside?',
+    // Where the picture stops being true (docs/EXPLAINING.md E4).
+    breaks: 'An average over years hides the days inside them: each bar is a mean, and the 2017 bar rests on about 92 days where the others rest on a whole year.',
     controls: [
       // kpAgainstAp(rec) plots Kp against ap and has no variable to pick.
       { k: 'v', label: 'variable', when: o => o.by !== 'kpap',
@@ -1907,6 +1927,8 @@ const PANELS = [
     label: 'Density',
     draws: 'Nothing yet, and the reason is worth a panel.',
     asks: 'What are these drivers worth as atmospheric density?',
+    // Where the picture stops being true (docs/EXPLAINING.md E4).
+    breaks: 'This is not a density: no atmosphere model is written in this tree yet, so the picture shows only the two drivers such a model would take.',
     controls: [],
     build(rec) {
       const withBoth = rec.days.filter(d => d.f107 !== null && d.ap !== null);
@@ -3124,6 +3146,10 @@ function panelBody(p, o) {
     // be read first.
     '<p class="caption sw-answer"></p>' +
     '<p class="caption muted">' + esc(p.draws) + '</p>' +
+    // WHERE THE PICTURE STOPS BEING TRUE. Every picture is right about some
+    // things and silent or wrong about others; saying which is what keeps it
+    // from being quoted as more than it shows (docs/EXPLAINING.md E4).
+    (p.breaks ? '<p class="caption breaks muted"><b>Where the picture stops being true:</b> ' + esc(p.breaks) + '</p>' : '') +
     // Which rows this picture is an argument about. A panel that illustrates a
     // claim and does not say which claim leaves the reader to guess, and the
     // guess is the place the picture and the row quietly stop agreeing.

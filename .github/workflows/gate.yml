@@ -90,6 +90,7 @@ jobs:
         run: |
           cargo run -p xtask -- docs
           cargo run -p xtask -- variables
+          cargo run -p xtask -- derisk
           if ! git diff --quiet; then
             echo "::error::the committed artefacts differ from what the sheets generate."
             echo "Run 'cargo run -p xtask -- docs' and commit the result."
@@ -104,8 +105,10 @@ jobs:
         run: |
           cargo run -p xtask -- docs
           cargo run -p xtask -- variables
+          cargo run -p xtask -- derisk
           cargo run -p xtask -- docs
           cargo run -p xtask -- variables
+          cargo run -p xtask -- derisk
           git diff --quiet || { echo "::error::a generator is not deterministic"; exit 1; }
 
       # CODEOWNERS IS GENERATED AND NOTHING REGENERATED IT. Every other generated
@@ -160,21 +163,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: the agent lanes
-        run: python3 tools/agent_lanes.py --selftest
       - name: the commit-message rule
         run: python3 tools/commit_message.py --selftest
       - name: the advisory review
         run: python3 tools/review_report.py --selftest
-      # Gap W8: the instruction files are an input to every node and were the
-      # only input nothing checked. Stale references are what they will really
-      # have — a path renamed by a commit that never opened one.
-      - name: the fleet instrument
-        run: python3 tools/fleet_report.py --selftest
-      - name: the instruction-file lint
+      # The house rules are an input to every change and prose is the one input
+      # nothing else checks. Stale references are what they will really have —
+      # a path renamed by a commit that never opened one.
+      - name: the house rules' own references
         run: |
-          python3 tools/instruction_lint.py --selftest
-          python3 tools/instruction_lint.py
+          python3 tools/docs_lint.py --selftest
+          python3 tools/docs_lint.py
       # Every node is the same files in one directory, and that uniformity is
       # what makes adding a node a copy rather than a decision. It degrades one
       # folder at a time, and each individual departure looks harmless — which
@@ -276,9 +275,7 @@ jobs:
   # adopted review model belongs in this job beside the mechanical pass, under
   # two rules: it writes to the summary and has no say in the merge, and its
   # family must differ from whichever model wrote the change. A model handed its
-  # own reasoning to grade approves it — which is why agents/provenance.toml
-  # declares the producer/checker pairings and the instruction lint refuses a
-  # pair whose models match.
+  # own reasoning to grade approves it.
   review:
     name: advisory review (never blocks)
     runs-on: ubuntu-latest

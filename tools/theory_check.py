@@ -149,8 +149,11 @@ def observed_f107a():
 # ─── the engine ───────────────────────────────────────────────────────────────
 
 def run(node, **over):
-    """One run through `/v1/run`, with driver overrides — the face's own path."""
-    q = (HOST + "/v1/run?" + urllib.parse.urlencode({"node": node})
+    """One run through `/v1/run`, with driver overrides — the face's own path.
+
+    At the declared defaults, so what a theory is checked against never depends
+    on whatever case is saved on the machine running the check."""
+    q = (HOST + "/v1/run?" + urllib.parse.urlencode({"node": node, "inputs": "defaults"})
          + "".join("&set=%s:%r" % (k, v) for k, v in sorted(over.items())))
     with urllib.request.urlopen(q, timeout=120) as fh:
         d = json.load(fh)

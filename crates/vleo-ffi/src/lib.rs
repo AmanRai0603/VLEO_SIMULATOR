@@ -162,7 +162,8 @@ pub unsafe extern "C" fn vleo_evaluate(case: *const VleoCase, out: *mut VleoResu
         set_message(format!("no node '{node}'"));
         return VLEO_UNKNOWN_NODE;
     }
-    let base = cstr(c.base_case).unwrap_or_else(|| "nominal".into());
+    // Null is the default case, which the engine resolves.
+    let base = cstr(c.base_case).unwrap_or_default();
     let mut supply = Vec::new();
     if !c.sets.is_null() && c.set_count > 0 {
         let sets = std::slice::from_raw_parts(c.sets, c.set_count as usize);

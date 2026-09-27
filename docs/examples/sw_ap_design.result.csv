@@ -1,0 +1,148 @@
+# VLEO multipayload — a saved result: what one run returned, and the inputs it ran on.
+# Open it in any spreadsheet. Upload it on the Results page to see it again without
+# running anything; its input rows can be loaded back as the case.
+# `value` is in `unit`; `si` is the same number in SI, which is what the tool reads.
+#! result vleo-result/1
+#! target sw_ap_design
+#! mode branch
+#! saved 2026-09-27T13:29:20Z
+#! name 
+#! chain cd9ab9
+#! kernel 1ad1ae
+#! graph adb684
+#! case 54347e
+#! template 48afb0100e92
+#! data solar-drivers@2026.09.04#54784567db11b868 solar-weather@2026.09.14#f3557eb8443bfdaa
+#! ran 2
+#! blocked 0
+section,id,name,value,unit,si,credibility,governing,note
+input,aero_appendage_area,Appendage frontal area,0.05,m^2,0.05,,,default
+input,aero_body_diameter,Body diameter,0.6,m,0.6,,,default
+input,aero_body_length,Body length,2,m,2,,,default
+input,aero_cp_cm_offset,Centre of pressure to centre of mass offset,0.15,m,0.15,,,default
+input,com_antenna_diameter,Spacecraft antenna diameter,0.3,m,0.3,,,default
+input,com_antenna_efficiency,Antenna aperture efficiency,0.6,-,0.6,,,default
+input,com_atmospheric_loss,Atmospheric and polarisation loss,1.8,-,1.8,,,default
+input,com_frequency,Downlink carrier frequency,8.2,GHz,8199999999.999999,,,default
+input,com_gs_antenna_diameter,Ground station antenna diameter,5.4,m,5.4,,,default
+input,com_gs_noise_temperature,Ground station antenna noise temperature,60,K,60,,,default
+input,com_implementation_loss,Implementation loss,1.5,-,1.5,,,default
+input,com_line_loss,Transmit line loss,1.2,-,1.2,,,default
+input,com_link_margin_required,Required link margin,3,-,3,,,default
+input,com_passes_per_day,Usable passes per day,9,-,9,,,default
+input,com_required_ebn0,Required energy per bit over noise density,4.5,-,4.5,,,default
+input,com_tx_power,Transmitter radio-frequency output power,8,W,8,,,default
+input,cost_annual_operations,Annual operations cost,4.5,MUSD,4500000,,,default
+input,cost_inflation,Annual inflation rate,0.03,-,0.03,,,default
+input,cost_launch_per_satellite,Launch cost per satellite,1.8,MUSD,1800000,,,default
+input,cost_learning_slope,Production learning curve slope,0.92,-,0.92,,,default
+input,gnc_alignment_error,Payload to sensor alignment error,30,arcsec,0.0001454441043328608,,,default
+input,gnc_control_error,Attitude control error,40,arcsec,0.0001939254724438144,,,default
+input,gnc_dump_time,Momentum dump interval,45,min,2700,,,default
+input,gnc_gdop,Geometric dilution of precision,2.5,-,2.5,,,default
+input,gnc_inertia_max,Largest principal moment of inertia,8,-,8,,,default
+input,gnc_inertia_min,Smallest principal moment of inertia,1.2,-,1.2,,,default
+input,gnc_magnetic_latitude,Magnetic latitude,45,deg,0.7853981633974483,,,default
+input,gnc_residual_dipole,Residual magnetic dipole,0.05,A.m^2,0.05,,,default
+input,gnc_sensor_noise,Attitude sensor noise,12,arcsec,0.00005817764173314432,,,default
+input,gnc_thermal_distortion,Thermal distortion error,20,arcsec,0.0000969627362219072,,,default
+input,gnc_user_range_error,GNSS user range error,1.5,m,1.5,,,default
+input,kpi_availability_required,Service availability — required,0.99,-,0.99,,,default
+input,kpi_cost_per_year_required,Cost per operational year — required,45,MUSD,45000000,,,default
+input,kpi_data_volume_required,Daily downlink volume — required,500,Gbit,500000000000,,,default
+input,kpi_geolocation_required,Emitter geolocation accuracy — required,500,m,500,,,default
+input,kpi_gsd_required,Ground sample distance — required,1,m,1,,,default
+input,kpi_latency_required,End to end latency — required,30,min,1800,,,default
+input,kpi_mass_margin_required,Mass margin — required,0.1,-,0.1,,,default
+input,kpi_power_margin_required,Power margin — required,0.2,-,0.2,,,default
+input,kpi_revisit_required,Mean revisit time — required,6,h,21600,,,default
+input,kpi_service_lifetime_required,Service lifetime — required,5,yr,157788000,,,default
+input,kpi_thermal_margin_required,Thermal margin — required,10,K,10,,,default
+input,kpi_thrust_margin_required,Thrust to drag closure — required,1,-,1,,,default
+input,l3_solar_req_01,"Required — F10.7, sustained",260,-,260,,,default
+input,l3_solar_req_02,"Required — F10.7, single day",350,-,350,,,default
+input,l3_solar_req_03,"Required — Ap, survival",207,-,207,,,default
+input,l3_solar_req_04,"Required — Ap, sustained",48,-,48,,,default
+input,l3_solar_req_05,"Required — Ap, single day",132,-,132,,,default
+input,mass_avionics,Avionics mass,9,kg,9,,,default
+input,mass_comms_hw,Communications hardware mass,7.5,kg,7.5,,,default
+input,mass_gnc_hw,GNC hardware mass,11,kg,11,,,default
+input,mass_harness,Harness and thermal hardware mass,12,kg,12,,,default
+input,mass_limit,Mass limit,250,kg,250,,,default
+input,mass_payload,Payload mass,55,kg,55,,,default
+input,mass_propulsion_hw,Propulsion hardware mass,26,kg,26,,,default
+input,mass_structure,Structure and mechanisms mass,38,kg,38,,,default
+input,mass_system_margin,System-level mass margin,0.2,-,0.2,,,default
+input,mis_delivery_time,Delivery time to the customer,3,min,180,,,default
+input,mis_processing_time,Ground processing time,8,min,480,,,default
+input,mis_satellites,Number of satellites,24,-,24,,,default
+input,mis_unit_availability,Single satellite availability,0.97,-,0.97,,,default
+input,pay_aperture,Optical aperture diameter,0.3,m,0.3,,,default
+input,pay_bits_per_pixel,Bits per pixel,12,-,12,,,default
+input,pay_compression,Image compression ratio,3,-,3,,,default
+input,pay_focal_length,Optical focal length,2.4,m,2.4,,,default
+input,pay_pixel_pitch,Detector pixel pitch,5.5,um,0.0000055,,,default
+input,pay_pixels_across,Detector pixels across track,8192,-,8192,,,default
+input,pay_power,Payload orbit-average power,120,W,120,,,default
+input,pay_quantum_efficiency,Detector quantum efficiency,0.75,-,0.75,,,default
+input,pay_radiance,At-aperture spectral radiance,60,-,60,,,default
+input,pay_read_noise,Detector read noise,8,-,8,,,default
+input,pay_rf_bandwidth,Intercept receiver bandwidth,20,MHz,20000000,,,default
+input,pay_rf_gdop,Geolocation geometric dilution,4,-,4,,,default
+input,pay_rf_integration,Intercept integration time,0.01,s,0.01,,,default
+input,pay_rf_snr,Intercept signal to noise ratio,10,-,10,,,default
+input,pay_transmission,Optical transmission,0.72,-,0.72,,,default
+input,pay_wavelength,Centre wavelength,550,nm,0.00000055,,,default
+input,prop_beam_voltage,Beam accelerating voltage,300,V,300,,,default
+input,prop_beta_backflow,Duct back-flow transmission,0.06,-,0.06,,,default
+input,prop_div_efficiency,Beam divergence efficiency,0.97,-,0.97,,,default
+input,prop_double_ion_factor,Doubly-charged ion correction,0.97,-,0.97,,,default
+input,prop_eta_geo,Intake geometric transmission,0.9,-,0.9,,,default
+input,prop_intake_area,Intake mouth area,0.2,m^2,0.2,,,default
+input,prop_ionisation_cost,Energy cost per ion,250,-,250,,,default
+input,prop_other_losses,Other thruster losses,0.15,-,0.15,,,default
+input,prop_ppu_efficiency,Power processing unit efficiency,0.9,-,0.9,,,default
+input,prop_throat_area,Intake throat area,0.01,m^2,0.01,,,default
+input,prop_utilisation,Propellant utilisation efficiency,0.4,-,0.4,,,default
+input,pwr_array_area,Solar array area,6,m^2,6,,,default
+input,pwr_array_areal_density,Array areal density,2.8,-,2.8,,,default
+input,pwr_array_incidence,Mean solar incidence angle on the array,25,deg,0.4363323129985824,,,default
+input,pwr_avionics_load,Avionics and housekeeping load,35,W,35,,,default
+input,pwr_battery_specific_energy,Battery specific energy,150,-,150,,,default
+input,pwr_cell_efficiency,Solar cell efficiency,0.3,-,0.3,,,default
+input,pwr_cell_temperature_coefficient,Cell power temperature coefficient,-0.0025,-,-0.0025,,,default
+input,pwr_degradation_rate,Annual array degradation rate,0.025,-,0.025,,,default
+input,pwr_discharge_efficiency,Battery discharge path efficiency,0.92,-,0.92,,,default
+input,pwr_dod,Battery depth of discharge,0.2,-,0.2,,,default
+input,pwr_harness_loss,Harness and distribution loss,0.06,-,0.06,,,default
+input,pwr_packing,Array packing factor,0.88,-,0.88,,,default
+input,pwr_thermal_load,Thermal control load,15,W,15,,,default
+input,sys_mission_requirements_mission_duration,Mission duration,5,yr,157788000,,,default
+input,sys_mission_requirements_mission_epoch,Mission epoch,9862,d,852076800,,,default
+input,thm_absorptivity,Solar absorptivity,0.3,-,0.3,,,default
+input,thm_emissivity,Infrared emissivity,0.85,-,0.85,,,default
+input,thm_internal_dissipation,Internal dissipation,0,W,0,,,default
+input,thm_radiator_area,Radiator area,2.5,m^2,2.5,,,default
+input,thm_temperature_limit,Upper temperature limit,323,K,323,,,default
+input,env_chamber_temperature,Intake chamber gas temperature,600,K,600,,,default
+input,env_wall_temperature,Spacecraft surface temperature,300,K,300,,,default
+input,orbit_altitude,Orbit altitude,250,km,250000,,,default
+input,orbit_beta_angle,Beta angle,29.999999999999996,deg,0.5235987755982988,,,default
+input,orbit_eccentricity,Orbit eccentricity,0,-,0,,,default
+input,orbit_inclination,Orbit inclination,96.6,deg,1.6859880574265222,,,default
+input,orbit_min_elevation,Minimum useful elevation angle,10,deg,0.17453292519943295,,,default
+input,sw_ap_central_expectation,Expected Ap over the mission window,22.095389,-,22.095389,,,default
+input,sw_ap_mean_band_spread,Ap rotation-forecast residual spread,3.593688,-,3.593688,,,default
+input,sw_band_coverage,Stated band coverage,0.9509267569,-,0.9509267569,,,default
+input,sw_cycle_repeatability,Cycle-to-cycle repeatability,0.7701397224,-,0.7701397224,,,default
+input,sw_event_duration,F10.7 burst duration,3.3114754098000003,d,286111.47540672,,,default
+input,sw_f107_observed,"Observed F10.7, the forecast's anchor",150,-,150,,,default
+input,sw_f107a_ratio,Daily F10.7 scatter about F10.7A,0.1222100376,-,0.1222100376,,,default
+input,sw_mean_band_spread,Rotation-forecast residual spread,13.454382,-,13.454382,,,default
+input,sw_recurrence_lag,Rotation recurrence lag,26,d,2246400,,,default
+input,sw_recurrence_strength,Rotation recurrence strength,0.375988,-,0.375988,,,default
+input,sw_semiannual_amplitude,Semiannual Ap amplitude,1.278112,-,1.278112,,,default
+input,sw_spike_threshold,F10.7 spike threshold,1.3048655732,-,1.3048655732,,,default
+input,sw_storm_design_level,Storm level designed for,2,-,2,,,changed
+output,sw_storm_design_level,Storm level designed for,2,-,2,1,uncertainty,
+output,sw_ap_design,Ap design value,80,-,80,1,mathematics,

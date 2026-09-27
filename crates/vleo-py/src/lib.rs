@@ -70,7 +70,9 @@ fn nodes() -> Vec<String> {
 /// `sets` maps node identifiers to SI values. Out of range is refused, never
 /// clamped, and the exception names the field, the bound and the reason.
 #[pyfunction]
-#[pyo3(signature = (node, case = "nominal", sets = None, mode = "branch"))]
+// `case` names the case; empty is the one case. The inputs a person saved live
+// with the application, not here: pass them as `sets`.
+#[pyo3(signature = (node, case = "", sets = None, mode = "branch"))]
 fn evaluate(
     py: Python<'_>,
     node: &str,
@@ -89,6 +91,9 @@ fn evaluate(
         data: Vec::new(),
         data_versions: Vec::new(),
     };
+    if let Some(why) = vleo_modules::case_refusal(&c) {
+        return Err(PyValueError::new_err(why));
+    }
     // The GIL is released for the duration: there is no global state in the
     // engine, so a sweep is a parallel map with no mutex.
     let out = py.allow_threads(|| {
@@ -128,7 +133,7 @@ fn evaluate(
 /// One call, not five hundred: the marshalling cost per call is what makes a
 /// tight loop calling evaluation per point slow, and then the engine is blamed.
 #[pyfunction]
-#[pyo3(signature = (node, over, start, stop, points = 64, case = "nominal"))]
+#[pyo3(signature = (node, over, start, stop, points = 64, case = ""))]
 fn sweep(
     py: Python<'_>,
     node: &str,
@@ -140,6 +145,13 @@ fn sweep(
 ) -> PyResult<(Vec<f64>, Vec<f64>, Vec<(f64, String)>)> {
     if Vleo::find(node).is_none() || Vleo::find(over).is_none() {
         return Err(PyValueError::new_err("the sweep names a node that does not exist"));
+    }
+    let probe = Case {
+        base: case.to_string(),
+        ..Default::default()
+    };
+    if let Some(why) = vleo_modules::case_refusal(&probe) {
+        return Err(PyValueError::new_err(why));
     }
     let n = points.max(2);
     Ok(py.allow_threads(|| {

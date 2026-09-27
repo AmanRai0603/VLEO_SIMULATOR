@@ -4,24 +4,41 @@
   <h2>Ap at a storm return period</h2>
   <p class="ident"><code>sw_storm_return_level</code> · <span class="kind kind-computed">computed</span> · owner <b>environment</b> · tier <b>A</b> · state <b>published</b></p>
 </header>
+<section class="answer-first">
+<p class="af-k">Answer first</p>
+<p class="af-q">What daily planetary Ap recurs once per mission lifetime?</p>
+<p class="af-a">Ap_T — computed on the inputs you run, never stored: run it beside this page.</p>
+<ul class="af-points">
+<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li><b>Holds</b> from 20 to 230 — outside it the row refuses, by name.</li>
+<li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></li>
+</ul>
+</section>
 <div class="tabs" role="tablist">
-  <button role="tab" class="tab sel" data-tab="0">question &amp; mathematics</button>
+  <button role="tab" class="tab sel" data-tab="0">said simply, then the real thing</button>
   <button role="tab" class="tab" data-tab="1">theory</button>
-  <button role="tab" class="tab" data-tab="2">interface</button>
-  <button role="tab" class="tab" data-tab="3">algorithm</button>
-  <button role="tab" class="tab" data-tab="4">the relation, moving</button>
-  <button role="tab" class="tab" data-tab="5">generated code</button>
-  <button role="tab" class="tab" data-tab="6">evidence</button>
-  <button role="tab" class="tab" data-tab="7">flags</button>
-  <button role="tab" class="tab" data-tab="8">credibility</button>
-  <button role="tab" class="tab" data-tab="9">design space</button>
+  <button role="tab" class="tab" data-tab="2">de-risking</button>
+  <button role="tab" class="tab" data-tab="3">interface</button>
+  <button role="tab" class="tab" data-tab="4">algorithm</button>
+  <button role="tab" class="tab" data-tab="5">the relation, moving</button>
+  <button role="tab" class="tab" data-tab="6">generated code</button>
+  <button role="tab" class="tab" data-tab="7">evidence</button>
+  <button role="tab" class="tab" data-tab="8">flags</button>
+  <button role="tab" class="tab" data-tab="9">credibility</button>
+  <button role="tab" class="tab" data-tab="10">design space</button>
 </div>
 <section class="panel sel" data-panel="0">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
+<div class="station">
+<h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
+<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">What daily planetary Ap recurs once per mission lifetime?</p>
-<p class="maths"><code>Ap(T) = 92.5155 + 40.9265*ln(T / 1 yr)</code></p>
+<p class="maths"><code>Ap(T) = 92.5155 + 40.9265*ln(T / 1 yr)</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></p>
 <p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
 <p class="note">Geomagnetic activity has no usable long-term forecast, so a design does not predict the storm — it sizes for the worst one the mission is likely to meet. That makes the mission length the input: a five-year mission and a fifteen-year one are owed different skies, and this row moves when orbit_mission_duration moves.</p>
-<h4>Assumptions</h4>
+<h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<h5>Assumptions, and where each stops holding</h5>
 <dl class="asm">
 <dt>The tail is log-linear in the return period, with the two coefficients fitted on this record</dt><dd>fails when the form is a choice, not the source's. Fitted over ranks 2 to 56 of the record, which is return periods 0.5035 to 14.0986 years; it carries a residual rms of 4.95 Ap against the empirical curve, worst +8.6 and -12.9. A power law on the same points is more than twice as bad (rms 9.10, worst -47.7), which is why this form and not that one. Anyone who needs the empirical step rather than a smooth curve should read the record, not this row.</dd>
 <dt>28.2 years of record support the whole curve, and its top end rests on two observations</dt><dd>fails when the empirical method cannot see past its own record length. At T = 15 years the answer is fitted through the second-largest daily Ap in 28.2 years, and at T = 10 years the third; the record's largest value, Ap 273, has an apparent return period of exactly 28.2 years for no reason other than that it is the largest thing in 28.2 years. The fitted domain is 0.5035 to 14.0986 years, and the declared input range 0.5 to 15 years reaches past BOTH ends of it: the curve is extrapolated by 0.285 Ap at a half-year mission and by 2.54 Ap at a fifteen-year one, because there is no rank between 1 and 2 and rank 1 is the record length itself. Small, but it is an extrapolation and an earlier version of this sheet claimed it was never one. A mission at the 15-year bound is being sized on a curve whose top is two data points. A design that needs the once-per-century storm needs a longer record or a fitted extreme-value model, not this row.</dd>
@@ -29,9 +46,16 @@
 <dt>The record this is fitted on is missing 273 days, and the missing window contains storms</dt><dd>fails when 2017-01-01 to 2017-09-30 has no rows in the daily table — nine months absent from a 29-year span, and the node's answer is a tail quantile of what remains. The hole is not empty of weather: the same bundle's alerts.csv records four days inside it with an OBSERVED K of 7 or more, including K = 8 three times on 7-8 September 2017. Bounding those days from the alerts (their other three-hourly intervals held at the record median) puts 2017-09-08 at a daily Ap of at least 104 and 2017-09-07 at 48, which would rank about 24th and 43rd in the record. Restoring them moves the five-year level by -0.0 Ap and the fifteen-year by -0.7: the tail is set by events far larger, so this particular gap does not bias this particular answer. A different gap, or one holding a top-ten storm, would.</dd>
 <dt>ap_planetary is the SWPC estimated planetary A, not the GFZ definitive value</dt><dd>fails when anyone reconciling these return levels against GFZ's definitive Ap series will find differences, and they are not transcription errors — they are two different published quantities. The bundle's INDEX.md says so; it is repeated here because a node author reads the sheet and not necessarily the bundle.</dd>
 </dl>
+<p class="muted">Outside <code>20 … 230</code> the row refuses rather than answers: ap is an equivalent amplitude in nanotesla. Below 20 the answer is not a storm at all — the record's median day is 7 — so a return level under it means the input or the fit reached somewhere neither was meant to go; THE BOUND IS THE RECORD'S LENGTH, NOT THE TABLE'S END. The fit evaluated at a return period equal to the record itself, 28.1971 years, is Ap 229.18; 230 is the first round number above it, so a return period beyond the record refuses instead of answering. The previous bound was 400 — the last point of the published ap/Kp table — which first bites at a return period of 1832 years, sixty-five times the record, and so enforced nothing: this node would answer a once-per-century question with Ap 281 while its own assumptions said a century needs a longer record. Note that 230 is BELOW the record's largest single day, Ap 273: rank 1 sits above the log-linear trend and was deliberately left out of the fitting range, so the fit does not chase it. This bound is the fit's own reach, not the record's extreme.</p>
+<h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
+<p class="d-l predict">Before you run it: what do you expect the answer to be, roughly, and which input do you expect to move it most? Write it down — then run, and compare. A guess that was wrong is the most useful thing on this page.</p>
+<p class="d-lr muted">Run it from the panel beside this page, on your own inputs, or open <i>the relation, moving</i> to watch the answer cross its range.</p>
+</div>
 </section>
 <section class="panel" data-panel="1">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <p class="why">Geomagnetic activity has no usable forecast at mission timescales, so a design cannot predict the storm it will meet. What it can do is size for the worst storm the mission is LIKELY to meet, which turns the mission length into the input: a five-year mission and a fifteen-year one are exposed to different extremes of the same distribution. That is extreme-value reasoning rather than forecasting, and the whole row is the empirical exceedance curve of the daily record with a functional form fitted through its tail.</p>
+<p class="muted">Each line below is <span class="claim claim-derived" title="worked here from sourced relations">derived</span> from the one before, ending at the relation — which is <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span>.</p>
 <div class="theory-walk" data-steps="9">
 <ol class="derive">
 <li><span class="dt">Return period is not a model, it is a definition: the average interval between events that exceed a level, which is the reciprocal of the exceedance probability per unit time. Inverting it turns 'how long is the mission' into 'how rare a storm must it tolerate'.</span><code class="dm">T(x) = 1 / P(Ap &gt; x)</code></li>
@@ -50,6 +74,11 @@
 <p class="maths concl">which is the relation this node states: <code>Ap(T) = 92.5155 + 40.9265*ln(T / 1 yr)</code></p>
 </section>
 <section class="panel" data-panel="2">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
+<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+</section>
+<section class="panel" data-panel="3">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">Every input and output, typed, with its unit. If it is not here it is not an interface.</p>
 <table class="iface"><thead><tr><th>direction</th><th>symbol</th><th>variable</th><th>type</th><th>unit</th></tr></thead><tbody>
 <tr><td>in</td><td><code>life</code></td><td><a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a></td><td>Time</td><td>yr</td></tr>
@@ -57,7 +86,8 @@
 </tbody></table>
 <p class="consumers"><b>5</b> nodes read this: <a class="xref" data-goto="l3_solar_ach_03">l3_solar_ach_03</a>, <a class="xref" data-goto="sw_kp_from_ap">sw_kp_from_ap</a>, <a class="xref" data-goto="sw_kp_mean_bias">sw_kp_mean_bias</a>, <a class="xref" data-goto="sw_kp_slot_bias">sw_kp_slot_bias</a>, <a class="xref" data-goto="sw_regime">sw_regime</a></p>
 </section>
-<section class="panel" data-panel="3">
+<section class="panel" data-panel="4">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <ol class="algo">
 <li><span class="step">take the mission length in years and read the fitted exceedance curve at that return period</span> <span class="binds">→ <code>level: Ratio</code></span></li>
 </ol>
@@ -82,12 +112,14 @@
 </ul>
 <p class="muted">The reason travels with the guard. A guard whose reason is not written down gets deleted by the next person who finds it awkward.</p>
 </section>
-<section class="panel" data-panel="4">
+<section class="panel" data-panel="5">
+<p class="dx dx-tutorial" title="learn by doing: try it and watch">tutorial</p>
 <div class="relation-host" data-node="sw_storm_return_level" data-lo="20" data-hi="230" data-symbol="Ap_T">
 <p class="muted">asking the engine…</p>
 </div>
 </section>
-<section class="panel" data-panel="5">
+<section class="panel" data-panel="6">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">This is the file compiled into the engine that returns the number above. There is no version of this where the page and the code disagree, because disagreement is a build failure.</p>
 <pre class="code"><code>// GENERATED from node.toml by `cargo xtask docs`. Do not edit outside a
 // numbered HOLE block: a hand edit anywhere else is discarded by the next
@@ -167,7 +199,8 @@ pub fn evaluate(life: Time) -&gt; Result&lt;Ratio, Fault&gt; {
 }
 </code></pre>
 </section>
-<section class="panel" data-panel="6">
+<section class="panel" data-panel="7">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <table class="fx"><thead><tr><th>case</th><th>expected</th><th>tolerance</th><th>provenance</th><th>source</th></tr></thead><tbody>
 <tr data-fixture="half a year — rank 56 of the record, the shortest mission the tree allows"><td>half a year — rank 56 of the record, the shortest mission the tree allows</td><td class="num">66</td><td class="num">0.0281</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
 <tr data-fixture="one year — rank 28, one storm season"><td>one year — rank 28, one storm season</td><td class="num">96</td><td class="num">0.0363</td><td>independent-derivation</td><td>noaa_swpc</td></tr>
@@ -178,7 +211,8 @@ pub fn evaluate(life: Time) -&gt; Result&lt;Ratio, Fault&gt; {
 </tbody></table>
 <p class="muted">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>
 </section>
-<section class="panel" data-panel="7">
+<section class="panel" data-panel="8">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p class="muted">What this node refuses, and what it returns when it refuses.</p>
 <ul class="flags">
 <li><code>OutOfDomain</code> below 20 — ap is an equivalent amplitude in nanotesla. Below 20 the answer is not a storm at all — the record's median day is 7 — so a return level under it means the input or the fit reached somewhere neither was meant to go</li>
@@ -189,17 +223,21 @@ pub fn evaluate(life: Time) -&gt; Result&lt;Ratio, Fault&gt; {
 </ul>
 <p class="muted">Out of domain is an error naming the field and the bound, at every face. A value silently corrected is a design that drifted without anyone deciding to.</p>
 </section>
-<section class="panel" data-panel="8">
+<section class="panel" data-panel="9">
+<p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <p>Evidence tier <b>A</b>. What this tier cannot detect: an error in the published source itself.</p>
 <div class="cred" data-cred-for="sw_storm_return_level"><p class="muted">Eight factors, and the lowest governs. Computed on the run, never stored — a stored badge is a claim about last March. Run this node to fill it in.</p></div>
 </section>
-<section class="panel" data-panel="9">
+<section class="panel" data-panel="10">
+<p class="dx dx-reference" title="facts to look up">reference</p>
 <p>Valid over <code>20 &hellip; 230</code> -.</p>
 <ul class="guards"><li>lower — ap is an equivalent amplitude in nanotesla. Below 20 the answer is not a storm at all — the record's median day is 7 — so a return level under it means the input or the fit reached somewhere neither was meant to go</li><li>upper — THE BOUND IS THE RECORD'S LENGTH, NOT THE TABLE'S END. The fit evaluated at a return period equal to the record itself, 28.1971 years, is Ap 229.18; 230 is the first round number above it, so a return period beyond the record refuses instead of answering. The previous bound was 400 — the last point of the published ap/Kp table — which first bites at a return period of 1832 years, sixty-five times the record, and so enforced nothing: this node would answer a once-per-century question with Ap 281 while its own assumptions said a century needs a longer record. Note that 230 is BELOW the record's largest single day, Ap 273: rank 1 sits above the log-linear trend and was deliberately left out of the fitting range, so the fit does not chase it. This bound is the fit's own reach, not the record's extreme</li></ul>
 <div class="sweep" data-over="orbit_mission_duration" data-points="60" data-y="sw_storm_return_level"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a> over 60 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>the relation has nobody's name against it — an agent may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
+<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
+<li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

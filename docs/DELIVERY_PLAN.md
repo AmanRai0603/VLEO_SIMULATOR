@@ -1,5 +1,9 @@
 # Delivery
 
+> **Answer first.** One kernel ships as two artefacts — a URL and an installer — opened through three doors: the daemon, the command line and the bindings.
+>
+> **Kind:** explanation · **For:** developers
+
 One kernel, two artefacts, three doors.
 
     THE URL         the layered document and a demonstration kernel in WebAssembly

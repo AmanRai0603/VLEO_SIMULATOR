@@ -30,7 +30,9 @@ use vleo_core::value::SlotStatus;
 /// run. That is what makes staleness computable rather than remembered.
 #[derive(Clone, Debug, Default)]
 pub struct Case {
-    /// The stored case this run started from — `nominal`, `solar_max`, and so on.
+    /// The case this run starts from — `multipayload`, the one case. Empty
+    /// means that one. The values a person saved are not here: a face that
+    /// holds them sends them in `supply`, ahead of anything typed on top.
     pub base: String,
     /// Overrides, as `(node id, SI value)`. Always SI: everything crossing this
     /// boundary is in the canonical unit of its type, and a face converts for

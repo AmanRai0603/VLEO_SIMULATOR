@@ -14,9 +14,8 @@ says, by doing it:
   fails    run it; it must REFUSE, and say what `expect` says — the step is
            showing a person what a refusal looks like, and a refusal that has
            quietly started succeeding is the drift
-  serves   start it; it must come up, answer, and be in the mode the manual
-           says — read-only unless it was started with VLEO_ALLOW_WRITE=1,
-           asked of the running copy itself
+  serves   start it; it must come up, answer, and refuse any request that
+           would write the repository — there is no mode that allows one
   probe    a request to the copy `serves` started
   writes   not run: it would change the repository this is checking. The
            manual says so beside it, and its name is checked by the Rust test
@@ -38,8 +37,9 @@ layer tells a person to do — clicking each label BY THE TEXT THE MANUAL GIVES
 FOR IT, read from the running copy's own /v1/manual. So a label renamed in the
 page and not the manual fails here, and so does one renamed in the manual and
 not the page. It also holds the manual to the claims a person would be hurt by
-if they were false: that a what-if and a paste write nothing, that a read-only
-copy refuses a save and says how to start one that will not, and that a run
+if they were false: that a what-if, a saved case and a saved result write
+nothing in the repository, that a node's form is checked and never applied by
+the page, that the browser has no way to change a node at all, and that a run
 always says how many rows ran and how many were blocked.
 """
 
@@ -52,6 +52,7 @@ import sys
 import tempfile
 import time
 import tomllib
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -64,6 +65,14 @@ URL = re.compile(r"http://127\.0\.0\.1:(\d+)")
 # checkout, and the pipeline has usually done it already by the time this runs.
 TIMEOUT_RUN = 900
 TIMEOUT_SERVE = 1200
+
+# Every command and every daemon this check starts reads and writes a case of
+# its own, never the one saved on this machine: the manual is a statement about
+# the declared defaults, and a walk that saves a case must not leave it behind
+# for the person who ran the check.
+CASE = Path(tempfile.mkdtemp(prefix="vleo-manual-case-")) / "inputs.csv"
+# The same for saved results: the walk saves, uploads and deletes them.
+RESULTS = Path(tempfile.mkdtemp(prefix="vleo-manual-results-"))
 
 
 def plain(s):
@@ -91,7 +100,8 @@ def tree_state(cwd):
 
 
 def run(cmd, cwd, timeout=TIMEOUT_RUN):
-    env = dict(os.environ, NO_COLOR="1", CARGO_TERM_COLOR="never")
+    env = dict(os.environ, NO_COLOR="1", CARGO_TERM_COLOR="never", VLEO_CASE=str(CASE),
+                   VLEO_RESULTS=str(RESULTS))
     try:
         r = subprocess.run(
             ["bash", "-c", cmd], cwd=cwd, capture_output=True, text=True,
@@ -144,6 +154,15 @@ def get(url, timeout=10):
         return r.status, r.read().decode("utf-8", "replace")
 
 
+def post(url, data, timeout=10):
+    """A POST, answering (status, body) whether or not the status is an error."""
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, data=data), timeout=timeout) as r:
+            return r.status, r.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode("utf-8", "replace")
+
+
 class Serving:
     """A `serves` command, started as written and stopped afterwards."""
 
@@ -154,7 +173,8 @@ class Serving:
         self.port = None
 
     def __enter__(self):
-        env = dict(os.environ, NO_COLOR="1", CARGO_TERM_COLOR="never")
+        env = dict(os.environ, NO_COLOR="1", CARGO_TERM_COLOR="never", VLEO_CASE=str(CASE),
+                   VLEO_RESULTS=str(RESULTS))
         self.proc = subprocess.Popen(
             ["bash", "-c", self.cmd], cwd=ROOT, env=env,
             stdout=self.log, stderr=subprocess.STDOUT, start_new_session=True,
@@ -198,14 +218,13 @@ def check_serving(s):
     code, body = get(f"http://127.0.0.1:{s.port}/v1/manual")
     if code != 200 or '"ok":true' not in body:
         return f"/v1/manual answered {code}"
-    # THE MODE IS WHAT THE MANUAL SAYS IT IS. "It starts read-only" and "start
-    # it with VLEO_ALLOW_WRITE=1 to edit" are claims about the program, so the
-    # program is asked.
-    wants = "VLEO_ALLOW_WRITE=1" in s.cmd
-    has = '"writes_allowed":true' in body
-    if wants != has:
-        return (f"started {'accepting edits' if has else 'read-only'}, and the manual "
-                f"says this command starts it {'accepting edits' if wants else 'read-only'}")
+    # NOTHING IT SERVES WRITES THE REPOSITORY. "The browser never changes the
+    # design" is a claim about the program, so the program is asked: the routes
+    # that once saved a sheet must not answer at all.
+    for path in ("/v1/sheet/sw_ap_design", "/v1/publish/sw_ap_design", "/v1/propose"):
+        code, said = post(f"http://127.0.0.1:{s.port}{path}", b"field=note&value=x")
+        if code == 200 and '"ok":true' in said:
+            return f"POST {path} was accepted — a request wrote the repository"
     return None
 
 
@@ -269,6 +288,11 @@ def main_run(args):
                 for pw, pst in probes:
                     code, out = run(aimed(pst["run"], s.port), ROOT, timeout=60)
                     report(pw, "probe", pst["run"], judge("exits", code, out, pst.get("expect"), "", ""))
+                problem = idle_connection_blocks(s.port)
+                print(f"  {'FAIL' if problem else 'ok  '} an idle connection does not hold up the next request"
+                      + (f"\n         {problem}" if problem else ""))
+                if problem:
+                    failures.append(("daemon", "idle", problem))
 
     print("\nevery usage line, against what each program's help prints")
     bad = usage_problems(manual)
@@ -283,11 +307,39 @@ def main_run(args):
     return 1 if failures else 0
 
 
+def idle_connection_blocks(port):
+    """Whether a connection that sends nothing stops the next request being answered.
+
+    A browser keeps a spare connection open so its next request skips the
+    handshake, and may never use it. The daemon once read each connection in
+    turn with no timeout, so it sat on the spare and every real request queued
+    behind it: pages hung until the browser happened to close it, and the
+    browser walk timed out at random. Asked here with a raw socket, which is
+    exactly what the browser does and needs no browser to reproduce.
+    """
+    import socket
+    idle = socket.create_connection(("127.0.0.1", port), timeout=5)
+    try:
+        time.sleep(0.2)
+        t = time.time()
+        try:
+            code, _ = get(f"http://127.0.0.1:{port}/v1/version", timeout=5)
+        except Exception as e:  # noqa: BLE001 — the failure is the finding
+            return f"no answer after {time.time() - t:.1f}s with an idle connection open: {e}"
+        return "" if code == 200 else f"answered {code} with an idle connection open"
+    finally:
+        idle.close()
+
+
 # The rows the walk uses: a computed row whose whole chain answers, and the
 # declared number it reads. Both in the solar subsystem, the one written all
 # the way through.
 WALK_COMPUTED = "sw_ap_design"
 WALK_DECLARED = "sw_storm_design_level"
+# The row whose de-risking record is the worked example, and the register row
+# holding the risk its versions moved.
+WALK_RECORD = "sw_central_expectation"
+WALK_REGISTER = "mgt_risk_register_technical_risk"
 WALK_SUBSYS = "l3_solar"
 
 
@@ -373,11 +425,12 @@ def browser_walk():
                 page.locator("#manual-tab").click()
                 page.wait_for_selector(".man-live")
                 live_text = page.locator(".man-live").inner_text()
-                assert "read-only" in live_text, f"the status card does not say read-only: {live_text[:200]}"
+                assert "Nothing here changes a node" in live_text and str(CASE) in live_text, \
+                    f"the status card does not say what this copy writes, and where: {live_text[:300]}"
                 titles = page.locator(".man-lt").all_inner_texts()
                 for l in live["manual"]["layers"]:
                     assert l["title"] in titles, f"no tab for the layer '{l['title']}'"
-            ok("the Manual tab opens, and says this copy is read-only", manual_opens)
+            ok("the Manual tab opens, and says nothing here changes a node", manual_opens)
 
             def deep_link():
                 page.goto(base + "#manual/term-run", wait_until="networkidle")
@@ -482,6 +535,168 @@ def browser_walk():
                 assert page.locator("#runview").is_visible(), "the run tab did not open"
             ok("the run tab opens", run_tab)
 
+            # THE CASE IS SET ON THE INPUTS PAGE, AND GIT NEVER SEES IT. The
+            # page lists every input in its two halves; a value saved there is
+            # what the next run uses; an uploaded file is shown before it is
+            # saved and refused whole when a row is bad; reset removes it. Every
+            # step leaves the working tree as it was, because the case is kept
+            # at VLEO_CASE — a scratch path for this walk — and not in the
+            # repository.
+            def open_inputs():
+                home()
+                page.locator("#tabs .tab", has_text=U("browser-inputs", 1)).first.click()
+                page.wait_for_selector("#inputsview:not([hidden]) .case-table tr.ci")
+
+            def case_state():
+                return page.locator(".case-state").inner_text()
+
+            def case_saved_on_page():
+                open_inputs()
+                total = page.evaluate("S.saved.inputs.length")
+                shown = 0
+                for g in ("Customer", U("browser-inputs", 2)):
+                    page.locator(".case-tab", has_text=g).first.click()
+                    page.wait_for_selector(".case-table tr.ci")
+                    shown += page.locator(".case-table tr.ci").count()
+                assert shown == total, f"the two halves list {shown} inputs, the case has {total}"
+                field = page.locator(f'tr.ci[data-id="{WALK_DECLARED}"] .ci-v')
+                field.fill("2")
+                field.dispatch_event("change")
+                button(".case-save-bar", U("browser-inputs", 3)).click()
+                page.wait_for_function(
+                    "() => /1 input changed/.test(document.querySelector('.case-state').innerText)",
+                    timeout=15000)
+                assert CASE.is_file() and f"{WALK_DECLARED}," in CASE.read_text(), \
+                    f"saving did not write the case to {CASE}"
+                untouched("saving the case")
+                open_row(WALK_COMPUTED)
+                panel = "#run-panel"
+                page.wait_for_selector(panel + " .run-in-table", timeout=60000)
+                src = page.locator(f'{panel} tr.ri[data-ovr="{WALK_DECLARED}"] .ri-src').inner_text()
+                assert src == "saved case", f"a saved input is credited to '{src}'"
+                button(panel, U("browser-run", 4)).click()
+                page.wait_for_selector(panel + " .answer", timeout=60000)
+                answer = page.locator(panel + " .answer").inner_text()
+                assert "80" in answer, f"the run did not use the saved case: {answer}"
+                assert "1 input changed" in page.locator(panel + " .run-for").inner_text()
+            ok("a value saved on the Inputs page is what the next run uses, and git sees nothing",
+               case_saved_on_page)
+
+            def case_upload():
+                open_inputs()
+                before = CASE.read_text() if CASE.is_file() else None
+                bad = Path(tempfile.mkdtemp()) / "bad.csv"
+                bad.write_text(f"id,value\n{WALK_DECLARED},9\nnot_a_row,1\n")
+                page.set_input_files(".case-up", str(bad))
+                page.wait_for_selector(".case-file .blocked")
+                said = page.locator(".case-file").inner_text()
+                assert "not_a_row" in said and "above 3" in said, f"a bad file was not refused by row: {said[:300]}"
+                assert (CASE.read_text() if CASE.is_file() else None) == before, "a refused file changed the case"
+                good = Path(tempfile.mkdtemp()) / "good.csv"
+                good.write_text(f"group,id,value\ncondition,{WALK_DECLARED},1\n")
+                page.set_input_files(".case-up", str(good))
+                page.wait_for_selector(".case-pv-save")
+                assert (CASE.read_text() if CASE.is_file() else None) == before, "a previewed file was saved unasked"
+                button(".case-file", U("browser-inputs", 6)).click()
+                page.wait_for_function(
+                    "() => /1 input changed/.test(document.querySelector('.case-state').innerText) && "
+                    "!document.querySelector('.case-file')", timeout=15000)
+                assert f"{WALK_DECLARED}," in CASE.read_text() and ",1," in CASE.read_text(), \
+                    "the uploaded file is not the saved case"
+                untouched("uploading a case")
+                page.once("dialog", lambda d: d.accept())
+                button(".case-actions", U("browser-inputs", 8)).click()
+                page.wait_for_function(
+                    "() => /every input is at its default/.test(document.querySelector('.case-state').innerText)",
+                    timeout=15000)
+                assert not CASE.is_file(), "reset left the saved case behind"
+            ok("an upload is shown first, refused whole on a bad row, saved on request, and reset",
+               case_upload)
+
+            def whatif_to_case():
+                open_row(WALK_COMPUTED)
+                panel = "#run-panel"
+                page.wait_for_selector(panel + " .run-in-table", timeout=60000)
+                row = page.locator(f'{panel} tr.ri[data-ovr="{WALK_DECLARED}"]')
+                row.locator(".ri-v").fill("2")
+                row.locator(".ri-v").press("Tab")
+                assert row.locator(".ri-src").inner_text() == "your edit", "an edited input is not credited to you"
+                assert not CASE.is_file(), "a what-if wrote the case"
+                button(panel, U("browser-run", 10)).click()
+                page.wait_for_function(
+                    "() => /1 input changed/.test(document.querySelector('#case-state').innerText)",
+                    timeout=30000)
+                page.wait_for_selector("#ovrbar", state="hidden")
+                assert CASE.is_file(), "saving the edits did not write the case"
+                untouched("saving a what-if to the case")
+                urllib.request.urlopen(urllib.request.Request(base + "v1/inputs/reset", data=b""), timeout=10)
+                page.evaluate("localStorage.clear()")
+            ok("a what-if is held in the browser until it is saved to the case", whatif_to_case)
+
+            # AN UPDATE CARRIES A CASE OVER. A case written for another set of
+            # inputs is kept aside untouched and carried into this one on the
+            # first read; the page names what was set aside until the result is
+            # kept. The file is the repository's own example of an old one.
+            def case_carried_over():
+                old = (ROOT / "cases" / "examples" / "from_an_older_tool.csv").read_text()
+                CASE.parent.mkdir(parents=True, exist_ok=True)
+                CASE.write_text(old)
+                open_inputs()
+                page.wait_for_selector(".case-upgrade")
+                said = page.locator(".case-upgrade").inner_text()
+                assert "retired_payload_mass" in said and "set aside" in said, \
+                    f"the carry-over does not name what it set aside: {' | '.join(said.splitlines())[:600]}"
+                kept = list(CASE.parent.glob("inputs.before-*.csv"))
+                assert kept and kept[0].read_text() == old, "the case as it was was not kept"
+                assert "#! set-aside retired_payload_mass" in CASE.read_text(), \
+                    "the set-aside value is not in the carried-over file"
+                untouched("carrying a case over")
+                button(".case-upgrade", U("browser-inputs", 9)).click()
+                page.wait_for_function("() => !document.querySelector('.case-upgrade')", timeout=15000)
+                assert "#! set-aside" not in CASE.read_text(), "keeping the result did not clear the record"
+                urllib.request.urlopen(urllib.request.Request(base + "v1/inputs/reset", data=b""), timeout=10)
+                for k in kept:
+                    k.unlink()
+            ok("an old case is carried over on update, the old file kept, and what was set aside named",
+               case_carried_over)
+
+            # A NODE'S FORM GOES OUT AND COMES BACK. Downloaded from the node's
+            # page, filled in a browser from disk with no daemon behind it, saved,
+            # and read back by the developer's own command — and the page's check
+            # of the filled file writes nothing.
+            def node_form_round_trip():
+                open_row(WALK_COMPUTED)
+                button("#node-body .sheet-tabs", U("browser-nodeform", 2)).click()
+                page.wait_for_selector(".nform-dl")
+                with page.expect_download() as dl:
+                    page.locator(".nform-dl").click()
+                blank = Path(tempfile.mkdtemp()) / dl.value.suggested_filename
+                dl.value.save_as(str(blank))
+                offline = browser.new_page()
+                offline.goto(blank.as_uri())
+                offline.wait_for_selector(".nf-q[data-field=note]")
+                assert "wording only" in offline.locator("#nf-dr-state").inner_text(), \
+                    "the form does not say that no record is needed yet"
+                offline.fill("input[aria-label=name]", "the manual check")
+                offline.locator(".nf-q[data-field=note] textarea").fill("A note from the walk.")
+                with offline.expect_download() as dl2:
+                    offline.click("#nf-save")
+                filled = blank.with_name("filled." + blank.name)
+                dl2.value.save_as(str(filled))
+                offline.close()
+                r = subprocess.run(["cargo", "run", "-q", "-p", "xtask", "--", "intake", str(filled)],
+                                   cwd=ROOT, capture_output=True, text=True, timeout=TIMEOUT_RUN,
+                                   env=dict(os.environ, NO_COLOR="1"))
+                said = plain(r.stdout)
+                assert r.returncode == 0 and "A note from the walk." in said and "1 change(s) can be applied" in said, \
+                    f"intake did not read the form the page saved: {said[-400:]} {r.stderr[-300:]}"
+                page.set_input_files(".nform-up", str(filled))
+                page.wait_for_selector(".nform-file")
+                assert "will apply" in page.locator(".nform-file").inner_text()
+                untouched("a node form, filled and checked")
+            ok("a node's form is downloaded, filled offline, saved, and read back by intake — writing nothing",
+               node_form_round_trip)
+
             print("\nwhat if")
 
             def computed_has_no_box():
@@ -495,51 +710,144 @@ def browser_walk():
                 box = page.locator(f'[data-ovr="{WALK_DECLARED}"] .ovr-v').first
                 box.fill("2")
                 box.press("Tab")
-                button("#node-body", U("browser-whatif", 2)).click()
+                button("#node-body", U("browser-run", 8)).click()
                 page.wait_for_selector("#ovrbar:not([hidden])", timeout=60000)
                 bar = page.locator("#ovrbar")
-                assert U("browser-whatif", 4) in bar.inner_text(), "the bar has no way to put everything back"
+                assert U("browser-run", 9) in bar.inner_text(), "the bar has no way to put everything back"
                 untouched("a what-if")
-                bar.locator("button", has_text=U("browser-whatif", 4)).click()
+                bar.locator("button", has_text=U("browser-run", 9)).click()
                 page.wait_for_timeout(300)
                 assert page.locator("#ovrbar").is_hidden(), "putting everything back left the bar up"
             ok("a what-if shows the bar, writes nothing, and puts back", what_if)
 
-            print("\nthe form, on a read-only copy")
+            # A RESULT IS KEPT, SENT AND SEEN AGAIN, AND GIT NEVER SEES IT. Saved
+            # from a run into VLEO_RESULTS — a scratch folder for this walk —
+            # shown without running, compared, downloaded as a report, uploaded
+            # back, made the case, and deleted.
+            print("\nresults")
 
-            def read_only_save():
+            def results_round_trip():
                 open_row(WALK_COMPUTED)
-                button("#node-body .sheet-tabs", U("browser-edit", 1)).click()
-                page.wait_for_selector('.sf-field[data-field="note"] textarea')
-                box = page.locator('.sf-field[data-field="note"]')
-                box.locator("textarea").fill("a note the walk types and is refused")
-                box.locator("button.sf-save").click()
+                panel = "#run-panel"
+                button(panel, U("browser-run", 4)).click()
+                page.wait_for_selector(panel + " .res-save", timeout=60000)
+                page.locator(panel + " .res-name").fill("the walk, defaults")
+                button(panel, U("browser-results", 1)).click()
                 page.wait_for_function(
-                    "() => { const e=document.querySelector('.sf-field[data-field=\"note\"] .sf-said');"
-                    " return e && !e.hidden && !e.classList.contains('waiting') && e.textContent.trim(); }")
-                said = box.locator(".sf-said").inner_text()
-                assert "read-only" in said and "VLEO_ALLOW_WRITE" in said, \
-                    f"a save on a read-only copy said: {said}"
-                untouched("a refused save")
-            ok("a save is refused on a read-only copy, and says how to start one that allows it", read_only_save)
+                    "() => /saved/.test(document.querySelector('#run-panel .res-saved').innerText)", timeout=30000)
+                kept = list(RESULTS.glob("*.csv"))
+                assert len(kept) == 1, f"saving did not write one result to {RESULTS}: {kept}"
+                assert "#! result vleo-result/1" in kept[0].read_text(), "the saved file is not a result"
+                untouched("saving a result")
+                tab(U("browser-results", 2))
+                page.wait_for_selector(".res-row")
+                page.locator(".res-open").first.click()
+                page.wait_for_selector(".res-one .answer")
+                assert "ran" in page.locator(".res-one .run-for").inner_text()
+                with page.expect_download() as dl:
+                    page.locator(".res-do a", has_text=U("browser-results", 4)).click()
+                report = Path(tempfile.mkdtemp()) / dl.value.suggested_filename
+                dl.value.save_as(str(report))
+                assert 'id="vleo-result"' in report.read_text(), "the report does not carry its CSV"
+                # The report, uploaded back, is the same result: kept once, not twice.
+                page.set_input_files(".res-up", str(report))
+                page.wait_for_selector(".res-one .answer")
+                assert page.locator(".res-row").count() == 1, "a result uploaded back was kept twice"
+                # Somebody else's — the repository's example, on a G2 storm.
+                page.set_input_files(".res-up", str(ROOT / "docs" / "examples" / "sw_ap_design.result.csv"))
+                page.wait_for_function("() => document.querySelectorAll('.res-row').length === 2", timeout=15000)
+                page.wait_for_selector(".res-cmp")
+                assert U("browser-results", 3) in page.locator(".res-one").inner_text()
+                page.select_option(".res-cmp", index=1)
+                page.wait_for_selector(".res-cmp-box")
+                said = page.locator(".res-cmp-box").inner_text()
+                assert "1 input differs" in said and "sw_storm_design_level" in said, \
+                    f"two results do not compare by the input that differs: {said[:300]}"
+                button(".res-do", U("browser-results", 6)).click()
+                page.wait_for_function(
+                    "() => /the case is now/.test(document.querySelector('.res-do-said').innerText)", timeout=15000)
+                untouched("a result made the case")
+                page.once("dialog", lambda d: d.accept())
+                button(".res-do", "delete").click()
+                page.wait_for_function("() => document.querySelectorAll('.res-row').length === 1", timeout=15000)
+                assert len(list(RESULTS.glob("*.csv"))) == 1, "delete did not remove the file"
+                urllib.request.urlopen(urllib.request.Request(base + "v1/inputs/reset", data=b""), timeout=10)
+                untouched("the results walk")
+            ok("a result is saved from a run, shown, sent as a report, uploaded back, compared, "
+               "made the case and deleted — git sees none of it", results_round_trip)
 
-            def paste_writes_nothing():
-                page.locator(".sf-paste summary", has_text=U("browser-paste", 1)).click()
-                page.locator(".sf-paste-in").fill('[question]\nnote = "from a sibling"\n')
-                button(".sf-paste", U("browser-paste", 2)).click()
-                page.wait_for_selector(".sf-diff")
-                assert "note" in page.locator(".sf-diff").inner_text()
-                assert button(".sf-paste", U("browser-paste", 3)).is_visible()
-                untouched("a paste preview")
-            ok("a paste shows what would change, and writes nothing", paste_writes_nothing)
+            # THE FORMS PAGE HANDS OUT EVERY FORM AND CHECKS ONE THAT COMES BACK.
+            # It never applies one: that is the developer's, at a terminal.
+            print("\nforms")
 
-            def the_rest_is_where_it_says():
-                page.locator(".sf-add summary").first.click()
-                assert button(".sf-array .sf-add", U("browser-blocks", 1)).is_visible(), \
-                    f"no '{U('browser-blocks', 1)}' once a list's add box is open"
-                assert button(".sf-view", U("browser-blocks", 2)).is_visible()
-                assert page.locator(".sf-propose summary", has_text=U("browser-share", 1)).is_visible()
-            ok("the lists, the view, and the branch step are where the manual says", the_rest_is_where_it_says)
+            def forms_page():
+                home()
+                tab(U("browser-nodeform", 1))
+                page.wait_for_selector(".forms-node")
+                page.locator(".forms-node").fill(WALK_COMPUTED)
+                page.locator(".forms-node").dispatch_event("input")
+                assert page.locator(".forms-dl").is_visible(), "a row's form is not offered for a row that exists"
+                assert page.locator(".forms-dl").get_attribute("href") == "/v1/form/" + WALK_COMPUTED
+                with page.expect_download() as dl:
+                    page.locator("a", has_text=U("browser-nodeform", 4)).click()
+                assert "vleo-node-form/1" in Path(dl.value.path()).read_text(), "the new-node form is not a form"
+                page.set_input_files(".forms-up", str(ROOT / "docs" / "examples" / "new-node.node-form.html"))
+                page.wait_for_selector(".forms-out .nform-file")
+                said = page.locator(".forms-out").inner_text()
+                assert "connects" in said and "sw_ap_design_margin" in said, \
+                    f"a new node's form was not checked, with its interfaces: {said[:300]}"
+                untouched("checking a form")
+            ok("the Forms page offers a row's form and a new node's, and checks a filled one — writing nothing",
+               forms_page)
+
+            # HOW DEEP, AND WHY IT CHANGED. The depth switch shows and hides
+            # the blocks the page marks; the record reads newest first; and a
+            # risk it moved leads to the register row, whose conclusion is read
+            # from the whole tree.
+            print("\nhow deep, and why it changed")
+
+            def depth_switch():
+                open_row(WALK_RECORD)
+                simply = page.locator("#node-body .simply").first
+                predict = page.locator("#node-body .predict").first
+                assert simply.is_visible() and not predict.is_visible(), "Read is not the default depth"
+                page.locator("#depth .dp", has_text=U("browser-derisk", 1)).click()
+                assert predict.is_visible(), "Learn does not ask for a prediction"
+                page.locator("#depth .dp", has_text="Expert").click()
+                assert not simply.is_visible(), "Expert still shows the plain words"
+                page.locator("#depth .dp", has_text="Read").click()
+                assert simply.is_visible()
+            ok("Learn asks for a prediction, Expert drops the plain words, Read is the default", depth_switch)
+
+            def record_and_conclusion():
+                open_row(WALK_RECORD)
+                page.locator("#node-body .tabs .tab", has_text="de-risking").click()
+                panel = page.locator('#node-body [data-panel="2"]')
+                said = panel.inner_text()
+                assert "Rests on" in said and said.index("v3") < said.index("v1"), \
+                    f"the record is not newest first: {said[:200]}"
+                panel.locator("a.xref", has_text="R-01").first.click()
+                page.wait_for_timeout(500)
+                page.locator(f'.mcell.diag[data-open="{WALK_REGISTER}"]').first.click()
+                page.wait_for_selector("#nodeview:not([hidden]) .sheet-tabs")
+                page.locator("#node-body .tabs .tab", has_text="de-risking").click()
+                page.wait_for_selector(".derisk-rollup table.risks")
+                roll = page.locator(".derisk-rollup").inner_text()
+                # The heading is set in capitals by the stylesheet; the words are the manual's.
+                assert U("browser-derisk", 3).lower() in roll.lower() and "L2" in roll \
+                    and WALK_RECORD in roll, \
+                    f"the register row does not conclude what the work did: {' | '.join(roll.splitlines())[:400]}"
+                untouched("reading the record")
+            ok("a row's record reads newest first, and its risk leads to the register's conclusion",
+               record_and_conclusion)
+
+            def no_way_to_edit():
+                open_row(WALK_COMPUTED)
+                for sel in (".sf-field", ".sf-save", ".sf-paste", ".sf-propose"):
+                    assert page.locator(sel).count() == 0, f"a node page still has an editor ({sel})"
+                labels = " ".join(page.locator("#node-body .sheet-tabs button").all_inner_texts())
+                assert "answer the questions" not in labels, "a node page still offers to answer its questions"
+            ok("a node's page has no way to change the node", no_way_to_edit)
 
             if errors:
                 failures.append("the page threw")

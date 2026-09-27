@@ -1,9 +1,15 @@
 # areas/generators.md
 
+> **Answer first.** The schema, the generators, the node form and the gate: one defect here is in every row at once, so every change here needs two reviewers.
+>
+> **Kind:** reference + explanation · **For:** developers
+
 The schema, the nine generators, the gate and the golden corpus.
 
 Applies to `crates/vleo-sheet/**`, `xtask/**`, `tools/**`.
-Agent I works here. Agents A, B, C, E never do.
+Maintained by the developers, and the node form lives here too: its template,
+its checker and its apply (`src/template.rs`), read from the same field table
+as the sheet.
 
 ## Why a change here needs two reviewers
 

@@ -408,33 +408,31 @@ fn every_route_is_documented_and_nothing_else() {
 }
 
 #[test]
-fn every_route_that_writes_says_so() {
-    // A route that changes a sheet is refused unless the daemon was started
-    // for it. The manual's `writes` flag is what tells a scripter that; held to
-    // the router's own write guard.
+fn no_route_writes_the_repository() {
+    // The browser never changes the design: a node changes through its form,
+    // applied by a developer. So no route may be marked as writing, and the
+    // daemon may not grow the switch that once allowed it — a route that wrote
+    // a sheet again would come back with that switch, and fail here.
     let src = read("crates/vleo-daemon/src/main.rs");
     let m = the_manual();
     for r in &m.routes {
-        let handler_writes = r.method == "POST"
-            && [
-                "/v1/sheet/",
-                "/v1/block/",
-                "/v1/view/",
-                "/v1/publish/",
-                "/v1/propose",
-            ]
-            .iter()
-            .any(|p| r.path.starts_with(p));
-        assert_eq!(
-            r.writes, handler_writes,
-            "{} {}: the manual says writes = {}, and the router says otherwise",
-            r.method, r.path, r.writes
+        assert!(
+            !r.writes,
+            "{} {}: the manual says it writes the repository, and no route may",
+            r.method, r.path
         );
     }
-    assert!(
-        src.contains("fn may_write"),
-        "the write guard the manual describes has moved"
-    );
+    for gone in [
+        "fn may_write",
+        "VLEO_ALLOW_WRITE",
+        "commit_edit",
+        "\"/v1/sheet/",
+    ] {
+        assert!(
+            !src.contains(gone),
+            "the daemon mentions `{gone}` — a way to write the repository from the browser"
+        );
+    }
 }
 
 #[test]
@@ -608,9 +606,9 @@ fn the_checks_refuse_what_they_exist_to_refuse() {
         "cargo run -p xtask -- status",
         "cargo xtask gate && cargo test",
         "cargo run -p vleo-cli --bin vleo -- run sw_ap_design",
-        "VLEO_ALLOW_WRITE=1 cargo run --release -p vleo-daemon",
+        "VLEO_PORT=8080 cargo run --release -p vleo-daemon",
         "curl -s 'http://127.0.0.1:7777/v1/run?node=sw_ap_design'",
-        "curl -s http://127.0.0.1:7777/v1/declare/sw_ap_design",
+        "curl -s http://127.0.0.1:7777/v1/form/sw_ap_design",
     ] {
         command_ok(good, &k).unwrap_or_else(|e| panic!("`{good}` was refused: {e}"));
     }
@@ -626,7 +624,7 @@ fn the_checks_refuse_what_they_exist_to_refuse() {
 
 #[test]
 fn a_malformed_manual_is_refused_by_name() {
-    let ok = "[[layer]]\nid=\"l\"\ntitle=\"L\"\n[[layer.section]]\nid=\"s\"\ntitle=\"S\"\nwho=\"user\"\n";
+    let ok = "[[layer]]\nid=\"l\"\ntitle=\"L\"\n[[layer.section]]\nid=\"s\"\ntitle=\"S\"\nwho=\"user\"\nkind=\"how-to\"\nanswer=\"A.\"\n";
     manual::parse(ok).expect("the minimal manual loads");
     for (bad, says) in [
         // A command whose check is not stated.
@@ -641,7 +639,11 @@ fn a_malformed_manual_is_refused_by_name() {
         // A "cannot" with nowhere to go instead.
         (format!("{ok}[[cannot]]\nplace=\"browser\"\nwhat=\"x\"\nwhy=\"y\"\nwho=\"user\"\n"), "instead"),
         // Two sections one link cannot tell apart.
-        (format!("{ok}[[layer.section]]\nid=\"s\"\ntitle=\"T\"\nwho=\"user\"\n"), "twice"),
+        (format!("{ok}[[layer.section]]\nid=\"s\"\ntitle=\"T\"\nwho=\"user\"\nkind=\"reference\"\nanswer=\"A.\"\n"), "twice"),
+        // A section that does not open with its answer (docs/EXPLAINING.md E1).
+        (ok.replace("answer=\"A.\"\n", ""), "answer"),
+        // A section that does not say what kind of reading it is (E8).
+        (ok.replace("kind=\"how-to\"", "kind=\"story\""), "kind"),
         // A reader nobody is.
         (ok.replace("who=\"user\"", "who=\"manager\""), "who"),
     ] {

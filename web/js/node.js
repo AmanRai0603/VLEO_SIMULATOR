@@ -16,7 +16,7 @@ import { mountRelation } from './relation.js';
 import { mountTheory } from './theory.js';
 import { figuresForRow, drawRowFigure } from './solar.js';
 import { isInput, inputControl, mountInput } from './inputs.js';
-import { mountSheetEditor } from './sheet.js';
+import { mountNodeForm } from './nodeform.js';
 
 export async function openNode(id) {
   const r = S.byId.get(id);
@@ -50,19 +50,19 @@ export async function openNode(id) {
       connectivityHtml(r) + '</section>' +
     '<section class="seg" data-seg="sheet"><h3 class="seg-h">' +
       '<span class="seg-n">3</span>the sheet — what it says</h3>' +
-      // READ IT, OR ANSWER IT. The generated page is what the sheet says; the
-      // form is the same nine questions with somewhere to type. They are two
-      // views of one file rather than two places, so a reader who notices a
-      // wrong bound while reading can fix it without going to find a terminal.
+      // READ IT HERE; CHANGE IT BY FORM. The generated page is what the sheet
+      // says. Nothing in this tool writes a node: a change is a node form,
+      // filled by whoever knows the answer and applied by a developer, who
+      // checks its interfaces first — so the design moves only through review.
       '<div class="tabrow sub sheet-tabs">' +
         '<button class="ctl sheet-tab sel" data-view="read">as written</button>' +
-        '<button class="ctl sheet-tab" data-view="edit">answer the questions</button>' +
+        '<button class="ctl sheet-tab" data-view="form">the node form — fill it anywhere</button>' +
       '</div>' +
       '<div class="sheet-read">' +
         (fragment || '<p class="empty">The sheet for <code>' + esc(id) +
           '</code> is not on disk. Run <code>cargo xtask docs</code>.</p>') +
       '</div>' +
-      '<div class="sheet-edit" hidden></div>' +
+      '<div class="sheet-form" hidden></div>' +
     '</section>' +
     // A FIGURE IS NOT A ROW, and it is not a place of its own either. The eight
     // study figures used to live behind a sixth item in a navigation whose own
@@ -97,22 +97,14 @@ export async function openNode(id) {
     });
   }
 
-  // The form is built when it is first asked for, not on every open: it is a
-  // second request to the daemon and most visits to a row are to read it.
-  let editorMounted = false;
   $$('.sheet-tabs .sheet-tab', body).forEach(t => {
-    t.addEventListener('click', async () => {
+    t.addEventListener('click', () => {
       $$('.sheet-tabs .sheet-tab', body).forEach(x => x.classList.remove('sel'));
       t.classList.add('sel');
-      const edit = t.dataset.view === 'edit';
-      $('.sheet-read', body).hidden = edit;
-      const host = $('.sheet-edit', body);
-      host.hidden = !edit;
-      if (edit && !editorMounted) {
-        editorMounted = true;
-        host.innerHTML = '<p class="muted">asking what this row still needs…</p>';
-        await mountSheetEditor(host, id);
-      }
+      $('.sheet-read', body).hidden = t.dataset.view !== 'read';
+      const nf = $('.sheet-form', body);
+      nf.hidden = t.dataset.view !== 'form';
+      if (!nf.hidden && !nf.childElementCount) mountNodeForm(nf, id);
     });
   });
 
@@ -135,6 +127,10 @@ export async function openNode(id) {
       // controls that walk it, so mounting late costs the reader nothing.
       const th = p && $('.theory-walk', p);
       if (th && !th.dataset.mounted) { th.dataset.mounted = '1'; mountTheory(th); }
+      // A risk-register row concludes what the whole tree has done to its
+      // risks, which no single sheet holds: asked for when the tab opens.
+      const dr = p && $('.derisk-rollup', p);
+      if (dr && !dr.dataset.mounted) { dr.dataset.mounted = '1'; mountRollup(dr); }
     };
   });
 
@@ -249,7 +245,7 @@ function activeBanner(r) {
       'check it against. The engine refuses it under its own name and everything downstream ' +
       'blocks on it, named. ' +
       '<span class="muted">Fixed by a <code>[theory]</code> block on the sheet — written by ' +
-      'somebody who knows where the relation came from. An agent may never supply mathematics, ' +
+      'somebody who knows where the relation came from. An assistant may never supply mathematics, ' +
       'which is the reason this refusal exists.</span></div>';
   }
   // Reach and trust are different facts, so both can show. A row can answer
@@ -271,4 +267,32 @@ function activeBanner(r) {
       '<code>[maths] confirmed_by</code> says a person read the relation in it.</span></div>';
   }
   return h;
+}
+
+/**
+ * The conclusion a risk-register row draws: each of its risks, where it was
+ * registered and where it stands now, and every node version that moved it
+ * with what was learned — read from the whole tree's records.
+ */
+async function mountRollup(host) {
+  const d = await fetch('/v1/derisk').then(x => x.json()).catch(() => null);
+  if (!d || !d.ok) { host.innerHTML = '<p class="empty">The engine did not answer.</p>'; return; }
+  const mine = d.register.filter(r => r.row === host.dataset.row);
+  const moved = mine.filter(r => r.moves.length).length;
+  host.innerHTML =
+    '<h4>What the work below has done to them</h4>' +
+    '<p class="af-q">' + (mine.length
+      ? plural(mine.length, 'risk') + ' registered here; ' + moved + ' moved by recorded work, ' +
+        mine.filter(r => r.now === 'closed').length + ' closed.'
+      : 'Nothing registered here yet.') + '</p>' +
+    '<p class="muted">Across the tree: ' + plural(d.changes, 'recorded change') + ', and ' + d.versioned +
+      ' of ' + d.published + ' published rows state what they rest on.</p>' +
+    (mine.length
+      ? '<table class="fx risks"><thead><tr><th>risk</th><th>registered</th><th>now</th><th>moved by</th></tr></thead><tbody>' +
+        mine.map(r => '<tr><td><b>' + esc(r.id) + '</b> ' + esc(r.title) + '</td><td>' + esc(r.registered) +
+          '</td><td><b>' + esc(r.now) + '</b></td><td>' + (r.moves.length ? r.moves.map(m =>
+            '<div><a class="xref" data-goto="' + esc(m.node) + '">' + esc(m.node) + '</a> v' + m.n + ' · ' +
+            esc(m.date) + ' · <b>' + esc(m.what) + '</b><div class="muted">' + esc(m.learned) + '</div></div>').join('')
+            : '<span class="muted">nothing yet</span>') + '</td></tr>').join('') + '</tbody></table>'
+      : '');
 }

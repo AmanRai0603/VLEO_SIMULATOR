@@ -41,7 +41,9 @@ export async function engineValues(ids) {
   const take = v => ({ si: v.si, shown: v.shown, unit: v.unit, symbol: v.symbol, label: v.label });
   const runs = await Promise.all(want.map(async (id) => {
     try {
-      const r = await fetch('/v1/run?node=' + encodeURIComponent(id));
+      // On the saved case, and without the reader's overrides: this is what
+      // the tree says as it stands for the inputs every run is on.
+      const r = await fetch('/v1/run?' + new URLSearchParams({ node: id }).toString());
       const d = await r.json();
       if (!d.ok) return { id, refused: d.message || d.fault || 'refused' };
       return { id, values: d.values || [] };

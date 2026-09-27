@@ -61,6 +61,94 @@ impl Theory {
     }
 }
 
+/// The node said simply, and where saying it simply stops being true.
+///
+/// The station pattern of `docs/EXPLAINING.md`: every node is read first in
+/// plain words, then as the real relation, then at the place the plain version
+/// breaks. The relation and its theory are the second of those; these are the
+/// first and the third, plus the wrong idea a reader most often brings.
+///
+/// Documentation, outside the sheet hash, for the same reason as [`Theory`].
+#[derive(Clone, Debug, Default)]
+pub struct Explain {
+    /// What the row works out and why it matters, with no symbol and no word a
+    /// newcomer would have to look up.
+    pub simply: String,
+    /// Where the plain version stops being true.
+    pub breaks: String,
+    /// The wrong idea a reader most often brings to this row, and what is true
+    /// instead. Optional: not every row has a common misconception.
+    pub wrong: String,
+}
+
+impl Explain {
+    pub fn is_empty(&self) -> bool {
+        self.simply.trim().is_empty()
+            && self.breaks.trim().is_empty()
+            && self.wrong.trim().is_empty()
+    }
+}
+
+/// One version of a node: what it rested on, and — from the second version on —
+/// which belief broke to make it, what was tested, and what changed.
+///
+/// A node changes because a belief broke, never because somebody preferred
+/// another shape. So every version after the first answers the questions of
+/// the de-risking narrative, one row per change: what we believed, what we
+/// tested, what we now know, what it cost, what changed in the plan, and which
+/// risks that opened or closed. It also says what THIS version rests on and
+/// what would break it, which is the next version's first question asked in
+/// advance.
+///
+/// Written by `xtask intake --apply` from the form that carried the change, and
+/// never edited after: a version is a record. `release` is `next` until a
+/// release is cut, when `xtask release` stamps it with the tool's version.
+#[derive(Clone, Debug, Default)]
+pub struct Version {
+    pub n: u32,
+    /// The tool release this version first shipped in, or `next`.
+    pub release: String,
+    pub date: String,
+    pub by: String,
+    /// Which kinds of decision moved: see `derisk::ABOUT`.
+    pub about: Vec<String>,
+    pub believed: String,
+    pub tested: String,
+    /// What we now know — the issue with the previous version.
+    pub learned: String,
+    pub cost: String,
+    /// What this version changes, and the benefit.
+    pub changed: String,
+    /// Risk moves, as `R-01 L5->L4`, `R-09 closed` or `R-12 opened`.
+    pub risks: Vec<String>,
+    /// What this version believes.
+    pub rests_on: String,
+    /// What would break that belief — the condition to watch.
+    pub breaks_if: String,
+    /// The relation as this version states it, and its source, kept so an
+    /// earlier version can be read after the sheet has moved on.
+    pub relation: String,
+    pub source: String,
+}
+
+/// One risk in the programme's register.
+///
+/// Registered on one of the risk-register rows of the management layer — which
+/// row says which kind of risk it is — and moved only by node versions: a risk
+/// is reduced or closed because something was tested and a belief changed, and
+/// the version that did it is the record of how.
+#[derive(Clone, Debug, Default)]
+pub struct Risk {
+    pub id: String,
+    pub title: String,
+    /// `L1` (least) to `L5`, when it was registered.
+    pub level: String,
+    pub owner: String,
+    pub since: String,
+    /// What could go wrong, and what it would cost if it did.
+    pub why: String,
+}
+
 /// One extra variable a node publishes beyond its primary answer.
 ///
 /// The rule everywhere else is one row, one question, one answer, and the
@@ -181,13 +269,13 @@ pub struct Sheet {
     pub source: String,
     /// Who supplied this relation, and when.
     ///
-    /// Agent A may never supply mathematics, and that prohibition had nothing
-    /// mechanical behind it: an invented formula that runs cleanly is the worst
-    /// failure this system can have, and it looked exactly like a cited one.
-    /// A name here is the authorship record the completion questions are
-    /// supposed to produce — so an agent cannot supply a relation without
-    /// forging a person's attribution, which is a different and much larger
-    /// thing than filling a blank field.
+    /// An assistant may never supply mathematics, and that prohibition needs
+    /// something mechanical behind it: an invented formula that runs cleanly is
+    /// the worst failure this system can have, and it looks exactly like a
+    /// cited one. A name here is the authorship record the completion
+    /// questions are supposed to produce — so an assistant cannot supply a
+    /// relation without forging a person's attribution, which is a different
+    /// and much larger thing than filling a blank field.
     ///
     /// It does not make the formula right. It makes the formula *somebody's*,
     /// which is what H1b needs in order to be a review rather than a reading.
@@ -196,6 +284,15 @@ pub struct Sheet {
     /// Where the relation came from, for a reader rather than for the compiler.
     /// Outside the sheet hash: see [`Theory`].
     pub theory: Theory,
+    /// The row said simply, where that breaks, and the wrong idea. Outside the
+    /// sheet hash: see [`Explain`].
+    pub explain: Explain,
+    /// Every recorded version, oldest first. Outside the sheet hash: a record
+    /// of why the node is what it is, not part of what it computes.
+    pub versions: Vec<Version>,
+    /// The risks this row registers. Only the rows under `mgt_risk_register`
+    /// hold any; the gate refuses them anywhere else.
+    pub risks: Vec<Risk>,
     pub symbol: String,
     pub ty: String,
     pub unit: String,
@@ -348,6 +445,12 @@ pub struct CycleSpec {
     pub seeds: Vec<(String, f64)>,
 }
 
+/// The case: the one multipayload design, and the shape of its inputs.
+///
+/// There is one, not one per customer — see `cases/multipayload.toml`. The
+/// values a person works with are stored by the application outside the
+/// repository; what is here is which inputs describe the CONDITION the design
+/// flies in. Every other declared input is CUSTOMER.
 #[derive(Clone, Debug, Default)]
 pub struct Case {
     pub id: String,
@@ -355,6 +458,9 @@ pub struct Case {
     pub note: String,
     pub supply: Vec<(String, f64)>,
     pub cycles: Vec<CycleSpec>,
+    /// The inputs in the Condition group, by row id. V16 refuses a name that
+    /// is not a declared, published input.
+    pub conditions: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default)]

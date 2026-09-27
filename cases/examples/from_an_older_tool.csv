@@ -1,0 +1,21 @@
+# A case file as an older version of the tool wrote it — kept here to show
+# what happens to one after the tool changes.
+#
+# Its `#! template` line names a set of inputs this tree no longer has, so it is
+# read as an upgrade rather than refused: the storm level is carried over, the
+# altitude — written in metres, as that older tool kept it — is converted to the
+# kilometres the row is in now, every input the file never knew runs at its
+# default, and `retired_payload_mass`, which is no longer a row at all, is SET
+# ASIDE by name with its value, not dropped. Run it:
+#
+#   cargo run -p vleo-cli --bin vleo -- run sw_ap_design --inputs cases/examples/from_an_older_tool.csv
+#
+# and write it out in this tree's template, set-aside value and all, with
+#
+#   cargo run -p vleo-cli --bin vleo -- inputs --inputs cases/examples/from_an_older_tool.csv
+#
+#! template 000000000000
+group,id,name,value,unit
+condition,sw_storm_design_level,Storm level designed for,2,-
+condition,orbit_altitude,Orbit altitude,300000,m
+customer,retired_payload_mass,Payload mass (retired),12,kg

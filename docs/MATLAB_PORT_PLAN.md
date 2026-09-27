@@ -1,5 +1,9 @@
 # Bringing the MATLAB tool across
 
+> **Answer first.** The row-by-row record of porting the MATLAB tool into this one: what was there, what was ported, where the port departed and why. A record, kept as written; its last section says what has changed since.
+>
+> **Kind:** explanation · **For:** developers
+
 Written after reading the uploaded `VLEO_Tool` end to end — every contract,
 every area README, and the purpose line of every model function. It plans the
 work; it does not do any of it.
@@ -4897,9 +4901,15 @@ advance by the very rows that refuse:
   further and predicts the frequency: *"the only one where the guard is likely
   to fire on an ordinary input rather than on a mistake."*
 
-So `tools/branch_audit.py` still reports two findings on solar, and both are
-true statements that a reader should be able to dismiss from the sheets in a
-minute. They are recorded here so nobody re-derives them as defects.
+So these two are not defects, and `tools/branch_audit.py` now says so itself:
+it reports them under **guards named in advance**, not as findings, and prints
+them on every run. The acknowledgement is its `ACKNOWLEDGED` list, and each
+entry is checked against what the engine returns — the input moved, the row
+that refuses, the side of its bound, and a phrase of that row's own written
+reason. A different row refusing, the other side of a bound, or either reason
+rewritten, and the acknowledgement no longer matches and the finding comes
+back; the selftest holds each of those ways. The audit on solar reads
+`FINDINGS: 0` with the two guards listed beneath it.
 
 ### 42.2b · The over-wide bound was drawing a false alarm
 
@@ -5912,3 +5922,28 @@ arrived at independently.
   before them, so the design chain reports 0 of 4 for validation where it
   reported 1. That is a gap already counted against those rows.
 - `gnc` still reaches no KPI closure at all.
+
+## §50 · The agent roster is gone; forms carry every change
+
+Written 27 September 2026. The sections above are a record and are left as they
+were written, so they still speak of seven agents, their lanes in
+`agents/lanes.toml` and a provenance register. None of that exists any more.
+
+The design is now changed one way only. Whoever knows what a node should say
+fills in that node's form — or the form for a new node — and a developer runs
+the checker on it (`xtask intake`), applies it, publishes, implements the holes
+with or without an assistant (`fill --by --model` records which), records the
+evidence, gates and releases. The browser cannot write the repository at all.
+
+What the lanes were for is held by the checks, which apply to anyone's change:
+`fill` is still the only way into a generated file; the fixture schema still
+refuses `self-snapshot` and `agent-generated`; a relation still carries a
+person's name, and intake and relation stamping both refuse an assistant's.
+§43.7's finding — that adding a row fitted inside no lane — is closed by the
+same change: a new row arrives as a form and a developer builds it.
+
+The checks the old instruction lint made that were not about agents — stale
+path references, row counts in prose, the sheet fields explained in
+`NODE_AUTHORING.md`, the single home of the review policy, `ADOPTION.lock` —
+moved to `tools/docs_lint.py`, which also refuses a house rule that still
+points at the removed machinery.

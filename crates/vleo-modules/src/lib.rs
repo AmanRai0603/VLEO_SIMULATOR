@@ -107,7 +107,47 @@ impl Vleo {
     pub fn case(id: &str) -> Option<&'static CaseDef> {
         CASES.iter().find(|c| c.id == id)
     }
+
+    /// The case a run starts from when nobody names one: the first, and today
+    /// the only one.
+    ///
+    /// Read from the table rather than written into each face, because five
+    /// faces each holding the string "nominal" is how a renamed file turned
+    /// every default run into a run of nothing in particular.
+    pub fn default_case() -> Option<&'static CaseDef> {
+        CASES.first()
+    }
+
+    /// The case a run names, or the default when it names none.
+    pub fn case_of(case: &vleo_bus::Case) -> Option<&'static CaseDef> {
+        if case.base.is_empty() {
+            Vleo::default_case()
+        } else {
+            Vleo::case(&case.base)
+        }
+    }
 }
+
+/// Why a run cannot start from the case it names, if it cannot.
+///
+/// Every face asks this before it evaluates. An unknown name is refused rather
+/// than ignored: the engine used to run the bare declared design for a case it
+/// had never heard of, which is a number with somebody else's name on it — a
+/// test and two tools named cases that did not exist and passed for years.
+pub fn case_refusal(case: &vleo_bus::Case) -> Option<String> {
+    if Vleo::case_of(case).is_some() {
+        return None;
+    }
+    let names = CASES.iter().map(|c| c.id).collect::<Vec<_>>().join(", ");
+    Some(if case.base.is_empty() {
+        "cases/ holds no case, so there is nothing to run".to_string()
+    } else {
+        alloc::format!("there is no case '{}'. The cases are: {}", case.base, names)
+    })
+}
+
+pub mod inputs;
+pub mod results;
 
 impl NodeTable for Vleo {
     fn nodes(&self) -> &[NodeDef] {
@@ -341,7 +381,14 @@ pub fn evaluate(case: &vleo_bus::Case, scratch: &mut Scratch) -> Result<vleo_bus
     let target = Vleo::find(&case.target).ok_or(Fault::NotRun {
         node: "unknown node",
     })?;
-    let base = Vleo::case(&case.base);
+    // Asked again here, not only by the faces: a caller that skipped the
+    // question must not get the declared design under another case's name.
+    if case_refusal(case).is_some() {
+        return Err(Fault::NotRun {
+            node: "the case named",
+        });
+    }
+    let base = Vleo::case_of(case);
 
     let mut store = Store::new(&mut scratch.slots);
 
@@ -364,6 +411,9 @@ pub fn evaluate(case: &vleo_bus::Case, scratch: &mut Scratch) -> Result<vleo_bus
             }
         }
     }
+    // Declared, then the case, then whatever the face sends — the saved
+    // inputs first and a person's unsaved edits after, so the last word is
+    // always the one typed most recently.
     if let Some(b) = base {
         for (v, val) in b.supply {
             supply_checked(&mut store, *v, *val)?;

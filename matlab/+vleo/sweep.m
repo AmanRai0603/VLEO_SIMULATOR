@@ -11,7 +11,7 @@ function t = sweep(node, over, from, to, varargin)
 %   sweep whose conclusion is unknown.
     p = inputParser;
     addParameter(p, 'points', 64);
-    addParameter(p, 'case', 'nominal');
+    addParameter(p, 'case', '');
     parse(p, varargin{:});
 
     out = py.vleo.sweep(node, over, from, to, ...

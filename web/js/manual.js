@@ -1,6 +1,6 @@
 /*
   The manual — how to use this tool, from the browser and from a terminal, as
-  somebody reading the design and as somebody building it.
+  somebody using the design and as somebody maintaining it.
 
   NOTHING HERE IS WRITTEN IN THIS FILE. The words come from docs/manual.toml,
   served at /v1/manual, and are held true by two checks: one that every name
@@ -9,8 +9,8 @@
   it here would be the copy nobody checks.
 
   What IS decided here is what is true of the copy of the tool you are looking
-  at right now — whether it will accept an edit, whose name an edit carries,
-  how many rows there are — and that is not decided either: it is read from the
+  at right now — where it keeps the case and the results, whether a case is
+  saved, how many rows there are — and that is not decided either: it is read from the
   same response, which the daemon fills from the functions that decide it.
 */
 'use strict';
@@ -158,7 +158,7 @@ function extra(id, d) {
           '<td class="muted">' + esc(a.why) + '</td></tr>'));
     }
     case 'ref-locked':
-      return table(['Field', 'Why the browser will not change it'], L.locked.map(x =>
+      return table(['Field', 'Why a form does not change it'], L.locked.map(x =>
         '<tr><td><code>' + esc(x.field) + '</code></td><td>' + esc(x.why) + '</td></tr>'));
     default:
       return '';
@@ -168,39 +168,36 @@ function extra(id, d) {
 /**
  * What is true of this copy of the tool, right now.
  *
- * The first thing on the page because it is what decides whether the rest
- * applies: a person told how to save a sheet, looking at a copy that will
- * refuse every save, needs to be told that before step one.
+ * The first thing on the page because it says what the rest acts on: which
+ * case every run below is on, and where what a person keeps actually goes —
+ * never into the repository.
  */
 function liveHtml(L) {
-  const write = L.writes_allowed
-    ? '<div class="man-live-row good"><b>This copy accepts edits.</b> A saved field is written to ' +
-      'the row’s <code>node.toml</code>, the row is regenerated and checked, and a refused ' +
-      'save puts everything back.</div>'
-    : '<div class="man-live-row"><b>This copy is read-only.</b> You can read everything, run ' +
-      'anything and try any what-if; saving a sheet is refused. To edit, stop it and start it with:' +
-      cmdBlock('VLEO_ALLOW_WRITE=1 cargo run --release -p vleo-daemon', '') + '</div>';
-  const who = L.identity
-    ? (L.identity_is_agent
-      ? '<div class="man-live-row bad">Edits here would be signed <b>' + esc(L.identity) + '</b>, ' +
-        'which is an agent’s name, so a change to a relation will be refused: an agent may ' +
-        'never supply mathematics. Set your own name for this checkout, then reload:' +
-        cmdBlock('git config user.name "Your Name"', '') + '</div>'
-      : '<div class="man-live-row">Edits here are signed <b>' + esc(L.identity) + '</b> ' +
-        '<span class="muted">— this checkout’s <code>git config user.name</code>.</span></div>')
-    : '<div class="man-live-row bad">' + esc(L.identity_why || 'This checkout has no name to sign with.') + '</div>';
+  const kase = L.case_stored
+    ? '<div class="man-live-row">A case is saved: <b>' + L.case_changed + ' input' +
+      (L.case_changed === 1 ? '' : 's') + ' changed</b> from the defaults, kept at <code>' +
+      esc(L.case_path) + '</code> — outside the repository.</div>'
+    : '<div class="man-live-row">No case is saved: every run is on the declared defaults. A case ' +
+      'you save is kept at <code>' + esc(L.case_path) + '</code>, outside the repository.</div>';
   return '<div class="man-live">' +
     '<div class="man-live-h">This copy of the tool, right now</div>' +
-    write + who +
+    '<div class="man-live-row">Nothing here changes a node. A node is changed by its form, ' +
+      'applied by a developer; the inputs and the results are yours, and stay on this machine.</div>' +
+    kase +
     '<div class="man-live-row muted">' + L.rows + ' rows · ' + L.published +
-      ' published · ' + L.seeded + ' seeded and waiting to be filled · serving on port ' +
+      ' published · ' + L.seeded + ' seeded and waiting for a form · serving on port ' +
       L.port + '</div>' +
     '</div>';
 }
 
 function sectionHtml(s, d) {
   return '<section class="man-sec" id="man-' + esc(s.id) + '" data-who="' + esc(s.who) + '">' +
-    '<h3>' + esc(s.title) + ' <span class="man-who ' + esc(s.who) + '">' + esc(WHO[s.who]) + '</span></h3>' +
+    '<h3>' + esc(s.title) + ' <span class="man-who ' + esc(s.who) + '">' + esc(WHO[s.who]) + '</span>' +
+      ' <span class="dx' + s.kind.split(' + ').map(k => ' dx-' + esc(k)).join('') + '" title="what kind of reading this is">' +
+      esc(s.kind) + '</span></h3>' +
+    // ANSWER FIRST (docs/EXPLAINING.md E1): the section in a sentence or two,
+    // before the reasons and the steps.
+    '<p class="man-answer"><span class="af-k">Answer first</span> ' + inline(s.answer) + '</p>' +
     md(s.body) +
     (s.steps.length ? '<ol class="man-steps">' + s.steps.map(stepHtml).join('') + '</ol>' : '') +
     extra(s.id, d) +
@@ -222,9 +219,9 @@ function draw(host) {
           '<button class="ctl man-f' + (VIEW.who === k ? ' sel' : '') + '" data-who="' + k + '">' +
           t + '</button>').join('') +
       '</div>' +
-      '<p class="man-side-note">A <b>user</b> reads the design, asks what-if, fills in a sheet’s ' +
-        'words and numbers and proposes changes. A <b>developer</b> also changes the tree itself: ' +
-        'rows, Rust, evidence, checks, data.</p>' +
+      '<p class="man-side-note">A <b>user</b> — the team — reads the design, sets the inputs, runs, ' +
+        'keeps results, and asks for a change by filling a node’s form. A <b>developer</b> maintains ' +
+        'the repository: checks each form, applies it, implements, evidences and releases it.</p>' +
       layers.map(l =>
         '<div class="man-side-h' + (l.id === L.id ? ' cur' : '') + '">' +
           '<a href="#manual/' + esc(l.id) + '" class="man-layer-link" data-layer="' + esc(l.id) + '">' +

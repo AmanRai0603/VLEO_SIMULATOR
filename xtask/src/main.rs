@@ -10,7 +10,30 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use vleo_sheet::{emit, gate, load_all, page, Tree};
 
+/// A reader that stops early — `| head`, `| grep -m1`, a pager quit halfway —
+/// closes the pipe, and the next line printed panics with a backtrace that
+/// reads like a crash in this program. It is not one: the reader had what it
+/// wanted. So that one panic ends the program quietly, and every other panic
+/// is reported exactly as before. (Restoring the default SIGPIPE disposition
+/// would need `unsafe`, which this crate forbids.)
+fn quiet_when_the_reader_stops() {
+    let default = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let msg = info
+            .payload()
+            .downcast_ref::<String>()
+            .map(String::as_str)
+            .or_else(|| info.payload().downcast_ref::<&str>().copied())
+            .unwrap_or("");
+        if msg.starts_with("failed printing to stdout") && msg.contains("Broken pipe") {
+            std::process::exit(0);
+        }
+        default(info);
+    }));
+}
+
 fn main() -> ExitCode {
+    quiet_when_the_reader_stops();
     let args: Vec<String> = std::env::args().skip(1).collect();
     let cmd = args.first().map(|s| s.as_str()).unwrap_or("help");
     let root = repo_root();
@@ -42,6 +65,11 @@ fn main() -> ExitCode {
         "mutate" => cmd_mutate(&root, &rest),
         "differential" => cmd_differential(&root, &rest),
         "confirm" => cmd_confirm(&root, &rest),
+        "form" => cmd_form(&root, &rest),
+        "intake" => cmd_intake(&root, &rest),
+        "publish" => cmd_publish(&root, &rest),
+        "derisk" => cmd_derisk(&root, &rest),
+        "release" => cmd_release(&root, &rest),
         "help" | "--help" | "-h" => {
             help();
             Ok(())
@@ -95,11 +123,11 @@ cargo xtask <command>
                      for. A gap left open is not a warning: generation refuses
                      until every one is answered. Add --source <path> to record
                      where the drafting started.
-  fill <node> --hole <n> --body <file|->
-                     splice one hole body into a generated model.rs. The hole
-                     filler is never handed the file: it returns the few typed
-                     lines as text and this puts them where they go. An agent
-                     given the file and told not to stray is not constrained.
+  fill <node> --hole <n> --body <file|-> [--by <who> --model <model>]
+                     splice one hole body into a generated model.rs. Whoever
+                     writes the body — a developer, or an assistant a developer
+                     runs — returns the few typed lines as text and this puts
+                     them where they go: nothing is handed the whole file.
   differential <node>
                      re-run the node against every other recorded body for the
                      same hole. A significant node is filled twice by different
@@ -131,6 +159,34 @@ cargo xtask <command>
   setup              point git at tools/githooks, so the commit-message hook
                      runs on this clone. One command per person per clone, and
                      the commands that matter say so until it is done.
+  form <node>|--new [--out <file.html>]
+                     a node's form: one HTML file that explains itself, asks
+                     every question the sheet answers, lists every row it could
+                     read, and saves a filled copy. --new is the form for a node
+                     the design does not have yet, which also asks where it goes.
+                     Anyone can fill it, offline, by hand or with an assistant;
+                     the filled file comes back to a developer.
+  intake <file.html> [--apply [--partial]]
+                     the checker: what a filled form would change, field by
+                     field, and every interface it declares — each input a row
+                     that exists, of the quantity expected. What it cannot do is
+                     named: a conflict with a change made since, a relation an
+                     assistant supplied. --apply writes it (a new node is built
+                     in its place in the tree), regenerates, gates, and puts
+                     everything back on a refusal. Known-good values come out as
+                     a request, never written.
+  publish <node>     move a filled, seeded row to published, so its model,
+                     contract and evidence are generated and its holes can be
+                     written. Refuses, naming every reason, while it is not ready.
+  derisk             write docs/DERISK_NARRATIVE.md and docs/derisking.csv — every
+                     recorded change, in the columns of the de-risking narrative,
+                     and every registered risk as it stands. Generated from the
+                     sheets' [[version]] and [[risk]] records, never edited.
+  release <version> [--check]
+                     stamp every node version still marked `next` with this
+                     release, set the workspace version, and regenerate. The
+                     node's record then says which release carried each belief.
+                     --check refuses while anything is unstamped or newer.
   variables          write docs/VARIABLES.md — every variable in the tree, its
                      unit, its range, the reason for each bound, and what reads
                      it. Generated, because a register maintained by hand is a
@@ -185,6 +241,488 @@ fn today() -> String {
         .and_then(|o| String::from_utf8(o.stdout).ok())
         .map(|s| s.trim().to_string())
         .unwrap_or_default()
+}
+
+/// One node's form, to fill anywhere and send back. See `vleo_sheet::template`.
+fn cmd_form(root: &Path, args: &[&str]) -> Result<(), String> {
+    let tree = load(root)?;
+    let html = if args.contains(&"--new") {
+        vleo_sheet::template::document_new(&tree)
+    } else {
+        let id = args
+            .first()
+            .filter(|a| !a.starts_with("--"))
+            .ok_or("usage: cargo xtask form <node>|--new [--out <file.html>]")?;
+        let sh = tree.sheets.get(*id).ok_or_else(|| {
+            format!("no node '{id}'. For a node the design does not have yet: `form --new`")
+        })?;
+        vleo_sheet::template::document(sh, &tree)
+    };
+    match args
+        .iter()
+        .position(|a| *a == "--out")
+        .and_then(|i| args.get(i + 1))
+    {
+        Some(out) => {
+            fs::write(out, &html).map_err(|e| format!("{out}: {e}"))?;
+            eprintln!(
+                "wrote {out} — open it in a browser, fill it, save a filled copy, and send that \
+                 back. Apply it with `cargo run -p xtask -- intake <file> --apply`."
+            );
+        }
+        None => print!("{html}"),
+    }
+    Ok(())
+}
+
+/// What a filled form would do to its node, and with `--apply`, do it.
+fn cmd_intake(root: &Path, args: &[&str]) -> Result<(), String> {
+    use vleo_sheet::template;
+    let file = args
+        .first()
+        .filter(|a| !a.starts_with("--"))
+        .ok_or("usage: cargo xtask intake <file.html> [--apply [--partial]]")?;
+    let html = fs::read_to_string(file).map_err(|e| format!("{file}: {e}"))?;
+    let p = template::plan(root, &html)?;
+    let f = &p.form;
+    let who = format!(
+        "{}{}{}; assistant: {}",
+        if f.name.is_empty() {
+            "(nobody named)"
+        } else {
+            &f.name
+        },
+        if f.team.is_empty() {
+            String::new()
+        } else {
+            format!(" ({})", f.team)
+        },
+        if f.date.is_empty() {
+            String::new()
+        } else {
+            format!(", {}", f.date)
+        },
+        f.ai
+    );
+    match &p.new {
+        Some(n) => println!(
+            "\x1b[1ma new node\x1b[0m — {} under {}, a {} row — a node form filled by {who}",
+            if n.id.is_empty() { "(no id)" } else { &n.id },
+            if n.parent.is_empty() {
+                "(no group)"
+            } else {
+                &n.parent
+            },
+            n.kind
+        ),
+        None => {
+            println!("\x1b[1m{}\x1b[0m — a node form filled by {who}", f.node);
+            println!(
+                "  {}",
+                if p.base_current {
+                    "node.toml is still the version the form was made from"
+                } else {
+                    "node.toml has changed since the form was made — a change to the same thing \
+                     is a conflict, named below"
+                }
+            );
+        }
+    }
+    print_plan(&p);
+    if !args.contains(&"--apply") {
+        if p.applicable() > 0 {
+            println!("\napply with: cargo run -p xtask -- intake {file} --apply");
+        }
+        return Ok(());
+    }
+    if p.blocked() > 0 && !args.contains(&"--partial") {
+        return Err(format!(
+            "{} change(s) cannot be applied (listed above). Resolve them, or apply the rest \
+             with --apply --partial — nothing was written",
+            p.blocked()
+        ));
+    }
+    let named = if f.name.is_empty() {
+        "the filler".to_string()
+    } else {
+        f.name.clone()
+    };
+    match &p.new {
+        Some(n) => {
+            if p.items
+                .iter()
+                .any(|i| i.what.starts_with("new ·") && i.verdict != template::Verdict::Apply)
+            {
+                return Err(
+                    "a new node needs a free id, a group that exists and a kind \
+                            the tree holds before it can be built — nothing was written"
+                        .into(),
+                );
+            }
+            let (dir, like) = build_new_node(root, n)?;
+            let p2 = match template::plan_onto(root, f, &n.id, &like) {
+                Ok(p2) => p2,
+                Err(e) => {
+                    unbuild_new_node(root, &dir)?;
+                    return Err(e);
+                }
+            };
+            println!(
+                "\nbuilt {} on the shape of {like}; applying the form to it:",
+                n.id
+            );
+            // WHAT THE FORM DOES NOT ASK, the model row decides — and says so.
+            // These are the developer's: how many reviewers the node needs,
+            // its tier, what reference data it reads.
+            let made = fs::read_to_string(dir.join("node.toml")).unwrap_or_default();
+            let mut p2 = p2;
+            for key in ["subsystem", "owner", "criticality", "tier", "bundles"] {
+                if let Some(l) = made
+                    .lines()
+                    .find(|l| l.trim_start().starts_with(&format!("{key} = ")))
+                {
+                    p2.open.push(format!(
+                        "`{}` is taken from {like} — the form does not ask it; confirm it",
+                        l.split('#').next().unwrap_or(l).trim()
+                    ));
+                }
+            }
+            if load(root)?
+                .sheets
+                .get(&like)
+                .is_some_and(|l| !l.kpis.is_empty())
+            {
+                p2.open.push(format!(
+                    "it contributes to no KPI: {like}'s [contributes] is {like}'s own contract \
+                     edge and is not inherited — add one if this row should move a KPI"
+                ));
+            }
+            print_plan(&p2);
+            match template::apply(root, &p2) {
+                vleo_sheet::form::Saved::Ok { regenerated, .. } => {
+                    cmd_codeowners(root)?;
+                    println!(
+                        "\nadded: {} under {} — node.toml written, {regenerated} artefact(s) \
+                         generated, the whole tree gated, CODEOWNERS regenerated. It is seeded: \
+                         `cargo run -p xtask -- declare {}` says what is still open, and \
+                         `cargo run -p xtask -- publish {}` generates its code once it is \
+                         complete. Review with `git status` and `git diff`, and name {named} \
+                         in the commit.",
+                        n.id, n.parent, n.id, n.id
+                    );
+                    Ok(())
+                }
+                vleo_sheet::form::Saved::Stale { .. } => {
+                    unbuild_new_node(root, &dir)?;
+                    Err("the new node changed while it was being built — nothing was kept".into())
+                }
+                vleo_sheet::form::Saved::Refused(e) => {
+                    unbuild_new_node(root, &dir)?;
+                    Err(format!(
+                        "{e} — the new node was removed again; nothing was kept"
+                    ))
+                }
+            }
+        }
+        None => match template::apply(root, &p) {
+            vleo_sheet::form::Saved::Ok { regenerated, .. } => {
+                println!(
+                    "\napplied: node.toml written, {regenerated} artefact(s) regenerated, the gate \
+                     passed. Review with `git diff`, and name {named} in the commit — the form is \
+                     theirs."
+                );
+                Ok(())
+            }
+            vleo_sheet::form::Saved::Stale { .. } => Err(
+                "node.toml changed while the form was being checked. Run intake again — nothing \
+                 was written"
+                    .into(),
+            ),
+            vleo_sheet::form::Saved::Refused(e) => Err(e),
+        },
+    }
+}
+
+/// The checker's report: every change with its verdict, every interface, what
+/// is still open, the filler's note and the known values.
+fn print_plan(p: &vleo_sheet::template::Plan) {
+    use vleo_sheet::template::Verdict;
+    println!();
+    if p.items.is_empty() {
+        println!("  the form changes nothing in the node");
+    }
+    let clip = |v: &str| {
+        let one = v.split_whitespace().collect::<Vec<_>>().join(" ");
+        if one.chars().count() > 70 {
+            format!("{}…", one.chars().take(69).collect::<String>())
+        } else {
+            one
+        }
+    };
+    for i in &p.items {
+        let (tag, why) = match &i.verdict {
+            Verdict::Apply => ("\x1b[32mAPPLY   \x1b[0m", String::new()),
+            Verdict::Already => ("already ", " — the node already says this".to_string()),
+            Verdict::Conflict(w) => ("\x1b[33mCONFLICT\x1b[0m", format!(" — {w}")),
+            Verdict::Refused(w) => ("\x1b[31mREFUSED \x1b[0m", format!(" — {w}")),
+        };
+        println!(
+            "  {tag} {:<28} «{}» → «{}»{why}",
+            i.what,
+            clip(&i.from),
+            clip(&i.to)
+        );
+    }
+    if !p.interfaces.is_empty() {
+        println!("\ninterfaces — what each input reads:");
+        for i in &p.interfaces {
+            if i.ok() {
+                println!(
+                    "  \x1b[32mconnects\x1b[0m {:<16} ← {:<34} {} in {}",
+                    i.binding, i.var, i.have, i.unit
+                );
+            } else {
+                println!(
+                    "  \x1b[31mREFUSED \x1b[0m {:<16} ← {:<34} {}",
+                    i.binding, i.var, i.why
+                );
+            }
+        }
+    }
+    if !p.about.is_empty() {
+        let f = &p.form;
+        println!(
+            "\nwhy it is changing — the decisions it moves: {}",
+            p.about.join(", ")
+        );
+        for (k, ask, _) in vleo_sheet::template::DERISK {
+            let v = f.derisk.get(k);
+            if !v.trim().is_empty() {
+                println!("  {:<40} {}", ask, clip(v));
+            }
+        }
+        match p.version {
+            Some(n) => println!("  → recorded as version {n}, released with the next release"),
+            None => println!(
+                "  → no version recorded: the record is incomplete, so these decisions are withheld"
+            ),
+        }
+    }
+    if !p.open.is_empty() {
+        println!("\nstill for the developer to settle:");
+        for o in &p.open {
+            println!("  · {o}");
+        }
+    }
+    println!();
+    println!(
+        "{} change(s) can be applied, {} cannot.",
+        p.applicable(),
+        p.blocked()
+    );
+    let f = &p.form;
+    if !f.notes.trim().is_empty() {
+        println!(
+            "\nfrom the filler:\n  {}",
+            f.notes.trim().replace('\n', "\n  ")
+        );
+    }
+    if !f.known.is_empty() {
+        println!(
+            "\nknown values the form supplies — a request for whoever records fixtures, never \
+             applied by this command:\n"
+        );
+        print!("{}", vleo_sheet::template::fixture_request(f));
+    }
+}
+
+/// Build a new node's folder on the shape of an existing row of the same kind,
+/// placed last under its group. Returns the folder and the row it was built on.
+///
+/// The shape comes from a row in the same part of the tree, so the new row is
+/// in the right crate, subsystem and owner; its own content is then applied by
+/// the form. It is SEEDED whatever its model was: a row is published on
+/// purpose, with `publish`, once it is complete.
+fn build_new_node(
+    root: &Path,
+    n: &vleo_sheet::template::NewNode,
+) -> Result<(PathBuf, String), String> {
+    let tree = load(root)?;
+    // Everything under the group, and the group's own ancestors in order, so a
+    // group with no rows of its own still finds its part of the tree.
+    let under = |s: &vleo_sheet::model::Sheet, g: &str| {
+        let mut p = s.parent.clone();
+        let mut hops = 0;
+        while !p.is_empty() && hops < 64 {
+            if p == g {
+                return true;
+            }
+            p = tree
+                .groups
+                .get(&p)
+                .map(|x| x.parent.clone())
+                .unwrap_or_default();
+            hops += 1;
+        }
+        false
+    };
+    let mut scope = n.parent.clone();
+    let mut like = None;
+    for _ in 0..64 {
+        let rows: Vec<&vleo_sheet::model::Sheet> = tree
+            .ordered()
+            .into_iter()
+            .filter(|s| under(s, &scope) && s.state != "deprecated")
+            .collect();
+        // The closest shape: a row of the same kind, under the same group, whose
+        // id begins as the new one does — `orbit_…` is built on an `orbit_` row,
+        // not on whichever row of the group happens to come last, and so takes
+        // that row's subsystem and owner rather than a neighbour's.
+        let stem = |id: &str| id.split('_').next().unwrap_or("").to_string();
+        if let Some(s) = rows
+            .iter()
+            .filter(|s| s.kind == n.kind)
+            .max_by_key(|s| (s.parent == n.parent, stem(&s.id) == stem(&n.id), s.order))
+        {
+            like = Some(*s);
+            break;
+        }
+        match tree.groups.get(&scope).map(|g| g.parent.clone()) {
+            Some(p) if !p.is_empty() => scope = p,
+            _ => break,
+        }
+    }
+    let like = like.ok_or_else(|| {
+        format!(
+            "no {} row anywhere above {} to take the shape from — a node of a kind its part of \
+             the tree has never held is a decision about the tree, not a form",
+            n.kind, n.parent
+        )
+    })?;
+    // Last under its group: after the highest order among the group's rows, or
+    // after the row it is built on.
+    let after = tree
+        .ordered()
+        .into_iter()
+        .filter(|s| s.parent == n.parent)
+        .map(|s| s.order)
+        .max()
+        .unwrap_or(like.order);
+    let dir = root
+        .join("crates")
+        .join(&like.crate_name)
+        .join("nodes")
+        .join(&n.id);
+    if dir.exists() {
+        return Err(format!("{} already exists", dir.display()));
+    }
+    let sheet = fs::read_to_string(like.dir.join("node.toml")).map_err(|e| e.to_string())?;
+    let (out, _) = clone_sheet(&sheet, &n.id, &n.id, after);
+    let mut text = String::new();
+    // The clone marks every blanked line "re-decide, do not inherit". Here the
+    // form re-decides them, and what it leaves blank intake reports by name —
+    // so the marker would only be a stale instruction on an answered line.
+    let mark = "   # REQUIRED — re-decide, do not inherit";
+    for line in out.lines() {
+        let line = line.strip_suffix(mark).unwrap_or(line);
+        let l = line.trim_start();
+        if l.starts_with("parent = ") {
+            text.push_str(&format!("parent = \"{}\"\n", n.parent));
+        } else if l.starts_with("state = ") {
+            text.push_str("state = \"empty\"\n");
+        } else {
+            text.push_str(line);
+            text.push('\n');
+        }
+    }
+    // Make room, exactly as `new` does: every row after the new one moves up.
+    for sh in tree.ordered() {
+        if sh.order <= after {
+            continue;
+        }
+        let f = sh.dir.join("node.toml");
+        let t = fs::read_to_string(&f).map_err(|e| e.to_string())?;
+        let mut w = String::new();
+        for line in t.lines() {
+            if line.trim_start().starts_with("order = ") {
+                w.push_str(&format!("order = {}\n", sh.order + 1));
+            } else {
+                w.push_str(line);
+                w.push('\n');
+            }
+        }
+        fs::write(&f, w).map_err(|e| e.to_string())?;
+    }
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    fs::write(dir.join("node.toml"), text).map_err(|e| e.to_string())?;
+    fs::write(
+        dir.join("fixtures.toml"),
+        "# Known-good values, and where each came from. An expected value may\n# never be produced by the code under test.\n",
+    )
+    .map_err(|e| e.to_string())?;
+    Ok((dir, like.id.clone()))
+}
+
+/// Take a new node back out: its folder, and the room made for it.
+fn unbuild_new_node(root: &Path, dir: &Path) -> Result<(), String> {
+    let order = fs::read_to_string(dir.join("node.toml"))
+        .ok()
+        .and_then(|t| {
+            t.lines().find_map(|l| {
+                l.trim_start()
+                    .strip_prefix("order = ")
+                    .map(|v| v.trim().to_string())
+            })
+        })
+        .and_then(|v| v.parse::<u32>().ok());
+    fs::remove_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    if let Some(at) = order {
+        let tree = load(root)?;
+        for sh in tree.ordered() {
+            if sh.order <= at {
+                continue;
+            }
+            let f = sh.dir.join("node.toml");
+            let t = fs::read_to_string(&f).map_err(|e| e.to_string())?;
+            let mut w = String::new();
+            for line in t.lines() {
+                if line.trim_start().starts_with("order = ") {
+                    w.push_str(&format!("order = {}\n", sh.order - 1));
+                } else {
+                    w.push_str(line);
+                    w.push('\n');
+                }
+            }
+            fs::write(&f, w).map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
+}
+
+/// Move a seeded row to published, from a terminal.
+fn cmd_publish(root: &Path, args: &[&str]) -> Result<(), String> {
+    let id = args.first().ok_or("usage: cargo xtask publish <node>")?;
+    let tree = load(root)?;
+    let sh = tree
+        .sheets
+        .get(*id)
+        .ok_or_else(|| format!("no node '{id}'"))?;
+    let base = fs::read_to_string(sh.dir.join("node.toml"))
+        .map(|t| vleo_sheet::form::file_hash(&t))
+        .map_err(|e| e.to_string())?;
+    match vleo_sheet::form::publish(root, id, &base) {
+        vleo_sheet::form::Saved::Ok { regenerated, .. } => {
+            println!(
+                "published {id}: {regenerated} artefact(s) generated, the whole tree gated. Its \
+                 holes are next — `cargo run -p xtask -- fill {id} --hole <n> --body <file>`."
+            );
+            Ok(())
+        }
+        vleo_sheet::form::Saved::Stale { .. } => {
+            Err("the sheet changed while publishing — run it again".into())
+        }
+        vleo_sheet::form::Saved::Refused(e) => Err(e),
+    }
 }
 
 /// The relations with nobody's name against them, and who owes each one.
@@ -264,7 +802,7 @@ fn cmd_confirm(root: &Path, args: &[&str]) -> Result<(), String> {
         return Err("--by is empty".into());
     }
 
-    // An agent may never supply mathematics. Stated as a sentence it is a hope;
+    // An assistant may never supply mathematics. Stated as a sentence it is a hope;
     // this makes it a fact about what can be written to the file.
     let lower = who.to_lowercase();
     for bad in vleo_sheet::form::agent_identities(root) {
@@ -273,7 +811,7 @@ fn cmd_confirm(root: &Path, args: &[&str]) -> Result<(), String> {
             || lower.contains(&format!("{bad}/"))
         {
             return Err(format!(
-                "refused: '{who}' is an agent. An agent may never supply mathematics, and this \
+                "refused: '{who}' is an assistant's name. An assistant may never supply mathematics, and this \
                  field is the only thing that can tell whether one did. It takes the name of a \
                  person who has read the relation against its source and is prepared to own it. \
                  Nothing was written."
@@ -384,36 +922,6 @@ fn read_fills(dir: &Path) -> Vec<Fill> {
         .unwrap_or_default()
 }
 
-/// What model an agent runs, from the one file that records it.
-fn agent_model(root: &Path, who: &str) -> Result<String, String> {
-    let text = fs::read_to_string(root.join("agents/provenance.toml"))
-        .map_err(|e| format!("agents/provenance.toml: {e}"))?;
-    let v: toml::Value = text
-        .parse()
-        .map_err(|e| format!("agents/provenance.toml: {e}"))?;
-    let agents = v
-        .get("agent")
-        .and_then(|a| a.as_array())
-        .ok_or("agents/provenance.toml declares no agents")?;
-    let known: Vec<String> = agents
-        .iter()
-        .filter_map(|a| a.get("name")?.as_str().map(str::to_string))
-        .collect();
-    agents
-        .iter()
-        .find(|a| {
-            a.get("name").and_then(|n| n.as_str()) == Some(who)
-                || a.get("id").and_then(|n| n.as_str()) == Some(who)
-        })
-        .and_then(|a| a.get("model")?.as_str().map(str::to_string))
-        .ok_or_else(|| {
-            format!(
-                "no agent '{who}' with a model in agents/provenance.toml. Known: {}",
-                known.join(", ")
-            )
-        })
-}
-
 /// Append a fill record.
 ///
 /// The model-family rule, enforced as a fact about the file rather than as a
@@ -421,13 +929,11 @@ fn agent_model(root: &Path, who: &str) -> Result<String, String> {
 /// refused. A model handed its own reasoning to check approves it, so two
 /// bodies from one model are one body written twice.
 fn check_fill_attribution(
-    root: &Path,
     sh: &vleo_sheet::model::Sheet,
     hole: u32,
-    who: &str,
+    model: &str,
     body: &str,
 ) -> Result<(), String> {
-    let model = agent_model(root, who)?;
     for f in read_fills(&sh.dir) {
         if f.hole == hole && f.body.trim() == body.trim() {
             return Ok(());
@@ -446,13 +952,12 @@ fn check_fill_attribution(
 }
 
 fn record_fill(
-    root: &Path,
     sh: &vleo_sheet::model::Sheet,
     hole: u32,
     who: &str,
+    model: &str,
     body: &str,
 ) -> Result<(), String> {
-    let model = agent_model(root, who)?;
     let existing = read_fills(&sh.dir);
     if existing
         .iter()
@@ -470,7 +975,7 @@ fn record_fill(
              # so both are kept here rather than hashed. `cargo xtask differential\n\
              # <node>` runs it.\n\
              #\n\
-             # Written by `cargo xtask fill --by`. Editing it by hand defeats the\n\
+             # Written by `cargo xtask fill --by --model`. Editing it by hand defeats the\n\
              # one thing it is for.\n",
         );
     } else {
@@ -499,10 +1004,10 @@ fn record_fill(
 /// numeric checks over the declared domain, and running a second, private grid
 /// beside them would be a second definition of correct.
 ///
-/// What this cannot do here is produce the second body: every agent in this
-/// repository runs one vendor's models, so the rule separates model tiers and
-/// not training. That is recorded in agents/provenance.toml and it is a
-/// decision with a cost attached, not something this command can close.
+/// What this cannot do is produce the second body. Whoever implements a node —
+/// a developer, or an assistant a developer runs — names the model with
+/// `--model`, and the rule is only as strong as the models on offer: two tiers
+/// of one vendor's models differ in size, not in training.
 fn cmd_differential(root: &Path, args: &[&str]) -> Result<(), String> {
     let id = args
         .first()
@@ -519,7 +1024,7 @@ fn cmd_differential(root: &Path, args: &[&str]) -> Result<(), String> {
     let fills = read_fills(&sh.dir);
     if fills.is_empty() {
         return Err(format!(
-            "no fills recorded for '{id}'. `cargo xtask fill --by <agent>` records one; \
+            "no fills recorded for '{id}'. `cargo xtask fill --by <who> --model <model>` records one; \
              without a record there is nothing to compare and saying so is the only \
              honest answer"
         ));
@@ -1471,7 +1976,9 @@ fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
         println!("  \x1b[33m?\x1b[0m  where this relation came from — and THE ROW DOES NOT ANSWER until it is here");
         println!("     [theory] why, reading, and a [[theory.step]] per step. A function is");
         println!("     defined by its derivation, not by its expression and not by its citation:");
-        println!("     a relation an agent invented carries a citation just as convincingly, and");
+        println!(
+            "     a relation an assistant invented carries a citation just as convincingly, and"
+        );
         println!("     the expression is one line anybody can type. Until this is written the");
         println!("     resolver refuses the row and every reader of it blocks by name.");
     } else if !sh.steps.is_empty() {
@@ -1483,7 +1990,9 @@ fn cmd_declare(root: &Path, args: &[&str]) -> Result<(), String> {
     if sh.expression.trim().is_empty() {
     } else if sh.relation_by.trim().is_empty() {
         println!("  \x1b[33m?\x1b[0m  who supplied this relation, and when");
-        println!("     [maths] confirmed_by — an agent may never supply mathematics, and without");
+        println!(
+            "     [maths] confirmed_by — an assistant may never supply mathematics, and without"
+        );
         println!("     a name nothing can tell whether one did. It does not make the formula");
         println!("     right; it makes it somebody's, which is what H1b needs to be a review.");
     } else {
@@ -1775,17 +2284,32 @@ fn cmd_fill(root: &Path, args: &[&str]) -> Result<(), String> {
         .position(|a| *a == "--by")
         .and_then(|i| args.get(i + 1))
         .copied();
-    match attribution {
-        Some(who) => check_fill_attribution(root, sh, n, who, &body)?,
-        None if sh.criticality == "significant" => {
+    let model = args
+        .iter()
+        .position(|a| *a == "--model")
+        .and_then(|i| args.get(i + 1))
+        .copied();
+    let attribution = match (attribution, model) {
+        (Some(who), Some(model)) => {
+            check_fill_attribution(sh, n, model, &body)?;
+            Some((who, model))
+        }
+        (Some(who), None) => {
+            return Err(format!(
+                "a body by {who} needs the model that wrote it: --model <name>. Two bodies from \
+                 one model are one body written twice, so the model is what the comparison \
+                 turns on. Nothing was written."
+            ))
+        }
+        (None, _) if sh.criticality == "significant" => {
             return Err(format!(
                 "'{id}' is significant, so its holes are filled twice by different models and \
                  the two compared. An unattributed body cannot be compared to anything: pass \
-                 --by <agent>. Nothing was written."
+                 --by <who> --model <model>. Nothing was written."
             ))
         }
-        None => {}
-    }
+        (None, _) => None,
+    };
 
     let mut holes = vleo_sheet::load::read_holes(&sh.dir);
     let before = holes.get(&n).cloned().unwrap_or_default();
@@ -1806,8 +2330,8 @@ fn cmd_fill(root: &Path, args: &[&str]) -> Result<(), String> {
             "hole {n} is still empty after the splice — nothing was written"
         ));
     }
-    if let Some(who) = attribution {
-        record_fill(root, sh, n, who, &body)?;
+    if let Some((who, model)) = attribution {
+        record_fill(sh, n, who, model, &body)?;
     }
     println!(
         "{id} hole {n} ({}) — {} line(s) spliced{}",
@@ -1856,10 +2380,25 @@ fn clone_sheet(sheet: &str, id: &str, folder: &str, src_order: u32) -> (String, 
     // algorithm, so the key alone is not enough to decide.
     let mut section = String::new();
     let mut carried: Vec<String> = Vec::new();
+    // THE SIBLING'S RECORD IS NOT INHERITED. Its versions say why the SIBLING
+    // changed, its risks are registered once, on it, and its plain-words
+    // explanation is about its own relation — so each is dropped whole, not
+    // blanked: a new row starts with no history, and says its first belief on
+    // its own form. Nor is what it CONTRIBUTES to: a KPI the sibling feeds is
+    // a contract edge of the sibling's, and a new row that inherited it claimed
+    // to move a KPI nobody had asked it to.
+    let mut dropped = false;
     for line in sheet.lines() {
         let l = line.trim_start();
         if l.starts_with('[') {
             section = l.to_string();
+            dropped = matches!(
+                l,
+                "[[version]]" | "[[risk]]" | "[explain]" | "[contributes]"
+            );
+        }
+        if dropped {
+            continue;
         }
         // A comment block is prose about the SIBLING, and there is no way to tell
         // its row-specific sentences from the template's generic ones. So it is
@@ -2194,11 +2733,164 @@ fn cmd_bundle(root: &Path, args: &[&str]) -> Result<(), String> {
 /// Generated from the sheets, like everything else. A register maintained by
 /// hand drifts from the tree within a week, and then it is worse than absent:
 /// somebody will trust it.
+/// The de-risking narrative: every recorded change and every risk, laid out
+/// from the sheets. Two files, one to read and one for a spreadsheet.
+fn cmd_derisk(root: &Path, _args: &[&str]) -> Result<(), String> {
+    let tree = load(root)?;
+    let md = vleo_sheet::derisk::narrative_md(&tree);
+    let csv = vleo_sheet::derisk::narrative_csv(&tree);
+    let a = write_if_changed(&root.join("docs/DERISK_NARRATIVE.md"), &md)?;
+    let b = write_if_changed(&root.join("docs/derisking.csv"), &csv)?;
+    let (changes, starts) = vleo_sheet::derisk::narrative(&tree);
+    let reg = vleo_sheet::derisk::register(&tree);
+    println!(
+        "derisk: {} change(s), {} starting belief(s), {} risk(s) registered, {} open — {}",
+        changes.len(),
+        starts.len(),
+        reg.len(),
+        reg.iter().filter(|r| r.now != "closed").count(),
+        if a || b {
+            "docs/DERISK_NARRATIVE.md and docs/derisking.csv written"
+        } else {
+            "nothing to write"
+        }
+    );
+    Ok(())
+}
+
+/// The workspace version, as `Cargo.toml` states it.
+fn workspace_version(root: &Path) -> Result<String, String> {
+    let text =
+        fs::read_to_string(root.join("Cargo.toml")).map_err(|e| format!("Cargo.toml: {e}"))?;
+    let v: toml::Value = text.parse().map_err(|e| format!("Cargo.toml: {e}"))?;
+    v.get("workspace")
+        .and_then(|w| w.get("package"))
+        .and_then(|p| p.get("version"))
+        .and_then(|x| x.as_str())
+        .map(str::to_string)
+        .ok_or_else(|| "Cargo.toml has no [workspace.package] version".into())
+}
+
+/// A RELEASE STAMPS THE BELIEFS IT CARRIES. Every node version recorded since
+/// the last release says `next`; this names them with the release that ships
+/// them, so a node's page and a saved result can say which release first held
+/// each belief — and why the one before it was replaced.
+fn cmd_release(root: &Path, args: &[&str]) -> Result<(), String> {
+    use vleo_sheet::derisk::{release_key, stamp, NEXT};
+    let v = args
+        .iter()
+        .find(|a| !a.starts_with("--"))
+        .copied()
+        .ok_or("usage: xtask release <version> [--check] — e.g. `release 0.2.0`")?;
+    let key = release_key(v)
+        .filter(|_| v != NEXT)
+        .ok_or_else(|| format!("«{v}» is not a version: three numbers, like 0.2.0"))?;
+    let now = workspace_version(root)?;
+    let now_key =
+        release_key(&now).ok_or_else(|| format!("Cargo.toml's version «{now}» is not x.y.z"))?;
+    if key < now_key {
+        return Err(format!(
+            "{v} is older than the workspace's {now}; a release only moves forward"
+        ));
+    }
+    let tree = load(root)?;
+    let mut newer = Vec::new();
+    let mut pending = Vec::new();
+    for sh in tree.ordered() {
+        for ver in &sh.versions {
+            if ver.release == NEXT {
+                pending.push(format!("{} v{}", sh.id, ver.n));
+            } else if release_key(&ver.release) > Some(key) {
+                newer.push(format!("{} v{} says {}", sh.id, ver.n, ver.release));
+            }
+        }
+    }
+    if !newer.is_empty() {
+        return Err(format!(
+            "these versions already name a later release than {v}: {}",
+            newer.join(", ")
+        ));
+    }
+    if args.contains(&"--check") {
+        if v != now {
+            return Err(format!("the workspace says {now}, and the release is {v}. Run `cargo xtask release {v}` and commit"));
+        }
+        if !pending.is_empty() {
+            return Err(format!(
+                "{} version(s) are still `next`, so this release would ship beliefs it does not name: {}. \
+                 Run `cargo xtask release {v}` and commit",
+                pending.len(),
+                pending.join(", ")
+            ));
+        }
+        println!("release {v}: every node version is stamped, and the workspace says {v}");
+        return Ok(());
+    }
+    let mut stamped = 0;
+    let mut nodes = 0;
+    for sh in tree.ordered() {
+        if !sh.versions.iter().any(|x| x.release == NEXT) {
+            continue;
+        }
+        let path = sh.dir.join("node.toml");
+        let text = fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+        let (out, n) = stamp(&text, v);
+        if n > 0 {
+            fs::write(&path, out).map_err(|e| format!("{}: {e}", path.display()))?;
+            stamped += n;
+            nodes += 1;
+        }
+    }
+    if v != now {
+        let path = root.join("Cargo.toml");
+        let text = fs::read_to_string(&path).map_err(|e| format!("Cargo.toml: {e}"))?;
+        let mut in_pkg = false;
+        let mut done = false;
+        let mut out = String::with_capacity(text.len());
+        for line in text.split_inclusive('\n') {
+            let l = line.trim();
+            if l.starts_with('[') {
+                in_pkg = l == "[workspace.package]";
+            }
+            if in_pkg && !done && l.starts_with("version") && l.contains('=') {
+                out.push_str(&format!("version = \"{v}\"\n"));
+                done = true;
+            } else {
+                out.push_str(line);
+            }
+        }
+        fs::write(&path, out).map_err(|e| format!("Cargo.toml: {e}"))?;
+        // The lock file names the workspace's own version; cargo rewrites it,
+        // offline, the moment anything asks it about the workspace.
+        let st = std::process::Command::new("cargo")
+            .args(["metadata", "--offline", "--format-version", "1"])
+            .current_dir(root)
+            .stdout(std::process::Stdio::null())
+            .status()
+            .map_err(|e| format!("cargo metadata: {e}"))?;
+        if !st.success() {
+            return Err("cargo could not update Cargo.lock for the new version".into());
+        }
+    }
+    cmd_docs(root, &[])?;
+    cmd_derisk(root, &[])?;
+    println!(
+        "release {v}: {stamped} version(s) stamped on {nodes} node(s); workspace {now} -> {v}.\n\
+         Next: `cargo run -p xtask -- gate && cargo test`, commit, then tag v{v}."
+    );
+    Ok(())
+}
+
 fn cmd_variables(root: &Path) -> Result<(), String> {
     let tree = load(root)?;
     let mut o = String::new();
     o.push_str("<!-- GENERATED by `cargo xtask variables`. Do not edit: the sheets are the source. -->\n\n");
     o.push_str("# The variable register\n\n");
+    o.push_str(
+        "> **Answer first.** Every variable in the tree — its unit, the range it is declared \
+         valid over, the reason for each bound, and what reads it. Generated from the sheets.\n>\n\
+         > **Kind:** reference · **For:** everyone\n\n",
+    );
     o.push_str("Every row in the tree, with the unit it publishes in, the range over which it\n");
     o.push_str("is declared valid, and the reason for each bound. A guard whose reason is not\n");
     o.push_str("written down gets deleted by the next person who finds it awkward, so the\n");

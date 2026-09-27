@@ -190,7 +190,7 @@ export async function mountRelation(host) {
     $('.rel-note', host).textContent = 'asking the engine…';
     const p = new URLSearchParams({
       node: id, over: d.id, from: d.lo, to: d.hi,
-      points: '120', case: S.engineCase, mode: 'branch',
+      points: '120', mode: 'branch',
     });
     res = await (await fetch('/v1/sweep?' + withOverrides(p).toString())).json();
     if (!res.ok) {
@@ -289,7 +289,7 @@ async function declaredValue(host, r) {
   host.innerHTML = '<p class="muted">asking the engine for the declared value\u2026</p>';
   let v = null;
   try {
-    const body = new URLSearchParams({ node: r.id, mode: 'branch', case: S.engineCase });
+    const body = new URLSearchParams({ node: r.id, mode: 'branch' });
     const rr = await (await fetch('/v1/run', {
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded' },

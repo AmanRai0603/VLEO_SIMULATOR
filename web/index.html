@@ -19,7 +19,13 @@
 
 <header id="masthead">
   <h1>VLEO Multipayload design tool</h1>
-  <p class="tagline">Orbitt Space · four layers · one architecture, many cases</p>
+  <p class="tagline">Orbitt Space · four layers · one architecture, one case</p>
+  <span class="grp" id="depth" role="group" aria-label="how deep the page goes"
+    title="Learn keeps every step and asks you to predict first · Read shows the answer, the plain words and the real thing · Expert keeps the answer, the relation, the limits and the reference"><span class="lbl">depth</span>
+    <button class="ctl dp" data-depth="learn">Learn</button
+    ><button class="ctl dp" data-depth="read">Read</button
+    ><button class="ctl dp" data-depth="expert">Expert</button>
+  </span>
 </header>
 
 <nav id="tabs">
@@ -27,6 +33,9 @@
     <button class="nudge" id="prev" title="the layer above">←</button>
     <button class="nudge" id="next" title="the layer below">→</button>
     <button class="tab arch-tab" id="arch-tab" title="the pattern every folder repeats">⌗ Architecture</button>
+    <button class="tab forms-tab" id="forms-tab" title="every way something reaches this tool: the inputs, results, and node forms">Forms</button>
+    <button class="tab results-tab" id="results-tab" title="what runs returned, kept on this machine and shown without running">Results</button>
+    <button class="tab inputs-tab" id="inputs-tab" title="the one case: every input, its default and the value it runs at — edit, upload or download as CSV">Inputs</button>
     <button class="tab manual-tab" id="manual-tab" title="how to use this tool — in the browser and in a terminal, as a user and as a developer">? Manual</button>
     <button class="tab sel" data-layer="1">1 Management layer</button>
     <button class="tab" data-layer="2">2 The system — tree, connectivity, one node</button>
@@ -57,8 +66,11 @@
   <div class="tabrow sub" id="caserow">
     <span class="tag" id="concept-tag">Constellation</span>
     <span class="lbl">case</span>
-    <button class="ctl case sel" data-case="c1">C1 · ISR+EO+geo</button
-    ><button class="ctl case" data-case="c2">C2 · comms+EO+PNT</button>
+    <b id="case-name"></b>
+    <span class="hint-inline" id="case-state"></span>
+    <button class="ctl" id="case-inputs" title="every input of the case, grouped customer and condition">inputs…</button>
+    <label class="ctl" id="case-upload-l" title="a CSV in the template's format: it is checked and shown before anything is saved">upload CSV<input type="file" id="case-upload" accept=".csv,text/csv" hidden></label>
+    <a class="ctl" id="case-download" href="/v1/inputs.csv" download="vleo-case.csv" title="the saved case, one row per input">download CSV</a>
     <span class="hint-inline" id="caserow-note"></span>
   </div>
 </nav>
@@ -134,6 +146,24 @@
   -->
   <div id="manualview" hidden>
     <div id="manual-body"></div>
+  </div>
+
+  <!--
+    The case: every input of the one design, grouped customer and condition,
+    and the values it runs at. Saved by the daemon outside the repository.
+  -->
+  <div id="inputsview" hidden>
+    <div id="inputs-body"></div>
+  </div>
+
+  <!-- Saved results: shown as they were, without running. -->
+  <div id="resultsview" hidden>
+    <div id="results-body"></div>
+  </div>
+
+  <!-- The forms: the inputs, results, and node forms, each with its owner. -->
+  <div id="formsview" hidden>
+    <div id="forms-body"></div>
   </div>
 
   <div id="nodeview" hidden>

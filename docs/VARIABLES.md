@@ -2,6 +2,10 @@
 
 # The variable register
 
+> **Answer first.** Every variable in the tree — its unit, the range it is declared valid over, the reason for each bound, and what reads it. Generated from the sheets.
+>
+> **Kind:** reference · **For:** everyone
+
 Every row in the tree, with the unit it publishes in, the range over which it
 is declared valid, and the reason for each bound. A guard whose reason is not
 written down gets deleted by the next person who finds it awkward, so the

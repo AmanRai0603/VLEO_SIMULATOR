@@ -1,5 +1,9 @@
 # Runbook
 
+> **Answer first.** A developer's first day, then one node form taken from arrival to release — check, apply, publish, implement, evidence, gate, review — and what to do when the gate refuses.
+>
+> **Kind:** how-to · **For:** developers
+
 Written from a node that was actually built, not from a specification. Every
 step below was performed.
 
@@ -25,18 +29,37 @@ Then:
     cargo run --release -p vleo-daemon
     # open http://127.0.0.1:7777
 
-## One node, start to merge
+## One form, arrival to release
 
-    cargo run -p xtask -- new prop_intake_throat --like prop_capture_efficiency
-    git switch -c node/prop-intake-throat
-    $EDITOR crates/vleo-mod-prop/nodes/intake_throat/node.toml   # the physics
+Almost every change to the design arrives as a filled node form from somebody
+on the team — `docs/examples/` has two, one for an existing node and one for a
+new one. Start by checking it; nothing is written by checking.
 
-`new --like` clones the *shape* of a sibling and blanks what must be
-re-decided. Not a literal copy: a copy drags someone else's source citation and
-someone else's domain limits through thirty nodes, and that is how a wrong
-reference propagates.
+    cargo run -p xtask -- intake sw_ap_design_margin.node-form.html
+      APPLY    new · id       «» → «sw_ap_design_margin»
+      APPLY    new · parent   «» → «l3_solar»
+      …
+      interfaces — what each input reads:
+        connects ap  ← sw_ap_design    Ratio in One
+      16 change(s) can be applied, 0 cannot.
 
-    cargo run -p xtask -- gate prop_intake_throat
+A **conflict** means the design changed under the form since it was drawn; a
+**refused** relation means the form says an assistant supplied it; an interface
+that does not connect names the row and what it actually is. Any of those goes
+back to whoever filled it, with those lines — it is never fixed up on the way
+in. When it is clean:
+
+    git switch -c node/sw-ap-design-margin
+    cargo run -p xtask -- intake sw_ap_design_margin.node-form.html --apply
+
+For an existing node this writes `node.toml`; for a new one it builds the
+folder in its place in the tree, on the shape of a sibling of the same kind —
+not a literal copy, because a copy drags someone else's source citation and
+domain limits along — and gates the whole tree. Either way it regenerates and
+gates as one edit, or puts everything back. What the form left blank is printed
+as still open.
+
+    cargo run -p xtask -- gate sw_ap_design_margin
       ok    schema
       ok    inputs
       note  gap-pass — no fixture: nothing outside this code has agreed with it
@@ -52,24 +75,32 @@ reference propagates.
 Splitting it is the only lever that moves the schedule without hiring, because
 roughly half the review load leaves the person who cannot be duplicated.
 
-    cargo run -p xtask -- docs prop_intake_throat    # six artefacts, none typed
+    cargo run -p xtask -- publish sw_ap_design_margin    # the code is generated
 
-Then fill the numbered `HOLE` blocks in `model.rs`. A few typed lines each. The
-signature, the unit types, every guard with its reason, the fault construction
-and the ordering are already generated.
+Then fill the numbered `HOLE` blocks in `model.rs`, through `xtask fill` — by
+hand or with an assistant, recorded with `--by` and `--model`. A few typed lines
+each. The signature, the unit types, every guard with its reason, the fault
+construction and the ordering are already generated. Record the known values the
+form supplied in `fixtures.toml`, with where they came from — intake prints them
+as `[[fixture]]` blocks and never writes them.
 
-    cargo test -p vleo-mod-prop
-    cargo run -p xtask -- gate prop_intake_throat
+    cargo test -p vleo-mod-solar
+    cargo run -p xtask -- gate sw_ap_design_margin
 
 **Review 2 (H2)** — fixtures, their provenance, and the filled holes. By then
 the node has already survived independent machine verification, so the person
 accepts rather than hunts. That is what makes two reviews per node affordable.
 
-    gh pr ready   →   merge   →   published
+    commit naming whoever filled the form   →   merge   →   release
 
 Two reviews. Everything between them is a command. If a node takes materially
-longer, the template has a defect, and it is worth finding: it will be paid 1329
-times.
+longer, the template has a defect, and it is worth finding: it will be paid 1396
+times. The team gets the node in the next release; their saved case carries
+over on its own, with any new input at its default.
+
+A row a developer starts without a form — rare, and usually structural — still
+starts with `cargo run -p xtask -- new <id> --like <sibling>` and goes through
+the same gate and reviews.
 
 ## When the gate refuses
 
@@ -120,6 +151,7 @@ the order is wrong.
 |---|---|---|
 | try a physics idea before declaring a node | a notebook against the wheel | nothing enters the repository until it is a declaration |
 | sweep a design and look at the shape | the interface, or `vleo sweep` | runs carry an exploration channel |
+| keep what a run said, to compare later | *save this result*, or `vleo run … --save` | results are kept under `~/.vleo/results/`, never in the checkout |
 | build a fixture the kernel must match | MATLAB — this is its best job | the fixture is committed as a golden vector, with its provenance |
 | try a whole alternative architecture | a long-lived spike branch | never merged; findings return as a declaration |
 

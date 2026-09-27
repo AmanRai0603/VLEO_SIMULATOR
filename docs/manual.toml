@@ -21,11 +21,15 @@
 #   check = "ci"      the pipeline runs this exact command; found in gate.yml
 #   check = "probe"   a request to the daemon `serves` started
 #
-# No counts are written here. How many rows there are, how many answer, whether
-# this daemon will accept an edit and whose name an edit will carry — the page
-# asks the running tool, because a number copied into a manual is wrong the day
-# after it is copied. USING_IT proved it: it said 1329 rows until 26 September
-# 2026, long after the tree reached 1396.
+# No counts are written here. How many rows there are, how many answer, where
+# this copy keeps the case and whether one is saved — the page asks the running
+# tool, because a number copied into a manual is wrong the day after it is
+# copied. USING_IT proved it: it said 1329 rows until 26 September 2026, long
+# after the tree reached 1396.
+#
+# Every section says what kind of reading it is (`kind`: tutorial, how-to,
+# reference or explanation) and opens with its `answer` — docs/EXPLAINING.md,
+# E1 and E8. The parser refuses a section without either.
 #
 # Markup in `body` and `say`: blank line = new paragraph, `code`, **bold**.
 
@@ -35,29 +39,31 @@
 id = "browser"
 title = "In the browser"
 lede = """
-What you can do by pointing and clicking, what happens to the repository when \
-you do it, and what the browser deliberately will not do — with where each of \
-those is done instead."""
+Everything a team using the tool does: read the design, set the inputs, run, \
+keep what a run returned, and ask for a node to change. **Nothing in the \
+browser changes the design.** What you set and what you keep are yours and \
+stay on your machine; what the design *is* changes only through a node's form, \
+which the developers check, apply and release."""
 
 [[layer.section]]
 id = "browser-open"
 title = "Open the tool"
 who = "everyone"
+kind = "how-to"
+answer = "Start the tool with one command and open the address it prints. It never writes the repository: what you keep — the case and your results — stays on your machine under ~/.vleo."
 body = """
 The tool is one program on your own machine. It serves this page and computes \
 every number on it, from one address, with no internet and no database. It \
 listens on `127.0.0.1` only, so nobody else on the network can reach it.
 
-It starts **read-only**. You can read everything, run anything and ask any \
-what-if, and nothing you do can change a file. Editing a row's sheet is a \
-separate, deliberate start — so a copy somebody left running cannot be written \
-to by accident.
-
-The status card at the top of this manual says which of the two this copy is \
-running as, right now."""
+**It never writes the repository.** The two things you can keep — the case you \
+run on and the results you save — are kept outside it, under `~/.vleo/`, so a \
+checkout stays exactly as it was released and `git status` is empty however \
+much you use the tool. The status card at the top of this manual says where \
+this copy keeps them."""
 
 [[layer.section.step]]
-say = "Start it read-only. It prints the address it got — the first free port from 7777 upward."
+say = "Start it. It prints the address it got — the first free port from 7777 upward."
 run = "cargo run --release -p vleo-daemon"
 check = "serves"
 
@@ -65,18 +71,45 @@ check = "serves"
 say = "Open the address it printed, normally `http://127.0.0.1:7777`."
 
 [[layer.section.step]]
-say = "To be able to edit sheets, stop it with **Ctrl-C** and start it with writing allowed instead."
-run = "VLEO_ALLOW_WRITE=1 cargo run --release -p vleo-daemon"
-check = "serves"
-
-[[layer.section.step]]
 say = "In a Codespace there is nothing to type: the tool is already running and port 7777 opens as a preview."
+
+
+[[layer.section]]
+id = "browser-roles"
+title = "Who does what"
+who = "everyone"
+kind = "explanation"
+answer = "The team uses the tool and never changes the design in it; when a node should change, the person who knows fills in its form. The developers check each form, apply it, implement it and release it."
+body = """
+The tool has two kinds of people around it, and the line between them is the \
+line between *using* the design and *changing* it.
+
+**The team uses it.** Anyone can set the inputs — by hand or as a CSV — run \
+any row on them, save what the run returned and send it on, and look at a \
+result somebody else saved without running anything. When a node is wrong, \
+missing or unfinished, the person who knows the answer fills in **that node's \
+form** — or the form for a new node — and sends it to the developers. That is \
+the whole of what a team does, and none of it needs a checkout, a compiler or \
+permission.
+
+**The developers maintain it.** A form that comes back is checked first — what \
+it would change, and whether every input it declares is a row that exists, of \
+the quantity expected. Then it is applied in its layer, the node's code is \
+generated and implemented, its evidence recorded, the whole tree checked, and \
+the change released. The next release carries it, and the team runs it on \
+their own inputs.
+
+So a question about the design is never answered by editing it in a browser: \
+it is answered by a form, which leaves a record of who asked, what changed and \
+why."""
 
 
 [[layer.section]]
 id = "browser-find"
 title = "Find your way around"
 who = "user"
+kind = "tutorial"
+answer = "The design is a tree of rows in four layers, drawn with its connections on one grid. Pick a layer, open a group, click a row to open its page."
 body = """
 The design is a tree of rows in four layers. Each row asks one small question \
 and has one answer. The tabs across the top are the layers, plus the \
@@ -118,6 +151,8 @@ ui = "⌗ Architecture"
 id = "browser-read"
 title = "Read a row"
 who = "user"
+kind = "explanation"
+answer = "A row's page opens with its answer first, then says it simply, then the real relation and its source, then where the simple version breaks. Every claim says whether it is sourced, derived or declared, and the depth switch chooses how much is shown."
 body = """
 A row's page answers four questions, in order.
 
@@ -127,17 +162,24 @@ A row's page answers four questions, in order.
 **What it is joined to** — the rows it reads, the rows that read it, and which \
 customer targets it feeds.
 
-**What it says** — the sheet itself: its question, its relation and where that \
-came from, its answer's unit and allowed range, and the reason for each bound.
+**What it says** — the sheet itself, laid out the same way on every row: an \
+**Answer first** box, then the row **said simply**, then **the real thing** — \
+its relation and where that came from — then **where the simple version \
+breaks**, and the wrong idea readers most often bring. Every claim is marked \
+*sourced*, *derived* or *declared*, and every tab says whether it is an \
+explanation, a reference or something to try. The **de-risking** tab says what \
+the row rests on and why it changed. Beside the sheet is the node's **form**, \
+for when what it says should change.
 
 **The picture** — for the rows that have one, the figure the claim is argued \
 from.
 
 A **grey** row is *seeded*: its folder exists and nothing is specified in it \
 yet. That is the normal state of most of the tree — the decomposition written \
-down before anyone was asked to fill it — not a failure. A row marked \
-**INACTIVE** has a relation but nothing on its sheet saying where the relation \
-came from, so it does not answer until somebody writes that."""
+down before anyone was asked to fill it — not a failure, and its form is how it \
+gets filled. A row marked **INACTIVE** has a relation but nothing on its sheet \
+saying where the relation came from, so it does not answer until a form \
+supplies that and a developer applies it."""
 
 [[layer.section.step]]
 say = "The four parts of a row's page, top to bottom."
@@ -157,52 +199,113 @@ ui = "↑ back to the layer"
 
 
 [[layer.section]]
-id = "browser-whatif"
-title = "Ask “what if” — change an input and watch the answer move"
+id = "browser-inputs"
+title = "Set the inputs — the case"
 who = "user"
+kind = "how-to"
+answer = "Every run is on one case: its inputs, set on the Inputs page or uploaded as a CSV and saved outside the repository. A file is shown before it is saved, refused whole if any row is bad, and carried over when the tool is updated."
 body = """
-A **declared** row is a number a person chose and put their name against — a \
-mission length, an altitude, a storm level. You can try a different value for \
-any published declared row and see what it does to everything downstream.
+There is **one case**, the multipayload design, and every run, sweep and figure \
+in the tool is for it. What changes from one customer to the next, or from one \
+sky to the next, is its **inputs** — never the tree. A customer is a set of \
+values, not a folder, so a new customer is never a change to the design.
 
-**This is not an edit.** The override lives in this browser only. The sheet on \
-disk keeps its declared value and its attribution, and `git status` is empty \
-afterwards. A bar across the top of every page lists what is overridden for as \
-long as anything is, because every computed number below it is then about a \
-design that is not the one in the repository.
+The **Inputs** tab lists all of them in two halves. **Condition** is what the \
+design flies in: the orbit, the environment and the solar weather it is sized \
+for. **Customer** is everything else — the payloads, the vehicle, the service \
+and what it must deliver. Each shows the value it runs at, its default — the \
+value declared on its own sheet — and the range it may move in.
 
-A **computed** row cannot be overridden: its value would be recomputed from its \
-inputs the moment it ran. Change one of the declared numbers it reads instead."""
+Change values there and save them, or **upload a CSV**. A file is read and \
+shown before anything is saved: what it sets, what that changes, and every row \
+it refuses. A file with any refused row — a name that is not an input, a unit \
+that is not the row's, a value outside the declared range — is not used at \
+all, because keeping the good half would be a run on values nobody asked for. \
+A blank value means the default, so a file only has to name what it changes.
+
+The saved case is kept by the tool **outside the repository** — beside the \
+reference data, in `~/.vleo/case/`, or wherever `VLEO_CASE` points — so git \
+never sees it. To keep a copy, or hand one to someone, download it; to put it \
+back, upload it. The bar across the top always says how many inputs the saved \
+case changes.
+
+**When the tool is updated, a case carries over.** Every CSV the tool writes \
+names the set of inputs it was written for, in a `#! template` line — keep it. \
+When a release adds, retires or re-ranges inputs, a case written before is not \
+refused: every value that still applies is carried, every new input runs at \
+its default, and any value that can no longer be used — its input retired, or \
+now outside its range — is **set aside** by name, with its value and why, \
+rather than dropped. The saved case is carried over on its own the first time \
+the updated tool reads it, and the file as it was is kept beside it; the \
+Inputs page says what the update did until you keep the result. An old file \
+you upload is carried over the same way, and shown before it is saved."""
 
 [[layer.section.step]]
-say = "Open a declared row. Beside its declared value is a box: type a new value inside the shown range."
+say = "Open every input of the case. The bar across the top has the same way in."
+ui = "Inputs"
 
 [[layer.section.step]]
-say = "Run everything with that value."
-ui = "update — run everything"
+say = "The two halves: what the customer chooses, and the condition it flies in."
+ui = "Condition"
 
 [[layer.section.step]]
-say = "Put one value back from its own page…"
-ui = "reset"
+say = "Change a value, then save. **default** puts one input back."
+ui = "save to the case"
 
 [[layer.section.step]]
-say = "…or every override at once, from the bar at the top."
-ui = "put all back"
+say = "Or start from the template — every input, every value blank — fill it in anywhere a table can be edited, and upload it."
+ui = "download a blank template"
+
+[[layer.section.step]]
+say = "Upload a CSV. What it would change is shown first; nothing is saved until you say so."
+ui = "upload a CSV…"
+
+[[layer.section.step]]
+say = "Save the file as the case, or discard it."
+ui = "save as the case"
+
+[[layer.section.step]]
+say = "Keep a copy of the case as it stands."
+ui = "download the case as CSV"
+
+[[layer.section.step]]
+say = "Every input back to its default, and the saved file removed."
+ui = "reset every input to its default"
+
+[[layer.section.step]]
+say = "After an update, read what was carried and what was set aside, then keep the carried-over case."
+ui = "keep the carried-over case"
 
 
 [[layer.section]]
 id = "browser-run"
-title = "Run a row"
+title = "Run a row, and ask “what if”"
 who = "user"
+kind = "how-to"
+answer = "Run any computed row on the case, or change an input first to ask what if. A run always says how many rows ran and names every one that was blocked."
 body = """
 Every computed row can be evaluated on the spot, on its own page or from the \
-**4 The run** tab. Choose how much of the tree to evaluate and which customer \
-case to evaluate it for.
+**4 The run** tab.
+
+**A run is on the case** — its saved inputs, see *Set the inputs*. The panel \
+says so in a sentence, and under it lists every input the answer depends on, \
+the most influential first, each with the value it will run at, which half of \
+the case it is in, and where the value came from: the **default**, the **saved \
+case**, or **your edit**.
+
+**Change one to ask a what-if.** The edit is kept in this browser only — listed \
+in the bar at the top, applied to every run and sweep until you reset it, and \
+never written to a file. A **computed** row cannot be changed this way: its \
+value would be recomputed from its inputs the moment it ran, so change one of \
+the declared numbers it reads instead. When a what-if is worth keeping, **save \
+it to the case** and every page runs on it from then on.
 
 The result always says **n ran, m blocked**, and names every blocked row. A row \
 with nothing in it does not quietly supply a default — it refuses, under its \
 own name, and everything that needed it says so. That count is never hidden, \
-because a number built partly on refusals is not the number it looks like."""
+because a number built partly on refusals is not the number it looks like. \
+What unblocks such a row is its form, filled and applied — see *Ask for a node \
+to change*."""
 
 [[layer.section.step]]
 say = "Just this row, with its inputs at their declared values."
@@ -217,211 +320,217 @@ say = "The whole tree."
 ui = "everything"
 
 [[layer.section.step]]
-say = "Choose the customer case from the **case** menu, then run."
+say = "With the inputs as you want them, run."
 ui = "run"
 
 [[layer.section.step]]
 say = "Or open the run tab and pick any row that has something in it as the target."
 ui = "4 The run"
 
-
-[[layer.section]]
-id = "browser-edit"
-title = "Fill in or change a row's sheet"
-who = "user"
-body = """
-Needs the tool started with writing allowed — see *Open the tool*. Read-only, \
-the form still shows every question, and saving is refused with a message \
-saying how to start it for editing.
-
-Open a row, go to its sheet, and choose **answer the questions**. The form \
-asks everything the sheet needs, in five groups: the row, the relation, the \
-answer, the contract, and the derivation. A question marked `?` blocks \
-generation — nothing is generated from the row until it is answered. Under \
-every box is what goes wrong without it.
-
-**Each field saves on its own.** Pressing **save** writes that one field into \
-`node.toml`, regenerates the row's other files from it, and runs the row's \
-checks. If a check refuses, the sheet and every file are put back exactly as \
-they were and you are told why — the tree is never left half-edited. If \
-somebody else changed the row after you opened it, nothing is written and you \
-are asked to reopen it rather than overwrite them.
-
-**A seeded row is checked lightly until it is published.** While a row is \
-still seeded, a save checks that the sheet still reads and that the row \
-keeps its name, its parent and its owner — not that its answers agree with \
-each other. A lower \
-bound above its upper bound is accepted there, and refused when you publish. \
-Once a row is published, every save runs every check.
-
-Some answers are chosen, not typed: a quantity, a unit, and which way a \
-requirement binds are menus, because a word that is not one of them would stop \
-the whole tree compiling.
-
-**Your name.** A change to a relation is signed with the name in this \
-checkout's `git config user.name` — shown at the top of the form, never typed. \
-If that name is an agent's, a relation save is refused: an agent may never \
-supply mathematics, and the signature is the only thing that can tell whether \
-one did."""
+[[layer.section.step]]
+say = "Open the inputs, change one, and run with it. **reset** puts that one back."
+ui = "the inputs this answer depends on"
 
 [[layer.section.step]]
-say = "Open a row's page and switch its sheet to the form."
-ui = "answer the questions"
+say = "Or run straight from under the table."
+ui = "run with these inputs"
 
 [[layer.section.step]]
-say = "If the form shows the wrong name, set yours once for this checkout — then reload."
-run = "git config user.name \"Your Name\""
-check = "writes"
-why = "sets the git identity of this checkout, which every commit from it will then carry"
+say = "A declared row's own page has the same box: type a value inside the shown range and run everything with it."
+ui = "update — run everything"
 
 [[layer.section.step]]
-say = "Answer a question, then press its own **save**. Wait for the line under it to say what happened."
+say = "Every what-if back at once, from the bar at the top."
+ui = "put all back"
 
 [[layer.section.step]]
-say = "Refused? The message names the field and the rule. Nothing changed; correct it and save again."
+say = "Make your edits part of the saved case. The bar at the top offers the same."
+ui = "save my edits to the case"
+
+[[layer.section.step]]
+say = "In the sweep, draw the declared defaults beside the case to see what the case changes."
+ui = "the declared defaults as well, one line each"
 
 
 [[layer.section]]
-id = "browser-blocks"
-title = "Inputs, steps, derivation and assumptions"
+id = "browser-results"
+title = "Keep a result, send it, and see it again without running"
 who = "user"
+kind = "how-to"
+answer = "Save a run as a result, and see it again later without running anything — or send it as a CSV or a report page. A result keeps the node versions it rested on, and says when one of those beliefs has broken since."
 body = """
-Below the questions are the four lists a sheet can have more than one of: \
-**what this row reads**, **the steps**, **how the relation was arrived at** and \
-**what has to be true for this to hold**. Each entry is a card with its own \
-**remove** and a **save** per box; a new one goes in from **add one** at the \
-bottom of its list.
+A run is worth keeping when somebody will ask about it later. **Save** it and \
+the tool writes one CSV: every value the run returned with its unit, its \
+credibility and what governs it, every row it blocked on and why, and **every \
+input it ran on**. The file is kept on this machine, in `~/.vleo/results/` or \
+wherever `VLEO_RESULTS` points — outside the repository, like the case.
 
-Three rules the form enforces, and why:
+The **Results** tab lists every saved result and shows any of them as it was \
+— **nothing runs**, so a result saved before a release reads exactly the same \
+after it. Two results can be compared value by value, and the inputs that \
+differ between them are listed first, because that is usually the answer.
 
-**Steps are added at the end and removed from the end.** Each step is a \
-numbered slot in the row's generated code where a developer writes a few lines \
-of Rust. Inserting one in the middle would move every written slot after it \
-onto a different step without a line of it changing. A step whose slot already \
-holds code cannot be removed here at all.
+To send one, download it as the **CSV** — it opens in any spreadsheet — or as \
+a **report**: one HTML page that reads without the tool, and carries the CSV \
+inside it, so uploading the report gives the result back whole. A result \
+somebody sent you is uploaded the same way.
 
-**An input a written step uses cannot be renamed or removed.** The code in the \
-slot refers to it by name.
-
-**An input must point at a row that exists, and only once.** Adding an input \
-changes the whole tree's connections, so the whole tree is checked, and a bad \
-one is put back.
-
-Under the lists, **how the answer is drawn** chooses a number, a line swept \
-against another row, or a bar."""
+**A result's inputs can become the case.** That puts every input back to what \
+the result ran on — the way to reproduce it, or to carry on from it. It is \
+checked like any other case, and refused whole if a release has since retired \
+or re-ranged something it sets."""
 
 [[layer.section.step]]
-say = "Open a list's **add one**, fill its boxes, then add it."
-ui = "add it"
+say = "After a run, give the result a name if you like, then keep it."
+ui = "save this result"
 
 [[layer.section.step]]
-say = "Change how the answer is drawn — the whole choice saves at once."
-ui = "save how it is drawn"
+say = "Every result kept on this machine. Open one to see it; nothing runs."
+ui = "Results"
 
 [[layer.section.step]]
-say = "The form does not redraw after a save. Reopen the row to see the lists as they now stand."
+say = "Put two side by side: what moved, and the inputs that differ."
+ui = "compare with"
+
+[[layer.section.step]]
+say = "Send it: the CSV for a spreadsheet, or the report for someone without the tool."
+ui = "download report"
+
+[[layer.section.step]]
+say = "Keep a result somebody sent — its CSV or its report."
+ui = "upload a result…"
+
+[[layer.section.step]]
+say = "Run on exactly what it ran on."
+ui = "use its inputs as the case"
 
 
 [[layer.section]]
-id = "browser-paste"
-title = "Copy from a similar row"
+id = "browser-nodeform"
+title = "Ask for a node to change, or for a new one"
 who = "user"
+kind = "how-to"
+answer = "To change a node, or ask for a new one, download its form, fill it anywhere and send it to the developers. If the change moves what the node computes, the form also says why: which belief broke, what was tested and what we now know."
 body = """
-Twenty rows that share a pattern do not need typing twenty times. Paste another \
-row's `node.toml` and the form shows what would change — **nothing is written \
-by pasting**. The fields that would move a row in the tree (its identifier, \
-parent, order and the rest) are dropped and listed with the reason, and a \
-pasted signature is always dropped: a name belongs on the relation its owner \
-actually read. Tick what you want and apply it; each ticked field then goes \
-through the same one-field save as if you had typed it."""
+Every node has a **form**: one self-contained HTML file that needs no \
+connection and nothing installed. It explains itself, asks every question the \
+node's sheet answers with *why* each is asked, shows what the node reads and \
+feeds and the known-good values that already hold it, lists every row it \
+could read, and saves a filled copy of itself. Send it to whoever should say \
+what the node is — a payload team, a customer's engineer, a reviewer. It can \
+be filled by hand, or given to an assistant: the content is a plain block of \
+text near the end of the file.
+
+**For a node the design does not have yet**, download the form for a new node. \
+It also asks where the node goes — its parent, and so its layer — and what kind \
+of row it is.
+
+**What it reads is its interface.** Every input names a row that exists, and \
+the form says, as you type, what that row is and its quantity. A developer's \
+first check is exactly this: that every input is a row, of the quantity the \
+node expects.
+
+**Why it is changing.** A change to what the node computes — an input, the \
+output, the model, the maths, the algorithm, how it is drawn — also says which \
+belief broke: what we believed, what we tested, what we now know, what \
+changes, and what the node rests on now. The form says as you type which \
+decisions your changes move and what is still to answer; without it the \
+developers apply only your wording. Wording alone needs none of it.
+
+Send the filled file to the developers. **This page can check it first** — \
+what it would change in the node, every interface it declares, and what \
+cannot be applied: a field the design changed since the form was made is a \
+*conflict*, never overwritten, and a relation an assistant supplied is \
+*refused*, because mathematics is derived by a person. Nothing is written \
+here. Known-good values in a form are passed to whoever records fixtures; \
+they are never written from a form."""
 
 [[layer.section.step]]
-say = "Open the paste box at the top of the form."
-ui = "paste a sheet body from another row"
+say = "Every form in one place: the inputs, results, and each node's form."
+ui = "Forms"
 
 [[layer.section.step]]
-say = "Paste, then preview."
-ui = "show me what this would change"
+say = "Or from a node's own page: in *the sheet*, open the form tab."
+ui = "the node form — fill it anywhere"
 
 [[layer.section.step]]
-say = "Tick the fields you want, then apply."
-ui = "apply the ticked ones"
+say = "Download it and send it to whoever should fill it."
+ui = "download the node form"
+
+[[layer.section.step]]
+say = "For a node that does not exist yet."
+ui = "download the form for a new node"
+
+[[layer.section.step]]
+say = "When it comes back, check it: what it would change, every interface, and what it cannot. Nothing is written."
+ui = "check a filled form…"
 
 
 [[layer.section]]
-id = "browser-publish"
-title = "Publish a row"
+id = "browser-derisk"
+title = "Why a node changes — its beliefs, versions and risks"
 who = "user"
+kind = "explanation"
+answer = "A node changes only because a belief it rested on broke, and every change records what we believed, what we tested, what we now know and what changed. The risk-register rows of the management layer conclude, from every node's record, how that work has moved the programme's risks."
 body = """
-A seeded row generates only its page. **Publishing** it is what makes the tool \
-generate its code, its contract and its tests — so it is an action with \
-conditions, not a box you type a state into. It is offered once every question \
-that blocks generation is answered and, for a computed row, it has at least one \
-input and at least one step. Until then the form lists exactly what is missing.
+Every decision in the design rests on a belief — that this relation holds here, \
+that this input is the one that matters, that this picture shows what it \
+claims. A node changes only when one of those beliefs **breaks**: somebody \
+tested it and learned otherwise. So a node's page has a **de-risking** tab. It \
+says what the node rests on now and what would break it, then every version \
+before it, newest first: what we believed, what we tested, what we now know, \
+what it cost, what changed, and which risks that moved.
 
-**Publishing runs every check**, including the ones a seeded row's saves skip \
-— that its bounds do not cross, for one. If one \
-refuses, the row is put back exactly as it was, still seeded, with no \
-generated file left behind, and the message names the rule.
+`sw_central_expectation` — the centre of the F10.7 design value — carries its \
+real history as the worked example: three versions, each replaced because a \
+test showed its belief did not hold.
 
-The button appears when the page opens, so after filling a row in, reload it.
+**The conclusion is drawn in the management layer.** A risk is registered once, \
+on one of the four risk-register rows — technical, schedule, supply, \
+regulatory — and moved only by node versions. Each of those rows' pages lists \
+its risks, where each started and where it stands now, and every version \
+across the tree that moved it. That is how the work below, taken together, \
+has de-risked the programme; `docs/DERISK_NARRATIVE.md` is the same thing as a \
+document, and `docs/derisking.csv` as a spreadsheet.
 
-A just-published row is not finished. Its steps' slots are empty until a \
-developer writes the Rust, and until then it reports **blocked, by name** on \
-every run — never a made-up number."""
+**A saved result keeps the versions it rested on.** When one of those rows has \
+moved on since, the result says so beside its number.
 
-[[layer.section.step]]
-say = "With everything answered, reload the row, then publish."
-ui = "publish this row"
-
-
-[[layer.section]]
-id = "browser-share"
-title = "Put your edits on a branch and share them"
-who = "user"
-body = """
-A sheet edit is a change to the design, so it belongs in the project's history \
-with a reviewer — not sitting in a working copy. From the bottom of the form, \
-the tool puts every row you have changed onto a new branch as one commit, with \
-your summary as its message.
-
-**It commits and does not push.** Pushing puts your work where other people and \
-the pipeline see it, so that step is yours: the tool shows the exact command \
-and, on GitHub, the link to open the pull request.
-
-Your checkout is left on the new branch. Anything else you had changed that is \
-not a row's folder is not touched and not committed."""
+**How deep a page goes is yours to choose.** The switch at the top — **Learn**, \
+**Read**, **Expert** — shows the same pages at three depths: Learn keeps every \
+step and asks you to predict before you run; Read shows the answer, the plain \
+words and the real thing; Expert keeps the answer, the relation, the limits and \
+the reference. How every page is laid out, and why, is in `docs/EXPLAINING.md`."""
 
 [[layer.section.step]]
-say = "Open the box at the bottom of the form, choose the kind of change and write one line saying what changed and why."
-ui = "put these edits on a branch"
+say = "Choose how deep the pages go. Learn adds a prediction to make before each run."
+ui = "Learn"
 
 [[layer.section.step]]
-say = "Commit."
-ui = "commit them to a branch"
+say = "Open a row and its de-risking tab: what it rests on now, and every version before it."
 
 [[layer.section.step]]
-say = "Copy the push command it shows and run it in a terminal. It looks like this, with your branch's name."
-run = "git push -u origin sheet/<row>-<stamp>"
-check = "writes"
-why = "publishes your branch to the shared repository"
-
-[[layer.section.step]]
-say = "Open the link it shows and raise the pull request. The template asks for the two reviews your change needs."
+say = "Open a risk-register row under the management layer's risk register: its risks, and what the work below has done to them."
+ui = "What the work below has done to them"
 
 
 [[layer.section]]
 id = "browser-limits"
 title = "What the browser will not do"
 who = "everyone"
+kind = "reference"
+answer = "The browser never changes the design. Each thing it will not do has a place it is done instead, and for a team that place is almost always a node's form."
 body = """
-Some changes move the tree, rewrite code a person wrote, or speak for the whole \
-project. Those are done at a terminal, where the change is a diff somebody \
-reviews — not refused to keep you out, but so that each has an owner. The \
-table below says, for each one, where it is done instead.
+The browser never changes the design: not a field, not a row, not the tree. \
+That is not to keep anybody out. A change to the design has to be checked \
+against every row that reads it, implemented, given evidence, and released so \
+that everyone runs the same thing — and a change typed into one copy of the \
+tool does none of that. So each one below has a place it is done instead, and \
+for a team that place is almost always a form.
 
-The locked fields of a row, and the reason each is locked, are listed live \
-under *Reference* — from the same table the form refuses them from."""
+The fields a node form does not carry at all — the ones that move a row in the \
+tree or change who owns it — are listed live under *Reference*, each with its \
+reason."""
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -440,6 +549,8 @@ against the programs themselves."""
 id = "term-setup"
 title = "Set up a copy"
 who = "developer"
+kind = "how-to"
+answer = "Install Rust, clone, wire the hooks once and fill the reference-data store once. Then the gate and the tests are the one command that must be green."
 body = """
 The only thing to install is Rust; the exact version is pinned in \
 `rust-toolchain.toml` and fetched on first use. There is no database and no \
@@ -488,6 +599,8 @@ expect = "KPI closures declared"
 id = "term-look"
 title = "Look around"
 who = "user"
+kind = "how-to"
+answer = "Everything the browser shows, the terminal prints: the rows, a sheet, the case, what answers and what reaches a customer target."
 body = """
 Everything the browser shows, the terminal can print. `vleo` is the \
 command-line face of the engine; `xtask` is the project's own tool for the tree \
@@ -506,10 +619,10 @@ check = "exits"
 expect = "reads"
 
 [[layer.section.step]]
-say = "The customer cases, and what each one supplies."
+say = "The case, how its inputs divide into customer and condition, and whether a case is saved."
 run = "cargo run -p vleo-cli --bin vleo -- cases"
 check = "exits"
-expect = "nominal"
+expect = "108 customer, 20 condition"
 
 [[layer.section.step]]
 say = "Counts by state and by subsystem, and what is holding the tree back."
@@ -543,8 +656,10 @@ expect = "kernel"
 
 [[layer.section]]
 id = "term-run"
-title = "Run, change an input, sweep, compare cases"
+title = "Run, change an input, sweep, keep the result"
 who = "user"
+kind = "how-to"
+answer = "Run a row on the case, on a CSV of your own or on the declared defaults, change a declared input with --set, sweep one, and keep a run as a result file."
 body = """
 The examples use the storm row `sw_ap_design`: *what daily Ap is this design \
 built to survive?* It reads one declared number, the storm level designed for, \
@@ -552,14 +667,27 @@ and turns it into the Ap that level bounds.
 
 A run prints the answer, its **credibility** — the weakest of eight factors, \
 named — and **n ran, m blocked** with every blocked row named. The **chain** \
-hash identifies that exact number: the engine, the tree, the case and every \
-input that reached it. Two runs with the same chain are the same run, so it is \
+hash identifies that exact number: the engine, the tree and every input that \
+reached it. Two runs with the same chain are the same run, so it is \
 the thing to quote.
+
+A run is on the **case**: the saved one — the same file the browser saves — or, \
+with `--inputs`, a CSV of your own, or with `--defaults` every input at its \
+declared value. The first lines of a run say which. `vleo inputs` prints the \
+case as a CSV to fill in; a blank value means the default, and a file with any \
+row that cannot be applied is refused whole, each bad row named. A file written \
+by an older version of the tool — its `#! template` line says so — is carried \
+over instead, and `vleo inputs --inputs old.csv` writes it out in the current \
+template, with every value it could not carry kept as a `#! set-aside` line. The order is \
+fixed: each row's declared value, then the case's, then `--set`.
 
 `--set` only changes a **declared** number — never a computed one, which would \
 be overwritten the moment it was evaluated — and it never writes the sheet.
 
-The last two steps use a **closure**, `l3_solar_ach_01`: the room the sustained \
+`--save` keeps the run as a **result**: the same CSV the browser's Results page \
+keeps, and `vleo result` shows it again without running anything.
+
+Two of the steps use a **closure**, `l3_solar_ach_01`: the room the sustained \
 F10.7 requirement has left once the design flux is taken from it. The launch \
 date is one of the declared numbers behind it, and a time is given in seconds."""
 
@@ -582,10 +710,40 @@ check = "fails"
 expect = "is computed from its inputs"
 
 [[layer.section.step]]
-say = "Evaluate for one customer case rather than the nominal one."
-run = "cargo run -p vleo-cli --bin vleo -- run sw_ap_design --case solar_max"
+say = "Print the case as a CSV — every input, its unit, default and range. Fill in `value` and keep the file anywhere."
+run = "cargo run -p vleo-cli --bin vleo -- inputs --defaults"
 check = "exits"
-expect = "Ap_design"
+expect = "group,id,name,value,unit,default,min,max"
+
+[[layer.section.step]]
+say = "Run on a case file. This one designs for a G2 storm and leaves every other input at its default."
+run = "cargo run -p vleo-cli --bin vleo -- run sw_ap_design --inputs cases/examples/storm_level_2.csv"
+check = "exits"
+expect = "Ap_design = 80"
+
+[[layer.section.step]]
+say = "A file from an older version of the tool is carried over, not refused: what still applies runs, new inputs take their defaults, and a value that cannot be used is set aside by name."
+run = "cargo run -p vleo-cli --bin vleo -- run sw_ap_design --inputs cases/examples/from_an_older_tool.csv"
+check = "exits"
+expect = "carried over from an older version"
+
+[[layer.section.step]]
+say = "Or on the declared defaults, whatever case is saved."
+run = "cargo run -p vleo-cli --bin vleo -- run sw_ap_design --defaults"
+check = "exits"
+expect = "Ap_design = 132"
+
+[[layer.section.step]]
+say = "Keep the run as a result file — every value, every input it ran on."
+run = "cargo run -p vleo-cli --bin vleo -- run sw_ap_design --inputs cases/examples/storm_level_2.csv --save my-result.csv"
+check = "writes"
+why = "writes the result file it is given"
+
+[[layer.section.step]]
+say = "See a saved result again. Nothing runs: this is what the run returned when it was saved. `--html <file>` writes it as a report to send."
+run = "cargo run -p vleo-cli --bin vleo -- result docs/examples/sw_ap_design.result.csv"
+check = "exits"
+expect = "a saved result"
 
 [[layer.section.step]]
 say = "Sweep a declared input across a range. A point that refuses is recorded, never dropped."
@@ -594,10 +752,10 @@ check = "exits"
 expect = "3 ran, 0 refused"
 
 [[layer.section.step]]
-say = "Every stored case against one row, side by side."
-run = "cargo run -p vleo-cli --bin vleo -- campaign sw_ap_design"
+say = "The defaults, the saved case and any case files against one row, side by side."
+run = "cargo run -p vleo-cli --bin vleo -- campaign sw_ap_design --inputs cases/examples/storm_level_2.csv"
 check = "exits"
-expect = "solar_max"
+expect = "storm_level_2.csv"
 
 [[layer.section.step]]
 say = "Run the closure at the declared launch date, 1 January 2027. The answer is the fraction of the requirement still free."
@@ -613,28 +771,91 @@ expect = "M_f107_long = 0.376314"
 
 
 [[layer.section]]
-id = "term-fill"
-title = "Fill a row — the loop you will live in"
+id = "term-nodeform"
+title = "Take in a node form — check it first"
 who = "developer"
+kind = "how-to"
+answer = "A developer's first act on a filled form is the checker, which writes nothing: what it would change, every interface it declares, what cannot be applied, and whether its reason is complete. Then --apply writes it as one edit, or not at all."
 body = """
-A row is a folder, and **only `node.toml` in it is written by hand**. Every \
-other file is generated from it; an edit anywhere else is thrown away the next \
-time the row is regenerated, and the checks catch it before then.
+Every change to the design arrives as a node's form, filled by whoever knew the \
+answer. A developer's first act on one is to **check** it, and nothing is \
+written by checking. `xtask intake` reads the filled file and says, field by \
+field, what it would change in the node's `node.toml`, against three versions: \
+the node when the form was made, what the filler made of it, and the node now \
+— so a change made in the repository meanwhile is a **conflict**, not \
+overwritten. It checks **every interface** the form declares: each input must \
+be a row that exists, or a named output of one, of the quantity the node \
+expects. A relation an assistant supplied is **refused**, and so is a numbered \
+step removed from the middle, because each number is a hole holding somebody's \
+Rust.
 
-The loop: start a row from a sibling, answer its questions, generate, check, \
-write the few lines of Rust in each numbered slot, give it evidence from \
-outside this code, and ask whether a person should look yet. Every step names \
-exactly what is still open, so there is never a guess about what is next.
+A form for a **new node** says where it goes. Intake checks that the id is \
+free and the parent is a group, and on `--apply` builds the folder in its \
+place in the tree — on the shape of a sibling of the same kind — then writes \
+the form into it and gates the **whole tree**, since a new row changes what \
+the tree connects. Anything the form left blank is listed as still open.
 
-The form in the browser writes the same `node.toml` through the same checks — \
-use whichever you prefer for the words and numbers. The Rust in the slots and \
-the evidence are done here."""
+`--apply` writes as one edit — regenerate, gate, and put everything back if \
+the gate refuses — with your name on any relation it changes. It refuses while \
+anything is blocked unless you add `--partial`. Known-good values in the form \
+are printed as `[[fixture]]` blocks for whoever records fixtures; they are \
+never written by intake. A filled seeded row is then **published**, which is \
+what generates its code — see *Implement a node*."""
 
 [[layer.section.step]]
-say = "Start a new row from a sibling. It copies the shape and blanks everything that has to be decided again — a real copy would drag a stale citation along."
-run = "cargo run -p xtask -- new <new_row_id> --like <sibling_row_id>"
+say = "A node's form, to send out. With `--out <file>` it is written to a file."
+run = "cargo run -p xtask -- form sw_ap_design"
+check = "exits"
+expect = "vleo-node-form/1"
+
+[[layer.section.step]]
+say = "The form for a node the design does not have yet."
+run = "cargo run -p xtask -- form --new"
+check = "exits"
+expect = "A new node"
+
+[[layer.section.step]]
+say = "Check a filled form — this one changes the note, adds an assumption and supplies a known value."
+run = "cargo run -p xtask -- intake docs/examples/sw_ap_design.node-form.html"
+check = "exits"
+expect = "can be applied"
+
+[[layer.section.step]]
+say = "Check a filled form for a new node: where it goes, what it would hold, and each interface it declares."
+run = "cargo run -p xtask -- intake docs/examples/new-node.node-form.html"
+check = "exits"
+expect = "connects"
+
+[[layer.section.step]]
+say = "Apply it: written, regenerated and gated as one edit, or not at all. Then read `git diff`."
+run = "cargo run -p xtask -- intake docs/examples/sw_ap_design.node-form.html --apply"
 check = "writes"
-why = "creates a new row folder and its sheet"
+why = "it writes the node's sheet — or builds a new node's folder — and regenerates, which is a change to the repository to review and commit"
+
+
+[[layer.section]]
+id = "term-fill"
+title = "Implement a node — the developer's loop"
+who = "developer"
+kind = "how-to"
+answer = "After a form is applied: publish the row so its code is generated, write the Rust in each numbered slot, add evidence from outside this code, and check it. Every step names exactly what is still open."
+body = """
+A row is a folder, and **only `node.toml` in it is written by hand** — by a \
+form's intake, or in your editor. Every other file is generated from it; an \
+edit anywhere else is thrown away the next time the row is regenerated, and \
+the checks catch it before then.
+
+The loop after a form is applied: publish the row so its code is generated, \
+write the few lines of Rust in each numbered slot, give it evidence from \
+outside this code, check it, and ask whether a person should look yet. Every \
+step names exactly what is still open, so there is never a guess about what \
+is next.
+
+**Any assistant may help write a slot.** `fill` takes the body as text, and \
+`--by` and `--model` record who wrote it and with what, so a significant slot \
+written twice by different models can be compared. What no assistant may \
+supply is the relation itself — that comes from the form, and a person's name \
+goes against it. Commit naming whoever filled the form."""
 
 [[layer.section.step]]
 say = "Ask what is still open, and what goes wrong without each answer."
@@ -643,7 +864,19 @@ check = "exits"
 expect = "ready to generate"
 
 [[layer.section.step]]
-say = "Edit `node.toml` in your editor — or in the browser's form. It is the only hand-written file in the folder."
+say = "Publish a filled seeded row: its model, contract and evidence are generated and its slots can be written. It refuses, naming every reason, while the row is not ready."
+run = "cargo run -p xtask -- publish <row>"
+check = "writes"
+why = "moves the row to published and generates its code"
+
+[[layer.section.step]]
+say = "Write the Rust for one numbered slot. It goes in as text, never by opening the generated file; the tool refuses a body that would reach outside its slot."
+run = "cargo run -p xtask -- fill <row> --hole <n> --body - --by \"Your Name\" --model <model>"
+check = "writes"
+why = "splices a body into the row's generated model.rs and records who wrote it"
+
+[[layer.section.step]]
+say = "Add evidence to `fixtures.toml`: values from a paper, a measurement or a trusted tool — including the known values a form supplied. An expected value may never come from the code under test, and the checks refuse one marked as if it did."
 
 [[layer.section.step]]
 say = "Generate the row's other files from its sheet. On a row that is already up to date, nothing is written."
@@ -656,15 +889,6 @@ say = "Check it. Every failure names the field and the rule."
 run = "cargo run -p xtask -- gate sw_ap_design"
 check = "exits"
 expect = "0 node check failure(s)"
-
-[[layer.section.step]]
-say = "Write the Rust for one numbered slot. It goes in as text, never by opening the generated file; the tool refuses a body that would reach outside its slot."
-run = "cargo run -p xtask -- fill <row> --hole <n> --body -"
-check = "writes"
-why = "splices a body into the row's generated model.rs"
-
-[[layer.section.step]]
-say = "Add evidence to `fixtures.toml`: values from a paper, a measurement or a trusted tool. An expected value may never come from the code under test, and the checks refuse one marked as if it did."
 
 [[layer.section.step]]
 say = "Ask whether a person should look yet. It stops at the first thing a machine could have found."
@@ -684,9 +908,56 @@ why = "writes your name and today's date against the relation on the row's sheet
 
 
 [[layer.section]]
+id = "term-derisk"
+title = "Record why it changed, and cut a release"
+who = "developer"
+kind = "how-to"
+answer = "Every applied change appends a version to its node; the narrative is regenerated from all of them; and a release stamps every unreleased version with the release that ships it."
+body = """
+A form that moves what a node computes carries its reason — what we believed, \
+what we tested, what we now know, what changed, and what the node rests on now. \
+Intake checks the record with everything else: without it, only the form's \
+wording is applied and every decision is **withheld**, by name; with it, the \
+changes go in and a `[[version]]` is appended to the sheet, numbered and marked \
+`next`. The kinds of decision it moved are read off what the form changed, \
+never asked. A risk move names a risk registered on a risk-register row, or the \
+record is refused.
+
+The narrative is generated from every node's record: \
+`docs/DERISK_NARRATIVE.md` to read and `docs/derisking.csv` for a spreadsheet, \
+in the columns of the quarterly de-risking narrative. The pipeline regenerates \
+both and fails on a difference.
+
+A release names the beliefs it ships. `xtask release <version>` stamps every \
+`next` with the release, sets the workspace version and regenerates; the \
+release pipeline runs `release <version> --check` and refuses while any version \
+is unstamped. Why, and the rules, are in `docs/DERISKING.md`."""
+
+[[layer.section.step]]
+say = "Regenerate the narrative. On a tree whose narrative is committed, nothing is written."
+run = "cargo run -p xtask -- derisk"
+check = "exits"
+expect = "nothing to write"
+
+[[layer.section.step]]
+say = "A saved result says which node versions it rests on — and, if one has moved on since, that a belief it rested on has broken."
+run = "cargo run -p vleo-cli --bin vleo -- result docs/examples/sw_ap_design.result.csv"
+check = "exits"
+expect = "a saved result"
+
+[[layer.section.step]]
+say = "Cut a release: every unreleased version stamped, the workspace version set, everything regenerated. Then gate, commit and tag."
+run = "cargo run -p xtask -- release <version>"
+check = "writes"
+why = "stamps `release` on every unreleased node version, sets the version in Cargo.toml and Cargo.lock, and regenerates"
+
+
+[[layer.section]]
 id = "term-evidence"
 title = "Is the evidence real?"
 who = "developer"
+kind = "how-to"
+answer = "Two commands ask whether the tests are worth anything: every fixture declaration is sound, and a perturbed answer is caught by the row's own tests."
 body = """
 A test that passes against a broken implementation is not testing anything. Two \
 commands ask that question directly."""
@@ -711,16 +982,21 @@ expect = "mutant(s) killed"
 
 [[layer.section]]
 id = "term-push"
-title = "Before you push, and how to commit"
+title = "Before you push, and how to release"
 who = "developer"
+kind = "how-to"
+answer = "Run the pipeline's checks before pushing: the gate and every test first, then formatting, lints, the assembly validations and the panels. A change from a form names who filled it."
 body = """
 The pipeline runs all of these on every push; running them first saves a round \
 trip. The first is the one that must be green.
 
 Commit messages read `type(scope): a sentence saying what changed`. The hook \
 installed by `setup` refuses anything else before it leaves your machine, and \
-the pipeline runs the same rule. How many reviewers a change needs is in \
-`CONTRIBUTING.md`."""
+the pipeline runs the same rule. A change that came from a form names who \
+filled it. How many reviewers a change needs is in `CONTRIBUTING.md`.
+
+Once merged, the change reaches the team in the next release: they update, and \
+their saved case carries over on its own — see *Set the inputs*."""
 
 [[layer.section.step]]
 say = "The checks and every test."
@@ -758,6 +1034,8 @@ expect = "scopes:"
 id = "term-data"
 title = "Reference data"
 who = "developer"
+kind = "how-to"
+answer = "Reference data arrives by an explicit sync as published, hashed sets; a run has verified data on disk or refuses to start."
 body = """
 The engine never fetches anything while it runs. Reference data arrives by an \
 explicit sync beforehand, as published sets with a manifest, a licence term and \
@@ -791,6 +1069,8 @@ why = "writes a new bundle and its manifest under bundles/, permanently"
 id = "term-regen"
 title = "Regenerate what is generated"
 who = "developer"
+kind = "how-to"
+answer = "Generated files are regenerated from their sources and committed; the pipeline fails if they differ from what the sources give."
 body = """
 Some files are written by the tool from others and never by hand. The pipeline \
 regenerates each one and fails if the result differs from what was committed, \
@@ -819,12 +1099,14 @@ why = "rewrites docs/VARIABLES.md"
 id = "term-http"
 title = "Talk to the running tool from a script"
 who = "developer"
+kind = "reference"
+answer = "Everything the page does is plain HTTP to the daemon, in SI units, and a script can do the same. No route writes the repository."
 body = """
 Everything the page does, it does over plain HTTP to the daemon, and so can a \
 script. Every value crossing that boundary is in SI units; a face converts for \
 display, never for transport. The full list of routes is under *Reference*. \
-The ones that change a sheet are refused unless the daemon was started with \
-writing allowed."""
+**No route writes the repository**: the only things a request can save are the \
+case and results, both kept outside it."""
 
 [[layer.section.step]]
 say = "The engine's identity."
@@ -839,10 +1121,10 @@ check = "probe"
 expect = "sw_ap_design"
 
 [[layer.section.step]]
-say = "The form for one row: every question, its shape and whether it is still open."
-run = "curl -s http://127.0.0.1:7777/v1/declare/sw_ap_design"
+say = "The results kept on this machine, newest first, and where they are kept."
+run = "curl -s http://127.0.0.1:7777/v1/results"
 check = "probe"
-expect = "fields"
+expect = "results"
 
 [[layer.section.step]]
 say = "This manual, as the page receives it."
@@ -855,28 +1137,34 @@ expect = "layers"
 id = "term-wrong"
 title = "When something goes wrong"
 who = "everyone"
+kind = "reference"
+answer = "The usual failures, each with what it means and what to do. Almost every refusal names the field and the rule, and that line is usually the whole answer."
 body = """
 **The tool will not start: nothing was free.** It tries sixteen ports from 7777 \
 upward. Something else is holding them — often an earlier copy of the tool. \
 Stop that one, or set `VLEO_PORT` to start somewhere else.
 
-**A save says the daemon is read-only.** It was started without writing \
-allowed. Stop it and start it with `VLEO_ALLOW_WRITE=1`.
+**An uploaded case or result is refused.** Every refused row is named, with \
+why. A case is all or nothing, so correct the named rows and upload it again. \
+A file from an older release is carried over rather than refused; one the \
+tool did not write — no `#! result` line — is not a result at all.
 
-**A save says the name is an agent's.** This checkout's `git config user.name` \
-is an agent. Set your own name and reload.
+**A form's check shows a conflict.** Somebody changed that field in the design \
+after the form was made. Nothing is overwritten: download the node's form \
+again, carry the answer across, and send the new one.
 
-**A save says somebody else changed the row.** Nothing was written. Reopen the \
-row and make your change again on top of theirs.
+**A form's check says an interface does not connect.** The input names a row \
+that does not exist, or one of a different quantity. The line says which, and \
+what the row it names actually is.
 
 **The checks refuse a row.** Each failure names the field and the rule. Read \
 that line before anything else; it is almost always the whole answer.
 
 **A row prints INACTIVE and does not answer.** Its relation is written but \
 nobody has derived it: the sheet has no `[theory]` block saying why it is this \
-relation. That is a person's work on the sheet, never something to work around \
-— and every row that reads it is blocked, by name, until it is done. \
-`active` lists each such row and how many rows wait on it.
+relation. That is a person's work, supplied through the node's form, never \
+something to work around — and every row that reads it is blocked, by name, \
+until it is done. `active` lists each such row and how many rows wait on it.
 
 **A sweep answers no point.** Every point is still recorded, with why: \
 *blocked* when a row on its chain does not answer, or the bound and its reason \
@@ -891,7 +1179,8 @@ type and scope it accepts.
 
 **A number looks wrong.** Run the row in the terminal, read its credibility \
 line and which factor governs it, and look at *the chain behind this number* — \
-every value that reached it, with each one's own credibility."""
+every value that reached it, with each one's own credibility. If the design is \
+what is wrong, that is a form."""
 
 [[layer.section.step]]
 say = "Start the tool on another port."
@@ -916,6 +1205,8 @@ What is in the repository, why each part is there, and what breaks without it.""
 id = "code-shape"
 title = "The shape of it"
 who = "developer"
+kind = "explanation"
+answer = "One kernel computes every number; everything else is arranged in rings that depend inward only. A row is one folder, and only its node.toml is written by hand."
 body = """
 **One kernel computes every number.** Everything else is arranged in rings \
 that depend inward only: quantities and portable maths (`vleo-units`), then the \
@@ -934,18 +1225,20 @@ come from* is answered by walking upward without ever leaving the tree.
 
 **One row is one folder**, under `crates/vleo-mod-<subsystem>/nodes/<row>/`:
 
-`node.toml` — the sheet. The only file a person writes.
+`node.toml` — the sheet. The only file written by hand — by a form's intake, or a developer.
 `fixtures.toml` — known-good values from outside this code.
 `model.rs` — generated, except the numbered slots where the Rust goes.
 `contract.rs`, `mod.rs`, `evidence.rs`, `page.html`, `meta.json` — generated.
 
-The rules that do not bend are in `AGENTS.md`, and the reasoning behind the \
-architecture is in `docs/ARCHITECTURE.md`."""
+The rules that do not bend, and the developer's loop, are in `AGENTS.md`; the \
+reasoning behind the architecture is in `docs/ARCHITECTURE.md`."""
 
 [[layer.section]]
 id = "code-folders"
 title = "Every top-level folder"
 who = "everyone"
+kind = "reference"
+answer = "Every folder and file at the top of the repository, and what it holds — checked against the repository both ways."
 body = """
 Every folder and file the repository tracks at its top level is below, with \
 what it holds — the list is checked against the repository itself, so nothing \
@@ -955,6 +1248,8 @@ is missing from it and nothing in it is gone."""
 id = "code-docs"
 title = "Where to read next"
 who = "everyone"
+kind = "reference"
+answer = "Every document under docs/, and what it is for — checked against the folder both ways."
 body = """
 Every document under `docs/`, and what it is for. Also checked against the \
 folder, both ways."""
@@ -974,6 +1269,8 @@ enforces them."""
 id = "ref-xtask"
 title = "xtask — the tree's own tool"
 who = "developer"
+kind = "reference"
+answer = "The project's own tool for the tree: generate, check, take in forms, record and release."
 body = """
 `cargo run -p xtask -- <command>`, or `cargo xtask <command>`. `help` prints \
 the same list with each command's reasons."""
@@ -982,6 +1279,8 @@ the same list with each command's reasons."""
 id = "ref-vleo"
 title = "vleo — the engine from the command line"
 who = "user"
+kind = "reference"
+answer = "The engine from the command line: run, sweep, compare cases, and read results."
 body = """
 `cargo run -p vleo-cli --bin vleo -- <command>`, or `cargo vleo <command>`."""
 
@@ -989,33 +1288,43 @@ body = """
 id = "ref-routes"
 title = "HTTP routes"
 who = "developer"
+kind = "reference"
+answer = "Every route the daemon answers. None writes the repository; the few that save anything save the case or a result, outside it."
 body = """
-Served by the daemon on `127.0.0.1`. The routes marked *writes* are refused \
-unless it was started with `VLEO_ALLOW_WRITE=1`."""
+Served by the daemon on `127.0.0.1`. **None writes the repository.** The few \
+that save anything save the case or a result, both kept outside it under \
+`~/.vleo/`."""
 
 [[layer.section]]
 id = "ref-env"
 title = "Settings"
 who = "everyone"
+kind = "reference"
+answer = "The environment variables the tool reads. None is required."
 body = """
 Environment variables the tool and its checks read. None is required."""
 
 [[layer.section]]
 id = "ref-sheet"
-title = "What a sheet holds"
+title = "What a node form asks"
 who = "user"
+kind = "reference"
+answer = "Every question a node form asks and every list it holds, read live from the table the form is built from."
 body = """
-Every question the form asks and every list it edits — read live from the table \
-the form itself is built from, so this cannot describe a form that no longer \
-exists."""
+Every question a node's form asks and every list it holds — read live from the \
+table the form itself is built from, so this cannot describe a form that no \
+longer exists."""
 
 [[layer.section]]
 id = "ref-locked"
-title = "What cannot change from the browser"
+title = "What a node form does not change"
 who = "everyone"
+kind = "reference"
+answer = "The fields that move a row in the tree or change who owns it. No form carries them; a developer changes them in a reviewed commit."
 body = """
-The fields that move a row in the tree or change who owns it, and each one's \
-reason — live, from the rule that refuses them."""
+The fields that move a row in the tree or change who owns it. A node's form \
+does not carry them, so no filled form can change them; a developer does, in a \
+reviewed change. Each one's reason is live, from the rule that refuses them."""
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1023,24 +1332,38 @@ reason — live, from the rule that refuses them."""
 
 [[cannot]]
 place = "browser"
-what = "Add a new row"
-why = "A new row is a new folder in the tree with an owner and a place among its siblings; it is a reviewed change to the tree's shape."
-instead = "cargo run -p xtask -- new <new_row_id> --like <sibling_row_id>"
-who = "developer"
+what = "Change a node — any field of its sheet"
+why = "A change to the design has to be checked against every row that reads it, implemented, given evidence and released, so that everyone runs the same thing."
+instead = "Fill the node's form and send it to the developers. Check it first, on the Forms page."
+who = "user"
 
 [[cannot]]
 place = "browser"
-what = "Delete a row"
+what = "Add a new node"
+why = "A new node is a new folder in the tree with an owner, a place among its siblings and interfaces to rows that exist."
+instead = "The form for a new node, on the Forms page. A developer applies it with `cargo run -p xtask -- intake <form.html> --apply`."
+who = "user"
+
+[[cannot]]
+place = "browser"
+what = "Delete a node"
 why = "Other rows read it. Removing one is a change to what every reader of it computes, and is decided in review, not in a form."
-instead = "In a checkout, on a branch, after `cargo run -p xtask -- reach` shows what reads it."
-who = "developer"
+instead = "Say so in the node's form, in its note. A developer decides, after `cargo run -p xtask -- reach` shows what reads it."
+who = "user"
 
 [[cannot]]
 place = "browser"
-what = "Move a row, rename it, or change its owner, layer, kind or order"
+what = "Move a node, rename it, or change its owner, layer, kind or order"
 why = "These move the tree or change who reviews the row. Its identifier is also its folder and its variable name."
 instead = "Edit node.toml in a checkout, then `cargo run -p xtask -- gate`; the reason for each is under Reference."
 who = "developer"
+
+[[cannot]]
+place = "browser"
+what = "Change a declared number in the design itself"
+why = "A what-if and the saved case never touch the sheet: a declared value carries the name of the person who chose it."
+instead = "For your own runs, the case. For the design's default, the node's form."
+who = "user"
 
 [[cannot]]
 place = "browser"
@@ -1052,23 +1375,16 @@ who = "developer"
 [[cannot]]
 place = "browser"
 what = "Add a known-good value (a fixture)"
-why = "An expected value may never come from the code under test. A box that made one easy to type would make that rule easy to break."
+why = "An expected value may never come from the code under test. A form may supply one; only a person records it, with its source."
 instead = "Edit fixtures.toml in the row's folder, with the value's source and provenance."
 who = "developer"
 
 [[cannot]]
 place = "browser"
-what = "Put your name against a relation without changing it"
-why = "Signing is an act of reading the relation against its source. The browser signs a relation only when you save a change to it."
+what = "Put your name against a relation"
+why = "Signing is an act of reading the relation against its source, done by the person who owns it."
 instead = "cargo run -p xtask -- confirm <row> --by \"Your Name\""
 who = "developer"
-
-[[cannot]]
-place = "browser"
-what = "Push, merge, or open the pull request"
-why = "Those speak for the project and use your credentials, so they are done by you, not by a background program."
-instead = "The push command and pull-request link the branch step shows you."
-who = "user"
 
 [[cannot]]
 place = "browser"
@@ -1083,13 +1399,6 @@ what = "Publish or change reference data"
 why = "A published set is permanent by design, and every number checked against it depends on it not changing."
 instead = "cargo run -p xtask -- bundle publish <dir>"
 who = "developer"
-
-[[cannot]]
-place = "browser"
-what = "Change a declared number in the design itself"
-why = "A what-if never touches the sheet: a declared value carries the name of the person who chose it."
-instead = "The row's form, with the tool started with writing allowed — or node.toml in a checkout."
-who = "user"
 
 [[cannot]]
 place = "terminal"
@@ -1186,8 +1495,8 @@ effect = "reads"
 [[command]]
 tool = "xtask"
 name = "fill"
-usage = "fill <node> --hole <n> --body <file|->"
-what = "Put the Rust for one numbered slot into a row's generated model."
+usage = "fill <node> --hole <n> --body <file|-> [--by <who> --model <model>]"
+what = "Put the Rust for one numbered slot into a row's generated model. `--by` and `--model` record who wrote it, and with what."
 who = "developer"
 effect = "writes"
 
@@ -1198,6 +1507,46 @@ usage = "differential <node>"
 what = "Compare two recorded bodies for the same slot, written by different model families."
 who = "developer"
 effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "form"
+usage = "form <node>|--new [--out <file.html>]"
+what = "A node's form: one self-contained HTML file that explains itself, asks every question the sheet answers, and saves a filled copy. `--new` is the form for a node the design does not have yet. Filled anywhere, by anyone."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "intake"
+usage = "intake <file.html> [--apply [--partial]]"
+what = "The checker: what a filled node form would change, field by field, and every interface it declares — conflicts and refusals named. `--apply` writes (building a new node in its place), regenerates and gates as one edit, or puts everything back."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "publish"
+usage = "publish <node>"
+what = "Move a filled, seeded row to published, so its code is generated and its slots can be written. Refuses, naming every reason, while it is not ready."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "derisk"
+usage = "derisk"
+what = "Write the de-risking narrative — docs/DERISK_NARRATIVE.md and docs/derisking.csv — from every node's `[[version]]` record and the risk register. Generated, never edited."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "release"
+usage = "release <version> [--check]"
+what = "Stamp every node version still marked `next` with this release, set the workspace version and regenerate. `--check` refuses while anything is unstamped — the release pipeline runs it."
+who = "developer"
+effect = "writes"
 
 [[command]]
 tool = "xtask"
@@ -1258,15 +1607,15 @@ effect = "writes"
 [[command]]
 tool = "vleo"
 name = "run"
-usage = "run <node> [--case <c>] [--mode alone|branch|all] [--set id=value ...]"
-what = "Evaluate a row and everything it needs. Always n ran, m blocked, with the blocked named."
+usage = "run <node> [--inputs <file.csv> | --defaults] [--mode alone|branch|all] [--set id=value ...] [--save <file.csv>]"
+what = "Evaluate a row and everything it needs. Always n ran, m blocked, with the blocked named. `--save` keeps the run and its inputs as a result file."
 who = "user"
 effect = "reads"
 
 [[command]]
 tool = "vleo"
 name = "sweep"
-usage = "sweep <node> --over <input> --from <a> --to <b> [--points n] [--case <c>]"
+usage = "sweep <node> --over <input> --from <a> --to <b> [--points n] [--inputs <file.csv> | --defaults]"
 what = "Sweep a declared input across a range. Refused points are recorded, never dropped."
 who = "user"
 effect = "reads"
@@ -1274,8 +1623,8 @@ effect = "reads"
 [[command]]
 tool = "vleo"
 name = "campaign"
-usage = "campaign <node> [--case <c>]"
-what = "Every stored case against one row."
+usage = "campaign <node> [--inputs <file.csv> ...]"
+what = "The defaults, the saved case and each case file named, against one row."
 who = "user"
 effect = "reads"
 
@@ -1299,7 +1648,23 @@ effect = "reads"
 tool = "vleo"
 name = "cases"
 usage = "cases"
-what = "The stored customer cases and what each supplies."
+what = "The case, how its inputs divide into customer and condition, and whether a case is saved."
+who = "user"
+effect = "reads"
+
+[[command]]
+tool = "vleo"
+name = "inputs"
+usage = "inputs [--inputs <file.csv> | --defaults]"
+what = "Every input of the case as a CSV — group, id, value, unit, default and range — to fill in and pass back with --inputs. With --inputs, a file from an older version comes out in the current template."
+who = "user"
+effect = "reads"
+
+[[command]]
+tool = "vleo"
+name = "result"
+usage = "result <file> [--html <out.html>]"
+what = "A saved result shown as it was — nothing runs. Reads the CSV `run --save` writes, or the report page it rides in; `--html` writes that report, to send."
 who = "user"
 effect = "reads"
 
@@ -1368,58 +1733,98 @@ what = "A row, as the engine holds it."
 
 [[route]]
 method = "GET"
-path = "/v1/declare/<id>"
-what = "The form for one row: every question, its shape, its current answer and whether it blocks generation."
-
-[[route]]
-method = "GET"
 path = "/v1/manual"
 what = "This manual, with what is true of the running tool right now."
 
 [[route]]
-method = "POST"
-path = "/v1/sheet/<id>"
-what = "Save one field. `field`, `value`, and `base` — the version the form started from."
-writes = true
-
-[[route]]
-method = "POST"
-path = "/v1/block/<id>"
-what = "Add, change or remove one entry of a list. `array`, `op`, `index`, the entry's keys, and `base`."
-writes = true
-
-[[route]]
-method = "POST"
-path = "/v1/view/<id>"
-what = "Set how the answer is drawn. `kind`, `over`, `points`, and `base`."
-writes = true
-
-[[route]]
-method = "POST"
-path = "/v1/publish/<id>"
-what = "Publish a seeded row. `base`."
-writes = true
-
-[[route]]
-method = "POST"
-path = "/v1/preview/<id>"
-what = "What pasting a sheet body would change. Writes nothing. `body`."
-
-[[route]]
-method = "POST"
-path = "/v1/propose"
-what = "Commit the edited rows to a new branch. Does not push. `summary`, `kind`."
-writes = true
-
-[[route]]
 method = "GET"
 path = "/v1/run"
-what = "Evaluate a row. `node`, and optionally `case`, `mode` and `set`."
+what = "Evaluate a row on the saved case. `node`, and optionally `mode`, `set`, and `inputs=defaults` to run the declared defaults instead."
 
 [[route]]
 method = "POST"
 path = "/v1/run"
 what = "The same as GET, with the parameters in the body."
+
+[[route]]
+method = "GET"
+path = "/v1/inputs"
+what = "Every input of the case — group, unit, default, range and the saved value — whether a case is saved, the current template, and what the last carry-over did to it."
+
+[[route]]
+method = "GET"
+path = "/v1/inputs.csv"
+what = "The saved case as a CSV to keep, in the current template with the record of any carry-over; with `inputs=defaults` the blank template; with `backup=1` the file as it was before the tool last carried it over."
+
+[[route]]
+method = "POST"
+path = "/v1/inputs/check"
+what = "Read a case — `csv=` a file's text, or `set=<id>:<si>` pairs — and say what it sets and every row it refuses. Saves nothing."
+
+[[route]]
+method = "POST"
+path = "/v1/inputs"
+what = "Save a case, the same parameters as the check. All or nothing: a case with any refused row is not saved. Written outside the repository."
+
+[[route]]
+method = "POST"
+path = "/v1/inputs/reset"
+what = "Remove the saved case: every input back to its default."
+
+[[route]]
+method = "GET"
+path = "/v1/form/<id>"
+what = "A node's form, as one self-contained HTML file to fill anywhere. `new` is the form for a node the design does not have yet."
+
+[[route]]
+method = "POST"
+path = "/v1/form/check"
+what = "What a filled node form would change, and every interface it declares: `html=` the file's text. Writes nothing — a form is applied by a developer with `xtask intake --apply`."
+
+[[route]]
+method = "GET"
+path = "/v1/derisk"
+what = "Every registered risk, where it stands and every node version that moved it — the conclusion the risk-register rows draw — and the version each recorded node is at."
+
+[[route]]
+method = "GET"
+path = "/v1/results"
+what = "Every result kept on this machine, newest first, and where they are kept."
+
+[[route]]
+method = "GET"
+path = "/v1/result"
+what = "One saved result, as it was: `name`. Nothing runs."
+
+[[route]]
+method = "GET"
+path = "/v1/result.csv"
+what = "A saved result's CSV, to keep or send: `name`."
+
+[[route]]
+method = "GET"
+path = "/v1/result.html"
+what = "A saved result as a report page that reads without the tool and carries its CSV: `name`."
+
+[[route]]
+method = "POST"
+path = "/v1/results/save"
+what = "Run, and keep what it returned and the inputs it ran on as a result: the parameters of `/v1/run`, and `label`. Written outside the repository."
+
+[[route]]
+method = "POST"
+path = "/v1/results/upload"
+what = "Keep a result somebody sent: `csv=` its CSV, or the text of its report."
+
+[[route]]
+method = "POST"
+path = "/v1/results/delete"
+what = "Remove one saved result: `name`."
+
+[[route]]
+method = "POST"
+path = "/v1/results/as-case"
+what = "Make a saved result's inputs the case: `name`. Checked like any case, and refused whole if one cannot apply."
 
 [[route]]
 method = "GET"
@@ -1456,9 +1861,14 @@ what = "The published output of the tool this was ported from, for comparison."
 # Settings. Checked against every place in the code that reads one, both ways.
 
 [[env]]
-name = "VLEO_ALLOW_WRITE"
-what = "Start the daemon able to edit sheets: 1, true or yes. Anything else, or unset, is read-only."
-default = "unset — read-only"
+name = "VLEO_CASE"
+what = "Where the saved case is kept — the CSV the Inputs page and `vleo run` read. Outside the repository, so git never sees it. A copy made before a carry-over sits beside it."
+default = "$HOME/.vleo/case/inputs.csv"
+
+[[env]]
+name = "VLEO_RESULTS"
+what = "Where saved results are kept — the Results page and `vleo run --save` without a path of its own. Outside the repository."
+default = "$HOME/.vleo/results"
 
 [[env]]
 name = "VLEO_PORT"
@@ -1506,7 +1916,7 @@ who = "developer"
 
 [[folder]]
 name = "cases"
-what = "Each customer's values, against the one shared architecture — never a copy of it per customer."
+what = "The one case: which inputs are the condition the design flies in, and so which are the customer's. Its values are not kept here — they are saved by the tool outside the repository. `cases/examples/` holds case files to read and copy, one as an older version of the tool wrote it."
 who = "user"
 
 [[folder]]
@@ -1526,7 +1936,7 @@ who = "developer"
 
 [[folder]]
 name = "docs"
-what = "The written record, and this manual's source, manual.toml."
+what = "The written record, this manual's source, manual.toml, the generated de-risking narrative and its spreadsheet, derisking.csv, and examples/: a filled node form, a filled new-node form and a saved result, to read and to run the commands above on."
 who = "everyone"
 
 [[folder]]
@@ -1545,11 +1955,6 @@ what = "The planning document's own tree, extracted verbatim — where the rows 
 who = "developer"
 
 [[folder]]
-name = "agents"
-what = "Which paths each agent may change, and where each agent's definition came from. Checked against the diff."
-who = "developer"
-
-[[folder]]
 name = "areas"
 what = "Files that narrow AGENTS.md for one area of the repository."
 who = "developer"
@@ -1561,7 +1966,7 @@ who = "developer"
 
 [[folder]]
 name = ".claude"
-what = "The agent definitions and the hooks that run on an edit."
+what = "The hooks that run on an edit in a checkout — the regeneration and gate an assistant's edit goes through, the same as anyone's."
 who = "developer"
 
 [[folder]]
@@ -1581,7 +1986,7 @@ who = "developer"
 
 [[folder]]
 name = "AGENTS.md"
-what = "The rules that do not bend, for every person and every agent."
+what = "The rules that do not bend, and the developer's loop: a form in, checked, applied, implemented, gated, released."
 who = "everyone"
 
 [[folder]]
@@ -1634,7 +2039,7 @@ what = "The long walk through doing the work, with real output."
 
 [[doc]]
 path = "docs/RUNBOOK.md"
-what = "A developer's first day, and one row from start to merge."
+what = "A developer's first day, and one form from arrival to release."
 
 [[doc]]
 path = "docs/NODE_AUTHORING.md"
@@ -1646,11 +2051,19 @@ what = "The rings, the layers and the reasoning behind them."
 
 [[doc]]
 path = "docs/WORK_MODEL.md"
-what = "How the work is divided first, and only then who does each part."
+what = "Who does what: the team that uses the tool and the developers who maintain it, and what crosses between them."
 
 [[doc]]
-path = "docs/AGENT_EVIDENCE.md"
-what = "What each agent was asked to do, and what it actually did — the evidence behind the roster."
+path = "docs/EXPLAINING.md"
+what = "How the tool explains itself: the rules every page, form, result, figure and document follows — answer first, said simply, where it breaks — and what checks each."
+
+[[doc]]
+path = "docs/DERISKING.md"
+what = "Why the design is what it is: beliefs, versions, the de-risking record every change carries, the risk register and releases."
+
+[[doc]]
+path = "docs/DERISK_NARRATIVE.md"
+what = "Every recorded change by release, and every risk as it stands. Generated by xtask derisk, with docs/derisking.csv beside it for a spreadsheet."
 
 [[doc]]
 path = "docs/VARIABLES.md"

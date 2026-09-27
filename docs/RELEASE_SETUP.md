@@ -1,5 +1,9 @@
 # Setting up the release approval
 
+> **Answer first.** One setting outside the repository makes a release need a person's approval; this page says how to add it, what it costs, and how to tell it worked.
+>
+> **Kind:** how-to · **For:** developers
+
 The release pipeline is finished except for one thing, and that one thing
 cannot live in this repository. This page is how to add it, what it costs, and
 how to tell whether it worked.

@@ -1,10 +1,14 @@
 # areas/numerics.md
 
+> **Answer first.** Portable maths only: the kernel's transcendentals come from pmath, so every target computes the same bits.
+>
+> **Kind:** reference + explanation · **For:** developers
+
 Precision, portable maths, profiling, and where a second implementation may
 differ from the first.
 
 Applies to `crates/vleo-units/src/pmath.rs`, `crates/vleo-core/**`.
-Agent I works here, with this file.
+Maintained by the developers, with this file.
 
 ## The rule, and why it is not negotiable
 

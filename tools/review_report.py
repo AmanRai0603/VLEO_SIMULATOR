@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """The advisory review — a report on a change, which can never block a merge.
 
-The roster had a reviewer agent. The audit kept it but moved it: not a roster
-agent, because it cannot block, and a thing that cannot block is a report.
+A reviewer that cannot block is a report, so this is one: it reads a change
+and says what a person should glance at.
 
     tools/review_report.py --range origin/main..HEAD
     tools/review_report.py                      # the working tree
@@ -21,7 +21,6 @@ here is about a *change* — two trees — which the gate has no way to ask:
   - a declaration moved and no evidence moved with it
   - a hole was filled and no test changed
   - the generator or the gate itself moved, which reaches every node at once
-  - a diff that does not fit inside any single agent's lane
 
 None of these is necessarily wrong. Each is worth a human glance, which is
 exactly the register a report should be written in.
@@ -134,22 +133,6 @@ def review(paths):
     return out
 
 
-def lanes_note(paths):
-    """Which single agent lane, if any, this whole diff sits inside."""
-    try:
-        sys.path.insert(0, str(ROOT / "tools"))
-        import agent_lanes
-    except Exception:
-        return None
-    inside = []
-    for lane in agent_lanes.lanes():
-        if all(agent_lanes.matches(p, lane.get("writes", [])) for p in paths) and not any(
-            agent_lanes.matches(p, lane.get("never", [])) for p in paths
-        ):
-            inside.append(lane["name"])
-    return inside
-
-
 def render(paths, rng):
     lines = ["## advisory review", ""]
     lines.append("_A report, never a gate. Nothing here can fail a build._")
@@ -171,17 +154,6 @@ def render(paths, rng):
             lines.append("- %s" % n)
         lines.append("")
 
-    inside = lanes_note(paths)
-    if inside is not None:
-        lines.append("")
-        if inside:
-            lines.append("Lane: this diff sits entirely inside `%s`." % "`, `".join(inside))
-        else:
-            lines.append(
-                "Lane: no single agent lane covers this diff. That is normal for a "
-                "person and worth checking for an agent — `tools/agent_lanes.py "
-                "--agent <name>` says which path fell outside."
-            )
     return "\n".join(lines)
 
 

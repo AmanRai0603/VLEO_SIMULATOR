@@ -46,3 +46,14 @@ reason_upper = ""
 [view]
 kind = "number"
 
+
+# The risks this row registers. A risk is moved only by node versions: see the
+# de-risking tab on this row's page, and docs/DERISKING.md.
+
+[[risk]]
+id = "R-01"
+title = "The design solar flux is set for the wrong part of the solar cycle"
+level = "L4"
+owner = "solar"
+since = "2026-09-14"
+why = "Drag, and with it propellant, lifetime and the thrust margin, scale with F10.7. A centre that does not follow the cycle sizes a mission on the declining half of cycle 25 for a sky 26 per cent brighter than the record says — carrying propellant it does not need — or leaves one flying into a stronger cycle short. The level is the owner's to confirm."

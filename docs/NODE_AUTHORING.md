@@ -1,5 +1,9 @@
 # Authoring a node
 
+> **Answer first.** What a node's sheet holds, field by field, and why each field is there — for whoever fills the node's form and for the developer who applies it.
+>
+> **Kind:** reference + explanation · **For:** everyone who fills or applies a node form
+
 ## What a node is, in plain words
 
 One small question with one answer. *Does the air the intake swallows produce
@@ -21,6 +25,26 @@ Once those exist, **eight artefacts are printed automatically**: the
 implementation scaffold, the contract, the module wiring, the test harness, the
 documentation fragment, the metadata, the graph entry and the binding. That is
 the entire point of the design. Write the physics once; get eight artefacts.
+
+## Who writes it, and how it arrives
+
+The sheet below is what a node **is**, and most of it is written by somebody
+who will never open this repository: the person who knows the answer — a
+payload team, a domain engineer, a customer's engineer — fills in **the node's
+form**. That is one HTML file per node (`cargo run -p xtask -- form <node>`, or
+the node's page in the tool), or per new node (`form --new`), which asks every
+question below with *why* it is asked, in the order this page explains them,
+and saves a filled copy of itself.
+
+A developer then runs the checker on it — `cargo run -p xtask -- intake
+<file.html>` — which says what it would change here, field by field, and
+whether every input it declares is a row that exists, of the quantity the node
+expects. `--apply` writes it into this file, regenerates and gates, or puts
+everything back. Everything after that — publishing, the holes, the fixtures —
+is the developer's, and is described below.
+
+So this page is written for both: for whoever fills the form, what each answer
+is for; for the developer, what the loader does with it.
 
 ## The sheet
 
@@ -98,15 +122,15 @@ found by checking one against the other, and most of what was missing belongs
 to `layers/`, `cases/` or `sources/` rather than to a node. What follows is
 everything left that is yours.
 
-`tools/instruction_lint.py` now holds this list against the loader, so a field
-added to a sheet and not explained here fails the lint rather than waiting to be
+`tools/docs_lint.py` now holds this list against the loader, so a field added
+to a sheet and not explained here fails the lint rather than waiting to be
 noticed.
 
 - **`[maths] confirmed_by`** — who supplied the relation, and when. Write it
   with `cargo xtask confirm <node> --by "<your name>"`, which shows you the
-  relation and its source first and refuses a name belonging to an agent. An agent may
-  never supply mathematics, and without a name nothing can tell whether one
-  did. A relation with nobody against it is a gap, so the node cannot reach H2.
+  relation and its source first and refuses a name belonging to an assistant. An
+  assistant may never supply mathematics, and without a name nothing can tell
+  whether one did. A relation with nobody against it is a gap, so the node cannot reach H2.
   It does not make the formula right; it makes it somebody's, which is what H1b
   needs to be a review rather than a reading.
 - **`criticality`** — `minor` or `significant`, defaulting to minor. Significant
@@ -254,6 +278,78 @@ The page renders the derivation COMPLETE and then offers to walk it one line at
 a time, so a `page.html` opened straight off the disk, with no engine and no
 script, still carries the whole argument.
 
+## Said simply, and where it breaks — `[explain]`
+
+```toml
+[explain]
+simply = "How bright the Sun will be, on average, over the years the mission actually flies. …"
+breaks = "It is an average over the whole mission, and a spacecraft meets its worst stretch, not its average. …"
+wrong  = "That the long-term average of the record, about 115 sfu, is the right centre for any mission. …"
+```
+
+The first step of every node page, and the last questions on its form
+(`docs/EXPLAINING.md`, E2, E4, E5). **`simply`** says what the row works out and
+why it matters with no symbol and no word a newcomer would have to look up —
+the question a writer who cannot answer has found a gap in their own
+understanding. **`breaks`** says where that plain version stops being true.
+**`wrong`** names the wrong idea readers most often bring, and what is true
+instead; it is optional, because not every row has one.
+
+All three are prose, outside the sheet hash: correcting a sentence regenerates
+the page and nothing else. A published row without `simply` and `breaks` is an
+open gap, and the gap pass holds it back from review.
+
+## Why it is what it is — `[[version]]`
+
+```toml
+[[version]]
+n = 2
+release = "next"            # stamped by `xtask release <version>`
+date = "2026-09-15"
+by = "A. Person (Solar team)"
+about = ["math", "model"]   # read off what the form changed — never typed
+believed = "…"              # what we believed
+tested = "…"                # what we tested, and where it is written down
+learned = "…"               # what we now know: the issue with the previous version
+cost = "…"                  # optional
+changed = "…"               # what this version changes, and the benefit
+risks = ["R-01 L4->L3"]     # optional
+rests_on = "…"              # what this version believes
+breaks_if = "…"             # what would break it
+relation = "…"              # the relation as this version states it
+source = "noaa_swpc"
+```
+
+A node changes because a belief broke, and this is the record of each time
+(`docs/DERISKING.md`). **Nobody writes it by hand in the normal course**: intake
+appends it from the form that carried the change, numbered after the last, and
+refuses to apply a change to what the node computes without one. The first
+version needs only `rests_on` and `breaks_if`; every later one needs
+`believed`, `tested`, `learned` and `changed` too. `about` is one or more of
+node, input, output, model, math, algorithm, visualisation. Versions are
+records: never edited, never renumbered. The gate refuses one out of order,
+with a release older than the one before it, or with a risk move it cannot read.
+
+A published row with no version is an open gap: nothing says what it rests on.
+
+## A risk — `[[risk]]`
+
+```toml
+[[risk]]
+id = "R-01"
+title = "The design solar flux is set for the wrong part of the solar cycle"
+level = "L4"      # L1 (least) to L5, when registered
+owner = "solar"
+since = "2026-09-14"
+why = "…what it would cost if it happened"
+```
+
+Only the four rows under `mgt_risk_register` hold risks — which one says what
+kind: technical, schedule, supply, regulatory. A risk is registered once, and
+after that it moves only when a node's version names it: `R-01 L4->L3`,
+`R-09 closed`, `R-12 opened`. The gate refuses a risk anywhere else or twice
+(V17), and a move naming a risk nobody registered (V18).
+
 ## What the tabs say when empty
 
 The empty state is the teaching surface. Most of these are read by somebody
@@ -261,8 +357,9 @@ about to fill their first node, and "no data" teaches nothing.
 
 | tab | empty state |
 |---|---|
-| question & mathematics | Not yet specified. Needs a question, an expression and a source. |
+| said simply, then the real thing | Not yet specified. Needs a question, an expression and a source — its node form is how it gets them. A written row with no `[explain]` says: nobody has said this row simply yet. |
 | theory | Nobody has written the theory for this row yet — the relation is stated before it and generated after it, and why it is that relation is missing. |
+| de-risking | No belief recorded yet. This row's next form says what it rests on and what would break it. |
 | interface | Inputs and outputs are declared. Units are not — a unit is a decision. |
 | algorithm | No steps yet. Each step becomes one hole in the generated code. |
 | the relation, moving | Nothing to walk: the sheet is seeded and the node returns NotRun. |

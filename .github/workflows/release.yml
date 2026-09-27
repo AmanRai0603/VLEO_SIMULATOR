@@ -63,12 +63,20 @@ jobs:
             exit 1
           }
 
+      # A release names the beliefs it ships. Every node version recorded since
+      # the last release says `next` until `xtask release` stamps it; a release
+      # cut with any still unstamped would ship a change its own record cannot
+      # place in a release.
+      - name: every node version names this release
+        run: cargo run -p xtask -- release "${{ steps.v.outputs.version }}" --check
+
       - name: the gate
         run: cargo run -p xtask -- gate
 
       - name: the generated artefacts match the sheets
         run: |
           cargo run -p xtask -- docs
+          cargo run -p xtask -- derisk
           git diff --quiet || { echo "::error::regeneration changes the tree"; exit 1; }
 
       - name: reference data verifies

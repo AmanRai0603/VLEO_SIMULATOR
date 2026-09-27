@@ -168,6 +168,21 @@ pub const FIELDS: &[Field] = &[
         insert: true,
     },
     Field {
+        field: "explain_simply",
+        table: "explain",
+        key: "simply",
+        shape: Shape::Prose,
+        group: "said simply",
+        ask: "say it simply: what does this row work out, and why does it matter — in plain \
+              words, with no symbol and no word a newcomer would have to look up",
+        why: "the first thing on the node's page. A reader who cannot yet read the relation \
+              reads this, and a writer who cannot write it has found a gap in their own \
+              understanding (docs/EXPLAINING.md, E2)",
+        blocks: false,
+        asked: true,
+        insert: true,
+    },
+    Field {
         field: "expression",
         table: "maths",
         key: "expression",
@@ -343,6 +358,32 @@ pub const FIELDS: &[Field] = &[
         asked: true,
         insert: true,
     },
+    Field {
+        field: "explain_breaks",
+        table: "explain",
+        key: "breaks",
+        shape: Shape::Prose,
+        group: "where it breaks",
+        ask: "where does the simple version stop being true",
+        why: "every simplification is wrong somewhere, and saying where is what makes it \
+              safe to use. Unwritten, the plain words get quoted as the physics (E4)",
+        blocks: false,
+        asked: true,
+        insert: true,
+    },
+    Field {
+        field: "explain_wrong",
+        table: "explain",
+        key: "wrong",
+        shape: Shape::Prose,
+        group: "where it breaks",
+        ask: "what do people commonly get wrong about this, and what is true instead",
+        why: "the gap most readers share. Named and corrected on the page, it is not \
+              rediscovered by each of them (E5). Leave it blank if there is none",
+        blocks: false,
+        asked: true,
+        insert: true,
+    },
 ];
 
 /// One field of the form, by name.
@@ -457,6 +498,9 @@ pub fn value(sh: &Sheet, field: &str) -> String {
         "declared_value" => sh.value.map(|v| format!("{v:?}")).unwrap_or_default(),
         "theory_why" => sh.theory.why.clone(),
         "theory_reading" => sh.theory.reading.clone(),
+        "explain_simply" => sh.explain.simply.clone(),
+        "explain_breaks" => sh.explain.breaks.clone(),
+        "explain_wrong" => sh.explain.wrong.clone(),
         _ => String::new(),
     }
 }
@@ -691,7 +735,7 @@ pub fn json(sh: &Sheet) -> Result<String, String> {
 }
 
 /// One repeated block's current contents, as key/value pairs per block.
-fn array_rows(sh: &Sheet, a: &Array) -> Vec<Vec<(&'static str, String)>> {
+pub(crate) fn array_rows(sh: &Sheet, a: &Array) -> Vec<Vec<(&'static str, String)>> {
     match a.path {
         "input" => sh
             .inputs
@@ -729,6 +773,20 @@ fn array_rows(sh: &Sheet, a: &Array) -> Vec<Vec<(&'static str, String)>> {
                 vec![
                     ("text", x.text.clone()),
                     ("fails_when", x.fails_when.clone()),
+                ]
+            })
+            .collect(),
+        "risk" => sh
+            .risks
+            .iter()
+            .map(|r| {
+                vec![
+                    ("id", r.id.clone()),
+                    ("title", r.title.clone()),
+                    ("level", r.level.clone()),
+                    ("owner", r.owner.clone()),
+                    ("since", r.since.clone()),
+                    ("why", r.why.clone()),
                 ]
             })
             .collect(),
@@ -919,7 +977,7 @@ fn assignments(text: &str, table: &str, key: &str) -> Vec<(usize, usize, String)
 /// The comment after a value, so replacing the value keeps it.
 ///
 /// 27 of the fields this form writes carry one, and they are not decoration:
-/// `# REQUIRED — an agent may never supply mathematics` sits on the relation of
+/// `# REQUIRED — an assistant may never supply mathematics` sits on the relation of
 /// the rows where that matters most. A save that dropped it would remove the
 /// instruction from the one place the next person reads.
 ///
@@ -985,13 +1043,30 @@ fn has_key(text: &str, table: &str, key: &str) -> Option<(usize, usize)> {
 
 /// Add a table the sheet has not got, in the place the authored sheets put it.
 ///
-/// Only `[theory]` is ever missing — `[question]`, `[maths]`, `[output]` and
-/// `[view]` are on all 1396 rows — so this creates that one and refuses the
-/// rest. A missing `[output]` is a malformed sheet and inventing it here would
-/// hide that.
+/// Only `[theory]` and `[explain]` are ever missing — `[question]`, `[maths]`,
+/// `[output]` and `[view]` are on all 1396 rows — so this creates those two and
+/// refuses the rest. A missing `[output]` is a malformed sheet and inventing it
+/// here would hide that.
 fn ensure_table(text: &str, table: &str) -> Result<String, String> {
     if window(text, table).is_some() {
         return Ok(text.to_string());
+    }
+    // THE ROW SAID SIMPLY goes straight after its question, which is where a
+    // reader meets it on the page (docs/EXPLAINING.md, E2). Without this, every
+    // row but the one that already had the table refused its own first
+    // plain-words answer — which is every row a form was ever sent for.
+    if table == "explain" {
+        let (_, end) = window(text, "question").ok_or_else(|| {
+            "this sheet has no [question] table to put [explain] after".to_string()
+        })?;
+        let mut o = String::with_capacity(text.len() + 64);
+        o.push_str(text[..end].trim_end_matches('\n'));
+        o.push_str(
+            "\n\n# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the\n\
+             # sheet hash.\n[explain]\n\n",
+        );
+        o.push_str(text[end..].trim_start_matches('\n'));
+        return Ok(o);
     }
     if table != "theory" {
         return Err(format!(
@@ -1007,7 +1082,7 @@ fn ensure_table(text: &str, table: &str) -> Result<String, String> {
     o.push_str(text[..end].trim_end_matches('\n'));
     o.push_str(
         "\n\n# WHERE THIS RELATION CAME FROM. Prose, outside the sheet hash: correcting a\n\
-         # sentence here does not invalidate a generated artefact.\n[theory]\n",
+         # sentence here does not invalidate a generated artefact.\n[theory]\n\n",
     );
     o.push_str(text[end..].trim_start_matches('\n'));
     Ok(o)
@@ -1155,33 +1230,25 @@ fn toml_quote(v: &str) -> String {
     o
 }
 
-/// Every name that is an agent, not a person, lowercased.
+/// Every name that is an assistant, not a person, lowercased.
 ///
-/// Read from `agents/provenance.toml` so adding an agent to the roster adds it
-/// here, plus the two generic words no attribution should ever be.
-pub fn agent_identities(root: &std::path::Path) -> Vec<String> {
-    let Ok(text) = std::fs::read_to_string(root.join("agents/provenance.toml")) else {
-        return vec!["claude".into(), "agent".into()];
-    };
-    let Ok(v) = text.parse::<toml::Value>() else {
-        return vec!["claude".into(), "agent".into()];
-    };
-    let mut out = Vec::new();
-    for a in v
-        .get("agent")
-        .and_then(toml::Value::as_array)
-        .into_iter()
-        .flatten()
-    {
-        for k in ["name", "id"] {
-            if let Some(x) = a.get(k).and_then(|x| x.as_str()) {
-                out.push(x.to_lowercase());
-            }
-        }
-    }
-    out.push("claude".into());
-    out.push("agent".into());
-    out
+/// A relation is confirmed by a person who has read it against its source — the
+/// developer who applies a node form, or who writes the relation in. An
+/// assistant may implement a relation a person supplied; it may never be the one
+/// who supplied it. These are the names an assistant arrives under.
+pub fn agent_identities(_root: &std::path::Path) -> Vec<String> {
+    [
+        "claude",
+        "agent",
+        "assistant",
+        "copilot",
+        "chatgpt",
+        "gpt",
+        "gemini",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect()
 }
 
 /// Who this checkout says it is, from `git config user.name`.
@@ -1214,9 +1281,9 @@ pub fn git_identity(root: &std::path::Path) -> Result<String, String> {
     Ok(name)
 }
 
-/// Whether this attribution is an agent's, and so must never be written.
+/// Whether this attribution is an assistant's, and so must never be written.
 ///
-/// An agent may never supply mathematics. Stated as a sentence that is a hope;
+/// An assistant may never supply mathematics. Stated as a sentence that is a hope;
 /// here it is a fact about what can reach the file — and it has to hold at every
 /// face, or the browser becomes the way round a rule the terminal enforces.
 pub fn refuse_agent_attribution(root: &std::path::Path, who: &str) -> Result<(), String> {
@@ -1234,7 +1301,7 @@ pub fn refuse_agent_attribution(root: &std::path::Path, who: &str) -> Result<(),
             || lower.contains(&format!("{bad}/"))
         {
             return Err(format!(
-                "refused: '{who}' is an agent. An agent may never supply mathematics, and this \
+                "refused: '{who}' is an assistant's name. An assistant may never supply mathematics, and this \
                  field is the only thing that can tell whether one did. It takes the name of a \
                  person who has read the relation against its source and is prepared to own it. \
                  Nothing was written."
@@ -1262,7 +1329,7 @@ fn today() -> String {
 /// was against the old mathematics; leaving it on the new attributes work to
 /// somebody who never saw it, which is worse than either having no name or
 /// having the editor's.
-fn stamp_relation(text: &str, who: &str) -> Result<String, String> {
+pub(crate) fn stamp_relation(text: &str, who: &str) -> Result<String, String> {
     set(text, "confirmed_by", &format!("{who} / {}", today()))
 }
 
@@ -1399,7 +1466,7 @@ pub enum Saved {
 ///   2  `base` is the hash the editor started from — a stale one is refused
 ///      rather than overwritten, which is what makes two editors safe
 ///   3  an edit to the relation carries an attribution, and that attribution is
-///      not an agent's
+///      not an assistant's
 ///   4  the sheet is written atomically: a temporary file, then a rename, so a
 ///      reader never sees half a sheet
 ///   5  the row's artefacts are regenerated and the gate is run on it
@@ -1420,20 +1487,8 @@ pub fn save(root: &std::path::Path, id: &str, field: &str, value: &str, base: &s
     if let Err(e) = value_allowed(field, value) {
         return Saved::Refused(e);
     }
-    if std::process::Command::new("rustfmt")
-        .arg("--version")
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .status()
-        .map(|s| !s.success())
-        .unwrap_or(true)
-    {
-        return Saved::Refused(
-            "rustfmt is not on the path. The generated Rust is formatted before it is compared, \
-             so saving without it would leave the tree failing its own regeneration check. \
-             Nothing was written."
-                .into(),
-        );
+    if let Some(why) = rustfmt_refusal() {
+        return Saved::Refused(why);
     }
 
     let tree = match crate::load::load_all(root) {
@@ -1452,7 +1507,7 @@ pub fn save(root: &std::path::Path, id: &str, field: &str, value: &str, base: &s
     if base != current {
         return Saved::Stale { current };
     }
-    // An agent may never supply mathematics, at any face. The name is the
+    // An assistant may never supply mathematics, at any face. The name is the
     // checkout's own — see `git_identity` — so it is the same one the commit
     // will carry rather than whatever was typed into a box.
     if field == "expression" || field == "confirmed_by" {
@@ -1472,7 +1527,7 @@ pub fn save(root: &std::path::Path, id: &str, field: &str, value: &str, base: &s
     // AND THE NAME IS WRITTEN, NOT ONLY CHECKED. The identity was verified
     // above and then went nowhere, so a relation saved through the face came
     // out with `confirmed_by` still blank — a relation with nobody against it,
-    // indistinguishable from one an agent wrote, which is the exact thing that
+    // indistinguishable from one an assistant wrote, which is the exact thing that
     // field exists to tell apart.
     let after = if field == "expression" {
         let who = match git_identity(root) {
@@ -1489,6 +1544,27 @@ pub fn save(root: &std::path::Path, id: &str, field: &str, value: &str, base: &s
     commit_edit(root, id, &path, &before, after, false)
 }
 
+/// Why an edit cannot be written here, if `rustfmt` is not on the path.
+///
+/// The generated Rust is formatted before it is compared, and a fallback to
+/// unformatted text would leave the tree failing its own regeneration diff. So
+/// every edit refuses up front rather than discovering it afterwards.
+pub(crate) fn rustfmt_refusal() -> Option<String> {
+    let missing = std::process::Command::new("rustfmt")
+        .arg("--version")
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .map(|s| !s.success())
+        .unwrap_or(true);
+    missing.then(|| {
+        "rustfmt is not on the path. The generated Rust is formatted before it is compared, \
+         so saving without it would leave the tree failing its own regeneration check. \
+         Nothing was written."
+            .to_string()
+    })
+}
+
 /// Write the edit, regenerate the row, gate it — or put everything back.
 ///
 /// The tail of every edit, whether it moved one field or a whole repeated
@@ -1502,7 +1578,7 @@ pub fn save(root: &std::path::Path, id: &str, field: &str, value: &str, base: &s
 ///
 /// ANY FAILURE AFTER THE WRITE RESTORES THE PREVIOUS SHEET. A tree left
 /// half-edited by a browser is the thing this must never do.
-fn commit_edit(
+pub(crate) fn commit_edit(
     root: &std::path::Path,
     id: &str,
     path: &std::path::Path,
@@ -1666,357 +1742,6 @@ fn regenerate(sh: &crate::model::Sheet, tree: &crate::load::Tree) -> Result<usiz
     Ok(n)
 }
 
-/// What pasting a sheet body into this row would change.
-///
-/// Pasting a sibling's `node.toml` is how twenty rows that share a pattern get
-/// filled without retyping, and it is also how a stale source citation gets
-/// dragged through thirty of them. So a paste is never applied: it is parsed,
-/// every structural key is dropped, and what remains is reported as a list of
-/// changes for a person to look at before anything is written.
-///
-/// Returned as JSON because the face is what shows it. `changes` is what would
-/// move, `dropped` is what was in the paste and will not be used — named
-/// individually, because a key silently ignored is a key somebody believes they
-/// set.
-pub fn preview(sh: &Sheet, pasted: &str) -> Result<String, String> {
-    let v: toml::Value = pasted
-        .parse()
-        .map_err(|e| format!("that is not TOML: {e}"))?;
-    let get = |field: &str| -> Option<String> {
-        let (table, key) = place(field)?;
-        let t = if table.is_empty() {
-            Some(&v)
-        } else {
-            v.get(table)
-        }?;
-        // A NUMBER IS A VALUE TOO. This read only strings, so a pasted `lower`
-        // and `upper` were neither shown as changes nor reported as dropped —
-        // they simply vanished, which is the one outcome a preview exists to
-        // prevent.
-        let x = t.get(key)?;
-        x.as_str()
-            .map(|s| s.to_string())
-            .or_else(|| x.as_float().map(|n| format!("{n:?}")))
-            .or_else(|| x.as_integer().map(|n| format!("{:?}", n as f64)))
-    };
-    let mut changes = Vec::new();
-    for a in asks(sh) {
-        if let Some(new) = get(a.field) {
-            let old = value(sh, a.field);
-            if new != old {
-                changes.push((a.field, old, new));
-            }
-        }
-    }
-    // Everything the paste carried that this form will not write, so the reader
-    // can see what was ignored rather than assume it landed.
-    //
-    // A TABLE IS NOT A FIELD. `[maths]` and `[output]` are containers the form
-    // writes INTO, so reporting them as "not a field this form writes" told a
-    // reader their whole relation had been dropped when only, say, an extra key
-    // beside it had. Tables are walked; their keys are what gets judged.
-    let mut dropped: Vec<String> = Vec::new();
-    fn note(dropped: &mut Vec<String>, table: &str, k: &str) {
-        let shown = if table.is_empty() {
-            k.to_string()
-        } else {
-            format!("{table}.{k}")
-        };
-        match field_at(table, k) {
-            // AN ATTRIBUTION IS NEVER PASTED. `confirmed_by` is a writable
-            // field, so without this it would be carried across with the
-            // relation — which is forging somebody's name onto mathematics they
-            // have not read. It is set by the person confirming, on the row they
-            // are confirming.
-            Some("confirmed_by") => dropped.push(format!(
-                "{shown} — an attribution is not pasted. It is the name of the person who \
-                 read THIS relation against its source; carrying one across from another row \
-                 would put their name on mathematics they have not seen"
-            )),
-            // A field the form writes. It is a change, not a drop.
-            Some(_) => {}
-            None if table.is_empty() => match structural(k) {
-                Some(why) => dropped.push(format!("{shown} — {why}")),
-                None => dropped.push(format!("{shown} — not a field this form writes")),
-            },
-            None => dropped.push(format!("{shown} — not a field this form writes")),
-        }
-    }
-    if let Some(t) = v.as_table() {
-        for (k, val) in t {
-            match val.as_table() {
-                // A table the form reaches into: judge its keys, not its name.
-                Some(inner) if tables().contains(&k.as_str()) => {
-                    for ik in inner.keys() {
-                        note(&mut dropped, k, ik);
-                    }
-                }
-                // Any other table is wholly outside the form.
-                Some(_) => dropped.push(format!("[{k}] — not a table this form writes")),
-                None if val.as_array().is_some() => {
-                    dropped.push(format!("[[{k}]] — not a table this form writes"))
-                }
-                None => note(&mut dropped, "", k),
-            }
-        }
-    }
-    dropped.sort();
-    dropped.dedup();
-    let mut o = String::from("{\n  \"changes\": [\n");
-    for (i, (f, from, to)) in changes.iter().enumerate() {
-        o.push_str(&format!(
-            "    {{\"field\": {}, \"from\": {}, \"to\": {}}}{}\n",
-            jq(f),
-            jq(from),
-            jq(to),
-            if i + 1 == changes.len() { "" } else { "," }
-        ));
-    }
-    o.push_str("  ],\n  \"dropped\": [\n");
-    for (i, d) in dropped.iter().enumerate() {
-        o.push_str(&format!(
-            "    {}{}\n",
-            jq(d),
-            if i + 1 == dropped.len() { "" } else { "," }
-        ));
-    }
-    o.push_str(&format!(
-        "  ],\n  \"file_hash\": {}\n}}\n",
-        jq(&std::fs::read_to_string(sh.dir.join("node.toml"))
-            .map(|t| file_hash(&t))
-            .unwrap_or_default())
-    ));
-    Ok(o)
-}
-
-/// What a proposal did.
-pub enum Proposed {
-    Ok {
-        branch: String,
-        commit: String,
-        files: usize,
-        /// Where to open the pull request, when the remote is one that has a
-        /// page for it. Empty when the remote is not recognised — a guessed URL
-        /// is worse than none.
-        compare: String,
-    },
-    Nothing,
-    Refused(String),
-}
-
-/// Run git in the checkout and give back its stdout, or its stderr as the error.
-///
-/// TRAILING WHITESPACE ONLY. This trimmed both ends, and `git status --porcelain`
-/// puts the status in the first two columns — so an unstaged modification is
-/// ` M path`, and trimming the front ate the leading space of the FIRST line
-/// only. `propose` then read the path from column 3 and got `rates/…` instead of
-/// `crates/…`, and `git add` failed on a path that does not exist. It survived
-/// review and a merge because it depends on what the first dirty line happens to
-/// be: an untracked file is `?? path`, which has no leading space and works.
-fn git(root: &std::path::Path, args: &[&str]) -> Result<String, String> {
-    let out = std::process::Command::new("git")
-        .arg("-C")
-        .arg(root)
-        .args(args)
-        .output()
-        .map_err(|e| format!("git could not be run: {e}"))?;
-    if !out.status.success() {
-        return Err(format!(
-            "git {}: {}",
-            args.join(" "),
-            String::from_utf8_lossy(&out.stderr).trim()
-        ));
-    }
-    Ok(String::from_utf8_lossy(&out.stdout).trim_end().to_string())
-}
-
-/// The node-folder paths in a `git status --porcelain` listing.
-///
-/// Porcelain v1 is `XY<space>PATH`: two columns of status, a space, then the
-/// path. The status columns can be blank — an unstaged modification is ` M` —
-/// so the path starts at column 3 and nothing before it may be trimmed away.
-///
-/// A rename is `R  old -> new`, and the path taken is the new one, because that
-/// is the file that exists to be added.
-fn dirty_paths(porcelain: &str) -> Vec<String> {
-    porcelain
-        .lines()
-        .filter(|l| l.len() > 3)
-        .map(|l| l[3..].trim())
-        .map(|p| p.rsplit(" -> ").next().unwrap_or(p).trim().to_string())
-        .filter(|p| p.contains("/nodes/"))
-        .collect()
-}
-
-/// Put the edited rows on a branch of their own, as one commit.
-///
-/// A sheet edit is a source change and belongs in history — unlike a run's
-/// inputs, which are a question somebody asked and are never committed. So the
-/// face's edits do not sit in the working tree waiting for somebody to notice
-/// them: they go onto a branch, where CODEOWNERS can route them to whoever owns
-/// those rows.
-///
-/// IT COMMITS AND IT DOES NOT PUSH. Pushing is outward-facing: it puts the work
-/// where other people and the pipeline see it, under whatever credentials the
-/// checkout holds, and a background service should not do that on its own. The
-/// branch and the command to push it are returned instead, so the person who
-/// made the edits is the one who shares them.
-///
-/// Only node folders are committed. Whatever else is dirty in the checkout is
-/// somebody's work in progress and is not this function's to sweep up.
-pub fn propose(root: &std::path::Path, summary: &str, kind: &str) -> Proposed {
-    // WHAT IS EDITED FIRST, WHO IS EDITING SECOND. This asked for the identity
-    // up front, so a checkout with no `git config user.name` — a fresh CI
-    // runner, say — was told to set one when there was nothing to commit in the
-    // first place. Demanding a name to attribute nothing is a worse answer than
-    // saying there is nothing to do, and it is not true that the name was
-    // needed.
-    let dirty = match git(root, &["status", "--porcelain", "--", "crates"]) {
-        Ok(d) => d,
-        Err(e) => return Proposed::Refused(e),
-    };
-    let paths = dirty_paths(&dirty);
-    if paths.is_empty() {
-        return Proposed::Nothing;
-    }
-    // The change type, which the commit-msg hook validates and which decides
-    // how this reads in a log. `docs` is the default because most sheet edits
-    // are a sentence somebody improved; a changed relation is not, and the face
-    // offers the others.
-    let kind = if kind.trim().is_empty() {
-        "docs"
-    } else {
-        kind.trim()
-    };
-    // Now there is something to commit, so there has to be somebody committing.
-    let who = match git_identity(root) {
-        Ok(w) => w,
-        Err(e) => return Proposed::Refused(e),
-    };
-    let summary = summary.trim();
-    if summary.is_empty() {
-        return Proposed::Refused(
-            "a proposal needs a one-line summary saying what changed and why. It becomes the \
-             commit subject, and a commit nobody can read in a list is a commit nobody reviews."
-                .into(),
-        );
-    }
-    // The rows touched, for the branch name and the message.
-    let mut rows: Vec<String> = paths
-        .iter()
-        .filter_map(|p| p.split("/nodes/").nth(1))
-        .filter_map(|r| r.split('/').next())
-        .map(|r| r.to_string())
-        .collect();
-    rows.sort();
-    rows.dedup();
-    let started = match git(root, &["rev-parse", "--abbrev-ref", "HEAD"]) {
-        Ok(b) => b,
-        Err(e) => return Proposed::Refused(e),
-    };
-    // NOW, NOT HEAD'S COMMIT DATE. This read `git log -1 --format=%cd` first,
-    // which stamps the branch with when the LAST COMMIT was made — so a branch
-    // created today could be named for a week ago, and two proposals from one
-    // HEAD collided on the same name. The collision was refused rather than
-    // clobbered, but the name was a small lie either way.
-    //
-    // Through `date` rather than a crate, which is how `xtask` stamps a sheet
-    // and for the reason it gives: adding a dependency to print a timestamp is
-    // how a dependency list stops meaning anything.
-    let stamp = std::process::Command::new("date")
-        .arg("+%Y%m%d-%H%M%S")
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map(|s| s.trim().to_string())
-        .unwrap_or_default();
-    let branch = format!(
-        "sheet/{}-{}",
-        rows.first().cloned().unwrap_or_else(|| "rows".into()),
-        if stamp.is_empty() {
-            "edit".into()
-        } else {
-            stamp
-        }
-    );
-    if git(root, &["rev-parse", "--verify", &branch]).is_ok() {
-        return Proposed::Refused(format!(
-            "a branch called {branch} already exists — commit or delete it first, rather than \
-             this deciding which one you meant"
-        ));
-    }
-    if let Err(e) = git(root, &["checkout", "-b", &branch]) {
-        return Proposed::Refused(e);
-    }
-    let put_back = |e: String| -> Proposed {
-        // The branch was created and the commit did not happen, so the checkout
-        // goes back where it started rather than sitting on a branch nobody
-        // asked for.
-        //
-        // AND THE INDEX IS UNSTAGED. `git add` has already run by the time a
-        // commit can fail — the repository's own commit-msg hook refusing the
-        // message is exactly how it fails — and leaving the rows staged changes
-        // something the person did not ask to change. They edited files; they
-        // did not stage them.
-        let _ = git(root, &["reset", "--quiet", "HEAD", "--", "crates"]);
-        let _ = git(root, &["checkout", &started]);
-        let _ = git(root, &["branch", "-D", &branch]);
-        Proposed::Refused(e)
-    };
-    for p in &paths {
-        if let Err(e) = git(root, &["add", "--", p]) {
-            return put_back(e);
-        }
-    }
-    // THE SCOPE IS THE CRATE, NOT THE ROW'S PREFIX. A first attempt used the
-    // row id's prefix — `sheet(gnc):` — and the repository's own commit-msg
-    // hook refused both halves: `sheet` is not a change type and `gnc` is not a
-    // scope here. The hook is right and it is the authority; this derives what
-    // it already accepts, from the crate the rows live in.
-    let scope = paths
-        .first()
-        .and_then(|p| p.split('/').nth(1))
-        .and_then(|c| c.strip_prefix("vleo-"))
-        .unwrap_or("tree")
-        .to_string();
-    let body = format!(
-        "{kind}({scope}): {summary}\n\n\
-         Edited through the face, on {} row(s):\n{}\n\n\
-         Every field went through the same gate a terminal edit does, and the\n\
-         row's artefacts were regenerated from the sheet before it was accepted.\n\n\
-         Attributed to {who}, from this checkout's git config user.name.\n",
-        rows.len(),
-        rows.iter()
-            .map(|r| format!("  {r}"))
-            .collect::<Vec<_>>()
-            .join("\n"),
-    );
-    if let Err(e) = git(root, &["commit", "-m", &body]) {
-        return put_back(e);
-    }
-    let commit = git(root, &["rev-parse", "--short", "HEAD"]).unwrap_or_default();
-    // Where to open the pull request, if the remote is somewhere that has one.
-    let remote = git(root, &["remote", "get-url", "origin"]).unwrap_or_default();
-    let compare = remote
-        .strip_suffix(".git")
-        .unwrap_or(&remote)
-        .replace("git@github.com:", "https://github.com/")
-        .replace("git@gitlab.com:", "https://gitlab.com/");
-    let compare = if compare.contains("github.com") {
-        format!("{compare}/compare/{branch}?expand=1")
-    } else if compare.contains("gitlab.com") {
-        format!("{compare}/-/merge_requests/new?merge_request[source_branch]={branch}")
-    } else {
-        String::new()
-    };
-    Proposed::Ok {
-        branch,
-        commit,
-        files: paths.len(),
-        compare,
-    }
-}
-
 // ─── the repeated blocks ─────────────────────────────────────────────────────
 //
 // A sheet's inputs, algorithm steps, theory steps and assumptions are
@@ -2066,6 +1791,16 @@ pub struct Array {
     pub blocks: Blocks,
     /// The table a first block goes after, when the sheet has none yet.
     pub after: &'static str,
+    /// The group whose rows alone carry this block, or empty for every row.
+    /// A risk is registered on a risk-register row and nowhere else.
+    pub only_under: &'static str,
+}
+
+impl Array {
+    /// Whether this block belongs on this row's form.
+    pub fn applies(&self, sh: &Sheet) -> bool {
+        self.only_under.is_empty() || sh.parent == self.only_under
+    }
 }
 
 /// EVERY REPEATED BLOCK THIS FORM WRITES.
@@ -2102,6 +1837,7 @@ pub const ARRAYS: &[Array] = &[
         ],
         blocks: Blocks::Free,
         after: "output",
+        only_under: "",
     },
     Array {
         name: "algorithm",
@@ -2142,13 +1878,14 @@ pub const ARRAYS: &[Array] = &[
         ],
         blocks: Blocks::EndOnly,
         after: "output",
+        only_under: "",
     },
     Array {
         name: "theory",
         path: "theory.step",
         label: "how the relation was arrived at",
         why: "the expression says what the relation is; these say how it was got to. A \
-              relation an agent invented carries a citation just as convincingly, and the \
+              relation an assistant invented carries a citation just as convincingly, and the \
               derivation is what a reviewer reads instead of taking the citation's word",
         columns: &[
             Column {
@@ -2168,6 +1905,7 @@ pub const ARRAYS: &[Array] = &[
         ],
         blocks: Blocks::Free,
         after: "theory",
+        only_under: "",
     },
     Array {
         name: "assumption",
@@ -2199,6 +1937,62 @@ pub const ARRAYS: &[Array] = &[
         // `insert_point` still prefers the derivation when there is one, so the
         // reading order of an authored sheet is kept where it exists.
         after: "maths",
+        only_under: "",
+    },
+    Array {
+        name: "risk",
+        path: "risk",
+        label: "the risks this row registers",
+        why: "a risk is registered once, here, and moved only by node versions — a risk is \
+              reduced because something was tested, and the version that tested it is the \
+              record of how. Which risk-register row holds a risk says what kind it is",
+        columns: &[
+            Column {
+                key: "id",
+                shape: Shape::Line,
+                ask: "its id: R- and a number, never reused",
+                required: true,
+                managed: false,
+            },
+            Column {
+                key: "title",
+                shape: Shape::Line,
+                ask: "what could go wrong, in a line",
+                required: true,
+                managed: false,
+            },
+            Column {
+                key: "level",
+                shape: Shape::Choice(crate::derisk::LEVELS),
+                ask: "how serious it is now, L1 (least) to L5",
+                required: true,
+                managed: false,
+            },
+            Column {
+                key: "owner",
+                shape: Shape::Line,
+                ask: "who owns it",
+                required: true,
+                managed: false,
+            },
+            Column {
+                key: "since",
+                shape: Shape::Line,
+                ask: "registered on (YYYY-MM-DD)",
+                required: true,
+                managed: false,
+            },
+            Column {
+                key: "why",
+                shape: Shape::Prose,
+                ask: "what it would cost if it happened",
+                required: true,
+                managed: false,
+            },
+        ],
+        blocks: Blocks::Free,
+        after: "maths",
+        only_under: crate::derisk::REGISTER,
     },
 ];
 

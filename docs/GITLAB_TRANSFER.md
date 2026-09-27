@@ -1,5 +1,9 @@
 # Moving this repository to GitLab
 
+> **Answer first.** What moving this repository to GitLab takes, measured while doing it: what moves, what does not, and every step that was tested.
+>
+> **Kind:** how-to · **For:** developers
+
 Written while doing it, not from a specification. Every reachability claim
 below was tested from the environment that would run the push.
 

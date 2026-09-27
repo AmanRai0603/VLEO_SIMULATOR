@@ -118,7 +118,12 @@ main { padding: 1.1rem 2.5rem 3rem; }
 .sw-panel-note .xref { font: 10.5px var(--mono); }
 
 /* ---------- the figure ---------------------------------------------------- */
-.colheads { display: grid; grid-template-columns: 402px 1fr; margin: .3rem 0 .4rem; }
+.colheads { display: grid; grid-template-columns: calc(var(--treew) + var(--pathw)) minmax(0, 1fr);
+  margin: .3rem 0 .4rem; max-width: 100%; }
+/* The two sticky columns, as one pair of widths: the grid, the column heads and
+   the sticky offsets all read these, so narrowing the tree on a phone cannot
+   leave one of them at the old width. */
+:root { --treew: 340px; --pathw: 62px; }
 .colhead { font-size: 10.5px; text-transform: uppercase; letter-spacing: .09em; }
 .colhead.out { color: var(--out); }
 .colhead.in { color: var(--in); justify-self: start; }
@@ -129,7 +134,7 @@ main { padding: 1.1rem 2.5rem 3rem; }
    than beside it. The two left columns stick while the matrix scrolls sideways. */
 .grid {
   display: grid;
-  grid-template-columns: 340px 62px max-content;
+  grid-template-columns: var(--treew) var(--pathw) max-content;
   gap: 0; align-items: start;
   overflow: auto; max-height: 76vh;
   border: 1px solid var(--rule-2); background: var(--card); border-radius: 3px;
@@ -137,7 +142,7 @@ main { padding: 1.1rem 2.5rem 3rem; }
   width: max-content; max-width: 100%;
 }
 .pane { min-width: 0; }
-#tree  { position: sticky; left: 0; z-index: 3; background: var(--card); width: 340px; }
+#tree  { position: sticky; left: 0; z-index: 3; background: var(--card); width: var(--treew); }
 
 /* ---------- the tree ------------------------------------------------------ */
 #tree { padding-right: .2rem; padding-left: 12px; }
@@ -198,7 +203,7 @@ main { padding: 1.1rem 2.5rem 3rem; }
 .pill.crossing { box-shadow: inset 0 0 0 1px var(--teal); }
 
 /* ---------- the paths column --------------------------------------------- */
-#paths { position: sticky; left: 340px; z-index: 2; background: var(--card); width: 62px; }
+#paths { position: sticky; left: var(--treew); z-index: 2; background: var(--card); width: var(--pathw); }
 .paths-label {
   position: absolute; top: -15px; left: 0; right: 0;
   font-size: 10px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .1em;
@@ -423,6 +428,121 @@ h4 { font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
 .verdicts .pass { color: var(--both); }
 .verdicts .fail { color: #a4262c; }
 .chainline { font-size: 10.5px; color: var(--ink-3); margin-top: .7rem; }
+
+/* ---------- who the run is for, and the inputs it runs at ------------------ */
+/* The pale tokens are redefined for the dark scheme, so every badge below
+   follows the page without a block of its own. */
+.run-case { font-size: 11px; color: var(--ink-2); margin: -.3rem 0 .6rem; }
+.run-case p { margin: .15rem 0; }
+.run-case .xref { margin-left: .3rem; }
+.run-inputs { margin: .2rem 0 .8rem; }
+.run-inputs-h { font-size: 11px; color: var(--ink-2); cursor: pointer; margin-bottom: .35rem; }
+.ri-wrap { overflow-x: auto; }
+.run-in-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.sweepctl select { max-width: 100%; }
+.run-in-table th { text-align: left; font-weight: 500; color: var(--ink-3); font-size: 10px;
+  border-bottom: 1px solid var(--rule); padding: .25rem .4rem; }
+.run-in-table td { border-bottom: 1px solid var(--rule-2); padding: .3rem .4rem; vertical-align: top; }
+.run-in-table tr.ri.more { display: none; }
+.run-in-table tr.ri.on td { background: var(--out-pale); }
+.run-in-table .ri-id { font-size: 10px; }
+.run-in-table .ri-v { width: 7.5rem; font: 11px var(--mono); border: 1px solid var(--rule);
+  background: var(--card); color: var(--ink); padding: .1rem .3rem; }
+.run-in-table tr.bad .ri-v { border-color: #a4262c; }
+.run-in-table .ri-why { color: #a4262c; font-size: 10px; }
+.run-in-table .ri-was { font-size: 10px; }
+.run-in-table .ri-range { white-space: nowrap; font-size: 10px; }
+.ri-src { font-size: 10px; padding: 0 .35rem; border-radius: 2px; white-space: nowrap;
+  border: 1px solid var(--rule); color: var(--ink-3); }
+.ri-src.saved { color: var(--in); border-color: var(--in); background: var(--in-pale); }
+.ri-grp { font-size: 10px; margin-top: .15rem; }
+.ri-src.you  { color: var(--out); border-color: var(--out); background: var(--out-pale); }
+.ri-more { margin-top: .4rem; }
+.ri-foot { font-size: 10.5px; margin-top: .5rem; }
+.ri-foot .ri-go, .ri-foot .ri-save { margin-left: .4rem; }
+.run-go-bar { margin-top: .4rem; }
+.run-for { font-size: 11px; color: var(--ink-2); margin: 0 0 .4rem; }
+.run-stale { font-size: 11px; color: var(--out); background: var(--out-pale);
+  border: 1px solid var(--out); border-radius: 3px; padding: .3rem .6rem; margin: .4rem 0; }
+.run-evidence > summary, .run-blocked > summary { font-size: 10.5px; cursor: pointer;
+  color: var(--ink-2); margin: .5rem 0 .2rem; }
+.run-evidence > summary { color: var(--both); }
+.run-evidence[open] > summary { margin-bottom: 0; }
+.sw-all-l { font-size: 10.5px; color: var(--ink-2); display: inline-flex; align-items: center; gap: .3rem; }
+.sweepctl input[type="checkbox"] { width: auto; }
+/* the case bar, and the Inputs page */
+#case-name { font-size: 11px; font-weight: 600; color: var(--ink); }
+#case-upload-l, #case-download, .case-actions a.ctl, .case-up-l { cursor: pointer; text-decoration: none; }
+.case-state { font-size: 11px; color: var(--ink-2); margin: 0 0 .6rem; }
+.case-state p { margin: .15rem 0; }
+.case-actions { flex-wrap: wrap; gap: .4rem; }
+.case-tabs { margin-top: 1rem; align-items: center; flex-wrap: wrap; }
+.case-tabs .case-n { font-size: 10px; color: var(--in); margin-left: .25rem; }
+.case-filter { margin-left: auto; width: 14rem; max-width: 100%; font: 11px var(--mono);
+  border: 1px solid var(--rule); background: var(--card); color: var(--ink); padding: .2rem .4rem; }
+.case-group-note { font-size: 10.5px; margin: .4rem 0; }
+.case-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.case-table th { text-align: left; font-weight: 500; color: var(--ink-3); font-size: 10px;
+  border-bottom: 1px solid var(--rule); padding: .25rem .4rem; }
+.case-table td { border-bottom: 1px solid var(--rule-2); padding: .3rem .4rem; vertical-align: top; }
+.case-table tr.ci.saved td { background: var(--in-pale); }
+.case-table tr.ci.on td { background: var(--out-pale); }
+.case-table .ri-id { font-size: 10px; }
+.case-table .ci-v { width: 7.5rem; font: 11px var(--mono); border: 1px solid var(--rule);
+  background: var(--card); color: var(--ink); padding: .1rem .3rem; }
+.case-table tr.bad .ci-v { border-color: #a4262c; }
+.case-table .ri-why { color: #a4262c; font-size: 10px; }
+.case-table .ri-range { white-space: nowrap; font-size: 10px; }
+/* The unit sits after the field in a table row, not inside it as it does on
+   the node page's single editor — absolute there, it escaped every table. */
+.run-in-table .ovr-u, .case-table .ovr-u { position: static; font-size: 10.5px; }
+.case-save-bar { margin-top: .6rem; }
+/* saved results, and the forms page */
+.res-actions, .res-do { flex-wrap: wrap; gap: .4rem; }
+.res-up-l, .forms-up-l, .forms-dl, .forms-new { cursor: pointer; text-decoration: none; }
+.res-list tr.sel td { background: var(--in-pale); }
+.res-one { border: 1px solid var(--rule); border-radius: 3px; padding: .6rem .9rem; margin: 1rem 0; background: var(--card); }
+.res-one h3 { margin: 0 0 .3rem; font-size: 13px; }
+.res-out tr.res-target td { background: var(--out-pale); }
+.res-filter { width: 16rem; max-width: 100%; margin: .2rem 0 .4rem; font: 11px var(--mono); }
+.res-cmp-box { border: 1px dashed var(--rule); border-radius: 3px; padding: .4rem .7rem; margin: .6rem 0; font-size: 11px; }
+.res-bar-c { width: 30%; }
+.res-bar { display: block; height: 8px; border-radius: 2px; }
+.res-bar.up { background: var(--out); }
+.res-bar.down { background: var(--in); }
+.res-save-bar { margin-top: .6rem; flex-wrap: wrap; }
+.res-name { width: 16rem; max-width: 100%; font: 11px var(--mono); }
+.forms-who { width: 100%; border-collapse: collapse; font-size: 11px; margin: .6rem 0 1rem; }
+.forms-who td, .forms-who th { border-bottom: 1px solid var(--rule-2); padding: .3rem .5rem; text-align: left; vertical-align: top; }
+.forms-sec { margin: 1.2rem 0; }
+.forms-sec h3 { font-size: 13px; margin: 0 0 .3rem; }
+.forms-pick { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; font-size: 11px; }
+.forms-node { width: 20rem; max-width: 100%; font: 11px var(--mono); }
+.nform-open li { margin: .2rem 0; font-size: 11px; }
+
+/* the node's form */
+.nform-steps li { margin: .3rem 0; }
+.nform-dl, .nform-up-l { cursor: pointer; text-decoration: none; }
+.nform-file { border: 1px solid var(--rule); border-radius: 3px; padding: .5rem .7rem; margin: .6rem 0;
+  font-size: 11px; background: var(--card); }
+.nform-file h4 { margin: 0 0 .3rem; font-size: 11.5px; }
+.nform-file table { border-collapse: collapse; font-size: 11px; margin: .3rem 0; width: 100%; }
+.nform-file td, .nform-file th { border-bottom: 1px solid var(--rule-2); padding: .2rem .5rem; text-align: left;
+  vertical-align: top; overflow-wrap: anywhere; }
+.nform-file td:first-child, .nform-file td:nth-child(2) { white-space: nowrap; }
+.nform-file td:nth-child(3), .nform-file td:nth-child(4) { width: 40%; }
+.nform-file tr.nform-apply td:first-child { color: var(--both); }
+.nform-file tr.nform-conflict td:first-child, .nform-file tr.nform-refused td:first-child { color: #a4262c; font-weight: 600; }
+.nform-why { color: #a4262c; font-size: 10px; margin-top: .15rem; }
+.nform-fx { font: 10.5px var(--mono); white-space: pre-wrap; background: var(--paper); padding: .4rem; }
+.case-upgrade { border: 1px solid var(--in); border-radius: 3px; padding: .4rem .7rem; margin: .5rem 0;
+  background: var(--in-pale); font-size: 11px; }
+.case-upgrade p { margin: .25rem 0; }
+.case-file { border: 1px solid var(--rule); border-radius: 3px; padding: .5rem .7rem; margin: .6rem 0;
+  font-size: 11px; background: var(--card); }
+.case-file h4 { margin: 0 0 .3rem; font-size: 11.5px; }
+.case-file table { border-collapse: collapse; font-size: 11px; margin: .3rem 0; }
+.case-file td, .case-file th { border-bottom: 1px solid var(--rule-2); padding: .2rem .5rem; text-align: left; }
 .sweepctl { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap;
   margin-top: .8rem; font-size: 10.5px; color: var(--ink-3); }
 .sweepctl input { width: 7rem; font: 11px var(--mono); border: 1px solid var(--rule);
@@ -698,11 +818,6 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
   .seeded, .hatch {
     background: repeating-linear-gradient(45deg,#232119,#232119 3px,#2b2921 3px,#2b2921 6px);
   }
-  /* The form's inputs sit on --paper, which is already dark here, so only the
-     accent-on-fill cases below need saying. The one thing that does not follow
-     from the tokens is the locked panel: --slate-pale is a dark block in dark
-     mode and reads as a hole in the page, so it takes the card instead. */
-  .sf-locked { background: var(--card); }
   /* A form field inherits the system's light chrome unless told otherwise. */
   input, select, textarea, button { color-scheme: dark; }
   .sweepctl input.bad { background: #2c1a19; }
@@ -765,140 +880,8 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
    the row. What is missing is a wiring decision somewhere else. */
 .banner.unread { border-left-color: var(--teal); }
 
-/* ── the sheet as a form ─────────────────────────────────────────────────────
-   The nine questions `xtask declare` asks, with somewhere to type. Existing
-   tokens only: an open question borrows `--out` because it is the same "this is
-   missing" the rest of the face already uses for an unanswered row, and a
-   refusal borrows it too rather than introducing a red nobody validated. */
+/* the sheet, read — and the node's form beside it */
 .sheet-tabs { margin: 0 0 10px; }
-.sf-head { font-size: 13px; margin: 0 0 12px; }
-
-.sf-who { margin: 0 0 16px; padding: 10px 12px;
-  border: 1px solid var(--rule); border-radius: 4px; background: var(--card); }
-.sf-who label { display: block; font-size: 12px; color: var(--ink-2); margin-bottom: 4px; }
-
-/* The groups. Sixteen questions in one column is a form people abandon halfway;
-   the heading says which of the few decisions the next few belong to. Its order
-   and its name come from the server, not from here. */
-.sf-group { font-size: 12px; font-weight: 500; letter-spacing: .04em;
-  text-transform: uppercase; color: var(--ink-3); margin: 22px 0 10px;
-  padding-bottom: 5px; border-bottom: 1px solid var(--rule-2); }
-.sf-group:first-of-type { margin-top: 4px; }
-.sf-group-open { float: right; text-transform: none; letter-spacing: 0;
-  color: var(--out); font-weight: 600; }
-/* A repeated block. Each one is a small card so the boundary between the third
-   assumption and the fourth is visible without counting. */
-.sf-array, .sf-view, .sf-publish { margin: 0 0 8px; }
-.sf-blocks { list-style: none; margin: 10px 0 0; padding: 0; }
-.sf-blocks > li { margin: 0 0 10px; padding: 8px 10px;
-  border: 1px solid var(--rule); border-radius: 4px; background: var(--card); }
-/* Removed, and the list not yet reloaded. Shown struck through rather than
-   deleted: a row that vanishes under the hand leaves a reader unsure what went. */
-.sf-blocks > li.gone { opacity: .5; }
-.sf-blocks > li.gone .sf-cell { text-decoration: line-through; }
-.sf-blockhead { display: flex; align-items: baseline; justify-content: space-between;
-  margin-bottom: 6px; }
-.sf-blocknum { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
-.sf-cell { margin: 0 0 8px; }
-.sf-cell label { display: block; font-size: 12px; color: var(--ink-2); margin-bottom: 4px; }
-.sf-cell input[type=text], .sf-cell input[type=number], .sf-cell textarea {
-  width: 100%; box-sizing: border-box; padding: .3rem .45rem;
-  font: inherit; font-size: 13px; color: var(--ink);
-  background: var(--paper); border: 1px solid var(--rule); border-radius: 3px;
-}
-.sf-cell textarea { resize: vertical; line-height: 1.45; }
-.sf-add { margin: 4px 0 0; padding: 8px 10px;
-  border: 1px dashed var(--rule); border-radius: 4px; }
-.sf-add summary { font-size: 12.5px; cursor: pointer; color: var(--ink-2); }
-.sf-add > .sf-cell { margin-top: 8px; }
-.sf-view .sf-cell, .sf-publish .sf-why { max-width: 42rem; }
-
-/* A field this row has not got is named rather than silently missing. */
-.sf-absent { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--rule-2); }
-
-.sf-field { margin: 0 0 18px; padding-left: 10px;
-  border-left: 2px solid var(--rule-2); }
-/* An open question is the one thing on this form a reader is looking for. */
-.sf-field.open { border-left-color: var(--out); }
-.sf-field label { display: block; font-size: 13px; color: var(--ink);
-  margin-bottom: 5px; cursor: pointer; }
-.sf-mark { display: inline-block; width: 1.1em; font-family: var(--mono);
-  color: var(--ink-3); }
-.sf-field.open .sf-mark { color: var(--out); font-weight: 600; }
-
-.sf-field input[type=text], .sf-field input[type=number], .sf-field textarea,
-.sf-who input {
-  width: 100%; box-sizing: border-box; padding: .34rem .45rem;
-  font: inherit; font-size: 13px; color: var(--ink);
-  background: var(--paper); border: 1px solid var(--rule); border-radius: 3px;
-}
-.sf-field textarea { resize: vertical; line-height: 1.45; }
-/* A bound is a number and reads as one. Narrow, monospaced and left-aligned, so
-   40.0 and 140.0 line up under each other where a reader compares them. */
-.sf-num { max-width: 14rem; font-family: var(--mono) !important; }
-.sf-field input:focus, .sf-field textarea:focus, .sf-who input:focus {
-  outline: 2px solid var(--teal); outline-offset: -1px; border-color: var(--teal);
-}
-
-/* The consequence, not a tooltip. A field whose consequence is hidden is a
-   field somebody fills with anything to make the form go green. */
-.sf-why { font-size: 11.5px; color: var(--ink-3); margin: 4px 0 0; line-height: 1.5; }
-.sf-save { margin-top: 6px; }
-
-.sf-said { font-size: 12px; margin: 6px 0 0; line-height: 1.5; }
-.sf-said.waiting { color: var(--ink-3); }
-.sf-said.good    { color: var(--both); }
-.sf-said.bad     { color: var(--out); }
-/* A conflict is not the reader's mistake and must not be coloured like one. */
-.sf-said.stale   { color: var(--teal); }
-
-.sf-locked { margin: 22px 0 0; padding: 12px;
-  border: 1px solid var(--rule); border-radius: 4px; background: var(--slate-pale); }
-.sf-locked h4 { font-size: 13px; margin: 0 0 4px; }
-.sf-locked dl { margin: 10px 0 0; font-size: 12px; }
-.sf-locked dt { font-family: var(--mono); color: var(--ink-2); margin-top: 8px; }
-.sf-locked dd { margin: 2px 0 0 0; color: var(--ink-3); line-height: 1.5; }
-.sf-foot { font-size: 11.5px; margin: 14px 0 0; }
-
-/* the paste, and what it would change */
-.sf-paste { margin: 0 0 20px; padding: 10px 12px;
-  border: 1px solid var(--rule); border-radius: 4px; background: var(--card); }
-.sf-paste summary { font-size: 13px; cursor: pointer; }
-.sf-paste-in { width: 100%; box-sizing: border-box; margin: 8px 0 6px;
-  padding: .34rem .45rem; font-family: var(--mono); font-size: 12px;
-  color: var(--ink); background: var(--paper);
-  border: 1px solid var(--rule); border-radius: 3px; resize: vertical; }
-.sf-diff { width: 100%; border-collapse: collapse; font-size: 12px; margin: 10px 0 8px; }
-.sf-diff th { text-align: left; font-weight: 500; color: var(--ink-3);
-  border-bottom: 1px solid var(--rule); padding: 3px 6px; }
-.sf-diff td { padding: 4px 6px; border-bottom: 1px solid var(--rule-2);
-  vertical-align: top; }
-/* What it was, and what it would become. The old value is not struck through:
-   it is still the truth until somebody applies this. */
-.sf-diff .was { color: var(--ink-3); }
-.sf-diff .now { color: var(--ink); }
-.sf-dropped, .sf-applied { font-size: 11.5px; color: var(--ink-3);
-  margin: 4px 0 0; padding-left: 18px; line-height: 1.6; }
-.sf-applied { color: var(--ink-2); }
-
-/* putting the edits on a branch */
-.sf-propose { margin: 20px 0 0; padding: 10px 12px;
-  border: 1px solid var(--rule); border-radius: 4px; background: var(--card); }
-.sf-propose summary { font-size: 13px; cursor: pointer; }
-.sf-propose label { display: block; font-size: 12px; color: var(--ink-2);
-  margin: 10px 0 4px; }
-.sf-propose input[type=text] { width: 100%; box-sizing: border-box;
-  padding: .34rem .45rem; font: inherit; font-size: 13px; color: var(--ink);
-  background: var(--paper); border: 1px solid var(--rule); border-radius: 3px; }
-.sf-propose-go { margin-top: 10px; }
-/* A command to copy, not prose describing one. */
-.sf-cmd { font-family: var(--mono); font-size: 12px; margin: 4px 0 8px;
-  padding: 6px 8px; overflow-x: auto; color: var(--ink);
-  background: var(--paper); border: 1px solid var(--rule); border-radius: 3px; }
-.sf-ident { font-size: 13px; margin: 0 0 4px; }
-
-/* A closed set is offered, not typed. */
-.sf-field select.sf-pick { width: 100%; box-sizing: border-box; font-size: 13px; }
 
 /* ─── the manual ────────────────────────────────────────────────────────────
    A page to read, not a figure: a narrow column for the prose, a sidebar for
@@ -989,6 +972,11 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
 /* A phone: the sidebar goes above the text, and the contents list becomes a
    short scroll rather than a column the text has to wait below. */
 @media (max-width: 760px) {
+  /* A phone is narrower than the two sticky columns were: the tree takes what
+     is left beside the paths, and the column heads wrap rather than push the
+     page sideways. */
+  :root { --treew: 210px; --pathw: 44px; }
+  .colheads { grid-template-columns: minmax(0, 1fr); gap: .15rem; }
   .man { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
   .man-main code, .man-ui { white-space: normal; overflow-wrap: anywhere; }
   .man-side { position: static; max-height: none; }
@@ -997,3 +985,73 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
   .man-cmd pre { padding-right: .75rem; padding-bottom: 2.1rem; }
   .man-copy { top: auto; bottom: .35rem; }
 }
+
+/* ---------- the explanation standard (docs/EXPLAINING.md) ----------------- */
+/* Depth: `d-l` only to a learner, `d-lr` to a learner and a reader. */
+html:not([data-depth="learn"]) .d-l { display: none; }
+html[data-depth="expert"] .d-lr { display: none; }
+#depth { float: right; margin-top: -2.1rem; }
+#depth .lbl { color: var(--ink-3); margin-right: .3rem; }
+
+/* Answer first: the node in four lines, before any tab. */
+.answer-first { border-left: 3px solid var(--both); background: var(--both-pale);
+  padding: .5rem .9rem .6rem; margin: .6rem 0 .8rem; border-radius: 0 3px 3px 0; }
+.af-k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--both);
+  margin: 0 0 .2rem; }
+.af-q { font-weight: 600; margin: 0 0 .25rem; }
+.af-a { margin: 0 0 .3rem; }
+.af-points { margin: .2rem 0 0; padding-left: 1.1rem; }
+.af-points li { margin: .1rem 0; }
+
+/* The station: say it simply, the real thing, where it breaks, the wrong idea, try it. */
+.station .st-h { display: flex; align-items: center; gap: .45rem; margin: .9rem 0 .3rem;
+  font-size: 12px; }
+.st-n { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--in-pale); color: var(--in); font-size: 10.5px; }
+.simply { font-size: 13px; }
+.breaks, .wrong { border-left: 2px solid var(--out); padding-left: .6rem; }
+.wrong { border-left-color: #a4262c; }
+.predict { background: var(--in-pale); padding: .4rem .6rem; border-radius: 3px; }
+
+/* The kind of each tab (Diátaxis), and the kind of each claim. */
+.dx { display: inline-block; font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+  padding: 0 .4rem; border-radius: 2px; margin: 0 0 .4rem; border: 1px solid var(--rule);
+  color: var(--ink-3); }
+.dx-explanation { color: var(--in); border-color: var(--in); }
+.dx-tutorial { color: var(--out); border-color: var(--out); }
+.claim { display: inline-block; font-size: 10.5px; padding: 0 .35rem; border-radius: 2px;
+  border: 1px solid var(--rule); color: var(--ink-2); white-space: nowrap; vertical-align: 1px; }
+.claim-sourced { border-color: var(--teal); color: var(--teal); }
+.claim-derived { border-color: var(--in); color: var(--in); }
+.claim-declared { border-color: var(--out); color: var(--out); }
+.claim-illustrative { border-style: dashed; }
+
+/* De-risking: the belief a node rests on, and every version before it. */
+.belief { border: 1px solid var(--both); border-radius: 3px; padding: .4rem .7rem; margin: 0 0 .6rem; }
+.belief p { margin: .15rem 0; }
+.belief-h { color: var(--both); }
+ol.versions { padding-left: 1.2rem; }
+li.version { margin: 0 0 .7rem; }
+.version-h { margin: 0 0 .2rem; }
+.version-h .about { color: var(--in); }
+li.version dl { display: grid; grid-template-columns: max-content 1fr; gap: .1rem .8rem; margin: 0; }
+li.version dt { color: var(--ink-3); }
+li.version dd { margin: 0; }
+table.risks td { vertical-align: top; }
+@media (max-width: 640px) {
+  li.version dl { grid-template-columns: 1fr; }
+  #depth { float: none; margin: .3rem 0 0; display: inline-block; }
+}
+@media (prefers-color-scheme: dark) {
+  .wrong { border-left-color: #ef8a8a; }
+}
+
+/* The manual: each section's answer, first, and its kind. */
+.man-answer { border-left: 3px solid var(--both); background: var(--both-pale); padding: .35rem .7rem;
+  margin: .3rem 0 .6rem; border-radius: 0 3px 3px 0; }
+.man-answer .af-k { display: block; }
+.dx-how-to { color: var(--teal); border-color: var(--teal); }
+.nform-dr { display: grid; grid-template-columns: max-content 1fr; gap: .1rem .8rem; }
+.nform-dr dt { color: var(--ink-3); }
+.nform-dr dd { margin: 0; }
+@media (max-width: 640px) { .nform-dr { grid-template-columns: 1fr; } }

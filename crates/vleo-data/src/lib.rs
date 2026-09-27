@@ -258,6 +258,38 @@ impl Store {
     }
 }
 
+/// Where the application keeps the saved case: the inputs a person set.
+///
+/// Beside the reference data and outside the repository, so changing inputs
+/// never changes the tree: `~/.vleo/case/inputs.csv`, or wherever `VLEO_CASE`
+/// points. One place, read by the daemon and the command line alike, so the
+/// browser and the terminal always run the same case.
+pub fn case_path() -> PathBuf {
+    if let Ok(p) = std::env::var("VLEO_CASE") {
+        return PathBuf::from(p);
+    }
+    std::env::var("HOME")
+        .map(|h| {
+            PathBuf::from(h)
+                .join(".vleo")
+                .join("case")
+                .join("inputs.csv")
+        })
+        .unwrap_or_else(|_| PathBuf::from(".vleo/case/inputs.csv"))
+}
+
+/// Where the application keeps saved results: what runs returned, with the
+/// inputs they ran on. Outside the repository like the case —
+/// `~/.vleo/results/`, or wherever `VLEO_RESULTS` points.
+pub fn results_path() -> PathBuf {
+    if let Ok(p) = std::env::var("VLEO_RESULTS") {
+        return PathBuf::from(p);
+    }
+    std::env::var("HOME")
+        .map(|h| PathBuf::from(h).join(".vleo").join("results"))
+        .unwrap_or_else(|_| PathBuf::from(".vleo/results"))
+}
+
 /// `YYYY-MM-DD`, checked for shape rather than trusted.
 ///
 /// No calendar arithmetic: this says the field is a date, not that the date

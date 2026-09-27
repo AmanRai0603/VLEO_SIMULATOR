@@ -11,12 +11,17 @@
 'use strict';
 
 import { $, $$ } from './dom.js';
-import { S, SIZES, HOWTO, load, layerRoot, subsystemLayers, subtreeAll } from './state.js';
+import { S, SIZES, HOWTO, load, layerRoot, subsystemLayers, subtreeAll,
+         theCase, loadSaved, onCaseChange } from './state.js';
 import { drawFigure, drawCaptions, drawStepper, drawStatus, drawFoot } from './figure.js';
 import { openNode } from './node.js';
 import { renderRun } from './run.js';
 import { drawArchitecture } from './architecture.js';
 import { renderManual } from './manual.js';
+import { renderCase, preview, saveOverridesToCase, savableOverrides } from './case.js';
+import { renderResults, openResult } from './results.js';
+import { renderForms } from './forms.js';
+import { initDepth } from './depth.js';
 import { loadOverrides, overrideCount, clearAllOverrides, clearOverride,
          fromSI, onOverrideChange } from './inputs.js';
 
@@ -24,6 +29,7 @@ import { loadOverrides, overrideCount, clearAllOverrides, clearOverride,
 // boot
 
 async function boot() {
+  initDepth();
   try {
     await load();
   } catch (e) {
@@ -31,6 +37,9 @@ async function boot() {
     return;
   }
   fillSubsys();
+  // The saved case, so every status line and run panel can say which inputs
+  // the numbers are for before the first run is asked for.
+  await loadSaved();
   // What this browser remembered from last time. It is read after the index so
   // an override naming a row that no longer exists can be dropped rather than
   // sent to the engine.
@@ -77,21 +86,33 @@ export function draw() {
   $('#runview').hidden  = v !== 'run';
   $('#archview').hidden = v !== 'arch';
   $('#manualview').hidden = v !== 'manual';
-  $('#caption-a').hidden = $('#caption-b').hidden = (v === 'node' || v === 'arch' || v === 'manual');
+  $('#inputsview').hidden = v !== 'inputs';
+  $('#resultsview').hidden = v !== 'results';
+  $('#formsview').hidden = v !== 'forms';
+  // The pages that are not the tree: no caption about the tree above them.
+  const page = v === 'node' || v === 'arch' || v === 'manual' || v === 'inputs' ||
+    v === 'results' || v === 'forms';
+  $('#caption-a').hidden = $('#caption-b').hidden = page;
   // The stepper walks a person through reading the TREE; on the manual it
   // would be a second set of instructions beside the first.
-  $('#stepper').hidden = v === 'manual';
+  $('#stepper').hidden = v === 'manual' || v === 'inputs' || v === 'results' || v === 'forms';
   $('#controls').style.display = v === 'layer' && S.layer !== 4 ? '' : 'none';
-  $('#caserow').style.display = v === 'arch' || v === 'manual' || S.layer === 4 ? 'none' : '';
+  // The case bar everywhere a number is shown: which inputs every run is on
+  // is the first thing a reader of any number needs.
+  $('#caserow').style.display =
+    v === 'arch' || v === 'manual' || v === 'inputs' || v === 'results' || v === 'forms' ? 'none' : '';
   $('#subsys-grp').style.display = S.layer === 3 ? '' : 'none';
   $('#concept-grp').style.display = S.layer === 1 ? '' : 'none';
 
   $('#arch-tab').classList.toggle('sel', v === 'arch');
   $('#manual-tab').classList.toggle('sel', v === 'manual');
+  $('#inputs-tab').classList.toggle('sel', v === 'inputs');
+  $('#results-tab').classList.toggle('sel', v === 'results');
+  $('#forms-tab').classList.toggle('sel', v === 'forms');
   $$('.tab[data-layer]').forEach(b =>
-    b.classList.toggle('sel', v !== 'arch' && v !== 'manual' && +b.dataset.layer === S.layer));
+    b.classList.toggle('sel', !page && v !== 'arch' && +b.dataset.layer === S.layer));
   $$('.ctl.sz').forEach(b => b.classList.toggle('sel', b.dataset.size === S.size));
-  $$('.ctl.case').forEach(b => b.classList.toggle('sel', b.dataset.case === S.caseSel));
+  drawCaseBar();
   $$('.ctl.cpt').forEach(b => b.classList.toggle('sel', b.dataset.concept === S.concept));
   $('#concept-tag').textContent = S.concept === 'single' ? 'Single satellite' : 'Constellation';
 
@@ -102,9 +123,55 @@ export function draw() {
 
   if (v === 'arch') { drawArchitecture(); drawStatus([]); return; }
   if (v === 'manual') { drawStatus([]); return; }
+  if (v === 'inputs' || v === 'results' || v === 'forms') { drawStatus([]); return; }
   if (v === 'run')  { drawRunView(); drawStatus([]); return; }
   if (v === 'node') { drawStatus(S.disp); return; }
   drawStatus(drawFigure());
+}
+
+/**
+ * The case, across the top: its name, how far its inputs are from the
+ * defaults, and the way in to change them.
+ *
+ * There is one case. This bar once held a button per customer and a menu of
+ * conditions, each a file under cases/ — and a customer that needed a file and
+ * a commit to exist was a tree that grew with every customer. What varies now
+ * is the inputs, set on the Inputs page or uploaded as a CSV and saved by the
+ * daemon outside the repository.
+ */
+function drawCaseBar() {
+  const c = theCase();
+  $('#case-name').textContent = c ? c.label : 'no case';
+  const d = S.saved;
+  $('#case-state').textContent = !d ? 'the case could not be read'
+    : !d.stored ? 'every input at its default'
+    : d.changed + ' input' + (d.changed === 1 ? '' : 's') + ' changed from default' +
+      (d.upgrade ? ' · carried over to this version' + (d.upgrade.set_aside.length
+        ? ', ' + d.upgrade.set_aside.length + ' value' + (d.upgrade.set_aside.length === 1 ? '' : 's') +
+          ' set aside' : '') : '');
+  $('#inputs-tab').textContent = 'Inputs' + (d && d.stored && d.changed ? ' · ' + d.changed : '');
+}
+
+/** Open the Results page, at one result when one is named. */
+async function setResults(file) {
+  if (file) openResult(file);
+  S.view = 'results';
+  draw();
+  await renderResults($('#results-body'));
+}
+
+/** Open the Forms page. */
+function setForms() {
+  S.view = 'forms';
+  draw();
+  renderForms($('#forms-body'));
+}
+
+/** Open the Inputs page. Rendered once per visit, like the manual. */
+async function setInputs() {
+  S.view = 'inputs';
+  draw();
+  await renderCase($('#inputs-body'));
 }
 
 /**
@@ -121,6 +188,7 @@ function drawOverrideBar() {
   const n = overrideCount();
   bar.hidden = n === 0;
   if (!n) return;
+  const savable = savableOverrides();
   const rows = [];
   for (const [id, si] of S.overrides) {
     const r = S.byId.get(id);
@@ -149,7 +217,14 @@ function drawOverrideBar() {
       'is. The sheets on disk are untouched and nothing is written to the ' +
       'repository.</div>' +
     '<div class="ovr-chips">' + rows.join('') +
-      '<button class="ctl ovr-bar-clear">put all back</button></div>';
+      '<button class="ctl ovr-bar-clear">put all back</button>' +
+      // A what-if worth keeping is made the case here — saved by the daemon,
+      // outside the repository, like any other change to the inputs.
+      (savable ? '<button class="ctl ovr-bar-save" title="make ' + (savable === n ? 'these' :
+        savable + ' of these') + ' part of the saved case: every run on every page then uses ' +
+        (savable === 1 ? 'it' : 'them') + '">save ' + (savable === n ? '' : savable + ' ') +
+        'to the case</button>' : '') +
+      '<span class="why ovr-bar-said"></span></div>';
 
   $$('.ovr-x', bar).forEach(b => b.onclick = e => {
     e.stopPropagation();
@@ -158,6 +233,17 @@ function drawOverrideBar() {
     draw();
   });
   $('.ovr-bar-clear', bar).onclick = () => { clearAllOverrides(); S.lastRun = null; draw(); };
+  const save = $('.ovr-bar-save', bar);
+  if (save) save.onclick = async () => {
+    save.disabled = true;
+    const res = await saveOverridesToCase();
+    // On success the case changed and everything showing a number redraws,
+    // this bar with it; only a refusal is left to say here.
+    if (!res.ok && bar.isConnected) {
+      save.disabled = false;
+      $('.ovr-bar-said', bar).textContent = 'not saved: ' + (res.message || 'refused');
+    }
+  };
 }
 
 /** Six significant figures, as the rest of the face writes a number. */
@@ -300,7 +386,29 @@ function wire() {
 
   $$('.ctl.sz').forEach(b => b.onclick = () => { S.size = b.dataset.size; draw(); });
   $$('.ctl.cpt').forEach(b => b.onclick = () => { S.concept = b.dataset.concept; draw(); });
-  $$('.ctl.case').forEach(b => b.onclick = () => { S.caseSel = b.dataset.case; draw(); });
+  $('#inputs-tab').onclick = () => setInputs();
+  $('#results-tab').onclick = () => setResults();
+  $('#forms-tab').onclick = () => setForms();
+  $('#case-inputs').onclick = () => setInputs();
+  // An upload from the bar opens the Inputs page and reads the file there, so
+  // what it would change is shown before anything is saved.
+  $('#case-upload').onchange = async e => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    await setInputs();
+    await preview($('#inputs-body'), file.name, await file.text());
+  };
+  // Whoever changed the saved case, every number on screen was for the old
+  // inputs. The node page is re-opened rather than patched: its input fields,
+  // its figures and its run panel all read the case, and re-opening is the one
+  // path that is already known to draw all of them from nothing. The Inputs
+  // page redraws itself.
+  onCaseChange(() => {
+    if (S.view === 'inputs' || S.view === 'results') { drawCaseBar(); drawStatus([]); return; }
+    if (S.view === 'node' && S.selected) { draw(); openNode(S.selected); return; }
+    draw();
+  });
   $('#subsys').onchange = e => { S.subsys = e.target.value; setLayer(3); };
   $('#back').onclick = () => { S.view = 'layer'; draw(); };
 
@@ -345,6 +453,8 @@ function wire() {
     e.preventDefault();
     if (x.dataset.goto) goTo(x.dataset.goto);
     else if (x.dataset.group) goToGroup(x.dataset.group);
+    else if (x.dataset.inputs !== undefined) setInputs();
+    else if (x.dataset.results !== undefined) setResults(x.dataset.results || null);
   });
 
   document.addEventListener('keydown', e => {

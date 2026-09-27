@@ -1,15 +1,17 @@
 function r = evaluate(node, varargin)
-%EVALUATE  One node, one case, one answer with its provenance.
+%EVALUATE  One node, one answer with its provenance.
 %
 %   r = vleo.evaluate('prop_thrust_to_drag')
-%   r = vleo.evaluate('prop_thrust_to_drag', 'case', 'solar_max', ...
-%                     'set', struct('orbit_altitude', 200e3))
+%   r = vleo.evaluate('prop_thrust_to_drag', 'set', struct('orbit_altitude', 220e3))
+%
+%   There is one case; its inputs start at their declared defaults and 'set'
+%   changes any of them, in SI.
 %
 %   Everything is SI. A face converts for display and never for transport.
 %   Out of range is refused, never clamped: the error names the field, the
 %   bound it broke and the reason that bound exists.
     p = inputParser;
-    addParameter(p, 'case', 'nominal');
+    addParameter(p, 'case', '');
     addParameter(p, 'set', struct());
     addParameter(p, 'mode', 'branch');
     parse(p, varargin{:});

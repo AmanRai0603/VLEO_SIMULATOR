@@ -1,11 +1,16 @@
 # areas/faces.md
 
+> **Answer first.** Every face crosses the boundary in SI and converts only for display; none writes the repository.
+>
+> **Kind:** reference + explanation · **For:** developers
+
 The command line, the daemon, the WebAssembly binding, the C ABI and the Python
 wheel — the doors onto one kernel.
 
 Applies to `crates/vleo-cli/**`, `crates/vleo-daemon/**`, `crates/vleo-wasm/**`,
 `crates/vleo-ffi/**`, `crates/vleo-py/**`.
-Agent I works here.
+Maintained by the developers. No face writes the repository; the case and
+results a face saves are kept outside it.
 
 ## The one rule about what crosses
 

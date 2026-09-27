@@ -28,7 +28,6 @@ export const S = {
   arch: 'node',        // which architecture section
   layer: 1,
   subsys: '',
-  caseSel: 'c1',
   concept: 'constellation',
   size: 'M',
   expanded: new Set(),
@@ -44,7 +43,16 @@ export const S = {
   baseline: null,
 
   // the run
-  engineCase: 'nominal',
+  //
+  // THE CASE EVERY NUMBER IS FOR. There is one — `engineCase` is its id, the
+  // multipayload design — and what varies is its inputs: the saved case, which
+  // the daemon keeps outside the repository and lays under every run it
+  // answers. `saved` is what `/v1/inputs` last said about it, and `caseStamp`
+  // moves each time it is saved or reset, so a number cached for the old
+  // inputs is never shown as one for the new.
+  engineCase: '',
+  saved: null,
+  caseStamp: 0,
   mode: 'branch',
   lastRun: null,
   runTarget: null,
@@ -80,7 +88,7 @@ function findRoots() {
 
 export const CAPTIONS = {
   1: ['Who wants what, what it costs, and what the programme has promised.',
-      'One architecture, many cases. A customer is a case, never a copy of the tree.'],
+      'One architecture, one case. A customer changes its inputs, never the tree.'],
   2: ['The system: what it is made of, and what reads what.',
       'Its row is what a node feeds. Its column is what feeds it.'],
   3: ['One subsystem layer, decomposed until every row is a question one person can answer.',
@@ -134,7 +142,10 @@ function ingest() {
     if (S.gnodes.has(r.parent)) S.gnodes.get(r.parent).push(r.i);
   }
   findRoots();
-  S.engineCase = S.index.cases.some(c => c.id === 'nominal') ? 'nominal' : S.index.cases[0].id;
+  // The one case. The engine runs it when none is named, so this is only ever
+  // a name to show.
+  const first = (S.index.cases || [])[0];
+  S.engineCase = first ? first.id : '';
   S.subsys = subsystemLayers()[0] || '';
 }
 
@@ -145,8 +156,50 @@ export function subsystemLayers() {
     .sort((a, b) => S.G.get(a).label.localeCompare(S.G.get(b).label));
 }
 
-/** A group is in scope unless it names cases and the chosen one is not among them. */
-export const caseOk = g => !g || !g.cases.length || g.cases.indexOf(S.caseSel) >= 0;
+/** A group is in scope unless it names cases and the one case is not among them. */
+export const caseOk = g => !g || !g.cases.length || g.cases.indexOf(S.engineCase) >= 0;
+
+/** The one case, as the index describes it. */
+export const theCase = () => (S.index.cases || [])[0] || null;
+
+/**
+ * What the saved case is, from the daemon: every input, its group, default and
+ * range, and the value it runs at when one is saved. Refreshed on load and
+ * after every save or reset.
+ */
+export async function loadSaved() {
+  try {
+    const d = await (await fetch('/v1/inputs')).json();
+    S.saved = d.ok ? d : null;
+  } catch (e) {
+    S.saved = null;
+  }
+  return S.saved;
+}
+
+/** A short key for "the inputs every run is on now", for caching a run. */
+export const caseKey = () => S.engineCase + '#' + S.caseStamp;
+
+/** For a status line: the case, and how far its inputs are from the defaults. */
+export function caseTag() {
+  const n = S.saved ? S.saved.changed : 0;
+  return !S.saved || !S.saved.stored ? 'defaults' : n + ' input' + (n === 1 ? '' : 's') + ' changed';
+}
+
+// Who else needs telling when the saved case changes. The Inputs page saves
+// and resets it; everything showing a number for the old inputs has to be
+// redrawn for the new ones.
+const caseListeners = [];
+export function onCaseChange(fn) { caseListeners.push(fn); }
+
+/** The saved case changed: re-read it and tell everyone showing a number. */
+export async function caseChanged() {
+  S.caseStamp += 1;
+  S.lastRun = null;
+  S.baseline = null;
+  await loadSaved();
+  for (const f of caseListeners) f();
+}
 
 export function subtreeNodes(gid) {
   const g = S.G.get(gid);

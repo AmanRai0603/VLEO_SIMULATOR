@@ -1,5 +1,9 @@
 # Architecture
 
+> **Answer first.** Four rings depend inward only — units, the kernel, the bus, the subsystem crates — and every face sits outside them; this is why, and what each ring may and may not do.
+>
+> **Kind:** explanation · **For:** developers
+
 ## Four rings, one direction
 
     RING 0   vleo-units     units and frames as types, constants, portable maths

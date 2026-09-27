@@ -245,3 +245,62 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "orbit_mission_duration"
 points = 60
+
+# ---------------------------------------------------------------------------
+# Said simply, and where the simple version breaks — docs/EXPLAINING.md.
+
+[explain]
+simply = "How bright the Sun will be, on average, over the years the mission actually flies. The Sun's activity rises and falls on a cycle of about eleven years, so when a mission flies matters as much as how long it flies: this row lays the shape past cycles followed over the mission's own dates, sized to the cycle it will meet, and averages it."
+breaks = "It is an average over the whole mission, and a spacecraft meets its worst stretch, not its average: five years from the declared epoch average about 90 sfu while opening near 105 and ending near 73. The highest stretch is sw_window_peak_level's answer, not this one. And the shape rests on two completed cycles, with the next cycle's size taken as the mean of their peaks — which is the one thing cycles do not reliably repeat."
+wrong = "That the long-term average of the record, about 115 sfu, is the right centre for any mission. It is right only for a mission longer than a whole cycle. For a five-year mission on the declining half of cycle 25 the record puts it 26 per cent high, and the legacy tool's frozen rotation forecast 74 per cent high."
+
+# ---------------------------------------------------------------------------
+# Why this row is what it is: every version, and the belief that broke to make
+# it — docs/DERISKING.md. Transcribed from the commits and the port record that
+# made each change; the relation of each is as that commit stated it.
+
+[[version]]
+n = 1
+release = "0.1.0"
+date = "2026-09-14"
+by = "recorded from commit 8a3b01a2"
+about = ["math", "model"]
+changed = "first version: persistence decaying into the study's constant climatology, CENTRAL = 114.8437 sfu"
+rests_on = "The record's unconditional mean flux, 114.84 sfu, is the right centre for a mission of any length at any date."
+breaks_if = "A mission shorter than a solar cycle is sized at a date where the cycle runs well above or below its long-term mean."
+relation = "F107_central(L) = w*F107_today + (1-w)*114.8437,  w = exp(-L / 27 d)"
+source = "noaa_swpc"
+
+[[version]]
+n = 2
+release = "0.1.0"
+date = "2026-09-15"
+by = "recorded from commit 30a61f8b and docs/MATLAB_PORT_PLAN.md §20"
+about = ["math", "model"]
+believed = "That the record's unconditional mean was the right centre — a mission through solar minimum and one through maximum designed to the same flux."
+tested = "The record by cycle phase: its F10.7 runs 64 to 343 sfu, almost entirely by where in the cycle it is. Two completed cycles aligned on their maxima and normalised by their own 81-day peaks; the window average compared with what the two cycles ran over the same span past maximum; twelve fixtures watched to fail on a 1e-6 shape perturbation, a dropped epoch and a broken modulo fold."
+learned = "The constant was 26 per cent high for a five-year mission opening in 2027 — the record ran at 91.2 sfu over that span, scaled onto cycle 25. The unconditional mean is right only once the window spans more than a cycle."
+cost = "one commit; no closure flipped"
+changed = "The centre is now the cycle analogue averaged over the mission's own dates. At the declared epoch it moves 114.84 to 90.39 sfu, and the design value and four downstream rows follow it down by 24.46 sfu; the l3_solar_req_01/02 margin widens from 21.9 to 46.3. It degrades into the old answer exactly where the old one was right: 119.10 sfu at fifteen years."
+risks = ["R-01 L4->L3"]
+rests_on = "Cycle shape repeats between cycles, and every cycle is the size of cycle 25 — its 81-day peak of 225.1 sfu."
+breaks_if = "A mission window runs past one period beyond cycle 25's maximum, into a cycle whose size is not cycle 25's."
+relation = "F107_central(T_e, L) = w*F107_today + (1-w)*mean_[T_e, T_e+L] A(t),  w = exp(-L / 27 d),  A(t) = P25 * R((t - T_max) mod P)"
+source = "noaa_swpc"
+
+[[version]]
+n = 3
+release = "0.1.0"
+date = "2026-09-15"
+by = "recorded from commit d6e46eb7"
+about = ["math", "algorithm"]
+believed = "That past one period the analogue could keep scaling by cycle 25's own peak — that the next cycle is this one's size — and that a 45-day grid was fine enough to hold the shape."
+tested = "The wrap and the amplitude, read against the completed cycles' own peaks (cycle 23 226.8 sfu, cycle 24 160.9); the grid against the 4178-day period; three mutations watched to fail — a dropped handover limit, a removed amplitude handover (11 fixtures) and a single-fold wrap (2)."
+learned = "Cycles repeat their shape and not their size, so beyond cycle 25 the amplitude was a guess; and the 45-day grid did not divide the period, which left a 1.2 sfu discontinuity at the wrap that no reading of the numbers would have found."
+cost = "one commit; no closure flipped"
+changed = "Outside cycle 25 the amplitude is the mean of the completed cycles' peaks, 193.9 sfu; the grid is 94 knots of 44.4468 days, so the handover falls on a knot. At the declared epoch the centre moves 90.39 to 86.85 sfu and the design value 203.68 to 200.14. The window's highest stretch became its own row, sw_window_peak_level."
+risks = ["R-01 L3->L2"]
+rests_on = "Cycle shape repeats between cycles, measured on two completed cycles; outside cycle 25 a cycle's size is the mean of the last two peaks."
+breaks_if = "Cycle 26's peak departs far from 193.9 sfu, or a third completed cycle's shape disagrees with the two-cycle analogue — the whole sample is two cycles, and eleven of ninety-three shape points rest on one of them."
+relation = "F107_central(T_e, L) = w*F107_today + (1-w)*mean_[T_e, T_e+L] A(t),  w = exp(-L / 27 d),  A(t) = amp(t) * R((t - T_max) mod P)"
+source = "noaa_swpc"
