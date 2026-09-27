@@ -497,6 +497,21 @@ h4 { font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
    the node page's single editor — absolute there, it escaped every table. */
 .run-in-table .ovr-u, .case-table .ovr-u { position: static; font-size: 10.5px; }
 .case-save-bar { margin-top: .6rem; }
+/* the node's form */
+.nform-steps li { margin: .3rem 0; }
+.nform-dl, .nform-up-l { cursor: pointer; text-decoration: none; }
+.nform-file { border: 1px solid var(--rule); border-radius: 3px; padding: .5rem .7rem; margin: .6rem 0;
+  font-size: 11px; background: var(--card); }
+.nform-file h4 { margin: 0 0 .3rem; font-size: 11.5px; }
+.nform-file table { border-collapse: collapse; font-size: 11px; margin: .3rem 0; width: 100%; }
+.nform-file td, .nform-file th { border-bottom: 1px solid var(--rule-2); padding: .2rem .5rem; text-align: left;
+  vertical-align: top; overflow-wrap: anywhere; }
+.nform-file td:first-child, .nform-file td:nth-child(2) { white-space: nowrap; }
+.nform-file td:nth-child(3), .nform-file td:nth-child(4) { width: 40%; }
+.nform-file tr.nform-apply td:first-child { color: var(--both); }
+.nform-file tr.nform-conflict td:first-child, .nform-file tr.nform-refused td:first-child { color: #a4262c; font-weight: 600; }
+.nform-why { color: #a4262c; font-size: 10px; margin-top: .15rem; }
+.nform-fx { font: 10.5px var(--mono); white-space: pre-wrap; background: var(--paper); padding: .4rem; }
 .case-upgrade { border: 1px solid var(--in); border-radius: 3px; padding: .4rem .7rem; margin: .5rem 0;
   background: var(--in-pale); font-size: 11px; }
 .case-upgrade p { margin: .25rem 0; }

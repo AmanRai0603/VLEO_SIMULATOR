@@ -329,6 +329,42 @@ ui = "the declared defaults as well, one line each"
 
 
 [[layer.section]]
+id = "browser-nodeform"
+title = "Send a node's form out, and check one that comes back"
+who = "user"
+body = """
+Every node can be sent to whoever should say what it is — a payload team, a \
+customer's engineer, a reviewer — as **one HTML file**: the node's form. It \
+needs no connection and nothing installed. It explains itself, asks every \
+question the node's sheet answers with *why* each is asked, shows what the node \
+reads and feeds and the known-good values that already hold it, and saves a \
+filled copy of itself. It can be filled by hand, or given to an assistant: the \
+content is a plain TOML block near the end of the file.
+
+The filled file goes back to the developer team. **This page only checks it** — \
+it shows what the form would change in the node, and what it cannot: a field \
+the repository changed since the form was made is a *conflict*, never \
+overwritten, and if an assistant helped with the relation itself, the relation \
+is *refused* — an agent may never supply mathematics; a developer derives it. \
+Known-good values are never written from a form: they come out as a request \
+for whoever records fixtures. A developer applies the rest at a terminal (see \
+*Apply a node's form*), and the next release carries it — where the people \
+who filled it run it with their own inputs."""
+
+[[layer.section.step]]
+say = "On a node's page, in *the sheet*, open the form tab."
+ui = "the node form — fill it anywhere"
+
+[[layer.section.step]]
+say = "Download it and send it to whoever should fill it."
+ui = "download the node form"
+
+[[layer.section.step]]
+say = "When it comes back, check it here: what it would change, and what it cannot. Nothing is written."
+ui = "check a filled form…"
+
+
+[[layer.section]]
 id = "browser-edit"
 title = "Fill in or change a row's sheet"
 who = "user"
@@ -812,6 +848,46 @@ say = "Put your name against one relation, after reading it against its source. 
 run = "cargo run -p xtask -- confirm <row> --by \"Your Name\""
 check = "writes"
 why = "writes your name and today's date against the relation on the row's sheet"
+
+
+[[layer.section]]
+id = "term-nodeform"
+title = "Apply a node's form"
+who = "developer"
+body = """
+A node's form is how a change to a node arrives from someone without a \
+checkout. `xtask form <node>` writes one, the same file the node's page \
+offers. When a filled one comes back, `xtask intake` says field by field what \
+it would change in `node.toml`, against three versions: the node when the form \
+was made, what the filler made of it, and the node now — so a change made in \
+the repository meanwhile is a **conflict**, not overwritten. A relation an \
+assistant supplied is **refused**. A numbered step removed from the middle is \
+refused, because each number is a hole holding somebody's Rust.
+
+`--apply` writes the rest as one edit — regenerate the node, gate it, and put \
+everything back if the gate refuses — with your name on any relation it \
+changes. It refuses while anything is blocked unless you add `--partial`. \
+Then review with `git diff`, commit naming whoever filled the form, and push. \
+Known values in the form are printed as `[[fixture]]` blocks for the person \
+who records fixtures; they are never written by intake."""
+
+[[layer.section.step]]
+say = "A node's form, to send out. With `--out <file>` it is written to a file."
+run = "cargo run -p xtask -- form sw_ap_design"
+check = "exits"
+expect = "vleo-node-form/1"
+
+[[layer.section.step]]
+say = "What a filled form would change — this one, filled in a browser, changes the note, adds an assumption and supplies a known value."
+run = "cargo run -p xtask -- intake docs/examples/sw_ap_design.node-form.html"
+check = "exits"
+expect = "can be applied"
+
+[[layer.section.step]]
+say = "Apply it: written, regenerated and gated as one edit, or not at all. Then `git diff`, commit and push."
+run = "cargo run -p xtask -- intake docs/examples/sw_ap_design.node-form.html --apply"
+check = "writes"
+why = "it writes the node's sheet and regenerates its generated files, which is a change to the repository to review and commit"
 
 
 [[layer.section]]
@@ -1332,6 +1408,22 @@ effect = "reads"
 
 [[command]]
 tool = "xtask"
+name = "form"
+usage = "form <node> [--out <file.html>]"
+what = "A node's form: one self-contained HTML file that explains itself, asks every question the sheet answers, and saves a filled copy. Filled anywhere, by anyone."
+who = "developer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "intake"
+usage = "intake <file.html> [--apply [--partial]]"
+what = "What a filled node form would change, field by field — conflicts and refusals named. `--apply` writes, regenerates and gates as one edit, or puts everything back."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
 name = "confirm"
 usage = "confirm <node> --by \"<name>\""
 what = "Put a person's name against a relation, after printing it and its source. `confirm --list` shows the ones with no name yet."
@@ -1584,6 +1676,16 @@ what = "Save a case, the same parameters as the check. All or nothing: a case wi
 method = "POST"
 path = "/v1/inputs/reset"
 what = "Remove the saved case: every input back to its default."
+
+[[route]]
+method = "GET"
+path = "/v1/form/<id>"
+what = "A node's form, as one self-contained HTML file to fill anywhere."
+
+[[route]]
+method = "POST"
+path = "/v1/form/check"
+what = "What a filled node form would change: `html=` the file's text. Writes nothing — a form is applied with `xtask intake --apply`."
 
 [[route]]
 method = "GET"

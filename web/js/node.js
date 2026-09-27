@@ -17,6 +17,7 @@ import { mountTheory } from './theory.js';
 import { figuresForRow, drawRowFigure } from './solar.js';
 import { isInput, inputControl, mountInput } from './inputs.js';
 import { mountSheetEditor } from './sheet.js';
+import { mountNodeForm } from './nodeform.js';
 
 export async function openNode(id) {
   const r = S.byId.get(id);
@@ -57,12 +58,14 @@ export async function openNode(id) {
       '<div class="tabrow sub sheet-tabs">' +
         '<button class="ctl sheet-tab sel" data-view="read">as written</button>' +
         '<button class="ctl sheet-tab" data-view="edit">answer the questions</button>' +
+        '<button class="ctl sheet-tab" data-view="form">the node form — fill it anywhere</button>' +
       '</div>' +
       '<div class="sheet-read">' +
         (fragment || '<p class="empty">The sheet for <code>' + esc(id) +
           '</code> is not on disk. Run <code>cargo xtask docs</code>.</p>') +
       '</div>' +
       '<div class="sheet-edit" hidden></div>' +
+      '<div class="sheet-form" hidden></div>' +
     '</section>' +
     // A FIGURE IS NOT A ROW, and it is not a place of its own either. The eight
     // study figures used to live behind a sixth item in a navigation whose own
@@ -105,7 +108,10 @@ export async function openNode(id) {
       $$('.sheet-tabs .sheet-tab', body).forEach(x => x.classList.remove('sel'));
       t.classList.add('sel');
       const edit = t.dataset.view === 'edit';
-      $('.sheet-read', body).hidden = edit;
+      $('.sheet-read', body).hidden = t.dataset.view !== 'read';
+      const nf = $('.sheet-form', body);
+      nf.hidden = t.dataset.view !== 'form';
+      if (!nf.hidden && !nf.childElementCount) mountNodeForm(nf, id);
       const host = $('.sheet-edit', body);
       host.hidden = !edit;
       if (edit && !editorMounted) {

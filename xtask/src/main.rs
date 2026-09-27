@@ -65,6 +65,8 @@ fn main() -> ExitCode {
         "mutate" => cmd_mutate(&root, &rest),
         "differential" => cmd_differential(&root, &rest),
         "confirm" => cmd_confirm(&root, &rest),
+        "form" => cmd_form(&root, &rest),
+        "intake" => cmd_intake(&root, &rest),
         "help" | "--help" | "-h" => {
             help();
             Ok(())
@@ -154,6 +156,18 @@ cargo xtask <command>
   setup              point git at tools/githooks, so the commit-message hook
                      runs on this clone. One command per person per clone, and
                      the commands that matter say so until it is done.
+  form <node> [--out <file.html>]
+                     the node's form: one HTML file that explains itself, asks
+                     every question the sheet answers, and saves a filled copy.
+                     Anyone can fill it, offline, by hand or with an assistant;
+                     the filled file comes back to a developer.
+  intake <file.html> [--apply [--partial]]
+                     what a filled form would change in its node, field by
+                     field — and what it cannot, because the node changed since
+                     or an assistant supplied the relation. --apply writes it,
+                     regenerates and gates, and puts everything back on a
+                     refusal. Known-good values come out as a request for the
+                     fixture recorder, never written.
   variables          write docs/VARIABLES.md — every variable in the tree, its
                      unit, its range, the reason for each bound, and what reads
                      it. Generated, because a register maintained by hand is a
@@ -208,6 +222,154 @@ fn today() -> String {
         .and_then(|o| String::from_utf8(o.stdout).ok())
         .map(|s| s.trim().to_string())
         .unwrap_or_default()
+}
+
+/// One node's form, to fill anywhere and send back. See `vleo_sheet::template`.
+fn cmd_form(root: &Path, args: &[&str]) -> Result<(), String> {
+    let id = args
+        .first()
+        .filter(|a| !a.starts_with("--"))
+        .ok_or("usage: cargo xtask form <node> [--out <file.html>]")?;
+    let tree = load(root)?;
+    let sh = tree.sheets.get(*id).ok_or_else(|| {
+        format!("no node '{id}'. A form is for a node that exists; a new one starts with `new`")
+    })?;
+    let html = vleo_sheet::template::document(sh, &tree);
+    match args
+        .iter()
+        .position(|a| *a == "--out")
+        .and_then(|i| args.get(i + 1))
+    {
+        Some(out) => {
+            fs::write(out, &html).map_err(|e| format!("{out}: {e}"))?;
+            eprintln!(
+                "wrote {out} — open it in a browser, fill it, save a filled copy, and send that \
+                 back. Apply it with `cargo run -p xtask -- intake <file> --apply`."
+            );
+        }
+        None => print!("{html}"),
+    }
+    Ok(())
+}
+
+/// What a filled form would do to its node, and with `--apply`, do it.
+fn cmd_intake(root: &Path, args: &[&str]) -> Result<(), String> {
+    use vleo_sheet::template::{self, Verdict};
+    let file = args
+        .first()
+        .filter(|a| !a.starts_with("--"))
+        .ok_or("usage: cargo xtask intake <file.html> [--apply [--partial]]")?;
+    let html = fs::read_to_string(file).map_err(|e| format!("{file}: {e}"))?;
+    let p = template::plan(root, &html)?;
+    let f = &p.form;
+    println!(
+        "\x1b[1m{}\x1b[0m — a node form filled by {}{}{}; assistant: {}",
+        f.node,
+        if f.name.is_empty() {
+            "(nobody named)"
+        } else {
+            &f.name
+        },
+        if f.team.is_empty() {
+            String::new()
+        } else {
+            format!(" ({})", f.team)
+        },
+        if f.date.is_empty() {
+            String::new()
+        } else {
+            format!(", {}", f.date)
+        },
+        f.ai
+    );
+    println!(
+        "  {}",
+        if p.base_current {
+            "node.toml is still the version the form was made from".to_string()
+        } else {
+            "node.toml has changed since the form was made — a change to the same thing is a \
+             conflict, named below"
+                .to_string()
+        }
+    );
+    println!();
+    if p.items.is_empty() {
+        println!("  the form changes nothing in the node");
+    }
+    for i in &p.items {
+        let (tag, why) = match &i.verdict {
+            Verdict::Apply => ("\x1b[32mAPPLY   \x1b[0m", String::new()),
+            Verdict::Already => ("already ", " — the node already says this".to_string()),
+            Verdict::Conflict(w) => ("\x1b[33mCONFLICT\x1b[0m", format!(" — {w}")),
+            Verdict::Refused(w) => ("\x1b[31mREFUSED \x1b[0m", format!(" — {w}")),
+        };
+        let clip = |v: &str| {
+            let one = v.split_whitespace().collect::<Vec<_>>().join(" ");
+            if one.chars().count() > 70 {
+                format!("{}…", one.chars().take(69).collect::<String>())
+            } else {
+                one
+            }
+        };
+        println!(
+            "  {tag} {:<28} «{}» → «{}»{why}",
+            i.what,
+            clip(&i.from),
+            clip(&i.to)
+        );
+    }
+    println!();
+    println!(
+        "{} change(s) can be applied, {} cannot.",
+        p.applicable(),
+        p.blocked()
+    );
+    if !f.notes.trim().is_empty() {
+        println!(
+            "\nfrom the filler:\n  {}",
+            f.notes.trim().replace('\n', "\n  ")
+        );
+    }
+    if !f.known.is_empty() {
+        println!(
+            "\nknown values the form supplies — a request for whoever records fixtures, never \
+             applied by this command:\n"
+        );
+        print!("{}", template::fixture_request(f));
+    }
+    if !args.contains(&"--apply") {
+        if p.applicable() > 0 {
+            println!("\napply with: cargo run -p xtask -- intake {file} --apply");
+        }
+        return Ok(());
+    }
+    if p.blocked() > 0 && !args.contains(&"--partial") {
+        return Err(format!(
+            "{} change(s) cannot be applied (listed above). Resolve them, or apply the rest \
+             with --apply --partial — nothing was written",
+            p.blocked()
+        ));
+    }
+    match template::apply(root, &p) {
+        vleo_sheet::form::Saved::Ok { regenerated, .. } => {
+            println!(
+                "\napplied: node.toml written, {regenerated} artefact(s) regenerated, the gate \
+                 passed. Review with `git diff`, and name {} in the commit — the form is theirs.",
+                if f.name.is_empty() {
+                    "the filler"
+                } else {
+                    &f.name
+                }
+            );
+            Ok(())
+        }
+        vleo_sheet::form::Saved::Stale { .. } => Err(
+            "node.toml changed while the form was being checked. Run intake again — nothing \
+             was written"
+                .into(),
+        ),
+        vleo_sheet::form::Saved::Refused(e) => Err(e),
+    }
 }
 
 /// The relations with nobody's name against them, and who owes each one.

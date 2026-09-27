@@ -642,6 +642,41 @@ def browser_walk():
             ok("an old case is carried over on update, the old file kept, and what was set aside named",
                case_carried_over)
 
+            # A NODE'S FORM GOES OUT AND COMES BACK. Downloaded from the node's
+            # page, filled in a browser from disk with no daemon behind it, saved,
+            # and read back by the developer's own command — and the page's check
+            # of the filled file writes nothing.
+            def node_form_round_trip():
+                open_row(WALK_COMPUTED)
+                button("#node-body .sheet-tabs", U("browser-nodeform", 1)).click()
+                page.wait_for_selector(".nform-dl")
+                with page.expect_download() as dl:
+                    page.locator(".nform-dl").click()
+                blank = Path(tempfile.mkdtemp()) / dl.value.suggested_filename
+                dl.value.save_as(str(blank))
+                offline = browser.new_page()
+                offline.goto(blank.as_uri())
+                offline.wait_for_selector(".nf-q[data-field=note]")
+                offline.fill("input[aria-label=name]", "the manual check")
+                offline.locator(".nf-q[data-field=note] textarea").fill("A note from the walk.")
+                with offline.expect_download() as dl2:
+                    offline.click("#nf-save")
+                filled = blank.with_name("filled." + blank.name)
+                dl2.value.save_as(str(filled))
+                offline.close()
+                r = subprocess.run(["cargo", "run", "-q", "-p", "xtask", "--", "intake", str(filled)],
+                                   cwd=ROOT, capture_output=True, text=True, timeout=TIMEOUT_RUN,
+                                   env=dict(os.environ, NO_COLOR="1"))
+                said = plain(r.stdout)
+                assert r.returncode == 0 and "A note from the walk." in said and "1 change(s) can be applied" in said, \
+                    f"intake did not read the form the page saved: {said[-400:]} {r.stderr[-300:]}"
+                page.set_input_files(".nform-up", str(filled))
+                page.wait_for_selector(".nform-file")
+                assert "will apply" in page.locator(".nform-file").inner_text()
+                untouched("a node form, filled and checked")
+            ok("a node's form is downloaded, filled offline, saved, and read back by intake — writing nothing",
+               node_form_round_trip)
+
             print("\nwhat if")
 
             def computed_has_no_box():

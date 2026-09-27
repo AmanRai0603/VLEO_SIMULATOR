@@ -691,7 +691,7 @@ pub fn json(sh: &Sheet) -> Result<String, String> {
 }
 
 /// One repeated block's current contents, as key/value pairs per block.
-fn array_rows(sh: &Sheet, a: &Array) -> Vec<Vec<(&'static str, String)>> {
+pub(crate) fn array_rows(sh: &Sheet, a: &Array) -> Vec<Vec<(&'static str, String)>> {
     match a.path {
         "input" => sh
             .inputs
@@ -1262,7 +1262,7 @@ fn today() -> String {
 /// was against the old mathematics; leaving it on the new attributes work to
 /// somebody who never saw it, which is worse than either having no name or
 /// having the editor's.
-fn stamp_relation(text: &str, who: &str) -> Result<String, String> {
+pub(crate) fn stamp_relation(text: &str, who: &str) -> Result<String, String> {
     set(text, "confirmed_by", &format!("{who} / {}", today()))
 }
 
@@ -1420,20 +1420,8 @@ pub fn save(root: &std::path::Path, id: &str, field: &str, value: &str, base: &s
     if let Err(e) = value_allowed(field, value) {
         return Saved::Refused(e);
     }
-    if std::process::Command::new("rustfmt")
-        .arg("--version")
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .status()
-        .map(|s| !s.success())
-        .unwrap_or(true)
-    {
-        return Saved::Refused(
-            "rustfmt is not on the path. The generated Rust is formatted before it is compared, \
-             so saving without it would leave the tree failing its own regeneration check. \
-             Nothing was written."
-                .into(),
-        );
+    if let Some(why) = rustfmt_refusal() {
+        return Saved::Refused(why);
     }
 
     let tree = match crate::load::load_all(root) {
@@ -1489,6 +1477,27 @@ pub fn save(root: &std::path::Path, id: &str, field: &str, value: &str, base: &s
     commit_edit(root, id, &path, &before, after, false)
 }
 
+/// Why an edit cannot be written here, if `rustfmt` is not on the path.
+///
+/// The generated Rust is formatted before it is compared, and a fallback to
+/// unformatted text would leave the tree failing its own regeneration diff. So
+/// every edit refuses up front rather than discovering it afterwards.
+pub(crate) fn rustfmt_refusal() -> Option<String> {
+    let missing = std::process::Command::new("rustfmt")
+        .arg("--version")
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .map(|s| !s.success())
+        .unwrap_or(true);
+    missing.then(|| {
+        "rustfmt is not on the path. The generated Rust is formatted before it is compared, \
+         so saving without it would leave the tree failing its own regeneration check. \
+         Nothing was written."
+            .to_string()
+    })
+}
+
 /// Write the edit, regenerate the row, gate it — or put everything back.
 ///
 /// The tail of every edit, whether it moved one field or a whole repeated
@@ -1502,7 +1511,7 @@ pub fn save(root: &std::path::Path, id: &str, field: &str, value: &str, base: &s
 ///
 /// ANY FAILURE AFTER THE WRITE RESTORES THE PREVIOUS SHEET. A tree left
 /// half-edited by a browser is the thing this must never do.
-fn commit_edit(
+pub(crate) fn commit_edit(
     root: &std::path::Path,
     id: &str,
     path: &std::path::Path,

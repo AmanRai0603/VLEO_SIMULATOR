@@ -534,6 +534,42 @@ Then commit. The message form is checked (§6).
 
 ---
 
+### 3.9 When the content comes from someone without a checkout
+
+A payload team, a customer's engineer or a reviewer can say what a node should
+be without touching the repository. Send them the node's form — the page's
+*the node form* tab, or:
+
+```
+$ cargo run -p xtask -- form sw_ap_design --out sw_ap_design.node-form.html
+```
+
+It is one HTML file that opens anywhere, asks the same questions as §3.3 with
+why each is asked, and saves a filled copy of itself. It can be filled by hand
+or given to an assistant. When it comes back:
+
+```
+$ cargo run -p xtask -- intake docs/examples/sw_ap_design.node-form.html
+sw_ap_design — a node form filled by A. Example (Payload team), 2026-09-27; assistant: none
+  node.toml is still the version the form was made from
+
+  APPLY    note                         «…» → «What the vehicle is built to survive, …»
+  APPLY    assumption 5 · added         «» → «text = The storm level is read on the NOAA G scale, …»
+
+2 change(s) can be applied, 0 cannot.
+```
+
+Intake compares three versions — the node when the form was made, what the
+filler made of it, and the node now — so a field the repository changed
+meanwhile is a CONFLICT, never overwritten. If the filler says an assistant
+helped with the relation, the relation, its steps and its derivation are
+REFUSED: you derive them. `--apply` writes the rest as one edit, regenerates,
+gates and puts everything back on a refusal, and stamps your name on any
+relation it changes. Known values in the form are printed as `[[fixture]]`
+blocks for whoever records fixtures (§3.7); they are never written by intake.
+Then `git diff`, commit naming the filler, push — and the release after that is
+the one they test with their own inputs.
+
 ## 4 · Where the work can be handed off
 
 Seven agents exist. You do not have to use any of them — every step above is

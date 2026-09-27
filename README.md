@@ -153,6 +153,24 @@ no longer be used is set aside by name, with its value, in the file itself. The
 saved case is carried over the first time the updated tool reads it, with the
 old file kept beside it, and the Inputs page says what changed.
 
+**Two forms go out to people who do not have a checkout, and come back.**
+
+| form | who fills it | what it changes | applied by |
+|---|---|---|---|
+| the case CSV — *Inputs* | anyone using the tool | the values a run is on | the tool itself, on upload; never git |
+| a node's form — one HTML file per node | whoever should say what that node is | the node's sheet: its question, relation, bounds, steps, assumptions | a developer, `xtask intake <file> --apply`, then git and a release |
+
+A node's form is downloaded from the node's page (or `xtask form <node>`). It
+is self-contained: it needs no connection, explains every question and why it is
+asked, shows what the node reads and feeds and the known values that hold it,
+and saves a filled copy of itself. It can be filled by hand or by an assistant —
+the content is a plain TOML block. The tool only *checks* a returned form; the
+developer's `intake` compares three versions (the node when the form was made,
+the form, the node now), so a change made meanwhile is a conflict rather than
+overwritten, and a relation an assistant supplied is refused. The next release
+carries what was applied, and the people who filled it run it with their own
+inputs. `docs/examples/` has one filled in a browser.
+
 `n ran, m blocked` is always printed and the blocked rows are always named. A
 row with no content yet returns `NotRun` under its own name rather than a
 substituted default. So does a written row whose relation is stated but has
@@ -175,9 +193,9 @@ moment the row is evaluated.
 | `crates/` | the whole Rust workspace: the four rings, the faces, and **1396 node folders** under `crates/vleo-mod-*/nodes/` | this is the tool. Almost every file in the repository is here, and most of those are the per-node artefacts `xtask docs` writes from a sheet |
 | `layers/` | the rows in the tree that are **not** nodes — headings, parents, group edges, subsystem ownership | the decomposition itself. `CODEOWNERS` is generated from it, so moving a branch here moves who reviews what |
 | `tools/` | the Python side: the seeder that built the tree, and every check the pipeline runs that is not `cargo` | the checks that cannot be expressed as a Rust test — screenshots, parity against MATLAB, commit messages, agent lanes. Each proves itself with `--selftest` before it is trusted to decide anything |
-| `web/` | the browser face — one `index.html`, one stylesheet, 20 ES modules, the manual among them | how the tool is read. It talks to `vleo-daemon` over HTTP and holds no physics of its own |
+| `web/` | the browser face — one `index.html`, one stylesheet, 21 ES modules, the manual among them | how the tool is read. It talks to `vleo-daemon` over HTTP and holds no physics of its own |
 | `panels/` | 14 declared panel specs, plus `REVIEW.md` and 16 reference screenshots — light and dark for the 8 panels checked on pixels | a figure nobody checked is a figure that silently goes wrong. The spec says what the panel must show; the references are what it looked like when a person last approved it |
-| `docs/` | 13 prose documents, 4 diagrams, and `manual.toml` — the source of the manual in the tool — indexed under **Reference** below | the written record. `VARIABLES.md` is generated; `MATLAB_PORT_PLAN.md` is the row-by-row account of the port and the longest thing here |
+| `docs/` | 13 prose documents, 4 diagrams, `manual.toml` — the source of the manual in the tool — and `examples/`, a node form filled in a browser; indexed under **Reference** below | the written record. `VARIABLES.md` is generated; `MATLAB_PORT_PLAN.md` is the row-by-row account of the port and the longest thing here |
 | `bundles/` | reference data as published sets, each with a manifest, a licence term and a hash | rule 2's external oracle. An expected value may never come from the code under test, so the data it is checked against is versioned and verified rather than fetched |
 | `cases/` | the one case, `multipayload.toml` — which inputs are the condition, and so which are the customer's — and `examples/`, case files to copy — one as an older tool wrote it | what a run is on. Its values are not kept here: a case per customer would grow the tree with the order book, so values are uploaded or typed in the tool and saved outside the repository. Gate check V16 refuses a condition that is not a real, settable input |
 | `matlab/` | a thin MATLAB face (`+vleo`) and the study's own published CSV | the tool this was ported from. Its saved run is what `tools/mat_parity.py` compares against |

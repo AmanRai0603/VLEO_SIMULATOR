@@ -326,6 +326,13 @@ fn route(
         ("POST", "/v1/inputs/check") => ok_json(inputs_check(params)),
         ("POST", "/v1/inputs") => ok_json(inputs_save(params)),
         ("POST", "/v1/inputs/reset") => ok_json(inputs_reset()),
+        // A node's form: one self-contained HTML file to fill anywhere, and
+        // the check of a filled one. The check writes nothing — a form is
+        // applied by a developer at a terminal, with `xtask intake --apply`.
+        ("GET", p) if p.starts_with("/v1/form/") => {
+            form_file(ctx, p.trim_start_matches("/v1/form/"))
+        }
+        ("POST", "/v1/form/check") => ok_json(form_check(ctx, params)),
         ("GET", p) if p.starts_with("/v1/fragment/") => {
             let id = p.trim_start_matches("/v1/fragment/");
             fragment(ctx, id)
@@ -1549,6 +1556,92 @@ fn reading_json(j: &mut Json, r: &vleo_modules::inputs::Reading) {
             j.close_obj();
         }
     }
+}
+
+/// One node's form, as a file to download.
+fn form_file(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
+    let id = decode(id);
+    let tree = match vleo_sheet::load::load_all(&ctx.root) {
+        Ok(t) => t,
+        Err(e) => {
+            return (
+                "500 Internal Server Error",
+                "text/plain; charset=utf-8",
+                format!("the tree does not load: {e}").into_bytes(),
+            )
+        }
+    };
+    match tree.sheets.get(&id) {
+        Some(sh) => (
+            "200 OK",
+            "text/html; charset=utf-8",
+            vleo_sheet::template::document(sh, &tree).into_bytes(),
+        ),
+        None => (
+            "404 Not Found",
+            "text/plain; charset=utf-8",
+            format!("no node '{id}'").into_bytes(),
+        ),
+    }
+}
+
+/// What a filled form would change in its node. Writes nothing.
+fn form_check(ctx: &Ctx, params: &str) -> String {
+    use vleo_sheet::template::{self, Verdict};
+    let mut j = Json::new();
+    j.raw("{");
+    let Some(html) = param(params, "html").map(decode) else {
+        j.bool_field("ok", false);
+        j.str_field("message", "no form was sent");
+        j.raw("}");
+        return j.0;
+    };
+    let p = match template::plan(&ctx.root, &html) {
+        Ok(p) => p,
+        Err(e) => {
+            j.bool_field("ok", false);
+            j.str_field("message", &e);
+            j.raw("}");
+            return j.0;
+        }
+    };
+    let f = &p.form;
+    j.bool_field("ok", true);
+    j.str_field("node", &f.node);
+    j.key("filled_by").raw("{");
+    j.str_field("name", &f.name);
+    j.str_field("team", &f.team);
+    j.str_field("date", &f.date);
+    j.str_field("ai", &f.ai);
+    j.close_obj();
+    j.bool_field("base_current", p.base_current);
+    j.num_field("applicable", p.applicable() as f64);
+    j.num_field("blocked", p.blocked() as f64);
+    j.key("items").open_arr();
+    for (k, i) in p.items.iter().enumerate() {
+        if k > 0 {
+            j.raw(",");
+        }
+        let (verdict, why) = match &i.verdict {
+            Verdict::Apply => ("apply", ""),
+            Verdict::Already => ("already", ""),
+            Verdict::Conflict(w) => ("conflict", w.as_str()),
+            Verdict::Refused(w) => ("refused", w.as_str()),
+        };
+        j.raw("{");
+        j.str_field("what", &i.what);
+        j.str_field("from", &i.from);
+        j.str_field("to", &i.to);
+        j.str_field("verdict", verdict);
+        j.str_field("why", why);
+        j.close_obj();
+    }
+    j.close_arr();
+    j.str_field("notes", &f.notes);
+    j.num_field("known", f.known.len() as f64);
+    j.str_field("fixture_request", &template::fixture_request(f));
+    j.raw("}");
+    j.0
 }
 
 /// Every input of the case, its group, default, range and saved value.

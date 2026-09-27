@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ap design value — node form</title>
+<style>
+:root { --paper:#faf9f5; --card:#ffffff; --ink:#1f1e1b; --ink2:#55524a; --ink3:#8a867b;
+  --rule:#dedbd2; --accent:#6b3fa0; --accent-pale:#efe8f7; --warn:#a4262c; --warn-pale:#fbeeee;
+  --ok:#2f6b3a; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+@media (prefers-color-scheme: dark) { :root { --paper:#1b1a18; --card:#23221f; --ink:#ecebe6;
+  --ink2:#c4c1b8; --ink3:#8f8b80; --rule:#3a3833; --accent:#b99ae0; --accent-pale:#2e2638;
+  --warn:#ef8a8a; --warn-pale:#3a2323; --ok:#8fcf99; } }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 0 16px 64px; background: var(--paper); color: var(--ink);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.nf-head, main { max-width: 920px; margin: 0 auto; }
+.nf-kicker { font: 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent);
+  margin: 28px 0 4px; }
+h1 { font-size: 26px; margin: 0 0 4px; }
+h2 { font-size: 18px; margin: 32px 0 6px; border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
+code, .nf-id { font-family: var(--mono); font-size: 13px; }
+.nf-id { color: var(--ink2); margin: 0 0 12px; }
+.nf-intro { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 18px; }
+.nf-intro li { margin: 4px 0; }
+.nf-muted { color: var(--ink3); font-size: 13px; }
+.nf-warn { color: var(--warn); background: var(--warn-pale); padding: 10px 14px; border-radius: 6px; }
+.nf-bar { position: sticky; top: 0; z-index: 5; background: var(--paper); border-bottom: 1px solid var(--rule);
+  padding: 10px 0; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+button { font: 13px var(--mono); padding: 6px 12px; border: 1px solid var(--rule); border-radius: 4px;
+  background: var(--card); color: var(--ink); cursor: pointer; }
+button:hover { border-color: var(--ink3); }
+button.nf-primary { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+button:disabled { opacity: .45; cursor: default; }
+.nf-count { font: 13px var(--mono); color: var(--ink2); }
+.nf-q { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; margin: 10px 0; }
+.nf-q.changed { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.nf-q label { display: block; font-weight: 600; }
+.nf-why { color: var(--ink3); font-size: 13px; margin: 2px 0 6px; }
+.nf-was { color: var(--ink3); font-size: 12px; margin-top: 4px; white-space: pre-wrap; }
+.nf-tag { font: 11px var(--mono); padding: 0 6px; border-radius: 3px; margin-left: 6px; vertical-align: 1px;
+  border: 1px solid var(--rule); color: var(--ink3); font-weight: 400; }
+.nf-tag.req { color: var(--warn); border-color: var(--warn); }
+.nf-tag.rel { color: var(--accent); border-color: var(--accent); }
+input, textarea, select { width: 100%; font: 14px var(--mono); color: var(--ink); background: var(--paper);
+  border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px; }
+textarea { min-height: 70px; resize: vertical; }
+.nf-block { border: 1px dashed var(--rule); border-radius: 6px; padding: 8px 12px; margin: 8px 0; }
+.nf-block-h { display: flex; justify-content: space-between; align-items: center; font: 12px var(--mono);
+  color: var(--ink3); }
+.nf-block .nf-col { margin: 6px 0; }
+.nf-block .nf-col span { font-size: 13px; color: var(--ink2); }
+.nf-ctx { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 14px; }
+.nf-ctx dt { color: var(--ink3); }
+.nf-ctx dd { margin: 0; font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
+table.nf-fx { border-collapse: collapse; width: 100%; font-size: 13px; }
+table.nf-fx td, table.nf-fx th { border-bottom: 1px solid var(--rule); padding: 4px 6px; text-align: left;
+  vertical-align: top; overflow-wrap: anywhere; }
+.nf-changes li { margin: 3px 0; }
+.nf-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 640px) { .nf-grid2 { grid-template-columns: 1fr; } .nf-ctx { grid-template-columns: 1fr; } }
+@media print { .nf-bar { display: none; } }
+</style>
+</head>
+<body>
+<header class="nf-head">
+<p class="nf-kicker">VLEO design tool · node form</p>
+<h1>Ap design value</h1>
+<p class="nf-id"><code>sw_ap_design</code> · computed · solar · owner environment · published</p>
+<section class="nf-intro">
+<p><b>This is a form for one node of the design, and it is the whole of it</b> — it needs no
+connection and nothing installed. Change what should change, say who you are, and save a filled
+copy. Send the saved file to the developer team: they check it, apply it to the node, and the next
+release of the tool carries your change, where you can run it with your own inputs.</p>
+<ol>
+<li>Fill in what you know. Each question says <i>why</i> it is asked; a question you cannot
+answer, leave as it is.</li>
+<li>Say who filled it, and whether an assistant helped. If one helped with the <b>relation</b>
+itself — the equation, its steps or its derivation — say so: those are then derived by a developer
+rather than taken from the form.</li>
+<li>Known-good values — an answer you know at given inputs, and where it comes from — go under
+<i>known values</i>. They are recorded by a person, with their source, and never guessed.</li>
+<li>Press <b>save a filled copy</b> and send that file. You can reopen it and carry on.</li>
+</ol>
+<p class="nf-muted">To fill it with an assistant, give it this file and ask it to edit only the
+block marked <code>vleo-node-form</code> near the end: plain TOML, one line per answer.</p>
+</section>
+</header>
+<noscript><p class="nf-warn">This page fills itself in with JavaScript. Without it, open this file in a text editor and edit the block marked <code>vleo-node-form</code> near the end — it is plain TOML, and every question is asked in the comments above it.</p></noscript>
+<main id="nf"></main>
+<script type="application/json" id="vleo-node-schema">
+{
+  "node": "sw_ap_design",
+  "label": "Ap design value",
+  "kind": "computed",
+  "subsystem": "solar",
+  "owner": "environment",
+  "state": "published",
+  "parent": "l3_solar",
+  "format": "vleo-node-form/1",
+  "reads": ["sw_storm_design_level"],
+  "feeds": ["sw_design_safe_duration", "sw_exceedance_duration", "sw_exceedance_phase", "sw_exceedance_rate"],
+  "fields": [
+    {"field": "label", "group": "the row", "ask": "what is this row called, in the tree", "why": "the page title and every reference to it", "shape": "line", "options": [], "required": true, "relation": false},
+    {"field": "question", "group": "the row", "ask": "what one question does it answer", "why": "an equation with no question gets reused for the wrong thing", "shape": "prose", "options": [], "required": true, "relation": false},
+    {"field": "note", "group": "the row", "ask": "what does a reader need told that the question does not say", "why": "the sentence under the question on the node's page, and the one place a row can say what it is NOT for", "shape": "prose", "options": [], "required": false, "relation": false},
+    {"field": "expression", "group": "the relation", "ask": "what is the relation", "why": "the algorithm, and what a reviewer compares against the source", "shape": "line", "options": [], "required": true, "relation": true},
+    {"field": "source", "group": "the relation", "ask": "cited where — book, paper, page", "why": "this is the claim everything else rests on", "shape": "line", "options": [], "required": true, "relation": true},
+    {"field": "symbol", "group": "the answer", "ask": "what is the answer's symbol", "why": "the binding name in the generated signature", "shape": "line", "options": [], "required": true, "relation": false},
+    {"field": "type", "group": "the answer", "ask": "what quantity is it", "why": "the signature; a dimensional error has to fail to compile", "shape": "quantity", "options": [], "required": true, "relation": false},
+    {"field": "unit", "group": "the answer", "ask": "in what unit", "why": "the conversion at every face boundary", "shape": "unit", "options": [], "required": true, "relation": false},
+    {"field": "lower", "group": "the answer", "ask": "what is the lowest value this row may return", "why": "the guard the generated code refuses below, and half of what the gate calls this row's domain", "shape": "number", "options": [], "required": false, "relation": false},
+    {"field": "upper", "group": "the answer", "ask": "and the highest", "why": "the same, at the other end. The gate refuses a pair that is not ordered, so these two are decided together", "shape": "number", "options": [], "required": false, "relation": false},
+    {"field": "reason_lower", "group": "the answer", "ask": "why is the lower bound there", "why": "a guard whose reason is not written gets deleted by the next person", "shape": "prose", "options": [], "required": true, "relation": false},
+    {"field": "reason_upper", "group": "the answer", "ask": "why is the upper bound there", "why": "the same, at the other end", "shape": "prose", "options": [], "required": true, "relation": false},
+    {"field": "theory_why", "group": "the derivation", "ask": "why is it this relation and not another", "why": "the relation says what; this says why, and it is what a reviewer reads before deciding whether to believe the number", "shape": "prose", "options": [], "required": false, "relation": true},
+    {"field": "theory_reading", "group": "the derivation", "ask": "how should the answer be read", "why": "a number with no reading gets quoted out of context. This is where a row says what its answer does NOT mean", "shape": "prose", "options": [], "required": false, "relation": true}
+  ],
+  "arrays": [
+    {"name": "input", "label": "what this row reads", "why": "the consumer declares what it expects, and assembly refuses a mismatch against what the producer publishes. It is also the derivation graph: an input is an edge, and the edges are what decide what runs before what", "end_only": false, "relation": false, "columns": [{"key": "binding", "ask": "the name it goes by inside this row", "shape": "line", "required": true, "managed": false}, {"key": "var", "ask": "which row answers it", "shape": "row", "required": true, "managed": false}, {"key": "type", "ask": "the quantity this row expects it to be", "shape": "quantity", "required": true, "managed": false}]},
+    {"name": "algorithm", "label": "the steps", "why": "each step becomes one numbered hole in the generated model, and the hole is where a person writes the few typed lines that compose relations from the kernel. The step's text is the comment above it", "end_only": true, "relation": true, "columns": [{"key": "number", "ask": "", "shape": "count", "required": true, "managed": true}, {"key": "text", "ask": "what this step does", "shape": "prose", "required": true, "managed": false}, {"key": "binds", "ask": "the name its result is bound to", "shape": "line", "required": true, "managed": false}, {"key": "type", "ask": "and its quantity", "shape": "quantity", "required": true, "managed": false}]},
+    {"name": "theory", "label": "how the relation was arrived at", "why": "the expression says what the relation is; these say how it was got to. A relation an agent invented carries a citation just as convincingly, and the derivation is what a reviewer reads instead of taking the citation's word", "end_only": false, "relation": true, "columns": [{"key": "text", "ask": "the step of the argument", "shape": "prose", "required": true, "managed": false}, {"key": "math", "ask": "and the line of maths, if there is one", "shape": "line", "required": false, "managed": false}]},
+    {"name": "assumption", "label": "what has to be true for this to hold", "why": "an assumption nobody wrote down is one nobody can check. Each says what it assumes AND the case it fails in, because an assumption with no failure case is a sentence rather than a warning", "end_only": false, "relation": false, "columns": [{"key": "text", "ask": "what is assumed", "shape": "prose", "required": true, "managed": false}, {"key": "fails_when", "ask": "and when that stops being true", "shape": "prose", "required": true, "managed": false}]}
+  ],
+  "choices": {"type": ["Acceleration", "Angle", "AngularMomentum", "AngularRate", "Area", "Charge", "Current", "DataRate", "DataVolume", "DipoleMoment", "Energy", "Force", "Frequency", "Impulse", "Irradiance", "Length", "MagneticFluxDensity", "Mass", "MassDensity", "MassFlow", "MassFlux", "MolarMass", "Money", "NumberDensity", "Power", "Pressure", "Ratio", "Temperature", "Time", "Torque", "Velocity", "Voltage", "Volume"], "unit": ["One", "Percent", "Decibel", "Count", "Bit", "Metre", "Kilometre", "Micrometre", "Nanometre", "SquareMetre", "CubicMetre", "Kilogram", "Gram", "KgPerMol", "Second", "Minute", "Hour", "Day", "Year", "MetrePerSecond", "KmPerSecond", "MetrePerSecond2", "KgPerSecond", "MgPerSecond", "KgPerCubicMetre", "PerCubicMetre", "Newton", "Millinewton", "Micronewton", "NewtonMetre", "NewtonSecond", "NewtonMetreSecond", "Pascal", "Joule", "WattHour", "Watt", "Kilowatt", "WattPerSquareMetre", "WattPerM2K4", "Kelvin", "Radian", "Degree", "RadianPerSecond", "DegreePerSecond", "DegreePerDay", "Arcsecond", "Volt", "Ampere", "AmpereHour", "Tesla", "AmpereSquareMetre", "Coulomb", "ElectronVolt", "Hertz", "Megahertz", "Gigahertz", "BitPerSecond", "MegabitPerSecond", "Gigabit", "Gigabyte", "UsDollar", "MillionUsDollar"]},
+  "view_kinds": ["number", "line", "bar"],
+  "provenances": ["independent-derivation", "published-source", "independent-tool", "physical-bound"],
+  "ai_help": ["none", "wording", "relation"],
+  "fixtures": [
+    {"label": "G2 moderate — Kp 6 — daily Ap bounded at 80", "inputs": "g_level = 2", "expect": "80", "tolerance": "0.000000000001", "provenance": "published-source", "source": "iaga_kp_ap"},
+    {"label": "G1 minor — Kp 5 — daily Ap bounded at 48", "inputs": "g_level = 1", "expect": "48", "tolerance": "0.000000000001", "provenance": "published-source", "source": "iaga_kp_ap"},
+    {"label": "G3 strong — Kp 7 — daily Ap bounded at 132, the declared default", "inputs": "g_level = 3", "expect": "132", "tolerance": "0.000000000001", "provenance": "published-source", "source": "iaga_kp_ap"}
+  ]
+}
+</script>
+<!-- The node as it was when this form was made. Do not edit: the developers compare it with the node as it is when the form comes back, so a change made meanwhile is not overwritten. -->
+<script type="application/toml" id="vleo-node-original">
+format = "vleo-node-form/1"
+node = "sw_ap_design"
+base = "7408d8"
+
+[fields]
+label = "Ap design value"
+question = "What daily Ap is this design built to survive?"
+note = "The design-side companion to sw_storm_return_level. That row says what the record will present over the mission; this says what the vehicle is built for, from the G level sw_storm_design_level declares. At the default G3 the answer is 132 and the record's five-year expectation is 158.4, and the gap between them is the finding."
+expression = "Ap_design(G) = ap at the top Kp of that G band: G1 -> 48, G2 -> 80, G3 -> 132"
+source = "iaga_kp_ap"
+symbol = "Ap_design"
+type = "Ratio"
+unit = "One"
+lower = "40.0"
+upper = "140.0"
+reason_lower = "the lowest value this relation can return is 48, at G1. A bound at 40 sits just under it and refuses anything that would design to less than a minor storm, which is not a design case: the record has 1358 days at G1 or above, 47 a year"
+reason_upper = "the highest this relation can return is 132, at G3, which is the top of the declared G range. A bound at 140 sits just above it and catches a G level outside the range or a misread table. It does NOT bound the sky: the record's largest daily Ap is 273 and the five-year return level is 158.4, both above this bound, and neither passes through this row"
+theory_why = "The G level is a name and the design needs a number, in the quantity the rest of the tree carries: daily planetary Ap. Getting from one to the other is not a conversion so much as a choice, because a G level constrains only the worst of a day's eight three-hourly slots and daily Ap is the mean of all eight. A single G3 day could have a daily Ap almost anywhere below the value it would reach if every slot sat at Kp 7. This row takes that upper value, and the whole of its content is the argument for taking the ceiling rather than the middle."
+theory_reading = "The answer at G3 is 132 and the record's five-year expectation is 158.4 — the design value is BELOW what the mission should expect, and the gap is the finding this pair of rows exists to surface. It is also conservative within its own level in the opposite direction: no G3 day in 29 years came within a third of 132, whose typical value is 51. So the number is a bound on its level and not a description of it, and the two facts do not cancel — one is about the level chosen, the other about the sky."
+
+[view]
+kind = "number"
+over = ""
+points = "0"
+
+[[input]]
+binding = "g_level"
+var = "sw_storm_design_level"
+type = "Ratio"
+
+[[algorithm]]
+number = "1"
+text = "convert the chosen G level to the daily Ap that level bounds, from the published ap table"
+binds = "out"
+type = "Ratio"
+
+[[theory]]
+text = "A G level fixes the worst slot of the day and leaves the other seven unconstrained. Daily Ap is the mean of all eight, so a day labelled G3 can have almost any daily Ap up to the value it would reach if every slot were as bad as its worst."
+math = "Ap_day = mean of eight three-hourly ap; G fixes only max Kp"
+
+[[theory]]
+text = "The record shows how wide that leaves it: days whose Kp_max is exactly 7 run from daily Ap 15 to 96, with a median of 51. There is no single Ap that 'is' G3."
+math = ""
+
+[[theory]]
+text = "A design bound has to hold for the worst day inside the level it claims, so the ceiling is the right end of the band, not the middle. The ceiling is the daily Ap a day would reach if all eight slots sat at that level's Kp — which is just that Kp's tabulated ap, since the mean of eight equal values is the value."
+math = "Ap_design(G) = ap(Kp of G) = 48, 80, 132 for G1, G2, G3"
+
+[[theory]]
+text = "That makes the row conservative by construction, and the size of the conservatism is measurable: the median G3 day is 51 and this row publishes 132, so no G3 day in 29 years came within a third of the design value. That is the price of a bound that cannot be violated by any day the level admits."
+math = ""
+
+[[theory]]
+text = "It is a lookup on three integers and nothing between them is defined. The ap values at Kp 5, 6 and 7 are 48, 80 and 132 — ratios of 1.67 and 1.65, so the scale is close to geometric and a linear reading between levels would be wrong by tens of nanotesla. That is why the producer's range is bounded to integers and why this row does not interpolate."
+math = ""
+
+[[theory]]
+text = "One thing the quantity cannot carry: daily Ap ignores everything about a storm except its size. A day at Ap 132 that recovers overnight and the first day of a three-day storm at the same Ap are the same number here, and the thermosphere does not treat them alike — density lags the driver, and a sustained storm heats it far more than one disturbed day. A drag design taking this number alone gets the peak and not the integral."
+math = ""
+
+[[assumption]]
+text = "The design value is BELOW what the record expects over the mission, and that is not a defect in either row"
+fails_when = "the two are read as competing answers. At G3 this row gives 132; sw_storm_return_level at the declared five-year mission gives 158.4, and the record's days nearest that Ap all reached Kp_max 9. So the sky a five-year mission should expect is stronger than the sky the vehicle is sized for, by about 20 per cent in daily Ap. The gap is real and is closed by operations rather than by structure: 49 days in 29 years reach G4 and 16 reach G5, and a mission flies through those rather than being built for them. Both numbers belong in the tree precisely so the gap is on a row instead of in somebody's head"
+
+[[assumption]]
+text = "The ceiling of the band, not its middle, and that choice is worth twice the number"
+fails_when = "a typical G3 day is wanted rather than a bound. Days in the record whose Kp_max is exactly 7 have daily Ap from 15 to 96 with a median of 51 — so the typical G3 day is 51 and this row publishes 132. The ceiling is correct for sizing, because a design bound must hold for the worst day inside the level it claims, and 132 is the value a day would reach if all eight slots sat at Kp 7. It is conservative by construction: no G3 day in 29 years came within a third of it"
+
+[[assumption]]
+text = "The published ap table is the conversion and it is not linear"
+fails_when = "a G level is interpolated. The ap values at Kp 5, 6 and 7 are 48, 80 and 132 — ratios of 1.67 and 1.65, so the scale is close to geometric and a linear reading between levels is wrong by tens of nanotesla. The relation is a lookup on three integer levels and nothing between them is defined, which is why sw_storm_design_level is bounded to integers 1 to 3 and why this row does not interpolate"
+
+[[assumption]]
+text = "Daily Ap ignores everything about the storm except its size"
+fails_when = "duration or timing matters. A day at Ap 132 that recovers overnight and the first day of a three-day storm at the same Ap are the same number here. The atmosphere does not treat them alike — density lags the driver and a sustained storm heats the thermosphere far more than a single disturbed day — so a drag design taking this number alone gets the peak and not the integral. sw_event_duration carries the dwell for F10.7; nothing in this group yet carries it for Ap"
+</script>
+<!-- THE FORM'S CONTENT. This block is what the developers read. Fill it on the page above, or edit it here directly — by hand, or with an assistant: it is TOML, one key per question, and [[input]], [[algorithm]], [[theory]], [[assumption]] and [[known_value]] repeat. Say in [filled_by] ai = "none", "wording" or "relation" how an assistant helped. -->
+<script type="application/toml" id="vleo-node-form">
+format = "vleo-node-form/1"
+node = "sw_ap_design"
+base = "7408d8"
+
+[filled_by]
+name = "A. Example"
+team = "Payload team"
+date = "2026-09-27"
+ai = "none"
+
+[fields]
+label = "Ap design value"
+question = "What daily Ap is this design built to survive?"
+note = "What the vehicle is built to survive, from the G level sw_storm_design_level declares. The payload team reads it against the record's five-year expectation in sw_storm_return_level."
+expression = "Ap_design(G) = ap at the top Kp of that G band: G1 -> 48, G2 -> 80, G3 -> 132"
+source = "iaga_kp_ap"
+symbol = "Ap_design"
+type = "Ratio"
+unit = "One"
+lower = "40.0"
+upper = "140.0"
+reason_lower = "the lowest value this relation can return is 48, at G1. A bound at 40 sits just under it and refuses anything that would design to less than a minor storm, which is not a design case: the record has 1358 days at G1 or above, 47 a year"
+reason_upper = "the highest this relation can return is 132, at G3, which is the top of the declared G range. A bound at 140 sits just above it and catches a G level outside the range or a misread table. It does NOT bound the sky: the record's largest daily Ap is 273 and the five-year return level is 158.4, both above this bound, and neither passes through this row"
+theory_why = "The G level is a name and the design needs a number, in the quantity the rest of the tree carries: daily planetary Ap. Getting from one to the other is not a conversion so much as a choice, because a G level constrains only the worst of a day's eight three-hourly slots and daily Ap is the mean of all eight. A single G3 day could have a daily Ap almost anywhere below the value it would reach if every slot sat at Kp 7. This row takes that upper value, and the whole of its content is the argument for taking the ceiling rather than the middle."
+theory_reading = "The answer at G3 is 132 and the record's five-year expectation is 158.4 — the design value is BELOW what the mission should expect, and the gap is the finding this pair of rows exists to surface. It is also conservative within its own level in the opposite direction: no G3 day in 29 years came within a third of 132, whose typical value is 51. So the number is a bound on its level and not a description of it, and the two facts do not cancel — one is about the level chosen, the other about the sky."
+
+[view]
+kind = "number"
+over = ""
+points = "0"
+
+[[input]]
+binding = "g_level"
+var = "sw_storm_design_level"
+type = "Ratio"
+
+[[algorithm]]
+number = "1"
+text = "convert the chosen G level to the daily Ap that level bounds, from the published ap table"
+binds = "out"
+type = "Ratio"
+
+[[theory]]
+text = "A G level fixes the worst slot of the day and leaves the other seven unconstrained. Daily Ap is the mean of all eight, so a day labelled G3 can have almost any daily Ap up to the value it would reach if every slot were as bad as its worst."
+math = "Ap_day = mean of eight three-hourly ap; G fixes only max Kp"
+
+[[theory]]
+text = "The record shows how wide that leaves it: days whose Kp_max is exactly 7 run from daily Ap 15 to 96, with a median of 51. There is no single Ap that 'is' G3."
+math = ""
+
+[[theory]]
+text = "A design bound has to hold for the worst day inside the level it claims, so the ceiling is the right end of the band, not the middle. The ceiling is the daily Ap a day would reach if all eight slots sat at that level's Kp — which is just that Kp's tabulated ap, since the mean of eight equal values is the value."
+math = "Ap_design(G) = ap(Kp of G) = 48, 80, 132 for G1, G2, G3"
+
+[[theory]]
+text = "That makes the row conservative by construction, and the size of the conservatism is measurable: the median G3 day is 51 and this row publishes 132, so no G3 day in 29 years came within a third of the design value. That is the price of a bound that cannot be violated by any day the level admits."
+math = ""
+
+[[theory]]
+text = "It is a lookup on three integers and nothing between them is defined. The ap values at Kp 5, 6 and 7 are 48, 80 and 132 — ratios of 1.67 and 1.65, so the scale is close to geometric and a linear reading between levels would be wrong by tens of nanotesla. That is why the producer's range is bounded to integers and why this row does not interpolate."
+math = ""
+
+[[theory]]
+text = "One thing the quantity cannot carry: daily Ap ignores everything about a storm except its size. A day at Ap 132 that recovers overnight and the first day of a three-day storm at the same Ap are the same number here, and the thermosphere does not treat them alike — density lags the driver, and a sustained storm heats it far more than one disturbed day. A drag design taking this number alone gets the peak and not the integral."
+math = ""
+
+[[assumption]]
+text = "The design value is BELOW what the record expects over the mission, and that is not a defect in either row"
+fails_when = "the two are read as competing answers. At G3 this row gives 132; sw_storm_return_level at the declared five-year mission gives 158.4, and the record's days nearest that Ap all reached Kp_max 9. So the sky a five-year mission should expect is stronger than the sky the vehicle is sized for, by about 20 per cent in daily Ap. The gap is real and is closed by operations rather than by structure: 49 days in 29 years reach G4 and 16 reach G5, and a mission flies through those rather than being built for them. Both numbers belong in the tree precisely so the gap is on a row instead of in somebody's head"
+
+[[assumption]]
+text = "The ceiling of the band, not its middle, and that choice is worth twice the number"
+fails_when = "a typical G3 day is wanted rather than a bound. Days in the record whose Kp_max is exactly 7 have daily Ap from 15 to 96 with a median of 51 — so the typical G3 day is 51 and this row publishes 132. The ceiling is correct for sizing, because a design bound must hold for the worst day inside the level it claims, and 132 is the value a day would reach if all eight slots sat at Kp 7. It is conservative by construction: no G3 day in 29 years came within a third of it"
+
+[[assumption]]
+text = "The published ap table is the conversion and it is not linear"
+fails_when = "a G level is interpolated. The ap values at Kp 5, 6 and 7 are 48, 80 and 132 — ratios of 1.67 and 1.65, so the scale is close to geometric and a linear reading between levels is wrong by tens of nanotesla. The relation is a lookup on three integer levels and nothing between them is defined, which is why sw_storm_design_level is bounded to integers 1 to 3 and why this row does not interpolate"
+
+[[assumption]]
+text = "Daily Ap ignores everything about the storm except its size"
+fails_when = "duration or timing matters. A day at Ap 132 that recovers overnight and the first day of a three-day storm at the same Ap are the same number here. The atmosphere does not treat them alike — density lags the driver and a sustained storm heats the thermosphere far more than a single disturbed day — so a drag design taking this number alone gets the peak and not the integral. sw_event_duration carries the dwell for F10.7; nothing in this group yet carries it for Ap"
+
+[[assumption]]
+text = "The storm level is read on the NOAA G scale"
+fails_when = "a design specification states its storm on another scale, such as Kp or Dst"
+
+[[known_value]]
+label = "G2 storm"
+inputs = "sw_storm_design_level = 2"
+expected = "80"
+tolerance = ""
+provenance = "published-source"
+source = "NOAA Space Weather Scales, the G2 row: Kp 6, ap 80"
+
+[notes]
+text = "We would like to run the sweep over the storm level once this is in."
+</script>
+<script>
+'use strict';
+(function () {
+  // The page exactly as it arrived, before anything is drawn into it. A saved
+  // copy is this with its data block replaced — so the copy is the same form,
+  // not a snapshot of whatever the page happened to be showing.
+  const PRISTINE = '<!doctype html>\n' + document.documentElement.outerHTML;
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  // ---- TOML, the subset these blocks use ---------------------------------
+  function parseToml(src) {
+    const root = {}; let cur = root; let i = 0; const n = src.length;
+    const ws = () => { while (i < n && (src[i] === ' ' || src[i] === '\t')) i++; };
+    const eol = () => { ws(); if (src[i] === '#') while (i < n && src[i] !== '\n') i++; };
+    const fail = m => { throw new Error(m + ' (at character ' + i + ')'); };
+    function esc1() {
+      const c = src[i++];
+      const m = { b: '\b', t: '\t', n: '\n', f: '\f', r: '\r', '"': '"', '\\': '\\' };
+      if (c in m) return m[c];
+      if (c === 'u' || c === 'U') {
+        const len = c === 'u' ? 4 : 8; const h = src.substr(i, len); i += len;
+        return String.fromCodePoint(parseInt(h, 16));
+      }
+      if (c === '\n' || c === ' ' || c === '\t' || c === '\r') { // line-ending backslash
+        while (i < n && /[\s]/.test(src[i])) i++; return '';
+      }
+      fail('bad escape \\' + c);
+    }
+    function value() {
+      if (src.startsWith('"""', i)) {
+        i += 3; if (src[i] === '\n') i++; else if (src.startsWith('\r\n', i)) i += 2;
+        let o = '';
+        while (i < n) {
+          if (src.startsWith('"""', i)) {
+            let q = 3; while (src[i + q] === '"') q++; // up to two quotes may end the value
+            o += '"'.repeat(q - 3); i += q; return o;
+          }
+          const c = src[i++]; o += c === '\\' ? esc1() : c;
+        }
+        fail('unclosed """');
+      }
+      if (src.startsWith("'''", i)) {
+        i += 3; if (src[i] === '\n') i++;
+        const e = src.indexOf("'''", i); if (e < 0) fail("unclosed '''");
+        const o = src.slice(i, e); i = e + 3; return o;
+      }
+      if (src[i] === '"') {
+        i++; let o = '';
+        while (i < n && src[i] !== '"') { if (src[i] === '\n') fail('newline in a string'); const c = src[i++]; o += c === '\\' ? esc1() : c; }
+        i++; return o;
+      }
+      if (src[i] === "'") { const e = src.indexOf("'", i + 1); const o = src.slice(i + 1, e); i = e + 1; return o; }
+      const m = /^[^\s#,\]}]+/.exec(src.slice(i)); if (!m) fail('a value was expected');
+      i += m[0].length; const t = m[0];
+      if (t === 'true') return true; if (t === 'false') return false;
+      const v = Number(t.replace(/_/g, '')); if (!isFinite(v)) fail('not a value: ' + t); return v;
+    }
+    function key() {
+      if (src[i] === '"') return value();
+      const m = /^[A-Za-z0-9_-]+/.exec(src.slice(i)); if (!m) fail('a key was expected');
+      i += m[0].length; return m[0];
+    }
+    function path(close) {
+      const parts = []; for (;;) { ws(); parts.push(key()); ws(); if (src[i] === '.') { i++; continue; } break; }
+      if (!src.startsWith(close, i)) fail('expected ' + close); i += close.length; return parts;
+    }
+    while (i < n) {
+      ws(); const c = src[i];
+      if (c === '\n' || c === '\r') { i++; continue; }
+      if (c === '#') { eol(); continue; }
+      if (src.startsWith('[[', i)) {
+        i += 2; const p = path(']]'); let t = root;
+        for (const k of p.slice(0, -1)) t = t[k] = t[k] || {};
+        const last = p[p.length - 1]; (t[last] = t[last] || []).push(cur = {}); eol(); continue;
+      }
+      if (c === '[') {
+        i++; const p = path(']'); let t = root; for (const k of p) t = t[k] = t[k] || {}; cur = t; eol(); continue;
+      }
+      const k = key(); ws(); if (src[i] !== '=') fail('expected = after ' + k); i++; ws();
+      cur[k] = value(); eol();
+    }
+    return root;
+  }
+  function tq(v) {
+    v = String(v == null ? '' : v);
+    const multi = v.indexOf('\n') >= 0;
+    let o = '';
+    for (let k = 0; k < v.length; k++) {
+      const c = v[k], code = c.charCodeAt(0);
+      if (c === '\\') o += '\\\\';
+      else if (c === '"') o += '\\"';
+      else if (c === '\n') o += multi ? '\n' : '\\n';
+      else if (c === '\t') o += '\\t';
+      else if (c === '\r') o += '\\r';
+      else if (c === '<' && (v[k + 1] === '/' || v[k + 1] === '!')) o += '\\u003C';
+      else if (code < 0x20 || code === 0x7f) o += '\\u' + code.toString(16).toUpperCase().padStart(4, '0');
+      else o += c;
+    }
+    return multi ? '"""\n' + o + '"""' : '"' + o + '"';
+  }
+
+  const SCHEMA = JSON.parse($('#vleo-node-schema').textContent);
+  const ORIG = parseToml($('#vleo-node-original').textContent);
+  let DATA;
+  try { DATA = parseToml($('#vleo-node-form').textContent); }
+  catch (e) {
+    $('#nf').innerHTML = '<p class="nf-warn"><b>The form\'s content block could not be read:</b> ' +
+      esc(e.message) + '. It has been edited into something that is not TOML; fix the block ' +
+      'marked vleo-node-form in a text editor.</p>';
+    return;
+  }
+  DATA.fields = DATA.fields || {}; DATA.filled_by = DATA.filled_by || {}; DATA.notes = DATA.notes || {};
+  ORIG.fields = ORIG.fields || {};
+  const S = v => (v == null ? '' : String(v));
+
+  function toToml() {
+    let o = 'format = ' + tq(SCHEMA.format) + '\nnode = ' + tq(DATA.node) + '\nbase = ' + tq(DATA.base) + '\n';
+    const by = DATA.filled_by;
+    o += '\n[filled_by]\nname = ' + tq(by.name) + '\nteam = ' + tq(by.team) + '\ndate = ' + tq(by.date) +
+      '\nai = ' + tq(by.ai || 'none') + '\n';
+    o += '\n[fields]\n';
+    for (const f of SCHEMA.fields) if (f.field in DATA.fields) o += f.field + ' = ' + tq(DATA.fields[f.field]) + '\n';
+    if (DATA.view) o += '\n[view]\nkind = ' + tq(DATA.view.kind) + '\nover = ' + tq(DATA.view.over) +
+      '\npoints = ' + tq(DATA.view.points) + '\n';
+    for (const a of SCHEMA.arrays) for (const r of (DATA[a.name] || [])) {
+      o += '\n[[' + a.name + ']]\n';
+      for (const c of a.columns) if (c.key in r) o += c.key + ' = ' + tq(r[c.key]) + '\n';
+    }
+    for (const r of (DATA.known_value || [])) {
+      o += '\n[[known_value]]\n';
+      for (const k of ['label', 'inputs', 'expected', 'tolerance', 'provenance', 'source']) o += k + ' = ' + tq(r[k]) + '\n';
+    }
+    o += '\n[notes]\ntext = ' + tq(DATA.notes.text) + '\n';
+    return o;
+  }
+
+  // ---- what changed, against the node as the form was made -------------
+  function changes() {
+    const out = [];
+    for (const f of SCHEMA.fields) {
+      const a = S(ORIG.fields[f.field]), b = S(DATA.fields[f.field]);
+      if (a !== b) out.push(f.field);
+    }
+    for (const a of SCHEMA.arrays) {
+      if (JSON.stringify(ORIG[a.name] || []) !== JSON.stringify(DATA[a.name] || [])) out.push(a.label);
+    }
+    if (ORIG.view && DATA.view && JSON.stringify(ORIG.view) !== JSON.stringify(DATA.view)) out.push('how it is drawn');
+    if ((DATA.known_value || []).length) out.push((DATA.known_value || []).length + ' known value(s)');
+    if (S(DATA.notes.text).trim()) out.push('a note for the developers');
+    return out;
+  }
+  function paintCount() {
+    const c = changes();
+    $('#nf-count').textContent = c.length ? c.length + ' change(s): ' + c.join(', ') : 'nothing changed yet';
+  }
+
+  // ---- controls --------------------------------------------------------
+  function control(shape, options, value, onchange, aria) {
+    let el;
+    const opts = shape === 'quantity' ? SCHEMA.choices.type : shape === 'unit' ? SCHEMA.choices.unit : options;
+    if (opts && opts.length) {
+      el = document.createElement('select');
+      const vals = opts.indexOf(value) >= 0 || value === '' ? opts : [value].concat(opts);
+      el.innerHTML = (value === '' ? '<option value=""></option>' : '') +
+        vals.map(o => '<option' + (o === value ? ' selected' : '') + '>' + esc(o) + '</option>').join('');
+    } else if (shape === 'prose') {
+      el = document.createElement('textarea');
+      el.value = value; el.rows = Math.min(14, Math.max(3, value.split('\n').length + 1));
+    } else {
+      el = document.createElement('input'); el.type = 'text'; el.value = value;
+      if (shape === 'number' || shape === 'count') el.inputMode = 'decimal';
+    }
+    el.setAttribute('aria-label', aria || '');
+    el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => { onchange(el.value); paintCount(); });
+    return el;
+  }
+
+  function question(f) {
+    const box = document.createElement('div');
+    box.className = 'nf-q'; box.dataset.field = f.field;
+    const was = S(ORIG.fields[f.field]);
+    box.innerHTML = '<label>' + esc(f.ask.charAt(0).toUpperCase() + f.ask.slice(1)) +
+      (f.required ? '<span class="nf-tag req">needed</span>' : '') +
+      (f.relation ? '<span class="nf-tag rel">the relation</span>' : '') +
+      ' <span class="nf-tag">' + esc(f.field) + '</span></label>' +
+      '<div class="nf-why">' + esc(f.why) + '</div>';
+    const paint = () => {
+      const now = S(DATA.fields[f.field]);
+      box.classList.toggle('changed', now !== was);
+      let w = box.querySelector('.nf-was');
+      if (now !== was) {
+        if (!w) { w = document.createElement('div'); w.className = 'nf-was'; box.appendChild(w); }
+        w.textContent = 'was: ' + (was || '(blank)');
+      } else if (w) w.remove();
+    };
+    box.appendChild(control(f.shape, f.options, S(DATA.fields[f.field]),
+      v => { DATA.fields[f.field] = v; paint(); }, f.field));
+    paint();
+    return box;
+  }
+
+  function blocks(a) {
+    const wrap = document.createElement('section');
+    const rows = DATA[a.name] = DATA[a.name] || [];
+    const draw = () => {
+      wrap.innerHTML = '<h2>' + esc(a.label.charAt(0).toUpperCase() + a.label.slice(1)) +
+        (a.relation ? ' <span class="nf-tag rel">the relation</span>' : '') + '</h2>' +
+        '<p class="nf-why">' + esc(a.why) + '</p>';
+      rows.forEach((r, i) => {
+        const b = document.createElement('div'); b.className = 'nf-block';
+        const last = i === rows.length - 1;
+        b.innerHTML = '<div class="nf-block-h"><span>' + esc(a.name) + ' ' + (i + 1) + '</span></div>';
+        const rm = document.createElement('button'); rm.type = 'button'; rm.textContent = 'remove';
+        rm.disabled = a.end_only && !last;
+        rm.title = rm.disabled ? 'Only the last can be removed: each is numbered, and the number is a place in the generated code.' : '';
+        rm.onclick = () => { rows.splice(i, 1); draw(); paintCount(); };
+        b.firstChild.appendChild(rm);
+        for (const c of a.columns) {
+          const col = document.createElement('div'); col.className = 'nf-col';
+          if (c.managed) { col.innerHTML = '<span>' + esc(c.key) + ': ' + esc(r[c.key] || '(assigned on apply)') + '</span>'; b.appendChild(col); continue; }
+          col.innerHTML = '<span>' + esc(c.ask || c.key) + (c.required ? ' <span class="nf-tag req">needed</span>' : '') + '</span>';
+          col.appendChild(control(c.shape, [], S(r[c.key]), v => { r[c.key] = v; }, a.name + ' ' + (i + 1) + ' ' + c.key));
+          b.appendChild(col);
+        }
+        wrap.appendChild(b);
+      });
+      const add = document.createElement('button'); add.type = 'button';
+      add.textContent = 'add ' + (a.end_only ? 'one at the end' : 'one');
+      add.onclick = () => {
+        const r = {}; for (const c of a.columns) r[c.key] = c.managed ? String(rows.length + 1) : '';
+        rows.push(r); draw(); paintCount();
+      };
+      wrap.appendChild(add);
+    };
+    draw();
+    return wrap;
+  }
+
+  function known() {
+    const wrap = document.createElement('section');
+    const rows = DATA.known_value = DATA.known_value || [];
+    const draw = () => {
+      wrap.innerHTML = '<h2>Known values</h2><p class="nf-why">An answer you know at given inputs, and where ' +
+        'it comes from. A developer records it as a check the node must pass — it is never taken from the ' +
+        'tool itself, and never from an assistant.</p>';
+      if (SCHEMA.fixtures.length) {
+        wrap.insertAdjacentHTML('beforeend', '<p class="nf-muted">Already held by:</p><table class="nf-fx"><tr><th>label</th>' +
+          '<th>inputs</th><th>expected</th><th>from</th></tr>' + SCHEMA.fixtures.map(x => '<tr><td>' + esc(x.label) +
+          '</td><td>' + esc(x.inputs) + '</td><td>' + esc(x.expect) + ' ± ' + esc(x.tolerance) + '</td><td>' +
+          esc(x.provenance) + ' — ' + esc(x.source) + '</td></tr>').join('') + '</table>');
+      }
+      rows.forEach((r, i) => {
+        const b = document.createElement('div'); b.className = 'nf-block';
+        b.innerHTML = '<div class="nf-block-h"><span>known value ' + (i + 1) + '</span></div>';
+        const rm = document.createElement('button'); rm.type = 'button'; rm.textContent = 'remove';
+        rm.onclick = () => { rows.splice(i, 1); draw(); paintCount(); };
+        b.firstChild.appendChild(rm);
+        const cols = [['label', 'what case this is'], ['inputs', 'the inputs it holds at, e.g. orbit_altitude = 250 km'],
+          ['expected', 'the answer, in the node\'s unit'], ['tolerance', 'how close counts, as a fraction (default 1e-6)'],
+          ['provenance', 'where it comes from'], ['source', 'the reference — book, paper, page, or who measured it']];
+        for (const [k, ask] of cols) {
+          const col = document.createElement('div'); col.className = 'nf-col';
+          col.innerHTML = '<span>' + esc(ask) + '</span>';
+          col.appendChild(control('line', k === 'provenance' ? SCHEMA.provenances : [], S(r[k]), v => { r[k] = v; }, 'known ' + (i + 1) + ' ' + k));
+          b.appendChild(col);
+        }
+        wrap.appendChild(b);
+      });
+      const add = document.createElement('button'); add.type = 'button'; add.textContent = 'add a known value';
+      add.onclick = () => { rows.push({ label: '', inputs: '', expected: '', tolerance: '', provenance: SCHEMA.provenances[0], source: '' }); draw(); paintCount(); };
+      wrap.appendChild(add);
+    };
+    draw();
+    return wrap;
+  }
+
+  // ---- the page --------------------------------------------------------
+  const main = $('#nf');
+  main.innerHTML = '<div class="nf-bar"><button type="button" class="nf-primary" id="nf-save">save a filled copy</button>' +
+    '<button type="button" id="nf-print">print</button><span class="nf-count" id="nf-count"></span></div>';
+
+  const who = document.createElement('section');
+  who.innerHTML = '<h2>Who is filling this</h2>';
+  const g = document.createElement('div'); g.className = 'nf-grid2';
+  for (const [k, ask] of [['name', 'your name'], ['team', 'your team or company'], ['date', 'date (filled in on save if blank)']]) {
+    const q = document.createElement('div'); q.className = 'nf-q'; q.innerHTML = '<label>' + esc(ask) + '</label>';
+    q.appendChild(control('line', [], S(DATA.filled_by[k]), v => { DATA.filled_by[k] = v; }, k)); g.appendChild(q);
+  }
+  const ai = document.createElement('div'); ai.className = 'nf-q';
+  ai.innerHTML = '<label>did an assistant help?</label><div class="nf-why">none · wording (the text, not the maths) · ' +
+    'relation (the equation, its steps or its derivation — those are then derived by a developer, not taken from this form)</div>';
+  ai.appendChild(control('choice', SCHEMA.ai_help, S(DATA.filled_by.ai || 'none'), v => { DATA.filled_by.ai = v; }, 'ai'));
+  g.appendChild(ai); who.appendChild(g); main.appendChild(who);
+
+  const ctx = document.createElement('section');
+  ctx.innerHTML = '<h2>This node</h2><dl class="nf-ctx"><dt>id</dt><dd>' + esc(SCHEMA.node) + '</dd><dt>kind</dt><dd>' +
+    esc(SCHEMA.kind) + '</dd><dt>subsystem</dt><dd>' + esc(SCHEMA.subsystem) + ' — owner ' + esc(SCHEMA.owner) +
+    '</dd><dt>state</dt><dd>' + esc(SCHEMA.state) + '</dd><dt>reads</dt><dd>' + (esc(SCHEMA.reads.join(', ')) || 'nothing') +
+    '</dd><dt>feeds</dt><dd>' + (esc(SCHEMA.feeds.join(', ')) || 'nothing yet') + '</dd></dl>' +
+    '<p class="nf-muted">Its place in the tree, its kind and its owner are not on this form: moving a node is a ' +
+    'developer\'s decision, taken in the repository.</p>';
+  main.appendChild(ctx);
+
+  const groups = [];
+  for (const f of SCHEMA.fields) if (groups.indexOf(f.group) < 0) groups.push(f.group);
+  for (const grp of groups) {
+    const sec = document.createElement('section');
+    sec.innerHTML = '<h2>' + esc(grp.charAt(0).toUpperCase() + grp.slice(1)) + '</h2>';
+    for (const f of SCHEMA.fields.filter(x => x.group === grp)) sec.appendChild(question(f));
+    main.appendChild(sec);
+  }
+  for (const a of SCHEMA.arrays) main.appendChild(blocks(a));
+
+  if (DATA.view) {
+    const v = document.createElement('section');
+    v.innerHTML = '<h2>How the answer is drawn</h2><p class="nf-why">A number, a line over one of its inputs, or bars.</p>';
+    const g2 = document.createElement('div'); g2.className = 'nf-grid2';
+    for (const [k, ask, sh, opts] of [['kind', 'drawn as', 'choice', SCHEMA.view_kinds], ['over', 'over which input (a line), or which row (bars)', 'line', []],
+      ['points', 'how many points along the line', 'count', []]]) {
+      const q = document.createElement('div'); q.className = 'nf-q'; q.innerHTML = '<label>' + esc(ask) + '</label>';
+      q.appendChild(control(sh, opts, S(DATA.view[k]), val => { DATA.view[k] = val; }, 'view ' + k)); g2.appendChild(q);
+    }
+    v.appendChild(g2); main.appendChild(v);
+  }
+  main.appendChild(known());
+
+  const notes = document.createElement('section');
+  notes.innerHTML = '<h2>Anything else the developers should know</h2><p class="nf-why">What you changed and why, what ' +
+    'you were unsure of, what you would like to see when you run it.</p>';
+  const nq = document.createElement('div'); nq.className = 'nf-q';
+  nq.appendChild(control('prose', [], S(DATA.notes.text), v => { DATA.notes.text = v; }, 'notes'));
+  notes.appendChild(nq); main.appendChild(notes);
+
+  $('#nf-print').onclick = () => window.print();
+  $('#nf-save').onclick = () => {
+    if (!S(DATA.filled_by.date)) DATA.filled_by.date = new Date().toISOString().slice(0, 10);
+    const open = '<script type="application/toml" id="vleo-node-form">';
+    const at = PRISTINE.indexOf(open);
+    const end = PRISTINE.indexOf('</' + 'script>', at);
+    const html = PRISTINE.slice(0, at + open.length) + '\n' + toToml() + PRISTINE.slice(end);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+    a.download = SCHEMA.node + '.node-form.html';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  };
+  paintCount();
+})();
+</script></body></html>
