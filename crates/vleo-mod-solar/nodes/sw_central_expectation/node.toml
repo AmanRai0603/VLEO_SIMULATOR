@@ -261,7 +261,7 @@ wrong = "That the long-term average of the record, about 115 sfu, is the right c
 
 [[version]]
 n = 1
-release = "next"
+release = "0.1.0"
 date = "2026-09-14"
 by = "recorded from commit 8a3b01a2"
 about = ["math", "model"]
@@ -273,7 +273,7 @@ source = "noaa_swpc"
 
 [[version]]
 n = 2
-release = "next"
+release = "0.1.0"
 date = "2026-09-15"
 by = "recorded from commit 30a61f8b and docs/MATLAB_PORT_PLAN.md §20"
 about = ["math", "model"]
@@ -290,7 +290,7 @@ source = "noaa_swpc"
 
 [[version]]
 n = 3
-release = "next"
+release = "0.1.0"
 date = "2026-09-15"
 by = "recorded from commit d6e46eb7"
 about = ["math", "algorithm"]

@@ -14,7 +14,7 @@ Why this exists, and how a change gets here, is in `docs/DERISKING.md`. The same
 
 ## Every change, by release
 
-### Not yet released
+### Release 0.1.0
 
 **`sw_central_expectation` — F10.7 central expectation at a lead, version 2** · Q3-26 · 2026-09-15 · math, model
 
@@ -42,4 +42,4 @@ Why this exists, and how a change gets here, is in `docs/DERISKING.md`. The same
 
 The first version of a row: what it rests on before anything has tested it.
 
-- `sw_central_expectation` v1 (next) — rests on: The record's unconditional mean flux, 114.84 sfu, is the right centre for a mission of any length at any date. *Would break if:* A mission shorter than a solar cycle is sized at a date where the cycle runs well above or below its long-term mean.
+- `sw_central_expectation` v1 (0.1.0) — rests on: The record's unconditional mean flux, 114.84 sfu, is the right centre for a mission of any length at any date. *Would break if:* A mission shorter than a solar cycle is sized at a date where the cycle runs well above or below its long-term mean.
