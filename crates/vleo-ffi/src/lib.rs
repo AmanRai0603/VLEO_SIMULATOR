@@ -162,7 +162,7 @@ pub unsafe extern "C" fn vleo_evaluate(case: *const VleoCase, out: *mut VleoResu
         set_message(format!("no node '{node}'"));
         return VLEO_UNKNOWN_NODE;
     }
-    // Null is the default customer, which the engine resolves: the first by id.
+    // Null is the default case, which the engine resolves.
     let base = cstr(c.base_case).unwrap_or_default();
     let mut supply = Vec::new();
     if !c.sets.is_null() && c.set_count > 0 {
@@ -184,8 +184,6 @@ pub unsafe extern "C" fn vleo_evaluate(case: *const VleoCase, out: *mut VleoResu
     };
     let case = Case {
         base,
-        // A C caller has no condition field yet; `base_case` names the customer.
-        condition: String::new(),
         supply,
         target: node.clone(),
         mode,

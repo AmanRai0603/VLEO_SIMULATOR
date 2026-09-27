@@ -22,7 +22,7 @@
 'use strict';
 
 import { $, $$, esc, fmt } from './dom.js';
-import { S, reachFrom, isSeeded, withCase } from './state.js';
+import { S, reachFrom, isSeeded } from './state.js';
 import { withOverrides } from './inputs.js';
 import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
   watchScheme, INK } from './chart.js';
@@ -289,7 +289,7 @@ async function declaredValue(host, r) {
   host.innerHTML = '<p class="muted">asking the engine for the declared value\u2026</p>';
   let v = null;
   try {
-    const body = withCase(new URLSearchParams({ node: r.id, mode: 'branch' }));
+    const body = new URLSearchParams({ node: r.id, mode: 'branch' });
     const rr = await (await fetch('/v1/run', {
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded' },

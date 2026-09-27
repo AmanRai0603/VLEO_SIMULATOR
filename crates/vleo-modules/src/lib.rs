@@ -108,92 +108,45 @@ impl Vleo {
         CASES.iter().find(|c| c.id == id)
     }
 
-    /// The customer a run is for when nobody names one: the first by id.
+    /// The case a run starts from when nobody names one: the first, and today
+    /// the only one.
     ///
     /// Read from the table rather than written into each face, because five
     /// faces each holding the string "nominal" is how a renamed file turned
     /// every default run into a run of nothing in particular.
-    pub fn default_customer() -> Option<&'static CaseDef> {
-        CASES.iter().find(|c| c.kind == "customer")
+    pub fn default_case() -> Option<&'static CaseDef> {
+        CASES.first()
     }
 
-    /// The customer a case names, or the default when it names none.
-    pub fn customer_of(case: &vleo_bus::Case) -> Option<&'static CaseDef> {
+    /// The case a run names, or the default when it names none.
+    pub fn case_of(case: &vleo_bus::Case) -> Option<&'static CaseDef> {
         if case.base.is_empty() {
-            Vleo::default_customer()
+            Vleo::default_case()
         } else {
-            Vleo::case(&case.base).filter(|c| c.kind == "customer")
+            Vleo::case(&case.base)
         }
     }
 }
 
-/// Why a run cannot start from this customer and condition, if it cannot.
+/// Why a run cannot start from the case it names, if it cannot.
 ///
-/// Every face asks this before it evaluates, so the sentence a person reads is
-/// the same from the browser, the command line and a script. An unknown or
-/// misplaced name is refused rather than ignored: the engine used to run the
-/// bare declared design for a customer it had never heard of, which is a
-/// number with somebody else's name on it.
+/// Every face asks this before it evaluates. An unknown name is refused rather
+/// than ignored: the engine used to run the bare declared design for a case it
+/// had never heard of, which is a number with somebody else's name on it — a
+/// test and two tools named cases that did not exist and passed for years.
 pub fn case_refusal(case: &vleo_bus::Case) -> Option<String> {
-    let names = |kind: &str| {
-        CASES
-            .iter()
-            .filter(|c| c.kind == kind)
-            .map(|c| c.id)
-            .collect::<Vec<_>>()
-            .join(", ")
-    };
-    if !case.base.is_empty() {
-        match Vleo::case(&case.base) {
-            None => {
-                return Some(alloc::format!(
-                    "there is no customer '{}'. The customers are: {}",
-                    case.base,
-                    names("customer")
-                ))
-            }
-            Some(c) if c.kind != "customer" => {
-                return Some(alloc::format!(
-                    "'{}' is a condition, not a customer. Name a customer ({}) and give '{}' \
-                     as the condition",
-                    case.base,
-                    names("customer"),
-                    case.base
-                ))
-            }
-            Some(_) => {}
-        }
-    } else if Vleo::default_customer().is_none() {
-        return Some("cases/ holds no customer, so there is nothing to run for".to_string());
+    if Vleo::case_of(case).is_some() {
+        return None;
     }
-    if !case.condition.is_empty() {
-        match Vleo::case(&case.condition) {
-            None => {
-                return Some(alloc::format!(
-                    "there is no condition '{}'. The conditions are: {}",
-                    case.condition,
-                    names("condition")
-                ))
-            }
-            Some(c) if c.kind != "condition" => {
-                return Some(alloc::format!(
-                    "'{}' is a customer, not a condition. The conditions are: {}",
-                    case.condition,
-                    names("condition")
-                ))
-            }
-            Some(c) if !c.unavailable.is_empty() => {
-                return Some(alloc::format!(
-                    "the condition '{}' cannot be applied: {}",
-                    c.id,
-                    c.unavailable
-                ))
-            }
-            Some(_) => {}
-        }
-    }
-    None
+    let names = CASES.iter().map(|c| c.id).collect::<Vec<_>>().join(", ");
+    Some(if case.base.is_empty() {
+        "cases/ holds no case, so there is nothing to run".to_string()
+    } else {
+        alloc::format!("there is no case '{}'. The cases are: {}", case.base, names)
+    })
 }
+
+pub mod inputs;
 
 impl NodeTable for Vleo {
     fn nodes(&self) -> &[NodeDef] {
@@ -428,18 +381,13 @@ pub fn evaluate(case: &vleo_bus::Case, scratch: &mut Scratch) -> Result<vleo_bus
         node: "unknown node",
     })?;
     // Asked again here, not only by the faces: a caller that skipped the
-    // question must not get the declared design under a customer's name.
+    // question must not get the declared design under another case's name.
     if case_refusal(case).is_some() {
         return Err(Fault::NotRun {
-            node: "the customer or condition named",
+            node: "the case named",
         });
     }
-    let base = Vleo::customer_of(case);
-    let condition = if case.condition.is_empty() {
-        None
-    } else {
-        Vleo::case(&case.condition)
-    };
+    let base = Vleo::case_of(case);
 
     let mut store = Store::new(&mut scratch.slots);
 
@@ -462,16 +410,11 @@ pub fn evaluate(case: &vleo_bus::Case, scratch: &mut Scratch) -> Result<vleo_bus
             }
         }
     }
-    // Declared, then the customer, then the condition, then the person. Each
-    // later one wins, so a condition stresses the customer's own design and a
-    // typed override always has the last word.
+    // Declared, then the case, then whatever the face sends — the saved
+    // inputs first and a person's unsaved edits after, so the last word is
+    // always the one typed most recently.
     if let Some(b) = base {
         for (v, val) in b.supply {
-            supply_checked(&mut store, *v, *val)?;
-        }
-    }
-    if let Some(c) = condition {
-        for (v, val) in c.supply {
             supply_checked(&mut store, *v, *val)?;
         }
     }

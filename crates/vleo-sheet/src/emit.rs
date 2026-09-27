@@ -1610,7 +1610,7 @@ pub fn tables_rs(tree: &Tree) -> String {
     // Cases, including the declared cycles.
     o.push_str("/// A loop the design actually has, declared where design decisions live.\n");
     o.push_str("pub struct CycleDef {\n    pub nodes: &'static [u16],\n    pub converge_on: u16,\n    pub tolerance: f64,\n    pub max_iter: u32,\n    pub seeds: &'static [(u16, f64)],\n}\n\n");
-    o.push_str("/// A customer, or a condition laid over one. See `cases/`.\npub struct CaseDef {\n    pub id: &'static str,\n    pub kind: &'static str,\n    pub label: &'static str,\n    pub note: &'static str,\n    pub unavailable: &'static str,\n    pub supply: &'static [(u16, f64)],\n    pub cycles: &'static [CycleDef],\n}\n\n");
+    o.push_str("/// The case: the one multipayload design. See `cases/`.\npub struct CaseDef {\n    pub id: &'static str,\n    pub label: &'static str,\n    pub note: &'static str,\n    pub supply: &'static [(u16, f64)],\n    pub cycles: &'static [CycleDef],\n    /// The inputs in the Condition group; every other declared input is Customer.\n    pub conditions: &'static [u16],\n}\n\n");
     o.push_str(&format!(
         "pub static CASES: [CaseDef; {}] = [\n",
         tree.cases.len()
@@ -1647,13 +1647,17 @@ pub fn tables_rs(tree: &Tree) -> String {
             })
             .collect::<Vec<_>>()
             .join(", ");
+        let conditions = c
+            .conditions
+            .iter()
+            .filter_map(|k| idx.get(k.as_str()).map(|i| i.to_string()))
+            .collect::<Vec<_>>()
+            .join(", ");
         o.push_str(&format!(
-            "    CaseDef {{ id: \"{}\", kind: \"{}\", label: \"{}\", note: \"{}\", unavailable: \"{}\", supply: &[{supply}], cycles: &[{cycles}] }},\n",
+            "    CaseDef {{ id: \"{}\", label: \"{}\", note: \"{}\", supply: &[{supply}], cycles: &[{cycles}], conditions: &[{conditions}] }},\n",
             esc(&c.id),
-            esc(&c.kind),
             esc(&c.label),
-            esc(&c.note),
-            esc(&c.unavailable)
+            esc(&c.note)
         ));
     }
     o.push_str("];\n\n");

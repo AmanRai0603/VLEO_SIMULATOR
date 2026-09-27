@@ -70,24 +70,21 @@ fn nodes() -> Vec<String> {
 /// `sets` maps node identifiers to SI values. Out of range is refused, never
 /// clamped, and the exception names the field, the bound and the reason.
 #[pyfunction]
-// `case` is the customer; empty is the default one, the first by id. The
-// condition is last and keyword-only in practice, so a positional call written
-// before it existed still means what it meant.
-#[pyo3(signature = (node, case = "", sets = None, mode = "branch", condition = ""))]
+// `case` names the case; empty is the one case. The inputs a person saved live
+// with the application, not here: pass them as `sets`.
+#[pyo3(signature = (node, case = "", sets = None, mode = "branch"))]
 fn evaluate(
     py: Python<'_>,
     node: &str,
     case: &str,
     sets: Option<std::collections::HashMap<String, f64>>,
     mode: &str,
-    condition: &str,
 ) -> PyResult<Result_> {
     if Vleo::find(node).is_none() {
         return Err(PyValueError::new_err(format!("no node '{node}'")));
     }
     let c = Case {
         base: case.to_string(),
-        condition: condition.to_string(),
         supply: sets.unwrap_or_default().into_iter().collect(),
         target: node.to_string(),
         mode: RunMode::from_name(mode),
@@ -136,8 +133,7 @@ fn evaluate(
 /// One call, not five hundred: the marshalling cost per call is what makes a
 /// tight loop calling evaluation per point slow, and then the engine is blamed.
 #[pyfunction]
-#[pyo3(signature = (node, over, start, stop, points = 64, case = "", condition = ""))]
-#[allow(clippy::too_many_arguments)]
+#[pyo3(signature = (node, over, start, stop, points = 64, case = ""))]
 fn sweep(
     py: Python<'_>,
     node: &str,
@@ -146,14 +142,12 @@ fn sweep(
     stop: f64,
     points: usize,
     case: &str,
-    condition: &str,
 ) -> PyResult<(Vec<f64>, Vec<f64>, Vec<(f64, String)>)> {
     if Vleo::find(node).is_none() || Vleo::find(over).is_none() {
         return Err(PyValueError::new_err("the sweep names a node that does not exist"));
     }
     let probe = Case {
         base: case.to_string(),
-        condition: condition.to_string(),
         ..Default::default()
     };
     if let Some(why) = vleo_modules::case_refusal(&probe) {
@@ -167,7 +161,6 @@ fn sweep(
             let x = start + (i as f64 / (n - 1) as f64) * (stop - start);
             let c = Case {
                 base: case.to_string(),
-                condition: condition.to_string(),
                 supply: vec![(over.to_string(), x)],
                 target: node.to_string(),
                 mode: RunMode::Branch,

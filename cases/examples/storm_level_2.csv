@@ -1,0 +1,12 @@
+# An example case, in the format the Inputs page downloads and uploads.
+#
+# One changed input: the design is built for a G2 storm rather than the G3 it
+# declares. Every input not listed runs at its default — a case file only has
+# to name what it changes. Run it from a terminal:
+#
+#   cargo run -p vleo-cli --bin vleo -- run sw_ap_design --inputs cases/examples/storm_level_2.csv
+#
+# or upload it on the Inputs page. It is here to be read and copied; the cases a
+# person works with are kept outside the repository.
+group,id,name,value,unit
+condition,sw_storm_design_level,Storm level designed for,2,-

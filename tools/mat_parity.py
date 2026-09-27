@@ -131,7 +131,9 @@ def kp_cal(ap, ctr, off):
 
 
 def run_node(port, node, sets=(), mode="branch"):
-    q = [("node", node), ("mode", mode)]
+    # At the declared defaults: a case saved on this machine is not the design
+    # the .mat was produced at.
+    q = [("node", node), ("mode", mode), ("inputs", "defaults")]
     q += [("set", f"{k}:{v!r}") for k, v in sets]
     req = urllib.request.Request(f"http://localhost:{port}/v1/run?" + urllib.parse.urlencode(q))
     with urllib.request.urlopen(req, timeout=30) as r:

@@ -62,6 +62,7 @@ import os
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 import tomllib
 from pathlib import Path
@@ -114,7 +115,10 @@ class Server:
             self.port = s.getsockname()[1]
 
     def __enter__(self):
-        env = dict(os.environ, VLEO_PORT=str(self.port))
+        # A scratch case, so what the panels draw is the declared design and
+        # not whatever case is saved on the machine running the check.
+        case = Path(tempfile.mkdtemp(prefix="vleo-panel-case-")) / "inputs.csv"
+        env = dict(os.environ, VLEO_PORT=str(self.port), VLEO_CASE=str(case))
         self.proc = subprocess.Popen(
             ["cargo", "run", "-q", "--release", "-p", "vleo-daemon"],
             cwd=self.root, env=env,

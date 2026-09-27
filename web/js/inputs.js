@@ -26,7 +26,7 @@
 'use strict';
 
 import { esc, fmt } from './dom.js';
-import { S, withCase, caseKey } from './state.js';
+import { S, caseKey } from './state.js';
 
 /** The key the browser remembers overrides under. Never a file, never the repo. */
 const KEY = 'vleo.overrides.v1';
@@ -185,12 +185,10 @@ export function overrideParams() {
 }
 
 /**
- * Those same pairs appended to a URLSearchParams, for a GET or a POST body —
- * with the customer and condition, because an override is always laid over
- * some customer's design and never over nobody's.
+ * Those same pairs appended to a URLSearchParams, for a GET or a POST body.
+ * They are laid over the saved case, which the daemon applies to every run.
  */
 export function withOverrides(params) {
-  withCase(params);
   for (const [k, v] of overrideParams()) params.append(k, v);
   return params;
 }
@@ -354,7 +352,7 @@ export function diffHtml(d, limit) {
  * any other way would attribute to the input whatever else differed.
  */
 async function runOnce(node, mode, bare) {
-  const p = withCase(new URLSearchParams({ node, mode }));
+  const p = new URLSearchParams({ node, mode });
   if (!bare) withOverrides(p);
   try {
     return await (await fetch('/v1/run', {

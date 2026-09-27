@@ -104,10 +104,9 @@ def quant(sorted_, q):
 # the engine
 
 def run_node(port, node, sets=()):
-    # No customer named: the engine runs the first by id, which is the
-    # reference design the MATLAB study was run at. This named "c1", a case
-    # that never existed and only worked because unknown names were ignored.
-    q = [("node", node), ("mode", "branch")]
+    # At the declared defaults, which are the reference design the MATLAB
+    # study was run at — never at whatever case is saved on this machine.
+    q = [("node", node), ("mode", "branch"), ("inputs", "defaults")]
     q += [("set", f"{k}:{v!r}") for k, v in sets]
     body = urllib.parse.urlencode(q).encode()
     req = urllib.request.Request(f"http://localhost:{port}/v1/run", data=body,

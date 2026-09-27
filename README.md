@@ -107,8 +107,11 @@ vleo list solar                    # the rows in a subsystem
 vleo show sw_ap_design             # the sheet, as the engine holds it
 vleo run sw_ap_design              # evaluate it and everything it needs
 vleo sweep sw_ap_design --over sw_storm_design_level --from 1 --to 3 --points 3
-vleo campaign l3_solar_ach_01      # every customer against one row
-vleo cases                         # the customers and conditions, and what each supplies
+vleo run sw_ap_design --inputs cases/examples/storm_level_2.csv   # on a case file
+vleo campaign sw_ap_design --inputs cases/examples/storm_level_2.csv
+                                   # defaults, the saved case and each file, side by side
+vleo cases                         # the case, and how its inputs divide
+vleo inputs                        # every input as a CSV to fill in
 vleo selftest                      # every fixture declaration in the tree is sound
 vleo data sync | list | verify     # the reference-data store
 ```
@@ -118,6 +121,7 @@ A run prints the number, the chain behind it, its credibility and what refused:
 ```
 sw_ap_design — Ap design value
   What daily Ap is this design built to survive?
+  inputs: the declared defaults
 
   Ap_design = 132.000 -
   credibility 1 of 4, governed by mathematics
@@ -126,16 +130,20 @@ sw_ap_design — Ap design value
 
   provenance
     data   solar-drivers@2026.09.04#54784567db11b868 · solar-weather@2026.09.14#f3557eb8443bfdaa
-    kernel 1ad1ae · graph adb684 · case abf96b · chain 075c5d
+    kernel 1ad1ae · graph adb684 · case 1f25f9 · chain 075c5d
     mode branch · endpoint local-cli
 ```
 
-**Every run is for a customer.** `--customer customer_2` names one — with none
-named, the first by id — and `--condition low_altitude` lays a condition over
-it. The order is fixed: each row's declared value, then the customer's, then the
-condition's, then `--set`. In the browser the same pair is chosen in the bar
-across the top, and the run panel lists every input the answer depends on with
-who set it. `--case` is the old name for `--customer` and still works.
+**There is one case, and what changes is its inputs.** A customer, or the sky
+a design must survive, is a set of input values — not a folder, and never a
+commit. The **Inputs** page lists all 128 in two halves: the **condition** the
+design flies in (orbit, environment, solar weather) and everything the
+**customer** chooses. Set them there or upload a CSV; the tool checks every row
+against its declared range, refuses a file with any bad row whole, and saves
+the case **outside the repository** (`~/.vleo/case/`, or `VLEO_CASE`), so git
+never sees it. Every run, sweep and figure is then on that case. From a terminal
+the same file runs with `--inputs <file.csv>`, `--defaults` runs the design as
+declared, and `--set` has the last word.
 
 `n ran, m blocked` is always printed and the blocked rows are always named. A
 row with no content yet returns `NotRun` under its own name rather than a
@@ -159,11 +167,11 @@ moment the row is evaluated.
 | `crates/` | the whole Rust workspace: the four rings, the faces, and **1396 node folders** under `crates/vleo-mod-*/nodes/` | this is the tool. Almost every file in the repository is here, and most of those are the per-node artefacts `xtask docs` writes from a sheet |
 | `layers/` | the rows in the tree that are **not** nodes — headings, parents, group edges, subsystem ownership | the decomposition itself. `CODEOWNERS` is generated from it, so moving a branch here moves who reviews what |
 | `tools/` | the Python side: the seeder that built the tree, and every check the pipeline runs that is not `cargo` | the checks that cannot be expressed as a Rust test — screenshots, parity against MATLAB, commit messages, agent lanes. Each proves itself with `--selftest` before it is trusted to decide anything |
-| `web/` | the browser face — one `index.html`, one stylesheet, 19 ES modules, the manual among them | how the tool is read. It talks to `vleo-daemon` over HTTP and holds no physics of its own |
+| `web/` | the browser face — one `index.html`, one stylesheet, 20 ES modules, the manual among them | how the tool is read. It talks to `vleo-daemon` over HTTP and holds no physics of its own |
 | `panels/` | 14 declared panel specs, plus `REVIEW.md` and 16 reference screenshots — light and dark for the 8 panels checked on pixels | a figure nobody checked is a figure that silently goes wrong. The spec says what the panel must show; the references are what it looked like when a person last approved it |
 | `docs/` | 13 prose documents, 4 diagrams, and `manual.toml` — the source of the manual in the tool — indexed under **Reference** below | the written record. `VARIABLES.md` is generated; `MATLAB_PORT_PLAN.md` is the row-by-row account of the port and the longest thing here |
 | `bundles/` | reference data as published sets, each with a manifest, a licence term and a hash | rule 2's external oracle. An expected value may never come from the code under test, so the data it is checked against is versioned and verified rather than fetched |
-| `cases/` | three customers and four conditions, against one shared architecture | who a run is for, and what it is asked to survive. The architecture is never copied per customer — `n` copies would mean `n` fixes and silent drift. Gate check V16 refuses a value aimed at a row a run would overwrite, and a condition that can no longer be applied says why |
+| `cases/` | the one case, `multipayload.toml` — which inputs are the condition, and so which are the customer's — and `examples/`, a case file to copy | what a run is on. Its values are not kept here: a case per customer would grow the tree with the order book, so values are uploaded or typed in the tool and saved outside the repository. Gate check V16 refuses a condition that is not a real, settable input |
 | `matlab/` | a thin MATLAB face (`+vleo`) and the study's own published CSV | the tool this was ported from. Its saved run is what `tools/mat_parity.py` compares against |
 | `sources/` | every citation as an object with an id, not as free text | a fixture references `jacchia1971`, never a sentence. Marking a source superseded then lists every row that depended on it, in one query |
 | `cd06/` | `tree.json` — the CD-06 planning document's own node tree, extracted verbatim | where the 1396 rows came from. `tools/seed_tree.py` reads it, so the tree's shape is traceable to the document rather than asserted |

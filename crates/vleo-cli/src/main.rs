@@ -65,6 +65,7 @@ fn main() -> ExitCode {
         "list" => cmd_list(&rest),
         "show" => cmd_show(&rest),
         "cases" => cmd_cases(),
+        "inputs" => cmd_inputs(&rest),
         "selftest" => cmd_selftest(),
         "data" => cmd_data(&rest),
         "version" => {
@@ -97,22 +98,27 @@ fn help() {
         "\
 vleo <command>
 
-  run <node> [--customer <c>] [--condition <k>] [--mode alone|branch|all] [--set id=value ...]
-                       evaluate one node and everything it needs, for one
-                       customer and optionally under one condition. Prints the
+  run <node> [--inputs <file.csv> | --defaults] [--mode alone|branch|all] [--set id=value ...]
+                       evaluate one node and everything it needs. Prints the
                        value, its provenance and every node that was blocked —
                        always n ran, m blocked, and the blocked ones named.
-                       With no --customer, the first customer by id.
-                       --case is the old name for --customer and still works.
-  sweep <node> --over <input> --from <a> --to <b> [--points n] [--customer <c>] [--condition <k>]
+                       The inputs are the saved case — the one the browser
+                       saves — unless --inputs names a CSV or --defaults asks
+                       for the design as declared; --set has the last word.
+  sweep <node> --over <input> --from <a> --to <b> [--points n] [--inputs <file.csv> | --defaults]
                        a behaviour sweep. Refused points are recorded, never
                        dropped: a sweep in which some rows quietly used a
                        substituted value is a sweep whose conclusion is unknown.
-  campaign <node> [--condition <k>]
-                       run every customer against one node and compare.
+  campaign <node> [--inputs <file.csv> ...]
+                       the defaults, the saved case and each file named,
+                       side by side against one node.
   list [<subsystem>]   the rows, their kind, their owner and their state.
   show <node>          the sheet, as the engine holds it.
-  cases                the customers and the conditions, and what each supplies.
+  cases                the case, how its inputs divide into customer and
+                       condition, and whether a case is saved.
+  inputs [--inputs <file.csv> | --defaults]
+                       every input as a CSV — group, id, value, unit, default,
+                       range. Fill in `value` and pass the file with --inputs.
   selftest             every fixture declaration in the tree is sound —
                        provenance outside the code, a positive tolerance.
                        It does not execute them: `cargo test` does.
@@ -191,24 +197,55 @@ fn sets(args: &[&str]) -> Result<Vec<(String, f64)>, String> {
     Ok(out)
 }
 
+/// Where a run's inputs come from, and the values, in SI.
+///
+/// The saved case by default — the one the browser saves, so the terminal and
+/// the page run the same inputs. `--inputs <file.csv>` runs a file instead,
+/// and `--defaults` runs the design as declared. A file with a refused row is
+/// refused whole, with every refusal named: running its good rows alone would
+/// be a run on a case nobody wrote.
+fn inputs_for(args: &[&str]) -> Result<(String, Vec<(String, f64)>), String> {
+    if args.contains(&"--defaults") {
+        return Ok(("the declared defaults".into(), Vec::new()));
+    }
+    let (from, text) = match opt(args, "--inputs") {
+        Some(f) => (
+            f.to_string(),
+            std::fs::read_to_string(f).map_err(|e| format!("--inputs {f}: {e}"))?,
+        ),
+        None => {
+            let p = vleo_data::case_path();
+            match std::fs::read_to_string(&p) {
+                Ok(t) => (format!("the saved case ({})", p.display()), t),
+                Err(_) => return Ok(("the declared defaults".into(), Vec::new())),
+            }
+        }
+    };
+    let r = vleo_modules::inputs::read_csv(&text);
+    if !r.ok() {
+        let rows = r
+            .refused
+            .iter()
+            .map(|(l, id, why)| format!("\n  line {l}: {id} {why}"))
+            .collect::<String>();
+        return Err(format!("{from} cannot be applied:{rows}"));
+    }
+    Ok((format!("{from}, {} changed from default", r.changed), r.set))
+}
+
 fn build_case(node: &str, args: &[&str]) -> Result<Case, String> {
     if Vleo::find(node).is_none() {
         return Err(format!(
             "no node '{node}'. `vleo list` shows every row; the identifier is the module path."
         ));
     }
-    // `--case` is the name this flag had before customers and conditions were
-    // told apart. Kept, so a script written then still runs the same thing.
-    let base = opt(args, "--customer")
-        .or_else(|| opt(args, "--case"))
-        .unwrap_or("")
-        .to_string();
-    let condition = opt(args, "--condition").unwrap_or("").to_string();
+    let (_, mut supply) = inputs_for(args)?;
+    // What was typed on the command line has the last word.
+    supply.extend(sets(args)?);
     let (data, data_versions) = resolve_data();
     let case = Case {
-        base,
-        condition,
-        supply: sets(args)?,
+        base: opt(args, "--case").unwrap_or("").to_string(),
+        supply,
         target: node.to_string(),
         mode: RunMode::from_name(opt(args, "--mode").unwrap_or("branch")),
         data,
@@ -233,6 +270,7 @@ fn cmd_run(args: &[&str]) -> Result<(), String> {
     let def = &NODES[idx as usize];
     println!("\x1b[1m{}\x1b[0m — {}", def.id, def.label);
     println!("  {}", def.question);
+    println!("  inputs: {}", inputs_for(args)?.0);
     println!();
     match results.values.iter().find(|v| v.id == def.id) {
         Some(v) => {
@@ -325,6 +363,7 @@ fn cmd_sweep(args: &[&str]) -> Result<(), String> {
     let node_idx = Vleo::find(node).ok_or_else(|| format!("no node '{node}'"))?;
 
     let mut scratch = Scratch::new();
+    println!("# inputs: {}", inputs_for(args)?.0);
     println!(
         "# {} against {} — {} points\n# {:<18} {:<22} note",
         node, over, points, VARS[over_idx as usize].symbol, NODES[node_idx as usize].id
@@ -366,37 +405,47 @@ fn cmd_sweep(args: &[&str]) -> Result<(), String> {
 fn cmd_campaign(args: &[&str]) -> Result<(), String> {
     let node = *args.first().ok_or("usage: vleo campaign <node>")?;
     let node_idx = Vleo::find(node).ok_or_else(|| format!("no node '{node}'"))?;
-    let mut scratch = Scratch::new();
-    let condition = opt(args, "--condition").unwrap_or("").to_string();
-    println!(
-        "{:<16} {:>20} {:>8} {:>8} {:>10}  chain",
-        "customer", NODES[node_idx as usize].id, "ran", "blocked", "cred"
-    );
-    // Customers only. A condition is a stress laid over a customer, not a
-    // buyer of its own, so it is chosen once for the whole comparison.
-    for c in tables::CASES.iter().filter(|c| c.kind == "customer") {
-        let (data, data_versions) = resolve_data();
-        let case = Case {
-            base: c.id.to_string(),
-            condition: condition.clone(),
-            supply: sets(args)?,
-            target: node.to_string(),
-            mode: RunMode::Branch,
-            data,
-            data_versions,
-        };
-        if let Some(why) = vleo_modules::case_refusal(&case) {
-            return Err(format!(
-                "{}. `vleo cases` lists them.",
-                why.trim_end_matches('.')
-            ));
+    // THE DEFAULTS, THE SAVED CASE, AND EVERY FILE NAMED, side by side. A
+    // customer or a condition is a CSV somebody keeps, not a file in this
+    // repository, so comparing them is comparing files: one run each, the
+    // same row, the same engine.
+    // `--inputs a.csv b.csv` and `--inputs a.csv --inputs b.csv` alike.
+    let mut files: Vec<&str> = Vec::new();
+    let mut taking = false;
+    for a in args.iter().skip(1) {
+        if *a == "--inputs" {
+            taking = true;
+        } else if a.starts_with("--") {
+            taking = false;
+        } else if taking {
+            files.push(a);
         }
+    }
+    let mut runs: Vec<(String, Vec<&str>)> = vec![("defaults".into(), vec!["--defaults"])];
+    if vleo_data::case_path().exists() {
+        runs.push(("saved case".into(), vec![]));
+    }
+    for f in &files {
+        runs.push((f.to_string(), vec!["--inputs", f]));
+    }
+    let mut scratch = Scratch::new();
+    // As wide as the longest name, so a file path does not push its row's
+    // numbers out from under their headings.
+    let w = runs.iter().map(|(n, _)| n.len()).max().unwrap_or(0).max(28);
+    println!(
+        "{:<w$} {:>20} {:>8} {:>8} {:>10}  chain",
+        "inputs", NODES[node_idx as usize].id, "ran", "blocked", "cred"
+    );
+    for (name, flags) in runs {
+        let mut a: Vec<&str> = vec![node];
+        a.extend(flags);
+        let case = build_case(node, &a)?;
         match vleo_modules::evaluate(&case, &mut scratch) {
             Ok(r) => {
                 let v = r.values.iter().find(|v| v.id == node);
                 println!(
-                    "{:<16} {:>20} {:>8} {:>8} {:>10}  {}",
-                    c.id,
+                    "{:<w$} {:>20} {:>8} {:>8} {:>10}  {}",
+                    name,
                     v.map(|v| vleo_bus::present(v.value, VARS[node_idx as usize].unit, 6).0)
                         .unwrap_or_else(|| "-".into()),
                     r.manifest.ran,
@@ -406,7 +455,7 @@ fn cmd_campaign(args: &[&str]) -> Result<(), String> {
                     r.manifest.chain
                 );
             }
-            Err(f) => println!("{:<16} refused: {}", c.id, f),
+            Err(f) => println!("{:<w$} refused: {}", name, f),
         }
     }
     Ok(())
@@ -524,33 +573,21 @@ fn cmd_show(args: &[&str]) -> Result<(), String> {
 }
 
 fn cmd_cases() -> Result<(), String> {
-    let mut last = "";
     for c in tables::CASES.iter() {
-        if c.kind != last {
-            println!(
-                "{}",
-                if c.kind == "customer" {
-                    "customers — who a run is for (--customer)"
-                } else {
-                    "conditions — laid over a customer (--condition)"
-                }
-            );
-            last = c.kind;
-        }
+        let all = vleo_modules::inputs::inputs(c);
+        let cond = all
+            .iter()
+            .filter(|i| i.group == vleo_modules::inputs::Group::Condition)
+            .count();
         println!("\x1b[1m{}\x1b[0m — {}", c.id, c.label);
         println!("  {}", c.note);
-        if !c.unavailable.is_empty() {
-            println!("  CANNOT BE APPLIED: {}", c.unavailable);
-        } else if c.supply.is_empty() {
-            println!("  supplies nothing beyond each node's declared value");
-        } else {
-            for (v, val) in c.supply {
-                println!("  {:<34} {}", VARS[*v as usize].id, val);
-            }
-        }
-        // The architecture's cycles come with the customer; a condition carries
-        // none of its own (V16), so listing them again under it says nothing.
-        for cy in c.cycles.iter().filter(|_| c.kind == "customer") {
+        println!(
+            "  {} inputs: {} customer, {} condition. `vleo inputs` prints them as a CSV to fill in.",
+            all.len(),
+            all.len() - cond,
+            cond
+        );
+        for cy in c.cycles {
             println!(
                 "  declared cycle over {} nodes, converging on {} to {:e} in at most {} sweeps",
                 cy.nodes.len(),
@@ -559,8 +596,36 @@ fn cmd_cases() -> Result<(), String> {
                 cy.max_iter
             );
         }
-        println!();
     }
+    let p = vleo_data::case_path();
+    match std::fs::read_to_string(&p) {
+        Ok(t) => {
+            let r = vleo_modules::inputs::read_csv(&t);
+            println!(
+                "saved case: {} — {} changed from default{}",
+                p.display(),
+                r.changed,
+                if r.ok() {
+                    String::new()
+                } else {
+                    format!(", {} row(s) that no longer apply", r.refused.len())
+                }
+            );
+        }
+        Err(_) => println!(
+            "saved case: none — every run uses the declared defaults ({})",
+            p.display()
+        ),
+    }
+    Ok(())
+}
+
+/// The case's inputs as a CSV: every input, its group, the value it runs at
+/// when one is saved, its default and its range. Fill in `value` and pass the
+/// file back with `--inputs`, or upload it on the Inputs page.
+fn cmd_inputs(args: &[&str]) -> Result<(), String> {
+    let (_, set) = inputs_for(args)?;
+    print!("{}", vleo_modules::inputs::csv(&set));
     Ok(())
 }
 

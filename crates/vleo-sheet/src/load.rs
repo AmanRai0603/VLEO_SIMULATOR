@@ -514,12 +514,20 @@ fn load_cases(tree: &mut Tree) -> Result<(), String> {
         let v: toml::Value = text.parse().map_err(|e| format!("{}: {e}", p.display()))?;
         let mut c = Case {
             id: s(v.get("id")),
-            kind: s(v.get("kind")),
             label: s(v.get("label")),
             note: s(v.get("note")),
-            unavailable: s(v.get("unavailable")),
             ..Default::default()
         };
+        if let Some(cond) = v
+            .get("groups")
+            .and_then(|g| g.get("condition"))
+            .and_then(|c| c.as_array())
+        {
+            c.conditions = cond
+                .iter()
+                .filter_map(|x| x.as_str().map(str::to_string))
+                .collect();
+        }
         if let Some(sup) = v.get("supply").and_then(|s| s.as_table()) {
             for (k, val) in sup {
                 c.supply.push((k.clone(), f(Some(val))));

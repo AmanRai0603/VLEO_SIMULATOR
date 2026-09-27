@@ -103,6 +103,12 @@ export function drawStatus(disp) {
     $('#caserow-note').textContent = r ? 'owner ' + r.owner : '';
     return;
   }
+  if (S.view === 'inputs') {
+    $('#status').textContent = ['The case', S.saved ? S.saved.label : '', caseTag()]
+      .filter(Boolean).join(' · ');
+    $('#caserow-note').textContent = '';
+    return;
+  }
   if (S.view === 'run') {
     const r = S.byId.get(S.runTarget);
     $('#status').textContent = ['Layer 4', 'The run', r ? r.id : '—', caseTag(), S.mode]

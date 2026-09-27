@@ -348,33 +348,22 @@ pub struct CycleSpec {
     pub seeds: Vec<(String, f64)>,
 }
 
-/// A file in `cases/`: who a run is for, or what sky it is flown under.
+/// The case: the one multipayload design, and the shape of its inputs.
 ///
-/// Two kinds, because they answer two questions. A **customer** is a buyer of
-/// the one shared architecture and supplies the values that buyer chose. A
-/// **condition** is laid over whichever customer is chosen — an altitude, a
-/// solar state — so a stress is asked of a customer's design rather than of a
-/// design nobody bought. The order is fixed: declared value, then the
-/// customer, then the condition, then whatever a person typed over it.
+/// There is one, not one per customer — see `cases/multipayload.toml`. The
+/// values a person works with are stored by the application outside the
+/// repository; what is here is which inputs describe the CONDITION the design
+/// flies in. Every other declared input is CUSTOMER.
 #[derive(Clone, Debug, Default)]
 pub struct Case {
     pub id: String,
-    /// `customer` or `condition`, and nothing else — V16 refuses any other.
-    pub kind: String,
     pub label: String,
     pub note: String,
-    /// Why this file cannot be applied, when it cannot. Empty means it can.
-    /// Kept in the file rather than deleted with it: the question it asked is
-    /// still a real one, and a reason on screen says what would bring it back.
-    pub unavailable: String,
     pub supply: Vec<(String, f64)>,
     pub cycles: Vec<CycleSpec>,
-}
-
-impl Case {
-    pub fn is_customer(&self) -> bool {
-        self.kind == "customer"
-    }
+    /// The inputs in the Condition group, by row id. V16 refuses a name that
+    /// is not a declared, published input.
+    pub conditions: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default)]

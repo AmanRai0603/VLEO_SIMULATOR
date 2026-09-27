@@ -65,6 +65,12 @@ URL = re.compile(r"http://127\.0\.0\.1:(\d+)")
 TIMEOUT_RUN = 900
 TIMEOUT_SERVE = 1200
 
+# Every command and every daemon this check starts reads and writes a case of
+# its own, never the one saved on this machine: the manual is a statement about
+# the declared defaults, and a walk that saves a case must not leave it behind
+# for the person who ran the check.
+CASE = Path(tempfile.mkdtemp(prefix="vleo-manual-case-")) / "inputs.csv"
+
 
 def plain(s):
     return ANSI.sub("", s)
@@ -91,7 +97,7 @@ def tree_state(cwd):
 
 
 def run(cmd, cwd, timeout=TIMEOUT_RUN):
-    env = dict(os.environ, NO_COLOR="1", CARGO_TERM_COLOR="never")
+    env = dict(os.environ, NO_COLOR="1", CARGO_TERM_COLOR="never", VLEO_CASE=str(CASE))
     try:
         r = subprocess.run(
             ["bash", "-c", cmd], cwd=cwd, capture_output=True, text=True,
@@ -154,7 +160,7 @@ class Serving:
         self.port = None
 
     def __enter__(self):
-        env = dict(os.environ, NO_COLOR="1", CARGO_TERM_COLOR="never")
+        env = dict(os.environ, NO_COLOR="1", CARGO_TERM_COLOR="never", VLEO_CASE=str(CASE))
         self.proc = subprocess.Popen(
             ["bash", "-c", self.cmd], cwd=ROOT, env=env,
             stdout=self.log, stderr=subprocess.STDOUT, start_new_session=True,
@@ -511,39 +517,103 @@ def browser_walk():
                 assert page.locator("#runview").is_visible(), "the run tab did not open"
             ok("the run tab opens", run_tab)
 
-            # A RUN IS FOR A CUSTOMER. The menu offers exactly the customers
-            # cases/ holds, the bar and the panel are one choice, the inputs are
-            # listed with who set them, and an edit in that table is what the run
-            # uses — held in the browser, so the working tree does not move.
-            def customer_run():
+            # THE CASE IS SET ON THE INPUTS PAGE, AND GIT NEVER SEES IT. The
+            # page lists every input in its two halves; a value saved there is
+            # what the next run uses; an uploaded file is shown before it is
+            # saved and refused whole when a row is bad; reset removes it. Every
+            # step leaves the working tree as it was, because the case is kept
+            # at VLEO_CASE — a scratch path for this walk — and not in the
+            # repository.
+            def open_inputs():
+                home()
+                page.locator("#tabs .tab", has_text=U("browser-inputs", 1)).first.click()
+                page.wait_for_selector("#inputsview:not([hidden]) .case-table tr.ci")
+
+            def case_state():
+                return page.locator(".case-state").inner_text()
+
+            def case_saved_on_page():
+                open_inputs()
+                total = page.evaluate("S.saved.inputs.length")
+                shown = 0
+                for g in ("Customer", U("browser-inputs", 2)):
+                    page.locator(".case-tab", has_text=g).first.click()
+                    page.wait_for_selector(".case-table tr.ci")
+                    shown += page.locator(".case-table tr.ci").count()
+                assert shown == total, f"the two halves list {shown} inputs, the case has {total}"
+                field = page.locator(f'tr.ci[data-id="{WALK_DECLARED}"] .ci-v')
+                field.fill("2")
+                field.dispatch_event("change")
+                button(".case-save-bar", U("browser-inputs", 3)).click()
+                page.wait_for_function(
+                    "() => /1 input changed/.test(document.querySelector('.case-state').innerText)",
+                    timeout=15000)
+                assert CASE.is_file() and f"{WALK_DECLARED}," in CASE.read_text(), \
+                    f"saving did not write the case to {CASE}"
+                untouched("saving the case")
                 open_row(WALK_COMPUTED)
                 panel = "#run-panel"
                 page.wait_for_selector(panel + " .run-in-table", timeout=60000)
-                assert U("browser-run", 6) in page.locator(panel).inner_text().lower(), \
-                    "the run panel does not offer a customer"
-                want = page.evaluate("S.index.cases.filter(c => c.kind === 'customer').map(c => c.id)")
-                got = page.locator(panel + " .run-customer option").evaluate_all(
-                    "os => os.map(o => o.value)")
-                assert got == want, f"the customer menu offers {got}, cases/ holds {want}"
-                second = want[1]
-                page.select_option(panel + " .run-customer", second)
+                src = page.locator(f'{panel} tr.ri[data-ovr="{WALK_DECLARED}"] .ri-src').inner_text()
+                assert src == "saved case", f"a saved input is credited to '{src}'"
+                button(panel, U("browser-run", 4)).click()
+                page.wait_for_selector(panel + " .answer", timeout=60000)
+                answer = page.locator(panel + " .answer").inner_text()
+                assert "80" in answer, f"the run did not use the saved case: {answer}"
+                assert "1 input changed" in page.locator(panel + " .run-for").inner_text()
+            ok("a value saved on the Inputs page is what the next run uses, and git sees nothing",
+               case_saved_on_page)
+
+            def case_upload():
+                open_inputs()
+                before = CASE.read_text() if CASE.is_file() else None
+                bad = Path(tempfile.mkdtemp()) / "bad.csv"
+                bad.write_text(f"id,value\n{WALK_DECLARED},9\nnot_a_row,1\n")
+                page.set_input_files(".case-up", str(bad))
+                page.wait_for_selector(".case-file .blocked")
+                said = page.locator(".case-file").inner_text()
+                assert "not_a_row" in said and "above 3" in said, f"a bad file was not refused by row: {said[:300]}"
+                assert (CASE.read_text() if CASE.is_file() else None) == before, "a refused file changed the case"
+                good = Path(tempfile.mkdtemp()) / "good.csv"
+                good.write_text(f"group,id,value\ncondition,{WALK_DECLARED},1\n")
+                page.set_input_files(".case-up", str(good))
+                page.wait_for_selector(".case-pv-save")
+                assert (CASE.read_text() if CASE.is_file() else None) == before, "a previewed file was saved unasked"
+                button(".case-file", U("browser-inputs", 6)).click()
                 page.wait_for_function(
-                    f"() => document.querySelector('#customer-picks [data-customer=\"{second}\"]')"
-                    ".classList.contains('sel')", timeout=15000)
+                    "() => /1 input changed/.test(document.querySelector('.case-state').innerText) && "
+                    "!document.querySelector('.case-file')", timeout=15000)
+                assert f"{WALK_DECLARED}," in CASE.read_text() and ",1," in CASE.read_text(), \
+                    "the uploaded file is not the saved case"
+                untouched("uploading a case")
+                page.once("dialog", lambda d: d.accept())
+                button(".case-actions", U("browser-inputs", 8)).click()
+                page.wait_for_function(
+                    "() => /every input is at its default/.test(document.querySelector('.case-state').innerText)",
+                    timeout=15000)
+                assert not CASE.is_file(), "reset left the saved case behind"
+            ok("an upload is shown first, refused whole on a bad row, saved on request, and reset",
+               case_upload)
+
+            def whatif_to_case():
+                open_row(WALK_COMPUTED)
+                panel = "#run-panel"
                 page.wait_for_selector(panel + " .run-in-table", timeout=60000)
                 row = page.locator(f'{panel} tr.ri[data-ovr="{WALK_DECLARED}"]')
                 row.locator(".ri-v").fill("2")
                 row.locator(".ri-v").press("Tab")
                 assert row.locator(".ri-src").inner_text() == "your edit", "an edited input is not credited to you"
-                button(panel, U("browser-run", 4)).click()
+                assert not CASE.is_file(), "a what-if wrote the case"
+                button(panel, U("browser-run", 8)).click()
                 page.wait_for_function(
-                    "() => /edited by you/.test(document.querySelector('#run-panel .run-out').innerText)",
-                    timeout=60000)
-                answer = page.locator(panel + " .answer").inner_text()
-                assert "80" in answer, f"the run did not use the edited input: {answer}"
-                untouched("a customer's run with an edited input")
+                    "() => /1 input changed/.test(document.querySelector('#case-state').innerText)",
+                    timeout=30000)
+                page.wait_for_selector("#ovrbar", state="hidden")
+                assert CASE.is_file(), "saving the edits did not write the case"
+                untouched("saving a what-if to the case")
+                urllib.request.urlopen(urllib.request.Request(base + "v1/inputs/reset", data=b""), timeout=10)
                 page.evaluate("localStorage.clear()")
-            ok("a run is for a customer, lists its inputs, and runs an edit without writing", customer_run)
+            ok("a what-if is held in the browser until it is saved to the case", whatif_to_case)
 
             print("\nwhat if")
 

@@ -12,12 +12,13 @@
 
 import { $, $$ } from './dom.js';
 import { S, SIZES, HOWTO, load, layerRoot, subsystemLayers, subtreeAll,
-         customers, conditions, customerShort, setCase, onCaseChange } from './state.js';
+         theCase, loadSaved, onCaseChange } from './state.js';
 import { drawFigure, drawCaptions, drawStepper, drawStatus, drawFoot } from './figure.js';
 import { openNode } from './node.js';
 import { renderRun } from './run.js';
 import { drawArchitecture } from './architecture.js';
 import { renderManual } from './manual.js';
+import { renderCase, preview, saveOverridesToCase, savableOverrides } from './case.js';
 import { loadOverrides, overrideCount, clearAllOverrides, clearOverride,
          fromSI, onOverrideChange } from './inputs.js';
 
@@ -32,6 +33,9 @@ async function boot() {
     return;
   }
   fillSubsys();
+  // The saved case, so every status line and run panel can say which inputs
+  // the numbers are for before the first run is asked for.
+  await loadSaved();
   // What this browser remembered from last time. It is read after the index so
   // an override naming a row that no longer exists can be dropped rather than
   // sent to the engine.
@@ -78,19 +82,25 @@ export function draw() {
   $('#runview').hidden  = v !== 'run';
   $('#archview').hidden = v !== 'arch';
   $('#manualview').hidden = v !== 'manual';
-  $('#caption-a').hidden = $('#caption-b').hidden = (v === 'node' || v === 'arch' || v === 'manual');
+  $('#inputsview').hidden = v !== 'inputs';
+  $('#caption-a').hidden = $('#caption-b').hidden =
+    (v === 'node' || v === 'arch' || v === 'manual' || v === 'inputs');
   // The stepper walks a person through reading the TREE; on the manual it
   // would be a second set of instructions beside the first.
-  $('#stepper').hidden = v === 'manual';
+  $('#stepper').hidden = v === 'manual' || v === 'inputs';
   $('#controls').style.display = v === 'layer' && S.layer !== 4 ? '' : 'none';
-  $('#caserow').style.display = v === 'arch' || v === 'manual' || S.layer === 4 ? 'none' : '';
+  // The case bar everywhere a number is shown: which inputs every run is on
+  // is the first thing a reader of any number needs.
+  $('#caserow').style.display = v === 'arch' || v === 'manual' || v === 'inputs' ? 'none' : '';
   $('#subsys-grp').style.display = S.layer === 3 ? '' : 'none';
   $('#concept-grp').style.display = S.layer === 1 ? '' : 'none';
 
   $('#arch-tab').classList.toggle('sel', v === 'arch');
   $('#manual-tab').classList.toggle('sel', v === 'manual');
+  $('#inputs-tab').classList.toggle('sel', v === 'inputs');
   $$('.tab[data-layer]').forEach(b =>
-    b.classList.toggle('sel', v !== 'arch' && v !== 'manual' && +b.dataset.layer === S.layer));
+    b.classList.toggle('sel', v !== 'arch' && v !== 'manual' && v !== 'inputs' &&
+                              +b.dataset.layer === S.layer));
   $$('.ctl.sz').forEach(b => b.classList.toggle('sel', b.dataset.size === S.size));
   drawCaseBar();
   $$('.ctl.cpt').forEach(b => b.classList.toggle('sel', b.dataset.concept === S.concept));
@@ -103,32 +113,39 @@ export function draw() {
 
   if (v === 'arch') { drawArchitecture(); drawStatus([]); return; }
   if (v === 'manual') { drawStatus([]); return; }
+  if (v === 'inputs') { drawStatus([]); return; }
   if (v === 'run')  { drawRunView(); drawStatus([]); return; }
   if (v === 'node') { drawStatus(S.disp); return; }
   drawStatus(drawFigure());
 }
 
 /**
- * The customer and the condition, across the top.
+ * The case, across the top: its name, how far its inputs are from the
+ * defaults, and the way in to change them.
  *
- * Built from cases/ rather than written into the page: this bar used to hold
- * two hard-coded buttons, C1 and C2, that changed a word in the status line and
- * nothing else, while the run panel below offered five other names under the
- * word "case". One pair now, set here or in any run panel, and every number on
- * screen is for it.
+ * There is one case. This bar once held a button per customer and a menu of
+ * conditions, each a file under cases/ — and a customer that needed a file and
+ * a commit to exist was a tree that grew with every customer. What varies now
+ * is the inputs, set on the Inputs page or uploaded as a CSV and saved by the
+ * daemon outside the repository.
  */
 function drawCaseBar() {
-  const picks = $('#customer-picks');
-  picks.innerHTML = customers().map(c =>
-    '<button class="ctl case' + (c.id === S.engineCase ? ' sel' : '') + '" data-customer="' +
-    c.id + '" title="' + c.note.replace(/"/g, '&quot;') + '">' + customerShort(c) + '</button>').join('');
-  const sel = $('#condition-pick');
-  sel.innerHTML = '<option value="">none</option>' + conditions().map(k =>
-    '<option value="' + k.id + '"' + (k.unavailable ? ' disabled' : '') +
-    (k.id === S.condition ? ' selected' : '') + ' title="' +
-    (k.unavailable || k.note).replace(/"/g, '&quot;') + '">' + k.label +
-    (k.unavailable ? ' — cannot be applied' : '') + '</option>').join('');
-  sel.value = S.condition;
+  const c = theCase();
+  $('#case-name').textContent = c ? c.label : 'no case';
+  const d = S.saved;
+  $('#case-state').textContent = !d ? 'the case could not be read'
+    : !d.stored ? 'every input at its default'
+    : d.changed + ' input' + (d.changed === 1 ? '' : 's') + ' changed from default' +
+      (d.refused && d.refused.length ? ' · ' + d.refused.length + ' saved value' +
+        (d.refused.length === 1 ? '' : 's') + ' no longer apply' : '');
+  $('#inputs-tab').textContent = 'Inputs' + (d && d.stored && d.changed ? ' · ' + d.changed : '');
+}
+
+/** Open the Inputs page. Rendered once per visit, like the manual. */
+async function setInputs() {
+  S.view = 'inputs';
+  draw();
+  await renderCase($('#inputs-body'));
 }
 
 /**
@@ -145,6 +162,7 @@ function drawOverrideBar() {
   const n = overrideCount();
   bar.hidden = n === 0;
   if (!n) return;
+  const savable = savableOverrides();
   const rows = [];
   for (const [id, si] of S.overrides) {
     const r = S.byId.get(id);
@@ -173,7 +191,14 @@ function drawOverrideBar() {
       'is. The sheets on disk are untouched and nothing is written to the ' +
       'repository.</div>' +
     '<div class="ovr-chips">' + rows.join('') +
-      '<button class="ctl ovr-bar-clear">put all back</button></div>';
+      '<button class="ctl ovr-bar-clear">put all back</button>' +
+      // A what-if worth keeping is made the case here — saved by the daemon,
+      // outside the repository, like any other change to the inputs.
+      (savable ? '<button class="ctl ovr-bar-save" title="make ' + (savable === n ? 'these' :
+        savable + ' of these') + ' part of the saved case: every run on every page then uses ' +
+        (savable === 1 ? 'it' : 'them') + '">save ' + (savable === n ? '' : savable + ' ') +
+        'to the case</button>' : '') +
+      '<span class="why ovr-bar-said"></span></div>';
 
   $$('.ovr-x', bar).forEach(b => b.onclick = e => {
     e.stopPropagation();
@@ -182,6 +207,17 @@ function drawOverrideBar() {
     draw();
   });
   $('.ovr-bar-clear', bar).onclick = () => { clearAllOverrides(); S.lastRun = null; draw(); };
+  const save = $('.ovr-bar-save', bar);
+  if (save) save.onclick = async () => {
+    save.disabled = true;
+    const res = await saveOverridesToCase();
+    // On success the case changed and everything showing a number redraws,
+    // this bar with it; only a refusal is left to say here.
+    if (!res.ok && bar.isConnected) {
+      save.disabled = false;
+      $('.ovr-bar-said', bar).textContent = 'not saved: ' + (res.message || 'refused');
+    }
+  };
 }
 
 /** Six significant figures, as the rest of the face writes a number. */
@@ -324,16 +360,24 @@ function wire() {
 
   $$('.ctl.sz').forEach(b => b.onclick = () => { S.size = b.dataset.size; draw(); });
   $$('.ctl.cpt').forEach(b => b.onclick = () => { S.concept = b.dataset.concept; draw(); });
-  $('#customer-picks').addEventListener('click', e => {
-    const b = e.target.closest('[data-customer]');
-    if (b && b.dataset.customer !== S.engineCase) setCase(b.dataset.customer);
-  });
-  $('#condition-pick').onchange = e => setCase(undefined, e.target.value);
-  // Whoever changed the pair, every number on screen was for the old one. The
-  // node page is re-opened rather than patched: its input fields, its figures
-  // and its run panel all read the customer, and re-opening is the one path
-  // that is already known to draw all of them from nothing.
+  $('#inputs-tab').onclick = () => setInputs();
+  $('#case-inputs').onclick = () => setInputs();
+  // An upload from the bar opens the Inputs page and reads the file there, so
+  // what it would change is shown before anything is saved.
+  $('#case-upload').onchange = async e => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    await setInputs();
+    await preview($('#inputs-body'), file.name, await file.text());
+  };
+  // Whoever changed the saved case, every number on screen was for the old
+  // inputs. The node page is re-opened rather than patched: its input fields,
+  // its figures and its run panel all read the case, and re-opening is the one
+  // path that is already known to draw all of them from nothing. The Inputs
+  // page redraws itself.
   onCaseChange(() => {
+    if (S.view === 'inputs') { drawCaseBar(); drawStatus([]); return; }
     if (S.view === 'node' && S.selected) { draw(); openNode(S.selected); return; }
     draw();
   });
@@ -381,6 +425,7 @@ function wire() {
     e.preventDefault();
     if (x.dataset.goto) goTo(x.dataset.goto);
     else if (x.dataset.group) goToGroup(x.dataset.group);
+    else if (x.dataset.inputs !== undefined) setInputs();
   });
 
   document.addEventListener('keydown', e => {

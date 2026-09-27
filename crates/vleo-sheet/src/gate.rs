@@ -954,84 +954,62 @@ pub fn validate_tree(tree: &Tree) -> Vec<Check> {
         Check::fail("V15 one label per row in a group", twins.join(", "))
     });
 
-    // V16 — every customer and condition supplies only what a run can take.
+    // V16 — the case supplies only what a run can take, and its groups name
+    //       only real inputs.
     //
     // A value in `cases/` aimed at a row that is not declared is overwritten
     // the moment that row is evaluated, and the run reports the design's number
-    // as though the file had been applied. That is not hypothetical: the solar
-    // maximum and minimum conditions set env_f107, env_f107a and env_kp, which
-    // became computed when the environment was wired to the solar-weather rows,
-    // and from then on "solar maximum" returned exactly the nominal answer with
-    // nothing to say so. A key naming no row at all was worse — the generator
-    // dropped it before the engine ever saw it.
+    // as though the file had been applied. That happened: two stored skies set
+    // three rows that later became computed, and from then on "solar maximum"
+    // returned the plain design under a storm's name. A key naming no row at
+    // all was worse — the generator dropped it before the engine saw it.
     //
-    // So a file either supplies declared, published rows only, or it says why it
-    // cannot be applied, and every face refuses it with that sentence. There is
-    // no third state in which it runs and quietly does nothing.
-    //
-    // Two kinds and no others, at least one customer (every face defaults to the
-    // first one by id), and a condition may not carry cycles of its own: the
-    // architecture's cycles come with the customer, and a stress that changed
-    // the loop structure would be a second design rather than a condition on
-    // this one.
+    // The Condition list is held to the same standard. It decides which half
+    // of the Inputs page and of every uploaded CSV an input sits in, and a
+    // name that is not a declared, published input would be a heading over
+    // nothing — or, after a rename, an input quietly moved to Customer.
     let mut badcase = Vec::new();
-    let mut customers = 0;
     for c in tree.cases.values() {
-        match c.kind.as_str() {
-            "customer" => customers += 1,
-            "condition" => {}
-            other => badcase.push(format!(
-                "cases/{}.toml has kind = \"{}\"; it must be \"customer\" or \"condition\"",
-                c.id, other
+        let mut check = |what: &str, k: &str| match tree.sheets.get(k) {
+            None => badcase.push(format!("{} {what} {}, which is not a row", c.id, k)),
+            Some(sh) if !sh.is_declared() => badcase.push(format!(
+                "{} {what} {}, which is {} — a run overwrites it, so it would change \
+                 nothing. Only a declared input can be set",
+                c.id, k, sh.kind
             )),
-        }
-        if c.is_customer() && !c.unavailable.is_empty() {
-            badcase.push(format!(
-                "customer {} is marked unavailable; a customer with nothing to apply is \
-                 an empty supply, not an unavailable one",
-                c.id
-            ));
-        }
-        if c.kind == "condition" && c.cycles.len() > tree.cycles.len() {
-            badcase.push(format!(
-                "condition {} declares a cycle of its own; cycles belong to the design",
-                c.id
-            ));
-        }
-        if !c.unavailable.is_empty() {
-            continue;
-        }
+            Some(sh) if sh.state != "published" => badcase.push(format!(
+                "{} {what} {}, which is {} rather than published",
+                c.id,
+                k,
+                if sh.is_seeded() {
+                    "seeded"
+                } else {
+                    sh.state.as_str()
+                }
+            )),
+            Some(_) => {}
+        };
         for (k, _) in &c.supply {
-            match tree.sheets.get(k) {
-                None => badcase.push(format!("{} supplies {}, which is not a row", c.id, k)),
-                Some(sh) if !sh.is_declared() => badcase.push(format!(
-                    "{} supplies {}, which is {} — a run overwrites it, so the file would \
-                     change nothing. Point it at a declared row, or mark the file unavailable \
-                     and say why",
-                    c.id, k, sh.kind
-                )),
-                Some(sh) if sh.state != "published" => badcase.push(format!(
-                    "{} supplies {}, which is {} rather than published",
-                    c.id,
-                    k,
-                    if sh.is_seeded() {
-                        "seeded"
-                    } else {
-                        sh.state.as_str()
-                    }
-                )),
-                Some(_) => {}
+            check("supplies", k);
+        }
+        for k in &c.conditions {
+            check("lists as a condition", k);
+        }
+        let mut seen = BTreeSet::new();
+        for k in &c.conditions {
+            if !seen.insert(k.as_str()) {
+                badcase.push(format!("{} lists {} as a condition twice", c.id, k));
             }
         }
     }
-    if customers == 0 {
-        badcase.push("cases/ holds no customer, and every face runs one by default".into());
+    if tree.cases.is_empty() {
+        badcase.push("cases/ holds no case, and every face runs one by default".into());
     }
     out.push(if badcase.is_empty() {
-        Check::pass("V16 customers and conditions supply only what a run can take")
+        Check::pass("V16 the case supplies only what a run can take")
     } else {
         Check::fail(
-            "V16 customers and conditions supply only what a run can take",
+            "V16 the case supplies only what a run can take",
             badcase.join(", "),
         )
     });

@@ -191,6 +191,68 @@ ui = "put all back"
 
 
 [[layer.section]]
+id = "browser-inputs"
+title = "Set the inputs — the case"
+who = "user"
+body = """
+There is **one case**, the multipayload design, and every run, sweep and figure \
+in the tool is for it. What changes from one customer to the next, or from one \
+sky to the next, is its **inputs** — never the tree. A customer is a set of \
+values, not a folder, so a new customer is never a commit.
+
+The **Inputs** tab lists all of them in two halves. **Condition** is what the \
+design flies in: the orbit, the environment and the solar weather it is sized \
+for. **Customer** is everything else — the payloads, the vehicle, the service \
+and what it must deliver. Each shows the value it runs at, its default — the \
+value declared on its own sheet — and the range it may move in.
+
+Change values there and save them, or **upload a CSV**. A file is read and \
+shown before anything is saved: what it sets, what that changes, and every row \
+it refuses. A file with any refused row — a name that is not an input, a unit \
+that is not the row's, a value outside the declared range — is not used at \
+all, because keeping the good half would be a run on values nobody asked for. \
+A blank value means the default, so a file only has to name what it changes.
+
+The saved case is kept by the tool **outside the repository** — beside the \
+reference data, in `~/.vleo/case/`, or wherever `VLEO_CASE` points — so git \
+never sees it. To keep a copy, or hand one to someone, download it; to put it \
+back, upload it. The bar across the top always says how many inputs the saved \
+case changes."""
+
+[[layer.section.step]]
+say = "Open every input of the case. The bar across the top has the same way in."
+ui = "Inputs"
+
+[[layer.section.step]]
+say = "The two halves: what the customer chooses, and the condition it flies in."
+ui = "Condition"
+
+[[layer.section.step]]
+say = "Change a value, then save. **default** puts one input back."
+ui = "save to the case"
+
+[[layer.section.step]]
+say = "Or start from the template — every input, every value blank — fill it in anywhere a table can be edited, and upload it."
+ui = "download a blank template"
+
+[[layer.section.step]]
+say = "Upload a CSV. What it would change is shown first; nothing is saved until you say so."
+ui = "upload a CSV…"
+
+[[layer.section.step]]
+say = "Save the file as the case, or discard it."
+ui = "save as the case"
+
+[[layer.section.step]]
+say = "Keep a copy of the case as it stands."
+ui = "download the case as CSV"
+
+[[layer.section.step]]
+say = "Every input back to its default, and the saved file removed."
+ui = "reset every input to its default"
+
+
+[[layer.section]]
 id = "browser-run"
 title = "Run a row"
 who = "user"
@@ -198,20 +260,16 @@ body = """
 Every computed row can be evaluated on the spot, on its own page or from the \
 **4 The run** tab.
 
-**A run is for a customer.** Choose one in the bar across the top or at the head \
-of the run panel — they are the same choice — and, if you want, a **condition** \
-laid over it: an altitude, or a sky. The panel says in a sentence what that \
-customer and condition set. A customer that sets nothing of its own yet says \
-so, because its numbers are then the shared design's. A condition that can no \
-longer be applied is shown greyed out with the reason, never run as though it \
-had been.
+**A run is on the case** — its saved inputs, see *Set the inputs*. The panel \
+says so in a sentence, and under it lists every input the answer depends on, \
+the most influential first, each with the value it will run at, which half of \
+the case it is in, and where the value came from: the **default**, the **saved \
+case**, or **your edit**.
 
-**Then the inputs.** Under that sentence is every input the answer depends on, \
-the most influential first, each with the value it will run at and who set it: \
-the shared design, the customer, the condition, or you. Change one to ask a \
-what-if. The change is kept in this browser only — listed in the bar at the \
-top, applied to every run and sweep until you reset it, and never written to a \
-file, so git sees nothing.
+Change one to ask a what-if. The edit is kept in this browser only — listed in \
+the bar at the top, applied to every run and sweep until you reset it, and \
+never written to a file. When a what-if is worth keeping, **save it to the \
+case** and every page runs on it from then on.
 
 The result always says **n ran, m blocked**, and names every blocked row. A row \
 with nothing in it does not quietly supply a default — it refuses, under its \
@@ -231,20 +289,12 @@ say = "The whole tree."
 ui = "everything"
 
 [[layer.section.step]]
-say = "With the customer, the condition and the inputs as you want them, run."
+say = "With the inputs as you want them, run."
 ui = "run"
 
 [[layer.section.step]]
 say = "Or open the run tab and pick any row that has something in it as the target."
 ui = "4 The run"
-
-[[layer.section.step]]
-say = "Choose who the run is for. The bar across the top holds the same choice."
-ui = "customer"
-
-[[layer.section.step]]
-say = "Lay a condition over the customer, or leave it at none."
-ui = "condition"
 
 [[layer.section.step]]
 say = "Open the inputs, change one, and run with it. **reset** puts that one back."
@@ -255,8 +305,12 @@ say = "Or run straight from under the table."
 ui = "run with these inputs"
 
 [[layer.section.step]]
-say = "In the sweep, draw one line per customer to see where they part."
-ui = "every customer, one line each"
+say = "Make your edits part of the saved case. The bar at the top offers the same."
+ui = "save my edits to the case"
+
+[[layer.section.step]]
+say = "In the sweep, draw the declared defaults beside the case to see what the case changes."
+ui = "the declared defaults as well, one line each"
 
 
 [[layer.section]]
@@ -540,10 +594,10 @@ check = "exits"
 expect = "reads"
 
 [[layer.section.step]]
-say = "The customers and the conditions, and what each one supplies — or why it cannot be applied."
+say = "The case, how its inputs divide into customer and condition, and whether a case is saved."
 run = "cargo run -p vleo-cli --bin vleo -- cases"
 check = "exits"
-expect = "customer_1"
+expect = "108 customer, 20 condition"
 
 [[layer.section.step]]
 say = "Counts by state and by subsystem, and what is holding the tree back."
@@ -577,7 +631,7 @@ expect = "kernel"
 
 [[layer.section]]
 id = "term-run"
-title = "Run, change an input, sweep, compare customers"
+title = "Run, change an input, sweep, compare cases"
 who = "user"
 body = """
 The examples use the storm row `sw_ap_design`: *what daily Ap is this design \
@@ -586,15 +640,16 @@ and turns it into the Ap that level bounds.
 
 A run prints the answer, its **credibility** — the weakest of eight factors, \
 named — and **n ran, m blocked** with every blocked row named. The **chain** \
-hash identifies that exact number: the engine, the tree, the customer and every \
-input that reached it. Two runs with the same chain are the same run, so it is \
+hash identifies that exact number: the engine, the tree and every input that \
+reached it. Two runs with the same chain are the same run, so it is \
 the thing to quote.
 
-A run is for a **customer** — `--customer`, and with none named, the first by \
-id — optionally under a **condition** laid over it with `--condition`. The \
-order is fixed: each row's declared value, then the customer's, then the \
-condition's, then `--set`. `vleo cases` lists both. `--case` is the old name for \
-`--customer` and still works.
+A run is on the **case**: the saved one — the same file the browser saves — or, \
+with `--inputs`, a CSV of your own, or with `--defaults` every input at its \
+declared value. The first lines of a run say which. `vleo inputs` prints the \
+case as a CSV to fill in; a blank value means the default, and a file with any \
+row that cannot be applied is refused whole, each bad row named. The order is \
+fixed: each row's declared value, then the case's, then `--set`.
 
 `--set` only changes a **declared** number — never a computed one, which would \
 be overwritten the moment it was evaluated — and it never writes the sheet.
@@ -622,22 +677,22 @@ check = "fails"
 expect = "is computed from its inputs"
 
 [[layer.section.step]]
-say = "Run for another customer. Customer 2 sets nothing of its own yet, so its answer is the shared design's."
-run = "cargo run -p vleo-cli --bin vleo -- run sw_ap_design --customer customer_2"
+say = "Print the case as a CSV — every input, its unit, default and range. Fill in `value` and keep the file anywhere."
+run = "cargo run -p vleo-cli --bin vleo -- inputs --defaults"
+check = "exits"
+expect = "group,id,name,value,unit,default,min,max"
+
+[[layer.section.step]]
+say = "Run on a case file. This one designs for a G2 storm and leaves every other input at its default."
+run = "cargo run -p vleo-cli --bin vleo -- run sw_ap_design --inputs cases/examples/storm_level_2.csv"
+check = "exits"
+expect = "Ap_design = 80"
+
+[[layer.section.step]]
+say = "Or on the declared defaults, whatever case is saved."
+run = "cargo run -p vleo-cli --bin vleo -- run sw_ap_design --defaults"
 check = "exits"
 expect = "Ap_design = 132"
-
-[[layer.section.step]]
-say = "Lay a condition over the customer — here the 200 km altitude."
-run = "cargo run -p vleo-cli --bin vleo -- run orbit_altitude --condition low_altitude"
-check = "exits"
-expect = "h = 200.000 km"
-
-[[layer.section.step]]
-say = "A condition that can no longer be applied is refused with its reason, never run as though it had been."
-run = "cargo run -p vleo-cli --bin vleo -- run sw_ap_design --condition solar_max"
-check = "fails"
-expect = "cannot be applied"
 
 [[layer.section.step]]
 say = "Sweep a declared input across a range. A point that refuses is recorded, never dropped."
@@ -646,10 +701,10 @@ check = "exits"
 expect = "3 ran, 0 refused"
 
 [[layer.section.step]]
-say = "Every customer against one row, side by side."
-run = "cargo run -p vleo-cli --bin vleo -- campaign sw_ap_design"
+say = "The defaults, the saved case and any case files against one row, side by side."
+run = "cargo run -p vleo-cli --bin vleo -- campaign sw_ap_design --inputs cases/examples/storm_level_2.csv"
 check = "exits"
-expect = "customer_3"
+expect = "storm_level_2.csv"
 
 [[layer.section.step]]
 say = "Run the closure at the declared launch date, 1 January 2027. The answer is the fraction of the requirement still free."
@@ -1310,7 +1365,7 @@ effect = "writes"
 [[command]]
 tool = "vleo"
 name = "run"
-usage = "run <node> [--customer <c>] [--condition <k>] [--mode alone|branch|all] [--set id=value ...]"
+usage = "run <node> [--inputs <file.csv> | --defaults] [--mode alone|branch|all] [--set id=value ...]"
 what = "Evaluate a row and everything it needs. Always n ran, m blocked, with the blocked named."
 who = "user"
 effect = "reads"
@@ -1318,7 +1373,7 @@ effect = "reads"
 [[command]]
 tool = "vleo"
 name = "sweep"
-usage = "sweep <node> --over <input> --from <a> --to <b> [--points n] [--customer <c>] [--condition <k>]"
+usage = "sweep <node> --over <input> --from <a> --to <b> [--points n] [--inputs <file.csv> | --defaults]"
 what = "Sweep a declared input across a range. Refused points are recorded, never dropped."
 who = "user"
 effect = "reads"
@@ -1326,8 +1381,8 @@ effect = "reads"
 [[command]]
 tool = "vleo"
 name = "campaign"
-usage = "campaign <node> [--condition <k>]"
-what = "Every customer against one row."
+usage = "campaign <node> [--inputs <file.csv> ...]"
+what = "The defaults, the saved case and each case file named, against one row."
 who = "user"
 effect = "reads"
 
@@ -1351,7 +1406,15 @@ effect = "reads"
 tool = "vleo"
 name = "cases"
 usage = "cases"
-what = "The customers and the conditions, and what each supplies."
+what = "The case, how its inputs divide into customer and condition, and whether a case is saved."
+who = "user"
+effect = "reads"
+
+[[command]]
+tool = "vleo"
+name = "inputs"
+usage = "inputs [--inputs <file.csv> | --defaults]"
+what = "Every input of the case as a CSV — group, id, value, unit, default and range — to fill in and pass back with --inputs."
 who = "user"
 effect = "reads"
 
@@ -1466,12 +1529,37 @@ writes = true
 [[route]]
 method = "GET"
 path = "/v1/run"
-what = "Evaluate a row. `node`, and optionally `case` (the customer), `condition`, `mode` and `set`."
+what = "Evaluate a row on the saved case. `node`, and optionally `mode`, `set`, and `inputs=defaults` to run the declared defaults instead."
 
 [[route]]
 method = "POST"
 path = "/v1/run"
 what = "The same as GET, with the parameters in the body."
+
+[[route]]
+method = "GET"
+path = "/v1/inputs"
+what = "Every input of the case — group, unit, default, range and the saved value — and whether a case is saved."
+
+[[route]]
+method = "GET"
+path = "/v1/inputs.csv"
+what = "The saved case as a CSV to keep, or with `inputs=defaults` the blank template."
+
+[[route]]
+method = "POST"
+path = "/v1/inputs/check"
+what = "Read a case — `csv=` a file's text, or `set=<id>:<si>` pairs — and say what it sets and every row it refuses. Saves nothing."
+
+[[route]]
+method = "POST"
+path = "/v1/inputs"
+what = "Save a case, the same parameters as the check. All or nothing: a case with any refused row is not saved. Written outside the repository, so it needs no write permission."
+
+[[route]]
+method = "POST"
+path = "/v1/inputs/reset"
+what = "Remove the saved case: every input back to its default."
 
 [[route]]
 method = "GET"
@@ -1511,6 +1599,11 @@ what = "The published output of the tool this was ported from, for comparison."
 name = "VLEO_ALLOW_WRITE"
 what = "Start the daemon able to edit sheets: 1, true or yes. Anything else, or unset, is read-only."
 default = "unset — read-only"
+
+[[env]]
+name = "VLEO_CASE"
+what = "Where the saved case is kept — the CSV the Inputs page and `vleo run` read. Outside the repository, so git never sees it."
+default = "$HOME/.vleo/case/inputs.csv"
 
 [[env]]
 name = "VLEO_PORT"
@@ -1558,7 +1651,7 @@ who = "developer"
 
 [[folder]]
 name = "cases"
-what = "Who a run is for — each customer's values against the one shared architecture, never a copy of it — and the conditions a run can be laid under."
+what = "The one case: which inputs are the condition the design flies in, and so which are the customer's. Its values are not kept here — they are saved by the tool outside the repository. `cases/examples/` holds a case file to read and copy."
 who = "user"
 
 [[folder]]

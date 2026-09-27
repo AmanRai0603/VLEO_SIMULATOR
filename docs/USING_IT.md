@@ -129,42 +129,48 @@ numbers it reads instead — `vleo show env_density_uncertainty` lists them.
 `vleo show <node>` lists what a row reads, so the message is a pointer rather
 than a dead end.
 
-### For a customer, under a condition
+### On the case — its inputs, from the browser or a CSV
 
-Every run is for a **customer**: a buyer of the one shared architecture, with
-the values that buyer chose. With none named, the first by id — Customer 1, the
-reference design. A **condition** is laid over the customer — an altitude, a
-sky — and `--set` over both:
+There is **one case**, the multipayload design. A customer, or the sky it must
+survive, is a set of input values rather than a folder — so a new customer is
+never a commit, and the tree does not grow with the order book. Its 128 inputs
+come in two halves: the **condition** the design flies in — orbit, environment,
+solar weather, listed in `cases/multipayload.toml` — and everything the
+**customer** chooses. Each defaults to the value declared on its own sheet.
 
-```
-$ vleo run orbit_altitude --customer customer_2 --condition low_altitude
-  h = 200.000 km
+In the browser, the **Inputs** tab lists every one with its value, default and
+range. Change them there, or upload a CSV: the file is shown before anything is
+saved, and a file with any row that cannot be applied — not an input, the wrong
+unit, outside its range — is refused whole with each bad row named. The saved
+case is kept **outside the repository**, in `~/.vleo/case/inputs.csv` or
+wherever `VLEO_CASE` points, so git never sees it; download it to keep a copy.
+Every run, sweep and figure is on that case, and the run panel says of each
+input whether it is the default, the saved case, or your own what-if edit —
+which stays in the browser until you save it to the case.
 
-$ vleo run sw_ap_design --condition solar_max
-vleo: the condition 'solar_max' cannot be applied: It sets env_f107, env_f107a
-and env_kp, which have been COMPUTED from the solar-weather rows …
-```
-
-The second is a refusal on purpose. Those three rows became computed, so a run
-overwrote whatever the condition set and "solar maximum" had been returning the
-plain design under a storm's name. A condition that cannot be applied now says
-why, and gate check V16 refuses any customer or condition whose values would be
-overwritten the same way. Customers 2 and 3 set nothing of their own yet — CD-06
-leaves their values "set here" — so their numbers are the shared design's, and
-the tool says so rather than showing them as theirs.
-
-In the browser the same pair is chosen in the bar across the top. The run panel
-then lists every input the answer depends on, most influential first, with who
-set each: the shared design, the customer, the condition or you. Changing one is
-a what-if held in that browser — it is never written to a file, so git sees
-nothing — and the sweep can draw one line per customer.
-
-Run every customer against a row, or check that every fixture declaration in
-the tree is sound — `cargo test` is what executes them:
+From a terminal the same files work:
 
 ```
-vleo cases              # the customers and the conditions, and what each supplies
-vleo campaign l3_solar_ach_01
+$ vleo inputs --defaults > my_case.csv      # the template: fill in `value`
+$ vleo run sw_ap_design --inputs cases/examples/storm_level_2.csv
+  inputs: cases/examples/storm_level_2.csv, 1 changed from default
+  Ap_design = 80.0000 -
+
+$ vleo run sw_ap_design --defaults          # the design as declared
+  Ap_design = 132.000 -
+```
+
+With neither flag a run uses the saved case, and says so on its first lines.
+A blank value in a file means the default, so a file only has to name what it
+changes; `--set` has the last word over all of it.
+
+Compare the defaults, the saved case and any case files against a row, or check
+that every fixture declaration in the tree is sound — `cargo test` is what
+executes them:
+
+```
+vleo cases              # the case, and how its inputs divide
+vleo campaign l3_solar_ach_01 --inputs cases/examples/storm_level_2.csv
 vleo selftest
 ```
 

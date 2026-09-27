@@ -318,6 +318,22 @@ fn route(
         // The manual, with what is true of this running copy right now.
         ("GET", "/v1/manual") => manual_endpoint(ctx),
         ("GET", "/v1/index") => ok_json(index_json()),
+        ("GET", "/v1/inputs") => ok_json(inputs_json()),
+        // The saved case as a file to keep, or with `inputs=defaults` the blank
+        // template: every input, every value left at its default.
+        ("GET", "/v1/inputs.csv") => (
+            "200 OK",
+            "text/csv; charset=utf-8",
+            vleo_modules::inputs::csv(&if param(params, "inputs") == Some("defaults") {
+                Vec::new()
+            } else {
+                saved_case().set
+            })
+            .into_bytes(),
+        ),
+        ("POST", "/v1/inputs/check") => ok_json(inputs_check(params)),
+        ("POST", "/v1/inputs") => ok_json(inputs_save(params)),
+        ("POST", "/v1/inputs/reset") => ok_json(inputs_reset()),
         ("GET", p) if p.starts_with("/v1/fragment/") => {
             let id = p.trim_start_matches("/v1/fragment/");
             fragment(ctx, id)
@@ -1354,10 +1370,8 @@ fn index_json() -> String {
         }
         j.raw("{");
         j.str_field("id", c.id);
-        j.str_field("kind", c.kind);
         j.str_field("label", c.label);
         j.str_field("note", c.note);
-        j.str_field("unavailable", c.unavailable);
         j.num_field("cycles", c.cycles.len() as f64);
         j.key("supply").open_arr();
         for (k, (v, val)) in c.supply.iter().enumerate() {
@@ -1391,27 +1405,211 @@ fn param<'a>(params: &'a str, key: &str) -> Option<&'a str> {
 }
 
 fn decode(s: &str) -> String {
+    // BYTES FIRST, TEXT AFTER. Each %xx is one byte of UTF-8, and a character
+    // like ° or — is two or three of them; pushing each byte as a character
+    // turned "°" into two unrelated letters, which a unit check then refused.
     let b = s.as_bytes();
-    let mut out = String::new();
+    let mut out: Vec<u8> = Vec::with_capacity(b.len());
     let mut i = 0;
     while i < b.len() {
         match b[i] {
             b'+' => {
-                out.push(' ');
+                out.push(b' ');
                 i += 1;
             }
             b'%' if i + 2 < b.len() => {
-                let h = u8::from_str_radix(&s[i + 1..i + 3], 16).unwrap_or(b'?');
-                out.push(h as char);
+                out.push(u8::from_str_radix(&s[i + 1..i + 3], 16).unwrap_or(b'?'));
                 i += 3;
             }
             c => {
-                out.push(c as char);
+                out.push(c);
                 i += 1;
             }
         }
     }
-    out
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+// ---------------------------------------------------------------------------
+// the saved case
+//
+// The inputs a person saved, stored by the application and never in the
+// repository: beside the reference data, in ~/.vleo/case/inputs.csv, or
+// wherever VLEO_CASE points. Stored as the same CSV a person downloads, so the
+// file on disk is one they can open, read and keep.
+
+fn case_path() -> PathBuf {
+    vleo_data::case_path()
+}
+
+/// The saved case, read and checked against the tree as it is now.
+///
+/// Read on every request rather than held, because it is a small file and a
+/// person may replace it from another tab. RE-CHECKED on every read: a row can
+/// be retired or re-ranged after the case was saved, and a stored value that no
+/// longer applies is reported as `refused` — shown on the Inputs page and in
+/// the bar — rather than sent to the engine to refuse every run in the tool.
+fn saved_case() -> vleo_modules::inputs::Reading {
+    match std::fs::read_to_string(case_path()) {
+        Ok(text) => vleo_modules::inputs::read_csv(&text),
+        Err(_) => vleo_modules::inputs::read_csv(&vleo_modules::inputs::csv(&[])),
+    }
+}
+
+fn reading_json(j: &mut Json, r: &vleo_modules::inputs::Reading) {
+    j.num_field("changed", r.changed as f64);
+    j.num_field("defaulted", r.defaulted as f64);
+    j.key("set").open_arr();
+    for (k, (id, si)) in r.set.iter().enumerate() {
+        if k > 0 {
+            j.raw(",");
+        }
+        j.raw("{");
+        j.str_field("id", id);
+        j.num_field("value", *si);
+        j.close_obj();
+    }
+    j.close_arr();
+    j.key("refused").open_arr();
+    for (k, (line, id, why)) in r.refused.iter().enumerate() {
+        if k > 0 {
+            j.raw(",");
+        }
+        j.raw("{");
+        j.num_field("line", *line as f64);
+        j.str_field("id", id);
+        j.str_field("why", why);
+        j.close_obj();
+    }
+    j.close_arr();
+}
+
+/// Every input of the case, its group, default, range and saved value.
+fn inputs_json() -> String {
+    let saved = saved_case();
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    if let Some(c) = Vleo::default_case() {
+        j.str_field("case", c.id);
+        j.str_field("label", c.label);
+        j.str_field("note", c.note);
+    }
+    j.str_field("path", &case_path().display().to_string());
+    j.bool_field("stored", case_path().exists());
+    reading_json(&mut j, &saved);
+    j.key("inputs").open_arr();
+    for (k, i) in vleo_modules::inputs::case_inputs().iter().enumerate() {
+        if k > 0 {
+            j.raw(",");
+        }
+        j.raw("{");
+        j.str_field("id", i.id);
+        j.str_field("label", i.label);
+        j.str_field("symbol", i.symbol);
+        j.str_field("group", i.group.name());
+        j.str_field("unit", i.unit);
+        j.num_field("factor", i.factor);
+        j.num_field("lo", i.lo);
+        j.num_field("hi", i.hi);
+        j.num_field("default", i.default);
+        match saved.set.iter().find(|(id, _)| id == i.id) {
+            Some((_, v)) => j.num_field("value", *v),
+            None => j.key("value").raw("null"),
+        };
+        j.close_obj();
+    }
+    j.close_arr();
+    j.raw("}");
+    j.0
+}
+
+/// What a CSV or a set of values would do, without saving it.
+fn inputs_reading(params: &str) -> vleo_modules::inputs::Reading {
+    match param(params, "csv") {
+        Some(csv) => vleo_modules::inputs::read_csv(&decode(csv)),
+        None => vleo_modules::inputs::check_values(&sets(params)),
+    }
+}
+
+fn inputs_check(params: &str) -> String {
+    let r = inputs_reading(params);
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", r.ok());
+    reading_json(&mut j, &r);
+    j.raw("}");
+    j.0
+}
+
+/// Save a case — a whole one, replacing what was there.
+///
+/// ALL OR NOTHING. A file with one refused row is not saved at all, and the
+/// reply names every refusal: keeping the good rows of a bad file would leave
+/// the tool running on a case nobody wrote.
+fn inputs_save(params: &str) -> String {
+    let r = inputs_reading(params);
+    let mut j = Json::new();
+    j.raw("{");
+    if !r.ok() {
+        j.bool_field("ok", false);
+        j.str_field(
+            "message",
+            &format!(
+                "nothing was saved: {} row(s) cannot be applied. Correct them and upload again.",
+                r.refused.len()
+            ),
+        );
+        reading_json(&mut j, &r);
+        j.raw("}");
+        return j.0;
+    }
+    let path = case_path();
+    let written = path
+        .parent()
+        .map(std::fs::create_dir_all)
+        .unwrap_or(Ok(()))
+        .and_then(|_| std::fs::write(&path, vleo_modules::inputs::csv(&r.set)));
+    match written {
+        Ok(()) => {
+            j.bool_field("ok", true);
+            j.str_field("path", &path.display().to_string());
+            reading_json(&mut j, &r);
+        }
+        Err(e) => {
+            j.bool_field("ok", false);
+            j.str_field(
+                "message",
+                &format!("the case could not be written to {}: {e}", path.display()),
+            );
+        }
+    }
+    j.raw("}");
+    j.0
+}
+
+/// Back to every default: the stored case is removed.
+fn inputs_reset() -> String {
+    let path = case_path();
+    let mut j = Json::new();
+    j.raw("{");
+    match std::fs::remove_file(&path) {
+        Ok(()) => {
+            j.bool_field("ok", true);
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            j.bool_field("ok", true);
+        }
+        Err(e) => {
+            j.bool_field("ok", false);
+            j.str_field(
+                "message",
+                &format!("could not remove {}: {e}", path.display()),
+            );
+        }
+    }
+    j.raw("}");
+    j.0
 }
 
 /// `set=id:value` repeated. Values are SI, always: a face converts for display
@@ -1487,27 +1685,28 @@ fn case_refused(params: &str, ctx: &Ctx) -> Option<String> {
     j.raw("{");
     j.bool_field("ok", false);
     j.str_field("fault", "case-refused");
-    j.str_field(
-        "node",
-        if case.condition.is_empty() {
-            &case.base
-        } else {
-            &case.condition
-        },
-    );
+    j.str_field("node", &case.base);
     j.str_field("message", &why);
     j.raw("}");
     Some(j.0)
 }
 
 fn build_case(params: &str, ctx: &Ctx) -> Case {
+    // THE SAVED CASE FIRST, THEN WHAT THIS REQUEST TYPED ON TOP. Every run,
+    // sweep, lever and panel therefore answers for the inputs the person saved,
+    // without each face having to carry them. `inputs=defaults` asks for the
+    // design as declared instead — what the parity and audit tools compare, so
+    // their verdicts never depend on whatever case somebody last uploaded.
+    let mut supply = if param(params, "inputs").map(decode).as_deref() == Some("defaults") {
+        Vec::new()
+    } else {
+        saved_case().set
+    };
+    supply.extend(sets(params));
     Case {
-        // `case` is the customer: the wire name predates the distinction, and
-        // renaming a parameter every face and script sends buys nothing. Empty
-        // means the default customer, which the engine resolves.
+        // `case` names the case — today there is one. Empty means that one.
         base: param(params, "case").map(decode).unwrap_or_default(),
-        condition: param(params, "condition").map(decode).unwrap_or_default(),
-        supply: sets(params),
+        supply,
         target: param(params, "node").map(decode).unwrap_or_default(),
         mode: RunMode::from_name(
             &param(params, "mode")
@@ -1545,6 +1744,24 @@ fn run_json(params: &str, ctx: &Ctx) -> String {
         }
         Ok(r) => {
             j.bool_field("ok", true);
+            // Which inputs this answer was for. A number with no case beside it
+            // is a number a reader will quote for the wrong inputs.
+            let saved = if param(params, "inputs").map(decode).as_deref() == Some("defaults") {
+                None
+            } else {
+                Some(saved_case())
+            };
+            j.key("inputs").raw("{");
+            j.bool_field("defaults", saved.is_none());
+            j.num_field(
+                "changed",
+                saved.as_ref().map(|s| s.changed).unwrap_or(0) as f64,
+            );
+            j.num_field(
+                "stale",
+                saved.as_ref().map(|s| s.refused.len()).unwrap_or(0) as f64,
+            );
+            j.close_obj();
             j.key("values").open_arr();
             for (i, v) in r.values.iter().enumerate() {
                 if i > 0 {

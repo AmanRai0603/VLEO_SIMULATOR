@@ -18,7 +18,6 @@
 'use strict';
 
 import { withOverrides } from './inputs.js';
-import { withCase } from './state.js';
 const cache = new Map();
 
 /**
@@ -42,9 +41,9 @@ export async function engineValues(ids) {
   const take = v => ({ si: v.si, shown: v.shown, unit: v.unit, symbol: v.symbol, label: v.label });
   const runs = await Promise.all(want.map(async (id) => {
     try {
-      // For the customer and condition the face is showing, and without the
-      // reader's overrides: this is what the tree says as it stands for them.
-      const r = await fetch('/v1/run?' + withCase(new URLSearchParams({ node: id })).toString());
+      // On the saved case, and without the reader's overrides: this is what
+      // the tree says as it stands for the inputs every run is on.
+      const r = await fetch('/v1/run?' + new URLSearchParams({ node: id }).toString());
       const d = await r.json();
       if (!d.ok) return { id, refused: d.message || d.fault || 'refused' };
       return { id, values: d.values || [] };
@@ -122,7 +121,7 @@ export async function engineSweep(node, over, from, to, points = 80, sets = null
  * a scenario is a fact about that scenario rather than an error in the figure.
  */
 export async function engineAt(node, sets) {
-  const q = withCase(new URLSearchParams({ node }));
+  const q = new URLSearchParams({ node });
   for (const [k, v] of Object.entries(sets || {})) q.append('set', k + ':' + v);
   try {
     const r = await fetch('/v1/run?' + q.toString());

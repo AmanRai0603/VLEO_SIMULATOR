@@ -54,10 +54,10 @@ def get(path):
 
 
 def run(node, mode, sets=None):
-    # No customer named: the engine runs the first by id. This named
-    # "nominal", which stopped existing when cases/ was split into customers
-    # and conditions, and the engine now refuses a name it does not hold.
-    p = [("node", node), ("mode", mode)]
+    # At the declared defaults, whatever case the person running the daemon
+    # has saved: an audit of the tree is a statement about the sheets, and a
+    # saved case is somebody's design, not the tree's.
+    p = [("node", node), ("mode", mode), ("inputs", "defaults")]
     for k, v in sets or []:
         p.append(("set", "%s:%.17g" % (k, v)))
     req = urllib.request.Request(HOST + "/v1/run",

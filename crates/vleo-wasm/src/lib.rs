@@ -106,7 +106,6 @@ pub fn evaluate(node: &str, base: &str, sets: &str) -> String {
         .collect();
     let case = Case {
         base: base.to_string(),
-        condition: String::new(),
         supply,
         target: node.to_string(),
         mode: RunMode::Branch,

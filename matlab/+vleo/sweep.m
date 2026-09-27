@@ -12,13 +12,11 @@ function t = sweep(node, over, from, to, varargin)
     p = inputParser;
     addParameter(p, 'points', 64);
     addParameter(p, 'case', '');
-    addParameter(p, 'condition', '');
     parse(p, varargin{:});
 
     out = py.vleo.sweep(node, over, from, to, ...
                         pyargs('points', int32(p.Results.points), ...
-                               'case', p.Results.case, ...
-                               'condition', p.Results.condition));
+                               'case', p.Results.case));
     x = double(py.array.array('d', out{1}));
     y = double(py.array.array('d', out{2}));
     t = table(x(:), y(:), 'VariableNames', {over, node});

@@ -595,12 +595,10 @@ pub fn index_json(tree: &Tree) -> String {
     let cases: Vec<&Case> = tree.cases.values().collect();
     for (i, c) in cases.iter().enumerate() {
         o.push_str(&format!(
-            "    {{\"id\":\"{}\",\"kind\":\"{}\",\"label\":\"{}\",\"note\":\"{}\",\"unavailable\":\"{}\",\"supply\":{{{}}}}}{}\n",
+            "    {{\"id\":\"{}\",\"label\":\"{}\",\"note\":\"{}\",\"supply\":{{{}}}}}{}\n",
             h(&c.id),
-            h(&c.kind),
             h(&c.label),
             h(&c.note),
-            h(&c.unavailable),
             c.supply
                 .iter()
                 .map(|(k, v)| format!("\"{}\":{}", h(k), json_num(*v)))

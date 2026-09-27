@@ -10,25 +10,23 @@
   root finds whichever one comes first in the markup — which is how a result
   once landed in a hidden panel and the visible one stayed blank.
 
-  WHO THE RUN IS FOR COMES FIRST. A run is always for a customer, optionally
-  under a condition, with whatever the reader typed over both. This panel used
-  to offer a menu called "case" holding two altitudes, a reference and two
-  skies, none of them a customer — and it never showed which inputs the chosen
-  one set, so a reader could not tell what they were running before they ran
-  it. The panel now says who, says what that customer and condition set, and
-  lists every input the answer depends on with the value it will run at and
-  where that value came from. Editing one is a what-if held in this browser:
-  it never writes a file and git never sees it.
+  WHAT THE RUN IS ON COMES FIRST. There is one case, and a run is always on
+  its saved inputs — the ones set on the Inputs page or uploaded there as a
+  CSV — with whatever the reader typed over them. The panel says so, and lists
+  every input the answer depends on with the value it will run at and where
+  that value came from: the default, the saved case, or an edit. An edit here
+  is a what-if held in this browser until it is saved to the case; neither
+  ever writes a file git can see.
 */
 'use strict';
 
 import { $, $$, esc, fmt } from './dom.js';
-import { S, reachFrom, isSeeded, isUndefined, isDeprecated, customers, conditions,
-         caseById, customerShort, setCase, withCase, caseKey } from './state.js';
+import { S, reachFrom, isSeeded, isUndefined, isDeprecated, theCase, caseKey } from './state.js';
 import { withOverrides, isInput, fromSI, toSI, unitOf, outOfRange, setOverride,
          clearOverride, onOverrideChange } from './inputs.js';
 import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
          watchScheme, INK } from './chart.js';
+import { savedValues, caseInput, saveOverridesToCase, savableOverrides } from './case.js';
 
 const POST = { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } };
 
@@ -42,48 +40,24 @@ async function runOnce(params) {
 }
 
 // ---------------------------------------------------------------------------
-// who the run is for
-
-function customerSelect() {
-  return '<select class="ctl run-customer" aria-label="customer">' + customers().map(c =>
-    '<option value="' + esc(c.id) + '"' + (c.id === S.engineCase ? ' selected' : '') +
-    ' title="' + esc(c.note) + '">' + esc(customerShort(c)) + '</option>').join('') + '</select>';
-}
-
-function conditionSelect() {
-  return '<select class="ctl run-condition" aria-label="condition">' +
-    '<option value="">none</option>' + conditions().map(k =>
-      '<option value="' + esc(k.id) + '"' + (k.id === S.condition ? ' selected' : '') +
-      (k.unavailable ? ' disabled' : '') + ' title="' + esc(k.unavailable || k.note) + '">' +
-      esc(k.label) + (k.unavailable ? ' — cannot be applied' : '') + '</option>').join('') +
-    '</select>';
-}
-
-/** "orbit_altitude = 200 km", for each value a customer or condition sets. */
-function supplyText(c) {
-  return c.supply.map(s => {
-    const row = S.byId.get(s.id);
-    return '<code>' + esc(s.id) + '</code> = ' +
-      (row ? esc(fmt(fromSI(row, s.value))) + ' ' + esc(unitOf(row.unit)) : esc(fmt(s.value)));
-  }).join(', ');
-}
+// what the run is on
 
 /**
- * What the chosen pair actually does, in a sentence.
- *
- * A customer that sets nothing of its own says so in as many words, because a
- * number shown for "Customer 2" that is really the shared design would
- * otherwise read as Customer 2's.
+ * The case and its inputs, in a sentence: how many the saved case moves from
+ * the default, and how many the reader has edited over it. A number read off
+ * this panel is for exactly these.
  */
 function caseNote() {
-  const c = caseById(S.engineCase);
-  const k = S.condition ? caseById(S.condition) : null;
-  if (!c) return '<p class="muted">No customer is chosen, so nothing can be run for anyone.</p>';
-  let h = '<b>' + esc(c.label) + '</b> ' + (c.supply.length
-    ? 'sets ' + supplyText(c) + '. Every other input is the shared design.'
-    : 'sets nothing of its own: every input below is the shared declared design.');
-  if (k) h += ' Laid over it: <b>' + esc(k.label) + '</b>, which sets ' + supplyText(k) + '.';
-  return '<p>' + h + '</p><p class="muted run-case-note">' + esc(c.note) + '</p>';
+  const c = theCase();
+  const d = S.saved;
+  const edits = S.overrides.size;
+  let h = 'Runs on <b>' + esc(c ? c.label : 'no case') + '</b>, ' + (!d ? 'whose inputs could not be read'
+    : !d.stored || !d.changed ? 'every input at its declared default'
+    : '<b>' + d.changed + ' input' + (d.changed === 1 ? '' : 's') + ' changed</b> from the default in ' +
+      'the saved case') +
+    (edits ? ', with <b>' + edits + ' what-if edit' + (edits === 1 ? '' : 's') + '</b> of yours over it' : '') +
+    '. <button class="ctl xref" data-inputs>the inputs…</button>';
+  return '<p>' + h + '</p>';
 }
 
 // ---------------------------------------------------------------------------
@@ -108,10 +82,7 @@ export function renderRun(host, r, standalone) {
         esc(x.id) + '</option>').join('') + '</select>' +
       '<span class="muted">only rows with something specified in them can be a target</span></div>';
   }
-  h += '<div class="runbar">' +
-    '<span class="lbl">customer</span>' + customerSelect() +
-    '<span class="lbl">condition</span>' + conditionSelect() +
-    '</div><div class="run-case">' + caseNote() + '</div>';
+  h += '<div class="run-case">' + caseNote() + '</div>';
 
   if (seeded) {
     h += '<p class="empty">This row is seeded. The folder, the sheet and the row exist; nothing is ' +
@@ -135,8 +106,8 @@ export function renderRun(host, r, standalone) {
   }
   if (!seeded) {
     h += '<details class="run-inputs" open><summary class="run-inputs-h">the inputs this answer ' +
-      'depends on</summary><div class="run-inputs-body"><p class="muted">reading what this ' +
-      'customer runs at…</p></div></details>';
+      'depends on</summary><div class="run-inputs-body"><p class="muted">reading what the ' +
+      'case runs at…</p></div></details>';
   }
   h += '<div class="runbar run-go-bar">' +
     '<button class="ctl mode' + (S.mode === 'alone' ? ' sel' : '') + '" data-mode="alone">alone</button>' +
@@ -149,10 +120,6 @@ export function renderRun(host, r, standalone) {
 
   paintModes(host, r);
   $$('.mode', host).forEach(b => b.onclick = () => { S.mode = b.dataset.mode; paintModes(host, r); });
-  // The pair is set through state, which redraws every panel showing a number
-  // for the old one — this one included.
-  $('.run-customer', host).onchange = e => setCase(e.target.value);
-  $('.run-condition', host).onchange = e => setCase(undefined, e.target.value);
   $('.run-go', host).onclick = () => go(host, r);
   const t = $('.run-target', host);
   if (t) t.onchange = e => { S.runTarget = e.target.value; renderRun(host, S.byId.get(e.target.value), true); };
@@ -187,8 +154,8 @@ async function go(host, r) {
   const btn = $('.run-go', host);
   btn.disabled = true;
   $('.run-why', host).textContent = 'running…';
-  // The overrides travel with every run, and so do the customer and the
-  // condition. A face that showed a what-if number on one panel and the
+  // The overrides travel with every run, and the daemon lays the saved case
+  // under them. A face that showed a what-if number on one panel and the
   // declared design on another would be the three-correct-numbers-at-three-
   // different-times bug this tool already has a comment about.
   const res = await runOnce(withOverrides(new URLSearchParams({ node: r.id, mode: S.mode })));
@@ -227,23 +194,25 @@ function levers(host, r) {
 const pct = v => v >= 0.1 ? Math.round(v * 100) + '%' :
   v >= 0.001 ? (v * 100).toFixed(2) + '%' : v > 0 ? '<0.01%' : 'nothing';
 
-/** Who set this input's value on the run about to happen. */
+/** Where this input's value on the run about to happen came from. */
 function sourceOf(id) {
   if (S.overrides.has(id)) return ['you', 'your edit'];
-  const k = S.condition ? caseById(S.condition) : null;
-  if (k && k.supply.some(s => s.id === id)) return ['cond', 'condition'];
-  const c = caseById(S.engineCase);
-  if (c && c.supply.some(s => s.id === id)) return ['cust', 'customer'];
-  return ['design', 'shared design'];
+  const i = caseInput(id);
+  const saved = savedValues();
+  if (i && saved.has(id) && saved.get(id) !== i.default) return ['saved', 'saved case'];
+  return ['design', 'default'];
 }
+
+/** Customer or condition: which half of the case an input sits in. */
+const groupOf = id => { const i = caseInput(id); return i ? i.group : ''; };
 
 /**
  * The table of inputs.
  *
- * THE VALUE SHOWN IS THE VALUE THE ENGINE WILL USE, read from a run for this
- * customer and condition rather than from the sheet. The index carries every
- * row's domain but not its answer, and a customer's value is not on the sheet
- * at all — so running is the only way to show the number that is about to go in.
+ * THE VALUE SHOWN IS THE VALUE THE ENGINE WILL USE, read from a run on the
+ * saved case rather than from the sheet. The index carries every row's domain
+ * but not its answer, and a saved value is not on the sheet at all — so running
+ * is the only way to show the number that is about to go in.
  *
  * Most-moving first, from the levers the engine measured, with the ones that
  * move nothing saying so rather than hidden: that a decision does not reach
@@ -259,15 +228,15 @@ async function mountInputs(host, r) {
   if (!ups.length) {
     summary.textContent = 'no input a person can set reaches this answer';
     body.innerHTML = '<p class="muted">Nothing declared with a range sits upstream of this row, ' +
-      'so every customer and condition runs it the same way and there is nothing here to edit.</p>';
+      'so every set of inputs runs it the same way and there is nothing here to edit.</p>';
     return;
   }
 
-  const base = await runOnce(withCase(new URLSearchParams({ node: r.id, mode: 'branch' })));
+  const base = await runOnce(new URLSearchParams({ node: r.id, mode: 'branch' }));
   const lv = await levers(host, r);
-  // The customer or condition may have changed while these were in flight; a
-  // table for the old pair drawn under the new one would be exactly the
-  // mismatch this panel exists to prevent.
+  // The saved case may have changed while these were in flight; a table for
+  // the old inputs drawn under the new ones would be exactly the mismatch this
+  // panel exists to prevent.
   if (!host.isConnected || key !== caseKey()) return;
   const at = new Map();
   if (base.ok) for (const v of base.values || []) at.set(v.id, v.si);
@@ -278,20 +247,28 @@ async function mountInputs(host, r) {
   const SHOW = 8;
   body.innerHTML = (base.ok ? '' :
       '<p class="blocked"><b>' + esc(base.fault || 'refused') + '</b> — ' + esc(base.message || '') +
-      '. The values below could not be read for this customer.</p>') +
-    '<div class="ri-wrap"><table class="fx run-in-table"><thead><tr><th>input</th><th>set by</th><th>runs at</th>' +
+      '. The values below could not be read for the case.</p>') +
+    '<div class="ri-wrap"><table class="fx run-in-table"><thead><tr><th>input</th><th>from</th><th>runs at</th>' +
     '<th>declared range</th><th></th></tr></thead><tbody>' +
     ups.map((row, i) => inputRow(row, at.get(row.id), span.get(row.id), i >= SHOW)).join('') +
     '</tbody></table></div>' +
     (ups.length > SHOW
       ? '<button class="ctl ri-more">show all ' + ups.length + ' inputs</button>' : '') +
     '<p class="muted ri-foot">An edit here is a what-if held in this browser: it applies to every ' +
-    'run and sweep until you reset it, it is listed in the bar at the top, and it never writes a ' +
-    'file — git sees nothing. <button class="ctl ri-go">run with these inputs</button></p>';
+    'run and sweep until you reset it or save it to the case, and it is listed in the bar at the ' +
+    'top. Neither writes a file git can see. <button class="ctl ri-go">run with these inputs</button>' +
+    '<button class="ctl ri-save"' + (savableOverrides() ? '' : ' hidden') + '>save my edits to the case' +
+    '</button><span class="why ri-said"></span></p>';
 
   const more = $('.ri-more', body);
   if (more) more.onclick = () => { $$('tr.ri.more', body).forEach(t => t.classList.remove('more')); more.remove(); };
   $('.ri-go', body).onclick = () => go(host, r);
+  // Saving changes the case, and everything showing a number redraws for it —
+  // this panel included. Only a refusal is left to say here.
+  $('.ri-save', body).onclick = async () => {
+    const res = await saveOverridesToCase();
+    if (!res.ok && body.isConnected) $('.ri-said', body).textContent = 'not saved: ' + (res.message || 'refused');
+  };
   $$('tr.ri', body).forEach(tr => wireInput(host, tr, at));
   paintSummary(host, ups);
   TABLES.add(host);
@@ -320,6 +297,8 @@ onOverrideChange(() => {
       src.className = 'ri-src ' + cls;
       src.textContent = txt;
     }
+    const save = $('.ri-save', host);
+    if (save) save.hidden = !savableOverrides();
     paintSummary(host);
   }
 });
@@ -335,17 +314,18 @@ function inputRow(row, baseSI, sp, more) {
     '<td class="ri-name"><b>' + esc(row.symbol || row.id) + '</b> <span class="muted">' +
       esc(row.label) + '</span><div class="muted ri-id"><code>' + esc(row.id) + '</code>' +
       (moves ? ' · ' + esc(moves) : '') + '</div></td>' +
-    '<td><span class="ri-src ' + cls + '">' + esc(txt) + '</span></td>' +
+    '<td><span class="ri-src ' + cls + '">' + esc(txt) + '</span>' +
+      (groupOf(row.id) ? '<div class="muted ri-grp">' + esc(groupOf(row.id)) + '</div>' : '') + '</td>' +
     '<td class="ri-val"><input class="ovr-v ri-v" type="number" step="any" value="' +
       (si == null ? '' : esc(fmt(fromSI(row, si)))) + '" aria-label="' + esc(row.label) + '">' +
       ' <span class="ovr-u">' + esc(unitOf(row.unit)) + '</span>' +
       '<div class="muted ri-was"' + (has && baseSI != null ? '' : ' hidden') + '>' +
-        (baseSI == null ? '' : 'this customer: ' + esc(fmt(fromSI(row, baseSI)))) + '</div>' +
+        (baseSI == null ? '' : 'the case: ' + esc(fmt(fromSI(row, baseSI)))) + '</div>' +
       '<div class="ri-why"></div></td>' +
     '<td class="muted ri-range">' + esc(fmt(fromSI(row, row.lo))) + ' … ' +
       esc(fmt(fromSI(row, row.hi))) + ' ' + esc(unitOf(row.unit)) + '</td>' +
     '<td><button class="ctl ri-reset"' + (has ? '' : ' disabled') +
-      ' title="back to this customer’s value">reset</button></td></tr>';
+      ' title="back to the case’s value">reset</button></td></tr>';
 }
 
 /**
@@ -367,6 +347,8 @@ function wireInput(host, tr, at) {
     src.className = 'ri-src ' + cls;
     src.textContent = txt;
     staleResult(host);
+    const save = $('.ri-save', host);
+    if (save) save.hidden = !savableOverrides();
     paintSummary(host);
   };
   field.addEventListener('change', () => {
@@ -380,7 +362,7 @@ function wireInput(host, tr, at) {
     tr.classList.toggle('bad', !!bad);
     why.textContent = bad ? 'refused: ' + bad : '';
     if (bad) return;
-    // Typing this customer's own number back is the absence of an edit.
+    // Typing the case's own number back is the absence of an edit.
     if (base != null && si === base) clearOverride(id); else setOverride(id, si);
     paint();
   });
@@ -399,17 +381,16 @@ function paintSummary(host, ups) {
   if (!el) return;
   const rows = $$('tr.ri', host);
   const n = ups ? ups.length : rows.length;
-  let you = 0, cust = 0, cond = 0;
+  let you = 0, saved = 0;
   for (const tr of rows) {
     const [cls] = sourceOf(tr.dataset.ovr);
-    if (cls === 'you') you++; else if (cls === 'cust') cust++; else if (cls === 'cond') cond++;
+    if (cls === 'you') you++; else if (cls === 'saved') saved++;
   }
   const bits = [];
-  if (cust) bits.push(cust + ' set by this customer');
-  if (cond) bits.push(cond + ' by the condition');
+  if (saved) bits.push(saved + ' from the saved case');
   if (you) bits.push(you + ' edited by you');
   el.textContent = 'the inputs this answer depends on — ' + n +
-    (bits.length ? ': ' + bits.join(', ') : ', all from the shared design');
+    (bits.length ? ': ' + bits.join(', ') : ', all at their defaults');
 }
 
 /** A result on screen for inputs that have since changed says so. */
@@ -449,13 +430,19 @@ export function renderResult(host, r, res) {
   } else {
     h += '<div class="answer none">not computed on this run</div>';
   }
-  // WHO THIS NUMBER IS FOR, beside it. A number without its customer is a
-  // number a reader will quote for the wrong one.
-  const c = caseById(S.engineCase), k = S.condition ? caseById(S.condition) : null;
+  // WHAT THIS NUMBER IS FOR, beside it — as the run itself reports it, not as
+  // the page believes it asked. A number without its inputs is a number a
+  // reader will quote for the wrong ones.
+  const c = theCase();
+  const inp = res.inputs || {};
   const edits = S.overrides.size;
-  h += '<p class="run-for">for <b>' + esc(c ? c.label : 'no customer') + '</b>' +
-    (k ? ' under <b>' + esc(k.label) + '</b>' : '') +
+  h += '<p class="run-for">on <b>' + esc(c ? c.label : 'the case') + '</b> · ' +
+    (inp.defaults ? 'every input at its default'
+      : inp.changed ? '<b>' + inp.changed + ' input' + (inp.changed === 1 ? '' : 's') + ' changed</b> in the saved case'
+      : 'every input at its default') +
     (edits ? ', with <b>' + edits + ' input' + (edits === 1 ? '' : 's') + ' edited by you</b>' : '') +
+    (inp.stale ? ' · <b>' + inp.stale + ' saved value' + (inp.stale === 1 ? '' : 's') +
+      ' no longer apply</b> and ' + (inp.stale === 1 ? 'was' : 'were') + ' not used' : '') +
     '</p>';
   if (v) {
     h += credBars(v) +
@@ -495,7 +482,7 @@ export function renderResult(host, r, res) {
       '</div></details>';
   }
   h += '<div class="chainline muted" title="The chain hash is the run\'s identity and its cache key. ' +
-    'It covers every node the run reached and each one\'s implementation content — not the customer ' +
+    'It covers every node the run reached and each one\'s implementation content — not the inputs ' +
     'alone, because rewriting a node\'s arithmetic without touching its interface must invalidate ' +
     'every result downstream of it.">chain <b>' + esc(res.manifest.chain) + '</b> · kernel ' +
     esc(res.manifest.kernel) + ' · graph ' + esc(res.manifest.graph) + ' · case ' +
@@ -534,7 +521,10 @@ function sweepControls(r) {
   }
   const def = ins.find(x => x.id === 'orbit_altitude') || ins[0];
   const marks = markLevels(r);
-  const many = customers().length > 1;
+  // Only offered when there is something to compare: with nothing saved and
+  // nothing edited, the defaults are the case and a second line would lie
+  // exactly on the first.
+  const moved = (S.saved && S.saved.stored && S.saved.changed) || S.overrides.size;
   return '<h4>behaviour sweep</h4><div class="sweepctl">over <select class="sw-over">' +
     ins.map(x => '<option value="' + esc(x.id) + '"' + (x.id === def.id ? ' selected' : '') + '>' +
       esc(x.id) + '</option>').join('') + '</select>' +
@@ -546,11 +536,11 @@ function sweepControls(r) {
     ' <button class="ctl sw-go">sweep</button>' +
     ' <span class="muted sw-range"></span></div>' +
     '<div class="sweepctl">' +
-    (many ? '<label class="sw-all-l"><input type="checkbox" class="sw-all">' +
-      ' every customer, one line each</label>' : '') +
+    (moved ? '<label class="sw-all-l"><input type="checkbox" class="sw-all">' +
+      ' the declared defaults as well, one line each</label>' : '') +
     (marks.length ? ' against <select class="sw-mark"><option value="">nothing — the curve alone</option>' +
       marks.map(x => '<option value="' + esc(x.id) + '">' + esc(x.id) + '</option>').join('') +
-      '</select><span class="muted"> a level to read the crossing against — run for this customer, ' +
+      '</select><span class="muted"> a level to read the crossing against — run on the case, ' +
       'and matched by subsystem and overlapping range, not by quantity, which the index cannot ' +
       'tell. Check the row it names.</span>' : '') +
     '</div>' +
@@ -657,7 +647,11 @@ function wireSweep(host, r) {
   go2.onclick = async () => {
     const d = S.byId.get(over.value);
     const all = $('.sw-all', host);
-    const who = all && all.checked ? customers() : [caseById(S.engineCase)].filter(Boolean);
+    // THE CASE, AND WITH IT THE DECLARED DESIGN. The case is the saved inputs
+    // with the reader's edits over them; the defaults line is the same sweep
+    // with neither, so what the case changed is the gap between two lines.
+    const who = [{ id: 'case', name: 'this case' }];
+    if (all && all.checked) who.push({ id: 'defaults', name: 'the declared defaults' });
     $('.sw-note', host).textContent = 'sweeping…';
     go2.disabled = true;
     const runs = [];
@@ -665,11 +659,11 @@ function wireSweep(host, r) {
       const p = new URLSearchParams({
         node: r.id, over: d.id, from: toSI(d, parseFloat(from.value)),
         to: toSI(d, parseFloat(to.value)), points: $('.sw-n', host).value, mode: 'branch',
-        case: c.id,
       });
+      if (c.id === 'defaults') p.set('inputs', 'defaults'); else withOverrides(p);
       let res;
       try {
-        res = await (await fetch('/v1/sweep?' + withOverrides(p).toString())).json();
+        res = await (await fetch('/v1/sweep?' + p.toString())).json();
       } catch (e) {
         res = { ok: false, message: 'the engine did not answer: ' + e };
       }
@@ -704,7 +698,7 @@ function wireSweep(host, r) {
   };
 }
 
-/** A level's own answer, RUN for this customer — a declared level lives only in the model. */
+/** A level's own answer, RUN on the case — a declared level lives only in the model. */
 async function levelOf(id) {
   const rr = await runOnce(withOverrides(new URLSearchParams({ node: id, mode: 'branch' })));
   const own = rr.ok && (rr.values || []).find(v => v.id === id);
@@ -725,7 +719,7 @@ function plot(host, r, last) {
   }
   const r0 = good[0].res;
   const fx = r0.x_factor, fy = r0.y_factor;
-  const custs = customers();
+  const LINES = ['case', 'defaults'];
   // A REFUSED POINT IS A GAP, NOT A JOIN. The line breaks where the engine
   // refused, so a stretch of the axis nobody computed is not drawn straight
   // across as though somebody had.
@@ -734,12 +728,12 @@ function plot(host, r, last) {
       .concat(res.refused.map(q => [q.x, null]))
       .sort((a, b) => a[0] - b[0]);
     return {
-      name: good.length > 1 ? customerShort(cu) : '',
+      name: good.length > 1 ? cu.name : '',
       kind: 'line',
-      // Colour follows the customer, never its place in this list: filtering
-      // to one customer must not repaint it.
-      colour: INK.series[Math.max(0, custs.findIndex(x => x.id === cu.id)) % INK.series.length],
-      width: cu.id === S.engineCase ? 2.2 : 1.4,
+      // Colour follows the line, never its place in this list: the case is
+      // the same colour whether or not the defaults are drawn beside it.
+      colour: INK.series[LINES.indexOf(cu.id) % INK.series.length],
+      width: cu.id === 'case' ? 2.2 : 1.4,
       x: pts.map(p => p[0] / fx),
       y: pts.map(p => (p[1] === null ? null : p[1] / fy)),
     };
@@ -779,12 +773,12 @@ function plot(host, r, last) {
   LIVE.add(paint);
   paint();
 
-  // What the picture says, in words: the points, the refusals, the customers
-  // that coincide, and the crossing.
+  // What the picture says, in words: the points, the refusals, whether the
+  // case and the defaults coincide, and the crossing.
   const bits = [];
   const refused = good.reduce((n, x) => n + x.res.refused.length, 0);
   const ran = r0.x.length + ' point' + (r0.x.length === 1 ? '' : 's') + ' ran' +
-    (good.length > 1 ? ' per customer' : '');
+    (good.length > 1 ? ' per line' : '');
   if (refused) {
     const first = good.find(x => x.res.refused.length).res.refused[0];
     bits.push(ran + ', <b>' + refused + ' refused</b> — ' + esc(first.why) + '. Refusals are gaps ' +
@@ -794,15 +788,14 @@ function plot(host, r, last) {
     bits.push(ran + ', none refused');
   }
   if (good.length > 1) {
-    const same = good.slice(1).filter(x => x.res.y.length === r0.y.length &&
-      x.res.y.every((v, i) => v === r0.y[i])).map(x => customerShort(x.c).split(' · ')[0]);
-    if (same.length) {
-      bits.push(esc(same.join(' and ')) + (same.length === 1 ? ' lies' : ' lie') + ' exactly on ' +
-        esc(customerShort(good[0].c).split(' · ')[0]) + ' — ' + (same.length === 1 ? 'it supplies' :
-        'they supply') + ' nothing of their own that reaches this row');
+    const same = good.slice(1).some(x => x.res.y.length === r0.y.length &&
+      x.res.y.every((v, i) => v === r0.y[i]));
+    if (same) {
+      bits.push('the declared defaults lie exactly on this case — nothing the case changes reaches ' +
+        'this row along this sweep');
     }
   }
-  for (const f of failed) bits.push('<b>' + esc(customerShort(f.c)) + ' was refused</b> — ' + esc(f.res.message || ''));
+  for (const f of failed) bits.push('<b>' + esc(f.c.name) + ' was refused</b> — ' + esc(f.res.message || ''));
   if (last.mark) {
     if (last.mark.si === null) {
       bits.push('<b>' + esc(last.mark.id) + ' was not drawn</b> — ' + esc(last.mark.why) +

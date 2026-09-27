@@ -44,13 +44,15 @@ export const S = {
 
   // the run
   //
-  // WHO THE RUN IS FOR, AND WHAT IT IS ASKED TO SURVIVE. `engineCase` is the
-  // customer — the wire still calls it `case` — and `condition` is laid over
-  // it, or empty for none. One pair for the whole face: the bar across the top
-  // and every run panel show and set the same two, so a number on one panel
-  // and a number on another are always for the same customer.
+  // THE CASE EVERY NUMBER IS FOR. There is one — `engineCase` is its id, the
+  // multipayload design — and what varies is its inputs: the saved case, which
+  // the daemon keeps outside the repository and lays under every run it
+  // answers. `saved` is what `/v1/inputs` last said about it, and `caseStamp`
+  // moves each time it is saved or reset, so a number cached for the old
+  // inputs is never shown as one for the new.
   engineCase: '',
-  condition: '',
+  saved: null,
+  caseStamp: 0,
   mode: 'branch',
   lastRun: null,
   runTarget: null,
@@ -86,7 +88,7 @@ function findRoots() {
 
 export const CAPTIONS = {
   1: ['Who wants what, what it costs, and what the programme has promised.',
-      'One architecture, many cases. A customer is a case, never a copy of the tree.'],
+      'One architecture, one case. A customer changes its inputs, never the tree.'],
   2: ['The system: what it is made of, and what reads what.',
       'Its row is what a node feeds. Its column is what feeds it.'],
   3: ['One subsystem layer, decomposed until every row is a question one person can answer.',
@@ -140,9 +142,9 @@ function ingest() {
     if (S.gnodes.has(r.parent)) S.gnodes.get(r.parent).push(r.i);
   }
   findRoots();
-  // The first customer by id, which is also what the engine runs when none is
-  // named — so the face shows the customer the numbers are actually for.
-  const first = customers()[0];
+  // The one case. The engine runs it when none is named, so this is only ever
+  // a name to show.
+  const first = (S.index.cases || [])[0];
   S.engineCase = first ? first.id : '';
   S.subsys = subsystemLayers()[0] || '';
 }
@@ -154,61 +156,48 @@ export function subsystemLayers() {
     .sort((a, b) => S.G.get(a).label.localeCompare(S.G.get(b).label));
 }
 
-/** A group is in scope unless it names customers and the chosen one is not among them. */
+/** A group is in scope unless it names cases and the one case is not among them. */
 export const caseOk = g => !g || !g.cases.length || g.cases.indexOf(S.engineCase) >= 0;
 
-/** The customers, in id order: who a run can be for. */
-export const customers = () => (S.index.cases || []).filter(c => c.kind === 'customer');
-/** The conditions, in id order, including the ones that cannot be applied. */
-export const conditions = () => (S.index.cases || []).filter(c => c.kind === 'condition');
-/** One entry of cases/, by id. */
-export const caseById = id => (S.index.cases || []).find(c => c.id === id) || null;
+/** The one case, as the index describes it. */
+export const theCase = () => (S.index.cases || [])[0] || null;
 
 /**
- * The customer and condition every engine call carries.
- *
- * One helper rather than a `case:` written into each call, because each call
- * written by hand is how the solar panels came to ask the engine for the
- * default design while the run panel beside them showed another customer.
- * An explicit value already on the params is kept.
+ * What the saved case is, from the daemon: every input, its group, default and
+ * range, and the value it runs at when one is saved. Refreshed on load and
+ * after every save or reset.
  */
-export function withCase(params) {
-  if (!params.has('case') && S.engineCase) params.set('case', S.engineCase);
-  if (!params.has('condition') && S.condition) params.set('condition', S.condition);
-  return params;
+export async function loadSaved() {
+  try {
+    const d = await (await fetch('/v1/inputs')).json();
+    S.saved = d.ok ? d : null;
+  } catch (e) {
+    S.saved = null;
+  }
+  return S.saved;
 }
 
-/** A short key for "this customer under this condition", for caching a run. */
-export const caseKey = () => S.engineCase + '|' + S.condition;
+/** A short key for "the inputs every run is on now", for caching a run. */
+export const caseKey = () => S.engineCase + '#' + S.caseStamp;
 
-/**
- * "Customer 1 — ISR + EO + geolocation" as it fits on a button: "C1 · ISR + EO
- * + geolocation". A label that does not follow the pattern is shown whole.
- */
-export const customerShort = c => !c ? '' :
-  c.label.replace(/^Customer\s+(\d+)\s+—\s+/, 'C$1 · ');
-
-/** The customer, and the condition if there is one, for a status line. */
+/** For a status line: the case, and how far its inputs are from the defaults. */
 export function caseTag() {
-  const c = caseById(S.engineCase);
-  const k = S.condition ? caseById(S.condition) : null;
-  const m = c && c.label.match(/^Customer\s+(\d+)/);
-  const who = m ? 'C' + m[1] : c ? c.id : '—';
-  return who + (k ? ' under ' + k.label.split(' — ')[0] : '');
+  const n = S.saved ? S.saved.changed : 0;
+  return !S.saved || !S.saved.stored ? 'defaults' : n + ' input' + (n === 1 ? '' : 's') + ' changed';
 }
 
-// Who else needs telling when the customer or the condition changes. The run
-// panel and the bar both set them; whichever did, everything showing a number
-// for the old pair has to be redrawn for the new one.
+// Who else needs telling when the saved case changes. The Inputs page saves
+// and resets it; everything showing a number for the old inputs has to be
+// redrawn for the new ones.
 const caseListeners = [];
 export function onCaseChange(fn) { caseListeners.push(fn); }
 
-/** Choose the customer, the condition, or both. `undefined` leaves one as it is. */
-export function setCase(customer, condition) {
-  if (customer !== undefined) S.engineCase = customer;
-  if (condition !== undefined) S.condition = condition;
+/** The saved case changed: re-read it and tell everyone showing a number. */
+export async function caseChanged() {
+  S.caseStamp += 1;
   S.lastRun = null;
   S.baseline = null;
+  await loadSaved();
   for (const f of caseListeners) f();
 }
 
