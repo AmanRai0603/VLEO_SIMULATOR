@@ -1771,7 +1771,32 @@ pub fn crate_registry_rs(node_dirs: &[(String, String)]) -> String {
     o.push_str("// every node added would otherwise touch this file and every merge would\n");
     o.push_str("// conflict in generated content nobody is allowed to edit.\n\n");
     for (ident, path) in node_dirs {
-        o.push_str(&format!("#[path = \"{path}\"]\npub mod {ident};\n"));
+        // Escaped as a Rust string literal: a Windows path's backslashes are
+        // otherwise read as escapes.
+        o.push_str(&format!("#[path = {path:?}]\npub mod {ident};\n"));
     }
     o
+}
+
+#[cfg(test)]
+mod tests {
+    use super::crate_registry_rs;
+
+    #[test]
+    fn a_windows_path_is_written_as_a_literal_rust_can_read() {
+        // A Windows checkout's backslashes, written raw, are string escapes:
+        // `\a`, `\V`, `\c`. The first release build on windows-latest failed
+        // on exactly that, 201 times.
+        let dirs = [(
+            "thm_margin".to_string(),
+            r"D:\a\VLEO\crates\vleo-mod-closure/nodes/thm_margin/mod.rs".to_string(),
+        )];
+        let o = crate_registry_rs(&dirs);
+        assert!(
+            o.contains(
+                r#"#[path = "D:\\a\\VLEO\\crates\\vleo-mod-closure/nodes/thm_margin/mod.rs"]"#
+            ),
+            "{o}"
+        );
+    }
 }

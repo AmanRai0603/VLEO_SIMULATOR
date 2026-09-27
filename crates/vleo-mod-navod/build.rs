@@ -31,10 +31,12 @@ fn main() {
         String::from("// GENERATED at build time. An aggregate: built, never committed.\n\n");
     for d in &dirs {
         let ident = d.replace(['-', '.'], "_");
-        src.push_str(&format!(
-            "#[path = \"{}/nodes/{}/mod.rs\"]\npub mod {};\n",
-            manifest, d, ident
-        ));
+        // `{:?}` writes the path as a Rust string literal, escaped. Written
+        // raw, a Windows checkout's `D:\a\VLEO_SIMULATOR\crates` is read as
+        // `\a`, `\V`, `\c` escapes and the crate does not compile — which is
+        // how the first release build on windows-latest failed.
+        let path = format!("{manifest}/nodes/{d}/mod.rs");
+        src.push_str(&format!("#[path = {path:?}]\npub mod {ident};\n"));
     }
     fs::write(Path::new(&out).join("nodes.rs"), src).expect("write nodes.rs");
 }
