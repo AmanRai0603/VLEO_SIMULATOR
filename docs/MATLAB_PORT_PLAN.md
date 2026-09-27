@@ -4897,9 +4897,15 @@ advance by the very rows that refuse:
   further and predicts the frequency: *"the only one where the guard is likely
   to fire on an ordinary input rather than on a mistake."*
 
-So `tools/branch_audit.py` still reports two findings on solar, and both are
-true statements that a reader should be able to dismiss from the sheets in a
-minute. They are recorded here so nobody re-derives them as defects.
+So these two are not defects, and `tools/branch_audit.py` now says so itself:
+it reports them under **guards named in advance**, not as findings, and prints
+them on every run. The acknowledgement is its `ACKNOWLEDGED` list, and each
+entry is checked against what the engine returns — the input moved, the row
+that refuses, the side of its bound, and a phrase of that row's own written
+reason. A different row refusing, the other side of a bound, or either reason
+rewritten, and the acknowledgement no longer matches and the finding comes
+back; the selftest holds each of those ways. The audit on solar reads
+`FINDINGS: 0` with the two guards listed beneath it.
 
 ### 42.2b · The over-wide bound was drawing a false alarm
 

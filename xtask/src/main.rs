@@ -10,7 +10,30 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use vleo_sheet::{emit, gate, load_all, page, Tree};
 
+/// A reader that stops early — `| head`, `| grep -m1`, a pager quit halfway —
+/// closes the pipe, and the next line printed panics with a backtrace that
+/// reads like a crash in this program. It is not one: the reader had what it
+/// wanted. So that one panic ends the program quietly, and every other panic
+/// is reported exactly as before. (Restoring the default SIGPIPE disposition
+/// would need `unsafe`, which this crate forbids.)
+fn quiet_when_the_reader_stops() {
+    let default = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let msg = info
+            .payload()
+            .downcast_ref::<String>()
+            .map(String::as_str)
+            .or_else(|| info.payload().downcast_ref::<&str>().copied())
+            .unwrap_or("");
+        if msg.starts_with("failed printing to stdout") && msg.contains("Broken pipe") {
+            std::process::exit(0);
+        }
+        default(info);
+    }));
+}
+
 fn main() -> ExitCode {
+    quiet_when_the_reader_stops();
     let args: Vec<String> = std::env::args().skip(1).collect();
     let cmd = args.first().map(|s| s.as_str()).unwrap_or("help");
     let root = repo_root();

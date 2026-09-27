@@ -164,6 +164,25 @@ With neither flag a run uses the saved case, and says so on its first lines.
 A blank value in a file means the default, so a file only has to name what it
 changes; `--set` has the last word over all of it.
 
+Files outlive versions of the tool. Each one it writes carries a `#! template`
+line naming the inputs it was written for; when the tree has changed since, the
+file is carried over instead of refused:
+
+```
+$ vleo run sw_ap_design --inputs cases/examples/from_an_older_tool.csv
+  inputs: …, 2 changed from default; carried over from an older version of the
+  tool: 126 new input(s) at their default, 1 value(s) set aside
+  set aside: retired_payload_mass = 12 kg — is not a row in this tree
+  Ap_design = 80.0000 -
+
+$ vleo inputs --inputs old.csv > new.csv    # the same file, in today's template
+```
+
+The saved case is carried over by itself the first time an updated tool reads
+it: the old file is kept beside it as `inputs.before-<template>.csv`, the new
+one records every value it set aside, and `vleo cases` and the Inputs page say
+what happened until the case is saved again.
+
 Compare the defaults, the saved case and any case files against a row, or check
 that every fixture declaration in the tree is sound — `cargo test` is what
 executes them:

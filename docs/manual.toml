@@ -217,7 +217,18 @@ The saved case is kept by the tool **outside the repository** — beside the \
 reference data, in `~/.vleo/case/`, or wherever `VLEO_CASE` points — so git \
 never sees it. To keep a copy, or hand one to someone, download it; to put it \
 back, upload it. The bar across the top always says how many inputs the saved \
-case changes."""
+case changes.
+
+**When the tool is updated, a case carries over.** Every CSV the tool writes \
+names the set of inputs it was written for, in a `#! template` line — keep it. \
+When rows are added, retired or re-ranged, a case written before is not \
+refused: every value that still applies is carried, every new input runs at \
+its default, and any value that can no longer be used — its input retired, or \
+now outside its range — is **set aside** by name, with its value and why, \
+rather than dropped. The saved case is carried over on its own the first time \
+the updated tool reads it, and the file as it was is kept beside it; the \
+Inputs page says what the update did until you keep the result. An old file \
+you upload is carried over the same way, and shown before it is saved."""
 
 [[layer.section.step]]
 say = "Open every input of the case. The bar across the top has the same way in."
@@ -250,6 +261,10 @@ ui = "download the case as CSV"
 [[layer.section.step]]
 say = "Every input back to its default, and the saved file removed."
 ui = "reset every input to its default"
+
+[[layer.section.step]]
+say = "After an update, read what was carried and what was set aside, then keep the carried-over case."
+ui = "keep the carried-over case"
 
 
 [[layer.section]]
@@ -648,7 +663,10 @@ A run is on the **case**: the saved one — the same file the browser saves — 
 with `--inputs`, a CSV of your own, or with `--defaults` every input at its \
 declared value. The first lines of a run say which. `vleo inputs` prints the \
 case as a CSV to fill in; a blank value means the default, and a file with any \
-row that cannot be applied is refused whole, each bad row named. The order is \
+row that cannot be applied is refused whole, each bad row named. A file written \
+by an older version of the tool — its `#! template` line says so — is carried \
+over instead, and `vleo inputs --inputs old.csv` writes it out in the current \
+template, with every value it could not carry kept as a `#! set-aside` line. The order is \
 fixed: each row's declared value, then the case's, then `--set`.
 
 `--set` only changes a **declared** number — never a computed one, which would \
@@ -687,6 +705,12 @@ say = "Run on a case file. This one designs for a G2 storm and leaves every othe
 run = "cargo run -p vleo-cli --bin vleo -- run sw_ap_design --inputs cases/examples/storm_level_2.csv"
 check = "exits"
 expect = "Ap_design = 80"
+
+[[layer.section.step]]
+say = "A file from an older version of the tool is carried over, not refused: what still applies runs, new inputs take their defaults, and a value that cannot be used is set aside by name."
+run = "cargo run -p vleo-cli --bin vleo -- run sw_ap_design --inputs cases/examples/from_an_older_tool.csv"
+check = "exits"
+expect = "carried over from an older version"
 
 [[layer.section.step]]
 say = "Or on the declared defaults, whatever case is saved."
@@ -1414,7 +1438,7 @@ effect = "reads"
 tool = "vleo"
 name = "inputs"
 usage = "inputs [--inputs <file.csv> | --defaults]"
-what = "Every input of the case as a CSV — group, id, value, unit, default and range — to fill in and pass back with --inputs."
+what = "Every input of the case as a CSV — group, id, value, unit, default and range — to fill in and pass back with --inputs. With --inputs, a file from an older version comes out in the current template."
 who = "user"
 effect = "reads"
 
@@ -1539,12 +1563,12 @@ what = "The same as GET, with the parameters in the body."
 [[route]]
 method = "GET"
 path = "/v1/inputs"
-what = "Every input of the case — group, unit, default, range and the saved value — and whether a case is saved."
+what = "Every input of the case — group, unit, default, range and the saved value — whether a case is saved, the current template, and what the last carry-over did to it."
 
 [[route]]
 method = "GET"
 path = "/v1/inputs.csv"
-what = "The saved case as a CSV to keep, or with `inputs=defaults` the blank template."
+what = "The saved case as a CSV to keep, in the current template with the record of any carry-over; with `inputs=defaults` the blank template; with `backup=1` the file as it was before the tool last carried it over."
 
 [[route]]
 method = "POST"
@@ -1602,7 +1626,7 @@ default = "unset — read-only"
 
 [[env]]
 name = "VLEO_CASE"
-what = "Where the saved case is kept — the CSV the Inputs page and `vleo run` read. Outside the repository, so git never sees it."
+what = "Where the saved case is kept — the CSV the Inputs page and `vleo run` read. Outside the repository, so git never sees it. A copy made before a carry-over sits beside it."
 default = "$HOME/.vleo/case/inputs.csv"
 
 [[env]]
@@ -1651,7 +1675,7 @@ who = "developer"
 
 [[folder]]
 name = "cases"
-what = "The one case: which inputs are the condition the design flies in, and so which are the customer's. Its values are not kept here — they are saved by the tool outside the repository. `cases/examples/` holds a case file to read and copy."
+what = "The one case: which inputs are the condition the design flies in, and so which are the customer's. Its values are not kept here — they are saved by the tool outside the repository. `cases/examples/` holds case files to read and copy, one as an older version of the tool wrote it."
 who = "user"
 
 [[folder]]

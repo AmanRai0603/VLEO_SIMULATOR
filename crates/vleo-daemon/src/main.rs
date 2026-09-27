@@ -319,18 +319,10 @@ fn route(
         ("GET", "/v1/manual") => manual_endpoint(ctx),
         ("GET", "/v1/index") => ok_json(index_json()),
         ("GET", "/v1/inputs") => ok_json(inputs_json()),
-        // The saved case as a file to keep, or with `inputs=defaults` the blank
-        // template: every input, every value left at its default.
-        ("GET", "/v1/inputs.csv") => (
-            "200 OK",
-            "text/csv; charset=utf-8",
-            vleo_modules::inputs::csv(&if param(params, "inputs") == Some("defaults") {
-                Vec::new()
-            } else {
-                saved_case().set
-            })
-            .into_bytes(),
-        ),
+        // The saved case as a file to keep — in this tree's template, with the
+        // record of any upgrade in it — or with `inputs=defaults` the blank
+        // template, or with `backup=1` the file as it was before an upgrade.
+        ("GET", "/v1/inputs.csv") => inputs_csv(params),
         ("POST", "/v1/inputs/check") => ok_json(inputs_check(params)),
         ("POST", "/v1/inputs") => ok_json(inputs_save(params)),
         ("POST", "/v1/inputs/reset") => ok_json(inputs_reset()),
@@ -1445,15 +1437,49 @@ fn case_path() -> PathBuf {
 /// The saved case, read and checked against the tree as it is now.
 ///
 /// Read on every request rather than held, because it is a small file and a
-/// person may replace it from another tab. RE-CHECKED on every read: a row can
-/// be retired or re-ranged after the case was saved, and a stored value that no
-/// longer applies is reported as `refused` — shown on the Inputs page and in
-/// the bar — rather than sent to the engine to refuse every run in the tool.
-fn saved_case() -> vleo_modules::inputs::Reading {
-    match std::fs::read_to_string(case_path()) {
-        Ok(text) => vleo_modules::inputs::read_csv(&text),
-        Err(_) => vleo_modules::inputs::read_csv(&vleo_modules::inputs::csv(&[])),
+/// person may replace it from another tab. CARRIED OVER on the first read after
+/// the tool changes under it: a case written for another set of inputs is
+/// copied aside and written again in this tree's template, with every value
+/// that could not be carried set aside by name — see `inputs::saved::load`. So
+/// a stored case always applies whole, and what an update did to it is shown
+/// on the Inputs page and counted on every run until the case is next saved.
+fn saved_case() -> vleo_modules::inputs::saved::Saved {
+    vleo_modules::inputs::saved::load(&case_path())
+}
+
+fn inputs_csv(params: &str) -> (&'static str, &'static str, Vec<u8>) {
+    const CSV: &str = "text/csv; charset=utf-8";
+    if param(params, "inputs") == Some("defaults") {
+        return ("200 OK", CSV, vleo_modules::inputs::csv(&[]).into_bytes());
     }
+    let saved = saved_case();
+    if param(params, "backup") == Some("1") {
+        // Only the copy the upgrade itself recorded, and only beside the case:
+        // a path read out of a file is never a path this route will open
+        // anywhere else.
+        let dir = case_path().parent().map(|d| d.to_path_buf());
+        let kept = saved
+            .reading
+            .upgrade
+            .as_ref()
+            .and_then(|u| u.backup.as_ref())
+            .map(PathBuf::from)
+            .filter(|b| b.parent().map(|d| d.to_path_buf()) == dir);
+        return match kept.and_then(|b| std::fs::read(b).ok()) {
+            Some(bytes) => ("200 OK", CSV, bytes),
+            None => (
+                "404 Not Found",
+                "text/plain; charset=utf-8",
+                b"no copy of an earlier case is recorded".to_vec(),
+            ),
+        };
+    }
+    (
+        "200 OK",
+        CSV,
+        vleo_modules::inputs::csv_with(&saved.reading.set, saved.reading.upgrade.as_ref())
+            .into_bytes(),
+    )
 }
 
 fn reading_json(j: &mut Json, r: &vleo_modules::inputs::Reading) {
@@ -1482,11 +1508,53 @@ fn reading_json(j: &mut Json, r: &vleo_modules::inputs::Reading) {
         j.close_obj();
     }
     j.close_arr();
+    match &r.template {
+        Some(t) => j.str_field("template", t),
+        None => j.key("template").raw("null"),
+    };
+    j.bool_field("outdated", r.outdated);
+    j.key("upgrade");
+    match &r.upgrade {
+        None => {
+            j.raw("null");
+        }
+        Some(u) => {
+            j.raw("{");
+            j.str_field("from", &u.from);
+            match &u.backup {
+                Some(b) => j.str_field("backup", b),
+                None => j.key("backup").raw("null"),
+            };
+            j.key("new").open_arr();
+            for (k, n) in u.new.iter().enumerate() {
+                if k > 0 {
+                    j.raw(",");
+                }
+                j.push_string(n);
+            }
+            j.close_arr();
+            j.key("set_aside").open_arr();
+            for (k, a) in u.set_aside.iter().enumerate() {
+                if k > 0 {
+                    j.raw(",");
+                }
+                j.raw("{");
+                j.str_field("id", &a.id);
+                j.str_field("value", &a.value);
+                j.str_field("unit", &a.unit);
+                j.str_field("why", &a.why);
+                j.close_obj();
+            }
+            j.close_arr();
+            j.close_obj();
+        }
+    }
 }
 
 /// Every input of the case, its group, default, range and saved value.
 fn inputs_json() -> String {
-    let saved = saved_case();
+    let loaded = saved_case();
+    let saved = &loaded.reading;
     let mut j = Json::new();
     j.raw("{");
     j.bool_field("ok", true);
@@ -1496,8 +1564,12 @@ fn inputs_json() -> String {
         j.str_field("note", c.note);
     }
     j.str_field("path", &case_path().display().to_string());
-    j.bool_field("stored", case_path().exists());
-    reading_json(&mut j, &saved);
+    j.bool_field("stored", loaded.stored);
+    j.str_field("template_now", &vleo_modules::inputs::template());
+    if let Some(e) = &loaded.error {
+        j.str_field("error", e);
+    }
+    reading_json(&mut j, saved);
     j.key("inputs").open_arr();
     for (k, i) in vleo_modules::inputs::case_inputs().iter().enumerate() {
         if k > 0 {
@@ -1700,7 +1772,7 @@ fn build_case(params: &str, ctx: &Ctx) -> Case {
     let mut supply = if param(params, "inputs").map(decode).as_deref() == Some("defaults") {
         Vec::new()
     } else {
-        saved_case().set
+        saved_case().reading.set
     };
     supply.extend(sets(params));
     Case {
@@ -1749,18 +1821,23 @@ fn run_json(params: &str, ctx: &Ctx) -> String {
             let saved = if param(params, "inputs").map(decode).as_deref() == Some("defaults") {
                 None
             } else {
-                Some(saved_case())
+                Some(saved_case().reading)
             };
+            let note = saved.as_ref().and_then(|s| s.upgrade.as_ref());
             j.key("inputs").raw("{");
             j.bool_field("defaults", saved.is_none());
             j.num_field(
                 "changed",
                 saved.as_ref().map(|s| s.changed).unwrap_or(0) as f64,
             );
+            // What the last update did to the case, until it is next saved:
+            // values it could not carry, and inputs it added at their defaults.
+            j.bool_field("upgraded", note.is_some());
             j.num_field(
-                "stale",
-                saved.as_ref().map(|s| s.refused.len()).unwrap_or(0) as f64,
+                "set_aside",
+                note.map(|u| u.set_aside.len()).unwrap_or(0) as f64,
             );
+            j.num_field("new", note.map(|u| u.new.len()).unwrap_or(0) as f64);
             j.close_obj();
             j.key("values").open_arr();
             for (i, v) in r.values.iter().enumerate() {

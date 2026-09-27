@@ -579,28 +579,24 @@ SOURCES = [
      "An independent implementation, used as a second opinion. Its outputs are a parity grid, never a fixture: an implementation cannot supply its own expected values, and this one is an implementation."),
 ]
 
+# ONE CASE. The seed once wrote five here — a nominal design, two altitudes and
+# two skies — and later three customers beside four conditions, each a file
+# under cases/. A case per customer grows the tree with the order book and makes
+# every changed number a commit, so there is one: the multipayload design. What
+# varies is its inputs, which a person sets in the tool and which are kept
+# outside the repository. The case says only which inputs are the CONDITION the
+# design flies in; everything else is what the customer chooses.
+#
+# The condition list starts empty. Gate check V16 accepts only declared,
+# published inputs there, and on the day of the seed nothing is published — the
+# list is filled in as the orbit, environment and solar-weather inputs are.
 CASES = [
-    ("nominal", "Nominal — case C1 at the reference altitude",
-     "The design point every dossier in this suite is checked against. Case A of "
-     "the two reference cases: 250 km, integrated ISR/EO and IoT comms "
-     "multipayload, global service, constellation concept.",
-     {}),
-    ("low_altitude", "Case A — 200 km, drag dominated",
-     "Drag-dominated and air-breathing propulsion in play. The propulsion layer "
-     "carries thrust-to-drag as its binding target.",
-     {"orbit_altitude": 200000.0}),
-    ("high_altitude", "Case B — 350 km, downlink dominated",
-     "Drag is reduced and both chemical and air-breathing propulsion close. The "
-     "propulsion targets relax and downlink and revisit dominate.",
-     {"orbit_altitude": 350000.0}),
-    ("solar_max", "Solar maximum, storm conditions",
-     "The activity level the design must survive rather than the one it is sized "
-     "at. Density at 250 km is roughly five times the quiet value.",
-     {"env_f107": 250.0, "env_f107a": 250.0, "env_kp": 7.0}),
-    ("solar_min", "Solar minimum, quiet conditions",
-     "The activity level at which the air-breathing concept is hardest, because "
-     "there is least air to breathe.",
-     {"env_f107": 70.0, "env_f107a": 70.0, "env_kp": 1.0}),
+    ("multipayload", "VLEO multipayload",
+     "The one case: every input of the multipayload design, grouped into what the "
+     "customer chooses and the condition it flies in. Defaults are the values "
+     "declared on each row; a saved case, uploaded as CSV or edited on the Inputs "
+     "page, changes them without touching the repository.",
+     []),
 ]
 
 CYCLE = dict(
@@ -660,21 +656,22 @@ def emit_supporting():
         write(os.path.join(ROOT, "layers", "%s.toml" % top), "\n".join(L) + "\n")
 
     # ---- cases -------------------------------------------------------------
-    for cid, label, note, supplied in CASES:
-        L = ["# A case: per-customer values against one shared architecture.",
+    for cid, label, note, condition in CASES:
+        L = ["# THE case: one multipayload design, and every input it has.",
              "#",
-             "# The architecture is never copied. What the customer did not buy is",
-             "# simply not in play, and n copies would mean n fixes and silent",
-             "# drift — the anti-clone-and-own rule, ISO/IEC 26580.",
+             "# There is one case, not one file per customer. The values a person works",
+             "# with are uploaded as a CSV or typed on the Inputs page, and the tool keeps",
+             "# them outside the checkout, so git never sees them. What lives here is the",
+             "# shape: which inputs are the CONDITION the spacecraft flies in, and so which",
+             "# are the CUSTOMER's.",
              "",
              "id = %s" % toml_str(cid), "label = %s" % toml_str(label),
-             "note = %s" % toml_str(note), ""]
-        if supplied:
-            L.append("[supply]")
-            L.append("# Overrides on top of each declared node's own value.")
-            for k, v in sorted(supplied.items()):
-                L.append("%s = %r" % (k, float(v)))
-            L.append("")
+             "note = %s" % toml_str(note), "",
+             "[groups]",
+             "# The environment and orbit the spacecraft flies in. Every input not listed",
+             "# here is Customer. Gate check V16 refuses a name here that is not a declared,",
+             "# published input.",
+             "condition = [%s]" % ", ".join(toml_str(c) for c in condition), ""]
         L += ["[[iterate]]",
               "# A declared cycle. Power becomes heat, heat sets array temperature,",
               "# array temperature sets cell efficiency, cell efficiency sets available",

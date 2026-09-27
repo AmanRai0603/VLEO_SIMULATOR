@@ -615,6 +615,33 @@ def browser_walk():
                 page.evaluate("localStorage.clear()")
             ok("a what-if is held in the browser until it is saved to the case", whatif_to_case)
 
+            # AN UPDATE CARRIES A CASE OVER. A case written for another set of
+            # inputs is kept aside untouched and carried into this one on the
+            # first read; the page names what was set aside until the result is
+            # kept. The file is the repository's own example of an old one.
+            def case_carried_over():
+                old = (ROOT / "cases" / "examples" / "from_an_older_tool.csv").read_text()
+                CASE.parent.mkdir(parents=True, exist_ok=True)
+                CASE.write_text(old)
+                open_inputs()
+                page.wait_for_selector(".case-upgrade")
+                said = page.locator(".case-upgrade").inner_text()
+                assert "retired_payload_mass" in said and "set aside" in said, \
+                    f"the carry-over does not name what it set aside: {said[:300]}"
+                kept = list(CASE.parent.glob("inputs.before-*.csv"))
+                assert kept and kept[0].read_text() == old, "the case as it was was not kept"
+                assert "#! set-aside retired_payload_mass" in CASE.read_text(), \
+                    "the set-aside value is not in the carried-over file"
+                untouched("carrying a case over")
+                button(".case-upgrade", U("browser-inputs", 9)).click()
+                page.wait_for_function("() => !document.querySelector('.case-upgrade')", timeout=15000)
+                assert "#! set-aside" not in CASE.read_text(), "keeping the result did not clear the record"
+                urllib.request.urlopen(urllib.request.Request(base + "v1/inputs/reset", data=b""), timeout=10)
+                for k in kept:
+                    k.unlink()
+            ok("an old case is carried over on update, the old file kept, and what was set aside named",
+               case_carried_over)
+
             print("\nwhat if")
 
             def computed_has_no_box():

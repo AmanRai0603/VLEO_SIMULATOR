@@ -118,7 +118,12 @@ main { padding: 1.1rem 2.5rem 3rem; }
 .sw-panel-note .xref { font: 10.5px var(--mono); }
 
 /* ---------- the figure ---------------------------------------------------- */
-.colheads { display: grid; grid-template-columns: 402px 1fr; margin: .3rem 0 .4rem; }
+.colheads { display: grid; grid-template-columns: calc(var(--treew) + var(--pathw)) minmax(0, 1fr);
+  margin: .3rem 0 .4rem; max-width: 100%; }
+/* The two sticky columns, as one pair of widths: the grid, the column heads and
+   the sticky offsets all read these, so narrowing the tree on a phone cannot
+   leave one of them at the old width. */
+:root { --treew: 340px; --pathw: 62px; }
 .colhead { font-size: 10.5px; text-transform: uppercase; letter-spacing: .09em; }
 .colhead.out { color: var(--out); }
 .colhead.in { color: var(--in); justify-self: start; }
@@ -129,7 +134,7 @@ main { padding: 1.1rem 2.5rem 3rem; }
    than beside it. The two left columns stick while the matrix scrolls sideways. */
 .grid {
   display: grid;
-  grid-template-columns: 340px 62px max-content;
+  grid-template-columns: var(--treew) var(--pathw) max-content;
   gap: 0; align-items: start;
   overflow: auto; max-height: 76vh;
   border: 1px solid var(--rule-2); background: var(--card); border-radius: 3px;
@@ -137,7 +142,7 @@ main { padding: 1.1rem 2.5rem 3rem; }
   width: max-content; max-width: 100%;
 }
 .pane { min-width: 0; }
-#tree  { position: sticky; left: 0; z-index: 3; background: var(--card); width: 340px; }
+#tree  { position: sticky; left: 0; z-index: 3; background: var(--card); width: var(--treew); }
 
 /* ---------- the tree ------------------------------------------------------ */
 #tree { padding-right: .2rem; padding-left: 12px; }
@@ -198,7 +203,7 @@ main { padding: 1.1rem 2.5rem 3rem; }
 .pill.crossing { box-shadow: inset 0 0 0 1px var(--teal); }
 
 /* ---------- the paths column --------------------------------------------- */
-#paths { position: sticky; left: 340px; z-index: 2; background: var(--card); width: 62px; }
+#paths { position: sticky; left: var(--treew); z-index: 2; background: var(--card); width: var(--pathw); }
 .paths-label {
   position: absolute; top: -15px; left: 0; right: 0;
   font-size: 10px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .1em;
@@ -492,6 +497,9 @@ h4 { font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
    the node page's single editor — absolute there, it escaped every table. */
 .run-in-table .ovr-u, .case-table .ovr-u { position: static; font-size: 10.5px; }
 .case-save-bar { margin-top: .6rem; }
+.case-upgrade { border: 1px solid var(--in); border-radius: 3px; padding: .4rem .7rem; margin: .5rem 0;
+  background: var(--in-pale); font-size: 11px; }
+.case-upgrade p { margin: .25rem 0; }
 .case-file { border: 1px solid var(--rule); border-radius: 3px; padding: .5rem .7rem; margin: .6rem 0;
   font-size: 11px; background: var(--card); }
 .case-file h4 { margin: 0 0 .3rem; font-size: 11.5px; }
@@ -1063,6 +1071,11 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
 /* A phone: the sidebar goes above the text, and the contents list becomes a
    short scroll rather than a column the text has to wait below. */
 @media (max-width: 760px) {
+  /* A phone is narrower than the two sticky columns were: the tree takes what
+     is left beside the paths, and the column heads wrap rather than push the
+     page sideways. */
+  :root { --treew: 210px; --pathw: 44px; }
+  .colheads { grid-template-columns: minmax(0, 1fr); gap: .15rem; }
   .man { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
   .man-main code, .man-ui { white-space: normal; overflow-wrap: anywhere; }
   .man-side { position: static; max-height: none; }

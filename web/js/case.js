@@ -160,16 +160,47 @@ function stateLine(d) {
     ? '<b>' + plural(d.changed, 'input') + ' changed from default</b> in the saved case'
     : 'nothing saved — every input is at its default');
   let h = '<p>' + bits.join(' · ') + '</p>';
-  // A value saved once and refused now — its row retired or re-ranged since —
-  // is not quietly dropped. The daemon runs the rest of the case without it,
-  // every run says how many it left out, and this names them.
-  if (d.refused && d.refused.length) {
-    h += '<div class="blocked"><b>' + plural(d.refused.length, 'saved value') + ' no longer ' +
-      (d.refused.length === 1 ? 'applies' : 'apply') + '</b> and ' +
-      (d.refused.length === 1 ? 'is' : 'are') + ' left out of every run — ' +
-      (d.refused.length === 1 ? 'that input runs' : 'those inputs run') + ' at the default ' +
-      'until the case is saved again:' + d.refused.map(r =>
-        '<div><code>' + esc(r.id) + '</code> — ' + esc(r.why) + '</div>').join('') + '</div>';
+  if (d.error) h += '<div class="blocked"><b>not written back</b><div>' + esc(d.error) + '</div></div>';
+  // AFTER AN UPDATE, WHAT THE UPDATE DID. The daemon carried the case over to
+  // the inputs the tool has now, kept the file as it was, and recorded every
+  // value it could not carry. The record stays until the case is saved again,
+  // so it is said here rather than once in a log nobody reads.
+  if (d.upgrade) {
+    h += '<div class="case-upgrade">' + upgradeHtml(d.upgrade,
+      'The tool has changed since this case was saved, and the case was carried over to the ' +
+      'inputs it has now.') +
+      (d.upgrade.backup ? '<p>The file as it was is kept at <code>' + esc(d.upgrade.backup) + '</code>. ' +
+        '<a class="ctl case-bk" href="/v1/inputs.csv?backup=1" download="vleo-case-before-update.csv">' +
+        'download it</a></p>' : '') +
+      '<p><button class="ctl case-keep">keep the carried-over case</button> ' +
+      '<span class="muted">saves it as it stands, which clears this note</span></p></div>';
+  }
+  return h;
+}
+
+/**
+ * What a carry-over does, in words: the inputs that are new and run at their
+ * defaults, and every value that could not be carried, with the value itself
+ * so it can be typed back if it still means something.
+ */
+function upgradeHtml(u, lead) {
+  const aside = u.set_aside || [], fresh = u.new || [];
+  let h = '<p><b>' + esc(lead) + '</b> ' + (fresh.length
+    ? plural(fresh.length, 'input') + ' ' + (fresh.length === 1 ? 'is' : 'are') + ' new and ' +
+      (fresh.length === 1 ? 'runs' : 'run') + ' at ' + (fresh.length === 1 ? 'its' : 'their') + ' default'
+    : 'No input is new') + '; ' + (aside.length
+    ? plural(aside.length, 'value') + ' could not be carried and ' + (aside.length === 1 ? 'is' : 'are') +
+      ' set aside:'
+    : 'every value was carried.') + '</p>';
+  if (aside.length) {
+    h += '<div class="blocked">' + aside.map(a =>
+      '<div><code>' + esc(a.id) + '</code>' + (a.value ? ' = ' + esc(a.value) + ' ' + esc(unitText(a.unit)) : '') +
+      ' — ' + esc(a.why) + '</div>').join('') + '</div>';
+  }
+  if (fresh.length) {
+    const SHOW = 12;
+    h += '<p class="muted">new: ' + fresh.slice(0, SHOW).map(n => '<code>' + esc(n) + '</code>').join(', ') +
+      (fresh.length > SHOW ? ' and ' + (fresh.length - SHOW) + ' more' : '') + '</p>';
   }
   return h;
 }
@@ -253,6 +284,12 @@ function wire(host) {
     PAGE.draft.clear();
     renderCase(host);
   };
+  const keep = $('.case-keep', host);
+  if (keep) keep.onclick = async () => {
+    keep.disabled = true;
+    const res = await saveCase(savedValues());
+    if (res.ok) renderCase(host); else keep.disabled = false;
+  };
   $('.case-reset', host).onclick = async () => {
     if (!confirm('Put every input back to its default and remove the saved case? ' +
                  'Download it first to keep a copy.')) return;
@@ -299,6 +336,13 @@ export async function preview(host, name, text) {
     el.innerHTML = h;
     $('.case-pv-close', el).onclick = () => { el.innerHTML = ''; };
     return;
+  }
+  // A file from an older version of the tool is carried over, not refused:
+  // what it cannot carry is named here, before anything is saved.
+  if (r.outdated && r.upgrade) {
+    h += '<div class="case-upgrade">' + upgradeHtml(r.upgrade,
+      'This file was written by an older version of the tool, for other inputs than it has now. ' +
+      'Its values are carried over.') + '</div>';
   }
   h += '<p>It sets <b>' + plural(r.set.length, 'input') + '</b>, ' + plural(r.changed, 'of them', 'of them') +
     ' away from the default; ' + r.defaulted + ' stay at the default. Saving it replaces the case: ' +

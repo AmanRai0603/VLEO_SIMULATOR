@@ -441,8 +441,8 @@ export function renderResult(host, r, res) {
       : inp.changed ? '<b>' + inp.changed + ' input' + (inp.changed === 1 ? '' : 's') + ' changed</b> in the saved case'
       : 'every input at its default') +
     (edits ? ', with <b>' + edits + ' input' + (edits === 1 ? '' : 's') + ' edited by you</b>' : '') +
-    (inp.stale ? ' · <b>' + inp.stale + ' saved value' + (inp.stale === 1 ? '' : 's') +
-      ' no longer apply</b> and ' + (inp.stale === 1 ? 'was' : 'were') + ' not used' : '') +
+    (inp.set_aside ? ' · <b>' + inp.set_aside + ' saved value' + (inp.set_aside === 1 ? '' : 's') +
+      ' set aside</b> when the case was carried over to this version — see the Inputs page' : '') +
     '</p>';
   if (v) {
     h += credBars(v) +

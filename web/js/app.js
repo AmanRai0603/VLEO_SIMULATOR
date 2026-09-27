@@ -136,8 +136,9 @@ function drawCaseBar() {
   $('#case-state').textContent = !d ? 'the case could not be read'
     : !d.stored ? 'every input at its default'
     : d.changed + ' input' + (d.changed === 1 ? '' : 's') + ' changed from default' +
-      (d.refused && d.refused.length ? ' · ' + d.refused.length + ' saved value' +
-        (d.refused.length === 1 ? '' : 's') + ' no longer apply' : '');
+      (d.upgrade ? ' · carried over to this version' + (d.upgrade.set_aside.length
+        ? ', ' + d.upgrade.set_aside.length + ' value' + (d.upgrade.set_aside.length === 1 ? '' : 's') +
+          ' set aside' : '') : '');
   $('#inputs-tab').textContent = 'Inputs' + (d && d.stored && d.changed ? ' · ' + d.changed : '');
 }
 

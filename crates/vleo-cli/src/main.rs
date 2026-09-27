@@ -54,7 +54,30 @@ fn repo_bundles() -> PathBuf {
     }
 }
 
+/// A reader that stops early — `| head`, `| grep -m1`, a pager quit halfway —
+/// closes the pipe, and the next line printed panics with a backtrace that
+/// reads like a crash in this program. It is not one: the reader had what it
+/// wanted. So that one panic ends the program quietly, and every other panic
+/// is reported exactly as before. (Restoring the default SIGPIPE disposition
+/// would need `unsafe`, which this crate forbids.)
+fn quiet_when_the_reader_stops() {
+    let default = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let msg = info
+            .payload()
+            .downcast_ref::<String>()
+            .map(String::as_str)
+            .or_else(|| info.payload().downcast_ref::<&str>().copied())
+            .unwrap_or("");
+        if msg.starts_with("failed printing to stdout") && msg.contains("Broken pipe") {
+            std::process::exit(0);
+        }
+        default(info);
+    }));
+}
+
 fn main() -> ExitCode {
+    quiet_when_the_reader_stops();
     let args: Vec<String> = std::env::args().skip(1).collect();
     let cmd = args.first().map(|s| s.as_str()).unwrap_or("help");
     let rest: Vec<&str> = args.iter().skip(1).map(|s| s.as_str()).collect();
@@ -204,24 +227,33 @@ fn sets(args: &[&str]) -> Result<Vec<(String, f64)>, String> {
 /// and `--defaults` runs the design as declared. A file with a refused row is
 /// refused whole, with every refusal named: running its good rows alone would
 /// be a run on a case nobody wrote.
-fn inputs_for(args: &[&str]) -> Result<(String, Vec<(String, f64)>), String> {
+///
+/// A file written by an older version of the tool is carried over rather than
+/// refused, and what could not be carried is said on stderr — see
+/// `inputs::read_csv`. A saved case is carried over on disk, its old copy kept
+/// beside it.
+fn inputs_for(args: &[&str]) -> Result<(String, vleo_modules::inputs::Reading), String> {
+    use vleo_modules::inputs::{read_csv, saved, Reading};
     if args.contains(&"--defaults") {
-        return Ok(("the declared defaults".into(), Vec::new()));
+        return Ok(("the declared defaults".into(), Reading::default()));
     }
-    let (from, text) = match opt(args, "--inputs") {
-        Some(f) => (
-            f.to_string(),
-            std::fs::read_to_string(f).map_err(|e| format!("--inputs {f}: {e}"))?,
-        ),
+    let (from, r) = match opt(args, "--inputs") {
+        Some(f) => {
+            let text = std::fs::read_to_string(f).map_err(|e| format!("--inputs {f}: {e}"))?;
+            (f.to_string(), read_csv(&text))
+        }
         None => {
             let p = vleo_data::case_path();
-            match std::fs::read_to_string(&p) {
-                Ok(t) => (format!("the saved case ({})", p.display()), t),
-                Err(_) => return Ok(("the declared defaults".into(), Vec::new())),
+            let s = saved::load(&p);
+            if !s.stored {
+                return Ok(("the declared defaults".into(), Reading::default()));
             }
+            if let Some(e) = &s.error {
+                eprintln!("vleo: {e}");
+            }
+            (format!("the saved case ({})", p.display()), s.reading)
         }
     };
-    let r = vleo_modules::inputs::read_csv(&text);
     if !r.ok() {
         let rows = r
             .refused
@@ -230,7 +262,30 @@ fn inputs_for(args: &[&str]) -> Result<(String, Vec<(String, f64)>), String> {
             .collect::<String>();
         return Err(format!("{from} cannot be applied:{rows}"));
     }
-    Ok((format!("{from}, {} changed from default", r.changed), r.set))
+    let mut said = format!("{from}, {} changed from default", r.changed);
+    if let Some(u) = &r.upgrade {
+        said.push_str(&format!(
+            "; carried over from an older version of the tool: {} new input(s) at their \
+             default, {} value(s) set aside",
+            u.new.len(),
+            u.set_aside.len()
+        ));
+    }
+    Ok((said, r))
+}
+
+/// Every value an upgrade set aside, on stderr, beside the line that says the
+/// run is on a carried-over case — so it is read once, not lost in the output.
+fn say_set_aside(r: &vleo_modules::inputs::Reading) {
+    for a in r.upgrade.iter().flat_map(|u| &u.set_aside) {
+        eprintln!(
+            "  set aside: {} = {} {} — {}",
+            a.id,
+            if a.value.is_empty() { "?" } else { &a.value },
+            a.unit,
+            a.why
+        );
+    }
 }
 
 fn build_case(node: &str, args: &[&str]) -> Result<Case, String> {
@@ -239,7 +294,8 @@ fn build_case(node: &str, args: &[&str]) -> Result<Case, String> {
             "no node '{node}'. `vleo list` shows every row; the identifier is the module path."
         ));
     }
-    let (_, mut supply) = inputs_for(args)?;
+    let (_, r) = inputs_for(args)?;
+    let mut supply = r.set;
     // What was typed on the command line has the last word.
     supply.extend(sets(args)?);
     let (data, data_versions) = resolve_data();
@@ -270,7 +326,9 @@ fn cmd_run(args: &[&str]) -> Result<(), String> {
     let def = &NODES[idx as usize];
     println!("\x1b[1m{}\x1b[0m — {}", def.id, def.label);
     println!("  {}", def.question);
-    println!("  inputs: {}", inputs_for(args)?.0);
+    let (said, r) = inputs_for(args)?;
+    println!("  inputs: {said}");
+    say_set_aside(&r);
     println!();
     match results.values.iter().find(|v| v.id == def.id) {
         Some(v) => {
@@ -363,7 +421,9 @@ fn cmd_sweep(args: &[&str]) -> Result<(), String> {
     let node_idx = Vleo::find(node).ok_or_else(|| format!("no node '{node}'"))?;
 
     let mut scratch = Scratch::new();
-    println!("# inputs: {}", inputs_for(args)?.0);
+    let (said, r) = inputs_for(args)?;
+    println!("# inputs: {said}");
+    say_set_aside(&r);
     println!(
         "# {} against {} — {} points\n# {:<18} {:<22} note",
         node, over, points, VARS[over_idx as usize].symbol, NODES[node_idx as usize].id
@@ -597,25 +657,54 @@ fn cmd_cases() -> Result<(), String> {
             );
         }
     }
+    println!(
+        "template {} — every CSV the tool writes names it, and a file naming another is carried over",
+        vleo_modules::inputs::template()
+    );
     let p = vleo_data::case_path();
-    match std::fs::read_to_string(&p) {
-        Ok(t) => {
-            let r = vleo_modules::inputs::read_csv(&t);
-            println!(
-                "saved case: {} — {} changed from default{}",
-                p.display(),
-                r.changed,
-                if r.ok() {
-                    String::new()
-                } else {
-                    format!(", {} row(s) that no longer apply", r.refused.len())
-                }
-            );
-        }
-        Err(_) => println!(
+    let s = vleo_modules::inputs::saved::load(&p);
+    if !s.stored {
+        println!(
             "saved case: none — every run uses the declared defaults ({})",
             p.display()
-        ),
+        );
+        return Ok(());
+    }
+    println!(
+        "saved case: {} — {} changed from default",
+        p.display(),
+        s.reading.changed
+    );
+    if let Some(e) = &s.error {
+        println!("  {e}");
+    }
+    if let Some(u) = &s.reading.upgrade {
+        println!(
+            "  carried over from template {} when the tool changed: {} new input(s) at their default, {} value(s) set aside",
+            u.from,
+            u.new.len(),
+            u.set_aside.len()
+        );
+        // Named up to a screenful; a file that named few inputs makes nearly
+        // every input new, and the count already says so.
+        for n in u.new.iter().take(12) {
+            println!("    new        {n}");
+        }
+        if u.new.len() > 12 {
+            println!("    new        … and {} more", u.new.len() - 12);
+        }
+        for a in &u.set_aside {
+            println!(
+                "    set aside  {} = {} {} — {}",
+                a.id,
+                if a.value.is_empty() { "?" } else { &a.value },
+                a.unit,
+                a.why
+            );
+        }
+        if let Some(b) = &u.backup {
+            println!("  the case as it was: {b}");
+        }
     }
     Ok(())
 }
@@ -623,9 +712,17 @@ fn cmd_cases() -> Result<(), String> {
 /// The case's inputs as a CSV: every input, its group, the value it runs at
 /// when one is saved, its default and its range. Fill in `value` and pass the
 /// file back with `--inputs`, or upload it on the Inputs page.
+///
+/// Always in this tree's template, so `vleo inputs --inputs old.csv > new.csv`
+/// is how a file from an older version is brought up to date: its values
+/// carried, new inputs blank, and anything that could not be carried written
+/// into the new file as a `#! set-aside` line rather than lost.
 fn cmd_inputs(args: &[&str]) -> Result<(), String> {
-    let (_, set) = inputs_for(args)?;
-    print!("{}", vleo_modules::inputs::csv(&set));
+    let (_, r) = inputs_for(args)?;
+    print!(
+        "{}",
+        vleo_modules::inputs::csv_with(&r.set, r.upgrade.as_ref())
+    );
     Ok(())
 }
 

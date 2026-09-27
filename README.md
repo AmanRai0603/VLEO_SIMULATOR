@@ -145,6 +145,14 @@ never sees it. Every run, sweep and figure is then on that case. From a terminal
 the same file runs with `--inputs <file.csv>`, `--defaults` runs the design as
 declared, and `--set` has the last word.
 
+**An update does not strand a case.** Every CSV the tool writes names the set of
+inputs it was written for (`#! template`). When the tree gains, retires or
+re-ranges an input, an older case is carried over rather than refused: values
+that still apply are kept, new inputs take their defaults, and anything that can
+no longer be used is set aside by name, with its value, in the file itself. The
+saved case is carried over the first time the updated tool reads it, with the
+old file kept beside it, and the Inputs page says what changed.
+
 `n ran, m blocked` is always printed and the blocked rows are always named. A
 row with no content yet returns `NotRun` under its own name rather than a
 substituted default. So does a written row whose relation is stated but has
@@ -171,7 +179,7 @@ moment the row is evaluated.
 | `panels/` | 14 declared panel specs, plus `REVIEW.md` and 16 reference screenshots — light and dark for the 8 panels checked on pixels | a figure nobody checked is a figure that silently goes wrong. The spec says what the panel must show; the references are what it looked like when a person last approved it |
 | `docs/` | 13 prose documents, 4 diagrams, and `manual.toml` — the source of the manual in the tool — indexed under **Reference** below | the written record. `VARIABLES.md` is generated; `MATLAB_PORT_PLAN.md` is the row-by-row account of the port and the longest thing here |
 | `bundles/` | reference data as published sets, each with a manifest, a licence term and a hash | rule 2's external oracle. An expected value may never come from the code under test, so the data it is checked against is versioned and verified rather than fetched |
-| `cases/` | the one case, `multipayload.toml` — which inputs are the condition, and so which are the customer's — and `examples/`, a case file to copy | what a run is on. Its values are not kept here: a case per customer would grow the tree with the order book, so values are uploaded or typed in the tool and saved outside the repository. Gate check V16 refuses a condition that is not a real, settable input |
+| `cases/` | the one case, `multipayload.toml` — which inputs are the condition, and so which are the customer's — and `examples/`, case files to copy — one as an older tool wrote it | what a run is on. Its values are not kept here: a case per customer would grow the tree with the order book, so values are uploaded or typed in the tool and saved outside the repository. Gate check V16 refuses a condition that is not a real, settable input |
 | `matlab/` | a thin MATLAB face (`+vleo`) and the study's own published CSV | the tool this was ported from. Its saved run is what `tools/mat_parity.py` compares against |
 | `sources/` | every citation as an object with an id, not as free text | a fixture references `jacchia1971`, never a sentence. Marking a source superseded then lists every row that depended on it, in one query |
 | `cd06/` | `tree.json` — the CD-06 planning document's own node tree, extracted verbatim | where the 1396 rows came from. `tools/seed_tree.py` reads it, so the tree's shape is traceable to the document rather than asserted |
