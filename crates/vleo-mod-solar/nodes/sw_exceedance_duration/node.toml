@@ -23,6 +23,13 @@ state = "published"
 text = "Once the record goes above the design Ap, how long does it stay there?"
 note = "The mean length of a run of consecutive days at or above sw_ap_design. At G3 it is 1.14 days — an exceedance is one disturbed day, not a siege. That is the reason 1.42 days of exceedance per mission is survivable rather than fatal."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "Once the daily level of geomagnetic disturbance goes above the level the vehicle is built for, how many days in a row it stays there. At the default storm grade G3 it is about 1.14 days: an exceedance is one disturbed day, occasionally two, not a siege, which is why the expected 1.42 such days per mission is survivable."
+breaks = "At G3 it is an average of only seven events, six of one day and one of two, so the decimals mean little. It counts whole-day averages, so a violent six hours can fail to show at all, and any quieter day ends a run, which is a choice rather than physics."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "D_exc(Ap_design) = mean length of a run of consecutive days with Ap >= Ap_design"
 source = "noaa_swpc"
@@ -154,3 +161,15 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "sw_storm_design_level"
 points = 40
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The measured mean run length at or above the design level: 1.271845 days at G1, 1.206897 at G2 and 1.142857 at G3, with longest runs of 5, 3 and 2 days, taking the first day below the bound as the end of a run."
+breaks_if = "A storm longer than two days above the G3 bound appears in the record, a one-day bridge rule is adopted, or three-hourly data show exceedances the daily averages miss."
+relation = "D_exc(Ap_design) = mean length of a run of consecutive days with Ap >= Ap_design"
+source = "noaa_swpc"

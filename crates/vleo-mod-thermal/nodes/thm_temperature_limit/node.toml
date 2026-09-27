@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What is the highest temperature the electronics may reach?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The highest temperature the spacecraft's electronics may reach: 323 kelvin. The thermal design has to keep them at or below it."
+breaks = "It is one limit for all the electronics, and the sheet gives no reason for 323 beyond the standard it cites. Its bounds say no electronics box in this design is qualified to operate below 273 kelvin or survives above 400."
+by = "an assistant, from what this sheet states — for its owner (thermal) to confirm"
+
 [maths]
 expression = "T_max = 323"
 source = "ecss_e_st_10_02"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (thermal) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The declared 323 kelvin is the upper limit for this design's electronics, from the standard the sheet cites and confirmed by A. Rai on 2026-09-01; no further reason is given."
+breaks_if = "A qualification temperature for this design's electronics boxes that differs from 323 kelvin."
+relation = "T_max = 323"
+source = "ecss_e_st_10_02"

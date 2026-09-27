@@ -22,6 +22,14 @@ state = "published"
 text = "Once F10.7 goes above the spike threshold, how long does it stay there?"
 note = "The dwell that turns a threshold into an event. A design cares about duration rather than about the crossing, because a single elevated day and a week of them are different loads on a drag budget and on a power one."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "Once the Sun's flux jumps past the level this tool counts as a spike, how many days in a row it tends to stay there: on average about 3.3 days. A single raised day and a week of them are different loads on a drag budget and a power budget, so the length of a burst matters more than the crossing."
+breaks = "The average hides the shape: of 61 bursts, 24 lasted one day, the middle one lasted 3, and a few long ones of up to 10 days pull the average up. Any quiet day ends a burst, which is a choice with no physics behind it, and bursts inside the nine missing months of 2017 are lost or cut short."
+wrong = "It is easy to size on 3.3 days as a typical burst. The most common burst is one day and the ones a design is exposed to run up to 10; 3.3 is neither the common case nor the bad one."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
 expression = "D_burst = mean length of a run of consecutive days with F107/F107A >= S_thr = 3.3115 d"
@@ -139,3 +147,15 @@ bundles = ["solar-weather"]
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the mean run length above the declared spike threshold of 1.3049, 3.3114754098 days from 202 spike days in 61 runs, is the dwell to carry; confirmed by A. Rai on 2026-09-14."
+breaks_if = "The spike threshold is changed without this row, a one-day bridge between runs is adopted, or a design needs the long bursts rather than the average."
+relation = "D_burst = mean length of a run of consecutive days with F107/F107A >= S_thr = 3.3115 d"
+source = "noaa_swpc"

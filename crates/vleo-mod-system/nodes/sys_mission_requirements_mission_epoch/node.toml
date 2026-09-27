@@ -31,6 +31,14 @@ state = "published"
 text = "On what date does the mission begin?"
 note = "The date every dated question in the design keys off. It is a mission requirement and it lives here, at the system layer, because the mission owns it and several subsystems read it — the solar-weather subsystem is the first to do so. Carried as days since 2000-01-01 so that nothing downstream needs a calendar."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The date the mission begins, 1 January 2027, which every dated question in the design uses. Solar activity runs on a cycle of about eleven years, so the date decides which part of the cycle the design faces; this one falls past the cycle's peak, on the declining side, where storms are common."
+breaks = "It is one date, so a slip changes the sky rather than only delaying it: a move to 2030 would bring a quieter sky toward solar minimum. It is also 366 days past the end of the solar record, so everything reading it is extending a pattern rather than reading an observation."
+wrong = "That a launch window can be treated as one date. A window means running the design at both ends of it and keeping the worse answer."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
 expression = "T_epoch = 9862 d  (2027-01-01)"
@@ -143,3 +151,15 @@ confirmed_by = "A. Rai / 2026-09-14"
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The declared 9862 days (2027-01-01) is the mission start, chosen to sit inside the cycle-phase band where the design's storm days fall, phase 0.6194 against a band of 0.29 to 0.74; confirmed by A. Rai on 2026-09-14."
+breaks_if = "The launch date moves or becomes a window; an epoch before 2018 or after 2040 falls outside what the sheet accepts."
+relation = "T_epoch = 9862 d  (2027-01-01)"
+source = "orbitt_case_c1"

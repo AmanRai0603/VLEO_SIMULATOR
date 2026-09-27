@@ -28,6 +28,14 @@ state = "published"
 text = "Is the published outlook better than assuming today's F10.7 continues?"
 note = "A skill score against persistence: 1 is perfect, 0 is no better than the naive baseline, negative is worse than doing nothing. It answers whether reading the outlook is worth anything at the lead sw_outlook_lead declares, which is the far end of the window where the answer is worst."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "Whether the published solar flux outlook beats the simplest guess, that today's flux continues. One would be perfect and zero no better than that guess; the outlook is better for most leads, at best about 0.44, but at the far end of its window, where this is read, it is very slightly worse than the guess."
+breaks = "Beating the simple guess is not the same as being accurate: even at its best the outlook's typical error is about 18 per cent of a typical flux. It is one score over 29 years, and the simple guess is strong when the Sun is quiet and weak in a rising cycle."
+wrong = "A positive score is easy to read as a good forecast. It only means the outlook's error grows more slowly than the simple guess's; the forecast is never accurate in this window."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "S_f107(L) = 1 - MSE_outlook(L) / MSE_persistence(L)"
 source = "noaa_swpc"
@@ -165,3 +173,15 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "sw_outlook_lead"
 points = 52
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the right baseline is the last observation strictly before the issue date; with that rule the score is positive from lead 1 to 23, peaks at 0.4375 at lead 9 and is negative at leads 24 to 26."
+breaks_if = "The baseline is allowed the issue-date observation, which alone turns the short-lead result negative, or the score is shown to depend strongly on activity level."
+relation = "S_f107(L) = 1 - MSE_outlook(L) / MSE_persistence(L)"
+source = "noaa_swpc"

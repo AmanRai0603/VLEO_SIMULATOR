@@ -62,6 +62,14 @@ the design to surviving 350 sfu — above the largest daily value in the record 
 and this says what the window's own band actually reaches.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much room is left between the solar activity the design must survive on a single day and what one day inside this mission's window can reach. Positive is room; negative is a violation and its size."
+breaks = "The day it describes stacks a daily swing on top of a 90th-percentile sustained level, so it is rarer than its label suggests, nearer a one-in-a-hundred day than one-in-twenty. And it is a ceiling on an index, not on the density and heating the spacecraft feels."
+wrong = "Reading the single-day margin as the sustained one, or the other way round. The sheet's three solar-flux levels, 124.14, 104.07 and 200.14, share a unit, so nothing in the tree would catch the swap."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # An achieved row restates the subsystem's conclusion on the side of the
 # comparison the closure reads. It computes nothing of its own.
@@ -187,3 +195,15 @@ type = "Ratio"
 kind = "line"
 over = "orbit_mission_duration"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "It reads the single-day level, 124.14 solar flux units, a sustained level of 104.07 plus a daily excursion of 20.07 read at that level, against a ceiling of 350."
+breaks_if = "The single-day level being swapped for one of its siblings, the daily excursion measured differently, or the 350 ceiling changing."
+relation = "M_f107_short = closure(F107_req_short, F107_short, AtMost).margin"
+source = "noaa_swpc"

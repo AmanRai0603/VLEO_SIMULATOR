@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How long does data wait on board before it can come down?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How long, on average, data waits on board before a ground pass lets it come down, taken as half the average gap between passes, from the number of passes a day."
+breaks = "It is an average that treats the passes as evenly spaced through the day, so a particular wait can be much longer. Above a day the mission is not operable."
+by = "an assistant, from what this sheet states — for its owner (operations) to confirm"
+
 [maths]
 expression = "t = 86400/(2*N_pass)"
 source = "larson_wertz"
@@ -56,3 +63,14 @@ kpis = ["kpi_latency"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (operations) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Half the mean interval between passes, as stated and cited to larson_wertz and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a wait above a day."
+relation = "t = 86400/(2*N_pass)"
+source = "larson_wertz"

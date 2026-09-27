@@ -9,7 +9,8 @@
 <p class="af-q">How fast does the accelerated beam leave the thruster?</p>
 <p class="af-a">v_e — computed on the inputs you run, never stored: run it beside this page.</p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">How fast the accelerated beam leaves the thruster, for an ion of the local air's average mass, carrying a single charge, pushed through the beam voltage.</li>
+<li><b>Rests on</b> The relation as stated and cited to romano2021, a singly charged ion of the local mean mass accelerated through the beam potential, not yet derived on the sheet. <span class="muted">(version 1; would break if Ions that are not singly charged or not of the local mean mass, an exhaust speed above 500 kilometres per second, or a derivation or comparison with romano2021 that disagrees.)</span></li>
 <li><b>Holds</b> from 1000 to 500000 m/s — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · romano2021</span></li>
 </ul>
@@ -31,13 +32,15 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">How fast the accelerated beam leaves the thruster, for an ion of the local air's average mass, carrying a single charge, pushed through the beam voltage. Air is lighter than xenon, so the same voltage gives a far higher exhaust speed: the one respect in which breathing air is easier rather than harder.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (propulsion) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">How fast does the accelerated beam leave the thruster?</p>
 <p class="maths"><code>v_e = sqrt(2*q*V_b/m_i)</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · romano2021</span></p>
 <p class="src">Source <b>romano2021</b> — Romano, F. et al. — Intake design for an atmosphere-breathing electric propulsion system <span class="where">Acta Astronautica, 2021</span></p>
 <p class="note">Air is lighter than xenon, so the same voltage buys a far higher exhaust velocity. It is the one respect in which air-breathing propulsion is easier rather than harder.</p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">It takes every ion as singly charged and of the air's average mass, so a mixed beam is described by one average. Below 1 kilometre per second the concept has no advantage over a cold gas thruster; above 500 kilometres per second the relativistic and space-charge assumptions in the relation break down.</p>
 <p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
 <p class="muted">Outside <code>1000 … 500000</code> m/s the row refuses rather than answers: below 1 km/s the exhaust is slower than a cold gas thruster and the concept has no advantage; above 500 km/s the relativistic and space-charge assumptions in the relation break down.</p>
 <h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
@@ -51,7 +54,13 @@
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> The relation as stated and cited to romano2021, a singly charged ion of the local mean mass accelerated through the beam potential, not yet derived on the sheet.</p>
+<p><b>Would break if:</b> Ions that are not singly charged or not of the local mean mass, an exhaust speed above 500 kilometres per second, or a derivation or comparison with romano2021 that disagrees.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (propulsion) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>The relation as stated and cited to romano2021, a singly charged ion of the local mean mass accelerated through the beam potential, not yet derived on the sheet.</dd><dt>Would break if</dt><dd>Ions that are not singly charged or not of the local mean mass, an exhaust speed above 500 kilometres per second, or a derivation or comparison with romano2021 that disagrees.</dd><dt>The relation, as this version states it</dt><dd><code>v_e = sqrt(2*q*V_b/m_i)</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · romano2021</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -176,8 +185,6 @@ pub fn evaluate(vb: Voltage, m: MolarMass) -&gt; Result&lt;Velocity, Fault&gt; {
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
 <li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 <li>no theory: the relation is stated but not derived — THE ROW DOES NOT ANSWER. A function is defined by its derivation, not by its expression and not by its citation, and until one is written every reader of this row is blocked on it by name</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>

@@ -29,6 +29,14 @@ state = "published"
 text = "How far does a single day's F10.7 stray from its own 81-day centred mean?"
 note = "The scatter of the daily driver about the smoothed one, as a ratio so it applies at any activity level. It is what sw_f107_81day cannot tell you and what a density model driven by a smoothed flux alone will miss."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far a single day's solar flux typically strays from its own 81-day average, as a fraction so it applies at any activity level: about twelve per cent. It is the width that goes with the smoothed level; a density model driven only by the smoothed flux designs to the average day."
+breaks = "The spread is lopsided: a day can sit far above its average, up to 2.11 times it, but never below zero, so doubling the spread does not give a 95 per cent band; the measured percentiles, 1.2188 and 1.3711, are the numbers to use. It is pooled over the whole cycle, though days stray more near the peak."
+wrong = "It is tempting to build a symmetric 95 per cent band from two of these spreads. The distribution is bounded below and long-tailed above, so two spreads do not mean 95 per cent here."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
 expression = "sd of F107 / F107A over the record = 0.122210"
@@ -147,3 +155,15 @@ bundles = ["solar-weather"]
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the spread of the daily-to-81-day ratio, 0.1222100376, measured over 10284 days, describes the scatter at any activity level; confirmed by A. Rai on 2026-09-14."
+breaks_if = "A design at a known point in the cycle needs the scatter for that point rather than the pooled figure, or the record's average ratio drifts away from one, showing the window is misaligned."
+relation = "sd of F107 / F107A over the record = 0.122210"
+source = "noaa_swpc"

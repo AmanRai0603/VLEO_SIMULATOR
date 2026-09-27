@@ -68,6 +68,14 @@ sizing, and a tool that published only one would have decided for the reader
 which of the two their problem is.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The solar radio flux the system designs to as a level held for months at a time: 104.07 solar flux units at the declared window. It is the number a solar array is sized on and a drag budget adds up over the mission, passed up unchanged from the solar-weather subsystem."
+breaks = "None of the subsystem's caveats come with it: it is the 90th-percentile edge of a band while the run is labelled 95 per cent, on a centre scaled by two past cycles whose peaks differ by 41 per cent. It is well below the study's 158.33 because this tree follows the cycle over the mission's own dates, a recorded decision."
+wrong = "That the sustained level can size a short heating case. The single day is 124.14, twenty flux units higher; reading the wrong one under-sizes a short case or over-sizes a steady one."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has NOT read this relation against its source yet.
 confirmed_by = ""
@@ -169,3 +177,15 @@ reason_upper = "the crossing's own ceiling, restated: above 400 sfu the exospher
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The sustained hot level received from the solar subsystem's interface is right as it stands, with the range kept exactly as the subsystem declares it; a person has not yet read this relation against its source."
+breaks_if = "The subsystem's sustained level changes beneath it, or the member received turns out not to be the sustained hot level."
+relation = "F107_sys = l3_solar_interface"
+source = "noaa_swpc"

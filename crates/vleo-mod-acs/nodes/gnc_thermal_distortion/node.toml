@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much does the structure move between the sensor and the payload over an orbit?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far the structure between the attitude sensor and the payload bends over one orbit as it heats and cools: 20 arcseconds. Any bending there is pointing error the sensor cannot see."
+breaks = "It is one declared number from a textbook reference, not an analysis of this structure. Above one degree the sheet says the structure is not stable enough for any payload in this design."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "sig_thm = 20"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 20 arcseconds is right for this design's structure, taken from the Larson and Wertz reference and confirmed by A. Rai on 2026-09-01."
+breaks_if = "A thermal-structural analysis or test of this vehicle showing a sensor-to-payload movement over an orbit different from 20 arcseconds."
+relation = "sig_thm = 20"
+source = "larson_wertz"

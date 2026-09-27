@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "Over what bandwidth does the geolocation payload observe?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The width of the radio band the geolocation payload listens across: 20 megahertz. It governs how precisely signals can be timed to locate their source."
+breaks = "It is only meaningful between 100 kilohertz and 500 megahertz. Below 100 kilohertz the timing is too coarse for any geolocation requirement here; above 500 megahertz the digitiser and the downlink neither fit nor close."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "B_rf = 20"
 source = "orbitt_case_c2"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 20 MHz is the receiver bandwidth for this design, as taken from the source case the sheet cites (orbitt_case_c2), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A receiver design or geolocation requirement for this payload that calls for a bandwidth other than 20 MHz."
+relation = "B_rf = 20"
+source = "orbitt_case_c2"

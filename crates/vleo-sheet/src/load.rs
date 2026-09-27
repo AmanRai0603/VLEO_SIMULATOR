@@ -161,6 +161,7 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
         sh.explain.simply = reflow(&s(ex.get("simply")));
         sh.explain.breaks = reflow(&s(ex.get("breaks")));
         sh.explain.wrong = reflow(&s(ex.get("wrong")));
+        sh.explain.by = s(ex.get("by")).trim().to_string();
     }
     let strings = |v: Option<&toml::Value>| -> Vec<String> {
         v.and_then(|x| x.as_array())

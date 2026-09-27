@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What is the angle between the orbit plane and the equator?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The tilt of the orbit plane against the equator: 96.6 degrees. It is a declared choice of the orbit the constellation flies."
+breaks = "The sheet gives no reason for 96.6 degrees, only that the angle is defined from 0 to 180 degrees."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "i = 96.6"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 96.6 degrees is the inclination for this design, as taken from the source case the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01; the sheet gives no reason for this value."
+breaks_if = "A chosen or achieved orbit for this design with an inclination other than 96.6 degrees."
+relation = "i = 96.6"
+source = "orbitt_case_c1"

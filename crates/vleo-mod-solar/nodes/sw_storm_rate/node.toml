@@ -26,6 +26,14 @@ state = "deprecated"
 text = "How many days a year does the real sky exceed this Kp?"
 note = "The row that tells a reader what a declared Kp costs. env_kp declares Kp = 3 by hand, and this says the record exceeds it on 63.6 days a year — more than two months of every year. It takes a Kp rather than an Ap because the Kp is what the design declares and what the atmosphere model reads."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How many days a year the real sky is more disturbed than a given geomagnetic activity level, which tells a reader what a declared level costs. At level 3 the record exceeds it on 63.6 days a year, more than two months of every year. It is retired, replaced by a row that answers against the level the design actually commits to."
+breaks = "It counts days, not storms, and a storm lasts more than a day, so 63.6 days a year is closer to 19 events. At the top of the scale it reads zero, which means not seen in 28.2 years of record, not impossible; the level below already rests on a single day."
+wrong = "That zero at the top of the scale means the largest storms cannot happen. The record simply does not contain one, and a design sized on that zero would carry no allowance for them."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # Convert the Kp to its ap on the published scale, then read the measured
 # exceedance rate. Tabulated at the scale's own 28 values, so the only
@@ -145,3 +153,15 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "env_kp"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "When live, counts of days over each of the scale's 28 published values across 28.2 years of record, with straight-line reading of at most a third of a unit between them; the row is now retired."
+breaks_if = "A record containing a day beyond the measured range, or a re-measurement on a new data bundle that moves the counts."
+relation = "rate(Kp) = days per year with Ap > ap(Kp), measured over the record"
+source = "noaa_swpc"

@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How long is the emitter observed for one measurement?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How long the payload listens to a radio emitter to make one measurement: one hundredth of a second. Too short and the emitter cannot be timed; too long and things move while it is being watched."
+breaks = "It is a single chosen duration. Below a microsecond the emitter is not observed long enough to time it, and above ten seconds both the emitter and the satellites' geometry move during the observation, so one measurement no longer describes one moment."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "t_int_rf = 0.01"
 source = "orbitt_case_c2"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That an observation time of 0.01 seconds is right for this payload; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "A measured or specified observation time for this payload that differs from 0.01 seconds, or evidence that the emitter or geometry moves appreciably within it."
+relation = "t_int_rf = 0.01"
+source = "orbitt_case_c2"

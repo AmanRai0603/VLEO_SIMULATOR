@@ -79,6 +79,11 @@ pub struct Explain {
     /// The wrong idea a reader most often brings to this row, and what is true
     /// instead. Optional: not every row has a common misconception.
     pub wrong: String,
+    /// Who wrote the plain words, as they would be named on the page. A draft
+    /// says so — an assistant's wording is marked as one, for the owner to
+    /// confirm — because words that look like the owner's and are not are the
+    /// quietest way a page misleads (E15).
+    pub by: String,
 }
 
 impl Explain {

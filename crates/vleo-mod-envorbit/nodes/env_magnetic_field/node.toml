@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How strong is the magnetic field at the flight altitude?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How strong the Earth's magnetic field is at the flight altitude and magnetic latitude, treating the Earth as a single bar magnet at its centre. It matters for sizing magnetorquers, the coils that push against this field."
+breaks = "A centred bar-magnet field leaves out every finer feature of the real one. Over the South Atlantic Anomaly the real field departs from it by up to 30 per cent, so a magnetorquer sized on this alone is undersized there."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "B = B0*(Re/r)^3*sqrt(1 + 3*sin^2(lat_m))"
 source = "igrf2020"
@@ -65,3 +72,14 @@ type = "MagneticFluxDensity"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "A centred dipole with no higher-order terms, as stated and cited to igrf2020 and not yet derived on the sheet."
+breaks_if = "A comparison with igrf2020 showing departures along the orbit larger than the 30 per cent the sheet allows, or a field below a microtesla or above a hundred microtesla."
+relation = "B = B0*(Re/r)^3*sqrt(1 + 3*sin^2(lat_m))"
+source = "igrf2020"

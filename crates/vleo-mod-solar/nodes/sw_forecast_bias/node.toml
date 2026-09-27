@@ -28,6 +28,14 @@ state = "published"
 text = "By how much does the published outlook miss the F10.7 that arrived?"
 note = "Signed, forecast minus observed, so a negative answer means the outlook was low. It is measured at the lead sw_outlook_lead declares, which is the far end of the window where the miss is largest. A design that sizes drag on a published outlook is exposed by exactly this number, in the unsafe direction: a low F10.7 is a thin atmosphere and an optimistic lifetime."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "By how much the published solar flux outlook misses on average, with sign, at the far end of its window. It is low at every lead, by about 4 solar flux units at the far end, and low flux means thinner air, less drag and a longer predicted lifetime than the mission will fly: the unsafe direction."
+breaks = "It is one average over 29 years of a changing Sun, while a forecaster's miss on a busy day differs from a quiet one; a design at a known point in the cycle is owed a bias for that point, which this does not give. The miss also varies with lead in a non-straight way."
+wrong = "A miss of about four units on a mean of 115 looks negligible. It is an offset under the whole margin, and a symmetric band around a biased centre is still in the wrong place; the fix is to add it back, not to widen the margin."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "B_f107(L) = mean over issues of (F107_forecast - F107_observed) at lead L"
 source = "noaa_swpc"
@@ -155,3 +163,15 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "sw_outlook_lead"
 points = 52
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The mean signed miss measured over 1997 to 2025 at 26 leads, from minus 0.593 to minus 3.968 solar flux units, never crossing zero, on 866 to 1257 pairs per lead."
+breaks_if = "The outlook is found to over-forecast at any lead, the bias proves strongly dependent on activity level, or the data bundle changes underneath the table."
+relation = "B_f107(L) = mean over issues of (F107_forecast - F107_observed) at lead L"
+source = "noaa_swpc"

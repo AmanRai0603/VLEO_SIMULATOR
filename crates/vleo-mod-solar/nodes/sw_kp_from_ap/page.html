@@ -9,7 +9,8 @@
 <p class="af-q">What Kp does this daily planetary Ap mean?</p>
 <p class="af-a">Kp — computed on the inputs you run, never stored: run it beside this page.</p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">Converts the daily geomagnetic index the design carries into Kp, a grade of disturbance from 0 to 9 set every three hours, which the atmosphere model wants.</li>
+<li><b>Rests on</b> The published 28-pair table, applied as published with straight lines between points, the choice of line costing at most 0.017 of a grade; confirmed by A. Rai on 2026-09-14. <span class="muted">(version 1; would break if A consumer needs the peak three-hour grade and does not add the separately measured offset, or an input above 400 or below 0 reaches the table without a guard upstream.)</span></li>
 <li><b>Holds</b> from 0 to 9 — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · iaga_kp_ap</span></li>
 </ul>
@@ -31,13 +32,15 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">Converts the daily geomagnetic index the design carries into Kp, a grade of disturbance from 0 to 9 set every three hours, which the atmosphere model wants. It reads the published 28-point table and nothing more; what flows in is the design storm, so what flows out is the grade of that storm.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (environment) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">What Kp does this daily planetary Ap mean?</p>
 <p class="maths"><code>Kp = piecewise_linear(ap_28 -&gt; kp_28, clamp(Ap, 0, 400))</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · iaga_kp_ap</span></p>
 <p class="src">Source <b>iaga_kp_ap</b> — Bartels, J. — The standardized index Ks and the planetary index Kp, with the ap equivalent-amplitude table <span class="where">IATME Bulletin 12b, IUGG Publication Office, 1949; the 28-point table as published by IAGA and distributed by GFZ Potsdam</span></p>
 <p class="note">The atmosphere model wants Kp; the design product carries Ap. This is that conversion and only that — the published table, applied as published. What flows in is the design storm from sw_storm_return_level, so what flows out is the Kp of that storm and not of an average day. The bias the table carries when a daily mean is fed to a three-hourly scale is measured separately, in sw_kp_slot_bias, and is not corrected here.</p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">The table is meant for three-hour values but is fed a daily average, so it reads about one grade below the day's worst three hours, and 1.6 below on disturbed days; that is not corrected here. Above the table's top every storm reads 9, and a negative input reads back as 0, the quietest possible sky.</p>
 <h5>Assumptions, and where each stops holding</h5>
 <dl class="asm">
 <dt>The table is defined for the three-hourly ap and is being fed a daily mean Ap</dt><dd>fails when Kp(ap) is concave, so by Jensen's inequality the table run on a daily mean returns a Kp above the mean of the eight three-hourly Kp and well below the daily peak. Measured on the solar-weather record over 10,297 days with both an Ap and all eight Kp: against the 24-hour mean the table reads high by 0.083 Kp (median), against the daily peak it reads low by 1.000 Kp; on disturbed days (Ap &gt;= 48, 131 of them) those become 0.397 high and 1.606 low. Both signs are what the concavity argument predicts. A design sized on the peak slot through this node alone is sized on a sky 1.6 Kp quieter than the record's, and that is on exactly the days a drag design is sized by. sw_kp_slot_bias now measures both offsets and publishes the peak one, +1.317 Kp at the design Ap of 158; this node's own answer still carries them uncorrected, because the correction is a separate row a consumer adds rather than something applied inside the conversion.</dd>
@@ -72,7 +75,13 @@
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> The published 28-pair table, applied as published with straight lines between points, the choice of line costing at most 0.017 of a grade; confirmed by A. Rai on 2026-09-14.</p>
+<p><b>Would break if:</b> A consumer needs the peak three-hour grade and does not add the separately measured offset, or an input above 400 or below 0 reaches the table without a guard upstream.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (environment) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>The published 28-pair table, applied as published with straight lines between points, the choice of line costing at most 0.017 of a grade; confirmed by A. Rai on 2026-09-14.</dd><dt>Would break if</dt><dd>A consumer needs the peak three-hour grade and does not add the separately measured offset, or an input above 400 or below 0 reaches the table without a guard upstream.</dd><dt>The relation, as this version states it</dt><dd><code>Kp = piecewise_linear(ap_28 -&gt; kp_28, clamp(Ap, 0, 400))</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · iaga_kp_ap</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -230,8 +239,4 @@ pub fn evaluate(ap: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 <div class="sweep" data-over="orbit_mission_duration" data-points="60" data-y="sw_kp_from_ap"><p class="muted">Sweeps against <a class="xref" data-goto="orbit_mission_duration">orbit_mission_duration</a> over 60 points. Run the branch to draw it.</p></div>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
-<section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
-</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

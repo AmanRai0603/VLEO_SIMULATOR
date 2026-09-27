@@ -22,6 +22,13 @@ state = "published"
 text = "How much delta-v a year does holding this altitude cost?"
 note = "This is the number an air-breathing system exists to make free. A stored-propellant design at 250 km spends several kilometres per second a year on it."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much change of speed a year it costs to hold this altitude against drag. This is the number an air-breathing system exists to make free: a stored-propellant design at 250 kilometres spends several kilometres per second a year on it."
+breaks = "It carries the present drag deceleration unchanged across one Julian year. Above 100 kilometres per second a year no propulsion system of any kind closes, and the answer is that the altitude is wrong."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "dv = (D/m)*t"
 source = "vallado2013"
@@ -54,3 +61,14 @@ type = "Velocity"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The drag deceleration integrated over one Julian year, as stated and cited to vallado2013 and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with vallado2013 that disagrees, or a cost above 100 kilometres per second a year."
+relation = "dv = (D/m)*t"
+source = "vallado2013"

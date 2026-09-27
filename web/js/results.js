@@ -19,7 +19,7 @@
 */
 'use strict';
 
-import { $, $$, esc, fmt, plural } from './dom.js';
+import { $, $$, esc, fmt, plural, answerFirst } from './dom.js';
 import { caseChanged } from './state.js';
 
 const POST = { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } };
@@ -49,9 +49,11 @@ export async function renderResults(host) {
     host.innerHTML = '<div class="blocked"><b>no answer</b><div>' + esc(list.message || '') + '</div></div>';
     return;
   }
-  let h = '<div class="node-head"><h2>Results — what runs returned</h2>' +
-    '<p class="ident">A saved result is one run, kept: every input it ran on, every value it returned, ' +
-    'and exactly which engine and tree produced it. Showing one runs nothing — it is shown as it was.</p></div>';
+  let h = '<div class="node-head"><h2>Results — what runs returned</h2></div>' +
+    answerFirst('A result is one run, kept exactly as it came out: the inputs it ran on, every value it ' +
+      'returned, and the beliefs it rested on. Showing one runs nothing.',
+      ['Download it as a CSV or a report page to send to someone.',
+       'If a belief it rested on has changed since, it says which.'], 'how-to');
   h += '<div class="runbar res-actions"><label class="ctl res-up-l">upload a result…' +
     '<input type="file" class="res-up" accept=".csv,.html,text/csv,text/html" hidden></label>' +
     '<span class="muted">a result CSV, or the report page it rides in. Kept at <code>' + esc(list.path) +

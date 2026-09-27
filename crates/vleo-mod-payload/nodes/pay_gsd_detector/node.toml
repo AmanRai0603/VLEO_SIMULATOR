@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What is the finest detail the detector can sample, whatever the optics?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The finest detail on the ground, in metres, that the detector can sample whatever the optics: one pixel projected onto the ground through the focal length from the flight altitude."
+breaks = "It is the detector's limit alone; the optics set a separate one. Below a millimetre the relation is being fed a focal length that is not physical; above a kilometre no product in this design is being made."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "GSD = h*p/f"
 source = "larson_wertz"
@@ -69,3 +76,14 @@ type = "Length"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Altitude times pixel pitch over focal length, as stated and cited from larson_wertz, not yet derived on the sheet."
+breaks_if = "A derivation or a check against larson_wertz disagrees, or the result falls below a millimetre or above a kilometre."
+relation = "GSD = h*p/f"
+source = "larson_wertz"

@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How large is the opening from the collection chamber into the thruster?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The size of the opening from the intake's collection chamber into the thruster: 0.01 square metres."
+breaks = "It is a declared size. Below one square centimetre the throat chokes the flow to the thruster however much the mouth collects, and it cannot be larger than the mouth in any useful intake."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "A_out = 0.01"
 source = "romano2021"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That a throat of 0.01 square metres is right for this intake; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "An intake design or test with a different throat opening, or evidence that this one chokes the flow to the thruster."
+relation = "A_out = 0.01"
+source = "romano2021"

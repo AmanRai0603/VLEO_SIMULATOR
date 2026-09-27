@@ -23,6 +23,14 @@ state = "published"
 text = "What is the highest level the cycle analogue reaches during the mission?"
 note = "The companion to sw_central_expectation, and the number a design that must SURVIVE the window wants rather than the one that describes it. The centre is a mean over the window, which for a five-year mission averages a busy opening against a quiet end and reports neither. This publishes the busiest sustained level inside the same window, from the same analogue, so the two can be read together."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The highest level the expected solar flux reaches during the mission, as opposed to its average. Over the declared five years the expectation opens near 105 and ends near 73: its average is 86.8, its peak 110.7. Thrust, propellant, intake area and lifetime are sized by the busiest sustained stretch, not the typical one."
+breaks = "It is the peak of the expectation, not of the sky: single days reach 343 while this row can never exceed 225.1. It says how high, not for how long. For future cycles it uses the midpoint of two past cycles 41 per cent apart, so if the next cycle runs like cycle 23 it is 17 per cent low."
+wrong = "That it is a worst case. It is the highest the expected level goes, with no excursion on top; a level that will not be exceeded needs the uncertainty growth added."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # The same analogue, maximised over the window instead of averaged over it.
 expression = "F107_window_peak(T_e, L) = max over t in [T_e, T_e+L] of A(t)"
@@ -157,3 +165,15 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "orbit_mission_duration"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The cycle analogue, the completed cycles' mean shape scaled by cycle 25's own peak inside cycle 25 and by the mean of two completed cycles, 193.9, outside it, describes the expected flux; its maximum over the window is found exactly."
+breaks_if = "The next cycle peaks far from 193.9 sfu (cycle 23 reached 226.8 and cycle 24 160.9), or the bundle changes without the shape and amplitudes being re-measured."
+relation = "F107_window_peak(T_e, L) = max over t in [T_e, T_e+L] of A(t)"
+source = "noaa_swpc"

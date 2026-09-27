@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How many satellites are in the constellation?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How many satellites fly in the constellation: 24. It shapes how often a place can be seen again and what the service costs each year."
+breaks = "It is a count a person picked, not one worked out from a revisit need. It is only held to be sensible from one satellite, the single-satellite limit of the trade, up to 500, above which the constellation is not the one costed here."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "N_sat = 24"
 source = "orbitt_case_c1"
@@ -48,3 +55,14 @@ kpis = ["kpi_revisit", "kpi_cost_per_year"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 24 satellites is the constellation size for this design, as taken from the source case the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A constellation plan or revisit requirement for this design that calls for a number other than 24, or more than 500."
+relation = "N_sat = 24"
+source = "orbitt_case_c1"

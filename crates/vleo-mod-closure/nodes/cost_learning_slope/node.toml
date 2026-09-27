@@ -22,6 +22,14 @@ state = "published"
 text = "By what factor does unit cost fall with each doubling of cumulative production?"
 note = "The term that decides whether forty satellites cost forty times one, and the term most concept estimates leave out."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much cheaper each satellite gets as more are built: every time the total number built doubles, the cost of one falls to 92 per cent of what it was. It decides whether forty satellites cost forty times one, and most early estimates leave it out."
+breaks = "One steady rate of learning is assumed for the whole run. A factor of one means no learning at all, the pessimistic limit, and below 0.70 no space production programme has learned that fast."
+wrong = "Forty satellites do not cost forty times one: each doubling of the number built brings the cost of one down, here to 92 per cent."
+by = "an assistant, from what this sheet states — for its owner (programme) to confirm"
+
 [maths]
 expression = "b_lc = 0.92"
 source = "nasa_cer"
@@ -46,3 +54,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (programme) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 0.92 per doubling of production is this programme's learning rate, from the source the sheet cites (nasa_cer), confirmed by A. Rai on 2026-09-01."
+breaks_if = "Production cost data or a manufacturer's quote for this build showing unit cost falling faster or slower than 0.92 per doubling."
+relation = "b_lc = 0.92"
+source = "nasa_cer"

@@ -121,21 +121,28 @@ fn a_result_keeps_the_beliefs_it_rests_on_and_says_when_one_breaks() {
         .find(|(_, n, _)| *n >= 2)
         .expect("no node with two recorded versions");
     assert_eq!(vleo_modules::results::node_version(id), Some((now, rel)));
+    // The run's own rows keep the versions they ran at; the row under test and
+    // one more are added to the same line.
     let (s, _, _) = a_result();
+    let text = csv(&s);
+    let line = text
+        .lines()
+        .find(|l| l.starts_with("#! versions "))
+        .unwrap();
+    let own = line.trim_start_matches("#! versions ").replace("none", "");
     let with = |n: u32| {
-        csv(&s).replace(
-            "#! versions none\n",
-            &format!("#! versions {id}=v{n}@{rel} other_row=v1@0.1.0\n"),
+        text.replace(
+            &format!("{line}\n"),
+            &format!("#! versions {own} {id}=v{n}@{rel} other_row=v1@0.1.0\n"),
         )
     };
     let current = read(&with(now)).unwrap();
-    assert_eq!(
-        current.versions,
-        vec![
-            (id.to_string(), now, rel.to_string()),
-            ("other_row".into(), 1, "0.1.0".into())
-        ]
-    );
+    assert!(current
+        .versions
+        .contains(&(id.to_string(), now, rel.to_string())));
+    assert!(current
+        .versions
+        .contains(&("other_row".into(), 1, "0.1.0".into())));
     assert!(vleo_modules::results::moved_since(&current).is_empty());
     assert_eq!(
         read(&csv(&current)).unwrap(),
@@ -167,7 +174,10 @@ fn a_row_whose_first_belief_came_after_the_result_is_a_belief_that_moved() {
     // without anyone having written it down, and that has moved since. A
     // result saved before the tool recorded beliefs says nothing either way.
     let (id, now, _) = vleo_modules::tables::NODE_VERSIONS[0];
-    let (s, _, _) = a_result();
+    let (mut s, _, _) = a_result();
+    // A run whose rows had no recorded version when it was saved.
+    s.versions.clear();
+    s.outputs.clear();
     let text = csv(&s);
     assert!(text.contains("#! versions none\n"), "{text}");
     let with_row = text.replace(

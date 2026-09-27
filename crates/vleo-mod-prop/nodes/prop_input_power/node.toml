@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much electrical power does the thruster itself draw?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much electrical power the thruster itself draws: the power that ends up in the beam plus the power spent making ions, raised to cover the thruster's other losses."
+breaks = "Every loss other than ionisation is gathered into one fraction, so the answer is only as good as that single figure. It is the thruster's own draw, not what propulsion takes from the bus. Above 100 kilowatts no bus in this mass class supplies it."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "P_in = (P_jet + P_ion)/(1 - L_other)"
 source = "romano2021"
@@ -69,3 +76,14 @@ type = "Power"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to romano2021, the jet and ionisation power inflated by the other-loss fraction, not yet derived on the sheet."
+breaks_if = "A derivation or comparison with romano2021 that disagrees, or other losses that do not scale with the jet and ionisation power."
+relation = "P_in = (P_jet + P_ion)/(1 - L_other)"
+source = "romano2021"

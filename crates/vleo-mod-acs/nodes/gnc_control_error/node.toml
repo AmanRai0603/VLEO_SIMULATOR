@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How well does the controller hold the commanded attitude?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How closely the controller holds the spacecraft at the attitude it was commanded to: within 40 arcseconds, where an arcsecond is a 3600th of a degree. It is part of how accurately the payload can point."
+breaks = "It is a declared figure, not the result of simulating the controller. Below 1 arcsecond no wheel-based controller holds that against the air's twisting force at these low altitudes; above two degrees it supports no pointing requirement in this design."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "sig_ctl = 40"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 40 arcseconds is this design's attitude control error, from the source the sheet cites (larson_wertz), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A control simulation or test with this design's wheels and the aerodynamic torque it meets showing a holding error other than 40 arcseconds."
+relation = "sig_ctl = 40"
+source = "larson_wertz"

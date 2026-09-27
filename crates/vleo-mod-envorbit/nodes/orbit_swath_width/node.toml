@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How wide a strip of ground does one pass cover?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How wide a strip of ground one pass covers, in kilometres, measured over the Earth's surface. It turns the angle at the Earth's centre between the ground track and the edge of coverage into a distance on the ground, and it feeds the revisit performance measure."
+breaks = "It is a width along the shortest path over the Earth's surface, taken from an angle at the Earth's centre, and is only as right as that angle. It cannot exceed the Earth's circumference, and below one kilometre it would not be a swath."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "W = 2*lambda*Re"
 source = "larson_wertz"
@@ -56,3 +63,14 @@ kpis = ["kpi_revisit"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The great-circle width from the Earth-central half-angle, as stated and cited from larson_wertz, not yet derived on the sheet."
+breaks_if = "A derivation or a check against larson_wertz disagrees, or a width comes out under one kilometre or beyond the Earth's circumference."
+relation = "W = 2*lambda*Re"
+source = "larson_wertz"

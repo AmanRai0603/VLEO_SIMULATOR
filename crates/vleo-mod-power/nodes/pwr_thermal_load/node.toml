@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What do the heaters and thermal control electronics draw?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The power drawn by the heaters and the thermal control electronics: 15 watts. It is one of the loads the power system must supply."
+breaks = "It is one declared figure. Above 300 watts the thermal design would be heating the spacecraft rather than getting rid of heat, which the sheet says does not happen in this orbit."
+by = "an assistant, from what this sheet states — for its owner (thermal) to confirm"
+
 [maths]
 expression = "P_th = 15"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (thermal) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That heaters and thermal control draw 15 watts; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "A thermal analysis for this spacecraft that needs a different heater power."
+relation = "P_th = 15"
+source = "orbitt_case_c1"

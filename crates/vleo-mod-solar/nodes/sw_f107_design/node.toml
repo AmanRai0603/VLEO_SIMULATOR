@@ -73,6 +73,14 @@ persistence reading back it should be revived on purpose rather than found by
 accident.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The solar flux level a design should be sized to: where the flux is expected to be over the mission, plus how far it could drift from there at the 95th percentile. So it is a value the mission should not exceed in 95 per cent of histories, not one it will see. It is retired: nothing reads it any more."
+breaks = "The 95 per cent confidence is inherited and cannot be changed here; a mission needing 99 per cent reads a number about 32 solar flux units too small at a one-year lead. Beyond one cycle past cycle 25's maximum, the expected level rests on two cycles whose peaks differ by 41 per cent."
+wrong = "That it is the 95th percentile of the solar flux. It adds a percentile of the change to an expected level, which is a different and larger thing; the record's own 95th percentile of daily flux is 201 solar flux units."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # The study's construction: the central expectation plus the percentile of the
 # change over the lead. The percentile does the safety.
@@ -202,3 +210,15 @@ type = "Ratio"
 kind = "line"
 over = "orbit_mission_duration"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "When live, that the expected level over the mission's own dates, 86.85 solar flux units, plus the measured 95th-percentile drift, 113.29, bounds the flux the design must survive; retired on 2026-09-16 because nothing reads it."
+breaks_if = "A mission needs a confidence other than 95 per cent, or the next cycle's size departs far from the mean of the two completed cycles behind the expected level."
+relation = "F107_design = F107_central + dF107_p95"
+source = "noaa_swpc"

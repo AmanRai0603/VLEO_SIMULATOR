@@ -9,7 +9,8 @@
 <p class="af-q">Once the record goes above the design Ap, how long does it stay there?</p>
 <p class="af-a">D_exc — computed on the inputs you run, never stored: run it beside this page.</p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">Once the daily level of geomagnetic disturbance goes above the level the vehicle is built for, how many days in a row it stays there.</li>
+<li><b>Rests on</b> The measured mean run length at or above the design level: 1.271845 days at G1, 1.206897 at G2 and 1.142857 at G3, with longest runs of 5, 3 and 2 days, taking the first day below the bound as the end of a run. <span class="muted">(version 1; would break if A storm longer than two days above the G3 bound appears in the record, a one-day bridge rule is adopted, or three-hourly data show exceedances the daily averages miss.)</span></li>
 <li><b>Holds</b> from 1 to 5 d — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></li>
 </ul>
@@ -31,13 +32,15 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">Once the daily level of geomagnetic disturbance goes above the level the vehicle is built for, how many days in a row it stays there. At the default storm grade G3 it is about 1.14 days: an exceedance is one disturbed day, occasionally two, not a siege, which is why the expected 1.42 such days per mission is survivable.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (environment) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">Once the record goes above the design Ap, how long does it stay there?</p>
 <p class="maths"><code>D_exc(Ap_design) = mean length of a run of consecutive days with Ap &gt;= Ap_design</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></p>
 <p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
 <p class="note">The mean length of a run of consecutive days at or above sw_ap_design. At G3 it is 1.14 days — an exceedance is one disturbed day, not a siege. That is the reason 1.42 days of exceedance per mission is survivable rather than fatal.</p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">At G3 it is an average of only seven events, six of one day and one of two, so the decimals mean little. It counts whole-day averages, so a violent six hours can fail to show at all, and any quieter day ends a run, which is a choice rather than physics.</p>
 <h5>Assumptions, and where each stops holding</h5>
 <dl class="asm">
 <dt>Just over one day at every level, and that is the finding</dt><dd>fails when a long exceedance is assumed. Measured, the mean run is 1.271845 days at the G1 bound, 1.206897 at G2 and 1.142857 at G3, and the maxima are 5, 3 and 2 days. The higher the bound the shorter the run, which is what a threshold cutting further into a peaked distribution must do. So at G3 the vehicle is above its design Ap for about one day at a time, at most two — long enough to matter to an attitude budget or a drag transient, not long enough to be a sustained environment. The three numbers are so close together that switching G level changes how OFTEN far more than how LONG</dd>
@@ -71,7 +74,13 @@
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> The measured mean run length at or above the design level: 1.271845 days at G1, 1.206897 at G2 and 1.142857 at G3, with longest runs of 5, 3 and 2 days, taking the first day below the bound as the end of a run.</p>
+<p><b>Would break if:</b> A storm longer than two days above the G3 bound appears in the record, a one-day bridge rule is adopted, or three-hourly data show exceedances the daily averages miss.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (environment) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>The measured mean run length at or above the design level: 1.271845 days at G1, 1.206897 at G2 and 1.142857 at G3, with longest runs of 5, 3 and 2 days, taking the first day below the bound as the end of a run.</dd><dt>Would break if</dt><dd>A storm longer than two days above the G3 bound appears in the record, a one-day bridge rule is adopted, or three-hourly data show exceedances the daily averages miss.</dd><dt>The relation, as this version states it</dt><dd><code>D_exc(Ap_design) = mean length of a run of consecutive days with Ap &gt;= Ap_design</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -221,8 +230,6 @@ pub fn evaluate(ap_design: Ratio) -&gt; Result&lt;Time, Fault&gt; {
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
 <li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

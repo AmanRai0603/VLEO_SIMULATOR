@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How far off the ground does the pointing error put the aim point?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far from its intended spot on the ground the payload actually aims, once the pointing error is carried along the slant range, the straight-line distance from the spacecraft to the ground point. It contributes to how accurately emitters on the ground can be located."
+breaks = "It uses only the pointing error and the slant range; an error in where the spacecraft itself is, is not in it. Above 100 kilometres the pointing is not usable for any payload here, and the number stops describing a working design."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "e = sigma*d"
 source = "larson_wertz"
@@ -64,3 +71,14 @@ kpis = ["kpi_geolocation"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited from larson_wertz, not yet derived on the sheet, fed with the pointing error and the slant range."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a ground error above 100 kilometres, where the pointing is not usable for any payload here."
+relation = "e = sigma*d"
+source = "larson_wertz"

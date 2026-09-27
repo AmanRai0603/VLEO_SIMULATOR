@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much torque does the residual magnetic dipole produce in the geomagnetic field?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The twisting force produced when the magnetism the spacecraft carries without meaning to, its residual dipole, meets Earth's magnetic field. It is taken in the worst-case orientation, and the attitude wheels must hold against it."
+breaks = "It is a worst case, with the spacecraft's magnetism turned to give the largest torque in the local field; the torque at any moment can be smaller. Above 1 newton metre no wheel that fits this vehicle can hold attitude."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "T = m_res x B"
 source = "larson_wertz"
@@ -61,3 +68,14 @@ type = "Torque"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited from larson_wertz, not yet derived on the sheet, taken at its worst-case orientation of the residual dipole against the local field."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a torque above 1 newton metre."
+relation = "T = m_res x B"
+source = "larson_wertz"

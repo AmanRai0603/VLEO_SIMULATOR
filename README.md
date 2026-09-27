@@ -77,6 +77,13 @@ and asks for the design to change through a node's form, which the developers
 check, apply and release. There is no edit mode to turn on: a node cannot be
 changed, added or removed from the browser.
 
+**The team does not need this repository.** `cargo run -p xtask -- kit` builds a
+folder with the two programs beside exactly the files they read, and
+`START_HERE.md` on top; the release pipeline attaches one per platform. Zip it,
+share it, and take back the node forms it hands out —
+[`docs/SHARING.md`](docs/SHARING.md) is the loop, and
+[`docs/TEAM_GUIDE.md`](docs/TEAM_GUIDE.md) is what the team reads.
+
 To change an input and watch the answer move —
 [`docs/USING_IT.md` §2b](docs/USING_IT.md) drives it end to end on the solar
 rows: only declared numbers can be set, the tool refuses a computed one by

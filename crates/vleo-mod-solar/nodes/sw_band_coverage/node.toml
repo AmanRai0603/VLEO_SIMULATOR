@@ -32,6 +32,14 @@ state = "published"
 text = "Does the stated 95 per cent band actually contain the truth 95 per cent of the time?"
 note = "Counted over 128135 day pairs at the same seventeen leads sw_uncertainty_growth is tabulated on. The answer is 0.9509 — the band is honest and very slightly conservative."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "A count of whether the Sun's stated one-in-twenty upper band on its flux index really holds: how often, over 128135 pairs of days at seventeen lead times, the rise stayed inside the band. The answer is 0.9509, so the band is honest and very slightly on the safe side."
+breaks = "It is checked on the same data the band was measured from, so it confirms the band was computed and wired correctly, not that it will hold in future. The pairs overlap heavily, so the real sample is far smaller than it looks, and it counts only rises above the band, not falls below it."
+wrong = "It is tempting to read 0.9509 as proof the band will hold out of sample. It is close to arithmetic on the same pairs; its worth is that it could have come back wrong if the table had been built wrong."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
 expression = "C_band = fraction of pairs with F107(t+L) - F107(t) <= dF107_p95(L), pooled over the seventeen leads"
@@ -152,3 +160,15 @@ bundles = ["solar-weather"]
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That counting coverage on the measured pairs, 0.9509267569, is a valid check of the band's construction, with per-lead coverage uniform from 0.949970 to 0.952425; confirmed by A. Rai on 2026-09-14."
+breaks_if = "Coverage drifts across lead times, falls below 0.9, or a mission needs protection against flux arriving lower than planned, which this count does not check."
+relation = "C_band = fraction of pairs with F107(t+L) - F107(t) <= dF107_p95(L), pooled over the seventeen leads"
+source = "noaa_swpc"

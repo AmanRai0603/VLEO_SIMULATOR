@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What is the largest principal moment of inertia?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How hard the spacecraft is to turn about the axis where it resists turning most. It is a number a person set for this design, and the attitude control sizing reads it."
+breaks = "It is one number for the vehicle as declared; the sheet gives no derivation for it beyond its source. The sheet stores it as a plain number while its bounds are written in kilogram square metres, and anything above 1000 kilogram square metres would mean a vehicle outside this mass class."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "I_max = 8"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 8 (bounds written in kilogram square metres) is right for this design, as taken from its cited reference case and confirmed by A. Rai on 2026-09-01."
+breaks_if = "A mass-properties estimate or measurement of this vehicle whose largest principal moment differs from 8."
+relation = "I_max = 8"
+source = "orbitt_case_c1"

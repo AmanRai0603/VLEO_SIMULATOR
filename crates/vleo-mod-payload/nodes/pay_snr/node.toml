@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How clean is one sample?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How clean one sample is: the signal set against the noise that comes with it, from the randomness of the light itself, the detector's dark signal and its read noise. It feeds the ground-resolution performance measure."
+breaks = "It takes a nominal dark contribution of 5 electrons rather than a measured one. Above 10000 the detector is far outside its linear range."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "SNR = N_e/sqrt(N_e + N_dark + n_read^2)"
 source = "larson_wertz"
@@ -64,3 +71,14 @@ kpis = ["kpi_gsd"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Shot noise, a nominal 5-electron dark contribution and read noise combined in quadrature, as stated and cited from larson_wertz, not yet derived on the sheet."
+breaks_if = "The detector's dark contribution differs from the nominal 5 electrons, a check against larson_wertz disagrees, or the ratio exceeds 10000."
+relation = "SNR = N_e/sqrt(N_e + N_dark + n_read^2)"
+source = "larson_wertz"

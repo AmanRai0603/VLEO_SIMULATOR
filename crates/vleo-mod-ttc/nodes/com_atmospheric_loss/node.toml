@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much is lost to the atmosphere, rain and polarisation mismatch, in decibels?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much of the downlink signal is lost to the air, to rain, and to the two antennas not quite matching in polarisation, the orientation of the radio wave: 1.8 decibels. It is signal the rest of the link has to make up."
+breaks = "It is one fixed figure for a loss that depends on the frequency, the elevation of the link and the rain. Above 15 decibels the link is not available at the stated elevation and frequency at all."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "L_atm = 1.8"
 source = "itu_p618"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 1.8 decibels covers atmosphere, rain and polarisation loss on this link, from the source the sheet cites (itu_p618), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A loss worked out for this link's actual frequency, elevation and rain conditions that differs from 1.8 decibels."
+relation = "L_atm = 1.8"
+source = "itu_p618"

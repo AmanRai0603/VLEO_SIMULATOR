@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What fraction of the panel area is active cell?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The share of a solar panel's area that is working cell rather than gaps, wiring and edge: 88 per cent."
+breaks = "It is one declared fraction. Below 50 per cent the panel is mostly structure, and above 98 per cent there is no room left for the connections between cells or the panel edge."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "f_pack = 0.88"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 0.88 of the panel area is active cell; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "A panel layout for the chosen array giving a different active fraction."
+relation = "f_pack = 0.88"
+source = "larson_wertz"

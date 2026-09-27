@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What does a square metre of deployed array weigh?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much one square metre of unfolded solar array weighs: 2.8 kilograms. It turns the array's size into its mass."
+breaks = "It is one declared figure for the whole array. Below half a kilogram per square metre no unfolding array structure of this size is that light, and above 10 the array's mass alone breaks the mass budget."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "sigma_a = 2.8"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the array weighs 2.8 kilograms per square metre; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it. The sheet records the unit as a plain number, while its bounds read in kilograms per square metre."
+breaks_if = "A mass figure for the chosen array design that differs from 2.8 kilograms per square metre."
+relation = "sigma_a = 2.8"
+source = "larson_wertz"

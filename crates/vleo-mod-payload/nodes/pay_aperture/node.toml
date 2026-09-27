@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How large is the telescope's entrance pupil?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How wide the telescope's opening is: 0.3 metres. It limits how fine a detail on the ground the camera can resolve, so it bears on image sharpness."
+breaks = "It is only meaningful between 2 centimetres and 1.5 metres. Below 2 centimetres, the blurring set by the opening's size is coarser than any useful ground detail from this altitude; above 1.5 metres the telescope does not fit the launch space of this class."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "D_o = 0.3"
 source = "orbitt_case_c1"
@@ -48,3 +55,14 @@ kpis = ["kpi_gsd"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 0.3 m is the telescope opening for this design, as taken from the source case the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A telescope design or specification for this payload with an opening other than 0.3 m."
+relation = "D_o = 0.3"
+source = "orbitt_case_c1"

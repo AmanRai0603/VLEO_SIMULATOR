@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How strong must the torque rods be to dump that momentum?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How strong the torque rods must be: the electromagnets that, pushing against Earth's magnetic field, empty the momentum the wheels have stored. It is sized on the stored momentum, the local field and the time available to dump it."
+breaks = "It uses one value of the field and one dump interval; where the field is weaker or the time shorter, stronger rods are needed. Above 1000 ampere square metres no torque rod that fits this vehicle produces it."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "m = h/(B*t_dump)"
 source = "larson_wertz"
@@ -69,3 +76,14 @@ type = "DipoleMoment"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited from larson_wertz, not yet derived on the sheet, fed with the stored momentum, the local field and the available dump interval."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a required dipole above 1000 ampere square metres, which no rod that fits this vehicle produces."
+relation = "m = h/(B*t_dump)"
+source = "larson_wertz"

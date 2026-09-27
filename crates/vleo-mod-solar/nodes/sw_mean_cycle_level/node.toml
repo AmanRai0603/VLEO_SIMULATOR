@@ -22,6 +22,14 @@ state = "published"
 text = "What F10.7 does the average solar cycle show at this phase?"
 note = "The climatology that knows where in the cycle it is. sw_central_expectation currently hands over to the record's unconditional mean of 114.84 sfu because no date was available; at the declared epoch's phase of 0.6194 this row says 108.14 instead. That difference — 6.7 sfu — is what having a date buys. The table is INTERPOLATED between bin centres, so the answer at a phase is not the nearest bin's mean: 0.6194 sits between the 0.575 bin at 126.23 and the 0.625 bin at 105.84, nine tenths of the way toward the second."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The solar flux the average solar cycle shows at a given point in the cycle, found by stacking the record's complete cycles on top of each other and averaging. At the declared mission start, 0.6194 of the way through the cycle, it gives 108.14 solar flux units against the record's plain average of 114.84: that 6.7 is what knowing the date buys."
+breaks = "It is a mean, so half the days at any point in the cycle are above it; it is a centre for a design value, not a design value. It averages only two complete cycles, which peaked near 196 and 146, and matches neither."
+wrong = "That a point in the cycle stands in for a level of activity. The average cycle rises fast and falls slowly, so two 'mid-cycle' points, 0.2 and 0.8, are owed 111 and 76 solar flux units."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "F107_cyc(phase) = mean over complete cycles of F10.7 at that phase"
 source = "noaa_swpc"
@@ -156,3 +164,15 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "sys_mission_requirements_mission_epoch"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Cycles 23 and 24 from the solar-weather bundle of 2026.09.14, stacked on phase in twenty bins and interpolated between bin centres, give the shape of the average cycle."
+breaks_if = "A third completed cycle disagrees with the two-cycle average, the bundle version changes without the bins being re-measured, or an answer falls outside 60 to 400 sfu, which would mean a broken table."
+relation = "F107_cyc(phase) = mean over complete cycles of F10.7 at that phase"
+source = "noaa_swpc"

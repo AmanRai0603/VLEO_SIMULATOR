@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What energy per bit does the link actually deliver at the design rate?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much signal energy each bit of data actually gets, compared with the noise, at the design data rate, in decibels. It is the received signal strength with the data rate taken out."
+breaks = "It is only as sound as the signal-strength and rate figures it combines, and the sheet states no assumptions or derivation. Below minus 10 decibels no coded link closes; above 40 the link is overdesigned by orders of magnitude."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "Eb/N0 = C/N0 - 10*log10(R)"
 source = "larson_wertz"
@@ -61,3 +68,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Its relation as stated and cited from larson_wertz, not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a result outside minus 10 to 40 decibels."
+relation = "Eb/N0 = C/N0 - 10*log10(R)"
+source = "larson_wertz"

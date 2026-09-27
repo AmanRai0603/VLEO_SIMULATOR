@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What does a year of service cost?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What one year of service costs: the whole programme's cost divided evenly over the years the mission lasts. It feeds the closure on cost per operational year."
+breaks = "It is an average over the mission, so it says nothing about when the money is spent, and it is only as right as the mission duration it is spread over. Above a trillion dollars a year the programme is not the one being designed."
+by = "an assistant, from what this sheet states — for its owner (programme) to confirm"
+
 [maths]
 expression = "C = C_total/years"
 source = "nasa_cer"
@@ -64,3 +71,14 @@ kpis = ["kpi_cost_per_year"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (programme) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited from nasa_cer, not yet derived on the sheet: the programme cost spread over the mission duration in years."
+breaks_if = "A mission duration that differs from the years the service actually runs, a comparison with nasa_cer that disagrees, or a figure above a trillion dollars a year."
+relation = "C = C_total/years"
+source = "nasa_cer"

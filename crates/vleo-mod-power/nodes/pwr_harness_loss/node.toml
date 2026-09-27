@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What fraction is lost between the source and the loads?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The share of power lost in the wiring and distribution between the power source and the equipment that uses it: 6 per cent."
+breaks = "It is one declared fraction for all the wiring. Above 25 per cent the wiring would be the largest load on the spacecraft, and the figure stops describing a working design."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "L_h = 0.06"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That harness and distribution lose 0.06 of the power; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "A harness design or measurement for this spacecraft giving a different loss."
+relation = "L_h = 0.06"
+source = "larson_wertz"

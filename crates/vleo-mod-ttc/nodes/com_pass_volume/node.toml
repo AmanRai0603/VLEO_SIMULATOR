@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much data comes down in one pass?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much data comes down in one pass, in gigabits: the data rate times the contact time, cut to 60 per cent to allow for the average pass and for protocol overhead."
+breaks = "One fixed 60 per cent stands for both the average pass and the protocol efficiency, and the sheet states no assumptions or derivation for it. Above a petabit per pass no modem in this class runs."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "V = R*t*eta_link"
 source = "larson_wertz"
@@ -61,3 +68,14 @@ type = "DataVolume"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Its relation as stated and cited from larson_wertz, with a 60 per cent mean-pass and protocol efficiency, not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a measured mean-pass and protocol efficiency that differs from 60 per cent."
+relation = "V = R*t*eta_link"
+source = "larson_wertz"

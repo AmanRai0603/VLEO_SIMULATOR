@@ -22,6 +22,13 @@ state = "published"
 text = "What does the end-of-life disposal manoeuvre cost, as required by the debris mitigation standard?"
 note = "Carried as a design variable rather than discovered at the end, because ISO 24113 makes it a requirement and not a courtesy."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What the end-of-life disposal manoeuvre costs, as a change of speed: lowering the orbit's lowest point to a 60 kilometre re-entry interface. It is carried as a design variable from the start because ISO 24113, the debris mitigation standard, makes disposal a requirement and not a courtesy."
+breaks = "It prices one idealised Hohmann transfer, the standard two-burn orbit change, from the flight altitude. Above 500 metres per second the disposal budget dominates the design and the altitude choice should be revisited."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "dv = |V_circ - V_transfer(r, a_t)|"
 source = "iso24113"
@@ -54,3 +61,14 @@ type = "Velocity"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "A Hohmann transfer lowering perigee to a 60 kilometre re-entry interface, as stated and cited to iso24113 and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with iso24113 that disagrees, a disposal that must reach an interface other than 60 kilometres, or a cost above 500 metres per second."
+relation = "dv = |V_circ - V_transfer(r, a_t)|"
+source = "iso24113"

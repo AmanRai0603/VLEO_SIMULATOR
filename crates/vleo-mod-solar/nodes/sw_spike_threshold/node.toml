@@ -26,6 +26,14 @@ state = "published"
 text = "How far above its own 81-day mean must F10.7 rise to count as a spike?"
 note = "A spike is a day the smooth cycle does not explain. F10.7 is measured against its own 81-day centred mean rather than against a fixed level, because 150 sfu is an ordinary day at solar maximum and an extraordinary one at minimum. The threshold is the record's own scatter, not a number picked to look round."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far above its own 81-day average the Sun's flux must climb for a day to count as a spike: 1.3049 times that average. Measuring against the day's own baseline matters because a level that is ordinary at solar maximum is extraordinary at minimum, and the threshold comes from the record's own scatter rather than a round number."
+breaks = "It tests a single day and says nothing about how long the flux stays high; that needs the event-duration row beside it. The average is centred, so it needs 40 days of the future: it describes a record and cannot be a live trigger. Nine months of 2017 are missing, so any spikes then are not counted."
+wrong = "That 'two and a half standard deviations' carries the usual bell-curve odds. The ratio is long-tailed upward: the largest in the record, 2.11, is nine standard deviations above the mean."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
 expression = "spike when F107 / F107A >= mean + 2.5*sd = 1.3049"
@@ -147,3 +155,15 @@ bundles = ["solar-weather"]
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The declared 1.3048655732 is the mean ratio 0.999340 plus 2.5 times its standard deviation 0.122210 over 10284 days of the solar-weather bundle of 2026.09.14; the 2.5 is a choice near the 98th percentile, not physics; confirmed by A. Rai on 2026-09-14."
+breaks_if = "The bundle version changes and a re-measurement differs, the mean ratio drifts away from one, or the threshold moves below 1.1 or above 1.6, where it would catch a fifth of all days or almost none."
+relation = "spike when F107 / F107A >= mean + 2.5*sd = 1.3049"
+source = "noaa_swpc"

@@ -70,6 +70,7 @@ fn main() -> ExitCode {
         "publish" => cmd_publish(&root, &rest),
         "derisk" => cmd_derisk(&root, &rest),
         "release" => cmd_release(&root, &rest),
+        "kit" => cmd_kit(&root, &rest),
         "help" | "--help" | "-h" => {
             help();
             Ok(())
@@ -104,7 +105,7 @@ cargo xtask <command>
   gate [<node>]      the checks, in order, stopping at the first failure.
                      Called by the authoring hook, by the pipeline and by hand.
   status             counts by state and by subsystem, and what is blocking.
-  active [<subsystem>]
+  active [<subsystem>] [--names]
                      which rows answer and which do not, and for each one that
                      does not, whether it is its own derivation that is missing
                      or a row it reads. A function is defined by its
@@ -182,6 +183,13 @@ cargo xtask <command>
                      recorded change, in the columns of the de-risking narrative,
                      and every registered risk as it stands. Generated from the
                      sheets' [[version]] and [[risk]] records, never edited.
+  kit [--bin <dir>] [--out <dir>]
+                     the tool as a team member gets it: the two programs and
+                     the files they read (the web face, the tree, its pages,
+                     the reference data) in one folder, with START_HERE.md and
+                     a start script. No git, no Rust source beyond the node
+                     folders. Zip the folder and share it. --bin is where the
+                     release-built programs are (default target/release).
   release <version> [--check]
                      stamp every node version still marked `next` with this
                      release, set the workspace version, and regenerate. The
@@ -2775,6 +2783,145 @@ fn workspace_version(root: &Path) -> Result<String, String> {
 /// the last release says `next`; this names them with the release that ships
 /// them, so a node's page and a saved result can say which release first held
 /// each belief — and why the one before it was replaced.
+/// THE TOOL, FOR A TEAM MEMBER, WITHOUT THE REPOSITORY.
+///
+/// The daemon reads its web face, the tree and every node's page at run time,
+/// so the two programs alone do not run. A kit is those programs beside exactly
+/// the files they read — nothing else: no git history, no generators, no
+/// kernel source. The team uses it and sends back node forms; nothing in it is
+/// ever edited, and their case and results live under `~/.vleo/`, outside it,
+/// so the next kit replaces this one without losing either.
+fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
+    let after = |flag: &str| {
+        args.iter()
+            .position(|a| *a == flag)
+            .and_then(|i| args.get(i + 1))
+            .map(PathBuf::from)
+    };
+    let version = workspace_version(root)?;
+    let bin = after("--bin").unwrap_or_else(|| root.join("target").join("release"));
+    let out = after("--out").unwrap_or_else(|| root.join("dist").join(format!("vleo-{version}")));
+    let exe = |name: &str| {
+        [name.to_string(), format!("{name}.exe")]
+            .into_iter()
+            .map(|n| bin.join(n))
+            .find(|p| p.is_file())
+    };
+    let programs: Vec<PathBuf> = ["vleo-daemon", "vleo"]
+        .iter()
+        .map(|n| {
+            exe(n).ok_or_else(|| {
+                format!(
+                    "no {n} in {} — build the programs first: \
+                     cargo build --release -p vleo-daemon -p vleo-cli",
+                    bin.display()
+                )
+            })
+        })
+        .collect::<Result<_, _>>()?;
+    if out.exists() {
+        fs::remove_dir_all(&out).map_err(|e| format!("{}: {e}", out.display()))?;
+    }
+    fs::create_dir_all(&out).map_err(|e| e.to_string())?;
+
+    fn copy_tree(from: &Path, to: &Path) -> Result<usize, String> {
+        let mut n = 0;
+        fs::create_dir_all(to).map_err(|e| format!("{}: {e}", to.display()))?;
+        for e in fs::read_dir(from).map_err(|e| format!("{}: {e}", from.display()))? {
+            let p = e.map_err(|e| e.to_string())?.path();
+            let dest = to.join(p.file_name().unwrap());
+            if p.is_dir() {
+                n += copy_tree(&p, &dest)?;
+            } else {
+                fs::copy(&p, &dest).map_err(|e| format!("{}: {e}", p.display()))?;
+                n += 1;
+            }
+        }
+        Ok(n)
+    }
+    // What the daemon reads, and only that.
+    let mut files = 0;
+    for dir in [
+        "web",
+        "layers",
+        "cases",
+        "sources",
+        "bundles",
+        "matlab/reference",
+    ] {
+        let from = root.join(dir);
+        if from.is_dir() {
+            files += copy_tree(&from, &out.join(dir))?;
+        }
+    }
+    fs::create_dir_all(out.join("docs")).map_err(|e| e.to_string())?;
+    fs::copy(root.join("docs/manual.toml"), out.join("docs/manual.toml"))
+        .map_err(|e| format!("docs/manual.toml: {e}"))?;
+    files += 1;
+    let tree = load(root)?;
+    let mut crates: BTreeSet<&str> = BTreeSet::new();
+    for sh in tree.ordered() {
+        crates.insert(sh.crate_name.as_str());
+    }
+    for c in &crates {
+        let from = root.join("crates").join(c).join("nodes");
+        files += copy_tree(&from, &out.join("crates").join(c).join("nodes"))?;
+    }
+    for p in &programs {
+        fs::copy(p, out.join(p.file_name().unwrap())).map_err(|e| e.to_string())?;
+    }
+    let guide = fs::read_to_string(root.join("docs/TEAM_GUIDE.md"))
+        .map_err(|e| format!("docs/TEAM_GUIDE.md: {e}"))?;
+    fs::write(out.join("START_HERE.md"), guide).map_err(|e| e.to_string())?;
+    let commit = std::process::Command::new("git")
+        .args(["rev-parse", "--short", "HEAD"])
+        .current_dir(root)
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+        .unwrap_or_default();
+    fs::write(
+        out.join("VERSION"),
+        format!(
+            "vleo {version}\ncommit {commit}\n{} rows\n",
+            tree.sheets.len()
+        ),
+    )
+    .map_err(|e| e.to_string())?;
+    fs::write(
+        out.join("start.sh"),
+        "#!/bin/sh\n# Start the tool and open it in the browser. Stop it with Ctrl-C.\n\
+         cd \"$(dirname \"$0\")\" || exit 1\nexec ./vleo-daemon --open\n",
+    )
+    .map_err(|e| e.to_string())?;
+    fs::write(
+        out.join("start.bat"),
+        "@echo off\r\nrem Start the tool and open it in the browser. Close this window to stop it.\r\n\
+         cd /d \"%~dp0\"\r\nvleo-daemon.exe --open\r\n",
+    )
+    .map_err(|e| e.to_string())?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        for f in ["start.sh", "vleo-daemon", "vleo"] {
+            let p = out.join(f);
+            if p.is_file() {
+                let _ = fs::set_permissions(&p, fs::Permissions::from_mode(0o755));
+            }
+        }
+    }
+    println!(
+        "kit: {} — vleo {version}, {} rows, {files} files beside the two programs.\n\
+         Zip that folder and share it. A team member unzips it, runs start.sh \
+         (start.bat on Windows) and reads START_HERE.md; nothing in it is edited, \
+         and their case and results stay under ~/.vleo/ when the next kit replaces it.",
+        out.display(),
+        tree.sheets.len()
+    );
+    Ok(())
+}
+
 fn cmd_release(root: &Path, args: &[&str]) -> Result<(), String> {
     use vleo_sheet::derisk::{release_key, stamp, NEXT};
     let v = args
@@ -3476,6 +3623,18 @@ fn cmd_active(root: &Path, args: &[&str]) -> Result<(), String> {
     let tree = load(root)?;
     let only = args.iter().find(|a| !a.starts_with("--")).copied();
     let verdict = active_verdicts(&tree);
+    // The rows that answer, one id per line — for a script, or for the list of
+    // rows whose plain words and first belief are the next thing to write.
+    if args.contains(&"--names") {
+        for sh in tree.ordered() {
+            if only.is_none_or(|sub| sh.subsystem == sub)
+                && matches!(verdict.get(sh.id.as_str()), Some(Verdict::Active))
+            {
+                println!("{}", sh.id);
+            }
+        }
+        return Ok(());
+    }
 
     // How much each undefined row is costing, measured rather than guessed:
     // the rows that name it as their blocker. This is the order to fix them in.

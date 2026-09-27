@@ -9,7 +9,8 @@
 <p class="af-q">How much of the next rotation's Ap does the pattern fail to explain?</p>
 <p class="af-a"><b>3.593688</b> <span class="claim claim-declared" title="a number a person chose, and put their name against">declared · A. Rai / 2026-09-16</span></p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">How far off the pattern-based forecast of the next 27-day stretch of geomagnetic disturbance has typically been, measured over 361 past forecasts that each used only earlier data.</li>
+<li><b>Rests on</b> That the spread of the forecast error, 3.593688 on the index, holds across the whole cycle and is a usable margin for an index that cannot go negative; confirmed by A. Rai on 2026-09-16. <span class="muted">(version 1; would break if Forecast errors in the declining phase prove wider than this pooled figure, or the filled-in 2017 stretch is shown to have narrowed it.)</span></li>
 <li><b>Holds</b> from 0 to 6 — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></li>
 </ul>
@@ -31,7 +32,8 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">How far off the pattern-based forecast of the next 27-day stretch of geomagnetic disturbance has typically been, measured over 361 past forecasts that each used only earlier data. It is about 3.59 on the daily index, and it sets the width of the sustained design bands on both the disturbed and the quiet side.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (environment) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">How much of the next rotation's Ap does the pattern fail to explain?</p>
 <p class="maths"><code>sigma_ap = std(pred - truth) over 361 walk-forward next-rotation forecasts = 3.5937</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></p>
@@ -42,6 +44,7 @@ It is a separate row because it is a separate measurement of a separate
 quantity, and because a row publishes one number.
 </p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">One spread is used for the whole cycle, though geomagnetic activity is burstier in the declining phase, so a window there gets a band too narrow. The index cannot go below zero and its errors are lopsided, so one symmetric spread fits the middle better than the far tail. Nine missing months of 2017 were filled in; counted as real, they would make the spread look narrower.</p>
 <h5>Assumptions, and where each stops holding</h5>
 <dl class="asm">
 <dt>One sigma holds across the whole cycle</dt><dd>fails when it does not, and the source says so about its own number. Geomagnetic activity is burstier near the declining phase than at minimum, so a window there is given a band too narrow</dd>
@@ -72,7 +75,13 @@ quantity, and because a row publishes one number.
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> That the spread of the forecast error, 3.593688 on the index, holds across the whole cycle and is a usable margin for an index that cannot go negative; confirmed by A. Rai on 2026-09-16.</p>
+<p><b>Would break if:</b> Forecast errors in the declining phase prove wider than this pooled figure, or the filled-in 2017 stretch is shown to have narrowed it.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (environment) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>That the spread of the forecast error, 3.593688 on the index, holds across the whole cycle and is a usable margin for an index that cannot go negative; confirmed by A. Rai on 2026-09-16.</dd><dt>Would break if</dt><dd>Forecast errors in the declining phase prove wider than this pooled figure, or the filled-in 2017 stretch is shown to have narrowed it.</dd><dt>The relation, as this version states it</dt><dd><code>sigma_ap = std(pred - truth) over 361 walk-forward next-rotation forecasts = 3.5937</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -195,8 +204,4 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
-<section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
-</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

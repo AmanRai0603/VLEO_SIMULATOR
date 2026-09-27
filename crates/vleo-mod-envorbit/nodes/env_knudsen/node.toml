@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "Is the flow free-molecular — which is what licenses every aerodynamic relation in this tree?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far a gas molecule travels between collisions compared with the size of the vehicle. When that distance is far larger, the air meets the spacecraft as separate molecules rather than as a flowing fluid, which is called free-molecular flow, and that is what licenses every aerodynamic relation in this tree."
+breaks = "It uses one characteristic length for the whole vehicle. Below ten the flow is transitional and the free-molecular relations are outside their envelope; that bound is the Ariane 501 lesson written as a guard, against a component used outside the envelope it was specified for. Above a million million the number is meaningless but harmless."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "Kn = lambda/L"
 source = "us_std_1976"
@@ -61,3 +68,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The ratio of mean free path to the vehicle's characteristic length, as stated and cited to us_std_1976 and not yet derived on the sheet, with ten as the lowest value at which the flow is free-molecular."
+breaks_if = "A derivation or a comparison with us_std_1976 that disagrees, or a value below ten at a design point, which would put every aerodynamic relation downstream outside its envelope."
+relation = "Kn = lambda/L"
+source = "us_std_1976"

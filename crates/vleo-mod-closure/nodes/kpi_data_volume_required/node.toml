@@ -23,6 +23,14 @@ sense = ">="
 [question]
 text = "What does the customer require for daily downlink volume?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much data the customer requires the system to bring down to the ground each day: 500 gigabits. The design's achieved daily downlink must reach it; more is better."
+breaks = "The sheet gives the number and its source but no reasoning for it. Below one gigabit a day the mission returns nothing useful, and above 10 petabits a day the ground segment is not the one costed."
+wrong = "Reading 500 gigabits as a cap. It is a floor: more delivered volume is better, and 500 gigabits is the least acceptable."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "R_req = 500"
 source = "orbitt_case_c1"
@@ -47,3 +55,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 500 gigabits a day is the customer's downlink requirement for this design, taken from its cited reference case and confirmed by A. Rai on 2026-09-01."
+breaks_if = "A customer requirement stating a daily downlink volume other than 500 gigabits."
+relation = "R_req = 500"
+source = "orbitt_case_c1"

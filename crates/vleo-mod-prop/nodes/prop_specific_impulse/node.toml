@@ -22,6 +22,14 @@ state = "published"
 text = "What is the specific impulse, referred honestly to the collected flow rather than the ionised part?"
 note = "Referring this to the ion flow alone flatters the number by the reciprocal of the utilisation, which is how brochure figures are made."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much thrust the system gets for each unit of propellant weight used per second, counted honestly against all the air collected rather than only the part that was ionised."
+breaks = "Below 100 seconds an air-breathing system offers nothing a cold gas thruster does not. Above 50,000 seconds the relation is being fed an ion flow that is not physical."
+wrong = "That specific impulse should be counted against the ionised flow alone. Doing so makes the number look larger by one over the share of propellant used, which is how brochure figures are made."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "Isp = T/(mdot*g0)"
 source = "romano2021"
@@ -62,3 +70,14 @@ type = "Time"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to romano2021, thrust divided by the weight flow of everything collected, not yet derived on the sheet."
+breaks_if = "A derivation or comparison with romano2021 that disagrees, or a result below 100 or above 50,000 seconds."
+relation = "Isp = T/(mdot*g0)"
+source = "romano2021"

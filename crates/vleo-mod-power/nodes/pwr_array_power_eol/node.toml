@@ -22,6 +22,14 @@ state = "published"
 text = "How much does the array produce at the end of the mission?"
 note = "Every power budget in this tree closes against this number, not against the beginning-of-life one."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How many watts the solar array still produces at the end of the mission, after ageing and after the loss from running hotter than its rating. Every power budget in the design closes against this number."
+breaks = "It starts from the new array's output and applies exactly two reductions, ageing and temperature; any other loss is not in it. It cannot exceed the beginning-of-life output, so a result above that is wrong."
+wrong = "That the power budget can be closed against what the new array produces. Every power budget in this tree closes against this end-of-life number, not the beginning-of-life one."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "P_eol = P_bol*f_deg*f_T"
 source = "larson_wertz"
@@ -70,3 +78,14 @@ type = "Power"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to larson_wertz, applying both the ageing degradation and the temperature derating to the beginning-of-life output, not yet derived on the sheet."
+breaks_if = "A derivation or comparison with larson_wertz that disagrees, or an end-of-life output above the beginning-of-life output."
+relation = "P_eol = P_bol*f_deg*f_T"
+source = "larson_wertz"

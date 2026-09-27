@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much is lost between the transmitter and the antenna, in decibels?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much of the transmitter's output is lost on the way to the antenna: 1.2 decibels. What is lost there heats the wiring instead of carrying data."
+breaks = "It is one declared figure, not worked out from the actual wiring. Above 6 decibels most of the transmitter output is heating the harness, the wiring, rather than leaving the antenna."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "L_line = 1.2"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 1.2 decibels is the loss between transmitter and antenna, from the source the sheet cites (larson_wertz), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A measured loss between the flight transmitter and antenna that differs from 1.2 decibels."
+relation = "L_line = 1.2"
+source = "larson_wertz"

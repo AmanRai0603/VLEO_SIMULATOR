@@ -70,6 +70,14 @@ day. A tool that published one of the five would have decided for the reader
 which of those their problem is.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "Everything the solar-weather subsystem concludes, carried up to the system level as one set: five design scenarios (expected, sustained hot, sustained quiet, hottest day, quietest day), each with a daily solar-flux level, its 81-day mean, and a geomagnetic disturbance level. It copies them unchanged, so a system reader never has to open the subsystem."
+breaks = "Every value inherits the limits of the row beneath it and a system reader sees none of them: the sustained scenarios are 90th-percentile bands though labelled 95 per cent, and the day scenarios are nearer one-in-a-hundred days. One refused member refuses the whole set. The sheet also disagrees with itself on whether the geomagnetic storm-scale columns cross."
+wrong = "Thinking the 81-day mean column is a calculation. For the day scenarios it is simply the mean level of the sustained scenario that day rides on; no values are combined."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has NOT read this relation against its source yet.
 confirmed_by = ""
@@ -598,3 +606,15 @@ type = "Answer"
 kind = "line"
 over = "orbit_mission_duration"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That a subsystem is reached through one row that relays its conclusions unchanged, with each member's range copied from its producer; the relation has not yet been read against its source by a person."
+breaks_if = "A member being published into the wrong scenario slot, a member refusing and blocking the set, or a system consumer needing a value the set does not carry."
+relation = "driver_set = {nominal, hotmean, coldmean, hotday, coldday} x {f107, f107bar, ap}, each member relayed from the row that computed it"
+source = "noaa_swpc"

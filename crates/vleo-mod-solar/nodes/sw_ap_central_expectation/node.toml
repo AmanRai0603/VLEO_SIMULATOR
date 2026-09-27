@@ -28,6 +28,14 @@ them says what the window sits at on an ordinary day, and a band needs a centre
 before it can have edges.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The ordinary level of geomagnetic disturbance the mission window is expected to sit at, measured on the daily index of how unsettled Earth's magnetic field is. Every other row of this kind gives an extreme; this one gives the centre that the design bands are built around, about 22.1."
+breaks = "It is simply the last forecast before the record ends, held flat across the whole window. It carries no trend with the solar cycle, so a window opening next month and one opening years out get the same number, and it is an average over about 27 days, not the level of any one day."
+wrong = "It is easy to read this as the level of a typical day. It is the mean of a 27-day stretch, so by construction about half the days in the window sit above it."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has read this relation against its source.
 confirmed_by = "A. Rai / 2026-09-16"
@@ -94,3 +102,15 @@ confirmed_by = "A. Rai / 2026-09-16"
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the level the Sun was last seen at is the level it will stay at across the window, the last rotation forecast of 22.095389 held forward, which A. Rai confirmed on 2026-09-16."
+breaks_if = "The window is long or opens far in the future, so the Sun has moved along its cycle, or the extrapolated phase past the end of the cycle table turns out to be wrong."
+relation = "Ap_central = the last rotation forecast, held forward = 22.0954"
+source = "noaa_swpc"

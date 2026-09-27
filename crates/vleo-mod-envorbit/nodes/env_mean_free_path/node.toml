@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How far does a molecule travel between collisions?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far a gas molecule travels, on average, between collisions at the flight altitude. It decides whether the air meets a spacecraft-sized body as separate molecules or as a continuous flow."
+breaks = "It treats every molecule as a hard ball of one fixed effective size, whatever the gas. Below a millimetre a spacecraft-sized body would be in continuous flow; beyond a billion metres the idea has no operational meaning here."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "lambda = 1/(sqrt(2)*n*sigma)"
 source = "us_std_1976"
@@ -53,3 +60,14 @@ type = "Length"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The hard-sphere mean free path with an effective cross-section of 1e-19 square metres, as stated and cited to us_std_1976 and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with us_std_1976 that disagrees, or a path below a millimetre at a design point."
+relation = "lambda = 1/(sqrt(2)*n*sigma)"
+source = "us_std_1976"

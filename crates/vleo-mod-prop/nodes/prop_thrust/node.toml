@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much thrust does the thruster produce from the air it is given?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much thrust the thruster produces from the air it is given: the flow of ions times the speed they leave at, corrected for the beam spreading out and for ions carrying more than one charge. It is shown against altitude."
+breaks = "It takes no account of how much power the spacecraft can actually supply. Above 1 newton no air-breathing thruster in this band produces thrust, at any intake size."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "T = mdot_i*v_e*alpha_div*alpha_pp"
 source = "romano2021"
@@ -82,3 +89,14 @@ kind = "line"
 over = "orbit_altitude"
 points = 60
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to romano2021, ion flow times exhaust velocity with divergence and multiple-charge corrections, not yet derived on the sheet."
+breaks_if = "A derivation or comparison with romano2021 that disagrees, or a thrust above 1 newton."
+relation = "T = mdot_i*v_e*alpha_div*alpha_pp"
+source = "romano2021"

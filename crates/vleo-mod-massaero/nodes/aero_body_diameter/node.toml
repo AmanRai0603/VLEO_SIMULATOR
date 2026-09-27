@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How wide is the vehicle across the flight direction?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How wide the spacecraft body is across the direction it flies. The width sets how much of the body faces the oncoming air, and so how hard the air-breathing design has to work to balance its drag."
+breaks = "It is one width for the body; what sticks out beyond it is counted separately. Below 0.1 metres no useful payload opening fits, and above 3 metres the frontal area makes the air-breathing design impossible at any altitude in the band."
+by = "an assistant, from what this sheet states — for its owner (mass) to confirm"
+
 [maths]
 expression = "D_b = 0.6"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (mass) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 0.6 metres is this design's body diameter, from the source the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A layout for this design whose width across the flight direction differs from 0.6 metres, or a payload opening that does not fit within it."
+relation = "D_b = 0.6"
+source = "orbitt_case_c1"

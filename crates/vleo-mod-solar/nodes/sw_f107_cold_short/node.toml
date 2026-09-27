@@ -44,6 +44,14 @@ hot day rides on the hot mean and the cold day on the cold mean. At this window
 that is 20.07 added at 104.07 against 4.39 taken off at 69.63.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How low the Sun's flux can be on a single day inside the mission window: the sustained cold level with a quiet day's own dip taken off. It comes to about 65.24 solar flux units, a genuinely quiet day just above the floor of 60, and it is the case a drag-based capability is weakest at."
+breaks = "Stacking a cold stretch with a cold day inside it gives a day rarer than the 95 per cent label suggests, nearer one in a hundred, and a quiet stretch is made of quiet days so they are not independent. The daily dip is matched to the level but not to where in the cycle that level occurs."
+wrong = "It looks like the hot single day with the sign flipped. The two tails differ and are read at different levels, 69.63 here against 104.07 there, so mirroring would put this about sixteen units below what the record supports."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has NOT read this relation against its source yet.
 confirmed_by = ""
@@ -163,3 +171,15 @@ reason_upper = "above 400 sfu the exospheric temperature relation is extrapolate
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the rotation-level error and a day's dip within its rotation stack, and that the dip measured at the cold sustained level, 4.3870 solar flux units at 69.63, applies inside the window."
+breaks_if = "The daily dip is shown to depend on cycle phase as well as level, or the sustained cold level falls so the answer nears 60 solar flux units and the row refuses."
+relation = "F107_cold_short = F107_cold_long - dF107_day_low"
+source = "noaa_swpc"

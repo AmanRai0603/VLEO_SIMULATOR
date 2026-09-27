@@ -21,6 +21,14 @@ state = "published"
 [question]
 text = "How long must one satellite operate?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How long one satellite must keep operating. It does not decide this itself: it carries the mission length already set as a programme requirement, five years, unchanged to the subsystem rows that need it, so that there is only one number for it and nowhere for a second opinion to enter."
+breaks = "It is one satellite's working life, not the service's. A constellation that replaces satellites sooner than a satellite's life has two mission lengths, and this is the shorter. It is only meaningful between six months and 15 years, the same range as the requirement it carries."
+wrong = "It is easy to read this as how long the service runs. It is one satellite's operating duration, and it restates the requirement rather than setting it."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 # IT RESTATES THE REQUIREMENT, it does not set it. Two rows declaring a mission
 # length is two rows that can disagree about how long the mission is, and the
@@ -105,3 +113,14 @@ kpis = ["kpi_cost_per_year"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared mission-duration requirement at layer 2 is the right length for one satellite, carried here unchanged in type and unit, within 0.5 to 15 years."
+breaks_if = "A mission length below six months, where the programme cannot pay back a satellite, or above 15 years, where the cost, degradation and battery cycle models are all used well past their fits."
+relation = "T_mis = T_mis_req"
+source = "orbitt_case_c1"

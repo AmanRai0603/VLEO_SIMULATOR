@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "By how much does the intake concentrate the gas before it reaches the thruster?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How many times denser the gas in the intake's chamber is than the air outside, taken from the same balance of flow in against flow out that sets how much air is captured."
+breaks = "The balance assumes the molecules do not collide with one another; above a compression of one hundred thousand the chamber gas becomes collisional and that no longer holds. A value below one would mean the intake dilutes the flow, which says the geometry is inverted."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "CR = 4*V*A_in*eta_geo/(v_bar*(A_out + beta*A_in))"
 source = "romano2021"
@@ -109,3 +116,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The flux balance as stated and cited to romano2021, not yet derived on the sheet, valid while the chamber gas stays free-molecular."
+breaks_if = "A compression ratio above one hundred thousand, where the chamber turns collisional, a value below one, or a derivation or comparison with romano2021 that disagrees."
+relation = "CR = 4*V*A_in*eta_geo/(v_bar*(A_out + beta*A_in))"
+source = "romano2021"

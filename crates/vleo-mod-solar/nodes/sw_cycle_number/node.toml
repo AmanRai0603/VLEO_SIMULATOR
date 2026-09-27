@@ -26,6 +26,14 @@ state = "deprecated"
 text = "Which numbered solar cycle is the mission epoch in?"
 note = "The coarsest dated fact about the mission: which cycle it flies in. Everything else that depends on the date depends on this first, because a phase means nothing without a cycle to be a phase of."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "Which numbered solar cycle the mission's date falls in. A cycle runs from one low point of sunspot activity to the next, and the record covers parts of cycles 23, 24 and 25. The number only says which set of cycle boundaries the date-dependent rows are using. It is retired: the position within the cycle carries what matters, and nothing reads this."
+breaks = "The number is a name. It says nothing about how active the cycle is, and nothing about where in the cycle the date sits. The record holds only three cycle starts, so any date after 1 December 2019 returns 25, however far out it is."
+wrong = "That the cycle number says how strong the Sun will be. Cycle 23's peak was 206.9 solar flux units and cycle 24's 149.4, a 28 per cent difference under consecutive labels."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "cyc(T) = 22 + count(cycle_starts <= T),  starts = 1997-01-15, 2008-12-01, 2019-12-01"
 source = "noaa_swpc"
@@ -143,3 +151,15 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "sys_mission_requirements_mission_epoch"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "When live, the three conventional cycle starts in the data bundle, 1997-01-15, 2008-12-01 and 2019-12-01, fixed on a smoothed sunspot series, with a boundary day belonging to the cycle it opens; the row is now retired."
+breaks_if = "Cycle 26 begins before the mission date, which this row would still call 25 because nothing in the data says when 26 starts, or the published cycle boundary dates are revised."
+relation = "cyc(T) = 22 + count(cycle_starts <= T),  starts = 1997-01-15, 2008-12-01, 2019-12-01"
+source = "noaa_swpc"

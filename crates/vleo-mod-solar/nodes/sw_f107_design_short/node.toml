@@ -37,6 +37,14 @@ propellant budget on its long sibling, and giving a design only one of the two
 decides for the reader which problem they have.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The high level of the Sun's flux the design must survive on a single day inside the mission window: the sustained high level plus how far a day can rise above its own 27-day stretch. It comes to about 124.14 solar flux units. A thermal case and a drag transient are sized on it; an array and a propellant budget on the sustained level."
+breaks = "Adding two one-sided margins gives a day rarer than the 95 per cent label, roughly one in a hundred if they were independent, and they are not independent because both widen with activity. And a one-in-twenty day is routine over a long mission, about eighteen times in a year; the rare day a design may care about is further out and not published here."
+wrong = "It is tempting to get the cold single day by mirroring this one. The two daily tails differ at every level, so the cold case is its own row."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has NOT read this relation against its source yet.
 confirmed_by = ""
@@ -129,3 +137,15 @@ reason_upper = "above 400 sfu the exospheric temperature relation is extrapolate
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the rotation-level error and a day's rise within its rotation stack, and that the rise measured at the sustained level, 20.0723 solar flux units at 104.07, applies inside the window."
+breaks_if = "The design needs the rarer day beyond one in twenty, or the rotation error and the daily rise are shown to be dependent in a way that fattens or thins the joint tail."
+relation = "F107_short = F107_long + dF107_day"
+source = "noaa_swpc"

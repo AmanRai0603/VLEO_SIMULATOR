@@ -78,6 +78,23 @@ fn main() {
     println!("  serving the interface and the engine from one origin:");
     println!("  \x1b[1mhttp://127.0.0.1:{port}\x1b[0m");
     println!("  loopback only. Exposing this to a network is a separate, explicit act.");
+    // `--open`: a kit's start script asks the tool to open itself, because only
+    // the tool knows which port it got — 7777 may be taken, and a script that
+    // guesses opens somebody else's page.
+    if std::env::args().any(|a| a == "--open") {
+        let url = format!("http://127.0.0.1:{port}");
+        let opener: &[&str] = if cfg!(target_os = "windows") {
+            &["cmd", "/C", "start", ""]
+        } else if cfg!(target_os = "macos") {
+            &["open"]
+        } else {
+            &["xdg-open"]
+        };
+        let _ = std::process::Command::new(opener[0])
+            .args(&opener[1..])
+            .arg(&url)
+            .spawn();
+    }
 
     let ctx = std::sync::Arc::new(Ctx {
         root,
@@ -137,16 +154,39 @@ fn short(h: u64) -> String {
     String::from_utf8(vleo_core::hash::short_hex(h).to_vec()).unwrap_or_default()
 }
 
+/// Where the tool's files are: the web face, the tree and its pages.
+///
+/// A developer runs this from a checkout; a team member runs it from an
+/// unpacked kit (`xtask kit`) with no checkout at all. So the files are looked
+/// for, in order: where `VLEO_ROOT` says, then upward from where it was started,
+/// then upward from the binary itself — a kit keeps the binary beside them, and
+/// a double-clicked binary starts wherever the desktop chose.
 fn repo_root() -> PathBuf {
-    let mut p = std::env::current_dir().unwrap_or_default();
-    loop {
-        if p.join("web").is_dir() && p.join("layers").is_dir() {
-            return p;
-        }
-        if !p.pop() {
-            return std::env::current_dir().unwrap_or_default();
+    let holds = |p: &Path| p.join("web").is_dir() && p.join("layers").is_dir();
+    if let Ok(r) = std::env::var("VLEO_ROOT") {
+        let r = PathBuf::from(r);
+        if holds(&r) {
+            return r;
         }
     }
+    let starts = [
+        std::env::current_dir().ok(),
+        std::env::current_exe()
+            .ok()
+            .and_then(|e| e.parent().map(Path::to_path_buf)),
+    ];
+    for start in starts.into_iter().flatten() {
+        let mut p = start;
+        loop {
+            if holds(&p) {
+                return p;
+            }
+            if !p.pop() {
+                break;
+            }
+        }
+    }
+    std::env::current_dir().unwrap_or_default()
 }
 
 type BundleFiles = BTreeMap<String, (PathBuf, Vec<String>)>;

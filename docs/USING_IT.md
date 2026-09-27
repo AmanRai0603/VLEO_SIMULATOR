@@ -388,14 +388,14 @@ sw_ap_design — a node form filled by A. Example (Payload team), 2026-09-27; as
 
   APPLY    note                         «…» → «What the vehicle is built to survive, …»
   APPLY    assumption 5 · added         «» → «text = The storm level is read on the NOAA G scale, …»
-  APPLY    de-risking · version 1       «» → «model — Adds the assumption that the level is a NOAA G-scale level, …»
+  APPLY    de-risking · version 2       «» → «model — Adds the assumption that the level is a NOAA G-scale level, …»
 
 why it is changing — the decisions it moves: model
   what did we believe                      That the storm level needed no scale named: …
   what did we test                         Compared the row's thresholds with the NOAA Space Weather Scales …
   what do we now know                      The thresholds are the NOAA scale's exactly, but nothing on the row …
   …
-  → recorded as version 1, released with the next release
+  → recorded as version 2, released with the next release
 
 still for the developer to settle:
   · known value 1 cites 'NOAA Space Weather Scales, the G2 row: Kp 6, ap 80', which is not in sources/sources.toml — …

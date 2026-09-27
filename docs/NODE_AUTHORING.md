@@ -293,7 +293,11 @@ why it matters with no symbol and no word a newcomer would have to look up —
 the question a writer who cannot answer has found a gap in their own
 understanding. **`breaks`** says where that plain version stops being true.
 **`wrong`** names the wrong idea readers most often bring, and what is true
-instead; it is optional, because not every row has one.
+instead; it is optional, because not every row has one. **`by`** names who wrote
+the plain words, and the page says so beside them. Intake writes the form's
+filler there whenever a form changes them; words an assistant drafted from the
+sheet say that, and that the owner is to confirm them — a draft that reads as
+the owner's own is the quietest way a page misleads (E15).
 
 All three are prose, outside the sheet hash: correcting a sentence regenerates
 the page and nothing else. A published row without `simply` and `breaks` is an

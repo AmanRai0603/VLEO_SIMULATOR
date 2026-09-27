@@ -1339,6 +1339,22 @@ fn plan_form_as(root: &Path, f: Form, first: bool) -> Result<Plan, String> {
     let unlisted = sources_unlisted(&tree, &f);
     let mut p = plan_form_on(&tree, f, first)?;
     p.open.extend(unlisted);
+    // WHOSE PLAIN WORDS THESE ARE. A form that changes them names its filler
+    // beside them, so the page never presents one person's wording — or an
+    // assistant's draft — as another's.
+    let wording = p.items.iter().any(|i| {
+        i.verdict == Verdict::Apply && i.what.starts_with("explain_") && i.what != "explain_by"
+    });
+    if let (true, Some(text)) = (wording, p.text.clone()) {
+        let who = if p.form.team.trim().is_empty() {
+            p.form.name.trim().to_string()
+        } else {
+            format!("{} ({})", p.form.name.trim(), p.form.team.trim())
+        };
+        if !who.is_empty() {
+            p.text = Some(form::set(&text, "explain_by", &who)?);
+        }
+    }
     Ok(p)
 }
 

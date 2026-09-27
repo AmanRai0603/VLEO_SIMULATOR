@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much power ends up in the beam?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much power ends up in the beam as motion, worked out from the thrust and the flow of ions."
+breaks = "It has no answer when the ion flow is zero, and refuses rather than give one. Above 100 kilowatts no bus in this mass class supplies it."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "P_jet = T^2/(2*mdot_i)"
 source = "romano2021"
@@ -61,3 +68,14 @@ type = "Power"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to romano2021, the beam's kinetic power formed from thrust and ion flow, not yet derived on the sheet."
+breaks_if = "A derivation or comparison with romano2021 that disagrees, or a jet power above 100 kilowatts."
+relation = "P_jet = T^2/(2*mdot_i)"
+source = "romano2021"

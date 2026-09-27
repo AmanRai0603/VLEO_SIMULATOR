@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How wide a strip does one optical pass image?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How wide a strip one optical pass images, in kilometres: the achieved ground sample size times the number of pixels across the track. It feeds the revisit performance measure."
+breaks = "It uses one sample size across the whole strip. Below 100 metres the swath is not a swath; above 1000 kilometres the field of view is not one this telescope has."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "W = GSD*N_x"
 source = "larson_wertz"
@@ -64,3 +71,14 @@ kpis = ["kpi_revisit"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Ground sample distance times across-track pixel count, as stated and cited from larson_wertz, not yet derived on the sheet."
+breaks_if = "A derivation or a check against larson_wertz disagrees, or the swath falls below 100 metres or above 1000 kilometres."
+relation = "W = GSD*N_x"
+source = "larson_wertz"

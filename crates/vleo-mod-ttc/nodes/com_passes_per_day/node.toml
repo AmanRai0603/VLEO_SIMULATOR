@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How many usable ground station contacts are there each day?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How many usable contacts with a ground station the spacecraft gets each day: 9. Each pass is a chance to bring data down, so this count feeds both how long data waits to reach the ground and how much of it arrives."
+breaks = "It is a declared count, not one this tool works out. Below half a pass a day the mission cannot be operated, and above 60 it would exceed the number of revolutions the spacecraft makes in a day."
+by = "an assistant, from what this sheet states — for its owner (operations) to confirm"
+
 [maths]
 expression = "N_pass = 9"
 source = "orbitt_case_c1"
@@ -48,3 +55,14 @@ kpis = ["kpi_latency", "kpi_data_volume"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (operations) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 9 usable passes a day is right for this design, from the source the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A contact schedule for the actual orbit and ground network giving a number of usable passes other than 9 a day."
+relation = "N_pass = 9"
+source = "orbitt_case_c1"

@@ -39,6 +39,14 @@ state = "published"
 text = "How many days a year does the record go above the design Ap?"
 note = "The exceedance rate of sw_ap_design, measured over 28.197 years. Multiply by the mission length for the number of days the vehicle spends outside what it was built for: at G3 and five years that is 1.42 days."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How many days a year the daily level of geomagnetic disturbance goes above the level the vehicle is built for, counted over 28.197 years of record. At the default storm grade G3 it is 0.284 days a year, so about 1.42 days over a five-year mission, which turns a broken requirement into a size a programme can decide on."
+breaks = "It is a rate from the past, not a forecast, and at G3 it rests on only eight days; its honest range per mission is roughly 0.9 to 2.0 days. Between the three grade levels the straight-line reading overstates the rate badly, and the nine missing months of 2017 fall where exceedances cluster, so the true rate is more likely higher."
+wrong = "It is tempting to treat the design level as a limit the sky respects. The record holds days above every storm grade below G4, so the choice is how many days of exceedance to accept, not whether there are any."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "R_exc(Ap_design) = days with Ap >= Ap_design, per year of record"
 source = "noaa_swpc"
@@ -180,3 +188,15 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "sw_storm_design_level"
 points = 40
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "A plain count of days at or above the design level over the days actually present: 131 above 48, 35 above 80 and 8 above 132, over 28.197 years."
+breaks_if = "A value between the three grade levels is read, the missing 2017 stretch turns out to hold exceedances, or a longer record changes the eight-day G3 count."
+relation = "R_exc(Ap_design) = days with Ap >= Ap_design, per year of record"
+source = "noaa_swpc"

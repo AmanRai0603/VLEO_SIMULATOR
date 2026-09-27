@@ -22,6 +22,14 @@ state = "published"
 text = "How much torque does the drag apply about the centre of mass?"
 note = "In VLEO this dominates gravity gradient and solar pressure by one to three orders of magnitude, which is why a control design carried over from a higher orbit is undersized here."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How strongly drag tries to turn the spacecraft about its centre of mass, in newton metres: the drag force times the distance between where drag acts and the centre of mass. In very low orbit it outweighs the pull of gravity gradient and solar pressure by ten to a thousand times."
+breaks = "It is one drag force times one offset, so it is a single magnitude and is only as right as that offset. Above 1 newton metre no reaction wheel that fits this vehicle can hold attitude."
+wrong = "That an attitude control design carried over from a higher orbit will do. Here drag torque dominates gravity gradient and solar pressure by one to three orders of magnitude, so such a design is undersized."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "T = D*x_cp"
 source = "larson_wertz"
@@ -62,3 +70,14 @@ type = "Torque"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Drag force times the centre-of-pressure offset, as stated and cited from larson_wertz, not yet derived on the sheet."
+breaks_if = "A derivation or a check against larson_wertz disagrees, or the torque exceeds 1 newton metre, beyond which the sheet says no fitting reaction wheel can hold attitude."
+relation = "T = D*x_cp"
+source = "larson_wertz"

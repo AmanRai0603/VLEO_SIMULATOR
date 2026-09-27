@@ -40,6 +40,14 @@ value" rather than "how wrong is the pattern about the window". Both are
 defensible and they are not the same question.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The high level of the Sun's flux the design must survive, held over the mission window for months at a time: the expected centre plus a margin for how wrong the forecast has been. It is what an array is sized on and what a drag budget adds up over the mission."
+breaks = "The margin of 1.28 spreads is really a 90th-percentile edge while the run is labelled 95 per cent. At that margin the band in fact holds a little more than a normal curve would say, but the far tail is heavier than normal, so a 99 per cent band built the same way would fall short. One spread is used for the whole window."
+wrong = "It is easy to take this for the existing single flux design value. That one adds a drift from today's value; this adds how wrong the pattern is about the window, and they answer different questions."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has NOT read this relation against its source yet.
 confirmed_by = ""
@@ -122,3 +130,15 @@ reason_upper = "above 400 sfu the exospheric temperature relation is extrapolate
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the expected centre plus 1.28 spreads of the rotation-forecast error is the right sustained upper edge; at that margin the band held 0.9149 to 0.9339 of past exceedances."
+breaks_if = "The confidence is set to a true one-sided 95 per cent, which adds about 4.9 solar flux units, or the window spans a rise or fall in the cycle where one spread is too narrow."
+relation = "F107_long = F107_central + 1.28 * sigma_total"
+source = "noaa_swpc"

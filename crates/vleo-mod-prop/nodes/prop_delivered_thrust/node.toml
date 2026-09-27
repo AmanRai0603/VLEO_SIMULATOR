@@ -21,6 +21,14 @@ state = "published"
 [question]
 text = "How much thrust is produced once the power available is taken into account?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much thrust the thruster actually delivers once the power it can get is taken into account: its full thrust scaled by the throttle, with the push it gets from each unit of propellant held unchanged."
+breaks = "It assumes thrust falls in step with power. A real thruster's efficiency falls away from its design point, so a deeply throttled system delivers less than this; the answer is optimistic below about half throttle."
+wrong = "That a thruster given half its power gives half its thrust. That is what the relation assumes, and below about half throttle a real thruster delivers less."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "T = k*T"
 source = "orbitt_case_c1"
@@ -68,3 +76,14 @@ kpis = ["kpi_thrust_margin"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to orbitt_case_c1, not yet derived on the sheet, assuming thrust scales linearly with delivered power at fixed specific impulse."
+breaks_if = "Data showing the thruster's thrust falls faster than its power when throttled, most likely below about half throttle, or a derivation or comparison with orbitt_case_c1 that disagrees."
+relation = "T = k*T"
+source = "orbitt_case_c1"

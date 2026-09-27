@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "Does the downlink close with margin to spare?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much the downlink, the radio link carrying data to the ground, has to spare, in decibels: the signal energy per bit against the noise that the link delivers, less what is required and less the losses of real equipment. It contributes to whether enough data reaches the ground each day."
+breaks = "It is only as good as the three numbers it combines: what the link delivers, what is required, and the implementation loss. Below minus 30 decibels the design is wrong somewhere upstream; above 40 decibels the link is overdesigned by orders of magnitude."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "M = Eb/N0 - EbN0_req - L_imp"
 source = "ecss_e_st_50"
@@ -72,3 +79,14 @@ kpis = ["kpi_data_volume"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited from ecss_e_st_50, not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with ecss_e_st_50 that disagrees, or a margin below minus 30 decibels or above 40 decibels, which the sheet reads as an upstream error or gross overdesign."
+relation = "M = Eb/N0 - EbN0_req - L_imp"
+source = "ecss_e_st_50"

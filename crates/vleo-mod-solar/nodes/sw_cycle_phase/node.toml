@@ -22,6 +22,14 @@ state = "published"
 text = "How far through its solar cycle is the mission epoch?"
 note = "Zero at the cycle's start and one at its end. This is the row the whole cycle-dependent half of the subsystem turns on: at the declared epoch it is 0.619, which is past maximum on the declining side — the storm-rich phase."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far through its roughly eleven-year solar cycle the mission starts, from zero at the start of the cycle to one at its end. At the declared start it is 0.619, a little past the peak on the declining side, which is the storm-rich part of the cycle."
+breaks = "The current cycle has not finished, so its length is taken as the mean of the two complete cycles, 11.44 years; if this cycle runs longer, the phase is too large. The phase is also a fraction of time, not of activity, because the cycle rises faster than it falls."
+wrong = "A phase of 0.619 is not 61.9 per cent of any activity level. Equal steps in phase are not equal steps in activity, because the cycle climbs quickly and takes about twice as long to fall."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "phase(T) = (T - start_of_cycle) / mean_cycle_length"
 source = "noaa_swpc"
@@ -163,3 +171,15 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "sys_mission_requirements_mission_epoch"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the current cycle, which began on 2019-12-01, will last about the mean of the last two complete cycles, 11.88 and 11.00 years."
+breaks_if = "The current cycle turns out markedly shorter or longer than 11.44 years, or the mission starts more than 11.44 years after the cycle began, where the row refuses."
+relation = "phase(T) = (T - start_of_cycle) / mean_cycle_length"
+source = "noaa_swpc"

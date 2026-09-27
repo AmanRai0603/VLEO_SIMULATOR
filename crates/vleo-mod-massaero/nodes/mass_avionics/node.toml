@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What do the on-board computer, harness electronics and data handling weigh?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What the on-board computer, harness electronics and data handling weigh, as a single number a person picked: 9 kilograms. Every mass margin in the design is built out of numbers like this one, so an error here moves them all."
+breaks = "It is one declared figure with no breakdown, and no reason beyond the case it came from. It is only held to be sensible between half a kilogram and 200 kilograms: below half a kilogram no avionics set exists, and above 200 kilograms the avionics are not in this class."
+by = "an assistant, from what this sheet states — for its owner (avionics) to confirm"
+
 [maths]
 expression = "m_av = 9"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (avionics) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 9 kg is right for the on-board computer, harness electronics and data handling on this design, as taken from the source case the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A measured, quoted or itemised mass for the on-board computer, harness electronics and data handling on this design that differs from 9 kg, or a design whose hardware falls outside half a kilogram to 200 kilograms."
+relation = "m_av = 9"
+source = "orbitt_case_c1"

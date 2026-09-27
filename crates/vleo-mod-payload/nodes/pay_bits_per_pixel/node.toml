@@ -21,6 +21,14 @@ state = "published"
 [question]
 text = "How many bits does each sample carry?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How many bits each image sample carries: 12. More bits mean a finer range of brightness levels."
+breaks = "It is only useful between 8 and 16 bits. Below 8 the range of brightness is too coarse for measuring light accurately; above 16 the extra bits go below the detector's own noise."
+wrong = "It is easy to think more bits always carry more information. Above 16 bits they exceed the detector's own noise floor, so the extra bits carry only noise."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "b_px = 12"
 source = "orbitt_case_c1"
@@ -45,3 +53,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 12 bits per sample is right for this design's detector, as taken from the source case the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A detector or data-chain specification for this payload that samples at a number of bits other than 12."
+relation = "b_px = 12"
+source = "orbitt_case_c1"

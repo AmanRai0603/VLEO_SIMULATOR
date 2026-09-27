@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How efficiently does stored energy reach the loads?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The share of the energy stored in the battery that actually reaches the equipment that uses it: 92 per cent."
+breaks = "It is one declared efficiency for the whole path from battery to loads. Below 60 per cent the path wastes more than the loads receive, and above 99 per cent has not been shown end to end including the regulator."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "eta_dis = 0.92"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the discharge path is 0.92 efficient; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "A measured or specified efficiency for this discharge path, including its regulator, that differs from 0.92."
+relation = "eta_dis = 0.92"
+source = "larson_wertz"

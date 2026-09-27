@@ -8,7 +8,7 @@
 */
 'use strict';
 
-import { $, esc, plural } from './dom.js';
+import { $, esc, plural, answerFirst } from './dom.js';
 import { S, LAYERS, CAPTIONS, subtreeNodes, isUndefined, answers, isUnread, caseTag } from './state.js';
 import { buildDisplay, relations } from './display.js';
 import { drawTree } from './tree.js';
@@ -34,9 +34,8 @@ export function drawFigure() {
 }
 
 export function drawCaptions() {
-  const cap = CAPTIONS[S.layer];
-  $('#caption-a').textContent = cap[0];
-  $('#caption-b').textContent = cap[1];
+  const [answer, points, kind] = CAPTIONS[S.layer];
+  $('#caption-a').innerHTML = answerFirst(esc(answer), points, kind);
 }
 
 export function drawStepper() {

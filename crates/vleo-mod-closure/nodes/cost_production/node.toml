@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What does building the whole constellation cost?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What building every satellite in the constellation costs, buses and payloads together, starting from the first unit's cost and following a learning curve, by which each later unit costs less as the builders gain experience."
+breaks = "It uses one learning slope for the whole run, applied to buses and payloads together; a run that learns faster or slower, or where the two learn differently, costs differently. Above a trillion dollars the programme is not the one being designed."
+by = "an assistant, from what this sheet states — for its owner (programme) to confirm"
+
 [maths]
 expression = "C = sum over n of T1*n^log2(b)"
 source = "nasa_cer"
@@ -77,3 +84,14 @@ type = "Money"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (programme) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The learning-curve relation as cited from nasa_cer, not yet derived on the sheet, with a single learning slope for buses and payloads together."
+breaks_if = "Production experience showing a different learning slope, buses and payloads learning at different rates, or a comparison with nasa_cer that disagrees."
+relation = "C = sum over n of T1*n^log2(b)"
+source = "nasa_cer"

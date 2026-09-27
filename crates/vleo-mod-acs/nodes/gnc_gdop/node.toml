@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much does the satellite geometry amplify ranging error into position error?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much the geometry of the satellites being ranged to magnifies the error in each range measurement into an error in position: a factor of 2.5."
+breaks = "It is one declared factor, not worked out from the geometry actually in view. It cannot be below one, and above 20 the geometry is degenerate, the satellites too poorly placed, and the position solution is not usable."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "GDOP = 2.5"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 2.5 is the geometric dilution of precision for this design, from the source the sheet cites (larson_wertz), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A geometry for this orbit and receiver giving a dilution of precision other than 2.5."
+relation = "GDOP = 2.5"
+source = "larson_wertz"

@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How well does the spacecraft know where it is?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How well the spacecraft knows where it is. It takes the error in the ranges measured by the navigation receiver and scales it by the geometric dilution, a factor for how much the geometry of the measurement worsens that error. It contributes to how accurately emitters can be located."
+breaks = "It rests on just two numbers, the range error and one geometry factor, so it is only as good as they are. Above 10 kilometres the navigation solution is not usable."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "e = URE*GDOP"
 source = "larson_wertz"
@@ -64,3 +71,14 @@ kpis = ["kpi_geolocation"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited from larson_wertz, not yet derived on the sheet, fed with the user range error and the geometric dilution."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a position error above 10 kilometres, where the navigation solution is not usable."
+relation = "e = URE*GDOP"
+source = "larson_wertz"

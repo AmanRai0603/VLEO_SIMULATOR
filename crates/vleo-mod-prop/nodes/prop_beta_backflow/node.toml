@@ -22,6 +22,13 @@ state = "published"
 text = "What fraction of thermal molecules in the chamber find their way back out of the mouth?"
 note = "This single number is what an intake design is for. A long, narrow, honeycombed duct makes it small; that is the whole device."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The share of the slow, warmed-up gas in the collection chamber that escapes back out through the intake's mouth: 6 per cent. Keeping this small is the whole purpose of an intake; a long, narrow, honeycombed duct is how it is done."
+breaks = "It is a single declared number standing in for the whole duct design. Below one in a thousand no duct that can be built traps gas that well, and above one half the duct traps nothing and the intake stops compressing the gas at all."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "beta = 0.06"
 source = "romano2021"
@@ -46,3 +53,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 0.06 of the chamber's thermal molecules find their way back out of the mouth; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for the number."
+breaks_if = "A test or simulation of the actual duct showing a different back-flow fraction; the design depends on it more than on any other intake number."
+relation = "beta = 0.06"
+source = "romano2021"

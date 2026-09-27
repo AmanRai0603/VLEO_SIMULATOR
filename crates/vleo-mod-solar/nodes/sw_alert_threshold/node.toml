@@ -33,6 +33,14 @@ state = "deprecated"
 text = "At what geomagnetic level does the issuing centre put out an alert?"
 note = "Not a property of the sky but of the people watching it, and it is the operational floor a mission's own alerting should not sit below. Read from the thresholds attached to the alerts as issued rather than chosen here."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The lowest level of geomagnetic disturbance at which the public space-weather service has put out an alert: 4, on a scale that runs from 0 to 9. It describes the people watching the sky rather than the sky, and was meant as the floor a mission's own alerting should not sit below. It is retired: nothing in the tree reads it."
+breaks = "Level 4 is 'active', one step below the storm scale, and the record reaches it on about a third of all days, so treating every alert as a storm would mean reacting a third of the time. It is what one centre alerted on over 29 years, not what a given spacecraft should react to."
+wrong = "That an alert means a storm. The storm scale starts one step higher, at 5; days reaching 4 or more are 32.2 per cent of the record, 114 a year."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
 expression = "K_alert = the lowest threshold_value on threshold_var K in alerts.csv = 4"
@@ -145,3 +153,15 @@ bundles = ["solar-weather"]
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "When live, that 4.0 (a pure number on the 0-to-9 scale) is the lowest threshold carried by the 9408 three-hourly alerts as issued over 29 years, confirmed by A. Rai on 2026-09-14; the row is now retired."
+breaks_if = "A re-measured alert record shows a legitimate threshold below 4, or a mission adopts this as its own trigger when its sensitivity to geomagnetic activity differs from what the public service assumes."
+relation = "K_alert = the lowest threshold_value on threshold_var K in alerts.csv = 4"
+source = "noaa_swpc"

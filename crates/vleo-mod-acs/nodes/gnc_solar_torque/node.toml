@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much torque does solar radiation pressure apply?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The twisting force that the pressure of sunlight puts on the spacecraft, because the point where it pushes is offset from the centre of mass. It uses the frontal area, that offset, and the angle at which sunlight meets the solar array, with a reflectivity of 0.6."
+breaks = "It takes the frontal area to stand for the sunlit area and fixes reflectivity at 0.6; a spacecraft whose sunlit face or surfaces differ feels a different torque. Above 1 newton metre no wheel that fits this vehicle can hold attitude."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "T = (S/c)*A*(1+q)*cos(theta)*x_cp"
 source = "larson_wertz"
@@ -69,3 +76,14 @@ type = "Torque"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited from larson_wertz, not yet derived on the sheet, with a reflectivity of 0.6 and the frontal area taken as the illuminated area."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, surfaces whose reflectivity is not 0.6, an illuminated area unlike the frontal area, or a torque above 1 newton metre."
+relation = "T = (S/c)*A*(1+q)*cos(theta)*x_cp"
+source = "larson_wertz"

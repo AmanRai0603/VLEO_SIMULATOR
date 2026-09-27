@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much noise does the ground antenna see?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much background radio noise the ground antenna picks up, stated as a temperature: 60 kelvin. The spacecraft's signal has to stand out against this noise."
+breaks = "It is one declared figure. Above 300 kelvin the antenna is looking at the ground, and below 10 kelvin it would need deep cryogenic cooling that no commercial station in this network has."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "T_a = 60"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 60 kelvin is the ground antenna noise temperature, from the source the sheet cites (larson_wertz), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A measured or specified noise temperature for the chosen ground stations that differs from 60 kelvin."
+relation = "T_a = 60"
+source = "larson_wertz"

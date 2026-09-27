@@ -22,6 +22,14 @@ state = "published"
 text = "How much does the air itself heat the spacecraft?"
 note = "Usually neglected, and at 200 km it should not be. It is a real term in the balance of a small, fast, low-flying vehicle."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much the thin air itself heats the spacecraft as it flies through it, in watts. It is usually neglected, and at 200 kilometres it should not be: it is a real term in the heat balance of a small, fast, low-flying vehicle."
+breaks = "It takes a fixed heat transfer coefficient of 0.9, the share of the incoming air's energy that becomes heat, and applies it to the frontal area, with no stated assumptions or derivation. Above 100 kilowatts the vehicle is re-entering rather than orbiting."
+wrong = "That heating by the air can be ignored in orbit. At 200 kilometres it is a real term in the heat balance of a small, fast, low-flying vehicle."
+by = "an assistant, from what this sheet states — for its owner (thermal) to confirm"
+
 [maths]
 expression = "Q = 0.5*rho*V^3*A*C_h"
 source = "larson_wertz"
@@ -70,3 +78,14 @@ type = "Power"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (thermal) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Its relation as stated and cited from larson_wertz, with a heat transfer coefficient of 0.9, not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a coefficient for these surfaces that differs from 0.9."
+relation = "Q = 0.5*rho*V^3*A*C_h"
+source = "larson_wertz"

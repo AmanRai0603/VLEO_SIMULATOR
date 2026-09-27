@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How far away is a target or ground station at the edge of the access circle?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The straight-line distance from the spacecraft to a target or ground station at the edge of the area it can reach, where the station sees it at the lowest elevation it will work at. It comes from the triangle formed by the Earth's centre, the spacecraft and the station."
+breaks = "It is the distance at the edge of that area only; the sheet notes the distance can never be less than the altitude. Beyond 4000 kilometres the geometry is outside this tool's band."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "d = sqrt(Re^2 + r^2 - 2*Re*r*cos(lambda))"
 source = "larson_wertz"
@@ -61,3 +68,14 @@ type = "Length"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The law of cosines across the access triangle, as stated and cited from larson_wertz, not yet derived on the sheet."
+breaks_if = "A derivation or a check against larson_wertz disagrees, or the result comes out below the altitude or beyond 4000 kilometres."
+relation = "d = sqrt(Re^2 + r^2 - 2*Re*r*cos(lambda))"
+source = "larson_wertz"

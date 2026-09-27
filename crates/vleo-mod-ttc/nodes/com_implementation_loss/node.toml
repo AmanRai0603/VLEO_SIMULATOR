@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How far short of theory does the real modem fall, in decibels?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far the real modem, the equipment that turns data into a radio signal and back, falls short of theory: 1.5 decibels. The link has to carry that much extra to make up for it."
+breaks = "It is one declared figure, not a measurement of the modem that will fly. Above 6 decibels the equipment is not flight hardware."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "L_imp = 1.5"
 source = "ccsds131"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 1.5 decibels is the implementation loss of this design's modem, from the source the sheet cites (ccsds131), confirmed by A. Rai on 2026-09-01."
+breaks_if = "Test results on the flight modem showing a shortfall from theory other than 1.5 decibels."
+relation = "L_imp = 1.5"
+source = "ccsds131"

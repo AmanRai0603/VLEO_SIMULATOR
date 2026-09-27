@@ -28,6 +28,13 @@ parity_tolerance = 1e-12
 text = "What Kp does this daily planetary Ap mean?"
 note = "The atmosphere model wants Kp; the design product carries Ap. This is that conversion and only that — the published table, applied as published. What flows in is the design storm from sw_storm_return_level, so what flows out is the Kp of that storm and not of an average day. The bias the table carries when a daily mean is fed to a three-hourly scale is measured separately, in sw_kp_slot_bias, and is not corrected here."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "Converts the daily geomagnetic index the design carries into Kp, a grade of disturbance from 0 to 9 set every three hours, which the atmosphere model wants. It reads the published 28-point table and nothing more; what flows in is the design storm, so what flows out is the grade of that storm."
+breaks = "The table is meant for three-hour values but is fed a daily average, so it reads about one grade below the day's worst three hours, and 1.6 below on disturbed days; that is not corrected here. Above the table's top every storm reads 9, and a negative input reads back as 0, the quietest possible sky."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
 # The published scale is 28 (Kp, ap) pairs. Read in the ap-to-Kp direction it is
@@ -174,3 +181,15 @@ type = "Ratio"
 kind = "line"
 over = "orbit_mission_duration"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The published 28-pair table, applied as published with straight lines between points, the choice of line costing at most 0.017 of a grade; confirmed by A. Rai on 2026-09-14."
+breaks_if = "A consumer needs the peak three-hour grade and does not add the separately measured offset, or an input above 400 or below 0 reaches the table without a guard upstream."
+relation = "Kp = piecewise_linear(ap_28 -> kp_28, clamp(Ap, 0, 400))"
+source = "iaga_kp_ap"

@@ -49,6 +49,14 @@ A single number for that is not a band, it is an average of bands, and it is
 correct only near the mean level of whatever sample produced it.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far a single day of geomagnetic disturbance can rise above its own 27-day average, at the one-in-twenty level and at the level that stretch sits at. At the disturbed design level it is about 63.85, more than four times the old single-number value of 15.00, and it roughly doubled the single-day design level."
+breaks = "The design level sits just above the highest level the table reaches, so the answer is held at the top value rather than extended; extending the steep top of the table would give about 72, so the published value may be low. The top of the table rests on only 300 days, and moves if one storm period is added or removed."
+wrong = "The old single number looked like a margin but was an error: it was measured on stretches averaging 11.64 and applied at 26.70. A disturbed stretch is not a quiet stretch scaled up; it contains storms."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has NOT read this relation against its source yet. The table is
 # measured from the record by the method the theory sets out; nobody has agreed
@@ -163,3 +171,15 @@ reason_upper = "above 150 the value exceeds anything the record supports for thi
 kind = "line"
 over = "sw_ap_design_long"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the 95th-percentile rise above the centred 27-day mean, binned within 15 per cent of the rotation level on eight levels from 4 to 26, describes the window, with the answer held at the top level beyond 26."
+breaks_if = "More record at higher levels shows the rise above 26 is larger than 63.85, one storm period added or removed moves the top of the table, or someone fits a smooth law through the table."
+relation = "dAp_day(L) = pctl(Ap - movmean(Ap, 27 d), 0.95) over days whose rotation sits within 15% of L"
+source = "noaa_swpc"

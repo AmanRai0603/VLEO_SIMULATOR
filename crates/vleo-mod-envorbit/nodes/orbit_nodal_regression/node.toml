@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How fast does the orbit plane rotate under the second zonal harmonic?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How fast the plane of the orbit slowly turns around the Earth, in degrees per day, because the Earth's gravity is not quite that of a perfect sphere. It depends on the orbit's distance from the Earth's centre, how nearly circular it is, and how steeply it is tilted."
+breaks = "It is the steady long-term drift from the single largest departure of the Earth's gravity from a sphere, not the short wobble around that drift. Its limit of 15 degrees per day either way holds only for this tool's altitude band, where a faster rate does not occur."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "dOmega/dt = -1.5*J2*sqrt(mu)*Re^2*cos(i)/((1-e^2)^2*a^(7/2))"
 source = "vallado2013"
@@ -69,3 +76,14 @@ type = "AngularRate"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The long-term node-rate relation for the second zonal harmonic, as stated and cited from vallado2013, not yet derived on the sheet."
+breaks_if = "A derivation or a check against vallado2013 disagrees with the relation as stated, or a rate faster than 15 degrees per day either way appears, which the sheet says does not occur in this altitude band."
+relation = "dOmega/dt = -1.5*J2*sqrt(mu)*Re^2*cos(i)/((1-e^2)^2*a^(7/2))"
+source = "vallado2013"

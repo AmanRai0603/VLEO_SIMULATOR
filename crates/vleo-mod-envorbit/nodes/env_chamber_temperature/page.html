@@ -9,7 +9,8 @@
 <p class="af-q">What temperature does the collected gas reach in the collection chamber?</p>
 <p class="af-a"><b>600</b> K <span class="claim claim-declared" title="a number a person chose, and put their name against">declared · A. Rai / 2026-09-01</span></p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">How hot the gas collected by the intake gets inside its collection chamber: 600 kelvin.</li>
+<li><b>Rests on</b> That 600 kelvin is the chamber gas temperature, from the source the sheet cites (romano2021), confirmed by A. Rai on 2026-09-01. <span class="muted">(version 1; would break if A thermal analysis or test of the intake chamber giving a gas temperature other than 600 kelvin, or one above 1500 kelvin where the gas is no longer thermalised and un-ionised.)</span></li>
 <li><b>Holds</b> from 300 to 1500 K — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · romano2021</span></li>
 </ul>
@@ -31,7 +32,8 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">How hot the gas collected by the intake gets inside its collection chamber: 600 kelvin. Hotter gas moves faster and leaks back out harder, so this sets how much of the collected air escapes the way it came in.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (propulsion) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">What temperature does the collected gas reach in the collection chamber?</p>
 <p class="maths"><code>T_c = 600</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · romano2021</span></p>
@@ -39,6 +41,7 @@
 <p class="declared">Declared: <b>600</b> K <span class="claim claim-declared" title="a number a person chose, and put their name against">declared · A. Rai / 2026-09-01</span></p>
 <p class="note">Drives the mean thermal speed, and therefore back-flow: a hotter chamber leaks harder.</p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">It is one declared temperature, not worked out from the chamber itself. It cannot be colder than the walls around it, and above 1500 kelvin the gas can no longer be treated as settled at one temperature and electrically neutral.</p>
 <p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
 <p class="muted">Outside <code>300 … 1500</code> K the row refuses rather than answers: the chamber cannot be colder than the walls that bound it; above 1500 K the assumption that the chamber gas is thermalised and un-ionised stops holding.</p>
 <h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
@@ -52,7 +55,13 @@
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> That 600 kelvin is the chamber gas temperature, from the source the sheet cites (romano2021), confirmed by A. Rai on 2026-09-01.</p>
+<p><b>Would break if:</b> A thermal analysis or test of the intake chamber giving a gas temperature other than 600 kelvin, or one above 1500 kelvin where the gas is no longer thermalised and un-ionised.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (propulsion) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>That 600 kelvin is the chamber gas temperature, from the source the sheet cites (romano2021), confirmed by A. Rai on 2026-09-01.</dd><dt>Would break if</dt><dd>A thermal analysis or test of the intake chamber giving a gas temperature other than 600 kelvin, or one above 1500 kelvin where the gas is no longer thermalised and un-ionised.</dd><dt>The relation, as this version states it</dt><dd><code>T_c = 600</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · romano2021</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -169,8 +178,6 @@ pub fn evaluate() -&gt; Result&lt;Temperature, Fault&gt; {
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
 <li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 <li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>

@@ -22,6 +22,13 @@ state = "published"
 text = "What is the mean molar mass of the air the vehicle is flying through?"
 note = "Falls from 26 g/mol at 120 km to near 16 — pure atomic oxygen — by 350 km. Every free-molecular relation downstream reads it."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The average weight of the gas the vehicle flies through, per mole (a fixed count of molecules). It falls from 26 grams per mole at 120 kilometres to near 16, pure atomic oxygen, by 350 kilometres, and every free-molecular relation downstream reads it."
+breaks = "It is a mass-weighted average over the five gases the model carries. The sheet holds it between 2 grams per mole, which would be pure hydrogen, and 30, heavier than molecular nitrogen; neither occurs in this band."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "M = rho*N_A/n"
 source = "jacchia1971"
@@ -62,3 +69,14 @@ type = "MolarMass"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The mass-weighted mean over five species, as stated and cited to jacchia1971 and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with jacchia1971 that disagrees, a value outside 2 to 30 grams per mole, or one that does not fall towards 16 by 350 kilometres."
+relation = "M = rho*N_A/n"
+source = "jacchia1971"

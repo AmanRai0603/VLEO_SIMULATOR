@@ -23,6 +23,14 @@ sense = "<="
 [question]
 text = "What does the customer require for mean revisit time?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How often, on average, the customer requires the system to look at the same place again: at least every 6 hours. The design's achieved mean revisit time must be 6 hours or less."
+breaks = "The sheet gives the number and its source but no reasoning for it. It is a mean, so it says nothing on its own about the longest gap. Below six minutes no constellation in this class achieves it; above 30 days the service is not the one being sold."
+wrong = "Reading 6 hours as a floor. Fewer hours means more often, so 6 hours is a ceiling."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "R_req = 6"
 source = "orbitt_case_c1"
@@ -47,3 +55,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 6 hours is the customer's mean revisit requirement, taken from its cited reference case and confirmed by A. Rai on 2026-09-01."
+breaks_if = "A customer requirement stating a mean revisit time other than 6 hours."
+relation = "R_req = 6"
+source = "orbitt_case_c1"

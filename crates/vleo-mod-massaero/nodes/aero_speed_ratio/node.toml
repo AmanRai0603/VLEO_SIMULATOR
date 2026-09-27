@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How hyperthermal is the flow — does the gas arrive as a beam or as a cloud?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How fast the spacecraft moves compared with the random thermal motion of the gas around it, which says whether the gas arrives as a beam or as a cloud. It is the flight speed divided by the most probable thermal speed of the local gas mixture."
+breaks = "Below one the flow is thermal rather than beam-like and Sentman's drag relations lose their meaning. Above 30 the numbers inside those relations become too small to compute and the relations are numerically dead."
+by = "an assistant, from what this sheet states — for its owner (aero) to confirm"
+
 [maths]
 expression = "s = V/sqrt(2*R*T/M)"
 source = "sentman1961"
@@ -69,3 +76,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (aero) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Bulk speed over the most probable thermal speed of the local mixture, as stated and cited from sentman1961, not yet derived on the sheet."
+breaks_if = "A derivation or a check against sentman1961 disagrees, or the ratio falls below one or rises above 30."
+relation = "s = V/sqrt(2*R*T/M)"
+source = "sentman1961"

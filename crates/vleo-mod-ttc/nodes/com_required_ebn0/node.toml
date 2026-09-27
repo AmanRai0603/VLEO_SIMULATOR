@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What energy per bit does the modulation and coding need, in decibels?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much signal energy each bit of data needs, compared with the background noise, for the chosen modulation and coding (the way data is put on the radio wave and protected against errors) to reach its required error rate: 4.5 decibels."
+breaks = "It holds only for the modulation and coding assumed here; above 20 decibels they are not the ones assumed. Below 0 decibels no practical coded modulation reaches the required bit error rate."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "EbN0_req = 4.5"
 source = "ccsds131"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 4.5 decibels is what this design's modulation and coding need, from the source the sheet cites (ccsds131), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A change of modulation, coding or required bit error rate, or modem tests showing a threshold other than 4.5 decibels."
+relation = "EbN0_req = 4.5"
+source = "ccsds131"

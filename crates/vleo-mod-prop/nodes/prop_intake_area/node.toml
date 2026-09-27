@@ -22,6 +22,14 @@ state = "published"
 text = "How large is the opening the intake presents to the flow?"
 note = "Both the numerator and part of the denominator of the closure. A bigger mouth collects more and drags more, which is why there is an optimum rather than a maximum."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The size of the intake's opening to the oncoming air: 0.2 square metres. A bigger mouth collects more gas but also drags more, which is why there is a best size rather than a biggest, and it feeds the thrust margin."
+breaks = "It is a declared size, not an optimised one. Below 100 square centimetres the collected flow is too small for any thruster considered to ionise, and above 5 square metres the mouth drags more than the thrust it can produce at every altitude in the band."
+wrong = "It is tempting to think a bigger intake is always better; it is not, because the same opening that collects gas also adds drag."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "A_in = 0.2"
 source = "romano2021"
@@ -49,3 +57,14 @@ kpis = ["kpi_thrust_margin"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That an intake mouth of 0.2 square metres is right for this design; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for the number."
+breaks_if = "A sizing study for this spacecraft showing the best balance of collection against drag lies at a different mouth area."
+relation = "A_in = 0.2"
+source = "romano2021"

@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much torque does the gravity gradient apply?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The twisting force, or torque, that the difference in gravity's pull across the spacecraft applies to it, worked out with the spacecraft held 10 degrees off the local vertical. It depends on the size of the orbit and on how unevenly the spacecraft's mass is spread, and the attitude wheels must hold against it."
+breaks = "It is taken at one attitude, 10 degrees off the local vertical; a spacecraft held at another angle feels a different torque. Above 1 newton metre the number no longer describes a design that works, because no wheel that fits this vehicle can hold attitude against it."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "T = (3*mu/(2*r^3))*|Iz - Iy|*sin(2*theta)"
 source = "larson_wertz"
@@ -69,3 +76,14 @@ type = "Torque"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The gravity-gradient relation as stated and cited from larson_wertz, not yet derived on the sheet, evaluated at a 10 degree offset from local vertical."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, an attitude held at a different offset from local vertical, or a torque above 1 newton metre."
+relation = "T = (3*mu/(2*r^3))*|Iz - Iy|*sin(2*theta)"
+source = "larson_wertz"

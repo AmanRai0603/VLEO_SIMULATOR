@@ -13,7 +13,7 @@
 */
 'use strict';
 
-import { $, esc } from './dom.js';
+import { $, esc, answerFirst } from './dom.js';
 import { S } from './state.js';
 import { checkForm } from './nodeform.js';
 
@@ -21,10 +21,13 @@ export function renderForms(host) {
   if (!host) return;
   const rows = S.rows.filter(r => r.state !== 'deprecated');
   host.innerHTML =
-    '<div class="node-head"><h2>Forms — how anything reaches this tool</h2>' +
-    '<p class="ident">Three kinds of thing come in from outside, and each has one owner. What you run on ' +
-    'and what you keep are yours. What the design IS changes only through a node form, applied by the ' +
-    'developers — so everyone can see what changed, and why, in the next release.</p></div>' +
+    '<div class="node-head"><h2>Forms — how anything reaches this tool</h2></div>' +
+    answerFirst('Three things come in from outside: your inputs, a result you kept, and a node form. ' +
+      'The node form is the only way the design itself changes — you fill it, the developers apply it, ' +
+      'and it arrives in the next release.',
+      ['What you run on and what you keep are yours, on this machine.',
+       'Check a filled form below before you send it: it shows what the developers will see, and changes nothing.'],
+      'how-to') +
     '<table class="fx forms-who"><thead><tr><th>form</th><th>who fills it</th><th>what it changes</th>' +
       '<th>who applies it</th></tr></thead><tbody>' +
       '<tr><td><b>the inputs</b> — a CSV</td><td>anyone using the tool</td><td>the values every run is on</td>' +

@@ -25,6 +25,14 @@ state = "published"
 text = "By how much can F10.7 rise over a lead this long, at 95% confidence?"
 note = "Half of the F10.7 design value. sw_central_expectation says where F10.7 is heading; this says how wrong that can be by the time the mission is there, so the band widens with lead exactly as knowledge fades. The percentile does the safety: the design value is the central expectation plus this."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much the Sun's flux can rise over a given lead time, at 95 per cent confidence, measured on the record. It is added to the central expectation to make the design value, so the margin widens as the mission reaches further into a future nobody can see clearly."
+breaks = "It is the 95th percentile only; a mission needing 99 per cent confidence reads a number 32 flux units too small at a one-year lead. The longest leads rest on few independent points in the solar cycle, because 28 years of record hold barely two and a half cycles."
+wrong = "That the uncertainty grows steadily with lead time. It rises to +114 at four years, falls to +66 at ten to eleven, and rises again to +115 at fifteen, because a lead of about a full cycle returns to a similar point in it."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # The empirical 95th percentile of F107(t+L) - F107(t), measured at seventeen
 # leads spanning the declared input range and interpolated between them.
@@ -164,3 +172,15 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "orbit_mission_duration"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Seventeen measured 95th percentiles of the change in flux, from pairs of days both actually observed in the solar-weather bundle of 2026.09.14, interpolated between leads and held at the ends."
+breaks_if = "The bundle version changes without the percentiles being re-measured, or a negative value appears, which would mean the difference was taken the wrong way round."
+relation = "dF107_p95(L) = piecewise_linear(measured_leads -> measured_p95, L)"
+source = "noaa_swpc"

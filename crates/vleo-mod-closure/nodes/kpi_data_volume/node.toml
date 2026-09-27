@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "Does enough data reach the ground each day?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "Whether enough data reaches the ground each day: the signed margin between the daily volume downlinked and the volume required, as a fraction of the requirement, read in the direction the requirement is stated."
+breaks = "It is only as good as the daily volume and the requirement it compares. A margin below minus 10000 per cent means the inputs are not the ones the requirement was written against; above 100000 per cent the requirement is not the one that binds."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "M = (achieved - required)/required, in the sense the requirement is stated"
 source = "orbitt_case_c1"
@@ -61,3 +68,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The margin comparison as stated and cited from orbitt_case_c1, not yet derived on the sheet, read in the sense the data volume requirement declares."
+breaks_if = "The requirement read in the wrong direction, or a margin below minus 10000 per cent or above 100000 per cent."
+relation = "M = (achieved - required)/required, in the sense the requirement is stated"
+source = "orbitt_case_c1"

@@ -37,6 +37,14 @@ state = "deprecated"
 text = "By how much does the published table over-read the 24-hour MEAN Kp at this Ap?"
 note = "The pair to sw_kp_slot_bias, and the half of the pair a thermospheric model actually asks for more often. DTM2020_Oper takes Kp in two senses — akp(1) a single three-hourly value, akp(3) the mean of the day's eight — and the published scale answers neither, because it is defined for a three-hourly ap while the design product carries a daily mean. sw_kp_slot_bias measures the peak-slot gap and this measures the mean-slot one. They have opposite signs, so applying the wrong one doubles the error instead of removing it."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "A small correction to the geomagnetic activity level a design reads for a day. The published conversion table is built for three-hour readings, the design carries a daily average, and read that way the table comes out slightly high: from about a tenth of a unit to about half a unit on the most disturbed days. It is retired: its table moved into the shared kernel."
+breaks = "It is the typical day at each activity level, not the day in hand, and it does not publish the spread. The quietest bin measures the opposite sign to the one the argument behind the row requires, and the largest correction rests on only twenty days of record."
+wrong = "That this correction and the one for the day's worst three-hour slot are interchangeable. They have opposite signs, so using the wrong one moves the answer the wrong way by about one and a half units and still looks plausible."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # Nine bins, nine medians, interpolated between the bin centres and held at the
 # ends. The bin edges are prf_ap2kp's own: 0 5 10 15 20 30 45 70 110 400.
@@ -183,3 +191,15 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "orbit_mission_duration"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "When live, nine binned medians measured on the record, and Jensen's inequality, which says an average of readings on this curved scale cannot exceed the table's reading of the day; retired when its table moved into the kernel."
+breaks_if = "The quietest bin's positive value, plus 0.042, proves real rather than an estimated-index or resolution effect, or re-measuring the top two bins, on 25 and 20 days, moves the deepest correction from minus 0.487."
+relation = "dKp_mean(Ap) = piecewise_linear(ap_bin_centres -> measured_medians, Ap)"
+source = "noaa_swpc"

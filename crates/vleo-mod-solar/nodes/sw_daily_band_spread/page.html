@@ -9,7 +9,8 @@
 <p class="af-q">How far above its own rotation does a single day of F10.7 reach, at the declared confidence, at the level that rotation sits at?</p>
 <p class="af-a">dF107_day — computed on the inputs you run, never stored: run it beside this page.</p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">How far a single day of the Sun's flux can rise above its own 27-day average, at the one-in-twenty level and at the level that stretch sits at.</li>
+<li><b>Rests on</b> That the 95th-percentile rise above the centred 27-day mean, binned within 15 per cent of the rotation level on seven levels from 70 to 210 solar flux units, describes the window. <span class="muted">(version 1; would break if A design level beyond 210 solar flux units is reached, or a different bin width or averaging window is shown to change the table materially.)</span></li>
 <li><b>Holds</b> from 0 to 120 — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></li>
 </ul>
@@ -31,7 +32,8 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">How far a single day of the Sun's flux can rise above its own 27-day average, at the one-in-twenty level and at the level that stretch sits at. At the disturbed design level it is about 20.07 solar flux units. It matters because an array is sized on the sustained level but a thermal case and a drag transient are sized on the day.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (environment) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">How far above its own rotation does a single day of F10.7 reach, at the declared confidence, at the level that rotation sits at?</p>
 <p class="maths"><code>dF107_day(L) = pctl(F107 - movmean(F107, 27 d), 0.95) over days whose rotation sits within 15% of L</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></p>
@@ -48,6 +50,7 @@ rotation. At a rotation level of 70 sfu a one-in-twenty day is 4.6 above it; at
 one end, and which end depends on where its sample happened to sit.
 </p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">Outside the measured range of 70 to 210 solar flux units the answer is held at the end value, so a mission at cycle peak above 210 gets a band narrower than the record supports. The top of the table rests on far fewer days than the bottom, and this is past scatter, not a forecast error.</p>
 <h5>Assumptions, and where each stops holding</h5>
 <dl class="asm">
 <dt>The departure scales with the level, and a single number for it is wrong away from its own sample's mean</dt><dd>fails when this is read as a refinement. It is a correction. Over the whole record the 95th-percentile departure runs 4.63 at a rotation level of 70 to 46.93 at 210 — a factor of ten — and the previous version of this row published one number, 34.23, measured on a 2001-day window whose rotations averaged 136.63. Applied at 69.63 it took the cold chain below the floor of 60 and sw_f107_cold_short refused. The refusal was the construction failing, not the guard being tight</dd>
@@ -58,6 +61,8 @@ one end, and which end depends on where its sample happened to sit.
 <dt>It is the record's own daily scatter, not a forecast error</dt><dd>fails when this is read as an uncertainty. It is not: it says how variable the sun is within a rotation, measured on days that already happened. What a forecast of a future day would get wrong is sw_uncertainty_growth's question and a larger number</dd>
 </dl>
 <p class="muted">Outside <code>0 … 120</code> the row refuses rather than answers: a spread of zero would mean every day equals its rotation mean, which the record contradicts on every day it holds; below zero is not a spread; above 120 sfu the departure exceeds the largest single-day excursion in the record, so a value there is an arithmetic error rather than an active sun.</p>
+<h4 class="st-h"><span class="st-n">4</span>Common wrong idea</h4>
+<p class="wrong">It can look like the old single number was a safe margin. It was measured on stretches averaging 136.63 and applied at other levels; at the design level it was 71 per cent too high, and on the quiet side it drove a scenario below the floor.</p>
 <h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
 <p class="d-l predict">Before you run it: what do you expect the answer to be, roughly, and which input do you expect to move it most? Write it down — then run, and compare. A guess that was wrong is the most useful thing on this page.</p>
 <p class="d-lr muted">Run it from the panel beside this page, on your own inputs, or open <i>the relation, moving</i> to watch the answer cross its range.</p>
@@ -85,7 +90,13 @@ one end, and which end depends on where its sample happened to sit.
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> That the 95th-percentile rise above the centred 27-day mean, binned within 15 per cent of the rotation level on seven levels from 70 to 210 solar flux units, describes the window.</p>
+<p><b>Would break if:</b> A design level beyond 210 solar flux units is reached, or a different bin width or averaging window is shown to change the table materially.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (environment) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>That the 95th-percentile rise above the centred 27-day mean, binned within 15 per cent of the rotation level on seven levels from 70 to 210 solar flux units, describes the window.</dd><dt>Would break if</dt><dd>A design level beyond 210 solar flux units is reached, or a different bin width or averaging window is shown to change the table materially.</dd><dt>The relation, as this version states it</dt><dd><code>dF107_day(L) = pctl(F107 - movmean(F107, 27 d), 0.95) over days whose rotation sits within 15% of L</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -246,8 +257,6 @@ pub fn evaluate(level: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
 <li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

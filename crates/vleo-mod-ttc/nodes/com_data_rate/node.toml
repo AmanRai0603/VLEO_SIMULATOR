@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How fast can data come down while keeping the required margin?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The fastest data can come down, in megabits per second, while the link still keeps the margin it is required to hold. It feeds the mission's data-volume performance indicator."
+breaks = "It is the rate that leaves exactly the required margin and nothing spare, so it is only as sound as the link figures it reads. The sheet states no assumptions or derivation. Below 1 kilobit per second the downlink cannot even carry housekeeping."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "R = 10^((C/N0 - EbN0_req - L_imp - M)/10)"
 source = "larson_wertz"
@@ -80,3 +87,14 @@ kpis = ["kpi_data_volume"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Its relation as stated and cited from larson_wertz, the link equation solved for rate, not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a result above 100 gigabits per second, which no spacecraft modem in this class runs."
+relation = "R = 10^((C/N0 - EbN0_req - L_imp - M)/10)"
+source = "larson_wertz"

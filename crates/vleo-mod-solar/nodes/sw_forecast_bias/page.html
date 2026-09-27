@@ -9,7 +9,8 @@
 <p class="af-q">By how much does the published outlook miss the F10.7 that arrived?</p>
 <p class="af-a">B_f107 — computed on the inputs you run, never stored: run it beside this page.</p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">By how much the published solar flux outlook misses on average, with sign, at the far end of its window.</li>
+<li><b>Rests on</b> The mean signed miss measured over 1997 to 2025 at 26 leads, from minus 0.593 to minus 3.968 solar flux units, never crossing zero, on 866 to 1257 pairs per lead. <span class="muted">(version 1; would break if The outlook is found to over-forecast at any lead, the bias proves strongly dependent on activity level, or the data bundle changes underneath the table.)</span></li>
 <li><b>Holds</b> from -4 to -0.5 — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></li>
 </ul>
@@ -31,13 +32,15 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">By how much the published solar flux outlook misses on average, with sign, at the far end of its window. It is low at every lead, by about 4 solar flux units at the far end, and low flux means thinner air, less drag and a longer predicted lifetime than the mission will fly: the unsafe direction.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (environment) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">By how much does the published outlook miss the F10.7 that arrived?</p>
 <p class="maths"><code>B_f107(L) = mean over issues of (F107_forecast - F107_observed) at lead L</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></p>
 <p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
 <p class="note">Signed, forecast minus observed, so a negative answer means the outlook was low. It is measured at the lead sw_outlook_lead declares, which is the far end of the window where the miss is largest. A design that sizes drag on a published outlook is exposed by exactly this number, in the unsafe direction: a low F10.7 is a thin atmosphere and an optimistic lifetime.</p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">It is one average over 29 years of a changing Sun, while a forecaster's miss on a busy day differs from a quiet one; a design at a known point in the cycle is owed a bias for that point, which this does not give. The miss also varies with lead in a non-straight way.</p>
 <h5>Assumptions, and where each stops holding</h5>
 <dl class="asm">
 <dt>The outlook is low at every lead in the window, and that is the unsafe direction</dt><dd>fails when the sign is read as incidental. Measured over 1997-2025 the bias is negative at all 26 verifiable leads, from -0.593 sfu at lead 1 to -3.968 sfu at lead 26, and it never crosses zero. So this is not scatter about a correct central value: the published outlook systematically under-forecasts F10.7, and a design reading it gets a thinner atmosphere, a lower drag and a longer predicted lifetime than it will fly. The remedy is to add the bias back, not to trust the outlook and widen a margin somewhere else</dd>
@@ -46,6 +49,8 @@
 <dt>Non-monotone in lead, and the middle of the curve is not noise</dt><dd>fails when somebody fits a straight line through it. The bias deepens to -2.748 sfu at lead 9, recovers to -1.848 at lead 13, then deepens again to -3.968 by lead 26. That interior minimum is present in a sample of over 1200 pairs per lead, so it is a property of how the outlook is constructed and not sampling scatter. The table interpolates between the measured leads rather than fitting a trend, because there is no trend to fit</dd>
 </dl>
 <p class="muted">Outside <code>-4 … -0.5</code> the row refuses rather than answers: the deepest measured bias is -3.968 sfu, at lead 26, the last verifiable lead. A value below -4 means the table was misread or the bundle changed underneath it; the shallowest measured bias is -0.593 sfu, at lead 1. A value above -0.5 — and certainly a positive one — would say the outlook over-forecasts F10.7 somewhere in the window, which this record does not show at any lead. The guard is deliberately on the safe side of zero rather than at zero, because an answer of -0.1 sfu would be as wrong as +0.1 and a bound at zero would pass it.</p>
+<h4 class="st-h"><span class="st-n">4</span>Common wrong idea</h4>
+<p class="wrong">A miss of about four units on a mean of 115 looks negligible. It is an offset under the whole margin, and a symmetric band around a biased centre is still in the wrong place; the fix is to add it back, not to widen the margin.</p>
 <h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
 <p class="d-l predict">Before you run it: what do you expect the answer to be, roughly, and which input do you expect to move it most? Write it down — then run, and compare. A guess that was wrong is the most useful thing on this page.</p>
 <p class="d-lr muted">Run it from the panel beside this page, on your own inputs, or open <i>the relation, moving</i> to watch the answer cross its range.</p>
@@ -71,7 +76,13 @@
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> The mean signed miss measured over 1997 to 2025 at 26 leads, from minus 0.593 to minus 3.968 solar flux units, never crossing zero, on 866 to 1257 pairs per lead.</p>
+<p><b>Would break if:</b> The outlook is found to over-forecast at any lead, the bias proves strongly dependent on activity level, or the data bundle changes underneath the table.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (environment) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>The mean signed miss measured over 1997 to 2025 at 26 leads, from minus 0.593 to minus 3.968 solar flux units, never crossing zero, on 866 to 1257 pairs per lead.</dd><dt>Would break if</dt><dd>The outlook is found to over-forecast at any lead, the bias proves strongly dependent on activity level, or the data bundle changes underneath the table.</dd><dt>The relation, as this version states it</dt><dd><code>B_f107(L) = mean over issues of (F107_forecast - F107_observed) at lead L</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -238,8 +249,6 @@ pub fn evaluate(lead: Time) -&gt; Result&lt;Ratio, Fault&gt; {
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
 <li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

@@ -9,7 +9,8 @@
 <p class="af-q">Does the thrust the air produces exceed the drag the air imposes? This is the closure the whole design exists to reach.</p>
 <p class="af-a">T_D — computed on the inputs you run, never stored: run it beside this page.</p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">How the thrust produced from the air compares with the drag the same air imposes, as a ratio.</li>
+<li><b>Rests on</b> The ratio of delivered thrust to drag, as stated and cited to romano2021 and not yet derived on the sheet, with one as the line between holding the orbit and losing it. <span class="muted">(version 1; would break if A derivation or a comparison with romano2021 that disagrees, or a ratio below zero or above one hundred, which would show an error in the thrust or the drag feeding it.)</span></li>
 <li><b>Holds</b> from 0 to 100 — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · romano2021</span></li>
 </ul>
@@ -31,13 +32,15 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">How the thrust produced from the air compares with the drag the same air imposes, as a ratio. At or above one the orbit holds indefinitely with no stored propellant; below one the mission has a lifetime rather than an altitude, and every other number in the design is a detail.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (systems) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">Does the thrust the air produces exceed the drag the air imposes? This is the closure the whole design exists to reach.</p>
 <p class="maths"><code>T/D</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · romano2021</span></p>
 <p class="src">Source <b>romano2021</b> — Romano, F. et al. — Intake design for an atmosphere-breathing electric propulsion system <span class="where">Acta Astronautica, 2021</span></p>
 <p class="note">At or above one the orbit holds indefinitely. Below one the mission has a lifetime rather than an altitude, and every other number in the design is a detail.</p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">It is a ratio of two computed forces, the delivered thrust and the drag, so it inherits every error in either. A negative ratio means a sign error in one of them, and above one hundred the vehicle would be a launch stage, not a satellite.</p>
 <p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
 <p class="muted">Outside <code>0 … 100</code> the row refuses rather than answers: a negative ratio means a sign error in thrust or drag; above 100 the vehicle is a launch stage, not a satellite.</p>
 <h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
@@ -51,7 +54,13 @@
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> The ratio of delivered thrust to drag, as stated and cited to romano2021 and not yet derived on the sheet, with one as the line between holding the orbit and losing it.</p>
+<p><b>Would break if:</b> A derivation or a comparison with romano2021 that disagrees, or a ratio below zero or above one hundred, which would show an error in the thrust or the drag feeding it.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (systems) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>The ratio of delivered thrust to drag, as stated and cited to romano2021 and not yet derived on the sheet, with one as the line between holding the orbit and losing it.</dd><dt>Would break if</dt><dd>A derivation or a comparison with romano2021 that disagrees, or a ratio below zero or above one hundred, which would show an error in the thrust or the drag feeding it.</dd><dt>The relation, as this version states it</dt><dd><code>T/D</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · romano2021</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -173,8 +182,6 @@ pub fn evaluate(t: Force, d: Force) -&gt; Result&lt;Ratio, Fault&gt; {
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
 <li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 <li>no fixture: nothing outside this code has ever agreed with what it computes</li>
 <li>no theory: the relation is stated but not derived — THE ROW DOES NOT ANSWER. A function is defined by its derivation, not by its expression and not by its citation, and until one is written every reader of this row is blocked on it by name</li>

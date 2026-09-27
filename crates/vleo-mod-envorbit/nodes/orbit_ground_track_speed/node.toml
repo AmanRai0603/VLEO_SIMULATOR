@@ -22,6 +22,14 @@ state = "published"
 text = "How fast does the sub-satellite point move over the ground?"
 note = "Not the orbital speed. The difference is what sets sensor dwell time and therefore signal-to-noise."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How fast the point directly beneath the satellite moves across the ground. It is not the orbital speed, and the difference is what sets how long a sensor dwells on a scene and therefore how much signal it gathers against noise."
+breaks = "The sheet holds it between 6 and 8 kilometres per second: below 6 is outside this tool's altitude band, and the ground track can never move faster than the orbital speed."
+wrong = "That the ground track moves at the orbital speed. It does not; the difference sets sensor dwell time and therefore signal-to-noise."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "V_g = V*Re/r"
 source = "larson_wertz"
@@ -62,3 +70,14 @@ type = "Velocity"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The orbital speed scaled by the ratio of Earth radius to orbital radius, as stated and cited to larson_wertz and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, a speed above the orbital speed, or one below 6 kilometres per second."
+relation = "V_g = V*Re/r"
+source = "larson_wertz"

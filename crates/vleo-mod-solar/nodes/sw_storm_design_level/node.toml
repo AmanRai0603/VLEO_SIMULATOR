@@ -38,6 +38,14 @@ state = "published"
 text = "Which NOAA G level is this design built to survive?"
 note = "1, 2 or 3 on the G scale — minor, moderate or strong. It is the switch: sw_ap_design reads it and turns it into a daily Ap, so moving this row is how a design asks what a different storm level would cost. Default G3."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The storm level the design is built to survive, on the NOAA scale of geomagnetic storms from G1, minor, to G5, extreme. It is set to G3, strong. It is a switch: the design's storm activity is derived from it, so changing it is how a design asks what a different storm level would cost."
+breaks = "The record says a five-year mission should expect a storm two levels higher, G5; storms above G3 are meant to be flown through with procedures, not built for. The scale grades the worst three hours of a day while the design works in daily averages, and days whose worst three hours reach G3 range widely in daily average activity."
+wrong = "That G3 is enough for a five-year mission. The storm such a mission should expect reaches G5; the gap is closed by operations, not by structure."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
 expression = "G_design = 3   (NOAA G3, strong, Kp 7)"
@@ -140,3 +148,15 @@ bundles = ["solar-weather"]
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The declared 3 (NOAA G3, strong, Kp 7) is the highest level this vehicle class can reasonably be sized for, with G4 and G5, on 49 and 16 days in 29 years, handled by operating through them; confirmed by A. Rai on 2026-09-14."
+breaks_if = "A mission requirement to survive G4 or G5 by design rather than by operations, which would mean changing this bound deliberately and revisiting the return level, the band and the requirement together."
+relation = "G_design = 3   (NOAA G3, strong, Kp 7)"
+source = "noaa_swpc"

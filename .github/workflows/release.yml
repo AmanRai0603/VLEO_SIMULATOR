@@ -120,12 +120,21 @@ jobs:
       # The three doors onto one kernel: the command line, the local server the
       # browser face talks to, and the shared library the wheel and MATLAB bind.
       - run: cargo build --release --target ${{ matrix.target }} -p vleo-cli -p vleo-daemon -p vleo-ffi
+      # WHAT THE TEAM GETS: a kit, not the repository. The programs alone do not
+      # run — the daemon reads the web face, the tree and every node's page — so
+      # each platform ships as one zip of the programs beside exactly those files,
+      # with START_HERE.md on top. docs/SHARING.md says how it is used.
+      - name: the kit
+        shell: bash
+        run: |
+          kit="vleo-${{ needs.prove.outputs.version }}-${{ matrix.target }}"
+          cargo run --release -p xtask -- kit --bin "target/${{ matrix.target }}/release" --out "kit/$kit"
+          cd kit
+          if [ "$RUNNER_OS" = "Windows" ]; then 7z a -tzip "../$kit.zip" "$kit" >/dev/null; else zip -qr "../$kit.zip" "$kit"; fi
       - uses: actions/upload-artifact@v4
         with:
           name: vleo-${{ matrix.target }}
-          path: |
-            target/${{ matrix.target }}/release/vleo*
-            !target/${{ matrix.target }}/release/*.d
+          path: vleo-${{ needs.prove.outputs.version }}-${{ matrix.target }}.zip
 
   # The one human approval. It is a GitHub environment with required reviewers,
   # which is a repository setting a person configures — this file only names it.

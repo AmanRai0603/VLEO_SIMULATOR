@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much does the spacecraft antenna concentrate the transmitted power?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How strongly the spacecraft's antenna focuses the power it transmits, compared with an antenna that radiates equally in all directions, in decibels. It is set by the antenna's diameter, the carrier frequency and the antenna's efficiency."
+breaks = "It uses the relation for a circular aperture, so it describes a dish-like antenna, and the sheet states no assumptions or derivation. Below minus 10 decibels the result is not an aperture antenna; above 80 it is a deep-space aperture, not a spacecraft antenna."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "G = eta*(pi*D/lambda)^2"
 source = "larson_wertz"
@@ -69,3 +76,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Its relation as stated and cited from larson_wertz, the circular aperture gain at the carrier wavelength, not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or an antenna that is not a circular aperture."
+relation = "G = eta*(pi*D/lambda)^2"
+source = "larson_wertz"

@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What does running the constellation cost each year?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What it costs each year to run the constellation, its ground segment and its team: 4.5 million US dollars."
+breaks = "It is one yearly figure, not built up from the work it pays for. Below 100 thousand dollars a year no ground segment and team exist, and above 200 million a year the programme is not the one costed here."
+by = "an assistant, from what this sheet states — for its owner (programme) to confirm"
+
 [maths]
 expression = "C_ops = 4.5"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (programme) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 4.5 million US dollars a year is the operations cost of this constellation, from the source the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "An operations quote or staffing plan for this constellation costing other than 4.5 million US dollars a year."
+relation = "C_ops = 4.5"
+source = "orbitt_case_c1"

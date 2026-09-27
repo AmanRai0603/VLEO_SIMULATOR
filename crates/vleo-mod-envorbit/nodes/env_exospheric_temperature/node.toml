@@ -21,6 +21,14 @@ state = "published"
 [question]
 text = "How hot is the upper thermosphere today, given the Sun and the geomagnetic field?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How hot the upper atmosphere gets, given how active the Sun is and how disturbed Earth's magnetic field is. It is the temperature the atmosphere approaches with height, the one number that gives a temperature at every altitude, and every air density in the design is built from it."
+breaks = "It is a night-time minimum averaged over the globe: the afternoon bulge adds up to 30 per cent, and there is no season in it. It is a fit to satellite drag data from the 1960s and 70s, and it applies storms and the Sun's flux with no delay, so a storm's heating is placed about six hours early."
+wrong = "It is not the temperature at the spacecraft's altitude or anywhere in particular: it is the level the temperature approaches with height, which the next step turns into a temperature at every altitude."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has NOT read this relation against Jacchia 1971 yet. The theory tab
 # below derives it; somebody has to check that derivation against the source and
@@ -190,3 +198,14 @@ kind = "line"
 over = "env_f107"
 points = 60
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Jacchia's 1971 global night-time relation holds for this design: no daily, seasonal or semiannual term, the geomagnetic correction with no lag, the same day's flux instead of the previous day's, and an unrecorded choice among the source's coefficient sets."
+breaks_if = "The design is driven by the daily peak geomagnetic slot rather than the mean (867.2 against 824.9 kelvin at the hot sustained scenario), or daytime, season or storm timing decides the answer."
+relation = "T_inf = 379 + 3.24*F10.7A + 1.3*(F10.7 - F10.7A) + 28*Kp + 0.03*exp(Kp)"
+source = "jacchia1971"

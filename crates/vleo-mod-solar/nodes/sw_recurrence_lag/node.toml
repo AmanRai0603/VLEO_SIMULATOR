@@ -23,6 +23,14 @@ state = "published"
 text = "At what lag does the solar-rotation signal in F10.7 peak?"
 note = "The lag at which today's F10.7 best predicts a future day, once the 11-year cycle is removed. It is the reason a 27-day outlook is 27 days long, and it is the shortest horizon at which a design can expect an active region to come back round."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The number of days after which the Sun's flux best repeats itself once the eleven-year cycle is removed: 26 days. The Sun rotates, so an active region facing Earth today comes back round about a month later; this is why a solar outlook is 27 days long, and the shortest time a design can expect a region to return."
+breaks = "The repeat is broad, not sharp: it stays strong from about 23 to 29 days, because the Sun's equator and mid-latitudes turn at different speeds and active regions grow and fade within a rotation. It is a tendency over a week-wide window, not a clock a design can time itself to."
+wrong = "That 26 days is the rotation period. The period is 27 days, shown by later repeats at 54 and 81 days; the first peak reads one day short because it sits on a falling background."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
 expression = "L_rot = argmax over lag of corr(F107', F107' shifted by lag) = 26 d"
@@ -142,3 +150,15 @@ bundles = ["solar-weather"]
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The declared 26.0 days is where the first peak of the detrended flux's self-correlation sits in the solar-weather bundle of 2026.09.14, after removing the cycle with a 365-day centred mean; confirmed by A. Rai on 2026-09-14."
+breaks_if = "The bundle version changes and the peak moves on re-measurement, or a value falls below 20 days or above 35 days, which would mean the detrending removed the rotation or a later repeat was read as the first."
+relation = "L_rot = argmax over lag of corr(F107', F107' shifted by lag) = 26 d"
+source = "noaa_swpc"

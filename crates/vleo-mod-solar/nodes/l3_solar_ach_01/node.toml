@@ -59,6 +59,14 @@ the closure so that the comparison against what the spacecraft can sustain
 happens on a row rather than in somebody's head.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much room is left between the sustained solar activity the design is committed to operate in and the level the record says this mission's window will actually present. Positive means room to spare; negative means the requirement is exceeded, and by how much."
+breaks = "A passing margin says the sky is one the design says it can operate in, not that the design is adequate: the spacecraft feels the air density that solar activity produces, through a model this subsystem does not own. The level it reads is a 90th-percentile band, though the run is labelled 95 per cent."
+wrong = "Taking this margin as proof the spacecraft copes. It only compares an index of solar activity against a ceiling on that index."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # An achieved row restates the subsystem's conclusion on the side of the
 # comparison the closure reads. It computes nothing of its own.
@@ -185,3 +193,15 @@ type = "Ratio"
 kind = "line"
 over = "orbit_mission_duration"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The sustained solar-flux level it reads, 104.07 solar flux units, is sized on a cycle analogue at the mission's own dates with a 90th-percentile band, and the ceiling it compares against is 260."
+breaks_if = "Either side moving: the cycle analogue behind 104.07 proving wrong for the mission's window, or the 260 ceiling being changed."
+relation = "M_f107_long = closure(F107_req_long, F107_long, AtMost).margin"
+source = "noaa_swpc"

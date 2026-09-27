@@ -62,6 +62,14 @@ state = "published"
 text = "How much room does the Ap survival requirement have left?"
 note = "The geomagnetic driver on the achieved side: the storm that recurs once per mission lifetime. Unlike the F10.7 pair this has no confidence attached, because geomagnetic activity has no usable long-term forecast and the study designs to a return period instead."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much room is left between the geomagnetic storm the design must not be destroyed by and the storm the record expects once in a five-year mission. The geomagnetic index here measures how disturbed the Earth's magnetic field is on a day."
+breaks = "It carries no confidence level, because geomagnetic activity has no usable long-term forecast. The expected storm, 158.38, sits above the 132 the vehicle operates through, so a passing margin here does not mean the storm case is closed: the mission is still outside its operating range for about 1.42 days over five years."
+wrong = "Treating this and the single-day geomagnetic closure as the same question. This one is a return level from the whole record, 158.4; the other is one scenario's worst day, 90.5."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # An achieved row restates the subsystem's conclusion on the side of the
 # comparison the closure reads. It computes nothing of its own.
@@ -179,3 +187,15 @@ type = "Ratio"
 kind = "line"
 over = "orbit_mission_duration"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The storm expected once in five years, 158.38, taken as a return level fitted to a 28.2-year record whose top end rests on two observations, compared against a survival ceiling of 207."
+breaks_if = "A storm larger than the record's fit, a longer record moving the return level, or the survival ceiling of 207 being changed."
+relation = "M_ap_survive = closure(Ap_req_survive, Ap_T, AtMost).margin"
+source = "noaa_swpc"

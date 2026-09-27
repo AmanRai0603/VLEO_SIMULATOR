@@ -9,7 +9,8 @@
 <p class="af-q">Over what bandwidth does the geolocation payload observe?</p>
 <p class="af-a"><b>20</b> MHz <span class="claim claim-declared" title="a number a person chose, and put their name against">declared · A. Rai / 2026-09-01</span></p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">The width of the radio band the geolocation payload listens across: 20 megahertz.</li>
+<li><b>Rests on</b> That 20 MHz is the receiver bandwidth for this design, as taken from the source case the sheet cites (orbitt_case_c2), confirmed by A. Rai on 2026-09-01. <span class="muted">(version 1; would break if A receiver design or geolocation requirement for this payload that calls for a bandwidth other than 20 MHz.)</span></li>
 <li><b>Holds</b> from 0.1 to 500 MHz — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · orbitt_case_c2</span></li>
 </ul>
@@ -31,13 +32,15 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">The width of the radio band the geolocation payload listens across: 20 megahertz. It governs how precisely signals can be timed to locate their source.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (payload) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">Over what bandwidth does the geolocation payload observe?</p>
 <p class="maths"><code>B_rf = 20</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · orbitt_case_c2</span></p>
 <p class="src">Source <b>orbitt_case_c2</b> — Orbitt Space — VLEO multipayload reference case C2 <span class="where">internal, 2026-09-01</span></p>
 <p class="declared">Declared: <b>20</b> MHz <span class="claim claim-declared" title="a number a person chose, and put their name against">declared · A. Rai / 2026-09-01</span></p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">It is only meaningful between 100 kilohertz and 500 megahertz. Below 100 kilohertz the timing is too coarse for any geolocation requirement here; above 500 megahertz the digitiser and the downlink neither fit nor close.</p>
 <p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
 <p class="muted">Outside <code>0.1 … 500</code> MHz the row refuses rather than answers: below 100 kHz the timing precision is too coarse for any geolocation requirement here; above 500 MHz the digitiser and the downlink neither fit nor close.</p>
 <h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
@@ -51,7 +54,13 @@
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> That 20 MHz is the receiver bandwidth for this design, as taken from the source case the sheet cites (orbitt_case_c2), confirmed by A. Rai on 2026-09-01.</p>
+<p><b>Would break if:</b> A receiver design or geolocation requirement for this payload that calls for a bandwidth other than 20 MHz.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (payload) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>That 20 MHz is the receiver bandwidth for this design, as taken from the source case the sheet cites (orbitt_case_c2), confirmed by A. Rai on 2026-09-01.</dd><dt>Would break if</dt><dd>A receiver design or geolocation requirement for this payload that calls for a bandwidth other than 20 MHz.</dd><dt>The relation, as this version states it</dt><dd><code>B_rf = 20</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · orbitt_case_c2</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -165,8 +174,6 @@ pub fn evaluate() -&gt; Result&lt;Frequency, Fault&gt; {
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
 <li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 <li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>

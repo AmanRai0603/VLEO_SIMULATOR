@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How long may the wheels accumulate momentum before it is dumped?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How long the reaction wheels may keep soaking up momentum before it is shed: 45 minutes. The shedding is done by magnetorquers, coils that act against Earth's magnetic field."
+breaks = "It is a declared interval, not worked out from how fast the wheels fill. Under a minute the magnetorquers would be commanded faster than the field geometry changes; over a day the wheels saturate, with no room to absorb more, long before the dump."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "t_dump = 45"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 45 minutes is the momentum dump interval, from the source the sheet cites (larson_wertz), confirmed by A. Rai on 2026-09-01."
+breaks_if = "The wheels saturating in less than 45 minutes under the disturbances this design meets."
+relation = "t_dump = 45"
+source = "larson_wertz"

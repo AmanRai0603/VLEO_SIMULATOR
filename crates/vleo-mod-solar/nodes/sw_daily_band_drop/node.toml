@@ -41,6 +41,14 @@ budget's LOWER bound and an aerodynamic control authority's worst case are made
 of. The hot day and the cold day both bound something.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far a single day of the Sun's flux can fall below its own 27-day average, at the one-in-twenty level and at the level that stretch sits at. At the quiet design level it is about 4.39 solar flux units, seven times less than the old single-number value, and that correction lets the quietest single-day scenario publish a real value instead of refusing."
+breaks = "The quiet design level sits just below the lowest level the table was measured at, so the answer is held at the end value; a colder window gets the same number. It is past scatter in days already observed, not a forecast error, and the 27-day window is a conventional round number, not a measured rotation period."
+wrong = "Falls below the average are not rises above it turned around. The Sun has a floor and no ceiling, so the two differ by six to fifteen per cent depending on level. And the quiet side matters too: it sets the low-drag case."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has NOT read this relation against its source yet. The table is
 # measured from the record by the method the theory sets out; nobody has agreed
@@ -152,3 +160,15 @@ reason_upper = "above 120 sfu the departure exceeds the largest single-day excur
 kind = "line"
 over = "sw_f107_cold_long"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the fifth-percentile dip below the centred 27-day mean, binned within 15 per cent of the rotation level, describes the window, with the answer held at the lowest level for anything below 70 solar flux units."
+breaks_if = "Evidence that quiet stretches below 70 solar flux units have larger daily dips, or that a different bin width or averaging window changes the table."
+relation = "dF107_day_low(L) = -pctl(F107 - movmean(F107, 27 d), 0.05) over days whose rotation sits within 15% of L"
+source = "noaa_swpc"

@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What does the on-board computer, the harness electronics and the housekeeping draw?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The power drawn by the on-board computer, the wiring electronics and general housekeeping: 35 watts. It is one of the loads the power system must supply."
+breaks = "It is one declared figure. Below 5 watts no spacecraft avionics set runs, and above 500 watts the avionics would dominate the power supply, which no design in this class does."
+by = "an assistant, from what this sheet states — for its owner (avionics) to confirm"
+
 [maths]
 expression = "P_av = 35"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (avionics) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the avionics and housekeeping draw 35 watts; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "A power budget for the chosen avionics that differs from 35 watts."
+relation = "P_av = 35"
+source = "orbitt_case_c1"

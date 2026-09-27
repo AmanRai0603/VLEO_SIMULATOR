@@ -23,6 +23,14 @@ sense = "<="
 [question]
 text = "What does the customer require for ground sample distance?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How fine a detail on the ground the customer requires each image pixel to cover: 1 metre. The design's achieved ground sample distance must be 1 metre or smaller."
+breaks = "The sheet gives the number and its source but no reasoning for it. Below 5 centimetres no optical payload in this mass class achieves it; above 100 metres the product is not the one being sold."
+wrong = "Treating a larger ground sample distance as better. Smaller is sharper, so 1 metre is a ceiling the design must stay under."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "R_req = 1"
 source = "orbitt_case_c1"
@@ -47,3 +55,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 1 metre is the customer's ground sample distance requirement, taken from its cited reference case and confirmed by A. Rai on 2026-09-01."
+breaks_if = "A customer requirement stating a ground sample distance other than 1 metre."
+relation = "R_req = 1"
+source = "orbitt_case_c1"

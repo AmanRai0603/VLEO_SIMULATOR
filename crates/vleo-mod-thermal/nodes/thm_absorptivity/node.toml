@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What fraction of incident sunlight does the external surface absorb?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The share of the sunlight falling on the spacecraft's outer surface that the surface absorbs: 0.3, or 30 per cent. It is one of the numbers the thermal margins are built from."
+breaks = "It is one number for the whole outer surface, and the sheet gives no reason for 0.3. Its lower limit notes that no space-qualified coating stays below 0.05 after exposure to atomic oxygen, so a coating's value is not fixed by what it was on the ground."
+by = "an assistant, from what this sheet states — for its owner (thermal) to confirm"
+
 [maths]
 expression = "alpha_s = 0.3"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (thermal) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The declared 0.3 is right for this design's outer surface; the sheet cites a standard reference but gives no reason for the value, which A. Rai confirmed on 2026-09-01."
+breaks_if = "A measured or specified absorptivity for this design's coating, including after atomic-oxygen exposure, that differs from 0.3."
+relation = "alpha_s = 0.3"
+source = "larson_wertz"

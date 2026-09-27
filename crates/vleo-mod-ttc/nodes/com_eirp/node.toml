@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much power does the spacecraft appear to radiate towards the ground station?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much power the spacecraft appears to radiate toward the ground station, in decibels relative to one watt: the transmitter power, raised by the antenna's gain and reduced by the line loss between them."
+breaks = "It is one figure toward the station, and the sheet states no assumptions or derivation for where that stops holding. Below minus 20 decibels relative to one watt no link in this design closes; above 90 the transmitter is not the one described."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "EIRP = 10*log10(P_t) + G_t - L_line"
 source = "larson_wertz"
@@ -69,3 +76,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Its relation as stated and cited from larson_wertz, not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a result outside minus 20 to 90 decibels relative to one watt."
+relation = "EIRP = 10*log10(P_t) + G_t - L_line"
+source = "larson_wertz"

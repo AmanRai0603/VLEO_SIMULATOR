@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What does the spacecraft weigh at separation?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What the spacecraft weighs at separation from its launcher, in kilograms: the dry mass plus the disposal propellant."
+breaks = "The only propellant it adds is the disposal propellant, so any other propellant carried is not in this sum. Below a kilogram there is no spacecraft; above 6 tonnes the vehicle is not in this class."
+by = "an assistant, from what this sheet states — for its owner (mass) to confirm"
+
 [maths]
 expression = "m_wet = m_dry + m_prop"
 source = "ecss_e_st_10_02"
@@ -61,3 +68,14 @@ type = "Mass"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (mass) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Dry mass plus disposal propellant, as stated and cited from ecss_e_st_10_02, not yet derived on the sheet."
+breaks_if = "The design carries propellant other than for disposal, a check against ecss_e_st_10_02 disagrees, or the result falls outside a kilogram to 6 tonnes."
+relation = "m_wet = m_dry + m_prop"
+source = "ecss_e_st_10_02"

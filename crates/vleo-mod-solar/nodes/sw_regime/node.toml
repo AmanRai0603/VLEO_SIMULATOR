@@ -53,6 +53,14 @@ parity_tolerance = 1e-12
 text = "Quiet, active or storm — which regime is this daily Ap in?"
 note = "1 is quiet, 2 is active, 3 is storm, in the order the study's own mixture put them. A number rather than a name because the interface carries numbers; the bands are integers and the boundaries are exact, so the encoding loses nothing."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "Which of three states a day's geomagnetic activity is in, numbered 1, 2 and 3: quiet up to a daily index of 6, active up to 25, storm above. A design cannot react to every small change in the index, but it can keep a separate budget for each state."
+breaks = "The label says nothing about how deep into a state a day is: a day at 26 and a day at 200 are both storm. It carries no confidence, looks at nothing but today's index, and in any run today it can only say active or storm, because its only input is a design storm level between 20 and 230."
+wrong = "That the number is a severity, as if storm were three times quiet. It is an index of which population the day belongs to; the active band is nineteen units of the daily index wide, while the step from active to storm is one."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
 expression = "regime(Ap) = 1 if Ap <= 6, 2 if Ap <= 25, 3 otherwise"
@@ -212,3 +220,15 @@ bundles = ["solar-weather"]
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The study's fitted three-part mixture on daily Ap reduces to two integer boundaries, between 6 and 7 and between 25 and 26, reproducing its published labels on 10128 of 10299 days; relation confirmed by A. Rai on 2026-09-14."
+breaks_if = "A reconciliation against the study's published labels finds disagreements other than the 171 days at Ap 0 or 1, or the mixture is refitted on a new bundle and its boundaries move off those integers."
+relation = "regime(Ap) = 1 if Ap <= 6, 2 if Ap <= 25, 3 otherwise"
+source = "noaa_swpc"

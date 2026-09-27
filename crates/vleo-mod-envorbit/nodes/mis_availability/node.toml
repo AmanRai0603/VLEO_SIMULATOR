@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What fraction of the time is the service available?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What fraction of the time the service is available, taken as the chance that at least 80 per cent of the constellation's satellites are working at once, given how often each one is working on its own."
+breaks = "It treats every satellite as equally reliable and as failing independently of the others, which is what the binomial count assumes. The 80 per cent threshold is written into the relation rather than read from the mission."
+by = "an assistant, from what this sheet states — for its owner (operations) to confirm"
+
 [maths]
 expression = "A = P(at least ceil(0.8*N) of N satellites up)"
 source = "larson_wertz"
@@ -64,3 +71,14 @@ kpis = ["kpi_availability"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (operations) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The binomial probability that at least 80 per cent of the constellation is operational, as stated and cited to larson_wertz and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, satellites whose failures are linked, or a service that needs more or fewer than 80 per cent of the constellation."
+relation = "A = P(at least ceil(0.8*N) of N satellites up)"
+source = "larson_wertz"

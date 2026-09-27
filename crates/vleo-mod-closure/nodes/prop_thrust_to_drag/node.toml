@@ -22,6 +22,13 @@ state = "published"
 text = "Does the thrust the air produces exceed the drag the air imposes? This is the closure the whole design exists to reach."
 note = "At or above one the orbit holds indefinitely. Below one the mission has a lifetime rather than an altitude, and every other number in the design is a detail."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How the thrust produced from the air compares with the drag the same air imposes, as a ratio. At or above one the orbit holds indefinitely with no stored propellant; below one the mission has a lifetime rather than an altitude, and every other number in the design is a detail."
+breaks = "It is a ratio of two computed forces, the delivered thrust and the drag, so it inherits every error in either. A negative ratio means a sign error in one of them, and above one hundred the vehicle would be a launch stage, not a satellite."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "T/D"
 source = "romano2021"
@@ -67,3 +74,14 @@ kind = "line"
 over = "orbit_altitude"
 points = 80
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The ratio of delivered thrust to drag, as stated and cited to romano2021 and not yet derived on the sheet, with one as the line between holding the orbit and losing it."
+breaks_if = "A derivation or a comparison with romano2021 that disagrees, or a ratio below zero or above one hundred, which would show an error in the thrust or the drag feeding it."
+relation = "T/D"
+source = "romano2021"

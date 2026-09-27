@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What is the smallest principal moment of inertia?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How easy the spacecraft is to turn about the axis where it resists turning least. It is a number a person set for this design, and it sits beside the largest moment so the attitude control can be sized for both."
+breaks = "It is a single declared number with no derivation on the sheet beyond its source. It cannot exceed the largest principal moment, and the sheet stores it as a plain number while its bounds are written in kilogram square metres."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "I_min = 1.2"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 1.2 (bounds written in kilogram square metres) is right for this design, as taken from its cited reference case and confirmed by A. Rai on 2026-09-01."
+breaks_if = "A mass-properties estimate or measurement of this vehicle whose smallest principal moment differs from 1.2, or one that exceeds the largest moment."
+relation = "I_min = 1.2"
+source = "orbitt_case_c1"

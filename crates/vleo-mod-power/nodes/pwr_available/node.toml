@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much power is actually available to the loads, averaged over an orbit?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much power actually reaches the spacecraft's equipment, averaged over one orbit. In sunlight the array feeds it directly; in eclipse the power comes through the battery, each path with its own efficiency, and the two are weighted by how much of the orbit is spent in each."
+breaks = "It assumes the array is big enough that the sunlit part of the orbit both runs the equipment and recharges the battery. If it is not, the battery's charge walks down orbit after orbit and this number is optimistic from the second day onwards."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "P_avail = P_eol*(1 - f_ecl)*eta_direct + P_eol*f_ecl*eta_batt"
 source = "larson_wertz"
@@ -73,3 +80,14 @@ type = "Power"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to larson_wertz, not yet derived on the sheet, and the assumption that the sunlit period both runs the loads and recharges the battery."
+breaks_if = "The battery's state of charge falls over successive orbits, showing the sunlit period does not cover both the loads and the recharge, or a derivation or comparison with larson_wertz disagrees."
+relation = "P_avail = P_eol*(1 - f_ecl)*eta_direct + P_eol*f_ecl*eta_batt"
+source = "larson_wertz"

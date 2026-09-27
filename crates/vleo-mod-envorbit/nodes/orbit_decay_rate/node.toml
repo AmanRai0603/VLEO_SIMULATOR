@@ -21,6 +21,14 @@ state = "published"
 [question]
 text = "How fast does the orbit fall if nothing compensates the drag?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How fast the orbit shrinks if nothing makes up for the drag, in metres per second of orbit size lost. It depends on the air density, the vehicle's ballistic coefficient (how much it resists being slowed by the air) and the size of the orbit, and it feeds the service lifetime."
+breaks = "It uses the long-term average decay for a circular orbit. A decay faster than 10 metres per second is re-entry, not an orbit."
+wrong = "That drag could ever raise the orbit. It cannot; a positive decay rate here is a sign error upstream."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "da/dt = -rho*sqrt(mu*a)/BC"
 source = "vallado2013"
@@ -74,3 +82,14 @@ kind = "line"
 over = "orbit_altitude"
 points = 60
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The circular-orbit secular decay relation, as stated and cited to vallado2013 and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with vallado2013 that disagrees, a decay faster than 10 metres per second, or any positive value."
+relation = "da/dt = -rho*sqrt(mu*a)/BC"
+source = "vallado2013"

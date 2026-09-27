@@ -180,7 +180,8 @@ A name is not knowledge. The plain-words answer uses no symbol and no term a new
 to look up; the real thing may, because it is the second step, not the first.
 
 **Where:** `[explain] simply`, the form's first explanatory question. **Checked by:** a person —
-the form asks for it in those words.
+the form asks for it in those words — and `[explain] by` names that person on the page. Words an
+assistant drafted from the sheet say so there, for the row's owner to confirm.
 
 ### E15 · Do not fool yourself — and do not let the page fool anybody
 
@@ -199,6 +200,7 @@ Feynman, "Cargo Cult Science".)*
 |---|---|---|---|---|---|---|---|---|---|
 | node form | intro | order of questions | illustrative example | asks *breaks* | asks *wrong* | — | — | worked de-risking example | — |
 | node page | Answer first box | first tab | on the claims | breaks + assumptions | if written | tab kinds | yes | evidence tab | Learn |
+| the views — the four layers, Architecture, Inputs, Forms, Results | Answer first box | — | — | — | — | kind on the box | — | — | — |
 | run panel and Results | answer, then points | — | — | blocked, weakest factor, broken beliefs | — | — | — | — | — |
 | result report (HTML) | first block | Said simply · Where it breaks | derived / declared | Where it breaks | — | section kinds | — | — | — |
 | the manual | answer line | — | — | *cannot* table | *when something goes wrong* | section kind | who-filter | examples run | — |

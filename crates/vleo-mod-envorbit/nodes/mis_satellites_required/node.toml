@@ -22,6 +22,13 @@ state = "published"
 text = "How many satellites would the revisit requirement need?"
 note = "The inverse question, and the one a concept trade actually asks."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How many satellites the revisit requirement would need, working backwards from the required revisit time, the swath and the speed of the ground track. It is the inverse question, and the one a concept trade actually asks."
+breaks = "It inverts the revisit relation, so it spreads the requirement evenly over the whole Earth's surface rather than over the places that matter. Above 100000 satellites the concept is not the one being designed."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "N = A_earth/(t_target*W*V_g)"
 source = "larson_wertz"
@@ -70,3 +77,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The revisit relation inverted for the satellite count, as stated and cited to larson_wertz and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a count above 100000."
+relation = "N = A_earth/(t_target*W*V_g)"
+source = "larson_wertz"

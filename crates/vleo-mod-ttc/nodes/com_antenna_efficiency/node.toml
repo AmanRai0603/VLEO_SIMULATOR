@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How efficiently does the antenna use its aperture?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What share of the antenna's physical size does useful work in focusing the signal: 60 per cent. An antenna whose surface is not evenly lit by its feed behaves as if it were smaller than it is."
+breaks = "It is one declared figure, not a measurement of the antenna flown. Below 20 per cent the surface is so badly lit that it is not a design considered here, and above 90 per cent no practical feed, the part that lights the antenna, achieves it."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "eta_a = 0.6"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 0.6 is the aperture efficiency of this design's antenna, from the source the sheet cites (larson_wertz), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A measured or specified efficiency for the chosen antenna and feed that differs from 0.6."
+relation = "eta_a = 0.6"
+source = "larson_wertz"

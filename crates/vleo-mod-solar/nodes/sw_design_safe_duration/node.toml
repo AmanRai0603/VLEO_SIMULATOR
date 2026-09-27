@@ -45,6 +45,14 @@ state = "published"
 text = "How long can the mission be before the record expects to exceed the design Ap?"
 note = "The inverse of sw_storm_return_level, read against sw_ap_design. At the declared G3 it is 2.62 years against a declared mission of 5 — so the answer to whether the design is exceeded is yes, and this is when it starts."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How long a mission could last before the record expects the chosen design level of geomagnetic disturbance to be exceeded once. At the default storm grade G3 it is 2.62 years, against a declared mission of five years, so the design is expected to be exceeded, and this says roughly when that becomes likely."
+breaks = "It is not a countdown: a storm expected once in 2.62 years can come in the first month or not for ten years. It inherits a fit whose top end rests on only two storms; at G3 the answer sits well inside the fitted range, but a much higher design level would lean on that thin end."
+wrong = "It is easy to read 2.62 years as a safe period before failure. It is where the expected count of such days passes one; over the five-year mission the expected count is 1.42 days."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "T_safe(Ap_design) = exp((Ap_design - 92.515531) / 40.926516)"
 source = "noaa_swpc"
@@ -169,3 +177,15 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "sw_storm_design_level"
 points = 40
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The storm return fit through ranks 2 to 56 of a 28.197-year record, valid from 0.5035 to 14.0986 years, and the design level read from the chosen storm grade."
+breaks_if = "The design level is raised to where the answer falls near the top of the fitted range, or a longer record changes the fit."
+relation = "T_safe(Ap_design) = exp((Ap_design - 92.515531) / 40.926516)"
+source = "noaa_swpc"

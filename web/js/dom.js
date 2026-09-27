@@ -23,5 +23,18 @@ export function fmt(v) {
   return String(Number(v.toPrecision(6)));
 }
 
+/**
+ * The answer, first (docs/EXPLAINING.md, E1): one or two sentences, then at most
+ * four supporting points, and the kind of reading it is (E8). Every view opens
+ * with one, so a reader who stops after it has still been told the point.
+ */
+export function answerFirst(answer, points = [], kind = '') {
+  return '<section class="answer-first view-af"><p class="af-k">Answer first' +
+    (kind ? ' <span class="dx dx-' + esc(kind.replace(/\s+/g, '-')) + '">' + esc(kind) + '</span>' : '') +
+    '</p><p class="af-a">' + answer + '</p>' +
+    (points.length ? '<ul class="af-points">' + points.map(p => '<li>' + p + '</li>').join('') + '</ul>' : '') +
+    '</section>';
+}
+
 /** `n thing` / `n things`, because the alternative is `1 boxes`. */
 export const plural = (n, one, many) => n + ' ' + (n === 1 ? one : (many || one + 's'));

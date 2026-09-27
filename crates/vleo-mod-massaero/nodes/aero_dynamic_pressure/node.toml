@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What pressure does the flow exert per unit of drag coefficient and area?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The pressure the oncoming air exerts for each unit of drag coefficient and area, in pascals, worked out from the air's density and the flight speed."
+breaks = "It belongs to the oncoming flow alone; what the spacecraft feels also depends on its drag coefficient and area. Above 1 pascal the vehicle is re-entering, not orbiting."
+by = "an assistant, from what this sheet states — for its owner (aero) to confirm"
+
 [maths]
 expression = "q = 0.5*rho*V^2"
 source = "vallado2013"
@@ -61,3 +68,14 @@ type = "Pressure"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (aero) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The free-stream dynamic pressure relation, as stated and cited from vallado2013, not yet derived on the sheet."
+breaks_if = "A derivation or a check against vallado2013 disagrees, or the pressure exceeds 1 pascal, where the sheet says the vehicle is re-entering."
+relation = "q = 0.5*rho*V^2"
+source = "vallado2013"

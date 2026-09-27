@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What does it cost to put one satellite in orbit?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What it costs to put one satellite into orbit: 1.8 million US dollars. It is counted once for every satellite in the constellation."
+breaks = "It is a single price per satellite, not a quote for a particular launch. Below 50 thousand dollars no launch service exists, and above 100 million per satellite the constellation is not the one costed here."
+by = "an assistant, from what this sheet states — for its owner (programme) to confirm"
+
 [maths]
 expression = "C_lch = 1.8"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (programme) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 1.8 million US dollars per satellite is the launch cost, from the source the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A launch quote for this constellation that works out to other than 1.8 million US dollars per satellite."
+relation = "C_lch = 1.8"
+source = "orbitt_case_c1"

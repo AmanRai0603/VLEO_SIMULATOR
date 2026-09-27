@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much atomic oxygen is there — the species that erodes materials and the one an intake actually collects?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How many oxygen atoms, as single atoms rather than molecules, there are in each cubic metre at the flight altitude. Atomic oxygen is the gas that erodes materials and the one an air intake actually collects, so it matters twice over."
+breaks = "It treats atomic oxygen alone, settled by its own weight as if undisturbed, driven only by altitude and the temperature of the upper atmosphere. Below a hundred million per cubic metre there is effectively none; above ten billion billion it would be denser than all the gas together at the model's base."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "n_O(z) = n_O(z0)*(T0/T)*exp(-INT M_O*g/(R*T) dz)"
 source = "jacchia1971"
@@ -64,3 +71,14 @@ kpis = ["kpi_service_lifetime"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Atomic oxygen alone in diffusive equilibrium, settled against gravity at the local temperature, as stated and cited to jacchia1971 and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with jacchia1971 that disagrees, or a result below a hundred million or above ten billion billion per cubic metre."
+relation = "n_O(z) = n_O(z0)*(T0/T)*exp(-INT M_O*g/(R*T) dz)"
+source = "jacchia1971"

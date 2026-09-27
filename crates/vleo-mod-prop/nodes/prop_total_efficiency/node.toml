@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What fraction of the power drawn from the bus ends up in the beam?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What share of the power the propulsion system takes from the bus ends up in the beam."
+breaks = "It cannot exceed one; a value above one would violate energy conservation and is a sign of an error upstream."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "eta_T = P_jet/P_prop"
 source = "romano2021"
@@ -61,3 +68,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to romano2021, jet power divided by bus demand, not yet derived on the sheet."
+breaks_if = "A derivation or comparison with romano2021 that disagrees, or an efficiency above one."
+relation = "eta_T = P_jet/P_prop"
+source = "romano2021"
