@@ -269,6 +269,11 @@ def main_run(args):
                 for pw, pst in probes:
                     code, out = run(aimed(pst["run"], s.port), ROOT, timeout=60)
                     report(pw, "probe", pst["run"], judge("exits", code, out, pst.get("expect"), "", ""))
+                problem = idle_connection_blocks(s.port)
+                print(f"  {'FAIL' if problem else 'ok  '} an idle connection does not hold up the next request"
+                      + (f"\n         {problem}" if problem else ""))
+                if problem:
+                    failures.append(("daemon", "idle", problem))
 
     print("\nevery usage line, against what each program's help prints")
     bad = usage_problems(manual)
@@ -281,6 +286,30 @@ def main_run(args):
     print(f"\n{ran} command(s) run, {len(failures)} wrong. Not run: {skipped['writes']} that "
           f"change files, {skipped['ci']} the pipeline runs as its own steps.")
     return 1 if failures else 0
+
+
+def idle_connection_blocks(port):
+    """Whether a connection that sends nothing stops the next request being answered.
+
+    A browser keeps a spare connection open so its next request skips the
+    handshake, and may never use it. The daemon once read each connection in
+    turn with no timeout, so it sat on the spare and every real request queued
+    behind it: pages hung until the browser happened to close it, and the
+    browser walk timed out at random. Asked here with a raw socket, which is
+    exactly what the browser does and needs no browser to reproduce.
+    """
+    import socket
+    idle = socket.create_connection(("127.0.0.1", port), timeout=5)
+    try:
+        time.sleep(0.2)
+        t = time.time()
+        try:
+            code, _ = get(f"http://127.0.0.1:{port}/v1/version", timeout=5)
+        except Exception as e:  # noqa: BLE001 — the failure is the finding
+            return f"no answer after {time.time() - t:.1f}s with an idle connection open: {e}"
+        return "" if code == 200 else f"answered {code} with an idle connection open"
+    finally:
+        idle.close()
 
 
 # The rows the walk uses: a computed row whose whole chain answers, and the
@@ -481,6 +510,40 @@ def browser_walk():
                 tab(U("browser-run", 5))
                 assert page.locator("#runview").is_visible(), "the run tab did not open"
             ok("the run tab opens", run_tab)
+
+            # A RUN IS FOR A CUSTOMER. The menu offers exactly the customers
+            # cases/ holds, the bar and the panel are one choice, the inputs are
+            # listed with who set them, and an edit in that table is what the run
+            # uses — held in the browser, so the working tree does not move.
+            def customer_run():
+                open_row(WALK_COMPUTED)
+                panel = "#run-panel"
+                page.wait_for_selector(panel + " .run-in-table", timeout=60000)
+                assert U("browser-run", 6) in page.locator(panel).inner_text().lower(), \
+                    "the run panel does not offer a customer"
+                want = page.evaluate("S.index.cases.filter(c => c.kind === 'customer').map(c => c.id)")
+                got = page.locator(panel + " .run-customer option").evaluate_all(
+                    "os => os.map(o => o.value)")
+                assert got == want, f"the customer menu offers {got}, cases/ holds {want}"
+                second = want[1]
+                page.select_option(panel + " .run-customer", second)
+                page.wait_for_function(
+                    f"() => document.querySelector('#customer-picks [data-customer=\"{second}\"]')"
+                    ".classList.contains('sel')", timeout=15000)
+                page.wait_for_selector(panel + " .run-in-table", timeout=60000)
+                row = page.locator(f'{panel} tr.ri[data-ovr="{WALK_DECLARED}"]')
+                row.locator(".ri-v").fill("2")
+                row.locator(".ri-v").press("Tab")
+                assert row.locator(".ri-src").inner_text() == "your edit", "an edited input is not credited to you"
+                button(panel, U("browser-run", 4)).click()
+                page.wait_for_function(
+                    "() => /edited by you/.test(document.querySelector('#run-panel .run-out').innerText)",
+                    timeout=60000)
+                answer = page.locator(panel + " .answer").inner_text()
+                assert "80" in answer, f"the run did not use the edited input: {answer}"
+                untouched("a customer's run with an edited input")
+                page.evaluate("localStorage.clear()")
+            ok("a run is for a customer, lists its inputs, and runs an edit without writing", customer_run)
 
             print("\nwhat if")
 

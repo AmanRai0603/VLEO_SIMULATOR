@@ -913,16 +913,17 @@ def selftest():
         ("a canvas panel that draws nothing",
          lambda d: (d / "web" / "js" / "run.js").write_text(
              (d / "web" / "js" / "run.js").read_text().replace(
-                 "function plot(host, res) {",
-                 "function plot(host, res) {\n  if (res) return;")),
+                 "function plot(host, r, last) {",
+                 "function plot(host, r, last) {\n  if (last) return;")),
          "1 renders"),
         ("a canvas panel wired to nothing",
+         # The sweep draws through the shared chart, so wiring it to nothing is
+         # handing the chart the same picture whatever the engine returned.
          lambda d: (d / "web" / "js" / "run.js").write_text(
              (d / "web" / "js" / "run.js").read_text()
-             .replace("const xs = res.x.map(v => v / res.x_factor);",
-                      "const xs = [0, 1, 2, 3];")
-             .replace("const ys = res.y.map(v => v / res.y_factor);",
-                      "const ys = [0, 1, 0, 1];")),
+             .replace("    drawChart(c, shown);",
+                      "    drawChart(c, { x: { label: 'x' }, y: { label: 'y' }, series: "
+                      "[{ name: '', kind: 'line', x: [0, 1, 2, 3], y: [0, 1, 0, 1] }] });")),
          "2 moves"),
         # THE DEFECT 2b EXISTS FOR, and the one the other four cannot see: a
         # panel that asks the engine for a row it declares and then draws a

@@ -11,12 +11,14 @@ function t = sweep(node, over, from, to, varargin)
 %   sweep whose conclusion is unknown.
     p = inputParser;
     addParameter(p, 'points', 64);
-    addParameter(p, 'case', 'nominal');
+    addParameter(p, 'case', '');
+    addParameter(p, 'condition', '');
     parse(p, varargin{:});
 
     out = py.vleo.sweep(node, over, from, to, ...
                         pyargs('points', int32(p.Results.points), ...
-                               'case', p.Results.case));
+                               'case', p.Results.case, ...
+                               'condition', p.Results.condition));
     x = double(py.array.array('d', out{1}));
     y = double(py.array.array('d', out{2}));
     t = table(x(:), y(:), 'VariableNames', {over, node});

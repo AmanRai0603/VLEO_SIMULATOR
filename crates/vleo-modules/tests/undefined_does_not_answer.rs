@@ -16,7 +16,10 @@ use vleo_modules::{Scratch, NODES};
 
 fn run(node: &str, mode: RunMode) -> Result<vleo_bus::Results, vleo_core::fault::Fault> {
     let case = Case {
-        base: "c1".into(),
+        // The default customer. This named "c1", a case that never existed, and
+        // passed only because the engine used to ignore a name it did not know.
+        base: String::new(),
+        condition: String::new(),
         supply: Vec::new(),
         target: node.into(),
         mode,

@@ -28,7 +28,6 @@ export const S = {
   arch: 'node',        // which architecture section
   layer: 1,
   subsys: '',
-  caseSel: 'c1',
   concept: 'constellation',
   size: 'M',
   expanded: new Set(),
@@ -44,7 +43,14 @@ export const S = {
   baseline: null,
 
   // the run
-  engineCase: 'nominal',
+  //
+  // WHO THE RUN IS FOR, AND WHAT IT IS ASKED TO SURVIVE. `engineCase` is the
+  // customer — the wire still calls it `case` — and `condition` is laid over
+  // it, or empty for none. One pair for the whole face: the bar across the top
+  // and every run panel show and set the same two, so a number on one panel
+  // and a number on another are always for the same customer.
+  engineCase: '',
+  condition: '',
   mode: 'branch',
   lastRun: null,
   runTarget: null,
@@ -134,7 +140,10 @@ function ingest() {
     if (S.gnodes.has(r.parent)) S.gnodes.get(r.parent).push(r.i);
   }
   findRoots();
-  S.engineCase = S.index.cases.some(c => c.id === 'nominal') ? 'nominal' : S.index.cases[0].id;
+  // The first customer by id, which is also what the engine runs when none is
+  // named — so the face shows the customer the numbers are actually for.
+  const first = customers()[0];
+  S.engineCase = first ? first.id : '';
   S.subsys = subsystemLayers()[0] || '';
 }
 
@@ -145,8 +154,63 @@ export function subsystemLayers() {
     .sort((a, b) => S.G.get(a).label.localeCompare(S.G.get(b).label));
 }
 
-/** A group is in scope unless it names cases and the chosen one is not among them. */
-export const caseOk = g => !g || !g.cases.length || g.cases.indexOf(S.caseSel) >= 0;
+/** A group is in scope unless it names customers and the chosen one is not among them. */
+export const caseOk = g => !g || !g.cases.length || g.cases.indexOf(S.engineCase) >= 0;
+
+/** The customers, in id order: who a run can be for. */
+export const customers = () => (S.index.cases || []).filter(c => c.kind === 'customer');
+/** The conditions, in id order, including the ones that cannot be applied. */
+export const conditions = () => (S.index.cases || []).filter(c => c.kind === 'condition');
+/** One entry of cases/, by id. */
+export const caseById = id => (S.index.cases || []).find(c => c.id === id) || null;
+
+/**
+ * The customer and condition every engine call carries.
+ *
+ * One helper rather than a `case:` written into each call, because each call
+ * written by hand is how the solar panels came to ask the engine for the
+ * default design while the run panel beside them showed another customer.
+ * An explicit value already on the params is kept.
+ */
+export function withCase(params) {
+  if (!params.has('case') && S.engineCase) params.set('case', S.engineCase);
+  if (!params.has('condition') && S.condition) params.set('condition', S.condition);
+  return params;
+}
+
+/** A short key for "this customer under this condition", for caching a run. */
+export const caseKey = () => S.engineCase + '|' + S.condition;
+
+/**
+ * "Customer 1 — ISR + EO + geolocation" as it fits on a button: "C1 · ISR + EO
+ * + geolocation". A label that does not follow the pattern is shown whole.
+ */
+export const customerShort = c => !c ? '' :
+  c.label.replace(/^Customer\s+(\d+)\s+—\s+/, 'C$1 · ');
+
+/** The customer, and the condition if there is one, for a status line. */
+export function caseTag() {
+  const c = caseById(S.engineCase);
+  const k = S.condition ? caseById(S.condition) : null;
+  const m = c && c.label.match(/^Customer\s+(\d+)/);
+  const who = m ? 'C' + m[1] : c ? c.id : '—';
+  return who + (k ? ' under ' + k.label.split(' — ')[0] : '');
+}
+
+// Who else needs telling when the customer or the condition changes. The run
+// panel and the bar both set them; whichever did, everything showing a number
+// for the old pair has to be redrawn for the new one.
+const caseListeners = [];
+export function onCaseChange(fn) { caseListeners.push(fn); }
+
+/** Choose the customer, the condition, or both. `undefined` leaves one as it is. */
+export function setCase(customer, condition) {
+  if (customer !== undefined) S.engineCase = customer;
+  if (condition !== undefined) S.condition = condition;
+  S.lastRun = null;
+  S.baseline = null;
+  for (const f of caseListeners) f();
+}
 
 export function subtreeNodes(gid) {
   const g = S.G.get(gid);

@@ -107,8 +107,8 @@ vleo list solar                    # the rows in a subsystem
 vleo show sw_ap_design             # the sheet, as the engine holds it
 vleo run sw_ap_design              # evaluate it and everything it needs
 vleo sweep sw_ap_design --over sw_storm_design_level --from 1 --to 3 --points 3
-vleo campaign l3_solar_ach_01      # every stored case against one row
-vleo cases                         # what each customer case supplies
+vleo campaign l3_solar_ach_01      # every customer against one row
+vleo cases                         # the customers and conditions, and what each supplies
 vleo selftest                      # every fixture declaration in the tree is sound
 vleo data sync | list | verify     # the reference-data store
 ```
@@ -129,6 +129,13 @@ sw_ap_design — Ap design value
     kernel 1ad1ae · graph adb684 · case abf96b · chain 075c5d
     mode branch · endpoint local-cli
 ```
+
+**Every run is for a customer.** `--customer customer_2` names one — with none
+named, the first by id — and `--condition low_altitude` lays a condition over
+it. The order is fixed: each row's declared value, then the customer's, then the
+condition's, then `--set`. In the browser the same pair is chosen in the bar
+across the top, and the run panel lists every input the answer depends on with
+who set it. `--case` is the old name for `--customer` and still works.
 
 `n ran, m blocked` is always printed and the blocked rows are always named. A
 row with no content yet returns `NotRun` under its own name rather than a
@@ -156,7 +163,7 @@ moment the row is evaluated.
 | `panels/` | 14 declared panel specs, plus `REVIEW.md` and 16 reference screenshots — light and dark for the 8 panels checked on pixels | a figure nobody checked is a figure that silently goes wrong. The spec says what the panel must show; the references are what it looked like when a person last approved it |
 | `docs/` | 13 prose documents, 4 diagrams, and `manual.toml` — the source of the manual in the tool — indexed under **Reference** below | the written record. `VARIABLES.md` is generated; `MATLAB_PORT_PLAN.md` is the row-by-row account of the port and the longest thing here |
 | `bundles/` | reference data as published sets, each with a manifest, a licence term and a hash | rule 2's external oracle. An expected value may never come from the code under test, so the data it is checked against is versioned and verified rather than fetched |
-| `cases/` | five per-customer value sets against one shared architecture | the architecture is never copied per customer. Five cases, one tree — `n` copies would mean `n` fixes and silent drift |
+| `cases/` | three customers and four conditions, against one shared architecture | who a run is for, and what it is asked to survive. The architecture is never copied per customer — `n` copies would mean `n` fixes and silent drift. Gate check V16 refuses a value aimed at a row a run would overwrite, and a condition that can no longer be applied says why |
 | `matlab/` | a thin MATLAB face (`+vleo`) and the study's own published CSV | the tool this was ported from. Its saved run is what `tools/mat_parity.py` compares against |
 | `sources/` | every citation as an object with an id, not as free text | a fixture references `jacchia1971`, never a sentence. Marking a source superseded then lists every row that depended on it, in one query |
 | `cd06/` | `tree.json` — the CD-06 planning document's own node tree, extracted verbatim | where the 1396 rows came from. `tools/seed_tree.py` reads it, so the tree's shape is traceable to the document rather than asserted |

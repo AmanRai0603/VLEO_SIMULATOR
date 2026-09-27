@@ -129,11 +129,41 @@ numbers it reads instead — `vleo show env_density_uncertainty` lists them.
 `vleo show <node>` lists what a row reads, so the message is a pointer rather
 than a dead end.
 
-Run every stored case against a row, or check that every fixture declaration in
+### For a customer, under a condition
+
+Every run is for a **customer**: a buyer of the one shared architecture, with
+the values that buyer chose. With none named, the first by id — Customer 1, the
+reference design. A **condition** is laid over the customer — an altitude, a
+sky — and `--set` over both:
+
+```
+$ vleo run orbit_altitude --customer customer_2 --condition low_altitude
+  h = 200.000 km
+
+$ vleo run sw_ap_design --condition solar_max
+vleo: the condition 'solar_max' cannot be applied: It sets env_f107, env_f107a
+and env_kp, which have been COMPUTED from the solar-weather rows …
+```
+
+The second is a refusal on purpose. Those three rows became computed, so a run
+overwrote whatever the condition set and "solar maximum" had been returning the
+plain design under a storm's name. A condition that cannot be applied now says
+why, and gate check V16 refuses any customer or condition whose values would be
+overwritten the same way. Customers 2 and 3 set nothing of their own yet — CD-06
+leaves their values "set here" — so their numbers are the shared design's, and
+the tool says so rather than showing them as theirs.
+
+In the browser the same pair is chosen in the bar across the top. The run panel
+then lists every input the answer depends on, most influential first, with who
+set each: the shared design, the customer, the condition or you. Changing one is
+a what-if held in that browser — it is never written to a file, so git sees
+nothing — and the sweep can draw one line per customer.
+
+Run every customer against a row, or check that every fixture declaration in
 the tree is sound — `cargo test` is what executes them:
 
 ```
-vleo cases              # what customers' cases supply
+vleo cases              # the customers and the conditions, and what each supplies
 vleo campaign l3_solar_ach_01
 vleo selftest
 ```

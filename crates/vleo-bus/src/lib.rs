@@ -30,8 +30,13 @@ use vleo_core::value::SlotStatus;
 /// run. That is what makes staleness computable rather than remembered.
 #[derive(Clone, Debug, Default)]
 pub struct Case {
-    /// The stored case this run started from — `nominal`, `solar_max`, and so on.
+    /// The customer this run is for — a file in `cases/` of kind `customer`.
+    /// Empty means the default, which is the first customer by id.
     pub base: String,
+    /// A condition laid over that customer — an altitude, a solar state — or
+    /// empty for none. Applied after the customer's values and before `supply`,
+    /// so a person's own override always has the last word.
+    pub condition: String,
     /// Overrides, as `(node id, SI value)`. Always SI: everything crossing this
     /// boundary is in the canonical unit of its type, and a face converts for
     /// display and never for transport.
@@ -97,6 +102,7 @@ impl Case {
     pub fn hash(&self) -> u64 {
         let mut h = Hasher::new();
         h.write_str(&self.base);
+        h.write_str(&self.condition);
         h.write_str(&self.target);
         h.write_str(self.mode.name());
         let mut sorted: Vec<&(String, f64)> = self.supply.iter().collect();

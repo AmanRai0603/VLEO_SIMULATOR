@@ -97,19 +97,22 @@ fn help() {
         "\
 vleo <command>
 
-  run <node> [--case <c>] [--mode alone|branch|all] [--set id=value ...]
-                       evaluate one node and everything it needs. Prints the
+  run <node> [--customer <c>] [--condition <k>] [--mode alone|branch|all] [--set id=value ...]
+                       evaluate one node and everything it needs, for one
+                       customer and optionally under one condition. Prints the
                        value, its provenance and every node that was blocked —
                        always n ran, m blocked, and the blocked ones named.
-  sweep <node> --over <input> --from <a> --to <b> [--points n] [--case <c>]
+                       With no --customer, the first customer by id.
+                       --case is the old name for --customer and still works.
+  sweep <node> --over <input> --from <a> --to <b> [--points n] [--customer <c>] [--condition <k>]
                        a behaviour sweep. Refused points are recorded, never
                        dropped: a sweep in which some rows quietly used a
                        substituted value is a sweep whose conclusion is unknown.
-  campaign <node> [--case <c>]
-                       run every stored case against one node and compare.
+  campaign <node> [--condition <k>]
+                       run every customer against one node and compare.
   list [<subsystem>]   the rows, their kind, their owner and their state.
   show <node>          the sheet, as the engine holds it.
-  cases                the stored cases and what each supplies.
+  cases                the customers and the conditions, and what each supplies.
   selftest             every fixture declaration in the tree is sound —
                        provenance outside the code, a positive tolerance.
                        It does not execute them: `cargo test` does.
@@ -194,19 +197,30 @@ fn build_case(node: &str, args: &[&str]) -> Result<Case, String> {
             "no node '{node}'. `vleo list` shows every row; the identifier is the module path."
         ));
     }
-    let base = opt(args, "--case").unwrap_or("nominal").to_string();
-    if Vleo::case(&base).is_none() {
-        return Err(format!("no stored case '{base}'. `vleo cases` lists them."));
-    }
+    // `--case` is the name this flag had before customers and conditions were
+    // told apart. Kept, so a script written then still runs the same thing.
+    let base = opt(args, "--customer")
+        .or_else(|| opt(args, "--case"))
+        .unwrap_or("")
+        .to_string();
+    let condition = opt(args, "--condition").unwrap_or("").to_string();
     let (data, data_versions) = resolve_data();
-    Ok(Case {
+    let case = Case {
         base,
+        condition,
         supply: sets(args)?,
         target: node.to_string(),
         mode: RunMode::from_name(opt(args, "--mode").unwrap_or("branch")),
         data,
         data_versions,
-    })
+    };
+    if let Some(why) = vleo_modules::case_refusal(&case) {
+        return Err(format!(
+            "{}. `vleo cases` lists them.",
+            why.trim_end_matches('.')
+        ));
+    }
+    Ok(case)
 }
 
 fn cmd_run(args: &[&str]) -> Result<(), String> {
@@ -353,20 +367,30 @@ fn cmd_campaign(args: &[&str]) -> Result<(), String> {
     let node = *args.first().ok_or("usage: vleo campaign <node>")?;
     let node_idx = Vleo::find(node).ok_or_else(|| format!("no node '{node}'"))?;
     let mut scratch = Scratch::new();
+    let condition = opt(args, "--condition").unwrap_or("").to_string();
     println!(
         "{:<16} {:>20} {:>8} {:>8} {:>10}  chain",
-        "case", NODES[node_idx as usize].id, "ran", "blocked", "cred"
+        "customer", NODES[node_idx as usize].id, "ran", "blocked", "cred"
     );
-    for c in tables::CASES.iter() {
+    // Customers only. A condition is a stress laid over a customer, not a
+    // buyer of its own, so it is chosen once for the whole comparison.
+    for c in tables::CASES.iter().filter(|c| c.kind == "customer") {
         let (data, data_versions) = resolve_data();
         let case = Case {
             base: c.id.to_string(),
+            condition: condition.clone(),
             supply: sets(args)?,
             target: node.to_string(),
             mode: RunMode::Branch,
             data,
             data_versions,
         };
+        if let Some(why) = vleo_modules::case_refusal(&case) {
+            return Err(format!(
+                "{}. `vleo cases` lists them.",
+                why.trim_end_matches('.')
+            ));
+        }
         match vleo_modules::evaluate(&case, &mut scratch) {
             Ok(r) => {
                 let v = r.values.iter().find(|v| v.id == node);
@@ -500,17 +524,33 @@ fn cmd_show(args: &[&str]) -> Result<(), String> {
 }
 
 fn cmd_cases() -> Result<(), String> {
+    let mut last = "";
     for c in tables::CASES.iter() {
+        if c.kind != last {
+            println!(
+                "{}",
+                if c.kind == "customer" {
+                    "customers — who a run is for (--customer)"
+                } else {
+                    "conditions — laid over a customer (--condition)"
+                }
+            );
+            last = c.kind;
+        }
         println!("\x1b[1m{}\x1b[0m — {}", c.id, c.label);
         println!("  {}", c.note);
-        if c.supply.is_empty() {
+        if !c.unavailable.is_empty() {
+            println!("  CANNOT BE APPLIED: {}", c.unavailable);
+        } else if c.supply.is_empty() {
             println!("  supplies nothing beyond each node's declared value");
         } else {
             for (v, val) in c.supply {
                 println!("  {:<34} {}", VARS[*v as usize].id, val);
             }
         }
-        for cy in c.cycles {
+        // The architecture's cycles come with the customer; a condition carries
+        // none of its own (V16), so listing them again under it says nothing.
+        for cy in c.cycles.iter().filter(|_| c.kind == "customer") {
             println!(
                 "  declared cycle over {} nodes, converging on {} to {:e} in at most {} sweeps",
                 cy.nodes.len(),

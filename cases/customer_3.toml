@@ -1,0 +1,26 @@
+# A customer: the values one buyer chose, against one shared architecture.
+#
+# What the customer chose, and nothing else: the architecture is never
+# copied. What they did not buy is simply not in play, and n copies
+# would mean n fixes and silent drift — the anti-clone-and-own rule,
+# ISO/IEC 26580.
+#
+# A run applies, in this order: each row's declared value, then this
+# file's [supply], then the condition chosen beside it, then whatever a
+# person typed over it in the browser. Only declared, published rows may
+# be supplied — gate check V16 refuses anything else, because a value
+# aimed at a computed row is overwritten and would change nothing.
+#
+# Every face runs the first customer by id when none is named.
+#
+# The declared cycles live in layers/cycles.toml, once, because a loop
+# is a property of the design rather than of the buyer. Every customer
+# inherits them.
+
+id = "customer_3"
+kind = "customer"
+label = "Customer 3 — open"
+note = "CD-06 holds this place for a third buyer: their ask, their KPIs, their own solution. Nothing is supplied yet, so every number shown for it is the shared declared design and says so. Fill [supply] with the values this customer chose."
+
+# Nothing supplied yet. CD-06 leaves this customer's values to be set.
+[supply]

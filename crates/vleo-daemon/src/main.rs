@@ -79,19 +79,39 @@ fn main() {
     println!("  \x1b[1mhttp://127.0.0.1:{port}\x1b[0m");
     println!("  loopback only. Exposing this to a network is a separate, explicit act.");
 
-    let ctx = Ctx {
+    let ctx = std::sync::Arc::new(Ctx {
         root,
         data,
         data_versions,
         bundles,
         port,
-    };
+    });
+    // ONE CONNECTION NEVER HOLDS UP ANOTHER, AND ONE REQUEST IS HANDLED AT A TIME.
+    //
+    // This loop used to read each connection itself, in turn. A browser opens
+    // connections it may never use — it keeps a spare one warm so the next
+    // request does not wait for a handshake — and the loop sat reading one of
+    // those, with no timeout, while every real request queued behind it. The
+    // page looked hung until the browser happened to close the spare. The more
+    // requests a page made at once, the more spares it opened, so a busier page
+    // made it worse; the manual's browser walk caught it as page loads that
+    // timed out at random.
+    //
+    // So each connection is READ on its own thread, with a timeout, and an idle
+    // one simply ends. HANDLING stays one at a time behind the lock: the form
+    // writes sheets and regenerates folders, and two saves interleaving would
+    // be a race this tool has never had to think about and should not start to.
+    let one_at_a_time = std::sync::Arc::new(std::sync::Mutex::new(()));
     for stream in listener.incoming() {
         match stream {
             Ok(s) => {
-                if let Err(e) = serve(s, &ctx) {
-                    eprintln!("vleo-daemon: {e}");
-                }
+                let ctx = ctx.clone();
+                let gate = one_at_a_time.clone();
+                std::thread::spawn(move || {
+                    if let Err(e) = serve(s, &ctx, &gate) {
+                        eprintln!("vleo-daemon: {e}");
+                    }
+                });
             }
             Err(e) => eprintln!("vleo-daemon: accept: {e}"),
         }
@@ -211,10 +231,25 @@ fn bundle_file(ctx: &Ctx, rest: &str) -> (&'static str, &'static str, Vec<u8>) {
 
 // ---------------------------------------------------------------------------
 
-fn serve(mut stream: TcpStream, ctx: &Ctx) -> std::io::Result<()> {
+fn serve(mut stream: TcpStream, ctx: &Ctx, gate: &std::sync::Mutex<()>) -> std::io::Result<()> {
+    // Long enough for any real request to arrive; a connection that has sent
+    // nothing by then is a spare the browser kept warm, and it is let go.
+    stream.set_read_timeout(Some(std::time::Duration::from_secs(20)))?;
     let mut reader = BufReader::new(stream.try_clone()?);
     let mut request = String::new();
-    reader.read_line(&mut request)?;
+    match reader.read_line(&mut request) {
+        Ok(0) => return Ok(()),
+        Ok(_) => {}
+        Err(e)
+            if matches!(
+                e.kind(),
+                std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+            ) =>
+        {
+            return Ok(())
+        }
+        Err(e) => return Err(e),
+    }
     let mut parts = request.split_whitespace();
     let method = parts.next().unwrap_or("").to_string();
     let target = parts.next().unwrap_or("/").to_string();
@@ -249,7 +284,13 @@ fn serve(mut stream: TcpStream, ctx: &Ctx) -> std::io::Result<()> {
         query
     };
 
-    let (status, ctype, payload) = route(&method, &path, &params, ctx);
+    let (status, ctype, payload) = {
+        // A poisoned lock means a handler panicked on an earlier request; that
+        // request already failed, and refusing every later one would turn one
+        // bad request into a dead tool.
+        let _one = gate.lock().unwrap_or_else(|p| p.into_inner());
+        route(&method, &path, &params, ctx)
+    };
     let head = format!(
         "HTTP/1.1 {status}\r\nContent-Type: {ctype}\r\nContent-Length: {}\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n",
         payload.len()
@@ -1313,8 +1354,10 @@ fn index_json() -> String {
         }
         j.raw("{");
         j.str_field("id", c.id);
+        j.str_field("kind", c.kind);
         j.str_field("label", c.label);
         j.str_field("note", c.note);
+        j.str_field("unavailable", c.unavailable);
         j.num_field("cycles", c.cycles.len() as f64);
         j.key("supply").open_arr();
         for (k, (v, val)) in c.supply.iter().enumerate() {
@@ -1432,11 +1475,38 @@ fn refuse(node: &str, message: &str) -> String {
     j.0
 }
 
+/// A customer or condition the engine would refuse, as the wire refusal.
+///
+/// Asked before any evaluation, by every endpoint that builds a case, so an
+/// unknown name or a condition that cannot be applied comes back as a sentence
+/// rather than as the declared design with a customer's name on it.
+fn case_refused(params: &str, ctx: &Ctx) -> Option<String> {
+    let case = build_case(params, ctx);
+    let why = vleo_modules::case_refusal(&case)?;
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", false);
+    j.str_field("fault", "case-refused");
+    j.str_field(
+        "node",
+        if case.condition.is_empty() {
+            &case.base
+        } else {
+            &case.condition
+        },
+    );
+    j.str_field("message", &why);
+    j.raw("}");
+    Some(j.0)
+}
+
 fn build_case(params: &str, ctx: &Ctx) -> Case {
     Case {
-        base: param(params, "case")
-            .map(decode)
-            .unwrap_or_else(|| "nominal".into()),
+        // `case` is the customer: the wire name predates the distinction, and
+        // renaming a parameter every face and script sends buys nothing. Empty
+        // means the default customer, which the engine resolves.
+        base: param(params, "case").map(decode).unwrap_or_default(),
+        condition: param(params, "condition").map(decode).unwrap_or_default(),
         supply: sets(params),
         target: param(params, "node").map(decode).unwrap_or_default(),
         mode: RunMode::from_name(
@@ -1450,6 +1520,9 @@ fn build_case(params: &str, ctx: &Ctx) -> Case {
 }
 
 fn run_json(params: &str, ctx: &Ctx) -> String {
+    if let Some(refusal) = case_refused(params, ctx) {
+        return refusal;
+    }
     let case = build_case(params, ctx);
     // Refuse before running, not after: a supplied value that cannot survive
     // the run has to be reported as a refusal rather than silently dropped.
@@ -1692,6 +1765,9 @@ fn sweep_json(params: &str, ctx: &Ctx) -> String {
     if let Some(why) = unsuppliable(&over) {
         return refuse(&over, &why);
     }
+    if let Some(refusal) = case_refused(params, ctx) {
+        return refusal;
+    }
 
     let mut j = Json::new();
     j.raw("{");
@@ -1915,6 +1991,9 @@ fn branches_json(params: &str) -> String {
 
 fn levers_json(params: &str, ctx: &Ctx) -> String {
     let node = param(params, "node").map(decode).unwrap_or_default();
+    if let Some(refusal) = case_refused(params, ctx) {
+        return refusal;
+    }
     let mut j = Json::new();
     j.raw("{");
     let ni = match Vleo::find(&node) {

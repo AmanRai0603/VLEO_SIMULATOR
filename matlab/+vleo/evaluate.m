@@ -1,15 +1,20 @@
 function r = evaluate(node, varargin)
-%EVALUATE  One node, one case, one answer with its provenance.
+%EVALUATE  One node, one customer, one answer with its provenance.
 %
 %   r = vleo.evaluate('prop_thrust_to_drag')
-%   r = vleo.evaluate('prop_thrust_to_drag', 'case', 'solar_max', ...
-%                     'set', struct('orbit_altitude', 200e3))
+%   r = vleo.evaluate('prop_thrust_to_drag', 'case', 'customer_2', ...
+%                     'condition', 'low_altitude', ...
+%                     'set', struct('orbit_altitude', 220e3))
+%
+%   'case' names the customer; empty is the first customer by id. A
+%   'condition' is laid over it, and 'set' over both.
 %
 %   Everything is SI. A face converts for display and never for transport.
 %   Out of range is refused, never clamped: the error names the field, the
 %   bound it broke and the reason that bound exists.
     p = inputParser;
-    addParameter(p, 'case', 'nominal');
+    addParameter(p, 'case', '');
+    addParameter(p, 'condition', '');
     addParameter(p, 'set', struct());
     addParameter(p, 'mode', 'branch');
     parse(p, varargin{:});
@@ -22,7 +27,8 @@ function r = evaluate(node, varargin)
 
     out = py.vleo.evaluate(node, pyargs('case', p.Results.case, ...
                                         'sets', sets, ...
-                                        'mode', p.Results.mode));
+                                        'mode', p.Results.mode, ...
+                                        'condition', p.Results.condition));
     r = struct( ...
         'value',       double(out.value), ...
         'unit',        char(out.unit), ...

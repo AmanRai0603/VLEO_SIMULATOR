@@ -107,6 +107,92 @@ impl Vleo {
     pub fn case(id: &str) -> Option<&'static CaseDef> {
         CASES.iter().find(|c| c.id == id)
     }
+
+    /// The customer a run is for when nobody names one: the first by id.
+    ///
+    /// Read from the table rather than written into each face, because five
+    /// faces each holding the string "nominal" is how a renamed file turned
+    /// every default run into a run of nothing in particular.
+    pub fn default_customer() -> Option<&'static CaseDef> {
+        CASES.iter().find(|c| c.kind == "customer")
+    }
+
+    /// The customer a case names, or the default when it names none.
+    pub fn customer_of(case: &vleo_bus::Case) -> Option<&'static CaseDef> {
+        if case.base.is_empty() {
+            Vleo::default_customer()
+        } else {
+            Vleo::case(&case.base).filter(|c| c.kind == "customer")
+        }
+    }
+}
+
+/// Why a run cannot start from this customer and condition, if it cannot.
+///
+/// Every face asks this before it evaluates, so the sentence a person reads is
+/// the same from the browser, the command line and a script. An unknown or
+/// misplaced name is refused rather than ignored: the engine used to run the
+/// bare declared design for a customer it had never heard of, which is a
+/// number with somebody else's name on it.
+pub fn case_refusal(case: &vleo_bus::Case) -> Option<String> {
+    let names = |kind: &str| {
+        CASES
+            .iter()
+            .filter(|c| c.kind == kind)
+            .map(|c| c.id)
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    if !case.base.is_empty() {
+        match Vleo::case(&case.base) {
+            None => {
+                return Some(alloc::format!(
+                    "there is no customer '{}'. The customers are: {}",
+                    case.base,
+                    names("customer")
+                ))
+            }
+            Some(c) if c.kind != "customer" => {
+                return Some(alloc::format!(
+                    "'{}' is a condition, not a customer. Name a customer ({}) and give '{}' \
+                     as the condition",
+                    case.base,
+                    names("customer"),
+                    case.base
+                ))
+            }
+            Some(_) => {}
+        }
+    } else if Vleo::default_customer().is_none() {
+        return Some("cases/ holds no customer, so there is nothing to run for".to_string());
+    }
+    if !case.condition.is_empty() {
+        match Vleo::case(&case.condition) {
+            None => {
+                return Some(alloc::format!(
+                    "there is no condition '{}'. The conditions are: {}",
+                    case.condition,
+                    names("condition")
+                ))
+            }
+            Some(c) if c.kind != "condition" => {
+                return Some(alloc::format!(
+                    "'{}' is a customer, not a condition. The conditions are: {}",
+                    case.condition,
+                    names("condition")
+                ))
+            }
+            Some(c) if !c.unavailable.is_empty() => {
+                return Some(alloc::format!(
+                    "the condition '{}' cannot be applied: {}",
+                    c.id,
+                    c.unavailable
+                ))
+            }
+            Some(_) => {}
+        }
+    }
+    None
 }
 
 impl NodeTable for Vleo {
@@ -341,7 +427,19 @@ pub fn evaluate(case: &vleo_bus::Case, scratch: &mut Scratch) -> Result<vleo_bus
     let target = Vleo::find(&case.target).ok_or(Fault::NotRun {
         node: "unknown node",
     })?;
-    let base = Vleo::case(&case.base);
+    // Asked again here, not only by the faces: a caller that skipped the
+    // question must not get the declared design under a customer's name.
+    if case_refusal(case).is_some() {
+        return Err(Fault::NotRun {
+            node: "the customer or condition named",
+        });
+    }
+    let base = Vleo::customer_of(case);
+    let condition = if case.condition.is_empty() {
+        None
+    } else {
+        Vleo::case(&case.condition)
+    };
 
     let mut store = Store::new(&mut scratch.slots);
 
@@ -364,8 +462,16 @@ pub fn evaluate(case: &vleo_bus::Case, scratch: &mut Scratch) -> Result<vleo_bus
             }
         }
     }
+    // Declared, then the customer, then the condition, then the person. Each
+    // later one wins, so a condition stresses the customer's own design and a
+    // typed override always has the last word.
     if let Some(b) = base {
         for (v, val) in b.supply {
+            supply_checked(&mut store, *v, *val)?;
+        }
+    }
+    if let Some(c) = condition {
+        for (v, val) in c.supply {
             supply_checked(&mut store, *v, *val)?;
         }
     }

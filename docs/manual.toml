@@ -196,8 +196,22 @@ title = "Run a row"
 who = "user"
 body = """
 Every computed row can be evaluated on the spot, on its own page or from the \
-**4 The run** tab. Choose how much of the tree to evaluate and which customer \
-case to evaluate it for.
+**4 The run** tab.
+
+**A run is for a customer.** Choose one in the bar across the top or at the head \
+of the run panel — they are the same choice — and, if you want, a **condition** \
+laid over it: an altitude, or a sky. The panel says in a sentence what that \
+customer and condition set. A customer that sets nothing of its own yet says \
+so, because its numbers are then the shared design's. A condition that can no \
+longer be applied is shown greyed out with the reason, never run as though it \
+had been.
+
+**Then the inputs.** Under that sentence is every input the answer depends on, \
+the most influential first, each with the value it will run at and who set it: \
+the shared design, the customer, the condition, or you. Change one to ask a \
+what-if. The change is kept in this browser only — listed in the bar at the \
+top, applied to every run and sweep until you reset it, and never written to a \
+file, so git sees nothing.
 
 The result always says **n ran, m blocked**, and names every blocked row. A row \
 with nothing in it does not quietly supply a default — it refuses, under its \
@@ -217,12 +231,32 @@ say = "The whole tree."
 ui = "everything"
 
 [[layer.section.step]]
-say = "Choose the customer case from the **case** menu, then run."
+say = "With the customer, the condition and the inputs as you want them, run."
 ui = "run"
 
 [[layer.section.step]]
 say = "Or open the run tab and pick any row that has something in it as the target."
 ui = "4 The run"
+
+[[layer.section.step]]
+say = "Choose who the run is for. The bar across the top holds the same choice."
+ui = "customer"
+
+[[layer.section.step]]
+say = "Lay a condition over the customer, or leave it at none."
+ui = "condition"
+
+[[layer.section.step]]
+say = "Open the inputs, change one, and run with it. **reset** puts that one back."
+ui = "the inputs this answer depends on"
+
+[[layer.section.step]]
+say = "Or run straight from under the table."
+ui = "run with these inputs"
+
+[[layer.section.step]]
+say = "In the sweep, draw one line per customer to see where they part."
+ui = "every customer, one line each"
 
 
 [[layer.section]]
@@ -506,10 +540,10 @@ check = "exits"
 expect = "reads"
 
 [[layer.section.step]]
-say = "The customer cases, and what each one supplies."
+say = "The customers and the conditions, and what each one supplies — or why it cannot be applied."
 run = "cargo run -p vleo-cli --bin vleo -- cases"
 check = "exits"
-expect = "nominal"
+expect = "customer_1"
 
 [[layer.section.step]]
 say = "Counts by state and by subsystem, and what is holding the tree back."
@@ -543,7 +577,7 @@ expect = "kernel"
 
 [[layer.section]]
 id = "term-run"
-title = "Run, change an input, sweep, compare cases"
+title = "Run, change an input, sweep, compare customers"
 who = "user"
 body = """
 The examples use the storm row `sw_ap_design`: *what daily Ap is this design \
@@ -552,9 +586,15 @@ and turns it into the Ap that level bounds.
 
 A run prints the answer, its **credibility** — the weakest of eight factors, \
 named — and **n ran, m blocked** with every blocked row named. The **chain** \
-hash identifies that exact number: the engine, the tree, the case and every \
+hash identifies that exact number: the engine, the tree, the customer and every \
 input that reached it. Two runs with the same chain are the same run, so it is \
 the thing to quote.
+
+A run is for a **customer** — `--customer`, and with none named, the first by \
+id — optionally under a **condition** laid over it with `--condition`. The \
+order is fixed: each row's declared value, then the customer's, then the \
+condition's, then `--set`. `vleo cases` lists both. `--case` is the old name for \
+`--customer` and still works.
 
 `--set` only changes a **declared** number — never a computed one, which would \
 be overwritten the moment it was evaluated — and it never writes the sheet.
@@ -582,10 +622,22 @@ check = "fails"
 expect = "is computed from its inputs"
 
 [[layer.section.step]]
-say = "Evaluate for one customer case rather than the nominal one."
-run = "cargo run -p vleo-cli --bin vleo -- run sw_ap_design --case solar_max"
+say = "Run for another customer. Customer 2 sets nothing of its own yet, so its answer is the shared design's."
+run = "cargo run -p vleo-cli --bin vleo -- run sw_ap_design --customer customer_2"
 check = "exits"
-expect = "Ap_design"
+expect = "Ap_design = 132"
+
+[[layer.section.step]]
+say = "Lay a condition over the customer — here the 200 km altitude."
+run = "cargo run -p vleo-cli --bin vleo -- run orbit_altitude --condition low_altitude"
+check = "exits"
+expect = "h = 200.000 km"
+
+[[layer.section.step]]
+say = "A condition that can no longer be applied is refused with its reason, never run as though it had been."
+run = "cargo run -p vleo-cli --bin vleo -- run sw_ap_design --condition solar_max"
+check = "fails"
+expect = "cannot be applied"
 
 [[layer.section.step]]
 say = "Sweep a declared input across a range. A point that refuses is recorded, never dropped."
@@ -594,10 +646,10 @@ check = "exits"
 expect = "3 ran, 0 refused"
 
 [[layer.section.step]]
-say = "Every stored case against one row, side by side."
+say = "Every customer against one row, side by side."
 run = "cargo run -p vleo-cli --bin vleo -- campaign sw_ap_design"
 check = "exits"
-expect = "solar_max"
+expect = "customer_3"
 
 [[layer.section.step]]
 say = "Run the closure at the declared launch date, 1 January 2027. The answer is the fraction of the requirement still free."
@@ -1258,7 +1310,7 @@ effect = "writes"
 [[command]]
 tool = "vleo"
 name = "run"
-usage = "run <node> [--case <c>] [--mode alone|branch|all] [--set id=value ...]"
+usage = "run <node> [--customer <c>] [--condition <k>] [--mode alone|branch|all] [--set id=value ...]"
 what = "Evaluate a row and everything it needs. Always n ran, m blocked, with the blocked named."
 who = "user"
 effect = "reads"
@@ -1266,7 +1318,7 @@ effect = "reads"
 [[command]]
 tool = "vleo"
 name = "sweep"
-usage = "sweep <node> --over <input> --from <a> --to <b> [--points n] [--case <c>]"
+usage = "sweep <node> --over <input> --from <a> --to <b> [--points n] [--customer <c>] [--condition <k>]"
 what = "Sweep a declared input across a range. Refused points are recorded, never dropped."
 who = "user"
 effect = "reads"
@@ -1274,8 +1326,8 @@ effect = "reads"
 [[command]]
 tool = "vleo"
 name = "campaign"
-usage = "campaign <node> [--case <c>]"
-what = "Every stored case against one row."
+usage = "campaign <node> [--condition <k>]"
+what = "Every customer against one row."
 who = "user"
 effect = "reads"
 
@@ -1299,7 +1351,7 @@ effect = "reads"
 tool = "vleo"
 name = "cases"
 usage = "cases"
-what = "The stored customer cases and what each supplies."
+what = "The customers and the conditions, and what each supplies."
 who = "user"
 effect = "reads"
 
@@ -1414,7 +1466,7 @@ writes = true
 [[route]]
 method = "GET"
 path = "/v1/run"
-what = "Evaluate a row. `node`, and optionally `case`, `mode` and `set`."
+what = "Evaluate a row. `node`, and optionally `case` (the customer), `condition`, `mode` and `set`."
 
 [[route]]
 method = "POST"
@@ -1506,7 +1558,7 @@ who = "developer"
 
 [[folder]]
 name = "cases"
-what = "Each customer's values, against the one shared architecture — never a copy of it per customer."
+what = "Who a run is for — each customer's values against the one shared architecture, never a copy of it — and the conditions a run can be laid under."
 who = "user"
 
 [[folder]]

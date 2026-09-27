@@ -9,7 +9,7 @@
 'use strict';
 
 import { $, esc, plural } from './dom.js';
-import { S, LAYERS, CAPTIONS, subtreeNodes, isUndefined, answers, isUnread } from './state.js';
+import { S, LAYERS, CAPTIONS, subtreeNodes, isUndefined, answers, isUnread, caseTag } from './state.js';
 import { buildDisplay, relations } from './display.js';
 import { drawTree } from './tree.js';
 import { drawPaths } from './paths.js';
@@ -99,13 +99,13 @@ export function drawStatus(disp) {
     const r = S.byId.get(S.selected);
     const g = r ? S.G.get(r.parent) : null;
     $('#status').textContent = ['Layer ' + (r ? r.layer : S.layer), g ? g.label : '',
-      S.caseSel.toUpperCase(), r ? r.id : '', r ? r.state : ''].filter(Boolean).join(' · ');
+      caseTag(), r ? r.id : '', r ? r.state : ''].filter(Boolean).join(' · ');
     $('#caserow-note').textContent = r ? 'owner ' + r.owner : '';
     return;
   }
   if (S.view === 'run') {
     const r = S.byId.get(S.runTarget);
-    $('#status').textContent = ['Layer 4', 'The run', r ? r.id : '—', S.engineCase, S.mode]
+    $('#status').textContent = ['Layer 4', 'The run', r ? r.id : '—', caseTag(), S.mode]
       .filter(Boolean).join(' · ');
     $('#caserow-note').textContent = '';
     return;
@@ -125,7 +125,7 @@ export function drawStatus(disp) {
   }
   const bits = ['Layer ' + S.layer, LAYERS[S.layer].name];
   if (S.layer === 3 && S.G.has(S.subsys)) bits[1] = S.G.get(S.subsys).label;
-  bits.push(S.caseSel.toUpperCase(), S.selected || '—',
+  bits.push(caseTag(), S.selected || '—',
     plural(disp.length, 'row'), plural(st.boxes, 'box', 'boxes'),
     st.crossing + ' crossing', st.below + ' against tree order');
   $('#status').textContent = bits.join(' · ');

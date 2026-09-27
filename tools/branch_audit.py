@@ -54,7 +54,10 @@ def get(path):
 
 
 def run(node, mode, sets=None):
-    p = [("node", node), ("mode", mode), ("case", "nominal")]
+    # No customer named: the engine runs the first by id. This named
+    # "nominal", which stopped existing when cases/ was split into customers
+    # and conditions, and the engine now refuses a name it does not hold.
+    p = [("node", node), ("mode", mode)]
     for k, v in sets or []:
         p.append(("set", "%s:%.17g" % (k, v)))
     req = urllib.request.Request(HOST + "/v1/run",

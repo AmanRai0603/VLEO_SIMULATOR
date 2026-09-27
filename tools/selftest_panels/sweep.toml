@@ -30,6 +30,7 @@ the range asked for. Both axis labels name the variable and its unit, and the
 unit is the one the engine returned rather than SI — a sweep over a mission
 length reads in years, not seconds. The note beneath states how many points ran
 and how many were refused, and those two numbers add to the number requested.
+One dot marks where the design sits now, labelled "this design, now".
 """
 tolerance = 0.02
 settle_ms = 8000
@@ -54,12 +55,17 @@ settle_ms = 8000
 # selftest case that needs a working canvas panel to break reported "1 renders"
 # instead of the "2 moves" it exists to prove. The checker was right and its own
 # fixture was stale.
+#
+# AND THE LIST IS RE-ORDERED WHEN THE ENGINE SAYS WHICH DECISIONS MOVE THE ROW,
+# which re-picks the first entry. The drive waits for that before choosing, or
+# the re-order would land after the choice and quietly undo it.
 ready = """
 (async () => {
   S.runTarget = 'sw_f107_design';
   S.view = 'run';
   draw();
-  await new Promise(r => setTimeout(r, 120));
+  const until = async f => { for (let i = 0; i < 100 && !f(); i++) await new Promise(r => setTimeout(r, 50)); };
+  await until(() => /moves this answer/.test((document.querySelector('.sw-over') || {}).textContent || ''));
   const o = document.querySelector('.sw-over');
   if (!o) throw new Error('the run view has no sweep control');
   o.value = 'sys_mission_requirements_mission_duration';
@@ -73,7 +79,7 @@ name = "over"
 drive = """
 (async () => {
   const o = document.querySelector('.sw-over');
-  o.value = 'env_f107';
+  o.value = 'sys_mission_requirements_mission_epoch';
   o.dispatchEvent(new Event('change'));
   document.querySelector('.sw-go').click();
 })()
@@ -85,7 +91,8 @@ name = "range"
 drive = """
 (async () => {
   const f = document.querySelector('.sw-from'), t = document.querySelector('.sw-to');
-  f.value = '63115200'; t.value = '157788000';
+  // In the row's own unit, years, as a person types it — 2 to 5.
+  f.value = '2'; t.value = '5';
   f.dispatchEvent(new Event('input')); t.dispatchEvent(new Event('input'));
   document.querySelector('.sw-go').click();
 })()

@@ -11,7 +11,8 @@
 'use strict';
 
 import { $, $$ } from './dom.js';
-import { S, SIZES, HOWTO, load, layerRoot, subsystemLayers, subtreeAll } from './state.js';
+import { S, SIZES, HOWTO, load, layerRoot, subsystemLayers, subtreeAll,
+         customers, conditions, customerShort, setCase, onCaseChange } from './state.js';
 import { drawFigure, drawCaptions, drawStepper, drawStatus, drawFoot } from './figure.js';
 import { openNode } from './node.js';
 import { renderRun } from './run.js';
@@ -91,7 +92,7 @@ export function draw() {
   $$('.tab[data-layer]').forEach(b =>
     b.classList.toggle('sel', v !== 'arch' && v !== 'manual' && +b.dataset.layer === S.layer));
   $$('.ctl.sz').forEach(b => b.classList.toggle('sel', b.dataset.size === S.size));
-  $$('.ctl.case').forEach(b => b.classList.toggle('sel', b.dataset.case === S.caseSel));
+  drawCaseBar();
   $$('.ctl.cpt').forEach(b => b.classList.toggle('sel', b.dataset.concept === S.concept));
   $('#concept-tag').textContent = S.concept === 'single' ? 'Single satellite' : 'Constellation';
 
@@ -105,6 +106,29 @@ export function draw() {
   if (v === 'run')  { drawRunView(); drawStatus([]); return; }
   if (v === 'node') { drawStatus(S.disp); return; }
   drawStatus(drawFigure());
+}
+
+/**
+ * The customer and the condition, across the top.
+ *
+ * Built from cases/ rather than written into the page: this bar used to hold
+ * two hard-coded buttons, C1 and C2, that changed a word in the status line and
+ * nothing else, while the run panel below offered five other names under the
+ * word "case". One pair now, set here or in any run panel, and every number on
+ * screen is for it.
+ */
+function drawCaseBar() {
+  const picks = $('#customer-picks');
+  picks.innerHTML = customers().map(c =>
+    '<button class="ctl case' + (c.id === S.engineCase ? ' sel' : '') + '" data-customer="' +
+    c.id + '" title="' + c.note.replace(/"/g, '&quot;') + '">' + customerShort(c) + '</button>').join('');
+  const sel = $('#condition-pick');
+  sel.innerHTML = '<option value="">none</option>' + conditions().map(k =>
+    '<option value="' + k.id + '"' + (k.unavailable ? ' disabled' : '') +
+    (k.id === S.condition ? ' selected' : '') + ' title="' +
+    (k.unavailable || k.note).replace(/"/g, '&quot;') + '">' + k.label +
+    (k.unavailable ? ' — cannot be applied' : '') + '</option>').join('');
+  sel.value = S.condition;
 }
 
 /**
@@ -300,7 +324,19 @@ function wire() {
 
   $$('.ctl.sz').forEach(b => b.onclick = () => { S.size = b.dataset.size; draw(); });
   $$('.ctl.cpt').forEach(b => b.onclick = () => { S.concept = b.dataset.concept; draw(); });
-  $$('.ctl.case').forEach(b => b.onclick = () => { S.caseSel = b.dataset.case; draw(); });
+  $('#customer-picks').addEventListener('click', e => {
+    const b = e.target.closest('[data-customer]');
+    if (b && b.dataset.customer !== S.engineCase) setCase(b.dataset.customer);
+  });
+  $('#condition-pick').onchange = e => setCase(undefined, e.target.value);
+  // Whoever changed the pair, every number on screen was for the old one. The
+  // node page is re-opened rather than patched: its input fields, its figures
+  // and its run panel all read the customer, and re-opening is the one path
+  // that is already known to draw all of them from nothing.
+  onCaseChange(() => {
+    if (S.view === 'node' && S.selected) { draw(); openNode(S.selected); return; }
+    draw();
+  });
   $('#subsys').onchange = e => { S.subsys = e.target.value; setLayer(3); };
   $('#back').onclick = () => { S.view = 'layer'; draw(); };
 
