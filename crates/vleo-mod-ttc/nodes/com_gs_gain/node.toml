@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much does the ground antenna concentrate the received power?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How strongly the ground station's antenna focuses the power it receives, in decibels, using the same circular-aperture relation as the spacecraft antenna, applied to the ground dish's diameter at the carrier frequency."
+breaks = "It describes a circular aperture, and the sheet states no assumptions or derivation. A ground aperture of this class always has positive gain; above 80 decibels it is a deep-space aperture."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "G = eta*(pi*D/lambda)^2"
 source = "larson_wertz"
@@ -69,3 +76,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Its relation as stated and cited from larson_wertz, the circular aperture gain applied to the ground antenna, not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a ground antenna that is not a circular aperture."
+relation = "G = eta*(pi*D/lambda)^2"
+source = "larson_wertz"

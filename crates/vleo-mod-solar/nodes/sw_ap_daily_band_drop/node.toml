@@ -36,6 +36,14 @@ case a magnetometer, a magnetorquer sizing and an aerodynamic control authority
 are bounded by from below.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far a single day of geomagnetic disturbance can fall below its own 27-day average, at the one-in-twenty level and at the level that stretch sits at. It is measured from the daily record and read at the quiet design level, where it comes to about 12.56. It feeds the quietest single-day scenario, which sits closest to the zero floor."
+breaks = "It is past scatter in days that already happened, not a forecast error. The drop is read from a table measured at eight levels and interpolated between them; the interpolation and the later subtraction do not know the index floors at zero, and the 27-day window is a conventional round number rather than a measured period."
+wrong = "It is easy to treat this as the upward swing turned around. The upward swing is about twice the drop at the bottom of the table and three times at the top, so mirroring one onto the other is wrong by that factor."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has NOT read this relation against its source yet. The table is
 # measured from the record by the method the theory sets out; nobody has agreed
@@ -144,3 +152,15 @@ reason_upper = "above 150 the value exceeds anything the record supports for thi
 kind = "line"
 over = "sw_ap_cold_long"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the fifth-percentile dip below the centred 27-day mean, binned within 15 per cent of the rotation level, describes the window; at 17.50 it sits between two well-filled bins holding 1558 and 803 days."
+breaks_if = "The window falls in a part of the cycle whose daily scatter differs, the chosen bin width or 27-day window proves the wrong trade, or the quiet level drops below about 15.6 so the single-day answer crosses zero."
+relation = "dAp_day_low(L) = -pctl(Ap - movmean(Ap, 27 d), 0.05) over days whose rotation sits within 15% of L"
+source = "noaa_swpc"

@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What fraction of light entering the aperture reaches the detector?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The share of light entering the telescope's opening that actually reaches the detector: 72 per cent. The rest is lost in the optics on the way."
+breaks = "It is one declared fraction for the whole optical train. Below ten per cent the optics are not of a kind considered here, and above 98 per cent no telescope with several elements achieves it."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "tau_o = 0.72"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That an optical transmission of 0.72 (a fraction) is right for this imager's optical train; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "A measured or specified transmission for this telescope that differs from 0.72."
+relation = "tau_o = 0.72"
+source = "orbitt_case_c1"

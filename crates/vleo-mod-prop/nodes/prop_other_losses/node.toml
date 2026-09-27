@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What fraction of the thruster's input power goes to losses other than ionisation and the beam?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The share of the thruster's input power lost to things other than making ions and the beam itself: 15 per cent."
+breaks = "It gathers every other loss into one declared fraction, without naming them. Above 60 per cent the thruster would be mostly a heater with a beam attached, and the figure stops describing a working thruster."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "L_other = 0.15"
 source = "romano2021"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That other losses take 0.15 of the thruster's input power; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "A power audit or test of this thruster showing a different share of input power lost outside ionisation and the beam."
+relation = "L_other = 0.15"
+source = "romano2021"

@@ -23,6 +23,13 @@ sense = ">="
 [question]
 text = "What does the customer require for power margin?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much spare power the design must keep in hand: 20 per cent. The achieved power margin must reach it."
+breaks = "The sheet gives the number and cites a European space standard as its source, with no further reasoning. A negative required margin would not be a requirement; above 100 per cent the design would be asked to double its power for no stated reason."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "R_req = 0.2"
 source = "ecss_e_st_10_02"
@@ -47,3 +54,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 0.2, a 20 per cent margin, is the right power margin requirement, taken from its cited European space standard and confirmed by A. Rai on 2026-09-01."
+breaks_if = "A programme or standard requirement calling for a power margin other than 20 per cent."
+relation = "R_req = 0.2"
+source = "ecss_e_st_10_02"

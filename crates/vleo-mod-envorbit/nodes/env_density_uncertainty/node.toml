@@ -22,6 +22,14 @@ state = "published"
 text = "How wrong might the density be, and therefore how wrong is every margin built on it?"
 note = "A node that consumes density and does not carry this forward is a node whose margin is fictional."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far wrong the air density might be, as a fraction of it, and therefore how wrong every margin built on the density might be. It starts from the error the model makes on quiet days and grows as the Earth's magnetic field becomes more disturbed."
+breaks = "It is one spread that depends only on geomagnetic disturbance. The sheet holds it to no less than five per cent, because no published comparison of an empirical model against measured drag does better, and no more than one hundred per cent, beyond which there is no model at all."
+wrong = "That a margin computed from density is as certain as it looks. A row that consumes density and does not carry this uncertainty forward has a margin that is fictional."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "sigma_rho = 0.15 + 0.03*Kp"
 source = "doornbos2011"
@@ -54,3 +62,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "A quiet-time residual that grows with geomagnetic activity, as stated and cited to doornbos2011 and not yet derived on the sheet."
+breaks_if = "A comparison with doornbos2011 or with measured drag that disagrees, or a result below five per cent or above one hundred per cent."
+relation = "sigma_rho = 0.15 + 0.03*Kp"
+source = "doornbos2011"

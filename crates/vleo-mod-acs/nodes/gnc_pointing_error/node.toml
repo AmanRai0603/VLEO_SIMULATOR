@@ -22,6 +22,14 @@ state = "published"
 text = "How accurately does the payload point?"
 note = "Root-sum-squared, unlike the disturbance torques above. These terms are genuinely independent, and summing them linearly would give a budget nothing could ever meet."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How accurately the payload points, as a three-sigma figure, a bound the error stays within nearly all the time. It combines four independent sources, sensor noise, alignment error, control error and thermal distortion, the way independent errors combine rather than by adding them. It contributes to how accurately emitters can be located."
+breaks = "The combination is right only while the four sources really are independent; any two that move together would make the true error larger than this figure. Above three degrees no payload in this design produces a usable product."
+wrong = "That the pointing errors should be added straight up, as the disturbance torques are. They are genuinely independent, and adding them linearly would give a budget nothing could ever meet."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "sigma = sqrt(sum of squares of the independent contributors)"
 source = "larson_wertz"
@@ -82,3 +90,14 @@ kpis = ["kpi_geolocation"]
 kind = "bar"
 y = "gnc_pointing_error"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The four contributors are genuinely independent, as the sheet's note states, and the combination cited from larson_wertz holds; it is not yet derived on the sheet."
+breaks_if = "Two of the contributors are found to move together, or a derivation or a comparison with larson_wertz disagrees."
+relation = "sigma = sqrt(sum of squares of the independent contributors)"
+source = "larson_wertz"

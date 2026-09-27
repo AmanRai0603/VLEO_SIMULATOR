@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much of the signal is lost simply by spreading out over the range?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much of the signal is lost simply by spreading out over the distance between spacecraft and ground station, in decibels. It is set by the straight-line working distance to the station and the carrier frequency."
+breaks = "It is spreading loss alone, taken at one working distance, and the sheet states no assumptions or derivation. Below 100 decibels the range is shorter than any orbit in this band; above 250 it is not a range this tool covers."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "L = (4*pi*d/lambda)^2"
 source = "larson_wertz"
@@ -61,3 +68,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Its relation as stated and cited from larson_wertz, the inverse-square spreading loss at the working slant range, not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a result outside 100 to 250 decibels."
+relation = "L = (4*pi*d/lambda)^2"
+source = "larson_wertz"

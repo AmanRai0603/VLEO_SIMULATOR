@@ -23,6 +23,13 @@ sense = ">="
 [question]
 text = "What does the customer require for thrust to drag closure?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "Whether the engine's push can at least match the air's drag: the required ratio of thrust to drag is 1. Reaching 1 is what it means for the design to close at all."
+breaks = "The sheet gives the number and a single source, with no margin above 1 stated. Below 0.1 it is not a closure requirement, and above 5 it is not one an air-breathing design is written against."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "R_req = 1"
 source = "romano2021"
@@ -47,3 +54,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 1 is the right thrust-to-drag requirement, the point at which the design closes at all, taken from its cited source and confirmed by A. Rai on 2026-09-01."
+breaks_if = "A programme decision to require thrust to exceed drag by some margin, or a requirement stating a ratio other than 1."
+relation = "R_req = 1"
+source = "romano2021"

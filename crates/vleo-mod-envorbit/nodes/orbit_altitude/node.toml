@@ -22,6 +22,13 @@ state = "published"
 text = "At what altitude does the constellation fly? This is the one parameter the whole architecture is shaped around."
 note = "Move this one value and 54 other nodes become stale. That is the requirement the tool exists to satisfy."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How high above the Earth the constellation flies: 250 kilometres. It is the one choice the whole design is shaped around; changing it makes 54 other rows out of date, and it bears on revisit, image sharpness and service lifetime."
+breaks = "It is only meaningful between 150 and 450 kilometres. Below 150 kilometres the air around a body this size stops behaving as separate molecules, and every aerodynamic row is outside the range it was built for; above 450 kilometres there is not enough air for the air-breathing concept to be the reason for the design."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "h = 250"
 source = "orbitt_case_c1"
@@ -49,3 +56,14 @@ kpis = ["kpi_revisit", "kpi_gsd", "kpi_service_lifetime"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 250 km is the altitude this design flies at, as taken from the source case the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A decision to fly the constellation at a different altitude, or one below 150 km or above 450 km, where the tree's aerodynamic and air-breathing reasoning no longer holds."
+relation = "h = 250"
+source = "orbitt_case_c1"

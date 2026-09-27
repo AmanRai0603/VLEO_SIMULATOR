@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much thrust is lost because the beam is not perfectly axial?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much thrust survives the ion beam spreading out instead of leaving perfectly straight backwards: 97 per cent, so three per cent is lost."
+breaks = "It is one declared factor for the beam's spread. A perfectly straight beam, a factor of one, does not exist, and below 0.7 the beam is more a cloud than a beam, so the idea stops applying."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "alpha_div = 0.97"
 source = "romano2021"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That a divergence efficiency of 0.97 (a fraction) is right for this thruster's beam; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "A measurement of this thruster's beam spread giving a noticeably different thrust loss."
+relation = "alpha_div = 0.97"
+source = "romano2021"

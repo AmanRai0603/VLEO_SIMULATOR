@@ -22,6 +22,14 @@ state = "published"
 text = "How circular is the orbit?"
 note = "Moving this reaches 3 nodes. Moving the altitude reaches 54. The difference is the answer to how much of the design a change just invalidated."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far the orbit is from a perfect circle: zero, a circular orbit. Changing it reaches only three rows, which shows how little of the design depends on it compared with altitude."
+breaks = "It is only meaningful up to 0.05. Beyond that the lowest point of a 250 kilometre orbit dips below 200 kilometres, the drag on each revolution stops being a small effect, and the circular-orbit working used throughout the tree no longer applies."
+wrong = "It is easy to assume every orbit setting reaches as far as any other. It does not: moving this one reaches three rows, while moving the altitude reaches 54."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "e = 0"
 source = "orbitt_case_c1"
@@ -46,3 +54,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the orbit is circular, eccentricity 0, as taken from the source case the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "An orbit for this design with eccentricity above 0.05, where the circular-orbit working throughout the tree stops applying."
+relation = "e = 0"
+source = "orbitt_case_c1"

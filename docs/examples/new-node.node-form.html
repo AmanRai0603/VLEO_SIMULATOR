@@ -1773,6 +1773,7 @@ ai = "none"
 label = "Ap design margin over the storm level"
 question = "How much Ap does the design allow per storm level it is sized for?"
 note = ""
+explain_simply = ""
 expression = "margin = Ap_design / G"
 source = "derived here from sw_ap_design"
 symbol = "Ap_per_G"
@@ -1786,22 +1787,13 @@ sense = ""
 declared_value = ""
 theory_why = ""
 theory_reading = ""
+explain_breaks = ""
+explain_wrong = ""
 
 [view]
 kind = "number"
 over = ""
 points = "0"
-
-[[input]]
-binding = "ap"
-var = "sw_ap_design"
-type = "Ratio"
-
-[[algorithm]]
-number = "1"
-text = "Divide the design Ap by the storm level."
-binds = "margin"
-type = "Ratio"
 
 [derisk]
 believed = ""
@@ -1815,6 +1807,17 @@ breaks_if = "The design Ap stops being proportional across storm levels — the 
 
 [notes]
 text = ""
+
+[[input]]
+binding = "ap"
+var = "sw_ap_design"
+type = "Ratio"
+
+[[algorithm]]
+number = "1"
+text = "Divide the design Ap by the storm level."
+binds = "margin"
+type = "Ratio"
 </script>
 <script>
 'use strict';

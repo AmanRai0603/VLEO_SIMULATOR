@@ -22,6 +22,14 @@ state = "published"
 text = "What fraction of the flow entering the mouth actually reaches the thruster?"
 note = "Read the relation slowly: the collection efficiency does not depend on the flight speed at all, only on geometry. Speed buys compression, not capture. A design trying to raise capture by flying faster is optimising the wrong term."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What fraction of the air entering the intake's mouth actually reaches the thruster. It depends only on the intake's shape, not on how fast the spacecraft flies: speed buys compression, not capture."
+breaks = "It assumes the molecules in the duct and chamber do not collide with one another, which fails once the chamber is compressed beyond roughly ten thousand times. It also assumes the chamber gas has fully settled to the chamber temperature; a short duct passes part of the flow straight through, raising the delivered flow unmodelled."
+wrong = "That flying faster raises capture. The fraction captured depends only on geometry, so a design trying to raise it by flying faster is optimising the wrong term."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "eta_c = A_out*eta_geo/(A_out + beta*A_in)"
 source = "romano2021"
@@ -121,3 +129,14 @@ kpis = ["kpi_thrust_margin"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The flux balance as stated and cited to romano2021, not yet derived on the sheet, with free-molecular flow throughout the duct and chamber and the chamber gas fully thermalised at the chamber temperature."
+breaks_if = "The chamber compresses beyond roughly ten thousand times and becomes collisional, a short duct passes part of the beam straight through, or a derivation or comparison with romano2021 disagrees."
+relation = "eta_c = A_out*eta_geo/(A_out + beta*A_in)"
+source = "romano2021"

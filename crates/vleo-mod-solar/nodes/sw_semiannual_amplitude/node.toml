@@ -23,6 +23,14 @@ state = "published"
 text = "How large is the semiannual variation in geomagnetic activity?"
 note = "Geomagnetic activity is higher near the equinoxes than near the solstices — the equinoctial or Russell-McPherron effect, from the changing angle between the interplanetary field and the geomagnetic dipole. This row says how big that seasonal swing is in Ap. It matters for a drag design because Ap drives the density model, but the size of the effect is the point: it moves the mean by about a tenth and predicts almost nothing about a given day."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How big the twice-yearly swing in geomagnetic activity is: about 1.278 units of the daily index around a mean near 10.5, roughly 12 per cent. Activity runs higher near the equinoxes than the solstices; the point is the size, which shifts the average a little and predicts almost nothing about a given day."
+breaks = "The swing explains only 0.63 per cent of day-to-day variation, so it belongs in monthly or yearly budgets, not as a daily correction. It is a fixed amount added and subtracted, which understates the effect in active periods and overstates it in quiet ones, and one term cannot show that the autumn peak is higher than the spring one."
+wrong = "That the seasonal swing helps predict a given day. Storm-to-storm variation exceeds the season by more than an order of magnitude; the swing is a shift in the average, visible only in aggregate."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
 expression = "Ap(doy) = 10.4936 + A*cos(4*pi*(doy-1)/365.25 - phi),  A = 1.2781"
@@ -148,3 +156,15 @@ bundles = ["solar-weather"]
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The declared 1.278112 is the amplitude of one half-year term fitted by least squares to 10299 daily values from 1997-01-09 to 2025-12-31, whose maxima landed within a week of both equinoxes; confirmed by A. Rai on 2026-09-14."
+breaks_if = "A refit on a refreshed bundle differs, the fitted maxima move away from the equinoxes, or the value falls outside 0.5 to 3.0, meaning the signal was lost or an annual or cycle term leaked in."
+relation = "Ap(doy) = 10.4936 + A*cos(4*pi*(doy-1)/365.25 - phi),  A = 1.2781"
+source = "noaa_swpc"

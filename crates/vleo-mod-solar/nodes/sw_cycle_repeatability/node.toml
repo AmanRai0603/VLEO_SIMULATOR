@@ -22,6 +22,14 @@ state = "published"
 text = "How much does one solar cycle repeat the shape of the last one?"
 note = "The correlation between cycles 23 and 24 after stacking both on phase. It is the credibility of sw_mean_cycle_level: that row hands a design a mean-cycle curve, and this row says how much a single cycle can be expected to look like it. The answer is that the SHAPE repeats and the AMPLITUDE does not, and a design that reads only the correlation will miss the second half."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How closely one solar cycle repeats the shape of the one before, measured by comparing the last two complete cycles laid over each other by how far through the cycle each point is. The shapes match fairly well, at 0.77 on a scale where one is identical, but the sizes do not: the second cycle peaked at about three-quarters of the first."
+breaks = "There are only two complete cycles in the record, so this is one observation, not an estimate with a known uncertainty. The measure ignores size entirely, so it can call two cycles alike when one is far stronger, and nine months of missing data forced two of the twenty comparison slots out."
+wrong = "A high match in shape is easy to read as meaning the cycles repeat. The measure cannot see size, and the two cycles differ by about a third of the mean; a mission sized on their average is sized for neither."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
 expression = "r_cyc = corr(F107 of cycle 23 by phase, F107 of cycle 24 by phase) = 0.7701"
@@ -155,3 +163,15 @@ bundles = ["solar-weather"]
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the shape match of 0.7701397224 over the 18 slots where both cycles have at least 150 days fairly describes how a cycle repeats; confirmed by A. Rai on 2026-09-14."
+breaks_if = "A longer record adds cycles whose shapes disagree, the published cycle boundaries move, or the slot rule is changed, which alone shifts the answer to 0.7756."
+relation = "r_cyc = corr(F107 of cycle 23 by phase, F107 of cycle 24 by phase) = 0.7701"
+source = "noaa_swpc"

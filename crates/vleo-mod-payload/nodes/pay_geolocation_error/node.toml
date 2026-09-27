@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How accurately can an emitter on the ground be located?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How accurately, in metres, a radio emitter on the ground can be located: the uncertainty in when its signal arrives, turned into a distance and enlarged by how poor the geometry of the measurement is. It feeds the geolocation performance measure."
+breaks = "It takes the timing uncertainty and the geometry penalty as single figures. Below a centimetre no time-difference system in this design performs that well; above 10000 kilometres the answer carries no information."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "e = c*sigma_tau*GDOP"
 source = "larson_wertz"
@@ -66,3 +73,14 @@ kind = "line"
 over = "pay_rf_bandwidth"
 points = 60
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Timing uncertainty converted to range and multiplied by the geometric dilution, as stated and cited from larson_wertz, not yet derived on the sheet."
+breaks_if = "A derivation or a check against larson_wertz disagrees, or the error falls below a centimetre or above 10000 kilometres."
+relation = "e = c*sigma_tau*GDOP"
+source = "larson_wertz"

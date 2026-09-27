@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How precisely can the payload time an intercepted signal?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How precisely the payload can tell when an intercepted signal arrived. It is the best timing any receiver could reach, set by the signal's bandwidth, how strong it is against the noise and how long it is listened to, and that timing is what lets the payload say where a signal came from."
+breaks = "It is a lower limit on timing, so a real receiver does no better and the number is the optimistic end. Coarser than about one second, the timing carries no information about where the signal came from; finer than a femtosecond, no receiver in this design times that precisely."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "sigma = 1/(2*pi*B*sqrt(2*SNR*B*T))"
 source = "larson_wertz"
@@ -69,3 +76,14 @@ type = "Time"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The Cramer-Rao lower bound on time-of-arrival estimation, as stated and cited to larson_wertz, not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees with the stated bound, or a result finer than a femtosecond or coarser than one second."
+relation = "sigma = 1/(2*pi*B*sqrt(2*SNR*B*T))"
+source = "larson_wertz"

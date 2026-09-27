@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "Is the spacecraft inside its temperature limit?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "Whether the spacecraft stays inside its temperature limit: how many kelvin the predicted temperature sits below the declared limit. A negative answer means the spacecraft runs hotter than it is allowed to."
+breaks = "It sets one predicted balance temperature against one limit, so it is only as good as that prediction. A margin below minus five hundred kelvin means the balance is being fed a nonsense load; above five hundred kelvin, the limit is not the one that binds."
+by = "an assistant, from what this sheet states — for its owner (thermal) to confirm"
+
 [maths]
 expression = "M = T_max - T_eq"
 source = "ecss_e_st_10_02"
@@ -64,3 +71,14 @@ kpis = ["kpi_thermal_margin"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (thermal) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The difference between the declared temperature limit and the predicted equilibrium temperature, as stated and cited to ecss_e_st_10_02 and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with ecss_e_st_10_02 that disagrees, or a margin beyond five hundred kelvin either way, showing a nonsense load or the wrong limit."
+relation = "M = T_max - T_eq"
+source = "ecss_e_st_10_02"

@@ -21,6 +21,14 @@ state = "published"
 [question]
 text = "What signal to noise ratio does the intercepted emitter present, as a linear ratio?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How strong the intercepted radio emitter's signal is compared with the background noise, as a plain ratio rather than in decibels. The design takes ten: the signal is ten times the noise."
+breaks = "It is one declared figure, not worked out from the emitter's power or distance. Below one tenth the signal cannot be detected at all, and above a thousand the emitter is so strong that locating it is no longer limited by this number."
+wrong = "It is easy to read ten as ten decibels; the sheet asks for a linear ratio, so ten means the signal is ten times the noise."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "SNR_rf = 10"
 source = "orbitt_case_c2"
@@ -45,3 +53,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That a signal to noise ratio of 10 (a plain ratio) is what the intercepted emitter presents; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "A link analysis or measurement for the emitters this payload targets that gives a different ratio, especially one near the undetectable floor of one tenth."
+relation = "SNR_rf = 10"
+source = "orbitt_case_c2"

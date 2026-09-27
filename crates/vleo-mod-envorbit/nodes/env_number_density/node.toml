@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How many particles per cubic metre are there at the flight altitude?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How many gas particles there are in each cubic metre at the flight altitude, adding up every gas the model carries. It is what an air intake has to collect."
+breaks = "It is a sum of each gas settled by its own weight as if undisturbed, driven only by altitude and the upper-atmosphere temperature. Below a hundred million per cubic metre there is nothing for an intake to collect; above a hundred billion billion the flow is continuous and the intake model does not apply."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "n = SUM_i n_i(z)"
 source = "jacchia1971"
@@ -61,3 +68,14 @@ type = "NumberDensity"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The sum of per-species diffusive-equilibrium densities, as stated and cited to jacchia1971 and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with jacchia1971 that disagrees, or a result below a hundred million or above a hundred billion billion per cubic metre."
+relation = "n = SUM_i n_i(z)"
+source = "jacchia1971"

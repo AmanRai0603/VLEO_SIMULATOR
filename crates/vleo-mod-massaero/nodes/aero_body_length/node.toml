@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How long is the vehicle along the flight direction?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How long the spacecraft is along the direction it flies. It bounds how much fits inside, including the several payloads the mission carries."
+breaks = "Below 0.3 metres the vehicle is smaller than a three-unit cubesat, a small standard satellite size, and the payloads do not fit. Above 10 metres both the launch envelope and the panel drag model this tool uses stop applying."
+by = "an assistant, from what this sheet states — for its owner (mass) to confirm"
+
 [maths]
 expression = "L = 2"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (mass) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 2 metres is this design's body length, from the source the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A launch envelope that cannot take a 2 metre body, or a payload layout for this design that needs a different length."
+relation = "L = 2"
+source = "orbitt_case_c1"

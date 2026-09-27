@@ -22,6 +22,14 @@ state = "published"
 text = "How large is the deployed solar array?"
 note = "A design variable rather than a computed one, deliberately: it is coupled to drag through the appendage area, so a solver that sized it from the power demand alone would hide the coupling the tree exists to show."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How big the unfolded solar array is: 6 square metres. It is chosen by hand on purpose, because a bigger array gives more power but also more drag, and sizing it from power alone would hide that trade. It feeds the power margin."
+breaks = "It is not worked out from the power the spacecraft needs. Below half a square metre no useful power comes out at any efficiency, and above 40 square metres the array's own drag exceeds the thrust the intake can produce at every altitude in the band."
+wrong = "It is tempting to think the array should simply be sized to meet the power demand; here it is deliberately a design choice, because its size also drives drag."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "A_arr = 6"
 source = "orbitt_case_c1"
@@ -49,3 +57,14 @@ kpis = ["kpi_power_margin"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That a 6 square metre array is right for this design; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for the number."
+breaks_if = "A design study showing a different array area balances power against drag better for this spacecraft."
+relation = "A_arr = 6"
+source = "orbitt_case_c1"

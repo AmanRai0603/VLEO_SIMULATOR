@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much data can the system bring down in a day?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much data the system can bring down in a day, in gigabits: the data per pass times the usable passes per day, allowing for the ground station being available 95 per cent of the time. It feeds the mission's data-volume performance indicator."
+breaks = "It takes station availability as a fixed 95 per cent and carries whatever the per-pass volume assumes; the sheet states no assumptions or derivation of its own. Above 10 petabits a day no ground segment in this design receives it."
+by = "an assistant, from what this sheet states — for its owner (operations) to confirm"
+
 [maths]
 expression = "V = V_pass*N_pass*A"
 source = "larson_wertz"
@@ -64,3 +71,14 @@ kpis = ["kpi_data_volume"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (operations) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Its relation as stated and cited from larson_wertz, with 95 per cent station availability, not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or station availability that differs from 95 per cent."
+relation = "V = V_pass*N_pass*A"
+source = "larson_wertz"

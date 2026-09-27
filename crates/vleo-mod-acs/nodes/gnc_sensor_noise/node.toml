@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How noisy is the attitude measurement?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How noisy the spacecraft's measurement of its own orientation is: 12 arcseconds, where an arcsecond is one three-thousand-six-hundredth of a degree. Pointing can be no better than the sensor that measures it."
+breaks = "It is one declared number from a textbook reference, not a figure for a chosen sensor. Below half an arcsecond no star tracker in this class performs that well; above one degree the sensor supports no pointing requirement in this design."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "sig_sen = 12"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 12 arcseconds is right for this design's attitude sensor, taken from the Larson and Wertz reference and confirmed by A. Rai on 2026-09-01."
+breaks_if = "A data sheet or test result for the selected attitude sensor giving noise different from 12 arcseconds."
+relation = "sig_sen = 12"
+source = "larson_wertz"

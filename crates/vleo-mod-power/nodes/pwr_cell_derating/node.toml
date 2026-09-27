@@ -22,6 +22,13 @@ state = "published"
 text = "How much output does the array lose because it is hotter than its rating?"
 note = "This node closes the loop. Without it power, thermal and propulsion are three independent chains; with it they are one system, and the resolver has to relax them together."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much output the solar array loses because it runs hotter than the temperature its rating assumes. It ties power, thermal and propulsion into one system: without it they are three separate chains, and with it they have to be solved together."
+breaks = "It treats the loss as a straight line in temperature about a reference of 298.15 kelvin, and it is floored at 30 per cent so the calculation cannot chase an array producing negative power; at that floor the answer is a guard, not a result. Above 1.5 the coefficient does not permit it."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "f_T = 1 + k_T*(T_eq - 298.15)"
 source = "larson_wertz"
@@ -62,3 +69,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The linear temperature coefficient about the 298.15 kelvin reference, as stated and cited to larson_wertz, not yet derived on the sheet, floored at 30 per cent."
+breaks_if = "Array output that does not fall in a straight line with temperature over the temperatures this design reaches, a result held at the 30 per cent floor, or a derivation or comparison with larson_wertz that disagrees."
+relation = "f_T = 1 + k_T*(T_eq - 298.15)"
+source = "larson_wertz"

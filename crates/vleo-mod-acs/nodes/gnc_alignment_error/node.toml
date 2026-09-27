@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How well is the payload aligned to the attitude sensor after launch and thermal cycling?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far the payload may be out of line with the attitude sensor once launch and repeated heating and cooling have had their effect: 30 arcseconds, where an arcsecond is a 3600th of a degree. The payload can only point as well as it is lined up with what measures its pointing."
+breaks = "It is one declared figure, not a measurement of this build. Below 1 arcsecond no mechanical alignment survives launch and thermal cycling; above one degree the alignment supports no pointing requirement in this design."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "sig_ali = 30"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 30 arcseconds is this design's payload to sensor alignment error, from the source the sheet cites (larson_wertz), confirmed by A. Rai on 2026-09-01."
+breaks_if = "Alignment measurements on this payload and sensor after launch and thermal testing that differ from 30 arcseconds."
+relation = "sig_ali = 30"
+source = "larson_wertz"

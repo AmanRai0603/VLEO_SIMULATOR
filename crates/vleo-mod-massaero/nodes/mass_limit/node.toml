@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What is the mass the launch slot or the bus allows?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The most the spacecraft is allowed to weigh, set by the launch slot or the bus it rides on: 250 kilograms. It is the ceiling the spacecraft's mass must stay under."
+breaks = "It is one declared number with no reason beyond the case it came from, and it does not say whether the launch slot or the bus sets it. It is only held to be sensible between 5 kilograms and 5 tonnes: below that no multi-payload mission fits, above it the launch and class are not the ones costed here."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "m_lim = 250"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 250 kg is the mass the launch slot or bus allows for this design, as taken from the source case the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A launch agreement or bus specification for this design that allows a different mass than 250 kg."
+relation = "m_lim = 250"
+source = "orbitt_case_c1"

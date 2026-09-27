@@ -9,7 +9,8 @@
 <p class="af-q">How much of the Earth's surface is in view at the working elevation?</p>
 <p class="af-a">lambda — computed on the inputs you run, never stored: run it beside this page.</p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">How far across the Earth's surface the satellite can reach at the working elevation, measured as the angle at the Earth's centre between the point beneath the satellite and the edge of what it can see.</li>
+<li><b>Rests on</b> The spherical Earth access geometry, as stated and cited to larson_wertz and not yet derived on the sheet. <span class="muted">(version 1; would break if A derivation or a comparison with larson_wertz that disagrees, or an angle below zero or beyond the sheet's upper bound.)</span></li>
 <li><b>Holds</b> from 0 to 86 deg — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · larson_wertz</span></li>
 </ul>
@@ -31,12 +32,14 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">How far across the Earth's surface the satellite can reach at the working elevation, measured as the angle at the Earth's centre between the point beneath the satellite and the edge of what it can see.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (systems) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">How much of the Earth's surface is in view at the working elevation?</p>
 <p class="maths"><code>lambda = acos((Re/r)*cos(eps)) - eps</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · larson_wertz</span></p>
 <p class="src">Source <b>larson_wertz</b> — Wertz, J. R., Everett, D. F. and Puschell, J. J. — Space Mission Engineering: The New SMAD <span class="where">Microcosm Press, 2011</span></p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">It treats the Earth as a perfect sphere. A negative angle means the target is below the horizon, and beyond 85 degrees the whole visible hemisphere would be in view, which does not occur in this band.</p>
 <p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
 <p class="muted">Outside <code>0 … 86</code> deg the row refuses rather than answers: a negative half-angle means the target is below the horizon; beyond 85 degrees the whole visible hemisphere is in view, which does not occur in this band.</p>
 <h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
@@ -50,7 +53,13 @@
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> The spherical Earth access geometry, as stated and cited to larson_wertz and not yet derived on the sheet.</p>
+<p><b>Would break if:</b> A derivation or a comparison with larson_wertz that disagrees, or an angle below zero or beyond the sheet's upper bound.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (systems) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>The spherical Earth access geometry, as stated and cited to larson_wertz and not yet derived on the sheet.</dd><dt>Would break if</dt><dd>A derivation or a comparison with larson_wertz that disagrees, or an angle below zero or beyond the sheet's upper bound.</dd><dt>The relation, as this version states it</dt><dd><code>lambda = acos((Re/r)*cos(eps)) - eps</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · larson_wertz</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -171,8 +180,6 @@ pub fn evaluate(r: Length, eps: Angle) -&gt; Result&lt;Angle, Fault&gt; {
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
 <li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 <li>no theory: the relation is stated but not derived — THE ROW DOES NOT ANSWER. A function is defined by its derivation, not by its expression and not by its citation, and until one is written every reader of this row is blocked on it by name</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>

@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What does the battery weigh?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What the battery weighs: the energy it must hold divided by how much energy each kilogram of battery stores."
+breaks = "It sizes the battery on stored energy alone and is only as good as the energy-per-kilogram figure it is given. Above a tonne the battery is not part of this spacecraft."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "m = E/e_batt"
 source = "larson_wertz"
@@ -61,3 +68,14 @@ type = "Mass"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to larson_wertz, the required energy divided by the specific energy, not yet derived on the sheet."
+breaks_if = "A derivation or comparison with larson_wertz that disagrees, a battery whose mass does not scale with the energy it holds, or a result above a tonne."
+relation = "m = E/e_batt"
+source = "larson_wertz"

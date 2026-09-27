@@ -23,6 +23,14 @@ sense = "<="
 [question]
 text = "What does the customer require for emitter geolocation accuracy?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How precisely the customer requires the system to locate a radio emitter on the ground: to within 500 metres. The design's achieved location error must stay at or under it."
+breaks = "The sheet gives the number and a different reference case from its siblings as source, but no reasoning. Below one metre no time-difference location system in this class achieves it; above 100 kilometres the product carries no information."
+wrong = "Reading 500 metres as something to reach. It is an error, so it must stay inside 500 metres, and a larger error is worse."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "R_req = 500"
 source = "orbitt_case_c2"
@@ -47,3 +55,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 500 metres is the customer's geolocation accuracy requirement, taken from its cited reference case and confirmed by A. Rai on 2026-09-01."
+breaks_if = "A customer requirement stating a geolocation accuracy other than 500 metres."
+relation = "R_req = 500"
+source = "orbitt_case_c2"

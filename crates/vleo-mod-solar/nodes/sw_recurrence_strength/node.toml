@@ -23,6 +23,14 @@ state = "published"
 text = "How strong is the solar-rotation recurrence in F10.7?"
 note = "The correlation at the recurrence lag sw_recurrence_lag reports. It says how much of a future day a design can actually infer from an active region coming back round, and the answer is a useful tendency rather than a prediction: 0.376 is 14 per cent of the variance."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How strongly the Sun's flux one rotation ahead echoes today's, once the eleven-year cycle is removed: a correlation of 0.376, which accounts for about 14 per cent, one seventh, of the variation. It tells a design that a 27-day outlook is a useful tendency, better than nothing and nowhere near enough to size anything on."
+breaks = "It is one number pooled over cycles 23, 24 and the rise of 25, but the echo differs across a cycle: at maximum many active regions blur it, near minimum one long-lived region can dominate it. It is also only the first peak; the echo continues faintly at the second and third rotations."
+wrong = "That a correlation of 0.376 is the share of the signal that recurs. The share explained is the correlation squared, 0.1414, so quoting the correlation overstates the recurrence by nearly three times."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
 expression = "r_rot = corr(F107', F107' shifted by L_rot) = 0.375988"
@@ -130,3 +138,15 @@ bundles = ["solar-weather"]
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The declared 0.375988 is the correlation of the detrended flux with itself at the 26-day lag, over 10242 detrended days of the solar-weather bundle of 2026.09.14; confirmed by A. Rai on 2026-09-14."
+breaks_if = "The bundle changes and a re-measurement differs, a version conditioned on the mission's cycle phase disagrees, or the value falls below 0.1 or above 0.7: the noise floor, or stronger than the five-day correlation of 0.531."
+relation = "r_rot = corr(F107', F107' shifted by L_rot) = 0.375988"
+source = "noaa_swpc"

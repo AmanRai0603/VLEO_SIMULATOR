@@ -38,6 +38,14 @@ state = "published"
 text = "What daily Ap is this design built to survive?"
 note = "The design-side companion to sw_storm_return_level. That row says what the record will present over the mission; this says what the vehicle is built for, from the G level sw_storm_design_level declares. At the default G3 the answer is 132 and the record's five-year expectation is 158.4, and the gap between them is the finding."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The daily level of geomagnetic disturbance the vehicle is built to survive, taken from the storm grade the design has chosen. At the default grade G3 it is 132, the top of that grade, and it sits below the 158.4 the record expects to see once over a five-year mission; that gap is the finding."
+breaks = "It is a bound, not a typical storm day: real G3 days in the record run from 15 to 96 with a median of 51. It knows only the size of a storm, not how long it lasts, so a one-day storm and the first day of a three-day storm look the same here, although a sustained storm heats the atmosphere far more."
+wrong = "It is easy to read this and the once-per-mission storm level as competing answers. One is what the vehicle is built for and the other what the sky will present; the gap is closed by operations, not structure."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "Ap_design(G) = ap at the top Kp of that G band: G1 -> 48, G2 -> 80, G3 -> 132"
 source = "iaga_kp_ap"
@@ -169,3 +177,15 @@ bundles = ["solar-weather"]
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the ceiling of a storm grade, the value a day would reach if all eight three-hour readings sat at that grade, is the right design bound, taken from the published table: 48, 80 and 132 for grades one to three."
+breaks_if = "A typical storm day is wanted instead of a bound, the grade is read between the three whole-number levels, or storm duration turns out to matter to the drag design."
+relation = "Ap_design(G) = ap at the top Kp of that G band: G1 -> 48, G2 -> 80, G3 -> 132"
+source = "iaga_kp_ap"

@@ -9,7 +9,8 @@
 <p class="af-q">How quiet can a single day of Ap be inside the mission window?</p>
 <p class="af-a">Ap_cold_short — computed on the inputs you run, never stored: run it beside this page.</p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">How quiet a single day of geomagnetic disturbance can be inside the mission window: the sustained quiet level with a quiet day's own dip below its 27-day stretch taken off.</li>
+<li><b>Rests on</b> That the two spreads stack, that the daily drop measured before the window applies inside it, and that the sustained quiet level stays clear of the crossing near 15.6. <span class="muted">(version 1; would break if A window with a sustained quiet level below about 15.6, a window in a different part of the cycle where daily variability differs, or a reader who takes the result as a one-in-twenty day.)</span></li>
 <li><b>Holds</b> from 0 to 400 — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></li>
 </ul>
@@ -31,7 +32,8 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">How quiet a single day of geomagnetic disturbance can be inside the mission window: the sustained quiet level with a quiet day's own dip below its 27-day stretch taken off. It now comes to about 4.93 on the daily index, a quiet but ordinary day, and it is the scenario closest to the zero floor anywhere in this group.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (environment) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">How quiet can a single day of Ap be inside the mission window?</p>
 <p class="maths"><code>Ap_cold_short = Ap_cold_long - dAp_day_low</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></p>
@@ -47,6 +49,7 @@ apart because percentiles of a truncated sample are. Three facts that disagree
 about shape meet in one subtraction here.
 </p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">Nothing in the arithmetic keeps the answer above zero: a sustained quiet level below about 15.6 would push it through the floor and the row would refuse. Stacking a quiet stretch with a quiet day inside it also makes something rarer than the 95 per cent the label suggests, since quiet days and quiet stretches are not independent.</p>
 <h5>Assumptions, and where each stops holding</h5>
 <dl class="asm">
 <dt>The result stays above zero, and nothing in the arithmetic ensures it</dt><dd>fails when the sustained quiet level is small. With this subsystem's level-conditioned drop the crossing is at a sustained Ap near 15.6, and the declared window's 17.50 clears it by under two units of level. The guard refuses rather than publishing a negative index, which is right, but it means this row is the one most likely in the subsystem to fire on an ordinary input rather than on a mistake</dd>
@@ -55,6 +58,8 @@ about shape meet in one subtraction here.
 <dt>The daily drop measured before the window applies inside it</dt><dd>fails when the window spans a different part of the cycle. Ap's within-rotation variability peaks in the DECLINING phase, when coronal holes are largest and high-speed streams recur, rather than at maximum. A drop measured on one phase is the wrong depth for another</dd>
 </dl>
 <p class="muted">Outside <code>0 … 400</code> the row refuses rather than answers: Ap floors at zero — a perfectly quiet day is Ap 0 and there is nothing below it. This is the row in the subsystem closest to its own floor, seven units clear at the declared window, and the only one where the guard is likely to fire on an ordinary input rather than on a mistake; 400 is the top of the Ap index itself; a value above it is not a geomagnetic index at all. On the QUIETEST of the five scenarios a value anywhere near it means a sign is wrong somewhere in the chain above.</p>
+<h4 class="st-h"><span class="st-n">4</span>Common wrong idea</h4>
+<p class="wrong">It is tempting to build the quiet day by mirroring the disturbed day. The upward swings are two to three times the downward ones and are read at different levels, so mirroring would give about minus 46, which is not a sky.</p>
 <h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
 <p class="d-l predict">Before you run it: what do you expect the answer to be, roughly, and which input do you expect to move it most? Write it down — then run, and compare. A guess that was wrong is the most useful thing on this page.</p>
 <p class="d-lr muted">Run it from the panel beside this page, on your own inputs, or open <i>the relation, moving</i> to watch the answer cross its range.</p>
@@ -82,7 +87,13 @@ about shape meet in one subtraction here.
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> That the two spreads stack, that the daily drop measured before the window applies inside it, and that the sustained quiet level stays clear of the crossing near 15.6.</p>
+<p><b>Would break if:</b> A window with a sustained quiet level below about 15.6, a window in a different part of the cycle where daily variability differs, or a reader who takes the result as a one-in-twenty day.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (environment) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>That the two spreads stack, that the daily drop measured before the window applies inside it, and that the sustained quiet level stays clear of the crossing near 15.6.</dd><dt>Would break if</dt><dd>A window with a sustained quiet level below about 15.6, a window in a different part of the cycle where daily variability differs, or a reader who takes the result as a one-in-twenty day.</dd><dt>The relation, as this version states it</dt><dd><code>Ap_cold_short = Ap_cold_long - dAp_day_low</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -226,8 +237,6 @@ pub fn evaluate(sustained: Ratio, daily: Ratio) -&gt; Result&lt;Ratio, Fault&gt;
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
 <li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

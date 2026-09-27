@@ -22,6 +22,13 @@ state = "published"
 text = "What does air-breathing propulsion save by removing the need to replace satellites when propellant runs out?"
 note = "The commercial argument for the whole programme, as a node with a source and evidence rather than a slide."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much air-breathing propulsion, which takes its propellant from the thin air around it, saves by removing the need to replace satellites when propellant runs out: the cost of building and launching the constellation again. It is the commercial argument for the whole programme, kept as a row with a source and evidence rather than a slide."
+breaks = "It is all or nothing: exactly one replacement of the whole constellation is counted when thrust exceeds drag, and none when it does not. It prices each replacement at the first unit's bus and payload cost plus launch."
+by = "an assistant, from what this sheet states — for its owner (programme) to confirm"
+
 [maths]
 expression = "C = (C_unit + C_launch)*N_replacements"
 source = "orbitt_case_c1"
@@ -86,3 +93,14 @@ type = "Money"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (programme) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited from orbitt_case_c1, not yet derived on the sheet: one avoided replacement of the whole constellation whenever thrust exceeds drag, and none otherwise."
+breaks_if = "A mission that would need more or fewer than one replacement without air-breathing propulsion, replacements that cost other than the first unit, or a comparison with orbitt_case_c1 that disagrees."
+relation = "C = (C_unit + C_launch)*N_replacements"
+source = "orbitt_case_c1"

@@ -22,6 +22,13 @@ state = "published"
 text = "How fast does the accelerated beam leave the thruster?"
 note = "Air is lighter than xenon, so the same voltage buys a far higher exhaust velocity. It is the one respect in which air-breathing propulsion is easier rather than harder."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How fast the accelerated beam leaves the thruster, for an ion of the local air's average mass, carrying a single charge, pushed through the beam voltage. Air is lighter than xenon, so the same voltage gives a far higher exhaust speed: the one respect in which breathing air is easier rather than harder."
+breaks = "It takes every ion as singly charged and of the air's average mass, so a mixed beam is described by one average. Below 1 kilometre per second the concept has no advantage over a cold gas thruster; above 500 kilometres per second the relativistic and space-charge assumptions in the relation break down."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "v_e = sqrt(2*q*V_b/m_i)"
 source = "romano2021"
@@ -62,3 +69,14 @@ type = "Velocity"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to romano2021, a singly charged ion of the local mean mass accelerated through the beam potential, not yet derived on the sheet."
+breaks_if = "Ions that are not singly charged or not of the local mean mass, an exhaust speed above 500 kilometres per second, or a derivation or comparison with romano2021 that disagrees."
+relation = "v_e = sqrt(2*q*V_b/m_i)"
+source = "romano2021"

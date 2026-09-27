@@ -22,6 +22,14 @@ state = "published"
 text = "Does the power system supply what the spacecraft asks for?"
 note = "A margin silently corrected to zero is a design that drifted without anyone deciding to. This one is signed."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "Whether the power system supplies what the spacecraft asks for: how far the power available exceeds or falls short of the power demanded, as a signed fraction of the demand. A negative answer is a shortfall, and it is reported as one."
+breaks = "It compares two single figures, available and demanded power, so it is only as good as they are. The sheet treats a margin below minus one hundred per cent as no longer a design, and one above ten thousand per cent as an absurdly oversized array."
+wrong = "That a negative power margin should be tidied up to zero. A margin silently corrected to zero is a design that drifted without anyone deciding to, so this one is signed and never clamped."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "M = (P_avail - P_dem)/P_dem"
 source = "ecss_e_st_10_02"
@@ -65,3 +73,14 @@ kpis = ["kpi_power_margin"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The signed fractional margin of available over demanded power, as stated and cited to ecss_e_st_10_02 and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with ecss_e_st_10_02 that disagrees, or a margin below minus one hundred or above ten thousand per cent, showing the inputs are not a real design."
+relation = "M = (P_avail - P_dem)/P_dem"
+source = "ecss_e_st_10_02"

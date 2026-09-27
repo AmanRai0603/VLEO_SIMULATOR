@@ -22,6 +22,14 @@ state = "published"
 text = "What system-level margin is held above the sum of the subsystem masses?"
 note = "Separate from and additional to the per-item maturity allowances. It covers what is not on the list yet, which on any real programme is the term that bites."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The extra share of mass held back above the sum of all the subsystem masses: 0.2, a fifth. It covers what is not on the list yet, which on any real programme is the part that bites."
+breaks = "It is a single fraction applied to the whole, so it says nothing about which items will grow. It is only meaningful between nothing and a half: a margin cannot be negative, and above half the design is a sketch and the number is not a budget."
+wrong = "It is easy to think this is the same as the allowances already added to each item for how mature its design is. It is not: it is separate from and on top of them."
+by = "an assistant, from what this sheet states — for its owner (mass) to confirm"
+
 [maths]
 expression = "M_sys = 0.2"
 source = "ecss_e_st_10_02"
@@ -46,3 +54,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (mass) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That a system margin of 0.2 on top of the per-item maturity allowances is enough for this design, following the standard the sheet cites (ecss_e_st_10_02), confirmed by A. Rai on 2026-09-01."
+breaks_if = "Unlisted items that together grow the spacecraft by more than a fifth of the subsystem total, or a governing standard or customer that requires a different system margin."
+relation = "M_sys = 0.2"
+source = "ecss_e_st_10_02"

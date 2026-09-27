@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What does the whole service payload set weigh?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What the whole service payload set weigh, as a single number a person picked: 55 kilograms. Every mass margin in the design is built out of numbers like this one, so an error here moves them all."
+breaks = "It is one declared figure with no breakdown, and no reason beyond the case it came from. It is only held to be sensible between half a kilogram and a tonne: below half a kilogram no service payload exists, and above a tonne the payload set is not in this class."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "m_pay = 55"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 55 kg is right for the whole service payload set on this design, as taken from the source case the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A measured, quoted or itemised mass for the whole service payload set on this design that differs from 55 kg, or a design whose hardware falls outside half a kilogram to a tonne."
+relation = "m_pay = 55"
+source = "orbitt_case_c1"

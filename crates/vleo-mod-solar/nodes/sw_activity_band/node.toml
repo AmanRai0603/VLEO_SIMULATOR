@@ -23,6 +23,14 @@ state = "published"
 text = "Which activity band does this F10.7 fall in?"
 note = "The coarse label that puts a flux value in context — a reader who sees 228 sfu and does not work with F10.7 daily has no idea whether that is ordinary or extreme. The band says it is the top one, and that 12.8% of the record sits there."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "Which of four standard levels of solar activity a given daily reading of the Sun's radio brightness falls in: low, moderate, elevated or high, numbered one to four. A bare reading such as 228 means little to most readers; the level says it is the top one."
+breaks = "The level is a label carried as a number, so averaging levels or treating level four as twice level two is wrong: the levels are unequal in width. The top level has no upper edge, so it stops telling cases apart where the design cares most. And it labels a single day, while a mission passes through every level."
+wrong = "It is easy to read the level of the design value as the level the mission will experience; it only says where the design point sits, since the record spends 39.8 per cent of its days in the lowest level and 12.8 per cent in the highest."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # The four standard levels, as three edges. Band 1 is below the first edge.
 expression = "band(F107) = 1 + count(edges <= F107),  edges = 90, 130, 170 sfu"
@@ -129,3 +137,15 @@ type = "Ratio"
 kind = "line"
 over = "env_f107"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The four levels are the standard published NOAA activity levels, applied as a lookup with nothing fitted: low below 90, moderate 90 to 129, elevated 130 to 169, high 170 and above."
+breaks_if = "A consumer averages or interpolates the levels, reads the design point's level as a mission forecast, or the published edges change or are swapped for data-driven thirds of the record."
+relation = "band(F107) = 1 + count(edges <= F107),  edges = 90, 130, 170 sfu"
+source = "noaa_swpc"

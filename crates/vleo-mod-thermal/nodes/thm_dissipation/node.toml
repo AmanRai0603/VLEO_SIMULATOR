@@ -21,6 +21,14 @@ state = "published"
 [question]
 text = "How much heat does the spacecraft have to get rid of?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much heat the spacecraft has to get rid of, in watts. Everything drawn from the power system ends up as heat, except what leaves as the thruster beam's kinetic power and as radiated radio power."
+breaks = "It ignores the small share of power stored in the battery over a cycle, which averages to zero over an orbit, so it is an orbit-average figure. The sheet gives no derivation."
+wrong = "That all the power drawn becomes heat. The thruster beam's kinetic power and the radiated radio power leave the spacecraft and are taken off."
+by = "an assistant, from what this sheet states — for its owner (thermal) to confirm"
+
 [maths]
 expression = "Q = P_dem - P_rf - P_beam"
 source = "larson_wertz"
@@ -73,3 +81,14 @@ type = "Power"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (thermal) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Its relation as stated and cited from larson_wertz, not yet derived on the sheet, and the assumption that all bus power not leaving as beam kinetic energy or radiated radio power becomes heat."
+breaks_if = "Energy stored in the battery stops averaging to zero over an orbit, or a result above 50 kilowatts, which nothing in this mass class dissipates."
+relation = "Q = P_dem - P_rf - P_beam"
+source = "larson_wertz"

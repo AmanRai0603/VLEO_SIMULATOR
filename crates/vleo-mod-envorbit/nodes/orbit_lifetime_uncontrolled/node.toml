@@ -21,6 +21,14 @@ state = "published"
 [question]
 text = "If propulsion stops, how long before the satellite re-enters?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "If propulsion stops, how many days the satellite has before it re-enters, following the orbit's decay down to the 120 kilometre model base."
+breaks = "It holds the atmosphere at today's activity for the whole decay, but over a solar cycle the density at a given altitude changes by more than a factor of ten, so this is an order-of-magnitude answer and is reported as one. Above 100 years the 25-year debris rule is violated and precision is irrelevant."
+wrong = "That this gives a re-entry date. It gives only an order of magnitude, because the atmosphere is held at the current activity while the real density changes more than tenfold over a solar cycle."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "t = INT da/(da/dt) from h to 120 km"
 source = "vallado2013"
@@ -76,3 +84,14 @@ kpis = ["kpi_service_lifetime"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Atmospheric conditions fixed at the current activity for the whole decay, integrated to the 120 kilometre model base as stated and cited to vallado2013; the relation is not yet derived on the sheet."
+breaks_if = "A decay long enough to span a change in solar activity, which moves density by more than an order of magnitude, a comparison with vallado2013 that disagrees, or a lifetime above 100 years."
+relation = "t = INT da/(da/dt) from h to 120 km"
+source = "vallado2013"

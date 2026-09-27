@@ -61,6 +61,14 @@ a third question again: the one storm in the whole mission, not the worst day of
 an ordinary design band.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The geomagnetic disturbance the design commits to keep operating through on a single day: a daily level of 132, the published threshold for a 'strong' storm. It sits between the sustained commitment of 48 and the survival commitment of 207."
+breaks = "The sheet's own note still calls this a survival level while its question says operating; the header says the question is the settled meaning. The threshold is checkable but not proven right: where a design must stop depends on thermal, torque and propellant limits this subsystem does not see."
+wrong = "Collapsing this into the storm requirement. The worst day of an ordinary design band and the one storm of the mission are different questions."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 confirmed_by = "A. Rai / 2026-09-16"
 expression = "Ap_req_short = ap(G3) = 132"
@@ -147,3 +155,15 @@ confirmed_by = "A. Rai / 2026-09-16"
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 132, the published daily-index equivalent of the 'strong' storm threshold, is right, raised from 80 on 2026-09-16 after the level-conditioned band showed this window reaching 90.55; confirmed by A. Rai on 2026-09-16."
+breaks_if = "The vehicle's thermal, torque or propellant limits proving to fall below 132, or the achieved single-day level rising above it."
+relation = "Ap_req_short = ap(G3) = 132"
+source = "orbitt_case_c1"

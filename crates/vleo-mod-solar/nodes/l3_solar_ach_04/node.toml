@@ -50,6 +50,14 @@ comparison binds two rows of the same shape at the same layer — visible on the
 tree instead of an edge somebody has to trace.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much room is left between the sustained geomagnetic disturbance the design is committed to operate in and what the record says this mission's window will present. Positive is room; negative is a violation and its size."
+breaks = "Both numbers are ceilings on an index; what a spacecraft feels is the heating, density and torque that disturbance produces, through models this subsystem does not own. The level it reads is a 90th-percentile band on a cycle-based estimate, though the run is labelled 95 per cent, and the residuals behind it are skewed."
+wrong = "Reading this sustained level as the single-day or the storm value. The three are 26.70, 41.70 and 158.38, far enough apart that swapping them could turn a pass into a failure."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # An achieved row restates the subsystem's conclusion on the side of the
 # comparison the closure reads. It computes nothing of its own.
@@ -153,3 +161,15 @@ type = "Ratio"
 kind = "line"
 over = "orbit_mission_duration"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "It reads the sustained geomagnetic level, 26.6953, sized on a cycle analogue scaled by two completed cycles whose peaks differ by 41 per cent, against a ceiling of 48."
+breaks_if = "The cycle analogue proving wrong for the mission's window, a wrong sibling level being read, or the 48 ceiling changing."
+relation = "M_ap_long = closure(Ap_req_long, Ap_long, AtMost).margin"
+source = "noaa_swpc"

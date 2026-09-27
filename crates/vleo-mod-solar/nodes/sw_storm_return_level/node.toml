@@ -32,6 +32,14 @@ state = "published"
 text = "What daily planetary Ap recurs once per mission lifetime?"
 note = "Geomagnetic activity has no usable long-term forecast, so a design does not predict the storm — it sizes for the worst one the mission is likely to meet. That makes the mission length the input: a five-year mission and a fifteen-year one are owed different skies, and this row moves when orbit_mission_duration moves."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The daily geomagnetic activity the mission can expect to meet about once in its lifetime. There is no useful long-range storm forecast, so the design sizes for the worst storm it is likely to meet; a longer mission meets a worse one. At the declared five years it is about 158.4."
+breaks = "The curve rests on 28.2 years of record and its top end on two observations; the longest missions are a small extrapolation past the fitted range. Storms cluster over days, so there are fewer independent storms than storm days and the true uncertainty is wider than the fit suggests. A once-per-century storm needs a longer record."
+wrong = "That it can answer for a storm rarer than the record. A return period beyond the record's 28.2 years is refused, and the answer sits below the record's largest single day, 273, because that day was deliberately left out of the fit."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # The exceedance curve of the daily record, fitted. Return period is the
 # reciprocal of exceedance probability by definition; the log-linear form and
@@ -211,3 +219,15 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "orbit_mission_duration"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The daily record's tail, from the solar-weather bundle of 2026.09.14, grows with the logarithm of the return period, fitted over 0.5035 to 14.0986 years with a residual of 4.95, and every day is an independent draw."
+breaks_if = "The bundle version changes without the two coefficients being refitted, a longer record departs from the fitted tail, or a gap in the record is found to hold a top-ten storm."
+relation = "Ap(T) = 92.5155 + 40.9265*ln(T / 1 yr)"
+source = "noaa_swpc"

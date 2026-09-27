@@ -51,6 +51,14 @@ sustained level its sibling carries, and the two are separate rows here because
 they are separate rows in the subsystem below.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The geomagnetic activity level the whole system designs to, passed up unchanged from the solar-weather subsystem. The system layer does not work out the environment itself; it takes the subsystem's conclusion and names which of its scenarios it means."
+breaks = "None of the subsystem's caveats come with it: the value stacks two one-sided allowances, so the day it describes is nearer one in a hundred than one in twenty. The sheet itself is not consistent about which scenario it names: its relation takes the sustained level, while its explanation and its reading of 90.55 describe the single disturbed day."
+wrong = "That a single-day value can be added up over the mission. A drag budget built on it designs for a sky the mission does not sit in; the sustained level is a separate number."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has NOT read this relation against its source yet.
 confirmed_by = ""
@@ -126,3 +134,15 @@ reason_upper = "the crossing's own ceiling, restated. This is a single-day value
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The value received from the solar subsystem's interface is right as it stands and the member named is the one meant; a person has not yet read this relation against its source."
+breaks_if = "A check shows the wrong member of the crossing's fifteen was named (the sheet names both the sustained and the single-day scenario), or the subsystem's value changes beneath it."
+relation = "Ap_sys = l3_solar_interface.ap_hotmean"
+source = "noaa_swpc"

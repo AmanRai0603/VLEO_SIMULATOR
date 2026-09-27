@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much ground does one satellite see at any instant?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much ground one satellite can see at any instant, in square metres: the cap of the Earth's surface within its view at the working elevation."
+breaks = "It treats the Earth as a sphere and the view as a round cap set by one angle at the Earth's centre. It can be no less than zero and no more than the surface area of the Earth."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "A = 2*pi*Re^2*(1 - cos(lambda))"
 source = "larson_wertz"
@@ -53,3 +60,14 @@ type = "Area"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The spherical cap subtended by the Earth-central half-angle, as stated and cited to larson_wertz and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or an area below zero or above the Earth's surface area."
+relation = "A = 2*pi*Re^2*(1 - cos(lambda))"
+source = "larson_wertz"

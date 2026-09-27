@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How many electrons of noise does one read add?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much noise one reading of the detector adds: 8 electrons. A detector far noisier than this is not usable for this product."
+breaks = "It is one figure for every reading. It is only meaningful between 1 electron, quieter than any space detector in this class reads, and 100 electrons, above which the detector is not usable for this product."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "n_read = 8"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 8 electrons per read is the noise of this design's detector, as taken from the source case the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A detector datasheet or test for this payload showing a read noise other than 8 electrons."
+relation = "n_read = 8"
+source = "orbitt_case_c1"

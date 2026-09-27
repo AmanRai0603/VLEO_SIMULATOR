@@ -22,6 +22,14 @@ state = "published"
 text = "What is the drag coefficient of this body, at this speed ratio, with this surface?"
 note = "Treating this as a constant 2.2 is the single largest avoidable error in a VLEO drag estimate, and it is what most concept studies do."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much drag this body's shape and surface produce for its frontal area, at its flight speed, in its gas and with its surface condition. It is worked out for gas too thin for its molecules to collide near the body, for the front face and the side walls, and referred back to the frontal area."
+breaks = "It assumes a molecule leaving the surface never returns and never strikes an incoming one. That fails below a Knudsen number of 10, a measure of how thin the gas is for a body this size, roughly 150 kilometres for this body. Above 5 the body is not the slender one the model assumes."
+wrong = "That the drag coefficient is a constant 2.2. Treating it so is the single largest avoidable error in a very-low-orbit drag estimate, and it is what most concept studies do."
+by = "an assistant, from what this sheet states — for its owner (aero) to confirm"
+
 [maths]
 expression = "Cd = P/sqrt(pi) + gamma*Q*Z + (gamma/2)*vr*(gamma*sqrt(pi)*Z + P)"
 source = "doornbos2011"
@@ -116,3 +124,14 @@ kind = "line"
 over = "orbit_altitude"
 points = 60
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (aero) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Free-molecular flow, with Sentman's coefficients for front face and side walls as stated and cited from doornbos2011, not yet derived on the sheet."
+breaks_if = "The Knudsen number falls below 10, roughly 150 kilometres for this body; the result falls below 1.5, meaning the speed ratio or accommodation is wrong; or a check against doornbos2011 disagrees."
+relation = "Cd = P/sqrt(pi) + gamma*Q*Z + (gamma/2)*vr*(gamma*sqrt(pi)*Z + P)"
+source = "doornbos2011"

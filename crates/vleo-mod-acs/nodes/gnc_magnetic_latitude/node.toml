@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "At what magnetic latitude is the field being evaluated?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The magnetic latitude, 45 degrees, at which the Earth's magnetic field is evaluated for the attitude control work. Magnetic latitude is latitude measured from the magnetic equator rather than the geographic one."
+breaks = "The field is evaluated at this one latitude only, and the sheet gives no reason for choosing 45 degrees beyond citing the 2020 international geomagnetic reference field. The value must lie between minus 90 and 90 degrees."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "lat_m = 45"
 source = "igrf2020"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 45 degrees is the right magnetic latitude at which to evaluate the field for this design, citing the 2020 geomagnetic reference field and confirmed by A. Rai on 2026-09-01."
+breaks_if = "A reviewer showing that the orbit or the sizing case this row feeds calls for a different magnetic latitude than 45 degrees."
+relation = "lat_m = 45"
+source = "igrf2020"

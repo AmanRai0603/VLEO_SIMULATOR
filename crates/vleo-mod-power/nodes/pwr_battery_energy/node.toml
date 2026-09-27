@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much energy must the battery hold to carry the load through eclipse?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much energy the battery must hold to carry the spacecraft's full power demand through eclipse. Only the declared share of the battery may be drained, and some energy is lost in discharge, so it must hold more than the eclipse itself uses."
+breaks = "It carries the full demand through the eclipse part of one orbit and nothing more, so it holds no reserve beyond that one eclipse. Above 27 kilowatt-hours the battery would be heavier than the whole spacecraft."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "E = P_ecl*t_ecl/(DoD*eta_dis)"
 source = "larson_wertz"
@@ -85,3 +92,14 @@ type = "Energy"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to larson_wertz, carrying the full demand through the eclipse fraction of one revolution at the declared depth of discharge, not yet derived on the sheet."
+breaks_if = "A derivation or comparison with larson_wertz that disagrees, a load in eclipse different from the full demand, or a result above 27 kilowatt-hours."
+relation = "E = P_ecl*t_ecl/(DoD*eta_dis)"
+source = "larson_wertz"

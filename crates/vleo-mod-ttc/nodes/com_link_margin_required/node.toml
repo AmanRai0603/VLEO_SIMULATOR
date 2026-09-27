@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much margin must the link carry above threshold, in decibels?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much spare signal the downlink must carry above the bare minimum it needs to work: 3 decibels. It is a requirement the link has to meet, not a result."
+breaks = "It says what the link must reach, not what it achieves. Above 12 decibels the link would be designed for an availability, the share of time it works, that nobody asked for."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "M_req = 3"
 source = "ecss_e_st_50"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 3 decibels is the margin the link must carry above threshold, from the source the sheet cites (ecss_e_st_50), confirmed by A. Rai on 2026-09-01."
+breaks_if = "An availability requirement or applicable standard for this mission that calls for a margin other than 3 decibels."
+relation = "M_req = 3"
+source = "ecss_e_st_50"

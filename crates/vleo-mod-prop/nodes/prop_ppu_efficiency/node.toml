@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How efficiently does the power processing unit convert bus power into thruster power?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much of the spacecraft's electrical power the power processing unit, the electronics that feed the thruster, passes on to the thruster: 90 per cent. The rest becomes heat."
+breaks = "It is one declared efficiency. Below 50 per cent the unit wastes more than the thruster uses and the thermal design does not close, and above 98 per cent no flown unit has been demonstrated."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "eta_ppu = 0.9"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the power processing unit is 0.9 efficient; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "A specification or test of the chosen power processing unit giving a different efficiency."
+relation = "eta_ppu = 0.9"
+source = "larson_wertz"

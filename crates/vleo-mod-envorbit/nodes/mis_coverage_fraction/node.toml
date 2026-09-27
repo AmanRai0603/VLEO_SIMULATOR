@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What fraction of the Earth does one satellite see at any instant?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What fraction of the whole Earth one satellite can see at any instant, found from the angle of ground in view around the point beneath it."
+breaks = "It treats the Earth as a sphere and the view as a round cap, and it is a snapshot of one satellite at one moment, not coverage built up over time. It can be no less than zero and no more than one, the whole Earth."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "f = (1 - cos(lambda))/2"
 source = "larson_wertz"
@@ -53,3 +60,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The spherical cap as a fraction of the whole sphere, as stated and cited to larson_wertz and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a fraction below zero or above one."
+relation = "f = (1 - cos(lambda))/2"
+source = "larson_wertz"

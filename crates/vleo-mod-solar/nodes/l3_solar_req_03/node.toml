@@ -89,6 +89,14 @@ sense = "<="
 text = "What daily planetary Ap must this design survive?"
 note = "The G3 design capability of Ap 132 with a 14 per cent margin on it. The record expects 158.4 over the declared five-year mission, so this requirement is NOT met — and the three exceedance rows say what that costs: about 1.42 days outside the bound over the mission, in one or two one-day events, on the declining side of the cycle where the epoch sits."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The geomagnetic storm the design must not be destroyed by: a daily disturbance level of 207, the published threshold for a 'severe' storm. It is separate from the lower level of 132 the vehicle keeps operating through."
+breaks = "The record expects 158.4 over five years, so the mission will meet a storm it cannot work through: about 1.42 days over the mission, in one or two one-day events. A daily figure also blurs a violent six-hour storm and a mild day-long one, and the record is only 29 years long."
+wrong = "Taking 207 as the level the vehicle operates through. It is a survival commitment; the operating level is 132 and did not move."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 confirmed_by = "A. Rai / 2026-09-16"   # a person read this relation against its source
 expression = "Ap_req = ap(G4) = 207"
@@ -225,3 +233,15 @@ confirmed_by = "A. Rai / 2026-09-16"
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 207, the published daily-index equivalent of the 'severe' storm threshold, is right because such a storm must not end the mission while operation stays at the 'strong' level of 132; decided and confirmed by A. Rai on 2026-09-16."
+breaks_if = "A storm larger than the 29-year record has shown, or the design's operating storm level being changed so that survival at 207 no longer follows."
+relation = "Ap_req = ap(G4) = 207"
+source = "orbitt_case_c1"

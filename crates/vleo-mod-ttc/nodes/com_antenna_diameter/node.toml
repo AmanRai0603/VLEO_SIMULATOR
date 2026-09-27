@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How large is the spacecraft downlink antenna?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How wide the spacecraft's antenna for sending payload data to the ground is. A bigger antenna focuses the signal more strongly, but it also faces the airflow and adds drag."
+breaks = "Below 2 centimetres the relation that turns antenna size into focusing power does not hold at this frequency. Above 2 metres the antenna is a drag surface larger than the vehicle."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "D_a = 0.3"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 0.3 metres is this design's downlink antenna diameter, from the source the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A chosen antenna for this design with a different diameter, or a downlink that does not close with a 0.3 metre antenna."
+relation = "D_a = 0.3"
+source = "orbitt_case_c1"

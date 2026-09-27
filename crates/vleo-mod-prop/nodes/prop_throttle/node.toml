@@ -22,6 +22,13 @@ state = "published"
 text = "How much of what the thruster asks for can the bus actually give it?"
 note = "The node that makes the power budget bite on the physics rather than being reported beside it."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much of the power the thruster asks for the supply can actually give it: what is left after every other load is served, as a share of the thruster's request, never less than none and never more than all of it. It makes the power budget act on the physics rather than being reported beside it."
+breaks = "Propulsion gets only the remainder, after every other load has been served. The throttle cannot exceed one: the thruster cannot be given more than it asked for."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "k = clamp((P_avail - P_other)/P_prop, 0, 1)"
 source = "orbitt_case_c1"
@@ -105,3 +112,14 @@ kpis = ["kpi_thrust_margin", "kpi_power_margin"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to orbitt_case_c1, every other load subtracted from what is available and the remainder capped at the request, not yet derived on the sheet."
+breaks_if = "A derivation or comparison with orbitt_case_c1 that disagrees, or a design in which propulsion is not the load served last."
+relation = "k = clamp((P_avail - P_other)/P_prop, 0, 1)"
+source = "orbitt_case_c1"

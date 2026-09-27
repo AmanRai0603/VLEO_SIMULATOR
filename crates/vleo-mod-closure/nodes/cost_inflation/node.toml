@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "At what annual rate are the fitted cost relations escalated to the target year?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The yearly rate used to bring the fitted cost estimates up to the target year: 3 per cent a year. It turns costs stated in older money into the money of the year the estimate is for."
+breaks = "One steady rate is applied every year. A negative rate would be deflation, which the cost model has no basis for, and above 15 per cent a year the estimate is decided by the escalation rather than by the design."
+by = "an assistant, from what this sheet states — for its owner (programme) to confirm"
+
 [maths]
 expression = "i_r = 0.03"
 source = "nasa_cer"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (programme) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 0.03, or 3 per cent a year, is the right escalation rate, from the source the sheet cites (nasa_cer), confirmed by A. Rai on 2026-09-01."
+breaks_if = "An agreed escalation rate for the programme's target year that differs from 3 per cent a year."
+relation = "i_r = 0.03"
+source = "nasa_cer"

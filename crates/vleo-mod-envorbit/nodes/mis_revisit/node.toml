@@ -21,6 +21,14 @@ state = "published"
 [question]
 text = "How often does the constellation come back to a given place?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How often, on average, the constellation comes back over a given place, found from the Earth's surface area and the rate at which all the satellites' swaths, the strips of ground their sensors see, sweep across it."
+breaks = "It assumes uniform coverage of the whole globe with no weighting by latitude. A Sun-synchronous constellation revisits the poles far more often than the equator, so this mean is optimistic at low latitudes and pessimistic at high ones."
+wrong = "That the mean revisit is the revisit at any particular place. It is a global average: at low latitudes the real revisit is longer than this, and at high latitudes shorter."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "t = A_earth/(N*W*V_g)"
 source = "larson_wertz"
@@ -78,3 +86,14 @@ kind = "line"
 over = "mis_satellites"
 points = 60
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Uniform coverage of the whole globe with no latitude weighting, and the relation as stated and cited to larson_wertz, not yet derived on the sheet."
+breaks_if = "The places that matter sit at latitudes where the real revisit departs from the global mean, a comparison with larson_wertz that disagrees, or a revisit above 100 days."
+relation = "t = A_earth/(N*W*V_g)"
+source = "larson_wertz"

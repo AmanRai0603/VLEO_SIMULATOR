@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much mass per second reaches the thruster?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much mass of air reaches the thruster each second: the air arriving on the intake's mouth, reduced by the fraction the intake actually delivers. It is shown against altitude."
+breaks = "It is only as good as the collection fraction it is given. Above 10 milligrams per second no intake in this band collects, at any mouth size the vehicle can carry, so an answer there means the inputs are wrong."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "mdot = rho*V*A_in*eta_c"
 source = "romano2021"
@@ -79,3 +86,14 @@ kind = "line"
 over = "orbit_altitude"
 points = 60
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to romano2021, the incident flux multiplied by the mouth area and the collection efficiency, not yet derived on the sheet."
+breaks_if = "A derivation or comparison with romano2021 that disagrees, or a collected flow above 10 milligrams per second."
+relation = "mdot = rho*V*A_in*eta_c"
+source = "romano2021"

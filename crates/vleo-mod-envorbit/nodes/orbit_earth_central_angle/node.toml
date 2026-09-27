@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much of the Earth's surface is in view at the working elevation?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far across the Earth's surface the satellite can reach at the working elevation, measured as the angle at the Earth's centre between the point beneath the satellite and the edge of what it can see."
+breaks = "It treats the Earth as a perfect sphere. A negative angle means the target is below the horizon, and beyond 85 degrees the whole visible hemisphere would be in view, which does not occur in this band."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "lambda = acos((Re/r)*cos(eps)) - eps"
 source = "larson_wertz"
@@ -61,3 +68,14 @@ type = "Angle"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The spherical Earth access geometry, as stated and cited to larson_wertz and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or an angle below zero or beyond the sheet's upper bound."
+relation = "lambda = acos((Re/r)*cos(eps)) - eps"
+source = "larson_wertz"

@@ -64,6 +64,14 @@ Ap to Kp and stops is sized on a sky quieter than the record's, on exactly the
 days a drag design is sized by.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "Kp is a scale from 0 to 9 of how disturbed Earth's magnetic field is. This is the Kp the system designs to in the worst three hours of its design day, the third input an upper-atmosphere density model takes. The worst three hours matter because converting the daily average alone reads a quieter sky than the record shows."
+breaks = "The worst-slot correction is a median, so half the days at the same activity have a worse peak. At the declared window it reads 7.9966, a severe storm, following from a corrected daily activity of 90.55; the study it came from gives 6.14. The sheet's relation names the sustained scenario while its explanation names the disturbed single day."
+wrong = "That converting daily activity to Kp and stopping there is enough. The conversion lands above the day's average slot and far below its peak, so a design sized on it alone meets a quieter sky than the record's."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has NOT read this relation against its source yet.
 confirmed_by = ""
@@ -142,3 +150,15 @@ reason_upper = "the crossing's own ceiling, restated: Kp is defined on 0 to 9. T
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The peak-slot Kp received from the solar subsystem's interface is right as it stands and is the member meant among ten; a person has not yet read this relation against its source."
+breaks_if = "A check shows the wrong one of the ten Kp members was named (they span 1.27 to 8.00), or the slot offset beneath it is re-measured on a new bundle version."
+relation = "Kp_sys = l3_solar_interface.kp_peak_hotmean"
+source = "iaga_kp_ap"

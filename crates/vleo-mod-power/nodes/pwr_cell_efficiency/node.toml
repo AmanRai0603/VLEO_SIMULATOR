@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How efficiently does one cell convert sunlight?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The share of sunlight falling on one solar cell that it turns into electricity: 30 per cent."
+breaks = "It is the efficiency of one cell, not of the whole array. Below 10 per cent no cell considered for this programme performs that badly, and above 40 per cent is beyond any qualified space cell available at the time of this baseline."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "eta_cell = 0.3"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That a cell efficiency of 0.3 is right for the cells chosen; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "A datasheet or test of the chosen solar cell giving a different efficiency."
+relation = "eta_cell = 0.3"
+source = "larson_wertz"

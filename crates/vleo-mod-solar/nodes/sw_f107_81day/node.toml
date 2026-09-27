@@ -46,6 +46,14 @@ state = "deprecated"
 text = "What 81-day centred mean F10.7 should a density model be given at the mission epoch?"
 note = "The second driver every empirical density model wants, beside the daily flux. At an epoch past the record it is a prediction rather than an observation, and the prediction is the mean cycle at that phase."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The smoothed solar activity level a density model asks for beside the daily value: the solar flux averaged over 81 days centred on the mission date. That date is past the end of the record, so the row gave the average of two past cycles at the same point in their cycle. It is retired because it returned another row's number unchanged."
+breaks = "It is a prediction carrying the name of a measurement: the mission date is 366 days past the record. It is also smoother than a true 81-day mean, since the averaging bins span 201 to 217 days, so it cannot show the Sun's rotation."
+wrong = "That the smoothed value can stand in for the daily one too. A single day strays from it by about twelve per cent, one standard deviation, and handing a density model the smoothed value twice loses every spike the atmosphere felt."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "F107A(epoch) = F107_cyc(phase(epoch))"
 source = "noaa_swpc"
@@ -182,3 +190,15 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "sys_mission_requirements_mission_epoch"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "When live, that the mean of cycles 23 and 24 at the same phase, 108.14 solar flux units at the declared epoch, is the best estimate of the centred mean at an epoch past the record; the row is now retired."
+breaks_if = "The epoch falls inside the record, where a measured centred mean exists, or the coming cycle departs from the two-cycle mean, whose shapes agree only to 0.770 and whose peaks differ by 28 per cent."
+relation = "F107A(epoch) = F107_cyc(phase(epoch))"
+source = "noaa_swpc"

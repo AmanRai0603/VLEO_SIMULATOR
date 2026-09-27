@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much area is available to reject heat?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The surface area available to shed heat: 2.5 square metres."
+breaks = "The sheet gives no reason for 2.5 beyond the case it cites. Below 0.1 square metres no useful heat is rejected, and above 30 square metres the radiator would be the spacecraft."
+by = "an assistant, from what this sheet states — for its owner (thermal) to confirm"
+
 [maths]
 expression = "A_rad = 2.5"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (thermal) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The declared 2.5 square metres is the radiator area for this design, from the case the sheet cites and confirmed by A. Rai on 2026-09-01; no further reason is given."
+breaks_if = "A layout or specified radiator area for this design that differs from 2.5 square metres."
+relation = "A_rad = 2.5"
+source = "orbitt_case_c1"

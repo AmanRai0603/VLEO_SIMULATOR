@@ -22,6 +22,14 @@ state = "published"
 text = "How well does this vehicle resist the atmosphere, per unit of its own mass?"
 note = "Higher is better here. A cubesat is around 50; a slender VLEO platform reaches 150, and that difference is worth tens of kilometres of altitude."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How well the spacecraft resists the atmosphere for its mass: its wet mass set against its drag coefficient and the area facing the flow. A cubesat is around 50, a slender very-low-orbit platform reaches 150, and that difference is worth tens of kilometres of altitude."
+breaks = "It takes mass, drag coefficient and area as single numbers, so it moves whenever any of them does. Below 5 kilograms per square metre the vehicle is a sail and nothing in this band closes; above 500 it is denser than any spacecraft ever flown."
+wrong = "That a lower number is better because it sounds like less drag. Here higher is better: more mass behind each unit of drag."
+by = "an assistant, from what this sheet states — for its owner (aero) to confirm"
+
 [maths]
 expression = "BC = m/(Cd*A)"
 source = "vallado2013"
@@ -70,3 +78,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (aero) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Wet mass over drag coefficient times frontal area, as stated and cited from vallado2013, not yet derived on the sheet."
+breaks_if = "A derivation or a check against vallado2013 disagrees, or a value comes out below 5 or above 500 kilograms per square metre."
+relation = "BC = m/(Cd*A)"
+source = "vallado2013"

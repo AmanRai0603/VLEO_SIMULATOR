@@ -21,6 +21,14 @@ state = "published"
 [question]
 text = "What fraction of the time is one satellite fully operational?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The fraction of the time one satellite is fully working: 0.97, that is 97 per cent. It feeds how available the service is as a whole."
+breaks = "It is a single average fraction and says nothing about how long outages last or when they fall. It is only held to be sensible between a half, below which the satellite is down more often than not, and 0.9999, which no small satellite has demonstrated."
+wrong = "It is easy to read this as the availability of the service. It is not: it is for a single satellite only."
+by = "an assistant, from what this sheet states — for its owner (operations) to confirm"
+
 [maths]
 expression = "A_unit = 0.97"
 source = "orbitt_case_c1"
@@ -48,3 +56,14 @@ kpis = ["kpi_availability"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (operations) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 0.97 is the fraction of time one satellite of this design is fully operational, as taken from the source case the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "Flight or test records for this design's satellites showing a fully operational fraction different from 0.97."
+relation = "A_unit = 0.97"
+source = "orbitt_case_c1"

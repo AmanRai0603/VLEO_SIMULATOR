@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What area does the flow actually see?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The area the oncoming flow actually sees, in square metres: the circular cross-section of the body plus the area of its appendages."
+breaks = "It treats the body's cross-section as a circle of its diameter and adds the appendage area as one figure, so it is only as right as those two inputs. Below 50 square centimetres there is no vehicle; above 20 square metres nothing in this design closes."
+by = "an assistant, from what this sheet states — for its owner (mass) to confirm"
+
 [maths]
 expression = "A = pi*D^2/4 + A_app"
 source = "orbitt_case_c1"
@@ -61,3 +68,14 @@ type = "Area"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (mass) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Circular body cross-section plus appendage area, as stated and cited from orbitt_case_c1, not yet derived on the sheet."
+breaks_if = "A derivation or a check against orbitt_case_c1 disagrees, or the area comes out below 50 square centimetres or above 20 square metres."
+relation = "A = pi*D^2/4 + A_app"
+source = "orbitt_case_c1"

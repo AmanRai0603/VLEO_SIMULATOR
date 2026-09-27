@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "Through what potential is the ion beam accelerated?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The voltage the thruster uses to speed up its ions: 300 volts. It sets how fast the exhaust leaves and so how much thrust a given flow of collected gas gives."
+breaks = "It is a chosen number, not one derived from the thruster. Below 50 volts the exhaust is too slow to give useful thrust from this flow, and above 2000 volts the grids wear away under atomic oxygen, the reactive single oxygen atoms of this altitude, with no demonstrated design to rely on."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "V_b = 300"
 source = "romano2021"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That a beam voltage of 300 volts is right for this thruster; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "A thruster design or test at a different working voltage, or grid erosion by atomic oxygen showing up at this voltage."
+relation = "V_b = 300"
+source = "romano2021"

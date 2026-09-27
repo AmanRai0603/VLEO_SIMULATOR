@@ -9,7 +9,8 @@
 <p class="af-q">How much data is one imaged scene?</p>
 <p class="af-a">V_scene — computed on the inputs you run, never stored: run it beside this page.</p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">How much data one imaged scene makes, in gigabits, from the number of pixels, the bits per pixel, the spectral bands and the compression.</li>
+<li><b>Rests on</b> A square scene in four bands, with the volume relation as stated and cited from ccsds122, not yet derived on the sheet. <span class="muted">(version 1; would break if The scene is not square or not four bands, a check against ccsds122 disagrees, or the volume exceeds a petabit.)</span></li>
 <li><b>Holds</b> from 0 to 1000000 Gbit — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · ccsds122</span></li>
 </ul>
@@ -31,12 +32,14 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">How much data one imaged scene makes, in gigabits, from the number of pixels, the bits per pixel, the spectral bands and the compression. It feeds the data-volume performance measure.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (payload) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">How much data is one imaged scene?</p>
 <p class="maths"><code>V = N_x*N_y*b*bands/CR</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · ccsds122</span></p>
 <p class="src">Source <b>ccsds122</b> — CCSDS 122.0-B — Image data compression <span class="where">CCSDS, 2017</span></p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">It assumes a square scene as wide as the across-track pixel count, in exactly four spectral bands; a longer strip or a different number of bands would give another answer. Above a petabit no single scene in this design is produced.</p>
 <p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
 <p class="muted">Outside <code>0 … 1000000</code> Gbit the row refuses rather than answers: a data volume cannot be negative; above a petabit no single scene in this design is produced.</p>
 <h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
@@ -50,7 +53,13 @@
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> A square scene in four bands, with the volume relation as stated and cited from ccsds122, not yet derived on the sheet.</p>
+<p><b>Would break if:</b> The scene is not square or not four bands, a check against ccsds122 disagrees, or the volume exceeds a petabit.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (payload) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>A square scene in four bands, with the volume relation as stated and cited from ccsds122, not yet derived on the sheet.</dd><dt>Would break if</dt><dd>The scene is not square or not four bands, a check against ccsds122 disagrees, or the volume exceeds a petabit.</dd><dt>The relation, as this version states it</dt><dd><code>V = N_x*N_y*b*bands/CR</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · ccsds122</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -170,8 +179,6 @@ pub fn evaluate(n: Ratio, b: Ratio, cr: Ratio) -&gt; Result&lt;DataVolume, Fault
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
 <li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 <li>no fixture: nothing outside this code has ever agreed with what it computes</li>
 <li>no theory: the relation is stated but not derived — THE ROW DOES NOT ANSWER. A function is defined by its derivation, not by its expression and not by its citation, and until one is written every reader of this row is blocked on it by name</li>

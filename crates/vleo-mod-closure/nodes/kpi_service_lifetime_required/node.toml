@@ -23,6 +23,13 @@ sense = ">="
 [question]
 text = "What does the customer require for service lifetime?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How long the customer requires the service to last: at least 5 years. The design's achieved lifetime must reach it."
+breaks = "The sheet gives the number and its source but no reasoning for it. Below five weeks the satellite is not a mission, and above 25 years the debris mitigation standard would be violated."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "R_req = 5"
 source = "orbitt_case_c1"
@@ -47,3 +54,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 5 years is the customer's service lifetime requirement, taken from its cited reference case and confirmed by A. Rai on 2026-09-01."
+breaks_if = "A customer requirement stating a service lifetime other than 5 years."
+relation = "R_req = 5"
+source = "orbitt_case_c1"

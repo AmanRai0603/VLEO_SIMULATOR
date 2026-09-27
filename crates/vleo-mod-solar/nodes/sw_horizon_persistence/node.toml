@@ -22,6 +22,14 @@ state = "published"
 text = "If all we know is today's F10.7, how wrong are we L days later?"
 note = "prf_horizon's structure function D(L) = RMS[F107(t+L) - F107(t)], its first method. Paired with sw_horizon_climatology it answers the design question directly: which of the two cheapest forecasts is worth using at this lead, and what either costs."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How wrong a forecast of the Sun's flux would be if it simply assumed today's value continues, at a given lead. The error grows from about 7 solar flux units at one day to about 50 at two years, with a dip at 27 days, because the Sun turns and the same active region faces Earth again."
+breaks = "In a real run it is only ever asked about leads of half a year and up, so the dip and the short-lead shape are carried but never used. The error has not levelled off even at two years, so reading the tail as settled understates how much worse longer leads get."
+wrong = "It is natural to assume forecast error only rises with lead. Today's flux is a better guide to one rotation ahead than to a fortnight ahead, and a smooth model would erase that."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # The RMS of the L-day change, measured at eighteen leads and interpolated.
 expression = "D(L) = RMS[F107(t+L) - F107(t)], from the record"
@@ -160,3 +168,15 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "orbit_mission_duration"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Error measured only on pairs of real observations the lead apart, with no filled-in days, pinned to the 2026.09.14 solar weather bundle."
+breaks_if = "The data bundle version changes without re-measuring, or the tree begins asking about leads short enough that the rotation dip matters."
+relation = "D(L) = RMS[F107(t+L) - F107(t)], from the record"
+source = "noaa_swpc"

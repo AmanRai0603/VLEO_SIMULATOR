@@ -22,6 +22,14 @@ state = "published"
 text = "How far out is a one-day orbit prediction, given how wrong the density model is?"
 note = "The term that dominates orbit prediction in this regime, and the reason the density uncertainty is a published output rather than a footnote."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far along its path the spacecraft's predicted position will be out after one day, because the model of the air density it flies through is uncertain. In this regime it is the error that dominates orbit prediction, which is why the density uncertainty is published as an answer in its own right."
+breaks = "It carries one source of error only: the density uncertainty applied to the drag, carried over exactly one day. Above 10000 kilometres the number stops meaning a distance the spacecraft is out by; it means the model is unusable there."
+wrong = "That the uncertainty in the density model is a detail for a footnote. In this regime it is the term that dominates orbit prediction, so it is published as an output."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "e = 1.5*da*t^2"
 source = "doornbos2011"
@@ -62,3 +70,14 @@ type = "Length"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited from doornbos2011, not yet derived on the sheet: the drag acceleration error, taken as the density uncertainty applied to the drag, propagated over one day."
+breaks_if = "A derivation or a comparison with doornbos2011 that disagrees with the relation, or a one-day error above 10000 kilometres, where the sheet says the model is unusable."
+relation = "e = 1.5*da*t^2"
+source = "doornbos2011"

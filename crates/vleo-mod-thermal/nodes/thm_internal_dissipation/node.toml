@@ -22,6 +22,14 @@ state = "published"
 text = "How much of the electrical power ends up as heat inside the spacecraft?"
 note = "Left at zero and overridden by the computed dissipation node. It exists so a case can pin a measured value in place of the computed one."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much of the electrical power ends up as heat inside the spacecraft, set here to zero watts. It is a placeholder: the computed dissipation replaces it, and it exists so a case can pin a measured value instead."
+breaks = "Zero is not a claim that nothing heats the inside; it holds only because the computed value overrides it. Read on its own, it would mean no internal heat at all."
+wrong = "That the spacecraft makes no internal heat. The zero is left in place and overridden by the computed dissipation; the row exists so a case can pin a measured value."
+by = "an assistant, from what this sheet states — for its owner (thermal) to confirm"
+
 [maths]
 expression = "Q_int = 0"
 source = "larson_wertz"
@@ -46,3 +54,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (thermal) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The declared 0.0 watts stands only as a placeholder that the computed dissipation overrides; A. Rai confirmed it on 2026-09-01."
+breaks_if = "The computed dissipation stops overriding it, or a case pins a measured value in its place."
+relation = "Q_int = 0"
+source = "larson_wertz"

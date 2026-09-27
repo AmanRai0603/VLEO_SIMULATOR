@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much heat does direct sunlight put into the spacecraft?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much heat direct sunlight puts into the spacecraft, in watts: the Sun's standard strength at the Earth, falling on the lit area at an average angle, times how readily the surface absorbs it."
+breaks = "It uses one mean angle of incidence, taken from the solar array, and the spacecraft's frontal area, so it is an average rather than the load on a given surface at a given moment. The sheet states no assumptions and no derivation."
+by = "an assistant, from what this sheet states — for its owner (thermal) to confirm"
+
 [maths]
 expression = "Q = S*A*alpha_s*cos(theta)"
 source = "larson_wertz"
@@ -69,3 +76,14 @@ type = "Power"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (thermal) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Its relation as stated and cited from larson_wertz, using the solar constant at a mean incidence, not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a result above 100 kilowatts, which would mean the illuminated area is not this spacecraft."
+relation = "Q = S*A*alpha_s*cos(theta)"
+source = "larson_wertz"

@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What temperature are the surfaces the atmosphere strikes?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How hot the outer surfaces are where the air strikes them: 300 kelvin. It feeds how the air is taken to bounce off those surfaces, and so the drag the spacecraft feels."
+breaks = "It is one declared temperature for the struck surfaces. Below 150 kelvin no external surface of this design is predicted to fall and the fit has no data; above 500 kelvin the materials are outside their qualification range, so a drag figure there means nothing."
+by = "an assistant, from what this sheet states — for its owner (thermal) to confirm"
+
 [maths]
 expression = "T_w = 300"
 source = "sentman1961"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (thermal) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 300 kelvin is the temperature of the surfaces the air strikes, from the source the sheet cites (sentman1961), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A thermal prediction for this design's exposed surfaces that differs from 300 kelvin."
+relation = "T_w = 300"
+source = "sentman1961"

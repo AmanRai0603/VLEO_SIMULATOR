@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "Does the spacecraft fit the mass it is allowed?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "Whether the spacecraft fits within the mass it is allowed: how much of the mass limit is left once the fully fuelled spacecraft is counted, as a signed fraction of that limit. A negative answer means the spacecraft is too heavy."
+breaks = "It knows only the two masses it is given, so it is as trustworthy as the mass estimate and the declared limit. A margin below minus five hundred per cent means the design is five times over and the inputs are wrong; a margin of one would mean the spacecraft weighs nothing."
+by = "an assistant, from what this sheet states — for its owner (mass) to confirm"
+
 [maths]
 expression = "M = (m_lim - m_wet)/m_lim"
 source = "ecss_e_st_10_02"
@@ -64,3 +71,14 @@ kpis = ["kpi_mass_margin"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (mass) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The signed fractional margin against the declared mass limit, as stated and cited to ecss_e_st_10_02 and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with ecss_e_st_10_02 that disagrees, or a margin below minus five hundred per cent or reaching one, which would point at wrong inputs rather than a real design."
+relation = "M = (m_lim - m_wet)/m_lim"
+source = "ecss_e_st_10_02"

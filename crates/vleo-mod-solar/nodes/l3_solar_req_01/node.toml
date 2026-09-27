@@ -36,6 +36,14 @@ is now the sustained half and req_02 is the single day, so the duplication is
 gone and two different commitments are stated instead of one commitment twice.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The highest sustained level of solar activity the design commits to operate in for the whole mission: 260 solar flux units, just above the hottest 27-day stretch in the record, 252.67 on 2024-08-13. The record's actual level for this mission is checked against it."
+breaks = "It is a ceiling on an index of solar radio flux, not on what the spacecraft feels, which is the air density that activity produces. And the record behind it is the satellite era only: an earlier solar cycle, cycle 19 in the late 1950s, ran higher than anything in it."
+wrong = "Expecting the requirement to follow the mission's dates. It does not move with the epoch; it is the vehicle's capability, and the sky's variation belongs on the achieved side."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # NOT A CONFIRMATION. The relation and its number have both changed, and the
 # person who read the old one read it against a sheet that asked a DIFFERENT
@@ -172,3 +180,15 @@ confirmed_by = "A. Rai / 2026-09-16"
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 260 sfu (\"260 sfu, above the record's largest 27-day mean of 252.67\") is right because the design should operate through any rotation the record has shown; set by A. Rai on 2026-09-16, which the sheet says is not yet a confirmation of the spacecraft claim."
+breaks_if = "A sustained 27-day level above 252.67 being observed, or the design needing to operate through a cycle-19-like maximum."
+relation = "F107_req = 260 sfu, above the record's largest 27-day mean of 252.67"
+source = "orbitt_case_c1"

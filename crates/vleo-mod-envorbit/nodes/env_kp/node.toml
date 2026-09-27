@@ -31,6 +31,14 @@ person. Until it carries a value this row carries what layer 2 publishes, and
 env_exospheric_temperature's second assumption says so at length.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How disturbed Earth's magnetic field is, on the planetary index that runs from zero to nine, at the level the design is sized to. Disturbance puts energy directly into the upper atmosphere; the value is worked out by the solar-weather part of the tool and passed on here unchanged."
+breaks = "The index is not linear, and it is not one number a day: there are eight three-hourly values, and a daily mean and a daily peak differ. Which one should drive the design is still open and needs a person. Moving from the old 3 to 5.198 made the modelled atmosphere hotter and denser."
+wrong = "A value outside zero to nine is not an extreme day but a mistake: below zero a unit error, above nine another geomagnetic index passed in by mistake, which unguarded would give an absurd temperature without complaint."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # NOT A RELATION. The identity is the point: one row owns the answer and this
 # one carries it, because two rows declaring the design flux is two rows that
@@ -102,3 +110,14 @@ reason_upper = "Kp is defined on 0..9. This is the guard that catches an Ap valu
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the geomagnetic index layer 2 publishes from the solar-weather subsystem is the right level to size to, although whether it should be the daily mean or the daily peak is still unanswered."
+breaks_if = "A person decides which daily slot, mean or peak, drives the design, and it is not the one layer 2 now publishes."
+relation = "Kp = Kp_sys"
+source = "orbitt_case_c1"

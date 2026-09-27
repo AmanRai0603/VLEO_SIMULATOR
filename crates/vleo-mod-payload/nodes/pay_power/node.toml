@@ -21,6 +21,14 @@ state = "published"
 [question]
 text = "How much power does the whole payload set draw, averaged over an orbit?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much power the whole payload set draws, averaged over an orbit: 120 watts. It counts against the power the spacecraft can supply, and so against its power margin."
+breaks = "An average hides any peaks, and the sheet does not say how the draw varies around the orbit. It is only held to be sensible up to 3 kilowatts, above which the payload is the spacecraft."
+wrong = "It is easy to read this as the payload's draw while working. It is the draw averaged over a whole orbit."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "P_pay = 120"
 source = "orbitt_case_c1"
@@ -48,3 +56,14 @@ kpis = ["kpi_power_margin"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 120 W is the payload's orbit-average draw for this design, as taken from the source case the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A power budget or measurement of this design's payload set giving an orbit-average draw other than 120 W."
+relation = "P_pay = 120"
+source = "orbitt_case_c1"

@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much of the sky, from a nadir-facing surface, is filled by the Earth?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much of the view from a downward-facing flat surface is filled by the Earth, as a fraction from none to all of it. It depends only on how far the spacecraft is from the Earth's centre."
+breaks = "It is the figure for a flat plate facing the Earth, as the question states; the sheet gives no assumptions for surfaces facing other ways and no derivation."
+by = "an assistant, from what this sheet states — for its owner (thermal) to confirm"
+
 [maths]
 expression = "F = (Re/r)^2"
 source = "larson_wertz"
@@ -53,3 +60,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (thermal) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Its relation as stated and cited from larson_wertz, the flat-plate-to-sphere view factor at the orbital radius, not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a result outside nothing to all of the view."
+relation = "F = (Re/r)^2"
+source = "larson_wertz"

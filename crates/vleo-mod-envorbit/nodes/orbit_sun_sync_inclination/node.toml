@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What inclination makes the orbit plane keep pace with the Sun?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The tilt of the orbit, in degrees, at which the slow turning of the orbit plane keeps pace with the Sun's apparent motion, so the plane holds its angle to the Sun. It is found by solving the plane-turning relation for that tilt, given the orbit's size and shape."
+breaks = "Not every orbit has such a tilt: the row refuses when none exists, and above 115 degrees there is no solution below 2000 kilometres. In this band the answer is always retrograde, tilted past a right angle, and above about 95 degrees."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "cos(i) = -Omega_sun*(1-e^2)^2*a^(7/2)/(1.5*J2*sqrt(mu)*Re^2)"
 source = "vallado2013"
@@ -61,3 +68,14 @@ type = "Angle"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The nodal regression relation solved for inclination, as stated and cited from vallado2013, not yet derived on the sheet."
+breaks_if = "A derivation or a check against vallado2013 disagrees, or an answer appears below about 95 or above 115 degrees, where the sheet says no Sun-synchronous solution lies in this band."
+relation = "cos(i) = -Omega_sun*(1-e^2)^2*a^(7/2)/(1.5*J2*sqrt(mu)*Re^2)"
+source = "vallado2013"

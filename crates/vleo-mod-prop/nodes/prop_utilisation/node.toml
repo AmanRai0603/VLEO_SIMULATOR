@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What fraction of the collected mass is actually ionised and accelerated?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The share of the gas the intake collects that the thruster actually turns into ions and speeds up: 40 per cent. It feeds the thrust margin."
+breaks = "It is one declared fraction. Below 5 per cent the thruster ionises almost nothing and the concept does not work, and above 95 per cent no source of the kind used here has shown it on atomic oxygen."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "eta_u = 0.4"
 source = "romano2021"
@@ -48,3 +55,14 @@ kpis = ["kpi_thrust_margin"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 0.4 of the collected mass is ionised and accelerated; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "A test of this thruster on atomic oxygen showing a different utilisation."
+relation = "eta_u = 0.4"
+source = "romano2021"

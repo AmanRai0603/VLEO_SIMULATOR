@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What does the spacecraft weigh with no propellant on board?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What the spacecraft weighs with no propellant on board, in kilograms: the masses of structure, propulsion hardware, power, harness, avionics, communications, guidance and control hardware and payload added up, with the system margin applied. It feeds the mass-margin performance measure."
+breaks = "It is only as complete as the list of masses it sums; anything missing from that list is missing from the answer unless the margin covers it. Below a kilogram there is no spacecraft; above 5 tonnes the vehicle is not in this class."
+by = "an assistant, from what this sheet states — for its owner (mass) to confirm"
+
 [maths]
 expression = "m_dry = (sum of subsystem masses)*(1 + M_sys)"
 source = "ecss_e_st_10_02"
@@ -120,3 +127,14 @@ kpis = ["kpi_mass_margin"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (mass) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The sum of subsystem masses with the system margin applied, as stated and cited from ecss_e_st_10_02, not yet derived on the sheet."
+breaks_if = "A check against ecss_e_st_10_02 disagrees, a subsystem mass is found missing from the sum, or the result falls below a kilogram or above 5 tonnes."
+relation = "m_dry = (sum of subsystem masses)*(1 + M_sys)"
+source = "ecss_e_st_10_02"

@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What does developing the design cost, once?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What developing the design costs, paid once. It is estimated from dry mass by a cost estimating relation, a fit of cost to mass, and escalated to 2026 money."
+breaks = "Dry mass is its only design input, so anything that drives development cost without changing mass is not in it. Above 100 billion dollars the relation is being fed a mass it was not fitted on."
+by = "an assistant, from what this sheet states — for its owner (programme) to confirm"
+
 [maths]
 expression = "C = a*m_dry^b, escalated"
 source = "nasa_cer"
@@ -61,3 +68,14 @@ type = "Money"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (programme) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The non-recurring cost estimating relation as cited from nasa_cer, not yet derived on the sheet, applies to this design's dry mass, escalated to 2026."
+breaks_if = "A dry mass outside the range the relation was fitted on, shown by an estimate above 100 billion dollars, or a comparison with nasa_cer that disagrees."
+relation = "C = a*m_dry^b, escalated"
+source = "nasa_cer"

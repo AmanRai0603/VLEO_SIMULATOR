@@ -31,6 +31,14 @@ doing now is a different question and a different row — sw_f107_observed, whic
 is what the subsystem's own forecast starts from.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How strong the Sun's radio emission at a wavelength of 10.7 centimetres is, at the level the design is sized to. It is the number the chain of air-density calculations is built on: a sustained level over the mission window, worked out by the solar-weather part of the tool and passed on here unchanged."
+breaks = "It is the hot sustained scenario's level, not the flux on any one day; a design that must survive its worst single day needs a different member of the set. It also made the modelled atmosphere cooler and thinner than the old figure of 150, so there is less drag but less margin against a real hot sky."
+wrong = "The drop from 150 to 104.07 was not the correction of an error: 150 was a defensible design default, and the new number is the solar record's own answer for this mission window."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # NOT A RELATION. The identity is the point: one row owns the answer and this
 # one carries it, because two rows declaring the design flux is two rows that
@@ -109,3 +117,14 @@ reason_upper = "above 400 sfu is beyond the largest recorded daily value, so the
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the solar-weather subsystem's hot sustained scenario, carried unchanged through the system layer, is the right flux to size this design to over its mission window."
+breaks_if = "The design must survive its worst single day rather than its worst sustained period, or the subsystem's forecast for the window is shown wrong."
+relation = "F107 = F107_sys_daily"
+source = "orbitt_case_c1"

@@ -32,6 +32,14 @@ state = "published"
 text = "Where in the solar cycle do the exceedances of the design Ap fall?"
 note = "The median cycle phase of the days above sw_ap_design, on the 0-to-1 scale sw_cycle_phase uses. At G3 it is 0.603 — the declining side, just past maximum — and the declared epoch sits at 0.619."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "Where in the solar cycle the days above the design level of geomagnetic disturbance tend to fall, as the middle value on a scale from zero at the cycle's start to one at its end. At the default storm grade G3 it is 0.603, just past the cycle's peak on the declining side; the mission's declared start sits at 0.619, inside that band."
+breaks = "It is a middle value with no spread beside it: at G3 the eight days run from 0.294 to 0.736, a band about five years wide. Eight days is a coarse sample, the phase scale is uncertain because the current cycle has not ended, and nine missing months of 2017 fall just past the edge of that band."
+wrong = "It is easy to read 0.603 as when exceedances happen. It is where the middle one happened; a schedule needs the whole band, which is nearly half a cycle wide."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "P_exc(Ap_design) = median cycle phase of the days with Ap >= Ap_design"
 source = "noaa_swpc"
@@ -161,3 +169,15 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "sw_storm_design_level"
 points = 40
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the middle phase of the exceedance days reflects the solar cycle rather than the chosen threshold, which the record supports: 0.571692 at G1, 0.576302 at G2 and 0.602697 at G3."
+breaks_if = "The middle phase starts moving with the threshold, one added or removed storm shifts the eight-day G3 sample, or the current cycle's length turns out different from what the phase scale assumes."
+relation = "P_exc(Ap_design) = median cycle phase of the days with Ap >= Ap_design"
+source = "noaa_swpc"

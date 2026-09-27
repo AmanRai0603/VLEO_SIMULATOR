@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much does the formation geometry amplify timing error into position error?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much the shape of the formation of satellites magnifies a small error in timing a radio signal into an error in where the emitter is placed. It cannot be below one; the design takes four, and it feeds the geolocation performance measure."
+breaks = "It is one fixed number for the whole formation, picked by a person rather than worked out from where the satellites actually are. Past fifty the geometry is so poor that no position can be solved at all, and the number stops meaning anything."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "GDOP_rf = 4"
 source = "orbitt_case_c2"
@@ -48,3 +55,14 @@ kpis = ["kpi_geolocation"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That a dilution of 4 (a plain ratio) is right for this formation's geometry; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "An analysis of the actual formation geometry giving a different dilution, or a geometry near enough to degenerate that the dilution heads towards fifty."
+relation = "GDOP_rf = 4"
+source = "orbitt_case_c2"

@@ -22,6 +22,13 @@ state = "published"
 text = "How many oxygen atoms strike a forward-facing surface over the mission?"
 note = "Polyimide erodes at about 3e-24 cm3 per incident atom, so 1e22 removes roughly 30 micrometres of it."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How many oxygen atoms strike each square metre of a forward-facing surface over the whole mission: the atomic oxygen density, times the flight speed, times the mission's length. It matters because the atoms wear material away; polyimide, for example, loses roughly 30 micrometres at a fluence of 1e22."
+breaks = "It is for a surface facing forward into the flow, and it multiplies one density, one speed and one duration, so it is only as good as those single figures are for the whole mission. Above 1e26 atoms per square metre no known external material survives."
+by = "an assistant, from what this sheet states — for its owner (mass) to confirm"
+
 [maths]
 expression = "F = n_O*V*t"
 source = "moe2005"
@@ -73,3 +80,14 @@ kpis = ["kpi_service_lifetime"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (mass) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Fluence as density times speed times duration, as stated and cited from moe2005, not yet derived on the sheet."
+breaks_if = "A derivation or a check against moe2005 disagrees, or the fluence exceeds 1e26 atoms per square metre, beyond which the sheet says no known external material survives."
+relation = "F = n_O*V*t"
+source = "moe2005"

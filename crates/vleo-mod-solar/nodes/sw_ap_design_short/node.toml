@@ -31,6 +31,14 @@ The one a drag transient and a single-orbit attitude case are sized on. Its
 sustained sibling is what a propellant budget integrates.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The daily level of geomagnetic disturbance the design must survive on a single bad day inside the mission window: the sustained disturbed level plus a disturbed day's own rise above it. It is about 90.5, a strong storm day, and it is what drag transients and single-orbit attitude cases are sized on."
+breaks = "Most of the answer is the daily rise, which is held at the top of its measured table and may be low. The value now exceeds the commitment to survive a single day at 80, so the closure against that requirement fails; whether the commitment or the window is wrong is a decision, not arithmetic."
+wrong = "The earlier 41.7 looked like a sound single-day level. It used a daily swing measured on much quieter stretches, and the record supports more than twice that for this window's own hot case."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has NOT read this relation against its source yet.
 confirmed_by = ""
@@ -102,3 +110,15 @@ reason_upper = "400 is the top of the Ap index itself; a value above it is not a
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the rotation-level error and a day's rise within its rotation stack, because a bad day is both a bad stretch and a bad day within it."
+breaks_if = "More record at high levels shows a larger daily rise, or the single-day survival commitment is moved, or the window is judged outside what the design was built for."
+relation = "Ap_short = Ap_long + dAp_day"
+source = "noaa_swpc"

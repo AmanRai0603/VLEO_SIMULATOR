@@ -21,6 +21,14 @@ state = "published"
 [question]
 text = "How long is one ground station pass?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How long one pass over a ground station lasts, in minutes: the share of each orbit the spacecraft spends inside the circle of ground from which the station can reach it. It is the longest pass, one directly overhead."
+breaks = "It assumes the pass is directly overhead. The mean over many passes is roughly 60 per cent of this, so a downlink volume computed from it will not be achieved."
+wrong = "That every pass lasts this long. This is the overhead pass; averaged over many passes the contact is roughly 60 per cent of it."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "t = T_orb*lambda/pi"
 source = "larson_wertz"
@@ -65,3 +73,14 @@ type = "Time"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Its relation as stated and cited from larson_wertz, not yet derived on the sheet, for a pass directly overhead."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or passes that are rarely overhead, so the achieved contact falls short of this figure."
+relation = "t = T_orb*lambda/pi"
+source = "larson_wertz"

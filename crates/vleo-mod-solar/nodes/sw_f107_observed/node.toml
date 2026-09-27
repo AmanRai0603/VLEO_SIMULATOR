@@ -43,6 +43,14 @@ row across its whole declared range, 60 to 400 sfu, leaves
 sw_central_expectation at 86.8497 to six figures.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The Sun's flux reading today, the starting point the forecast begins from. It is a round default of 150 solar flux units, not a reading taken on a date, and it matters very little: moving it across its whole allowed range leaves the expected central flux unchanged to six figures, because its weight fades within about a solar rotation."
+breaks = "It would start to matter at leads of a few days, where today's flux counts and a round 150 would be doing real work badly; this tree's declared leads start well past that. It is a daily value, not an 81-day average, and must not be read as one."
+wrong = "It is easy to take this for the flux the design is sized to. It is only the forecast's starting anchor; the design flux is computed and published elsewhere in this group."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # NOT A NEW CONFIRMATION AND NOT A NEW NUMBER. This is the same 150 that has
 # been declared on env_f107 since 2026-09-01 and confirmed there by A. Rai. The
@@ -106,3 +114,15 @@ confirmed_by = "A. Rai / 2026-09-01, carried unchanged from env_f107"
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 150 (solar flux units), a round design default carried unchanged from the earlier environment row and confirmed by A. Rai on 2026-09-01, is an adequate stand-in because the forecast gives it almost no weight at the leads this tree asks about."
+breaks_if = "The tree starts asking about leads of only days, where today's flux carries real weight, or a real observation is needed for the anchor to be honest."
+relation = "F107_obs = 150"
+source = "noaa_swpc"

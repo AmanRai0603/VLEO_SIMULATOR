@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What fraction of the mouth is open duct, and what fraction of a hyperthermal beam does that duct pass?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The share of the intake's mouth that is open duct, and so how much of the incoming fast-moving gas gets through rather than hitting structure: 90 per cent."
+breaks = "It is one declared fraction. A fully open mouth, a fraction of one, has no structure and cannot be built, and below ten per cent the duct blocks more than it passes and is no longer an intake."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "eta_geo = 0.9"
 source = "romano2021"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That a geometric transmission of 0.9 (a fraction) is right for this intake; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "A drawing or test of the actual intake mouth showing a different open fraction or transmission."
+relation = "eta_geo = 0.9"
+source = "romano2021"

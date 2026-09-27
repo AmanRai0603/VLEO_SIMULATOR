@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How well does the external surface radiate in the infrared?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How well the spacecraft's outer surface gives off heat as infrared radiation, on a scale where 1 is a perfect emitter: 0.85. This is how the surface rejects heat."
+breaks = "It is one number for the whole outer surface, and the sheet gives no reason for 0.85. At very low values the surface could not reject heat at all and no design would close."
+by = "an assistant, from what this sheet states — for its owner (thermal) to confirm"
+
 [maths]
 expression = "eps = 0.85"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (thermal) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The declared 0.85 is right for this design's outer surface; the sheet cites a standard reference but gives no reason for the value, which A. Rai confirmed on 2026-09-01."
+breaks_if = "A measured or specified emissivity for this design's coating that differs from 0.85."
+relation = "eps = 0.85"
+source = "larson_wertz"

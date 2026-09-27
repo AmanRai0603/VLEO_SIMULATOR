@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How far is the spacecraft from the centre of the Earth?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far the spacecraft is from the centre of the Earth, in metres: its altitude added to the Earth's radius at the equator, as the WGS-84 standard model of the Earth's shape gives it."
+breaks = "It adds the one equatorial radius whatever latitude the spacecraft is over. It is held between 6400 and 7000 kilometres: below the Earth's mean radius is not an orbit, and above 7000 kilometres is outside the band this tool is scoped to."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "r = R_earth + h"
 source = "wgs84"
@@ -53,3 +60,14 @@ type = "Length"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Altitude plus the WGS-84 equatorial radius, as stated and cited from wgs84, not yet derived on the sheet."
+breaks_if = "A comparison with wgs84 disagrees, or the result falls below the Earth's mean radius or above 7000 kilometres, meaning the altitude fed in is not an orbit in this tool's band."
+relation = "r = R_earth + h"
+source = "wgs84"

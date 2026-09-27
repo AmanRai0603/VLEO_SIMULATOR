@@ -21,6 +21,14 @@ state = "published"
 [question]
 text = "What temperature does the spacecraft settle at?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The temperature the spacecraft settles at, in kelvin, when the heat it takes in balances the heat its radiator sends out. The heat in is direct sunlight, sunlight reflected off the Earth, the Earth's own heat, heating by the air, and the spacecraft's own dissipated power."
+breaks = "It treats the whole spacecraft as one temperature, while a real design has a temperature difference across every panel. It sizes a radiator and bounds a temperature; it does not predict a gradient."
+wrong = "That this is the temperature of every part of the spacecraft. It is one figure for the whole vehicle, and real panels vary across their surfaces."
+by = "an assistant, from what this sheet states — for its owner (thermal) to confirm"
+
 [maths]
 expression = "T = (Q_total/(eps*sigma*A_rad))^(1/4)"
 source = "larson_wertz"
@@ -107,3 +115,14 @@ kind = "line"
 over = "orbit_altitude"
 points = 50
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (thermal) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Its relation as stated and cited from larson_wertz, not yet derived on the sheet, and the assumption that the whole spacecraft is at one temperature."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a result below 100 kelvin, colder than possible in this orbit, or above 1000 kelvin, which means the balance is being fed a nonsense load."
+relation = "T = (Q_total/(eps*sigma*A_rad))^(1/4)"
+source = "larson_wertz"

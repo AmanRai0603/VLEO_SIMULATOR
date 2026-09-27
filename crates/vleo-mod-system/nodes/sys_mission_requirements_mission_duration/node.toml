@@ -21,6 +21,14 @@ state = "published"
 [question]
 text = "How long must the mission operate?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How long the mission must operate: five years. Every subsystem sizes against this same mission length."
+breaks = "It assumes one duration governs the whole programme. If a constellation replaces satellites on a schedule shorter than a satellite's life, the satellite's life and the service's life are different numbers, and this row is the service's."
+wrong = "That this is each satellite's lifetime. When satellites are replaced sooner, it is the length of the service, not of any one satellite."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "T_mis_req = 5"
 source = "orbitt_case_c1"
@@ -52,3 +60,15 @@ confirmed_by = "A. Rai / 2026-09-01, carried unchanged from orbit_mission_durati
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The declared 5.0 years is the mission length for this design, from the case the sheet cites, carried unchanged from the earlier mission-duration row where A. Rai confirmed it on 2026-09-01; the sheet gives no further reason for five."
+breaks_if = "A programme decision or specification setting a mission length other than five years, or a replenishment schedule that makes satellite life and service life different numbers."
+relation = "T_mis_req = 5"
+source = "orbitt_case_c1"

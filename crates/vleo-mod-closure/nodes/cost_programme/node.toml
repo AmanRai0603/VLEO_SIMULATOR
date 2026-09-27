@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What does the whole programme cost over the mission?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What the whole programme costs over the mission: developing the design once, building the constellation, launching every satellite, and paying for operations every year of the mission. It feeds the cost per operational year."
+breaks = "It holds only these four parts; any cost outside development, production, launch and operations is not in it, and operations are taken as the same cost each year. Above a trillion dollars the programme is not the one being designed."
+by = "an assistant, from what this sheet states — for its owner (programme) to confirm"
+
 [maths]
 expression = "C = NRE + production + launch + operations*years"
 source = "nasa_cer"
@@ -96,3 +103,14 @@ kpis = ["kpi_cost_per_year"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (programme) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The sum as stated and cited from nasa_cer, not yet derived on the sheet: development, the production run, a launch cost per satellite, and a yearly operations cost over the mission."
+breaks_if = "A cost outside the four parts turns out to matter, operations cost that changes from year to year, or a comparison with nasa_cer that disagrees."
+relation = "C = NRE + production + launch + operations*years"
+source = "nasa_cer"

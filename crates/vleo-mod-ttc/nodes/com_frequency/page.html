@@ -9,7 +9,8 @@
 <p class="af-q">On what frequency does the payload data come down?</p>
 <p class="af-a"><b>8.2</b> GHz <span class="claim claim-declared" title="a number a person chose, and put their name against">declared · A. Rai / 2026-09-01</span></p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">The radio frequency the payload data comes down on: 8.2 gigahertz.</li>
+<li><b>Rests on</b> That 8.2 gigahertz is the downlink carrier frequency, from the source the sheet cites (itu_sa1862), confirmed by A. Rai on 2026-09-01. <span class="muted">(version 1; would break if A change of downlink frequency away from 8.2 gigahertz, for instance to reach a ground segment other than the one costed here.)</span></li>
 <li><b>Holds</b> from 0.1 to 40 GHz — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · itu_sa1862</span></li>
 </ul>
@@ -31,13 +32,15 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">The radio frequency the payload data comes down on: 8.2 gigahertz. It shapes how large the antennas must be, how much rain gets in the way, and what ground segment the link needs.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (comms) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">On what frequency does the payload data come down?</p>
 <p class="maths"><code>f_c = 8.2</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · itu_sa1862</span></p>
 <p class="src">Source <b>itu_sa1862</b> — ITU-R SA.1862 — Frequency bands for Earth exploration-satellite service downlinks <span class="where">ITU, 2010</span></p>
 <p class="declared">Declared: <b>8.2</b> GHz <span class="claim claim-declared" title="a number a person chose, and put their name against">declared · A. Rai / 2026-09-01</span></p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">Below 100 megahertz the antenna does not fit on this spacecraft. Above 40 gigahertz rain fade, the weakening of the signal by rain, dominates, and the ground stations are no longer the ones costed here.</p>
 <p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
 <p class="muted">Outside <code>0.1 … 40</code> GHz the row refuses rather than answers: below 100 MHz the antenna does not fit on this spacecraft; above 40 GHz rain fade dominates and the ground segment is not the one costed here.</p>
 <h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
@@ -51,7 +54,13 @@
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> That 8.2 gigahertz is the downlink carrier frequency, from the source the sheet cites (itu_sa1862), confirmed by A. Rai on 2026-09-01.</p>
+<p><b>Would break if:</b> A change of downlink frequency away from 8.2 gigahertz, for instance to reach a ground segment other than the one costed here.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (comms) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>That 8.2 gigahertz is the downlink carrier frequency, from the source the sheet cites (itu_sa1862), confirmed by A. Rai on 2026-09-01.</dd><dt>Would break if</dt><dd>A change of downlink frequency away from 8.2 gigahertz, for instance to reach a ground segment other than the one costed here.</dd><dt>The relation, as this version states it</dt><dd><code>f_c = 8.2</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · itu_sa1862</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -165,8 +174,6 @@ pub fn evaluate() -&gt; Result&lt;Frequency, Fault&gt; {
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
 <li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 <li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>

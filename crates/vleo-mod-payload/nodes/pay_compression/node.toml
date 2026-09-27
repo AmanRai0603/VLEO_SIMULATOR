@@ -21,6 +21,14 @@ state = "published"
 [question]
 text = "By what factor is the imagery compressed before downlink?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "By what factor the imagery is squeezed before it is sent to the ground: 3. The larger the factor, the less data has to be sent down."
+breaks = "The factor alone does not say how much image quality is lost. It is only meaningful from 1, no compression at all, up to 20; beyond 20 to 1 the compression loses enough to destroy the brightness measurements the product is sold on."
+wrong = "It is easy to treat a higher compression factor as free downlink. Above 20 to 1 the loss destroys the measurements the product is sold on."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "CR_img = 3"
 source = "ccsds122"
@@ -45,3 +53,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That a compression factor of 3 suits this design's imagery, following the compression standard the sheet cites (ccsds122), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A compression scheme chosen for this payload that achieves a different factor than 3, or quality tests showing the product's measurements do not survive it."
+relation = "CR_img = 3"
+source = "ccsds122"

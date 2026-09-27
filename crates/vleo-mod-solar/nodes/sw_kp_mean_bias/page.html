@@ -9,7 +9,8 @@
 <p class="af-q">By how much does the published table over-read the 24-hour MEAN Kp at this Ap?</p>
 <p class="af-a">dKp_mean — computed on the inputs you run, never stored: run it beside this page.</p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">A small correction to the geomagnetic activity level a design reads for a day.</li>
+<li><b>Rests on</b> When live, nine binned medians measured on the record, and Jensen's inequality, which says an average of readings on this curved scale cannot exceed the table's reading of the day; retired when its table moved into the kernel. <span class="muted">(version 1; would break if The quietest bin's positive value, plus 0.042, proves real rather than an estimated-index or resolution effect, or re-measuring the top two bins, on 25 and 20 days, moves the deepest correction from minus 0.487.)</span></li>
 <li><b>Holds</b> from -1 to 0.5 — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></li>
 </ul>
@@ -31,13 +32,15 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">A small correction to the geomagnetic activity level a design reads for a day. The published conversion table is built for three-hour readings, the design carries a daily average, and read that way the table comes out slightly high: from about a tenth of a unit to about half a unit on the most disturbed days. It is retired: its table moved into the shared kernel.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (environment) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">By how much does the published table over-read the 24-hour MEAN Kp at this Ap?</p>
 <p class="maths"><code>dKp_mean(Ap) = piecewise_linear(ap_bin_centres -&gt; measured_medians, Ap)</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></p>
 <p class="src">Source <b>noaa_swpc</b> — NOAA Space Weather Prediction Center — solar and geomagnetic indices <span class="where">NOAA, retrieved 2026-09-01</span></p>
 <p class="note">The pair to sw_kp_slot_bias, and the half of the pair a thermospheric model actually asks for more often. DTM2020_Oper takes Kp in two senses — akp(1) a single three-hourly value, akp(3) the mean of the day's eight — and the published scale answers neither, because it is defined for a three-hourly ap while the design product carries a daily mean. sw_kp_slot_bias measures the peak-slot gap and this measures the mean-slot one. They have opposite signs, so applying the wrong one doubles the error instead of removing it.</p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">It is the typical day at each activity level, not the day in hand, and it does not publish the spread. The quietest bin measures the opposite sign to the one the argument behind the row requires, and the largest correction rests on only twenty days of record.</p>
 <h5>Assumptions, and where each stops holding</h5>
 <dl class="asm">
 <dt>The correction is a median per bin, so it describes the typical day at that Ap and not the day in hand</dt><dd>fails when the offset is a distribution, not a number. Adding the median recovers the typical 24-hour mean and still misses any individual day, and the spread within a bin is not published by this row. A design that needs the worst case at a given Ap needs a percentile of the offset, not its median.</dd>
@@ -46,6 +49,8 @@
 <dt>This is NOT the daily-peak slot</dt><dd>fails when the two slots have opposite signs. The peak-slot offset measured on the same 10,297 days runs from +0.833 to +1.747; this one runs from +0.042 to -0.487. Applying this row where sw_kp_slot_bias was wanted moves the answer the wrong way by roughly one and a half Kp, and the result is still a plausible Kp, so nothing downstream will refuse it.</dd>
 </dl>
 <p class="muted">Outside <code>-1 … 0.5</code> the row refuses rather than answers: the deepest measured bin median is -0.487 and the relation is a table that clamps at its ends, so no input can produce less. -1.0 is therefore unreachable by this relation and exists to catch a broken table rather than an extreme sky; Jensen's inequality puts this at or below zero wherever the published Ap is the mean of the day's eight ap, and the one bin that measures positive measures +0.042. +0.5 would say the table under-reads the 24-hour mean by half a Kp, which no bin shows and which is the signature of the peak-slot offset having been put in this row by mistake.</p>
+<h4 class="st-h"><span class="st-n">4</span>Common wrong idea</h4>
+<p class="wrong">That this correction and the one for the day's worst three-hour slot are interchangeable. They have opposite signs, so using the wrong one moves the answer the wrong way by about one and a half units and still looks plausible.</p>
 <h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
 <p class="d-l predict">Before you run it: what do you expect the answer to be, roughly, and which input do you expect to move it most? Write it down — then run, and compare. A guess that was wrong is the most useful thing on this page.</p>
 <p class="d-lr muted">Run it from the panel beside this page, on your own inputs, or open <i>the relation, moving</i> to watch the answer cross its range.</p>
@@ -73,7 +78,13 @@
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> When live, nine binned medians measured on the record, and Jensen's inequality, which says an average of readings on this curved scale cannot exceed the table's reading of the day; retired when its table moved into the kernel.</p>
+<p><b>Would break if:</b> The quietest bin's positive value, plus 0.042, proves real rather than an estimated-index or resolution effect, or re-measuring the top two bins, on 25 and 20 days, moves the deepest correction from minus 0.487.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (environment) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>When live, nine binned medians measured on the record, and Jensen's inequality, which says an average of readings on this curved scale cannot exceed the table's reading of the day; retired when its table moved into the kernel.</dd><dt>Would break if</dt><dd>The quietest bin's positive value, plus 0.042, proves real rather than an estimated-index or resolution effect, or re-measuring the top two bins, on 25 and 20 days, moves the deepest correction from minus 0.487.</dd><dt>The relation, as this version states it</dt><dd><code>dKp_mean(Ap) = piecewise_linear(ap_bin_centres -&gt; measured_medians, Ap)</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -232,8 +243,6 @@ pub fn evaluate(ap: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
 <li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

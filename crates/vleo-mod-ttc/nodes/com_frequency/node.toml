@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "On what frequency does the payload data come down?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The radio frequency the payload data comes down on: 8.2 gigahertz. It shapes how large the antennas must be, how much rain gets in the way, and what ground segment the link needs."
+breaks = "Below 100 megahertz the antenna does not fit on this spacecraft. Above 40 gigahertz rain fade, the weakening of the signal by rain, dominates, and the ground stations are no longer the ones costed here."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "f_c = 8.2"
 source = "itu_sa1862"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 8.2 gigahertz is the downlink carrier frequency, from the source the sheet cites (itu_sa1862), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A change of downlink frequency away from 8.2 gigahertz, for instance to reach a ground segment other than the one costed here."
+relation = "f_c = 8.2"
+source = "itu_sa1862"

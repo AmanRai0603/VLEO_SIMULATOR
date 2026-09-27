@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How strong is the received carrier relative to the noise floor?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How strong the received signal is compared with the background noise, per unit of bandwidth, in decibel-hertz. It assembles the whole link: the power sent toward the station, the losses from distance and atmosphere, and the ground station's sensitivity."
+breaks = "It is one figure for one geometry, and the sheet states no assumptions or derivation. Below 20 decibel-hertz no link in this design closes; above 120 the geometry is not one this tool covers."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "C/N0 = EIRP - L_fs - L_atm + G/T - 10*log10(k)"
 source = "larson_wertz"
@@ -77,3 +84,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Its relation as stated and cited from larson_wertz, the link equation in decibels, not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or a result outside 20 to 120 decibel-hertz."
+relation = "C/N0 = EIRP - L_fs - L_atm + G/T - 10*log10(k)"
+source = "larson_wertz"

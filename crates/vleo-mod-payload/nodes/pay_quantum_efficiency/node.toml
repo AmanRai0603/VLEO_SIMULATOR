@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What fraction of incident photons become photoelectrons?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The share of light particles reaching the detector that become electrical signal: 0.75, that is three quarters. The higher it is, the more signal each image collects."
+breaks = "It is one figure standing for the whole band of light the detector sees. It is only meaningful between 5 per cent, below which the detector is not one considered here, and 95 per cent, which no back-illuminated detector reaches across the band."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "QE = 0.75"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 0.75 is this design's detector efficiency, as taken from the source case the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A detector datasheet or test for this payload showing an efficiency across the band other than 0.75."
+relation = "QE = 0.75"
+source = "orbitt_case_c1"

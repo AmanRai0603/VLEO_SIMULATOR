@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What deceleration does the drag produce on this mass?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How quickly drag slows the spacecraft, in metres per second each second: the drag force divided by the wet mass."
+breaks = "It divides by the wet mass, the mass at separation, so it describes that one mass and not a lighter spacecraft later. Above 0.1 metres per second each second the orbit decays within hours."
+by = "an assistant, from what this sheet states — for its owner (aero) to confirm"
+
 [maths]
 expression = "a_D = D/m"
 source = "vallado2013"
@@ -61,3 +68,14 @@ type = "Acceleration"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (aero) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Deceleration as drag force over wet mass, as stated and cited from vallado2013, not yet derived on the sheet."
+breaks_if = "A derivation or a check against vallado2013 disagrees, or the result exceeds 0.1 metres per second each second, where the sheet says the orbit decays within hours."
+relation = "a_D = D/m"
+source = "vallado2013"

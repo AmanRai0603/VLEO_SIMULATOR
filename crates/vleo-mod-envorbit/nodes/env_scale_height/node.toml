@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "Over what altitude change does the density fall by a factor of e?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The height over which the air's density falls by a fixed factor, the mathematical constant e. It is set by the local temperature, the average weight of the gas and gravity, and it says how quickly the air thins with height."
+breaks = "It is a local figure at one altitude. The sheet holds it between 5 and 200 kilometres: less than 5 does not occur above the model base, and above 200 the atmosphere is effectively at one temperature throughout and the idea stops being useful."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "H = R*T/(M*g)"
 source = "vallado2013"
@@ -61,3 +68,14 @@ type = "Length"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The barometric scale height from local temperature, mean molar mass and gravity, as stated and cited to vallado2013 and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with vallado2013 that disagrees, or a result below 5 or above 200 kilometres."
+relation = "H = R*T/(M*g)"
+source = "vallado2013"

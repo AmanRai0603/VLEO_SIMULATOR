@@ -9,7 +9,8 @@
 <p class="af-q">What F10.7 must the design survive as a sustained level over the mission window?</p>
 <p class="af-a">F107_long — computed on the inputs you run, never stored: run it beside this page.</p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">The high level of the Sun's flux the design must survive, held over the mission window for months at a time: the expected centre plus a margin for how wrong the forecast has been.</li>
+<li><b>Rests on</b> That the expected centre plus 1.28 spreads of the rotation-forecast error is the right sustained upper edge; at that margin the band held 0.9149 to 0.9339 of past exceedances. <span class="muted">(version 1; would break if The confidence is set to a true one-sided 95 per cent, which adds about 4.9 solar flux units, or the window spans a rise or fall in the cycle where one spread is too narrow.)</span></li>
 <li><b>Holds</b> from 60 to 400 — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></li>
 </ul>
@@ -31,7 +32,8 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">The high level of the Sun's flux the design must survive, held over the mission window for months at a time: the expected centre plus a margin for how wrong the forecast has been. It is what an array is sized on and what a drag budget adds up over the mission.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (environment) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">What F10.7 must the design survive as a sustained level over the mission window?</p>
 <p class="maths"><code>F107_long = F107_central + 1.28 * sigma_total</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></p>
@@ -46,6 +48,7 @@ value&quot; rather than &quot;how wrong is the pattern about the window&quot;. B
 defensible and they are not the same question.
 </p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">The margin of 1.28 spreads is really a 90th-percentile edge while the run is labelled 95 per cent. At that margin the band in fact holds a little more than a normal curve would say, but the far tail is heavier than normal, so a 99 per cent band built the same way would fall short. One spread is used for the whole window.</p>
 <h5>Assumptions, and where each stops holding</h5>
 <dl class="asm">
 <dt>1.28 is the confidence, and it is the 90th percentile while the run is called 95 per cent</dt><dd>fails when a reader takes the published band as a 95 per cent bound. Phi(1.28) = 0.8997. A one-sided 95 per cent bound is 1.645 sigma, which at this sigma is a further 4.9 sfu. The daily half of the same band DOES use 0.95, so the two halves are not at one confidence, and this row reproduces that rather than silently repairing it Which number that is, is now a row of its own — sw_band_confidence, seeded by §30 B2 and unanswered, because the value needs a person. Until it carries one the multiplier is a literal in this hole and three others, each saying it is declared in the sheet while no sheet declares it. §44 measures what each answer costs: moving to 1.645 moves 47 rows and no KPI closure, leaves all five solar closures closing with 3.1 to 6.2 per cent less margin, and breaks no parity check in this repository</dd>
@@ -53,6 +56,8 @@ defensible and they are not the same question.
 <dt>One sigma covers the whole window</dt><dd>fails when sigma is not flat across the cycle — the source says so about its own number — so a window spanning a rise or a fall is given one width where it needs two</dd>
 </dl>
 <p class="muted">Outside <code>60 … 400</code> the row refuses rather than answers: below 60 sfu has never been observed and every relation reading F10.7 has no support there; a design level below it means the spread has been subtracted rather than added; above 400 sfu the exospheric temperature relation is extrapolated past the largest recorded daily value, and a sustained level there is not a window this tool can model.</p>
+<h4 class="st-h"><span class="st-n">4</span>Common wrong idea</h4>
+<p class="wrong">It is easy to take this for the existing single flux design value. That one adds a drift from today's value; this adds how wrong the pattern is about the window, and they answer different questions.</p>
 <h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
 <p class="d-l predict">Before you run it: what do you expect the answer to be, roughly, and which input do you expect to move it most? Write it down — then run, and compare. A guess that was wrong is the most useful thing on this page.</p>
 <p class="d-lr muted">Run it from the panel beside this page, on your own inputs, or open <i>the relation, moving</i> to watch the answer cross its range.</p>
@@ -76,7 +81,13 @@ defensible and they are not the same question.
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> That the expected centre plus 1.28 spreads of the rotation-forecast error is the right sustained upper edge; at that margin the band held 0.9149 to 0.9339 of past exceedances.</p>
+<p><b>Would break if:</b> The confidence is set to a true one-sided 95 per cent, which adds about 4.9 solar flux units, or the window spans a rise or fall in the cycle where one spread is too narrow.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (environment) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>That the expected centre plus 1.28 spreads of the rotation-forecast error is the right sustained upper edge; at that margin the band held 0.9149 to 0.9339 of past exceedances.</dd><dt>Would break if</dt><dd>The confidence is set to a true one-sided 95 per cent, which adds about 4.9 solar flux units, or the window spans a rise or fall in the cycle where one spread is too narrow.</dd><dt>The relation, as this version states it</dt><dd><code>F107_long = F107_central + 1.28 * sigma_total</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -217,8 +228,6 @@ pub fn evaluate(central: Ratio, spread: Ratio) -&gt; Result&lt;Ratio, Fault&gt; 
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
 <li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

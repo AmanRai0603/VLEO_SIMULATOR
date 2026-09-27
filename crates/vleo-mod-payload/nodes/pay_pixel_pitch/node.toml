@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How large is one detector pixel?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The size of one detector pixel: 5.5 micrometres, a micrometre being a thousandth of a millimetre. Pixels too large let the detector, not the telescope, limit the detail."
+breaks = "It is only meaningful between 1 and 30 micrometres. No space-qualified detector has pixels below one micrometre, and above 30 micrometres the pixel, not the telescope, limits the detail and the opening is wasted."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "p_x = 5.5"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 5.5 micrometres is the pixel size of this design's detector, as taken from the source case the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A detector selected for this payload whose pixel size differs from 5.5 micrometres."
+relation = "p_x = 5.5"
+source = "orbitt_case_c1"

@@ -50,6 +50,14 @@ The checking partner is l3_solar_ach_02, which restates sw_f107_design_short:
 the sustained hot level with the within-rotation daily excursion on top.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The highest solar activity the design must survive on any single day inside the mission: 350 solar flux units, just above the record's worst day, 343 on 2023-02-17. Survive, not operate in: a day at this level may cost a safe mode and some propellant, but not the vehicle."
+breaks = "It is anchored in 28.2 years of satellite-era record, not the Sun's whole history; cycle 19 in the late 1950s was reported above 350. It limits an index, not the density and heating the spacecraft feels."
+wrong = "Checking the sustained achieved level against this single-day ceiling, or the reverse. The two are different commitments, and crossing them reports a margin that belongs to neither."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # NOT A CONFIRMATION. The relation and the number are both new: this row asked a
 # different question at a different value until §20 step 5. An agent may not
@@ -172,3 +180,15 @@ confirmed_by = "A. Rai / 2026-09-16"
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 350 sfu (\"350 sfu, above the record's largest daily value of 343\") is right because no day the record has shown should end the mission; set by A. Rai on 2026-09-16, which the sheet says is not yet a confirmation of the spacecraft claim."
+breaks_if = "A day above 343 solar flux units being observed, or a design requirement to survive a cycle-19-like maximum."
+relation = "F107_req_day = 350 sfu, above the record's largest daily value of 343"
+source = "orbitt_case_c1"

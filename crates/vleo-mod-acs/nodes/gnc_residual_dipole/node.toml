@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much uncompensated magnetic moment does the spacecraft carry?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How strongly the spacecraft behaves like a small magnet that nobody has cancelled out: 0.05 ampere square metres. That leftover magnetism pushes against the Earth's field and twists the spacecraft, so it is a disturbance the attitude control must carry."
+breaks = "It is one declared number taken from a textbook reference, not measured on this vehicle. Above 5 ampere square metres the sheet says the magnetic disturbance would outweigh every other torque and the design could not be controlled."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "m_res = 0.05"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 0.05 ampere square metres is right for this design, taken from the Larson and Wertz reference and confirmed by A. Rai on 2026-09-01."
+breaks_if = "A magnetic cleanliness test or estimate of this vehicle giving a residual dipole different from 0.05 ampere square metres."
+relation = "m_res = 0.05"
+source = "larson_wertz"

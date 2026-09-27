@@ -9,7 +9,8 @@
 <p class="af-q">How long is the emitter observed for one measurement?</p>
 <p class="af-a"><b>0.01</b> s <span class="claim claim-declared" title="a number a person chose, and put their name against">declared · A. Rai / 2026-09-01</span></p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">How long the payload listens to a radio emitter to make one measurement: one hundredth of a second.</li>
+<li><b>Rests on</b> That an observation time of 0.01 seconds is right for this payload; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it. <span class="muted">(version 1; would break if A measured or specified observation time for this payload that differs from 0.01 seconds, or evidence that the emitter or geometry moves appreciably within it.)</span></li>
 <li><b>Holds</b> from 0.000001 to 10 s — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · orbitt_case_c2</span></li>
 </ul>
@@ -31,13 +32,15 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">How long the payload listens to a radio emitter to make one measurement: one hundredth of a second. Too short and the emitter cannot be timed; too long and things move while it is being watched.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (payload) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">How long is the emitter observed for one measurement?</p>
 <p class="maths"><code>t_int_rf = 0.01</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · orbitt_case_c2</span></p>
 <p class="src">Source <b>orbitt_case_c2</b> — Orbitt Space — VLEO multipayload reference case C2 <span class="where">internal, 2026-09-01</span></p>
 <p class="declared">Declared: <b>0.01</b> s <span class="claim claim-declared" title="a number a person chose, and put their name against">declared · A. Rai / 2026-09-01</span></p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">It is a single chosen duration. Below a microsecond the emitter is not observed long enough to time it, and above ten seconds both the emitter and the satellites' geometry move during the observation, so one measurement no longer describes one moment.</p>
 <p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
 <p class="muted">Outside <code>0.000001 … 10</code> s the row refuses rather than answers: below a microsecond the emitter is not observed long enough to time it; above 10 seconds the emitter and the geometry both move during the observation.</p>
 <h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
@@ -51,7 +54,13 @@
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> That an observation time of 0.01 seconds is right for this payload; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it.</p>
+<p><b>Would break if:</b> A measured or specified observation time for this payload that differs from 0.01 seconds, or evidence that the emitter or geometry moves appreciably within it.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (payload) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>That an observation time of 0.01 seconds is right for this payload; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it.</dd><dt>Would break if</dt><dd>A measured or specified observation time for this payload that differs from 0.01 seconds, or evidence that the emitter or geometry moves appreciably within it.</dd><dt>The relation, as this version states it</dt><dd><code>t_int_rf = 0.01</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · orbitt_case_c2</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -165,8 +174,6 @@ pub fn evaluate() -&gt; Result&lt;Time, Fault&gt; {
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
 <li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 <li>no theory: the relation is stated but not derived, so a reviewer can check what it computes and not whether it is the right thing to compute</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>

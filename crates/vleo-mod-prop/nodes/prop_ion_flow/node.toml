@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much of the collected mass is actually accelerable?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much of the collected air, in mass per second, is actually turned into ions the thruster can accelerate: the collected flow times the share of propellant that is used."
+breaks = "The share used is a single figure. The ion flow can never exceed the collected flow it comes from."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "mdot_i = eta_u*mdot"
 source = "romano2021"
@@ -61,3 +68,14 @@ type = "MassFlow"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to romano2021, the propellant utilisation efficiency applied to the collected flow, not yet derived on the sheet."
+breaks_if = "An ion flow above the collected flow, or a derivation or comparison with romano2021 that disagrees."
+relation = "mdot_i = eta_u*mdot"
+source = "romano2021"

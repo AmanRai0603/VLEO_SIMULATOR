@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much power does making the ions cost, before any of them is accelerated?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much power it costs to make the ions, before any of them is accelerated: the number of ions made each second, each charged its stated energy cost."
+breaks = "It is only as good as the stated energy cost per ion, and it counts ions of the air's average mass. Above 100 kilowatts no bus in this mass class supplies it."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "P_ion = (mdot_i/m_i)*eps_i*q"
 source = "romano2021"
@@ -69,3 +76,14 @@ type = "Power"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to romano2021, ions per second each charged its stated energy cost, not yet derived on the sheet."
+breaks_if = "A derivation or comparison with romano2021 that disagrees, or ions whose mass is not the air's average."
+relation = "P_ion = (mdot_i/m_i)*eps_i*q"
+source = "romano2021"

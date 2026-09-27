@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How long does ground processing take after the data lands?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How long ground processing takes after the data lands: 8 minutes. It is part of how quickly the service can put a product in a customer's hands, which is one of the figures the design is judged by."
+breaks = "It is one fixed number, so it leaves out any queueing or spread between passes. It is only held to be sensible between six seconds and a day: below that no ground processing chain in this design runs, and above a day the product is not the near-real-time one being sold."
+by = "an assistant, from what this sheet states — for its owner (operations) to confirm"
+
 [maths]
 expression = "t_proc = 8"
 source = "orbitt_case_c1"
@@ -48,3 +55,14 @@ kpis = ["kpi_latency"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (operations) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 8 minutes is the ground processing time for this design, as taken from the source case the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A measured or specified processing time for this design's ground chain that differs from 8 minutes, or one longer than a day."
+relation = "t_proc = 8"
+source = "orbitt_case_c1"

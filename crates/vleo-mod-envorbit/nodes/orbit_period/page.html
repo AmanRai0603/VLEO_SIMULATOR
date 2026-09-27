@@ -9,7 +9,8 @@
 <p class="af-q">How long does one revolution take?</p>
 <p class="af-a">T_orb — computed on the inputs you run, never stored: run it beside this page.</p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">How long the spacecraft takes to go once around the Earth, in minutes, worked out from its distance from the Earth's centre by Kepler's third law.</li>
+<li><b>Rests on</b> Kepler's third law at the circular radius, as stated and cited from vallado2013, not yet derived on the sheet. <span class="muted">(version 1; would break if A derivation or a check against vallado2013 disagrees, or a period falls outside 83 to 104 minutes, meaning an orbit inside the Earth or beyond about 1000 kilometres.)</span></li>
 <li><b>Holds</b> from 83 to 104 min — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · vallado2013</span></li>
 </ul>
@@ -31,12 +32,14 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">How long the spacecraft takes to go once around the Earth, in minutes, worked out from its distance from the Earth's centre by Kepler's third law. In this tool's band it lies between 83 and 104 minutes.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (systems) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">How long does one revolution take?</p>
 <p class="maths"><code>T = 2*pi*sqrt(a^3/mu)</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · vallado2013</span></p>
 <p class="src">Source <b>vallado2013</b> — Vallado, D. A. — Fundamentals of Astrodynamics and Applications, 4th edition <span class="where">Microcosm Press, 2013</span></p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">It treats the orbit as a circle at that distance. Its limits are the tool's band, not physics at large: a period below 5000 seconds would be an orbit inside the Earth, and 6200 seconds corresponds to about 1000 kilometres, outside the band.</p>
 <p class="muted">No assumption stated. A multi-step relation always has at least one.</p>
 <p class="muted">Outside <code>83 … 104</code> min the row refuses rather than answers: a period below 5000 s corresponds to an orbit inside the Earth; 6200 s corresponds to about 1000 km, outside this tool's band.</p>
 <h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
@@ -50,7 +53,13 @@
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> Kepler's third law at the circular radius, as stated and cited from vallado2013, not yet derived on the sheet.</p>
+<p><b>Would break if:</b> A derivation or a check against vallado2013 disagrees, or a period falls outside 83 to 104 minutes, meaning an orbit inside the Earth or beyond about 1000 kilometres.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (systems) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>Kepler's third law at the circular radius, as stated and cited from vallado2013, not yet derived on the sheet.</dd><dt>Would break if</dt><dd>A derivation or a check against vallado2013 disagrees, or a period falls outside 83 to 104 minutes, meaning an orbit inside the Earth or beyond about 1000 kilometres.</dd><dt>The relation, as this version states it</dt><dd><code>T = 2*pi*sqrt(a^3/mu)</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · vallado2013</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -169,8 +178,6 @@ pub fn evaluate(r: Length) -&gt; Result&lt;Time, Fault&gt; {
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
 <li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
 <li>no theory: the relation is stated but not derived — THE ROW DOES NOT ANSWER. A function is defined by its derivation, not by its expression and not by its citation, and until one is written every reader of this row is blocked on it by name</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>

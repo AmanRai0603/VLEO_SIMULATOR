@@ -22,6 +22,13 @@ state = "published"
 text = "How much mass arrives on a square metre facing the flow each second?"
 note = "The ceiling on everything downstream. At 200 km it is about 2 milligrams per square metre per second."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much air arrives each second on one square metre facing the flow: the air's density times the flight speed. It is the ceiling on everything downstream; at 200 kilometres it is about 2 milligrams per square metre per second."
+breaks = "It is what arrives, not what is captured; everything downstream is at most a part of it. Above 1 kilogram per square metre per second the flow is continuum, behaving as a fluid rather than as separate molecules, and the intake model does not apply."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "phi = rho*V"
 source = "romano2021"
@@ -62,3 +69,14 @@ type = "MassFlux"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to romano2021, the free-stream density multiplied by the flight speed, not yet derived on the sheet."
+breaks_if = "A derivation or comparison with romano2021 that disagrees, a value at 200 kilometres far from about 2 milligrams per square metre per second, or a flux above 1 kilogram per square metre per second."
+relation = "phi = rho*V"
+source = "romano2021"

@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How large is the ground station antenna?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How wide the ground station's receiving antenna is: 5.4 metres. It is the ground end of the link the spacecraft's data must cross."
+breaks = "It is one declared size for the ground antenna. Below half a metre no station in the costed network is that small, and above 35 metres it is a deep-space antenna, not a commercial ground station."
+by = "an assistant, from what this sheet states — for its owner (comms) to confirm"
+
 [maths]
 expression = "D_g = 5.4"
 source = "orbitt_case_c1"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (comms) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 5.4 metres is the ground antenna diameter, from the source the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "The mission using ground stations whose antennas differ from 5.4 metres."
+relation = "D_g = 5.4"
+source = "orbitt_case_c1"

@@ -41,6 +41,14 @@ apart because percentiles of a truncated sample are. Three facts that disagree
 about shape meet in one subtraction here.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How quiet a single day of geomagnetic disturbance can be inside the mission window: the sustained quiet level with a quiet day's own dip below its 27-day stretch taken off. It now comes to about 4.93 on the daily index, a quiet but ordinary day, and it is the scenario closest to the zero floor anywhere in this group."
+breaks = "Nothing in the arithmetic keeps the answer above zero: a sustained quiet level below about 15.6 would push it through the floor and the row would refuse. Stacking a quiet stretch with a quiet day inside it also makes something rarer than the 95 per cent the label suggests, since quiet days and quiet stretches are not independent."
+wrong = "It is tempting to build the quiet day by mirroring the disturbed day. The upward swings are two to three times the downward ones and are read at different levels, so mirroring would give about minus 46, which is not a sky."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has NOT read this relation against its source yet.
 confirmed_by = ""
@@ -147,3 +155,15 @@ reason_upper = "400 is the top of the Ap index itself; a value above it is not a
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the two spreads stack, that the daily drop measured before the window applies inside it, and that the sustained quiet level stays clear of the crossing near 15.6."
+breaks_if = "A window with a sustained quiet level below about 15.6, a window in a different part of the cycle where daily variability differs, or a reader who takes the result as a one-in-twenty day."
+relation = "Ap_cold_short = Ap_cold_long - dAp_day_low"
+source = "noaa_swpc"

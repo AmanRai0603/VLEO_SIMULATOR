@@ -33,6 +33,14 @@ window sits at. A design needs both and they are different numbers by a factor
 of several.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The disturbed level of geomagnetic activity the design must survive, held over the mission window: the expected centre plus a margin, about 26.7 on the daily index. It feeds density, then drag, then lifetime, and is what a propellant budget integrates."
+breaks = "The margin of 1.28 spreads is really a 90th-percentile edge while the run is labelled 95 per cent. The index cannot go below zero and swings a long way upward, so a symmetric margin understates the far upper tail, although at this particular margin it slightly over-covers."
+wrong = "This is not the same as the storm level the design must survive once per mission; that asks what extreme recurs, this asks what level the window sits at, and the two differ by a factor of several."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has NOT read this relation against its source yet.
 confirmed_by = ""
@@ -99,3 +107,15 @@ reason_upper = "above 300 the level exceeds the largest daily Ap in the record, 
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the expected centre plus 1.28 spreads of the rotation-forecast error is the right sustained upper edge; at that margin the band held 0.9148 to 0.9239 of past exceedances."
+breaks_if = "The confidence is set to a true one-sided 95 per cent, which would use 1.645, or a design is sized on the far tail, where the record runs 2.53 to 2.87 spreads against a normal's 2.33."
+relation = "Ap_long = Ap_central + 1.28 * sigma_ap"
+source = "noaa_swpc"

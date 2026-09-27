@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much output does the array lose per kelvin above its reference temperature?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much output the solar array loses for each degree it runs hotter than its reference temperature: a small negative fraction, so the array gives less power when warm."
+breaks = "It is one declared rate. A positive value would mean a cell that improves when heated, which does not happen, and no cell technology degrades faster than one per cent per degree."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "k_T = -0.0025"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the array loses -0.0025 of its output per kelvin above its reference temperature; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it."
+breaks_if = "A datasheet or test of the chosen cells giving a different loss of output with temperature."
+relation = "k_T = -0.0025"
+source = "larson_wertz"

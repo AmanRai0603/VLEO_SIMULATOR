@@ -22,6 +22,13 @@ state = "published"
 text = "How much power does the propulsion system take from the bus?"
 note = "The largest single load on the bus, and the reason the power chapter is where an air-breathing design usually fails."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much power the propulsion system takes from the spacecraft's electrical supply: what the thruster itself draws, raised by the losses in the power processing unit that feeds it. It is the largest single load, and the reason power is where an air-breathing design usually fails."
+breaks = "The only loss it adds is the power processing unit's, taken as one efficiency figure. Above 100 kilowatts no bus in this mass class supplies it."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "P_prop = P_in/eta_ppu"
 source = "larson_wertz"
@@ -62,3 +69,14 @@ type = "Power"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to larson_wertz, the thruster's input power divided by the power processing unit efficiency, not yet derived on the sheet."
+breaks_if = "A derivation or comparison with larson_wertz that disagrees, a power processing unit whose loss is not a fixed fraction, or a demand above 100 kilowatts."
+relation = "P_prop = P_in/eta_ppu"
+source = "larson_wertz"

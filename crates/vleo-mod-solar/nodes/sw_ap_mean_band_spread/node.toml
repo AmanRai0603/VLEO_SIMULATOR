@@ -27,6 +27,13 @@ It is a separate row because it is a separate measurement of a separate
 quantity, and because a row publishes one number.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far off the pattern-based forecast of the next 27-day stretch of geomagnetic disturbance has typically been, measured over 361 past forecasts that each used only earlier data. It is about 3.59 on the daily index, and it sets the width of the sustained design bands on both the disturbed and the quiet side."
+breaks = "One spread is used for the whole cycle, though geomagnetic activity is burstier in the declining phase, so a window there gets a band too narrow. The index cannot go below zero and its errors are lopsided, so one symmetric spread fits the middle better than the far tail. Nine missing months of 2017 were filled in; counted as real, they would make the spread look narrower."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has read this relation against its source.
 confirmed_by = "A. Rai / 2026-09-16"
@@ -95,3 +102,15 @@ confirmed_by = "A. Rai / 2026-09-16"
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the spread of the forecast error, 3.593688 on the index, holds across the whole cycle and is a usable margin for an index that cannot go negative; confirmed by A. Rai on 2026-09-16."
+breaks_if = "Forecast errors in the declining phase prove wider than this pooled figure, or the filled-in 2017 stretch is shown to have narrowed it."
+relation = "sigma_ap = std(pred - truth) over 361 walk-forward next-rotation forecasts = 3.5937"
+source = "noaa_swpc"

@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How bright is the scene at the aperture, per unit wavelength?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How bright the scene is when its light reaches the telescope, for each slice of wavelength: 60, somewhere between a dark night-time scene and a desert at noon."
+breaks = "The number is carried without a unit; the unit appears only in the reasons for its bounds, as watts per square metre, per unit of viewing direction, per micrometre of wavelength. One brightness stands for every scene, held sensible from 0.1, darker than any night-time reference used here, to 500, brighter than a desert at noon."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "L_ap = 60"
 source = "modtran_ref"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That a scene brightness of 60 is the right reference for this design, with the value from the atmospheric reference the sheet cites (modtran_ref), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A reference scene or atmospheric model for this design's targets that gives a brightness at the telescope other than 60."
+relation = "L_ap = 60"
+source = "modtran_ref"

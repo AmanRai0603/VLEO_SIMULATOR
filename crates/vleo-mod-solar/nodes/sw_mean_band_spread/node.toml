@@ -39,6 +39,14 @@ It is the number a design carries as margin: the central expectation without it
 is a line with no width.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far, typically, the tool's pattern for solar flux misses the level of the next 27-day solar rotation: about 13.4544 solar flux units, measured over 361 rotations using only what was known before each one. It is the margin a design carries around its central expectation, which without it is a line with no width."
+breaks = "One number is pooled over the whole solar cycle, but the spread is not flat: near solar maximum this band is too narrow and near minimum too wide. A nine-month gap in 2017 was filled with smooth invented values, which makes the spread a little narrower than the record can support."
+wrong = "That it measures what a forecaster would get wrong. There is no forecast in it, only the cycle pattern and the memory of the last two rotations; a real 27-day outlook does better."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has read this relation against its source.
 confirmed_by = "A. Rai / 2026-09-16"
@@ -138,3 +146,15 @@ confirmed_by = "A. Rai / 2026-09-16"
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The declared 13.454382 sfu is the walk-forward residual spread over 361 rotations of the solar-weather bundle of 2026.09.14, 0.31 per cent from the study's own 13.496882; confirmed by A. Rai on 2026-09-16."
+breaks_if = "The bundle version changes and a re-measurement differs, a spread split by cycle phase shows the pooled number misleads at the mission's phase, or the value exceeds 45 sfu, where the pattern would be worse than the record's own mean."
+relation = "sigma_total = std(pred - truth) over 361 walk-forward next-rotation forecasts = 13.4544 sfu"
+source = "noaa_swpc"

@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What angle does the Sun make with the orbit plane? It decides eclipse duration and therefore both the power and the thermal design."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The angle the Sun makes with the plane of the orbit: 30 degrees. It decides how long the spacecraft spends in the Earth's shadow on each orbit, and so drives both the power and the thermal design."
+breaks = "It is one fixed angle, while the sheet gives no reason for choosing 30 degrees in particular. The angle is defined only from minus 90 to 90 degrees."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "beta = 30"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That a Sun angle of 30 degrees to the orbit plane is the right case for this design, with the value drawn from the textbook the sheet cites (larson_wertz), confirmed by A. Rai on 2026-09-01; the sheet gives no reason for this value."
+breaks_if = "An orbit for this design that puts the Sun at a different angle to the orbit plane than 30 degrees."
+relation = "beta = 30"
+source = "larson_wertz"

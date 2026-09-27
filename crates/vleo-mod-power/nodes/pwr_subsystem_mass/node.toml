@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What does the whole power subsystem weigh?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What the whole power subsystem weighs: the solar array and the battery, plus 25 per cent of their combined mass for the unit that distributes and controls the power."
+breaks = "The distribution and control unit is not sized here; it is a flat 25 per cent of the array and battery, and nothing else is added. Above two tonnes the power system is not part of this spacecraft."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "m = m_arr + m_batt + m_pcdu"
 source = "larson_wertz"
@@ -61,3 +68,14 @@ type = "Mass"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to larson_wertz, with the distribution and control unit taken as 25 per cent of the array and battery masses, not yet derived on the sheet."
+breaks_if = "A distribution and control unit whose mass is far from 25 per cent of the array and battery, a derivation or comparison with larson_wertz that disagrees, or a result above two tonnes."
+relation = "m = m_arr + m_batt + m_pcdu"
+source = "larson_wertz"

@@ -60,6 +60,14 @@ The checking partner is l3_solar_ach_04, which reports the sustained Ap the
 record says the window will present.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The sustained geomagnetic disturbance the design commits to keep operating in for the whole mission: a daily level of 48, the published threshold for a 'minor' storm. It means operating through minor-storm conditions indefinitely, with no safe mode."
+breaks = "The number is a published threshold, which makes it checkable but not proven right: where a particular design must stop operating depends on its thermal, torque and propellant limits, which this subsystem does not see. It limits an index, not what the spacecraft feels."
+wrong = "Reading a passing check here as proof the design is adequate. It only says the disturbance index stays under the committed level."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 confirmed_by = "A. Rai / 2026-09-16"
 expression = "Ap_req_long = ap(G1) = 48"
@@ -142,3 +150,15 @@ confirmed_by = "A. Rai / 2026-09-16"
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 48, the published daily-index equivalent of the 'minor' storm threshold, is right as the level for continuous operation; recorded by A. Rai on 2026-09-16, though the sheet says the spacecraft claim behind it is not yet confirmed."
+breaks_if = "The vehicle's thermal, torque or propellant analysis showing it cannot operate continuously at 48, or a mission window at cycle maximum bringing the achieved level close."
+relation = "Ap_req_long = ap(G1) = 48"
+source = "orbitt_case_c1"

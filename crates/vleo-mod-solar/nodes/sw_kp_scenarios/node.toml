@@ -58,6 +58,14 @@ BELOW the peak. A design sized on the conversion alone is sized on a sky quieter
 than the record's, and on exactly the days a drag design is sized by.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "Kp is a scale from 0 to 9 of how disturbed Earth's magnetic field is. These are the ten Kp values the five driver scenarios carry: the typical and the worst three-hour stretch of each day. Converting the day's average straight to Kp reads quieter than the day's worst stretch, and a drag design is sized by exactly those days."
+breaks = "The corrections are medians, so half the days at any activity level have a worse peak than the one published here; they know the day's average, not whether it was one long storm or quiet with one severe spike. The tables are held at their ends rather than extended, so a scenario pushed past them would reach that limit without warning."
+wrong = "That converting the day's average activity onto the published Kp scale gives the Kp that matters. It lands above the typical three-hour slot and well below the day's peak, so a design sized on it alone is sized on a quieter sky than the record shows."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has NOT read this relation against its source yet.
 confirmed_by = ""
@@ -277,3 +285,15 @@ reason_upper = "Kp is defined on 0 to 9"
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The published scale and both measured slot offsets, medians over nine bins of Ap from the solar-weather bundle of 2026.09.14, held at their ends, are right; this row only composes them at five points, so its errors are theirs."
+breaks_if = "The bundle moves and the offsets re-measure differently, a scenario's Ap falls outside the tables (the scale runs to ap 400, the bias bins to a centre of 255), or the parity grid stops reproducing the study's ten numbers to four decimals."
+relation = "Kp_slot(s) = kp_from_ap(Ap_s) + dKp_slot(Ap_s), for each of the five scenarios and each of the two slots"
+source = "iaga_kp_ap"

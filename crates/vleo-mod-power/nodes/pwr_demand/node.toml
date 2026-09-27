@@ -22,6 +22,13 @@ state = "published"
 text = "How much power does the whole spacecraft need?"
 note = "Written as one function with named arguments rather than a chain of additions, so a forgotten term is a missing argument the compiler names."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much power the whole spacecraft needs: the power propulsion actually draws, the payload, the avionics, the transmitter and the thermal load, added together and raised by the loss in the wiring harness."
+breaks = "It counts these five loads and the harness loss and nothing else. It is written with each load named, so a forgotten one shows up as a missing part, but a load nobody named is still missed. Above 50 kilowatts nothing in this mass class supplies it."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "P_dem = (P_prop + P_pay + P_av + P_com + P_th)*(1 + L_h)"
 source = "larson_wertz"
@@ -94,3 +101,14 @@ type = "Power"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to larson_wertz, the named loads summed and inflated by the harness loss, not yet derived on the sheet."
+breaks_if = "A load on the spacecraft that is none of the five named, a derivation or comparison with larson_wertz that disagrees, or a demand above 50 kilowatts."
+relation = "P_dem = (P_prop + P_pay + P_av + P_com + P_th)*(1 + L_h)"
+source = "larson_wertz"

@@ -22,6 +22,14 @@ state = "published"
 text = "What ground sample distance does the system actually achieve?"
 note = "Taking the better of the two produces a resolution claim the optics cannot deliver and the detector cannot sample, and it survives review because both inputs are individually correct."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The size on the ground, in metres, of the finest detail the imager actually delivers: the worse of what the optics can resolve and what the detector can sample. It feeds the ground-resolution performance measure."
+breaks = "It considers only those two limits. Below a millimetre the inputs are not physical; above a kilometre no product in this design is being made."
+wrong = "That the resolution is the better of the two limits. That claim is one the optics cannot deliver and the detector cannot sample, and it survives review because both inputs are individually correct."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "GSD = max(GSD_diffraction, GSD_detector)"
 source = "larson_wertz"
@@ -65,3 +73,14 @@ kpis = ["kpi_gsd"]
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The worse of the diffraction and detector limits, as stated and cited from larson_wertz, not yet derived on the sheet."
+breaks_if = "A derivation or a check against larson_wertz disagrees, or the result falls below a millimetre or above a kilometre."
+relation = "GSD = max(GSD_diffraction, GSD_detector)"
+source = "larson_wertz"

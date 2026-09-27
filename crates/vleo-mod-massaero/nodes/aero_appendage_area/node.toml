@@ -22,6 +22,13 @@ state = "published"
 text = "How much frontal area do the array, antennas and radiators add beyond the body?"
 note = "Separated from the body area because it is the term a power or thermal decision moves, and the tree has to show that coupling."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The extra area facing the oncoming air that the solar array, antennas and radiators add beyond the body itself. It is kept separate from the body because it is the part a power or thermal decision moves, and the design has to show that link to drag."
+breaks = "It is a fixed number, so it does not follow the power or thermal choices it depends on. Above 5 square metres of appendage the vehicle is really an array with a satellite attached, and the drag is decided by the array alone."
+by = "an assistant, from what this sheet states — for its owner (mass) to confirm"
+
 [maths]
 expression = "A_app = 0.05"
 source = "orbitt_case_c1"
@@ -46,3 +53,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (mass) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 0.05 square metres is this design's appendage frontal area, from the source the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A power or thermal decision that grows the array, antennas or radiators, or a measured frontal area for this design that differs from 0.05 square metres."
+relation = "A_app = 0.05"
+source = "orbitt_case_c1"

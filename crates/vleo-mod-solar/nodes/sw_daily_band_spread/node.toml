@@ -62,6 +62,14 @@ rotation. At a rotation level of 70 sfu a one-in-twenty day is 4.6 above it; at
 one end, and which end depends on where its sample happened to sit.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far a single day of the Sun's flux can rise above its own 27-day average, at the one-in-twenty level and at the level that stretch sits at. At the disturbed design level it is about 20.07 solar flux units. It matters because an array is sized on the sustained level but a thermal case and a drag transient are sized on the day."
+breaks = "Outside the measured range of 70 to 210 solar flux units the answer is held at the end value, so a mission at cycle peak above 210 gets a band narrower than the record supports. The top of the table rests on far fewer days than the bottom, and this is past scatter, not a forecast error."
+wrong = "It can look like the old single number was a safe margin. It was measured on stretches averaging 136.63 and applied at other levels; at the design level it was 71 per cent too high, and on the quiet side it drove a scenario below the floor."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has NOT read this relation against its source yet. The table is
 # measured from the record by the method the theory sets out; nobody has agreed
@@ -178,3 +186,15 @@ reason_upper = "above 120 sfu the departure exceeds the largest single-day excur
 kind = "line"
 over = "sw_f107_design_long"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the 95th-percentile rise above the centred 27-day mean, binned within 15 per cent of the rotation level on seven levels from 70 to 210 solar flux units, describes the window."
+breaks_if = "A design level beyond 210 solar flux units is reached, or a different bin width or averaging window is shown to change the table materially."
+relation = "dF107_day(L) = pctl(F107 - movmean(F107, 27 d), 0.95) over days whose rotation sits within 15% of L"
+source = "noaa_swpc"

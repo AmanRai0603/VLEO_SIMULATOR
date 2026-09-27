@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much angular momentum must the wheels be able to store?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much spin, or angular momentum, the wheels must be able to store so the spacecraft can hold its attitude against the steady disturbing torque. It is that torque built up over half an orbit, with a 50 per cent margin on top."
+breaks = "It takes the steady part of the disturbance over half a revolution and a fixed 50 per cent margin, and nothing more; a disturbance that keeps building for longer is not in it. Above 100 newton metre seconds no wheel assembly that fits this vehicle stores it."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "h = T*T_orb/2*(1 + margin)"
 source = "larson_wertz"
@@ -61,3 +68,14 @@ type = "AngularMomentum"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited from larson_wertz, not yet derived on the sheet: the secular torque accumulated over half a revolution with a 50% margin."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, a disturbance that accumulates over more than half a revolution, or a requirement above 100 newton metre seconds."
+relation = "h = T*T_orb/2*(1 + margin)"
+source = "larson_wertz"

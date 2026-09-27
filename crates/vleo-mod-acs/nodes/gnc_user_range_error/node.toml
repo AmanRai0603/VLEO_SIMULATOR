@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How accurate is one pseudorange measurement?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How accurate one range measurement from the satellite navigation receiver to a navigation satellite is: 1.5 metres. It sets how well the spacecraft can work out its own orbit."
+breaks = "It is one declared number from a textbook reference, not this receiver's measured performance. Below 5 centimetres would need carrier-phase processing that this receiver does not do on board; above 50 metres the receiver is no use for orbit determination."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "URE = 1.5"
 source = "larson_wertz"
@@ -45,3 +52,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the declared 1.5 metres is right for this design's receiver, taken from the Larson and Wertz reference and confirmed by A. Rai on 2026-09-01."
+breaks_if = "A receiver specification or test giving a range error different from 1.5 metres, or a change to on-board carrier-phase processing."
+relation = "URE = 1.5"
+source = "larson_wertz"

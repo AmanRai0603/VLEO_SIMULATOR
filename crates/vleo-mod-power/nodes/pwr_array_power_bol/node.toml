@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How much does the array produce when new, in sunlight?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How many watts the solar array produces when new and in sunlight: the Sun's power falling on the array's area, reduced by how efficiently the cells convert it, how much of the area is covered by cells, and the average angle at which the sunlight strikes."
+breaks = "It is a new array in full sun at an average angle, so it leaves out eclipse, ageing and heat. It uses the solar constant, one fixed figure for sunlight. Above 50 kilowatts the array is not the one these inputs describe."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "P_bol = S*A*eta_cell*f_pack*cos(theta)"
 source = "larson_wertz"
@@ -77,3 +84,14 @@ type = "Power"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to larson_wertz, applying the solar constant to the illuminated active area at the mean incidence, not yet derived on the sheet."
+breaks_if = "A derivation or comparison with larson_wertz that disagrees, or a result above 50 kilowatts, which would mean the inputs do not describe this array."
+relation = "P_bol = S*A*eta_cell*f_pack*cos(theta)"
+source = "larson_wertz"

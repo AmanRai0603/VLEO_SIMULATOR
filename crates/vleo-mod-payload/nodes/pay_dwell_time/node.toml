@@ -22,6 +22,14 @@ state = "published"
 text = "How long does the sensor have to collect photons from one ground sample?"
 note = "The constraint low altitude imposes and higher orbits do not: the ground moves under the sensor faster in angular terms, which partly gives back the signal-to-noise the shorter range won."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How long, in seconds, the sensor has to collect light from one patch of ground before the ground has moved on by one sample: the size of a ground sample divided by the speed of the ground track."
+breaks = "It is a limit low altitude imposes and higher orbits do not. Below a nanosecond no detector collects anything; above one second the ground has moved many samples during the collection."
+wrong = "That flying lower only helps the image because the range is shorter. The ground moves under the sensor faster in angular terms, so collection time shrinks and partly gives back the signal-to-noise the shorter range won."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "t = GSD/V_g"
 source = "larson_wertz"
@@ -62,3 +70,14 @@ type = "Time"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Ground sample distance over ground track speed, as stated and cited from larson_wertz, not yet derived on the sheet."
+breaks_if = "A derivation or a check against larson_wertz disagrees, or the time falls below a nanosecond or above one second."
+relation = "t = GSD/V_g"
+source = "larson_wertz"

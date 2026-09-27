@@ -22,6 +22,14 @@ state = "published"
 text = "How much energy does the source spend to make one ion, including every loss?"
 note = "Not the ionisation potential. A real source spends 2 to 30 times the theoretical minimum on excitation, radiation and wall losses."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much energy the thruster's source actually spends to make one ion, counting every loss along the way: 250 electronvolts per ion."
+breaks = "It is one declared figure. A real source spends between 2 and 30 times the theoretical minimum on excitation, radiation and losses to the walls; below 20 electronvolts per ion no source has come close, and above 1000 the ionisation power alone exceeds any plausible spacecraft power supply."
+wrong = "It is easy to take this as the energy needed to remove one electron from an oxygen atom, 13.6 electronvolts; it is not, because a real source spends many times that on losses."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "eps_i = 250"
 source = "romano2021"
@@ -46,3 +54,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That the source spends 250 electronvolts per ion, all losses included; the value is declared, confirmed by A. Rai on 2026-09-01, and the sheet gives no further reason for it. The sheet records the unit as a plain number, while its bounds read in electronvolts per ion."
+breaks_if = "A measured energy cost per ion for this source that differs from 250 electronvolts."
+relation = "eps_i = 250"
+source = "romano2021"

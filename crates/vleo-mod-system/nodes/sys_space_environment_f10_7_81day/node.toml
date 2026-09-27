@@ -61,6 +61,14 @@ f107 and f107bar columns: the three *mean scenarios have the two equal, because
 they ARE the window mean, and the two *day scenarios do not.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "The 81-day average solar flux that the design's single day sits on: 104.07 solar flux units against a daily 124.14. Density models of the upper atmosphere take both, because the day's flux drives that day's heating and the 81-day average sets the background the atmosphere has settled into."
+breaks = "None of the subsystem's caveats come with it: it is the 90th-percentile edge of a band while the run is labelled 95 per cent, on a centre scaled by two past cycles whose peaks differ by 41 per cent. It is 104.07 rather than the study's 175.55 because this tree centres on the cycle pattern at the mission's own dates."
+wrong = "That the hot day's 81-day value is the 81-day average of the hot day itself, 124.14. It is the sustained hot level beneath the day, 104.07; taking the wrong one puts the atmosphere's background twenty flux units out."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # A person has NOT read this relation against its source yet.
 confirmed_by = ""
@@ -142,3 +150,15 @@ reason_upper = "the crossing's own ceiling, restated: above 400 sfu every consum
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The value received from the solar subsystem's interface is right as it stands and is the 81-day level the hot day rides on; a person has not yet read this relation against its source."
+breaks_if = "The member named turns out to be another scenario's, it is paired with the sustained flux row instead of the single-day one, or the subsystem's value changes beneath it."
+relation = "F107bar_sys = l3_solar_interface"
+source = "noaa_swpc"

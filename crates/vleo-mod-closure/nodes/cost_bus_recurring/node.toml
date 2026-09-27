@@ -21,6 +21,14 @@ state = "published"
 [question]
 text = "What does the first spacecraft bus cost to build?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What the first spacecraft bus, the spacecraft apart from its payload, costs to build. It is estimated from dry mass by a fit to historical costs and escalated to 2026 money."
+breaks = "It is a historical fit whose one-sigma scatter is 40 per cent, larger than most of the design decisions it would be used to compare. Above 10 billion dollars for one bus the relation is being fed a mass it was not fitted on."
+wrong = "That a gap between two designs' estimates here shows which bus is cheaper. The fit's one-sigma residual is 40 per cent, larger than most of the differences it would be asked to compare."
+by = "an assistant, from what this sheet states — for its owner (programme) to confirm"
+
 [maths]
 expression = "C = a*m_dry^b, escalated"
 source = "nasa_cer"
@@ -65,3 +73,14 @@ type = "Money"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (programme) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The historical fit cited from nasa_cer applies to this class of spacecraft, with a one-sigma residual of 40%; the relation is not yet derived on the sheet."
+breaks_if = "This class of spacecraft falls outside the historical fit, the dry mass lies beyond the masses it was fitted on, or a comparison with nasa_cer disagrees."
+relation = "C = a*m_dry^b, escalated"
+source = "nasa_cer"

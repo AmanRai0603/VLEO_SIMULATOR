@@ -22,6 +22,13 @@ state = "published"
 text = "Does thrust exceed drag — does the design close at all?"
 note = "The one closure the whole programme exists to reach. Everything else is a detail until this is at or above zero margin."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "Whether the design closes at all: how far the thrust-to-drag ratio the design achieves sits above or below the ratio it is required to reach, as a signed fraction of that requirement. It is the one closure the whole programme exists to reach; until it is at or above zero, everything else is a detail."
+breaks = "It is only as good as the achieved ratio and the requirement fed to it, and the comparison is made in the direction the requirement is stated. A margin below minus ten thousand per cent means the inputs are not the ones the requirement was written against; above a hundred thousand per cent, the requirement is not the one that binds."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
 [maths]
 expression = "M = (achieved - required)/required, in the sense the requirement is stated"
 source = "romano2021"
@@ -62,3 +69,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The signed fractional margin of achieved against required, taken in the sense the requirement is stated, as stated and cited to romano2021 and not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with romano2021 that disagrees, or a margin below minus ten thousand or above a hundred thousand per cent, showing the inputs or the requirement are not the ones meant."
+relation = "M = (achieved - required)/required, in the sense the requirement is stated"
+source = "romano2021"

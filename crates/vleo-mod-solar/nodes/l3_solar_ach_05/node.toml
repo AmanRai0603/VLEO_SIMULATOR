@@ -58,6 +58,14 @@ comparison binds two rows of the same shape at the same layer — visible on the
 tree instead of an edge somebody has to trace.
 """
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much room is left between the geomagnetic disturbance the design is committed to on a single day and the worst day this mission's own hot scenario presents. Positive is room; negative is a violation and its size."
+breaks = "It is one scenario's worst day, not the worst the whole record holds: the storm expected once in the mission is 158.4. Its daily term is read at the top of a table whose top rests on 300 days, and the band beneath it is the 90th percentile though labelled 95 per cent."
+wrong = "Reading this and the storm closure as rival answers. This one belongs to the scenario, 90.5; the storm one belongs to the whole record, 158.4. A design needs both."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # An achieved row restates the subsystem's conclusion on the side of the
 # comparison the closure reads. It computes nothing of its own.
@@ -174,3 +182,15 @@ type = "Ratio"
 kind = "line"
 over = "orbit_mission_duration"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "It reads the single-day geomagnetic level, 90.5472, a sustained level with the daily spread measured at that level added, against a ceiling of 132 raised from 80 on 2026-09-16."
+breaks_if = "The level-conditioned daily spread being re-measured, the scenario's sustained level moving, or the 132 ceiling being changed."
+relation = "M_ap_short = closure(Ap_req_short, Ap_short, AtMost).margin"
+source = "noaa_swpc"

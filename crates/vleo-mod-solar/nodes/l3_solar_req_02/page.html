@@ -9,7 +9,8 @@
 <p class="af-q">What F10.7 must this design survive on a single day inside the mission window?</p>
 <p class="af-a"><b>350</b> <span class="claim claim-declared" title="a number a person chose, and put their name against">declared · A. Rai / 2026-09-16</span></p>
 <ul class="af-points">
-<li class="muted">No belief recorded yet — see <i>de-risking</i>.</li>
+<li class="d-lr">The highest solar activity the design must survive on any single day inside the mission: 350 solar flux units, just above the record's worst day, 343 on 2023-02-17.</li>
+<li><b>Rests on</b> That the declared 350 sfu (&quot;350 sfu, above the record's largest daily value of 343&quot;) is right because no day the record has shown should end the mission; set by A. Rai on 2026-09-16, which the sheet says is not yet a confirmation of the spacecraft claim. <span class="muted">(version 1; would break if A day above 343 solar flux units being observed, or a design requirement to survive a cycle-19-like maximum.)</span></li>
 <li><b>Holds</b> from 60 to 400 — outside it the row refuses, by name.</li>
 <li><b>From</b> <span class="claim claim-sourced" title="stated in the cited work">sourced · orbitt_case_c1</span></li>
 </ul>
@@ -31,7 +32,8 @@
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
 <div class="station">
 <h4 class="st-h d-lr"><span class="st-n">1</span>Say it simply</h4>
-<p class="empty d-lr">Nobody has said this row simply yet. Its node form asks for it: what the row works out and why it matters, with no symbol and no jargon.</p>
+<p class="simply d-lr">The highest solar activity the design must survive on any single day inside the mission: 350 solar flux units, just above the record's worst day, 343 on 2023-02-17. Survive, not operate in: a day at this level may cost a safe mode and some propellant, but not the vehicle.</p>
+<p class="by d-lr">In plain words by an assistant, from what this sheet states — for its owner (environment) to confirm.</p>
 <h4 class="st-h"><span class="st-n">2</span>Now the real thing</h4>
 <p class="question">What F10.7 must this design survive on a single day inside the mission window?</p>
 <p class="maths"><code>F107_req_day = 350 sfu, above the record's largest daily value of 343</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · orbitt_case_c1</span></p>
@@ -47,6 +49,7 @@ The checking partner is l3_solar_ach_02, which restates sw_f107_design_short:
 the sustained hot level with the within-rotation daily excursion on top.
 </p>
 <h4 class="st-h"><span class="st-n">3</span>Where the simple version breaks</h4>
+<p class="breaks">It is anchored in 28.2 years of satellite-era record, not the Sun's whole history; cycle 19 in the late 1950s was reported above 350. It limits an index, not the density and heating the spacecraft feels.</p>
 <h5>Assumptions, and where each stops holding</h5>
 <dl class="asm">
 <dt>350 is anchored in the record's largest observed day, and a longer record would move it</dt><dd>fails when a day above 343 sfu is observed. The record is 28.2 years and covers two and a half cycles; cycle 19 in the late 1950s ran higher than anything in it, with F10.7 reported above 350. So this requirement is anchored in the SATELLITE-ERA record rather than in the observed history of the sun, and a design meant to survive a cycle-19 maximum needs a larger number. The rounding to 350 buys seven sfu against that, which is not much</dd>
@@ -55,6 +58,8 @@ the sustained hot level with the within-rotation daily excursion on top.
 <dt>One number for the whole mission, with no epoch and no phase in it</dt><dd>fails when the mission slips. The requirement does not move with the epoch and is not meant to — it is the vehicle's capability, and the sky's variation belongs on the achieved side of the closure where it can be seen</dd>
 </dl>
 <p class="muted">Outside <code>60 … 400</code> the row refuses rather than answers: the same floor as env_f107: below 60 sfu has never been observed, so a requirement there could never be met and is not a requirement; the same ceiling as env_f107: above 400 sfu every consumer of F10.7 is extrapolating, and a requirement written past the range its consumers support is not checkable.</p>
+<h4 class="st-h"><span class="st-n">4</span>Common wrong idea</h4>
+<p class="wrong">Checking the sustained achieved level against this single-day ceiling, or the reverse. The two are different commitments, and crossing them reports a margin that belongs to neither.</p>
 <h4 class="st-h d-lr"><span class="st-n">5</span>Try it</h4>
 <p class="d-l predict">Before you run it: what do you expect the answer to be, roughly, and which input do you expect to move it most? Write it down — then run, and compare. A guess that was wrong is the most useful thing on this page.</p>
 <p class="d-lr muted">Run it from the panel beside this page, on your own inputs, or open <i>the relation, moving</i> to watch the answer cross its range.</p>
@@ -82,7 +87,13 @@ the sustained hot level with the within-rotation daily excursion on top.
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<p class="empty">No belief recorded yet. This row's next form says what it rests on and what would break it, and from then on every change says which belief broke (D1).</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<p><b>Rests on:</b> That the declared 350 sfu (&quot;350 sfu, above the record's largest daily value of 343&quot;) is right because no day the record has shown should end the mission; set by A. Rai on 2026-09-16, which the sheet says is not yet a confirmation of the spacecraft claim.</p>
+<p><b>Would break if:</b> A day above 343 solar flux units being observed, or a design requirement to survive a cycle-19-like maximum.</p></div>
+<ol class="versions" reversed>
+<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (environment) to confirm · <span class="about">node</span></p>
+<dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>That the declared 350 sfu (&quot;350 sfu, above the record's largest daily value of 343&quot;) is right because no day the record has shown should end the mission; set by A. Rai on 2026-09-16, which the sheet says is not yet a confirmation of the spacecraft claim.</dd><dt>Would break if</dt><dd>A day above 343 solar flux units being observed, or a design requirement to survive a cycle-19-like maximum.</dd><dt>The relation, as this version states it</dt><dd><code>F107_req_day = 350 sfu, above the record's largest daily value of 343</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · orbitt_case_c1</span></dd></dl></li>
+</ol>
 </section>
 <section class="panel" data-panel="3">
 <p class="dx dx-reference" title="facts to look up">reference</p>
@@ -212,8 +223,6 @@ pub fn evaluate() -&gt; Result&lt;Ratio, Fault&gt; {
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
-<li>not said simply, or not where the simple version breaks — a reader who cannot follow the relation has nothing to hold on to (E2)</li>
-<li>no belief recorded — what does this row rest on, and what would break it? Its next change will need to say which belief broke (D1)</li>
 <li>significant, and one fixture or none — a significant node is the one that gets a second independent check, which is the whole reason for the word</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

@@ -72,6 +72,14 @@ state = "deprecated"
 text = "At what lead is the published short-term outlook verified?"
 note = "The lead the forecast-verification rows are evaluated at. sw_forecast_skill and sw_forecast_bias both answer 'at what lead', and this is the lead worth asking about: the far end of the published window, where the outlook is weakest and a design reading it is most exposed. It is the far end the record can measure, not the nominal far end of the product — see the note above on the two lead conventions in the source column."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How many days ahead the published short-term solar forecast is checked against what actually happened: 26 days. That is the far end of what the record can verify, where the forecast is weakest, which is what a design reading it needs to know. It is retired because it restated a measured number as a decision."
+breaks = "A single lead cannot describe the forecast: measured against simply repeating the last observation, its skill rises to a peak at 9 days and turns negative at 24, 25 and 26. Day 27 is left out because the record numbers its days two ways and only a minority of issues reach it."
+wrong = "That the forecast reaches only 26 days. It spans 27 days in 899 of 1281 issues; 26 is the last lead the record can check, not the length of the product."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 confirmed_by = "A. Rai / 2026-09-14"   # a person read this relation against its source
 expression = "L_short = 26 d"
@@ -177,3 +185,15 @@ confirmed_by = "A. Rai / 2026-09-14"
 
 [view]
 kind = "number"
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "When live, that 26.0 days is the last lead the record can verify, since only 192 of 1281 issues place a row at day 27 while 868 support day 26, confirmed by A. Rai on 2026-09-14; the row is now retired."
+breaks_if = "The source's lead numbering is corrected so that day 27 can be verified on a full sample, or the forecast is to be verified at some other lead."
+relation = "L_short = 26 d"
+source = "noaa_swpc"

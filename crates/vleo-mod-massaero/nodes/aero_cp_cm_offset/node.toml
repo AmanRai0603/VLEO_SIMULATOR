@@ -22,6 +22,14 @@ state = "published"
 text = "How far behind the centre of mass does the aerodynamic force act?"
 note = "Positive means aft, which is the stable configuration. Arranging that is most of what passive aerostability in VLEO means."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far behind the centre of mass the air's push on the spacecraft acts. Behind is the stable arrangement, where the vehicle tends to keep facing into the flow, and arranging that is most of what staying stable by the air alone means at these low altitudes."
+breaks = "It is one declared distance, not worked out from where the mass and the surfaces actually sit. A zero offset is only neutrally stable, and the offset cannot be longer than the body."
+wrong = "A zero offset is not a safe balanced choice: it is neutrally stable, which is the limit and not a design. The stable arrangement has the push acting behind the centre of mass."
+by = "an assistant, from what this sheet states — for its owner (gnc) to confirm"
+
 [maths]
 expression = "x_cp = 0.15"
 source = "orbitt_case_c1"
@@ -46,3 +54,14 @@ confirmed_by = "A. Rai / 2026-09-01"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "That 0.15 metres behind the centre of mass is this design's offset, from the source the sheet cites (orbitt_case_c1), confirmed by A. Rai on 2026-09-01."
+breaks_if = "A mass or layout estimate for this design that puts the aerodynamic force at a different distance behind the centre of mass, or ahead of it."
+relation = "x_cp = 0.15"
+source = "orbitt_case_c1"

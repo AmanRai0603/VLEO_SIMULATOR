@@ -22,6 +22,13 @@ state = "published"
 text = "How much radiator would be needed to hold the temperature limit?"
 note = "The inverse question, and the one a thermal design actually asks."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much radiator, in square metres, the spacecraft would need to get rid of its heat while staying at its temperature limit. It is the inverse of the settling-temperature question, and the one a thermal design actually asks."
+breaks = "Its only heat input is the heat the spacecraft must reject; the surroundings enter only as a fixed effective background of 250 kelvin. The sheet states no assumptions and no derivation. Above 1000 square metres the design does not close and the dissipation is wrong."
+by = "an assistant, from what this sheet states — for its owner (thermal) to confirm"
+
 [maths]
 expression = "A = Q/(eps*sigma*(T^4 - T_sink^4))"
 source = "larson_wertz"
@@ -70,3 +77,14 @@ type = "Area"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (thermal) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Its relation as stated and cited from larson_wertz, radiating against a 250 kelvin effective sink, not yet derived on the sheet."
+breaks_if = "A derivation or a comparison with larson_wertz that disagrees, or evidence that 250 kelvin is not the right effective background for this orbit."
+relation = "A = Q/(eps*sigma*(T^4 - T_sink^4))"
+source = "larson_wertz"

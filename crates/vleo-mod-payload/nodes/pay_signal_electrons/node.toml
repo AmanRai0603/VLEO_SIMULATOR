@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How many photoelectrons does one ground sample produce?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How many electrons one ground sample frees in the detector, the raw signal the image is built from: light from the scene gathered through the aperture over the dwell time, passed through the optics, and converted at the detector's quantum efficiency, the fraction of light that becomes signal."
+breaks = "It collects light over a fixed band 100 nanometres wide. Above a billion electrons the detector is saturated many times over, so the count stops meaning anything."
+by = "an assistant, from what this sheet states — for its owner (payload) to confirm"
+
 [maths]
 expression = "N_e = L*Omega*A_px*B*tau*QE*t/(h*c/lambda)"
 source = "larson_wertz"
@@ -109,3 +116,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (payload) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Photon collection through the aperture over the dwell time across a 100 nm band, as stated and cited from larson_wertz, not yet derived on the sheet."
+breaks_if = "The instrument's band is not 100 nanometres, a check against larson_wertz disagrees, or the count exceeds a billion electrons."
+relation = "N_e = L*Omega*A_px*B*tau*QE*t/(h*c/lambda)"
+source = "larson_wertz"

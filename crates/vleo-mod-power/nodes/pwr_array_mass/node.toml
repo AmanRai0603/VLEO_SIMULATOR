@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "What does the deployed array weigh?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "What the deployed solar array weighs: its area multiplied by how many kilograms each square metre of array carries."
+breaks = "It is only as good as the weight per square metre it is given, and it takes the array's mass to grow in step with its area. Above a tonne the array is not part of this spacecraft, so an answer there means the inputs are wrong."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "m = A*sigma_a"
 source = "larson_wertz"
@@ -61,3 +68,14 @@ type = "Mass"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The area-times-areal-density relation as stated and cited to larson_wertz, not yet derived on the sheet."
+breaks_if = "A derivation or comparison with larson_wertz that disagrees, an array whose mass does not grow in step with its area, or a result above a tonne."
+relation = "m = A*sigma_a"
+source = "larson_wertz"

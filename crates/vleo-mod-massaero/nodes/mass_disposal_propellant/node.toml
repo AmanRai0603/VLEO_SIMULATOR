@@ -22,6 +22,14 @@ state = "published"
 text = "How much stored propellant must be carried for the disposal manoeuvre?"
 note = "An air-breathing design does not reach zero here. Debris mitigation is a requirement, not a courtesy."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much stored propellant must be carried, in kilograms, for the manoeuvre that brings the spacecraft down at the end of its life. It comes from the dry mass and the speed change the manoeuvre needs, at a specific impulse, a measure of engine efficiency, of 220 seconds."
+breaks = "It assumes a stored-propellant engine at 220 seconds of specific impulse. Above a tonne the disposal budget is larger than the spacecraft."
+wrong = "That an air-breathing spacecraft needs no disposal propellant. It does not reach zero here: debris mitigation is a requirement, not a courtesy."
+by = "an assistant, from what this sheet states — for its owner (propulsion) to confirm"
+
 [maths]
 expression = "m = m_dry*(exp(dv/v_e) - 1)"
 source = "iso24113"
@@ -62,3 +70,14 @@ type = "Mass"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (propulsion) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The rocket equation at a 220 s stored-propellant specific impulse, as stated and cited from iso24113, not yet derived on the sheet."
+breaks_if = "The disposal engine's specific impulse is not 220 seconds, a check against iso24113 disagrees, or the result exceeds a tonne."
+relation = "m = m_dry*(exp(dv/v_e) - 1)"
+source = "iso24113"

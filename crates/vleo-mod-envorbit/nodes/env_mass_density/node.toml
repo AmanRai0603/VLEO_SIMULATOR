@@ -21,6 +21,14 @@ state = "published"
 [question]
 text = "How much air is there at the flight altitude, in kilograms per cubic metre?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How much air there is at the flight altitude, in kilograms per cubic metre, built up gas by gas over five gases. It is the density the drag downstream is worked out from, and it feeds the service lifetime."
+breaks = "It returns the daily mean, with no daily, seasonal or longitudinal variation, while the real density at a fixed altitude varies by a factor of two around the orbit. It assumes the gases separate by weight above 120 kilometres, which fails below about 100 kilometres, where mixing dominates."
+wrong = "That this is the density the spacecraft meets at every point of its orbit. It is the daily mean; the real density at a fixed altitude varies by a factor of two around the orbit."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 expression = "rho = SUM_i n_i(z)*m_i,  n_i(z) = n_i(z0)*(T0/T)^(1+alpha_i)*exp(-INT M_i*g/(R*T) dz)"
 source = "jacchia1971"
@@ -77,3 +85,14 @@ kind = "line"
 over = "orbit_altitude"
 points = 80
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Diffusive equilibrium above 120 kilometres for five species, with no diurnal, seasonal or longitudinal variation, as stated and cited to jacchia1971; the relation is not yet derived on the sheet."
+breaks_if = "Use below about 100 kilometres, a design that depends on the density around the orbit rather than its daily mean, a result outside the sheet's bounds, or a comparison with jacchia1971 that disagrees."
+relation = "rho = SUM_i n_i(z)*m_i,  n_i(z) = n_i(z0)*(T0/T)^(1+alpha_i)*exp(-INT M_i*g/(R*T) dz)"
+source = "jacchia1971"

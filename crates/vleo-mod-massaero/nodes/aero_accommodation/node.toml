@@ -22,6 +22,14 @@ state = "published"
 text = "How completely does an incoming molecule thermalise with the surface before leaving?"
 note = "A design that assumes a fixed accommodation has a margin that moves when the Sun does."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How completely a gas molecule that hits the spacecraft settles to the surface's own temperature before it leaves, as a fraction from zero to one. It is worked out from how much atomic oxygen covers the surface, which depends on the oxygen density and the temperature of the upper atmosphere."
+breaks = "It assumes the surface is covered in atomic oxygen stuck to it and behaves as that coverage dictates. A freshly cleaned or fluorinated surface holds far less, and its drag differs by tens of per cent from what this gives."
+wrong = "That accommodation is a fixed property of the surface, set once. It follows the atmosphere, so a design that assumes a fixed value has a margin that moves when the Sun does."
+by = "an assistant, from what this sheet states — for its owner (aero) to confirm"
+
 [maths]
 expression = "alpha = K*n_O*T_inf/(1 + K*n_O*T_inf),  K = 7.5e-17"
 source = "moe2005"
@@ -66,3 +74,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (aero) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The surface is covered in adsorbed atomic oxygen, with the adsorption relation as stated and cited from moe2005, not yet derived on the sheet."
+breaks_if = "The surface is freshly cleaned or fluorinated and holds far less oxygen, or a derivation or check against moe2005 disagrees."
+relation = "alpha = K*n_O*T_inf/(1 + K*n_O*T_inf),  K = 7.5e-17"
+source = "moe2005"

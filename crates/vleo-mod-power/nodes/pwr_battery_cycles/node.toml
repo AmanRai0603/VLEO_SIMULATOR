@@ -21,6 +21,13 @@ state = "published"
 [question]
 text = "How many charge and discharge cycles does the battery see?"
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How many times the battery is charged and discharged over the mission, counted as one cycle for every orbit flown. It is the number the battery's cells must have data for."
+breaks = "It is a count of orbits and nothing more: it says nothing about how deeply each cycle drains the battery. Above a million cycles no cell chemistry has data to hold it against."
+by = "an assistant, from what this sheet states — for its owner (power) to confirm"
+
 [maths]
 expression = "N = t_mission/T_orbit"
 source = "larson_wertz"
@@ -61,3 +68,14 @@ type = "Ratio"
 [view]
 kind = "number"
 
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (power) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "The relation as stated and cited to larson_wertz, the mission duration divided by the orbital period, not yet derived on the sheet."
+breaks_if = "An orbit that does not give the battery exactly one cycle, a derivation or comparison with larson_wertz that disagrees, or a count above a million cycles."
+relation = "N = t_mission/T_orbit"
+source = "larson_wertz"

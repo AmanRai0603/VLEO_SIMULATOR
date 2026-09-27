@@ -28,6 +28,14 @@ state = "published"
 text = "By how much does the published table under-read the daily PEAK Kp at this Ap?"
 note = "sw_kp_from_ap applies the published scale as published, and the scale is defined for the three-hourly ap while the design product carries a daily mean. This row measures the resulting bias for the slot that sizes a drag design — the daily peak — and publishes it as a correction to be added. The 24-hour-mean slot has its own, smaller and oppositely-signed bias, recorded in the assumptions rather than published, because a node answers one question."
 
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How far the published scale under-reads the worst three-hour stretch of a day when it is fed the day's average geomagnetic activity. It is a correction to add, measured on the record, because the atmosphere responds to the disturbance it actually met, which for a heating calculation is closer to the day's peak than its average."
+breaks = "It is a median for each band of activity, so it describes the typical day and misses any particular one; a worst case would need a percentile, which is not published here. Above a daily activity of 110 the correction rests on only twenty days, and its drop there may be a small-sample accident."
+wrong = "That this correction also fixes the day's average slot. The average slot has its own bias of the opposite sign, running from +0.042 down to -0.487, so using this one there would double the error rather than remove it."
+by = "an assistant, from what this sheet states — for its owner (environment) to confirm"
+
 [maths]
 # Nine bins, nine medians, interpolated between the bin centres and held at the
 # ends. The bin edges are prf_ap2kp's own: 0 5 10 15 20 30 45 70 110 400.
@@ -161,3 +169,15 @@ bundles = ["solar-weather"]
 kind = "line"
 over = "orbit_mission_duration"
 points = 60
+
+[[version]]
+n = 1
+release = "next"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (environment) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "Nine bin medians measured on the solar-weather bundle of 2026.09.14, interpolated between bin centres and held at the ends, describe the typical day's peak-slot offset, which the concavity of the scale says cannot be negative."
+breaks_if = "The bundle version changes without the medians being re-measured, a negative correction appears, or more days in the 110-to-400 bin show the fall to +1.317 was a small-sample artefact."
+relation = "dKp_peak(Ap) = piecewise_linear(ap_bin_centres -> measured_medians, Ap)"
+source = "noaa_swpc"
