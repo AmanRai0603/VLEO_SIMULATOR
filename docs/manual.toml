@@ -473,6 +473,55 @@ ui = "check a filled form…"
 
 
 [[layer.section]]
+id = "browser-method"
+title = "Give the method, your code and your test cases"
+who = "user"
+kind = "how-to"
+answer = "In a node's form, write the relation once more as a method — a few lines in a small fixed language — paste the code you wrote and tested, and give at least three cases your code answered and one it refuses. The form runs your method on your cases as you type and shows any that disagree, before you send it."
+body = """
+A node's relation arrives three ways, and each checks the other two. **Your \
+code** — MATLAB, Python, C, anything — produced your test cases. **The method** \
+says the same relation in the method language (docs/PSEUDOCODE.md), which the \
+tool can check for units and run. **The code the tool ships** is generated from \
+the method. All three must give your answers, so a mistake in any one of them \
+shows up as a case that disagrees.
+
+**The method.** It reads the node's inputs by their names, gives every number \
+its unit in brackets — `250 [km]`, `30 [deg]` — and ends every path with \
+`return` (the answer) or `refuse` (why it will not answer). The form checks \
+the units as you type: adding a length to a time, taking the logarithm of a \
+length, or returning the wrong quantity is shown on the line it happens.
+
+**Your cases.** Each is a set of inputs, in SI, and the answer your code gave \
+for them, with how close counts. At least three answers and one case the node \
+must refuse — the refusal shows the method says no where your code says no. \
+The method's value appears beside yours only after you have typed yours, so \
+the tool is never where your answer came from.
+
+**Your code and its test** are pasted whole, with what ran them. They are \
+kept with the node so the cases can be produced again and a reviewer can read \
+where the numbers came from.
+
+**Flight software** that implements the node can be kept in the same form, \
+each file with its test and its last result. It is stored beside the relation, \
+not built by the tool.
+
+Every question has **Show the example** beside it: the same question answered \
+for one worked node, marked illustrative."""
+
+[[layer.section.step]]
+say = "Open the node's form and find *The method*. Read *The method language on one page* if it is your first."
+
+[[layer.section.step]]
+say = "Write the method, then fill *Your code*: the code, its language, the function that is this node, and the test code that ran it."
+
+[[layer.section.step]]
+say = "Add your test cases — three or more with the answer your code gave, and one it refuses — and watch *Check: the method against your cases* until it says **Sound**."
+
+[[layer.section.step]]
+say = "Say in *Why it is changing* what adding the method tested, save a filled copy and send it."
+
+[[layer.section]]
 id = "browser-preview"
 title = "Try the preview of your change, and approve it"
 who = "user"
@@ -661,6 +710,26 @@ say = "A corrected form for the same node goes onto the same branch."
 run = "cargo run -p xtask -- take forms/<file>.node-form.html --for \"<author>\" --again"
 check = "writes"
 why = "applies the corrected form onto the branch that already holds the first one"
+
+[[layer.section]]
+id = "maint-method"
+title = "Check a node's method against its author's cases"
+who = "maintainer"
+kind = "how-to"
+answer = "Run method with the node's id. It checks the method and runs every one of the author's cases through it — the same check the author saw in their form, and the one the gate refuses on."
+body = """
+`take` prints the same check before it applies a form, under *the method, \
+against the author's cases*, and the gate refuses a node whose method does not \
+check, whose cases disagree, or that has fewer than three answers and one \
+refusal. A case that disagrees is the author's to settle — their code, their \
+method or their expected value is wrong — so it goes back to them with the \
+line printed, never to a tolerance."""
+
+[[layer.section.step]]
+say = "Check one node's method and cases."
+run = "cargo run -p xtask -- method orbit_velocity"
+check = "exits"
+why = "prints each case with what the author's code gave and what the method gives, or says the node has no method yet"
 
 [[layer.section]]
 id = "maint-preview"
@@ -1297,6 +1366,33 @@ why = "writes dist/vleo-<version>/, which git ignores"
 
 
 [[layer.section]]
+id = "term-method"
+title = "The method language and the form's checker"
+who = "developer"
+kind = "how-to"
+answer = "The method language is one module, vleo_sheet::method. Every node form carries it compiled to WebAssembly as web/method.wasm; after changing the language, rebuild that file with method-wasm and commit it with its stamp."
+body = """
+The gate, `take`, intake and the node form all call \
+`vleo_sheet::method::report_toml` — the form through `web/method.wasm`, which \
+`xtask method-wasm` builds from `crates/vleo-method-wasm`. A test refuses a \
+checkout whose checker sources have moved on from the committed file, so a form \
+can never check by older rules than the gate. `docs/PSEUDOCODE.md` is written \
+by `xtask docs` from the same tables the checker reads. Changing what a method \
+means is a reviewed change to every node that has one."""
+
+[[layer.section.step]]
+say = "Rebuild the checker every form carries, after changing the language."
+run = "cargo run -p xtask -- method-wasm"
+check = "writes"
+why = "builds crates/vleo-method-wasm for wasm32 and writes web/method.wasm and its stamp"
+
+[[layer.section.step]]
+say = "Or only ask whether it is current."
+run = "cargo run -p xtask -- method-wasm --check"
+check = "exits"
+why = "compares the fingerprint of the checker's sources with the one recorded beside web/method.wasm"
+
+[[layer.section]]
 id = "term-evidence"
 title = "Is the evidence real?"
 who = "developer"
@@ -1886,6 +1982,22 @@ effect = "writes"
 
 [[command]]
 tool = "xtask"
+name = "method"
+usage = "method <node>"
+what = "Checks a node's method in the method language and runs each of its author's test cases through it: what their code gave, what the method gives, and whether the set is complete — at least three answers and one refusal. The same check the node form runs as the author types, and the gate refuses on."
+who = "maintainer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "method-wasm"
+usage = "method-wasm [--check]"
+what = "Builds the method checker every node form carries — vleo_sheet::method compiled to WebAssembly — into web/method.wasm with the fingerprint of its sources; --check only says whether the committed file is current."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
 name = "take"
 usage = "take <form.html> --for <author> [--again] [--no-push] [--no-test]"
 what = "Takes a filled node form in: checks it, and if it cannot be taken writes `<form>.returned.txt` to send back and changes nothing; otherwise puts it on its own branch `form/<author>/<node>` from a fresh main, applies it, regenerates, gates, tests, commits naming the author and pushes. The push builds the author's preview."
@@ -2459,6 +2571,10 @@ what = "The maintainer's guide: taking forms in, previews, approvals, releases �
 [[doc]]
 path = "docs/roles/developer.html"
 what = "The developer's guide: the code and checks the routine cannot write, and the tool itself. Generated from this manual."
+
+[[doc]]
+path = "docs/PSEUDOCODE.md"
+what = "The method language: every statement, function, constant and unit a method may use, and the worked example in full. Generated from the checker's own tables."
 
 [[doc]]
 path = "docs/USING_IT.md"

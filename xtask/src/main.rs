@@ -11,6 +11,7 @@ use std::process::ExitCode;
 use vleo_sheet::{emit, gate, load_all, page, Tree};
 
 mod flow;
+mod method;
 
 /// A reader that stops early — `| head`, `| grep -m1`, a pager quit halfway —
 /// closes the pipe, and the next line printed panics with a backtrace that
@@ -79,6 +80,8 @@ fn main() -> ExitCode {
         "approve" => flow::cmd_approve(&root, &rest),
         "queue" => flow::cmd_queue(&root, &rest),
         "ship" => flow::cmd_ship(&root, &rest),
+        "method" => method::cmd_method(&root, &rest),
+        "method-wasm" => method::cmd_method_wasm(&root, &rest),
         "help" | "--help" | "-h" => {
             help();
             Ok(())
@@ -205,6 +208,13 @@ cargo xtask <command>
                      maintainer.html and developer.html, rendered from
                      docs/manual.toml. Never
                      edited by hand; the pipeline regenerates and compares.
+  method <node>      the node's method, checked, and each of its author's test
+                     cases run through it — the check the form runs as the
+                     author types, and the one the gate refuses on.
+  method-wasm [--check]
+                     rebuild web/method.wasm, the checker every node form
+                     carries, from vleo_sheet::method; --check only says
+                     whether the committed one is current.
   take <form.html> --for <author> [--again] [--no-push] [--no-test]
                      the maintainer's first step: check a filled node form;
                      if it cannot be taken, write <form>.returned.txt to send
@@ -550,6 +560,38 @@ fn print_plan(p: &vleo_sheet::template::Plan) {
             None => println!(
                 "  → no version recorded: the record is incomplete, so these decisions are withheld"
             ),
+        }
+    }
+    // THE METHOD, AGAINST ITS AUTHOR'S CASES, on the node as it would be after
+    // this form — the same check the author saw in the form and the gate runs
+    // on apply, so a refusal here is one the author could already see.
+    if let Some(text) = &p.text {
+        if let Ok(r) = vleo_sheet::method::report_toml(text) {
+            if text.contains("\n[method]") || !r.cases.is_empty() {
+                println!("\nthe method, against the author's cases:");
+                for d in &r.diags {
+                    println!("  {d}");
+                }
+                for (c, v) in &r.cases {
+                    println!(
+                        "  {} {}: {}",
+                        if v.agrees() { "ok  " } else { "FAIL" },
+                        c.label,
+                        v.text(c)
+                    );
+                }
+                for sft in &r.shortfall {
+                    println!("  missing: {sft}");
+                }
+                println!(
+                    "  {}",
+                    if r.sound() {
+                        "sound — the method checks and agrees with every case"
+                    } else {
+                        "NOT SOUND — the gate will refuse this on apply; send it back with the lines above"
+                    }
+                );
+            }
         }
     }
     if !p.open.is_empty() {
@@ -1538,6 +1580,14 @@ fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
     if touched == 0 {
         return Err(format!("no node matched '{}'", only.unwrap_or("")));
     }
+    // The method language's reference page, from the tables the checker reads,
+    // so the page and the checker cannot describe two languages.
+    if only.is_none() {
+        let md = vleo_sheet::method::reference_md();
+        if write_if_changed(&root.join("docs/PSEUDOCODE.md"), &md)? {
+            written += 1;
+        }
+    }
     println!("docs: {touched} node(s), {written} artefact(s) written");
     Ok(())
 }
@@ -1757,7 +1807,9 @@ fn ring(crate_name: &str) -> Option<(u8, &'static str)> {
         "vleo-data" => (2, "reference data"),
         "vleo-modules" => (4, "the facade over every node crate"),
         "vleo-server" => (5, "the server both the daemon and the Python package start"),
-        "vleo-cli" | "vleo-daemon" | "vleo-ffi" | "vleo-py" | "vleo-wasm" => (6, "a face"),
+        "vleo-cli" | "vleo-daemon" | "vleo-ffi" | "vleo-py" | "vleo-wasm" | "vleo-method-wasm" => {
+            (6, "a face")
+        }
         "xtask" => (6, "the task runner"),
         n if n.starts_with("vleo-mod-") => (3, "RING 3 — the nodes"),
         _ => return None,

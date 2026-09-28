@@ -197,6 +197,10 @@ results, the manual, figures and these documents are all held to it by check.
     cargo run -p xtask -- ship <version>    the release branch, stamped and
                                             proved (docs/roles/maintainer.html)
     cargo run -p xtask -- guides            the three role guides, from the manual
+    cargo run -p xtask -- method <node>     the node's method, run on its author's
+                                            cases (docs/PSEUDOCODE.md)
+    cargo run -p xtask -- method-wasm       rebuild the checker every node form
+                                            carries, web/method.wasm
     cargo run -p vleo-cli --bin vleo -- run <node> [--save <file.csv>]
     cargo run -p vleo-cli --bin vleo -- result <file>
 
