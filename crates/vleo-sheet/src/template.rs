@@ -89,12 +89,17 @@ const RELATION_ARRAYS: &[&str] = &["algorithm", "theory", "case"];
 const STAMPS_RELATION: &[&str] = &["algorithm", "theory"];
 
 /// The method checker every form carries: `vleo_sheet::method::report_toml`
-/// compiled to WebAssembly by `xtask method-wasm`. Not read when this crate is
-/// itself compiled to WebAssembly — that build IS the checker.
-#[cfg(not(target_arch = "wasm32"))]
-const METHOD_WASM: &[u8] = include_bytes!("../../../web/method.wasm.gz");
-#[cfg(target_arch = "wasm32")]
-const METHOD_WASM: &[u8] = &[];
+/// compiled to WebAssembly by `xtask method-wasm`, beside the tree's own files.
+pub const CHECKER: &str = "web/method.wasm.gz";
+
+/// The checker, read from the tree when a form is made — never built into a
+/// program. A program carrying compressed WebAssembly beside the script that
+/// unpacks and runs it is the shape browsers and antivirus block, and the
+/// first 0.3.0 Windows kit was blocked by Chrome for exactly that. Missing, the
+/// form says so on its check rather than checking by nothing.
+fn checker(tree: &Tree) -> Vec<u8> {
+    std::fs::read(tree.root.join(CHECKER)).unwrap_or_default()
+}
 
 /// Standard base64, for carrying the checker inside the page.
 fn base64(bytes: &[u8]) -> String {
@@ -787,6 +792,7 @@ pub fn document(sh: &Sheet, tree: &Tree) -> String {
         &schema(Some(sh), tree),
         &original_toml(&sh.id, &base, &content(sh), false),
         &data_toml(&sh.id, &base, &content(sh), false),
+        &checker(tree),
     )
 }
 
@@ -876,6 +882,7 @@ pub fn document_example(sh: &Sheet, tree: &Tree) -> Result<String, String> {
         &schema(Some(sh), tree),
         &original_toml(&sh.id, &base, &original, false),
         &data,
+        &checker(tree),
     ))
 }
 
@@ -890,10 +897,18 @@ pub fn document_new(tree: &Tree) -> String {
         &schema(None, tree),
         &original_toml("", "", &c, true),
         &data_toml("", "", &c, true),
+        &checker(tree),
     )
 }
 
-fn page(title: &str, head: &str, schema: &str, original: &str, data: &str) -> String {
+fn page(
+    title: &str,
+    head: &str,
+    schema: &str,
+    original: &str,
+    data: &str,
+    checker: &[u8],
+) -> String {
     let mut o = String::with_capacity(160 * 1024);
     o.push_str("<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n");
     o.push_str("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
@@ -938,7 +953,7 @@ fn page(title: &str, head: &str, schema: &str, original: &str, data: &str) -> St
     // saved copy, so a filled form still checks its method wherever it goes.
     o.push_str(&format!(
         "<script type=\"application/octet-stream\" id=\"vleo-method-wasm\">{}</script>\n",
-        base64(METHOD_WASM)
+        base64(checker)
     ));
     o.push_str("<script>\n");
     o.push_str(PAGE_JS);
@@ -2912,6 +2927,7 @@ const PAGE_JS: &str = r#"'use strict';
     if (VM || VMerr) return VM;
     try {
       const bin = atob((($('#vleo-method-wasm') || {}).textContent || '').trim());
+      if (!bin) throw new Error('this form was made without its checker, web/method.wasm.gz');
       const gz = new Uint8Array(bin.length);
       for (let k = 0; k < bin.length; k++) gz[k] = bin.charCodeAt(k);
       // Carried compressed, to keep the form small; unpacked by the browser.
