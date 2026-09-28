@@ -201,7 +201,7 @@ fn version() -> (String, String, usize) {
 #[pyfunction]
 #[pyo3(signature = (root = None, port = 7777, open = true))]
 fn serve(py: Python<'_>, root: Option<String>, port: u16, open: bool) -> PyResult<u16> {
-    py.allow_threads(|| vleo_daemon::serve(root.map(Into::into), port, open, true))
+    py.allow_threads(|| vleo_server::serve(root.map(Into::into), port, open, true))
         .map_err(PyRuntimeError::new_err)
 }
 

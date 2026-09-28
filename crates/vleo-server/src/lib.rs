@@ -1,4 +1,6 @@
-//! `vleo-daemon` — the local engine, serving its own interface.
+//! `vleo-server` — the local engine, serving its own interface. The daemon
+//! (`vleo-daemon`) starts it as a program; the Python package (`python -m vleo`)
+//! starts it inside python.exe.
 //!
 //! # The one hard part, settled by design rather than discovered later
 //!
@@ -49,7 +51,7 @@ pub fn main() {
         .is_some_and(|stem| opens_by_name(&stem));
     let open = named_to_open || std::env::args().any(|a| a == "--open");
     if let Err(e) = serve(None, port_pref, open, false) {
-        eprintln!("vleo-daemon: {e}");
+        eprintln!("vleo: {e}");
         std::process::exit(1);
     }
 }
@@ -175,11 +177,11 @@ fn accept(listener: TcpListener, ctx: std::sync::Arc<Ctx>) {
                 let gate = one_at_a_time.clone();
                 std::thread::spawn(move || {
                     if let Err(e) = serve_one(s, &ctx, &gate) {
-                        eprintln!("vleo-daemon: {e}");
+                        eprintln!("vleo: {e}");
                     }
                 });
             }
-            Err(e) => eprintln!("vleo-daemon: accept: {e}"),
+            Err(e) => eprintln!("vleo: accept: {e}"),
         }
     }
 }

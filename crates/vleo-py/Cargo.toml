@@ -24,7 +24,7 @@ vleo-bus = { path = "../vleo-bus", features = ["std"] }
 vleo-core = { path = "../vleo-core", features = ["std"] }
 # The whole tool, not only the engine: `python -m vleo` serves the same pages
 # the daemon does, from inside python.exe, so nothing new has to be run.
-vleo-daemon = { path = "../vleo-daemon" }
+vleo-server = { path = "../vleo-server" }
 # abi3: one build per system for every Python from 3.9, so one package carries
 # one file per system rather than one per system and interpreter.
 pyo3 = { version = "0.22", features = ["extension-module", "abi3-py39"] }

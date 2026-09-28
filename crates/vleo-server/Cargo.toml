@@ -1,0 +1,24 @@
+[package]
+name = "vleo-server"
+description = "The local server: the interface assets and the engine from one origin on loopback. The daemon starts it as a program; the Python package starts it inside python.exe. One server, so the two cannot disagree."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+vleo-modules = { workspace = true, features = ["std"] }
+vleo-bus = { workspace = true, features = ["std"] }
+vleo-core = { workspace = true, features = ["std"] }
+vleo-units = { workspace = true, features = ["std"] }
+vleo-data = { workspace = true }
+# The sheet loader, so a face can be served the declaration form. This crate
+# reads what a sheet means from the single implementation of it; the
+# alternative was a second copy of the form in JavaScript, which would drift
+# and look complete while doing it.
+vleo-sheet = { workspace = true }
+
+[lints.rust]
+unsafe_code = "forbid"

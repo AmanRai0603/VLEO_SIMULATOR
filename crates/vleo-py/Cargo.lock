@@ -405,19 +405,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "vleo-daemon"
-version = "0.2.0"
-dependencies = [
- "embed-resource",
- "vleo-bus",
- "vleo-core",
- "vleo-data",
- "vleo-modules",
- "vleo-sheet",
- "vleo-units",
-]
-
-[[package]]
 name = "vleo-data"
 version = "0.2.0"
 dependencies = [
@@ -603,8 +590,20 @@ dependencies = [
  "pyo3",
  "vleo-bus",
  "vleo-core",
- "vleo-daemon",
  "vleo-modules",
+ "vleo-server",
+]
+
+[[package]]
+name = "vleo-server"
+version = "0.2.0"
+dependencies = [
+ "vleo-bus",
+ "vleo-core",
+ "vleo-data",
+ "vleo-modules",
+ "vleo-sheet",
+ "vleo-units",
 ]
 
 [[package]]
