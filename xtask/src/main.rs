@@ -3018,6 +3018,29 @@ fn cmd_release(root: &Path, args: &[&str]) -> Result<(), String> {
         if !st.success() {
             return Err("cargo could not update Cargo.lock for the new version".into());
         }
+        // THE CRATES OUTSIDE THE WORKSPACE KEEP LOCK FILES OF THEIR OWN, and
+        // each names the workspace crates it depends on at their version. Left
+        // alone they still said 0.1.0 after release 0.1.1, and the pipeline's
+        // `--locked` build of the wasm face refused. Every one is refreshed the
+        // same way, offline.
+        let crates = fs::read_dir(root.join("crates")).map_err(|e| format!("crates/: {e}"))?;
+        for dir in crates.filter_map(|e| e.ok()).map(|e| e.path()) {
+            if !dir.join("Cargo.lock").is_file() {
+                continue;
+            }
+            let st = std::process::Command::new("cargo")
+                .args(["metadata", "--offline", "--format-version", "1"])
+                .current_dir(&dir)
+                .stdout(std::process::Stdio::null())
+                .status()
+                .map_err(|e| format!("cargo metadata: {e}"))?;
+            if !st.success() {
+                return Err(format!(
+                    "cargo could not update {}/Cargo.lock for the new version",
+                    dir.display()
+                ));
+            }
+        }
     }
     cmd_docs(root, &[])?;
     cmd_derisk(root, &[])?;
