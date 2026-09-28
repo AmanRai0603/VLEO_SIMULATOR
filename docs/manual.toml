@@ -1427,7 +1427,10 @@ The gate, `take`, intake and the node form all call \
 `vleo_sheet::method` — the form through `web/method.wasm.gz`, which \
 `xtask method-wasm` builds from `crates/vleo-method-wasm`. A test refuses a \
 checkout whose checker sources have moved on from the committed file, so a form \
-can never check by older rules than the gate. `docs/PSEUDOCODE.md` is written \
+can never check by older rules than the gate. A form reads the file from beside \
+the tree when it is made; no program carries it built in, because compressed \
+WebAssembly inside a program is what Chrome blocked in the first 0.3.0 Windows \
+kit, and the release refuses a program that does. `docs/PSEUDOCODE.md` is written \
 by `xtask docs` from the same tables the checker reads. Changing what a method \
 means is a reviewed change to every node that has one."""
 

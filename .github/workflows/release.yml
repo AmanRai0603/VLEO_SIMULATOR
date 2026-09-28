@@ -143,6 +143,11 @@ jobs:
           # its data had been rewritten to CRLF on checkout — and nothing here
           # noticed until a teammate saw every solar row refuse.
           VLEO_DATA="$RUNNER_TEMP/kit-data" "kit/$kit/vleo" data sync "kit/$kit/bundles"
+          # No program carries the node form's checker built in. Compressed
+          # WebAssembly inside a program, beside the script that unpacks it, is
+          # what Chrome blocked in the first 0.3.0 Windows kit; the kit carries
+          # it as web/method.wasm.gz instead, read when a form is made.
+          python tools/checker_not_built_in.py web/method.wasm.gz "kit/$kit"
           cd kit
           if [ "$RUNNER_OS" = "Windows" ]; then 7z a -tzip "../$kit.zip" "$kit" >/dev/null; else zip -qr "../$kit.zip" "$kit"; fi
       - uses: actions/upload-artifact@v4
@@ -162,6 +167,7 @@ jobs:
             [ -f "$src" ] && cp "$src" pylib/
           done
           ls -l pylib
+          python tools/checker_not_built_in.py web/method.wasm.gz pylib
       - uses: actions/upload-artifact@v4
         with:
           name: pylib-${{ matrix.system }}
