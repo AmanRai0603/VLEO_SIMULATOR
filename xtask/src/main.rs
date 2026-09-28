@@ -183,13 +183,16 @@ cargo xtask <command>
                      recorded change, in the columns of the de-risking narrative,
                      and every registered risk as it stands. Generated from the
                      sheets' [[version]] and [[risk]] records, never edited.
-  kit [--bin <dir>] [--out <dir>]
+  kit [--bin <dir>] [--out <dir>] [--files-only]
                      the tool as a team member gets it: the two programs and
                      the files they read (the web face, the tree, its pages,
-                     the reference data) in one folder, with START_HERE.md and
-                     a start script. No git, no Rust source beyond the node
+                     the reference data) in one folder, with START_HERE.md —
+                     on Windows the daemon is `Start VLEO.exe`, elsewhere
+                     start.sh starts it. No git, no Rust source beyond the node
                      folders. Zip the folder and share it. --bin is where the
-                     release-built programs are (default target/release).
+                     release-built programs are (default target/release);
+                     --files-only leaves the programs out, for the Python
+                     package (tools/build_wheel.py).
   release <version> [--check]
                      stamp every node version still marked `next` with this
                      release, set the workspace version, and regenerate. The
@@ -2807,7 +2810,15 @@ fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
             .map(|n| bin.join(n))
             .find(|p| p.is_file())
     };
-    let programs: Vec<PathBuf> = ["vleo-daemon", "vleo"]
+    // `--files-only`: the files the tool reads and nothing that runs — what
+    // the Python package carries beside its own engine.
+    let files_only = args.contains(&"--files-only");
+    let wanted: &[&str] = if files_only {
+        &[]
+    } else {
+        &["vleo-daemon", "vleo"]
+    };
+    let programs: Vec<PathBuf> = wanted
         .iter()
         .map(|n| {
             exe(n).ok_or_else(|| {
@@ -2867,8 +2878,21 @@ fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
         let from = root.join("crates").join(c).join("nodes");
         files += copy_tree(&from, &out.join("crates").join(c).join("nodes"))?;
     }
+    // On Windows the daemon ships as `Start VLEO.exe`: the program itself is
+    // what a person double-clicks, and it opens the browser because of its
+    // name. No script starts it — a script launching a program is one more
+    // thing an antivirus heuristic weighs against an unknown file.
+    let windows = programs
+        .iter()
+        .any(|p| p.extension().is_some_and(|e| e == "exe"));
     for p in &programs {
-        fs::copy(p, out.join(p.file_name().unwrap())).map_err(|e| e.to_string())?;
+        let name = p.file_name().unwrap().to_string_lossy().into_owned();
+        let as_named = if name == "vleo-daemon.exe" {
+            "Start VLEO.exe".to_string()
+        } else {
+            name
+        };
+        fs::copy(p, out.join(as_named)).map_err(|e| e.to_string())?;
     }
     let guide = fs::read_to_string(root.join("docs/TEAM_GUIDE.md"))
         .map_err(|e| format!("docs/TEAM_GUIDE.md: {e}"))?;
@@ -2889,18 +2913,14 @@ fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
         ),
     )
     .map_err(|e| e.to_string())?;
-    fs::write(
-        out.join("start.sh"),
-        "#!/bin/sh\n# Start the tool and open it in the browser. Stop it with Ctrl-C.\n\
-         cd \"$(dirname \"$0\")\" || exit 1\nexec ./vleo-daemon --open\n",
-    )
-    .map_err(|e| e.to_string())?;
-    fs::write(
-        out.join("start.bat"),
-        "@echo off\r\nrem Start the tool and open it in the browser. Close this window to stop it.\r\n\
-         cd /d \"%~dp0\"\r\nvleo-daemon.exe --open\r\n",
-    )
-    .map_err(|e| e.to_string())?;
+    if !files_only && !windows {
+        fs::write(
+            out.join("start.sh"),
+            "#!/bin/sh\n# Start the tool and open it in the browser. Stop it with Ctrl-C.\n\
+             cd \"$(dirname \"$0\")\" || exit 1\nexec ./vleo-daemon --open\n",
+        )
+        .map_err(|e| e.to_string())?;
+    }
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -2911,13 +2931,21 @@ fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
             }
         }
     }
+    let start = if files_only {
+        "installs the Python package that carries it"
+    } else if windows {
+        "double-clicks Start VLEO.exe"
+    } else {
+        "runs start.sh"
+    };
     println!(
-        "kit: {} — vleo {version}, {} rows, {files} files beside the two programs.\n\
-         Zip that folder and share it. A team member unzips it, runs start.sh \
-         (start.bat on Windows) and reads START_HERE.md; nothing in it is edited, \
+        "kit: {} — vleo {version}, {} rows, {files} files beside {} program(s).\n\
+         Zip that folder and share it. A team member unzips it, {start} \
+         and reads START_HERE.md; nothing in it is edited, \
          and their case and results stay under ~/.vleo/ when the next kit replaces it.",
         out.display(),
-        tree.sheets.len()
+        tree.sheets.len(),
+        programs.len()
     );
     Ok(())
 }

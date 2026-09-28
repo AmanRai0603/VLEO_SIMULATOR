@@ -62,6 +62,17 @@ why = "builds and publishes the stable-ABI wheel"
 fallback = "setuptools-rust, or shipping the shared library and a ctypes shim"
 verified = "2026-09-11"
 
+[[adopted]]
+name = "embed-resource"
+upstream = "https://github.com/nabijaczleweli/rust-embed-resource"
+licence = "MIT"
+version = "3"
+used_by = "vleo-daemon, vleo-cli, vleo-py (build scripts, Windows only)"
+load_bearing = false
+why = "compiles the Windows version information — company, product, version — into the programs, which a file with none of is one more thing an antivirus weighs against it"
+fallback = "call the Windows SDK's rc.exe from the build script directly, or ship without the version information"
+verified = "2026-09-28"
+
 # --- deliberately not adopted, with the reason -------------------------------
 #
 # hifitime, ANISE, nalgebra and hyperdual are the right answers to time, frames,

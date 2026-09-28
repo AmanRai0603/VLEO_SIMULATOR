@@ -1,36 +1,60 @@
 # Start here
 
-> **Answer first.** Unzip the folder, run `start.bat` (Windows) or `start.sh` (macOS, Linux), and
-> the tool opens in your browser. Set your inputs, run the design, keep the results. When the
-> design itself is wrong or missing something, fill that node's form and send the file to the
+> **Answer first.** Install the one file with Python — `python -m pip install vleo-<version>-py3-none-any.whl`
+> — then start it with `python -m vleo`, and the tool opens in your browser. (Or unzip the kit for
+> your system and start the program in it.) Set your inputs, run the design, keep the results. When
+> the design itself is wrong or missing something, fill that node's form and send the file to the
 > developers — they check it, build it in, and send you the next version. Your inputs and results
 > are kept on your machine and carry over to every new version.
 >
 > **Kind:** tutorial + how-to · **For:** the team using the tool
 
-This folder is the whole tool. It needs no internet, no installation and no account, and
-nothing in it is edited by you — so replacing it with the next version never loses anything.
+The tool comes two ways, and both are the same tool with the same engine. It needs no internet
+and no account, and nothing in it is edited by you — so the next version never loses anything.
 
 ---
 
 ## 1 · Start it
 
+### A · The Python package — one file for every laptop (use this one)
+
+`vleo-<version>-py3-none-any.whl` is the same file for Windows, macOS and Linux. It has no program
+of its own in it — it runs inside Python — so Windows does not stop it as an unknown program, and
+email, drives and browsers pass it like any other file.
+
+1. **Once: Python 3.9 or newer.** On Windows, install *Python 3.12* from the Microsoft Store (no
+   administrator needed). macOS and Linux usually have it already as `python3`.
+2. **Install the file.** Open a terminal where you saved it — on Windows, in File Explorer click the
+   address bar, type `cmd` and press Enter — and run:
+
+       python -m pip install vleo-<version>-py3-none-any.whl
+
+   (`python3` instead of `python` on macOS and Linux; `py` if Windows says `python` is not found.)
+   It needs no internet.
+3. **Start it,** from any terminal, whenever you want the tool:
+
+       python -m vleo
+
+   `python -m vleo --check` proves the install works on your computer without opening anything.
+
+### B · The kit — a folder for your system
+
 | on | do this |
 |---|---|
-| Windows | right-click the zip → **Properties** → tick **Unblock** → **OK**, then **Extract All**; open the folder and double-click `start.bat` |
-| macOS | open a terminal in this folder, run `xattr -dr com.apple.quarantine .` once, then `./start.sh` |
-| Linux | `./start.sh` |
+| Windows | right-click the zip → **Properties** → tick **Unblock** → **OK**, then **Extract All** to `C:\vleo`; open the folder and double-click **`Start VLEO.exe`** |
+| macOS | open a terminal in the folder, run `xattr -dr com.apple.quarantine .` once, then `./start.sh` |
+| Linux | `./start.sh` in the folder |
 
-**Windows says "Windows protected your PC"?** The programs are not signed yet, so Windows does not
-know them. Click **More info → Run anyway**; it asks once. Ticking **Unblock** on the zip before
-extracting it stops the question for every file inside. If your company's security software still
-blocks it, ask IT to allow the folder — the tool only listens on your own machine and never uses the
-network.
+**Windows says "Windows protected your PC"?** The program is not signed, so Windows does not know
+it. Click **More info → Run anyway**; it asks once. **If your company's antivirus removes
+`Start VLEO.exe`** (it can, as an unknown program), use **A** — or ask IT to exclude the folder
+`C:\vleo`. The tool only listens on your own machine and never uses the network.
 
-The tool opens in your browser, normally at `http://127.0.0.1:7777`; if that port is taken it
-uses the next free one and opens that instead, and the window it runs in prints the address. It
-is only on your machine — nobody else can reach it. To stop it, close the window (Windows) or
-press Ctrl-C (macOS, Linux).
+### Either way
+
+The tool opens in your browser, normally at `http://127.0.0.1:7777`; if that port is taken it uses
+the next free one and opens that instead, and the window it runs in prints the address. It is only
+on your machine — nobody else can reach it. To stop it, close that window or press Ctrl-C.
 
 ## 2 · Use it
 
@@ -66,12 +90,15 @@ file back with the reason, line by line.
 
 ## 4 · When a new version arrives
 
-Replace this folder with the new one and start it again. Your inputs, saved case and results are
-kept under `~/.vleo/` (your home folder — on Windows `C:\Users\<you>\.vleo`), not here, so they
-carry over. (Kits before 0.1.2 kept them inside this folder on Windows: copy its hidden `.vleo`
-folder into your home folder before you delete the old one.) If an input no longer
-exists, the tool says so by name; if a result you kept rested on a belief that has since changed,
-the Results page says which one.
+**A:** install the new `.whl` the same way — `python -m pip install vleo-<new version>-py3-none-any.whl`
+replaces the old one. **B:** replace the folder with the new one. Then start it again.
+
+Your inputs, saved case and results are kept under `~/.vleo/` (your home folder — on Windows
+`C:\Users\<you>\.vleo`), not in the tool, so they carry over — and A and B read the same place, so
+you can switch between them. (Kits before 0.1.2 kept them inside the kit folder on Windows: copy
+its hidden `.vleo` folder into your home folder before you delete the old one.) If an input no
+longer exists, the tool says so by name; if a result you kept rested on a belief that has since
+changed, the Results page says which one.
 
 ## 5 · What you cannot do here, and why
 

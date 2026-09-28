@@ -315,7 +315,7 @@ fn known() -> Known {
     Known {
         xtask: dispatched(&read("xtask/src/main.rs")),
         vleo: dispatched(&read("crates/vleo-cli/src/main.rs")),
-        routes: routed(&read("crates/vleo-daemon/src/main.rs")),
+        routes: routed(&read("crates/vleo-daemon/src/lib.rs")),
         env: env_read(),
         crates,
     }
@@ -421,7 +421,7 @@ fn no_route_writes_the_repository() {
     // applied by a developer. So no route may be marked as writing, and the
     // daemon may not grow the switch that once allowed it — a route that wrote
     // a sheet again would come back with that switch, and fail here.
-    let src = read("crates/vleo-daemon/src/main.rs");
+    let src = read("crates/vleo-daemon/src/lib.rs");
     let m = the_manual();
     for r in &m.routes {
         assert!(
