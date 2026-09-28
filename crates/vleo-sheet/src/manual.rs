@@ -35,6 +35,10 @@ pub enum Who {
     /// Everything a user does, and the tree itself: rows, holes, fixtures,
     /// checks, merges, data.
     Developer,
+    /// Runs the repository's routine: takes a node form in onto its own
+    /// branch, sends the author a preview, records their approval, releases
+    /// and shares. Every step is a command; nothing here writes code.
+    Maintainer,
     Everyone,
 }
 
@@ -43,6 +47,7 @@ impl Who {
         match self {
             Who::User => "user",
             Who::Developer => "developer",
+            Who::Maintainer => "maintainer",
             Who::Everyone => "everyone",
         }
     }
@@ -50,6 +55,7 @@ impl Who {
         match s {
             "user" => Some(Who::User),
             "developer" => Some(Who::Developer),
+            "maintainer" => Some(Who::Maintainer),
             "everyone" => Some(Who::Everyone),
             _ => None,
         }
@@ -192,7 +198,34 @@ pub struct Cannot {
     pub who: Who,
 }
 
+/// One of the three roles around the loop, and what its guide opens with.
+///
+/// Each field is a rule of docs/EXPLAINING.md held to a role: the answer
+/// first (E1), said simply (E2, E14), what the role does and never does, the
+/// common wrong idea and its correction (E5), and where the simple picture of
+/// the role stops being true (E4). All are required, so a guide never opens
+/// with a gap.
+pub struct Role {
+    pub id: String,
+    pub title: String,
+    pub answer: String,
+    pub simply: String,
+    pub does: Vec<String>,
+    pub never: Vec<String>,
+    pub wrong: String,
+    pub right: String,
+    pub breaks: String,
+    /// Predict before you look (E11): a question about the role, and its
+    /// answer, shown at the Learn depth with the answer held back.
+    pub predict: String,
+    pub reveal: String,
+}
+
+/// The roles a manual must describe, in the order their guides are listed.
+pub const ROLES: &[&str] = &["user", "maintainer", "developer"];
+
 pub struct Manual {
+    pub roles: Vec<Role>,
     pub layers: Vec<Layer>,
     pub commands: Vec<Command>,
     pub routes: Vec<Route>,
@@ -237,7 +270,9 @@ fn need(v: &toml::Value, key: &str, at: &str) -> Result<String, String> {
 
 fn who(v: &toml::Value, at: &str) -> Result<Who, String> {
     let w = need(v, "who", at)?;
-    Who::parse(&w).ok_or_else(|| format!("{at}: who = \"{w}\" — one of user, developer, everyone"))
+    Who::parse(&w).ok_or_else(|| {
+        format!("{at}: who = \"{w}\" — one of user, maintainer, developer, everyone")
+    })
 }
 
 fn table<'a>(v: &'a toml::Value, key: &str) -> Vec<&'a toml::Value> {
@@ -469,7 +504,52 @@ pub fn parse(text: &str) -> Result<Manual, String> {
         });
     }
 
+    let mut roles = Vec::new();
+    for r in table(&v, "role") {
+        let id = need(r, "id", "a [[role]]")?;
+        let at = format!("role '{id}'");
+        if !ROLES.contains(&id.as_str()) {
+            return Err(format!("{at}: one of {}", ROLES.join(", ")));
+        }
+        let list = |key: &str| -> Result<Vec<String>, String> {
+            let items: Vec<String> = r
+                .get(key)
+                .and_then(|x| x.as_array())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|i| i.as_str().map(str::to_string))
+                        .collect()
+                })
+                .unwrap_or_default();
+            if items.iter().all(|i| i.trim().is_empty()) {
+                return Err(format!("{at}: `{key}` is missing or empty"));
+            }
+            Ok(items)
+        };
+        roles.push(Role {
+            title: need(r, "title", &at)?,
+            answer: need(r, "answer", &at)?,
+            simply: need(r, "simply", &at)?,
+            does: list("does")?,
+            never: list("never")?,
+            wrong: need(r, "wrong", &at)?,
+            right: need(r, "right", &at)?,
+            breaks: need(r, "breaks", &at)?,
+            predict: need(r, "predict", &at)?,
+            reveal: need(r, "reveal", &at)?,
+            id,
+        });
+    }
+    for want in ROLES {
+        if roles.iter().filter(|r| r.id == *want).count() != 1 {
+            return Err(format!(
+                "the manual must describe the role '{want}' exactly once — its guide opens with it"
+            ));
+        }
+    }
+
     Ok(Manual {
+        roles,
         layers,
         commands,
         routes,
