@@ -109,6 +109,8 @@
     return Cd
 </code></pre>
 <p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>The method</h4>
+<p class="muted">No method yet. When this node's owner sends one — the relation in the method language, with their own code and test cases — the tool checks all three against each other (docs/PSEUDOCODE.md).</p>
 <h4>Guards</h4>
 <ul class="guards">
 <li><code>Cd &ge; 1.5</code> — no free-molecular body has a drag coefficient below 1.5; a lower value means the speed ratio or the accommodation is wrong</li>
@@ -206,6 +208,7 @@ pub fn evaluate(s: Ratio, l: Length, d: Length, alpha: Ratio, t_w: Temperature, 
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+<li>no method yet — the relation in the method language, with the author's own code and test cases, so the tool can check it three ways (docs/PSEUDOCODE.md)</li>
 <li>no theory: the relation is stated but not derived — THE ROW DOES NOT ANSWER. A function is defined by its derivation, not by its expression and not by its citation, and until one is written every reader of this row is blocked on it by name</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

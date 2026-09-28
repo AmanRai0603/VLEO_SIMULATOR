@@ -400,6 +400,12 @@ ol.algo .binds { color: var(--ink-3); font-size: 10.5px; }
 ul.guards, ul.flags { font-size: 11.5px; color: var(--ink-2); padding-left: 1.2rem; }
 pre.code { background: #f7f5ef; border: 1px solid var(--rule-2); border-radius: 3px;
   padding: .8rem; overflow: auto; font-size: 10.5px; line-height: 1.5; max-height: 38rem; }
+/* THE METHOD, THE AUTHOR'S CODE, THE CASES AND FLIGHT SOFTWARE on a node page. */
+pre.code.method { white-space: pre; border-left: 3px solid var(--in); }
+details.author-code, details.flight { margin: .5rem 0; font-size: 11.5px; }
+details.author-code summary, details.flight summary { cursor: pointer; color: var(--in); }
+table.cases .ok { color: var(--both); }
+table.cases .bad { color: var(--out); font-weight: 600; }
 .gaps { border: 1px solid var(--out); border-radius: 3px; padding: .6rem .9rem;
   margin-top: 1.4rem; background: #fdf8f1; }
 .gaps h4 { margin: 0 0 .3rem; font-size: 10px; text-transform: uppercase;

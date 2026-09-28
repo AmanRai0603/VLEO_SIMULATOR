@@ -68,8 +68,57 @@ pub const AI_HELP: &[&str] = &["none", "wording", "relation"];
 
 /// The arrays that ARE the relation, with the scalar fields that are. An
 /// assistant that helped with the relation may not supply any of these.
-const RELATION_FIELDS: &[&str] = &["expression", "source", "theory_why", "theory_reading"];
-const RELATION_ARRAYS: &[&str] = &["algorithm", "theory"];
+///
+/// The method is the relation once more, and the author's code and cases are
+/// the evidence it is checked against: an assistant that wrote any of them has
+/// made the check compare the assistant with itself.
+const RELATION_FIELDS: &[&str] = &[
+    "expression",
+    "source",
+    "theory_why",
+    "theory_reading",
+    "method_text",
+    "author_code",
+    "author_test_code",
+];
+const RELATION_ARRAYS: &[&str] = &["algorithm", "theory", "case"];
+/// The blocks whose change re-confirms the relation itself, and so carries the
+/// applying developer's name onto it. The author's cases are refused from an
+/// assistant like the relation, but they are the author's evidence, not the
+/// relation, and do not move whose name is on it.
+const STAMPS_RELATION: &[&str] = &["algorithm", "theory"];
+
+/// The method checker every form carries: `vleo_sheet::method::report_toml`
+/// compiled to WebAssembly by `xtask method-wasm`. Not read when this crate is
+/// itself compiled to WebAssembly — that build IS the checker.
+#[cfg(not(target_arch = "wasm32"))]
+const METHOD_WASM: &[u8] = include_bytes!("../../../web/method.wasm");
+#[cfg(target_arch = "wasm32")]
+const METHOD_WASM: &[u8] = &[];
+
+/// Standard base64, for carrying the checker inside the page.
+fn base64(bytes: &[u8]) -> String {
+    const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut o = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for c in bytes.chunks(3) {
+        let n = (c[0] as u32) << 16
+            | (*c.get(1).unwrap_or(&0) as u32) << 8
+            | *c.get(2).unwrap_or(&0) as u32;
+        o.push(T[(n >> 18) as usize & 63] as char);
+        o.push(T[(n >> 12) as usize & 63] as char);
+        o.push(if c.len() > 1 {
+            T[(n >> 6) as usize & 63] as char
+        } else {
+            '='
+        });
+        o.push(if c.len() > 2 {
+            T[n as usize & 63] as char
+        } else {
+            '='
+        });
+    }
+    o
+}
 
 // ---------------------------------------------------------------------------
 // the content, as the data block holds it
@@ -562,6 +611,90 @@ fn schema(sh: Option<&Sheet>, tree: &Tree) -> String {
         js_list(vleo_units::QUANTITIES),
         js_list(&crate::unit_names())
     ));
+    // Each quantity's SI unit, so a case's inputs and answer are asked for in
+    // the unit the checker and the generated code work in.
+    o.push_str("  \"si\": {");
+    for (i, q) in vleo_units::QUANTITIES.iter().enumerate() {
+        let sym = vleo_units::quantity_unit(q)
+            .map(|u| u.symbol())
+            .unwrap_or("");
+        o.push_str(&format!(
+            "{}{}: {}",
+            if i > 0 { ", " } else { "" },
+            js(q),
+            js(sym)
+        ));
+    }
+    o.push_str("},\n");
+    o.push_str(&format!(
+        "  \"method\": {{\"version\": {}, \"min_cases\": {}, \"min_refusals\": {}, \"statements\": [{}], \
+         \"functions\": [{}], \"constants\": [{}]}},\n",
+        crate::method::LANGUAGE_VERSION,
+        crate::method::MIN_CASES,
+        crate::method::MIN_REFUSALS,
+        crate::method::STATEMENTS
+            .iter()
+            .map(|st| format!("[{}, {}, {}]", js(st.form), js(st.meaning), js(st.example)))
+            .collect::<Vec<_>>()
+            .join(", "),
+        crate::method::FUNCTIONS
+            .iter()
+            .map(|f| format!("[{}, {}]", js(f.name), js(f.meaning)))
+            .collect::<Vec<_>>()
+            .join(", "),
+        crate::method::KERNEL_CONSTANTS
+            .iter()
+            .map(|c| format!("[{}, {}, {}]", js(c.name), js(c.unit), js(c.meaning)))
+            .collect::<Vec<_>>()
+            .join(", ")
+    ));
+    // THE WORKED EXAMPLE, station by station, from one module — the same one
+    // docs/PSEUDOCODE.md and the role guides show.
+    o.push_str(&format!(
+        "  \"example\": {{\"title\": {}, \"tag\": {}, \"fields\": {{",
+        js(crate::example::TITLE),
+        js(crate::example::TAG)
+    ));
+    let mut first = true;
+    for fl in FIELDS {
+        if let Some(v) = crate::example::field(fl.field) {
+            o.push_str(&format!(
+                "{}{}: {}",
+                if first { "" } else { ", " },
+                js(fl.field),
+                js(v)
+            ));
+            first = false;
+        }
+    }
+    o.push_str("}, \"arrays\": {");
+    let mut first = true;
+    for a in ARRAYS {
+        let bl = crate::example::blocks(a.name);
+        if bl.is_empty() {
+            continue;
+        }
+        o.push_str(&format!(
+            "{}{}: [",
+            if first { "" } else { ", " },
+            js(a.name)
+        ));
+        first = false;
+        for (i, b) in bl.iter().enumerate() {
+            o.push_str(if i > 0 { ", {" } else { "{" });
+            for (j, (k, v)) in b.iter().enumerate() {
+                o.push_str(&format!(
+                    "{}{}: {}",
+                    if j > 0 { ", " } else { "" },
+                    js(k),
+                    js(v)
+                ));
+            }
+            o.push('}');
+        }
+        o.push(']');
+    }
+    o.push_str("}},\n");
     o.push_str(&format!(
         "  \"view_kinds\": {},\n  \"provenances\": {},\n  \"ai_help\": {},\n",
         js_list(form::VIEW_KINDS),
@@ -711,6 +844,12 @@ fn page(title: &str, head: &str, schema: &str, original: &str, data: &str) -> St
          what we tested, what we now know, what changes, and what it rests on now. On a new node's form, [new] says where it goes: its id, the \
          group it hangs under, and its kind. -->\n<script type=\"application/toml\" id=\"{DATA_ID}\">\n{}</script>\n",
         data
+    ));
+    // The method checker, as base64. Never edited, and carried into every
+    // saved copy, so a filled form still checks its method wherever it goes.
+    o.push_str(&format!(
+        "<script type=\"application/octet-stream\" id=\"vleo-method-wasm\">{}</script>\n",
+        base64(METHOD_WASM)
     ));
     o.push_str("<script>\n");
     o.push_str(PAGE_JS);
@@ -1355,6 +1494,23 @@ fn plan_form_as(root: &Path, f: Form, first: bool) -> Result<Plan, String> {
             p.text = Some(form::set(&text, "explain_by", &who)?);
         }
     }
+    // WHOSE METHOD THIS IS. A method is mathematics: it carries the name of the
+    // person who wrote it, the form's filler, and is refused under an
+    // assistant's name exactly as a relation is.
+    let method = p
+        .items
+        .iter()
+        .any(|i| i.verdict == Verdict::Apply && i.what == "method_text");
+    if let (true, Some(text)) = (method, p.text.clone()) {
+        let who = p.form.name.trim().to_string();
+        form::refuse_agent_attribution(root, &who).map_err(|e| format!("the method: {e}"))?;
+        let when = if p.form.date.trim().is_empty() {
+            String::new()
+        } else {
+            format!(" / {}", p.form.date.trim())
+        };
+        p.text = Some(form::set(&text, "method_by", &format!("{who}{when}"))?);
+    }
     Ok(p)
 }
 
@@ -1710,7 +1866,7 @@ fn plan_edits(tree: &Tree, f: Form) -> Result<Plan, String> {
                 if a.name == "input" && verdict == Verdict::Apply {
                     p.edges = true;
                 }
-                if RELATION_ARRAYS.contains(&a.name) && verdict == Verdict::Apply {
+                if STAMPS_RELATION.contains(&a.name) && verdict == Verdict::Apply {
                     p.relation = true;
                 }
                 p.items.push(Item {
@@ -1745,7 +1901,7 @@ fn plan_edits(tree: &Tree, f: Form) -> Result<Plan, String> {
             if a.name == "input" && verdict == Verdict::Apply {
                 p.edges = true;
             }
-            if RELATION_ARRAYS.contains(&a.name) && verdict == Verdict::Apply {
+            if STAMPS_RELATION.contains(&a.name) && verdict == Verdict::Apply {
                 p.relation = true;
             }
             p.items.push(Item {
@@ -1778,7 +1934,7 @@ fn plan_edits(tree: &Tree, f: Form) -> Result<Plan, String> {
             if a.name == "input" && verdict == Verdict::Apply {
                 p.edges = true;
             }
-            if RELATION_ARRAYS.contains(&a.name) && verdict == Verdict::Apply {
+            if STAMPS_RELATION.contains(&a.name) && verdict == Verdict::Apply {
                 p.relation = true;
             }
             p.items.push(Item {
@@ -1977,23 +2133,29 @@ fn fixture_inputs(said: &str, inputs: &[BTreeMap<String, String>]) -> Option<Str
 const INTRO_HTML: &str = r#"<section class="nf-intro">
 <p class="nf-answer"><b>Answer first.</b> This file asks for one node of the design to change — or
 for a new one — and it is the whole of the request: it needs no connection and nothing installed.
-Fill in what you know, say why it is changing, save a copy and send it to the developers. They
-check it, apply it, and the next release of the tool carries it, where you run it on your own
-inputs.</p>
+Fill in what you know, say why it is changing, save a copy and send it to the maintainer. They check
+it, build it in, and send you a preview of your change to try; when it gives what you expect, you
+approve it, and the next release carries it for everyone.</p>
 <ol>
 <li><b>What is asked.</b> Every question the node answers, in the order it is read: what it is
 called and asks, <i>said simply</i>, the relation and where it comes from, the answer and its
-bounds, the derivation, and <i>where the simple version breaks</i>. Each question says why it is
-asked. Leave what you cannot answer as it is.</li>
+bounds, what it reads, and <i>where the simple version breaks</i>. Each question says why it is
+asked, and <i>Show the example</i> beside it shows the same question answered for one worked
+node. Leave what you cannot answer as it is.</li>
+<li><b>The method, your code, your cases.</b> Write the relation once more as a <i>method</i> — a
+few lines in a small fixed language — paste the code you wrote and tested, and give at least three
+test cases your code answered and one it refuses. The page runs your method on your cases as you
+type, with the same checker the maintainer runs: a case that disagrees is shown before you send
+anything. Flight software that belongs to this node can be kept here with its test.</li>
 <li><b>Why it is changing.</b> A node changes because a belief broke. If your changes move what
 the node computes — an input, the output, the model, the maths, the algorithm, how it is drawn —
 the section <i>Why it is changing</i> must say what was believed, what was tested, what we now
-know and what changes. Without it the developers apply only your wording. A worked example is in
-that section.</li>
+know and what changes. Without it only your wording is applied. A worked example is in that
+section.</li>
 <li><b>What is not yours to change here.</b> Where the node sits in the tree, its kind and its
 owner are the developers'. If an assistant helped with the <b>relation</b> itself — the equation,
-its steps or its derivation — say so: those are then derived by a developer, never taken from the
-form. Known values go under <i>known values</i>, with their source; they are recorded by a person.</li>
+its steps, its derivation, the method, your code or your cases — say so: those are then never
+taken from the form. Known values go under <i>known values</i>, with their source.</li>
 </ol>
 <p class="nf-muted">Tags: <span class="nf-tag req">needed</span> blocks the node until answered ·
 <span class="nf-tag rel">the relation</span> never taken from an assistant ·
@@ -2071,6 +2233,25 @@ table.nf-fx td, table.nf-fx th { border-bottom: 1px solid var(--rule); padding: 
 .nf-changes li { margin: 3px 0; }
 .nf-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 @media (max-width: 640px) { .nf-grid2 { grid-template-columns: 1fr; } .nf-ctx { grid-template-columns: 1fr; } }
+textarea.nf-code { white-space: pre; overflow-wrap: normal; overflow-x: auto; tab-size: 2; font-size: 13px;
+  min-height: 120px; }
+.nf-exbox { margin-top: 6px; }
+.nf-exbox summary { cursor: pointer; color: var(--accent); font-size: 13px; }
+.nf-exbox pre, .nf-ref pre { background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px;
+  overflow-x: auto; font: 12.5px/1.45 var(--mono); white-space: pre; margin: 6px 0; }
+.nf-ref { font-size: 13px; }
+.nf-ref table { border-collapse: collapse; width: 100%; }
+.nf-ref td { border-bottom: 1px solid var(--rule); padding: 3px 6px; vertical-align: top; }
+.nf-ins { display: grid; grid-template-columns: max-content 1fr; gap: 4px 10px; align-items: center; }
+.nf-ins label { font: 13px var(--mono); font-weight: 400; }
+.nf-check { border: 1px solid var(--accent); border-radius: 6px; padding: 8px 14px; margin: 14px 0; background: var(--card); }
+.nf-check h3 { margin: 4px 0 6px; font-size: 15px; }
+.nf-check ul { margin: 4px 0; padding-left: 20px; }
+.nf-check li { margin: 2px 0; font-size: 13.5px; }
+.nf-check .ok, .nf-case-res.ok { color: var(--ok); }
+.nf-check .bad, .nf-case-res.bad { color: var(--warn); }
+.nf-sound { font: 13px var(--mono); padding: 6px 10px; border-radius: 4px; background: var(--accent-pale); }
+.nf-sound.bad { background: var(--warn-pale); color: var(--warn); }
 @media print { .nf-bar { display: none; } }
 "#;
 
@@ -2267,6 +2448,7 @@ const PAGE_JS: &str = r#"'use strict';
         ? 'Still to answer below: ' + miss.map(k => (SCHEMA.derisk.find(d => d[0] === k) || [k, k])[1]).join('; ') +
           (DATA.new ? ' — a new node is not built without them.' : ' — without them the developers apply only your wording.')
         : 'The record is complete: this becomes version ' + (SCHEMA.version + 1) + ' of the node.');
+    if (typeof scheduleCheck === 'function') scheduleCheck();
   }
 
   // ---- controls --------------------------------------------------------
@@ -2281,6 +2463,20 @@ const PAGE_JS: &str = r#"'use strict';
     } else if (shape === 'prose') {
       el = document.createElement('textarea');
       el.value = value; el.rows = Math.min(14, Math.max(3, value.split('\n').length + 1));
+    } else if (shape === 'code') {
+      // Code: every space kept, no wrapping, and Tab indents instead of
+      // leaving the box.
+      el = document.createElement('textarea'); el.className = 'nf-code';
+      el.value = value; el.spellcheck = false; el.setAttribute('wrap', 'off');
+      el.rows = Math.min(24, Math.max(6, value.split('\n').length + 1));
+      el.addEventListener('keydown', e => {
+        if (e.key !== 'Tab' || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
+        e.preventDefault();
+        const a = el.selectionStart, b = el.selectionEnd;
+        el.value = el.value.slice(0, a) + '  ' + el.value.slice(b);
+        el.selectionStart = el.selectionEnd = a + 2;
+        el.dispatchEvent(new Event('input'));
+      });
     } else {
       el = document.createElement('input'); el.type = 'text'; el.value = value;
       if (shape === 'number' || shape === 'count') el.inputMode = 'decimal';
@@ -2330,7 +2526,57 @@ const PAGE_JS: &str = r#"'use strict';
     };
     box.appendChild(control(f.shape, f.options, S(DATA.fields[f.field]),
       v => { DATA.fields[f.field] = v; paint(); }, f.field));
+    const ex = (SCHEMA.example && SCHEMA.example.fields || {})[f.field];
+    if (ex) box.appendChild(exampleBox(ex));
     paint();
+    return box;
+  }
+
+  // "SHOW THE EXAMPLE": the same question answered for one worked node, so what
+  // a good answer looks like is on the page beside the question.
+  function exampleBox(text) {
+    const d = document.createElement('details'); d.className = 'nf-exbox';
+    d.innerHTML = '<summary>Show the example <span class="nf-tag">' + esc(SCHEMA.example.tag) + '</span></summary>' +
+      '<pre>' + esc(text) + '</pre>';
+    return d;
+  }
+  function exampleBlocks(a) {
+    const bl = (SCHEMA.example && SCHEMA.example.arrays || {})[a.name];
+    if (!bl || !bl.length) return null;
+    return exampleBox(bl.map((b, i) => a.name + ' ' + (i + 1) + '\n' +
+      Object.entries(b).map(([k, v]) => '  ' + k + ': ' + String(v).replace(/\n/g, '\n    ')).join('\n')).join('\n\n'));
+  }
+
+  // ---- a case's inputs: one number per input of the node, in SI ----------
+  function bindings() {
+    return (DATA.input || []).filter(r => S(r.binding).trim()).map(r => [S(r.binding).trim(), S(r.type)]);
+  }
+  function readInputs(v) {
+    const m = {}; const re = /([A-Za-z_][A-Za-z0-9_]*)\s*=\s*([^,}\s]+)/g; let x;
+    while ((x = re.exec(S(v)))) m[x[1]] = x[2];
+    return m;
+  }
+  function inputsOk(v) {
+    const m = readInputs(v), b = bindings();
+    return b.length > 0 && b.every(([k]) => k in m && isFinite(Number(m[k])) && m[k] !== '');
+  }
+  function inputsEditor(r, onchange) {
+    const box = document.createElement('div'); box.className = 'nf-ins';
+    const b = bindings();
+    if (!b.length) { box.innerHTML = '<span class="nf-muted">add this node\'s inputs first — a case gives each one a value</span>'; return box; }
+    const m = readInputs(r.inputs);
+    for (const [k, ty] of b) {
+      const lab = document.createElement('label'); lab.textContent = k + ' [' + ((SCHEMA.si || {})[ty] || '?') + ']';
+      const inp = document.createElement('input'); inp.type = 'text'; inp.inputMode = 'decimal'; inp.value = S(m[k]);
+      inp.setAttribute('aria-label', 'case input ' + k);
+      inp.addEventListener('input', () => {
+        const cur = readInputs(r.inputs); cur[k] = inp.value.trim();
+        r.inputs = '{ ' + b.map(([n]) => n).filter(n => S(cur[n]) !== '').map(n => n + ' = ' + cur[n]).join(', ') + ' }';
+        inp.style.borderColor = inp.value.trim() && !isFinite(Number(inp.value)) ? 'var(--warn)' : '';
+        onchange(); paintCount();
+      });
+      box.appendChild(lab); box.appendChild(inp);
+    }
     return box;
   }
 
@@ -2341,6 +2587,7 @@ const PAGE_JS: &str = r#"'use strict';
       wrap.innerHTML = '<h2>' + esc(a.label.charAt(0).toUpperCase() + a.label.slice(1)) +
         (a.relation ? ' <span class="nf-tag rel">the relation</span>' : '') + '</h2>' +
         '<p class="nf-why">' + esc(a.why) + '</p>';
+      const exb = exampleBlocks(a); if (exb) wrap.appendChild(exb);
       rows.forEach((r, i) => {
         const b = document.createElement('div'); b.className = 'nf-block';
         const last = i === rows.length - 1;
@@ -2365,15 +2612,34 @@ const PAGE_JS: &str = r#"'use strict';
         for (const c of a.columns) {
           const col = document.createElement('div'); col.className = 'nf-col';
           if (c.managed) { col.innerHTML = '<span>' + esc(c.key) + ': ' + esc(r[c.key] || '(assigned on apply)') + '</span>'; b.appendChild(col); continue; }
-          col.innerHTML = '<span>' + esc(c.ask || c.key) + (c.required ? ' <span class="nf-tag req">needed</span>' : '') + '</span>';
-          col.appendChild(control(c.shape, [], S(r[c.key]), v => {
-            r[c.key] = v;
-            if (a.name === 'input' && c.key === 'var' && !S(r.type) && ROWS.get(v)) {
-              r.type = ROWS.get(v)[2]; draw(); return;
-            }
-            paintHint();
-          }, a.name + ' ' + (i + 1) + ' ' + c.key));
+          let ask = c.ask || c.key;
+          if (a.name === 'case' && c.key === 'expect') ask = 'the answer your code gave, in ' + ((SCHEMA.si || {})[S(DATA.fields.type) || SCHEMA.type] || 'SI');
+          col.innerHTML = '<span>' + esc(ask) + (c.required ? ' <span class="nf-tag req">needed</span>' : '') + '</span>';
+          if (a.name === 'case' && (c.key === 'expect' || c.key === 'tolerance')) col.dataset.answer = '1';
+          if (c.shape === 'inputs') {
+            col.appendChild(inputsEditor(r, () => {}));
+          } else {
+            const opts = c.shape === 'choice' && a.name === 'case' && c.key === 'refuse' ? ['no', 'yes'] : [];
+            col.appendChild(control(c.shape, opts, S(r[c.key]), v => {
+              r[c.key] = v;
+              if (a.name === 'input' && c.key === 'var' && !S(r.type) && ROWS.get(v)) {
+                r.type = ROWS.get(v)[2]; draw(); return;
+              }
+              if (a.name === 'case' && c.key === 'refuse') showAnswer();
+              paintHint();
+            }, a.name + ' ' + (i + 1) + ' ' + c.key));
+          }
           b.appendChild(col);
+        }
+        // A case that must be refused has no answer to give.
+        const showAnswer = () => {
+          if (a.name !== 'case') return;
+          for (const el of b.querySelectorAll('[data-answer]')) el.hidden = S(r.refuse) === 'yes';
+        };
+        showAnswer();
+        if (a.name === 'case') {
+          const res = document.createElement('div'); res.className = 'nf-was nf-case-res'; res.dataset.case = String(i);
+          b.appendChild(res);
         }
         if (a.name === 'input') { b.appendChild(hint); paintHint(); }
         wrap.appendChild(b);
@@ -2382,6 +2648,7 @@ const PAGE_JS: &str = r#"'use strict';
       add.textContent = 'add ' + (a.end_only ? 'one at the end' : 'one');
       add.onclick = () => {
         const r = {}; for (const c of a.columns) r[c.key] = c.managed ? String(rows.length + 1) : '';
+        if (a.name === 'case') { r.refuse = 'no'; r.tolerance = '1e-6'; r.inputs = '{ }'; }
         rows.push(r); draw(); paintCount();
       };
       wrap.appendChild(add);
@@ -2502,15 +2769,142 @@ const PAGE_JS: &str = r#"'use strict';
     'developer\'s decision, taken in the repository.</p>';
   if (!SCHEMA.new) main.appendChild(ctx);
 
+  // THE METHOD, YOUR CODE, YOUR CASES — and the check that runs one against
+  // the others while you type, with the same checker intake and the gate use.
+  const INTRO = {
+    'the method': 'Your relation once more, as a few lines the tool can check, run and translate into the code it ships. ' +
+      'It reads the inputs by their names, gives every number its unit, and ends every path with return or refuse.',
+    'your code': 'The code you wrote and tested — in MATLAB, Python, C or anything else — and the script that ran it on ' +
+      'your test cases. Your cases decide: the method, and the code the tool generates from it, must reproduce every one.'
+  };
+  function methodRef() {
+    const m = SCHEMA.method || {};
+    const d = document.createElement('details'); d.className = 'nf-exbox nf-ref';
+    d.innerHTML = '<summary>The method language on one page (version ' + esc(m.version) + ')</summary>' +
+      '<table>' + (m.statements || []).map(x => '<tr><td><code>' + esc(x[0]) + '</code></td><td>' + esc(x[1]) +
+      '<pre>' + esc(x[2]) + '</pre></td></tr>').join('') + '</table>' +
+      '<p><b>Functions:</b> ' + (m.functions || []).map(x => '<code title="' + esc(x[1]) + '">' + esc(x[0]) + '</code>').join(' · ') + '</p>' +
+      '<p><b>Constants:</b> ' + (m.constants || []).map(x => '<code title="' + esc(x[2]) + '">' + esc(x[0]) + '</code> [' + esc(x[1]) + ']').join(' · ') + '</p>' +
+      '<p class="nf-muted">Units go in brackets straight after a number: <code>250 [km]</code>, <code>30 [deg]</code>, ' +
+      '<code>3.986e14 [m^3/s^2]</code>. A bare 0 is zero of anything. The full reference is docs/PSEUDOCODE.md.</p>';
+    return d;
+  }
+  const check = document.createElement('section'); check.className = 'nf-check'; check.id = 'nf-check';
+  let placedCases = false, placedInputs = false;
   const groups = [];
   for (const f of SCHEMA.fields) if (groups.indexOf(f.group) < 0) groups.push(f.group);
   for (const grp of groups) {
+    // What the node reads comes before the method, which reads it by name.
+    if (grp === 'the method') {
+      const ia = SCHEMA.arrays.find(a => a.name === 'input');
+      if (ia) { main.appendChild(blocks(ia)); placedInputs = true; }
+    }
     const sec = document.createElement('section');
-    sec.innerHTML = '<h2>' + esc(grp.charAt(0).toUpperCase() + grp.slice(1)) + '</h2>';
+    sec.innerHTML = '<h2>' + esc(grp.charAt(0).toUpperCase() + grp.slice(1)) + '</h2>' +
+      (INTRO[grp] ? '<p class="nf-why">' + esc(INTRO[grp]) + '</p>' : '');
+    if (grp === 'the method') sec.appendChild(methodRef());
     for (const f of SCHEMA.fields.filter(x => x.group === grp)) sec.appendChild(question(f));
     main.appendChild(sec);
+    if (grp === 'your code') {
+      const ca = SCHEMA.arrays.find(a => a.name === 'case');
+      if (ca) { main.appendChild(blocks(ca)); main.appendChild(check); placedCases = true; }
+    }
   }
-  for (const a of SCHEMA.arrays) main.appendChild(blocks(a));
+  for (const a of SCHEMA.arrays) {
+    if (a.name === 'flight' || (a.name === 'case' && placedCases) || (a.name === 'input' && placedInputs)) continue;
+    main.appendChild(blocks(a));
+    if (a.name === 'case') main.appendChild(check);
+  }
+  for (const a of SCHEMA.arrays) if (a.name === 'flight') main.appendChild(blocks(a));
+
+  // ---- the check: the method run on your cases, in this page -------------
+  let VM = null, VMerr = '';
+  async function vm() {
+    if (VM || VMerr) return VM;
+    try {
+      const bin = atob((($('#vleo-method-wasm') || {}).textContent || '').trim());
+      const bytes = new Uint8Array(bin.length);
+      for (let k = 0; k < bin.length; k++) bytes[k] = bin.charCodeAt(k);
+      VM = (await WebAssembly.instantiate(bytes, {})).instance.exports;
+    } catch (e) { VMerr = String(e && e.message || e); }
+    return VM;
+  }
+  async function runReport(text) {
+    const v = await vm(); if (!v) return null;
+    const enc = new TextEncoder().encode(text);
+    const p = v.vleo_alloc(enc.length);
+    new Uint8Array(v.memory.buffer, p, enc.length).set(enc);
+    const out = v.vleo_report(p, enc.length), n = v.vleo_report_len();
+    return JSON.parse(new TextDecoder().decode(new Uint8Array(v.memory.buffer, out, n)));
+  }
+  const num = v => { const x = Number(S(v).trim()); return isFinite(x) && S(v).trim() !== '' ? String(x) : null; };
+  // Only a case whose answer YOU have typed is run: the method's value is shown
+  // beside yours, never before it, so the tool can never be where your answer
+  // came from.
+  function checkToml() {
+    let o = '[method]\ntext = ' + tq(S(DATA.fields.method_text)) + '\n\n[output]\ntype = ' +
+      tq(S(DATA.fields.type)) + '\n';
+    for (const [k, ty] of bindings()) o += '\n[[input]]\nbinding = ' + tq(k) + '\ntype = ' + tq(ty) + '\n';
+    const used = [], waiting = [];
+    (DATA.case || []).forEach((r, i) => {
+      const refuse = S(r.refuse) === 'yes';
+      if ((!refuse && num(r.expect) == null) || !inputsOk(r.inputs)) { waiting.push(i); return; }
+      o += '\n[[case]]\nlabel = ' + tq(S(r.label) || 'case ' + (i + 1)) + '\nrefuse = ' + tq(refuse ? 'yes' : 'no') + '\n';
+      if (!refuse) o += 'expect = ' + num(r.expect) + '\ntolerance = ' + (num(r.tolerance) || '0') + '\n';
+      const m = readInputs(r.inputs);
+      o += 'inputs = { ' + bindings().map(([k]) => k + ' = ' + Number(m[k])).join(', ') + ' }\n';
+      used.push(i);
+    });
+    return { text: o, used, waiting };
+  }
+  let timer = null, seq = 0;
+  function scheduleCheck() { clearTimeout(timer); timer = setTimeout(doCheck, 350); }
+  async function doCheck() {
+    const my = ++seq;
+    const head = '<h3>Check: the method against your cases</h3>';
+    const resEls = [...document.querySelectorAll('.nf-case-res')];
+    for (const el of resEls) { el.textContent = ''; el.className = 'nf-was nf-case-res'; }
+    if (!S(DATA.fields.method_text).trim()) {
+      check.innerHTML = head + '<p class="nf-why">Write the method above, and your cases, and this runs one on the ' +
+        'other as you type — the same check the developers run when the form arrives.</p>';
+      return;
+    }
+    const { text, used, waiting } = checkToml();
+    const r = await runReport(text);
+    if (my !== seq) return;
+    if (!r) {
+      check.innerHTML = head + '<p class="nf-warn">This browser could not start the checker (' + esc(VMerr) +
+        '). The developers run the same check when the form arrives; nothing is lost.</p>';
+      return;
+    }
+    let h = head;
+    if (r.error) h += '<p class="bad">' + esc(r.error) + '</p>';
+    if (r.diags.length) h += '<ul>' + r.diags.map(d => '<li class="' + (d.severity === 'error' ? 'bad' : '') + '">' +
+      (d.line ? 'line ' + d.line + ': ' : '') + (d.severity === 'note' ? 'note: ' : '') + esc(d.msg) + '</li>').join('') + '</ul>';
+    else if (!r.error) h += '<p class="ok">The method reads, and its units agree.</p>';
+    const agree = r.cases.filter(c => c.agrees).length;
+    if (r.cases.length) h += '<p>' + agree + ' of ' + r.cases.length + ' case(s) agree with your code.</p><ul>' +
+      r.cases.map(c => '<li class="' + (c.agrees ? 'ok' : 'bad') + '">' + esc(c.label) + ': ' + esc(c.text) +
+        (c.got != null && c.agrees && !c.refuse ? ' — the method gives ' + esc(String(Number(c.got))) : '') + '</li>').join('') + '</ul>';
+    if (waiting.length) h += '<p class="nf-muted">' + waiting.length + ' case(s) not run yet: give every input a number, and ' +
+      'type the answer your code gave (or say it must be refused). The method\'s value is shown only after yours.</p>';
+    if (r.shortfall.length) h += '<ul>' + r.shortfall.map(x => '<li class="bad">' + esc(x) + '</li>').join('') + '</ul>';
+    h += '<p class="nf-sound' + (r.sound ? '' : ' bad') + '">' + (r.sound
+      ? 'Sound: the method checks, and agrees with every one of your cases.'
+      : 'Not sound yet — the developers will see exactly what is shown here.') + '</p>';
+    check.innerHTML = h;
+    used.forEach((i, k) => {
+      const c = r.cases[k], el = resEls.find(e => e.dataset.case === String(i));
+      if (!c || !el) return;
+      el.className = 'nf-was nf-case-res ' + (c.agrees ? 'ok' : 'bad');
+      el.textContent = (c.agrees ? '✓ ' : '✗ ') + c.text +
+        (c.got != null && c.agrees && !c.refuse ? ' — the method gives ' + String(Number(c.got)) : '');
+    });
+    for (const i of waiting) {
+      const el = resEls.find(e => e.dataset.case === String(i));
+      if (el) el.textContent = 'not run yet: every input needs a number, and your code\'s answer (or refuse = yes)';
+    }
+  }
 
   if (DATA.view) {
     const v = document.createElement('section');
@@ -2578,6 +2972,7 @@ const PAGE_JS: &str = r#"'use strict';
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   };
   paintCount();
+  doCheck();
 })();
 "#;
 

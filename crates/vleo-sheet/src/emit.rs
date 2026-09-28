@@ -1174,6 +1174,17 @@ pub fn gap_pass(sh: &Sheet, holes: &BTreeMap<u32, String>) -> Vec<String> {
                 .into(),
         );
     }
+    // The method and its author's cases: the node's relation in a form the
+    // tool can check and translate, and the evidence from the author's own
+    // code. A computed row with one answer and none of this is unfinished, and
+    // says so; a set row and a declared row are not asked.
+    if !sh.is_declared() && sh.publishes.is_empty() && sh.method.text.trim().is_empty() {
+        g.push(
+            "no method yet — the relation in the method language, with the author's own code \
+             and test cases, so the tool can check it three ways (docs/PSEUDOCODE.md)"
+                .into(),
+        );
+    }
     if sh.criticality == "significant"
         && !sh.dir.join("parity.csv").is_file()
         && sh.fixtures.len() < 2

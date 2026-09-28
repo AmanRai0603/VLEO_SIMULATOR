@@ -60,7 +60,7 @@ pub fn about_of(what: &str) -> Option<&'static str> {
         "symbol" | "type" | "unit" | "lower" | "upper" | "reason_lower" | "reason_upper"
         | "sense" | "publishes" => "output",
         "source" | "assumption" => "model",
-        "expression" => "math",
+        "expression" | "method_text" => "math",
         "algorithm" => "algorithm",
         "view" => "visualisation",
         _ => return None,

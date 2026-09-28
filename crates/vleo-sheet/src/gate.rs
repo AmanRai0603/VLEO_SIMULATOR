@@ -118,6 +118,125 @@ fn versions_check(sh: &Sheet) -> Check {
     }
 }
 
+/// The method, the author's code and cases, and flight software.
+///
+/// Nothing here is asked of a row that has none of them: a node without a
+/// method keeps its hand-written holes, and the gap pass lists the method as
+/// still to come. What IS here is refused rather than noted, because each of
+/// these is a claim — "this method is the relation", "these cases came from my
+/// code" — and a claim that does not hold must not reach a release.
+fn method_checks(sh: &Sheet) -> Vec<Check> {
+    use crate::method;
+    let mut out = Vec::new();
+    let has_method = !sh.method.text.trim().is_empty();
+    if has_method {
+        let mut bad = Vec::new();
+        if !sh.publishes.is_empty() {
+            bad.push(format!(
+                "this row publishes a set of {} values, and a method answers one quantity — \
+                 the set keeps its hand-written holes",
+                sh.publishes.len() + 1
+            ));
+        }
+        if sh.is_declared() {
+            bad.push("a declared row states a number; it has no method".into());
+        }
+        let who = sh.method.by.to_lowercase();
+        if crate::form::agent_identities(&sh.dir).iter().any(|a| {
+            who == *a || who.starts_with(&format!("{a} ")) || who.contains(&format!("{a}/"))
+        }) {
+            bad.push(format!(
+                "the method is attributed to «{}», an assistant — an assistant may never supply \
+                 mathematics",
+                sh.method.by
+            ));
+        }
+        let text = std::fs::read_to_string(sh.dir.join("node.toml")).unwrap_or_default();
+        match method::report_toml(&text) {
+            Err(e) => bad.push(e),
+            Ok(r) => {
+                for d in r
+                    .diags
+                    .iter()
+                    .filter(|d| d.severity == method::Severity::Error)
+                {
+                    bad.push(format!("method {d}"));
+                }
+                for (c, v) in &r.cases {
+                    if !v.agrees() {
+                        bad.push(format!("case «{}»: {}", c.label, v.text(c)));
+                    }
+                }
+                bad.extend(r.shortfall.iter().cloned());
+            }
+        }
+        out.push(if bad.is_empty() {
+            Check::pass("method")
+        } else {
+            Check::fail("method", bad.join("; "))
+        });
+    }
+    // Cases say where they came from: the author's own code, which must be
+    // here to be read and run again.
+    if !sh.cases.is_empty() {
+        let mut bad = Vec::new();
+        if sh.author.code.trim().is_empty() {
+            bad.push(
+                "the cases came from your code, and the code is not here — paste it under \
+                      [author] code"
+                    .to_string(),
+            );
+        }
+        if sh.author.language.trim().is_empty() {
+            bad.push("say what language the code is in".into());
+        }
+        if sh.author.name.trim().is_empty() {
+            bad.push("say who wrote the code".into());
+        }
+        if sh.author.test_code.trim().is_empty() {
+            bad.push("the test code that ran the cases is not here".into());
+        }
+        for c in &sh.cases {
+            for (k, _) in &c.inputs {
+                if !sh.inputs.iter().any(|i| &i.binding == k) {
+                    bad.push(format!(
+                        "case «{}» sets «{k}», which is not an input of this row",
+                        c.label
+                    ));
+                }
+            }
+        }
+        out.push(if bad.is_empty() {
+            Check::pass("cases")
+        } else {
+            Check::fail("cases", bad.join("; "))
+        });
+    }
+    if !sh.flight.is_empty() {
+        let mut bad = Vec::new();
+        let mut names = BTreeSet::new();
+        for f in &sh.flight {
+            if f.name.trim().is_empty() || f.code.trim().is_empty() {
+                bad.push("a flight software block needs its file name and its code".to_string());
+            } else if !names.insert(f.name.as_str()) {
+                bad.push(format!("«{}» is kept twice", f.name));
+            }
+            if f.language.trim().is_empty() || f.purpose.trim().is_empty() {
+                bad.push(format!(
+                    "«{}» needs its language and what it does on board",
+                    f.name
+                ));
+            }
+        }
+        out.push(if bad.is_empty() {
+            Check::pass("flight")
+        } else {
+            Check::fail("flight", bad.join("; "))
+        });
+    }
+    out
+}
+
 /// The per-node checks.
 pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     let mut out = Vec::new();
@@ -153,6 +272,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
             Check::fail("parent", format!("'{}' is not a group", sh.parent))
         });
         out.push(versions_check(sh));
+        out.extend(method_checks(sh));
         let gaps = emit::gap_pass(sh, &holes);
         out.push(if gaps.is_empty() {
             Check::pass("gap-pass")
@@ -162,6 +282,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         return out;
     }
     out.push(versions_check(sh));
+    out.extend(method_checks(sh));
 
     // 1 — the sheet validates; no required field is blank.
     let mut missing = Vec::new();
