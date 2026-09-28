@@ -92,7 +92,7 @@ y = "gnc_pointing_error"
 
 [[version]]
 n = 1
-release = "next"
+release = "0.1.1"
 date = "2026-09-27"
 by = "an assistant, transcribed from this sheet — for its owner (gnc) to confirm"
 about = ["node"]

@@ -65,7 +65,7 @@ kind = "number"
 
 [[version]]
 n = 1
-release = "next"
+release = "0.1.1"
 date = "2026-09-27"
 by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
 about = ["node"]
