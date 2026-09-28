@@ -13,11 +13,21 @@ repository = "https://github.com/AmanRai0603/VLEO_SIMULATOR"
 # has no interpreter.
 
 [lib]
-name = "vleo"
+# `_vleo`: the native module inside the `vleo` package. The package picks the
+# one built for the machine it is on — python/vleo/__init__.py.
+name = "_vleo"
 crate-type = ["cdylib"]
 
 [dependencies]
 vleo-modules = { path = "../vleo-modules", features = ["std"] }
 vleo-bus = { path = "../vleo-bus", features = ["std"] }
 vleo-core = { path = "../vleo-core", features = ["std"] }
-pyo3 = { version = "0.22", features = ["extension-module"] }
+# The whole tool, not only the engine: `python -m vleo` serves the same pages
+# the daemon does, from inside python.exe, so nothing new has to be run.
+vleo-server = { path = "../vleo-server" }
+# abi3: one build per system for every Python from 3.9, so one package carries
+# one file per system rather than one per system and interpreter.
+pyo3 = { version = "0.22", features = ["extension-module", "abi3-py39"] }
+
+[build-dependencies]
+embed-resource = "3"

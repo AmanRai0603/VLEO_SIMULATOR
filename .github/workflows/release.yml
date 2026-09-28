@@ -106,16 +106,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # `system` is the name the Python package gives each engine it carries.
+        # Linux builds on the older Ubuntu so the programs and the engine load
+        # on the laptops still running it, not only on the newest.
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
+            system: linux-x86_64
           - os: macos-latest
             target: aarch64-apple-darwin
+            system: macos-arm64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+            system: windows-x86_64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - run: rustup target add ${{ matrix.target }}
       # The three doors onto one kernel: the command line, the local server the
       # browser face talks to, and the shared library the wheel and MATLAB bind.
@@ -140,6 +149,113 @@ jobs:
         with:
           name: vleo-${{ matrix.target }}
           path: vleo-${{ needs.prove.outputs.version }}-${{ matrix.target }}.zip
+      # THE ENGINE FOR THE PYTHON PACKAGE: the same code as the daemon, built as
+      # a Python module. One per system; the `wheel` job below puts all of them
+      # in one file.
+      - name: the engine for the Python package
+        shell: bash
+        run: |
+          cargo build --locked --release --manifest-path crates/vleo-py/Cargo.toml --target ${{ matrix.target }}
+          mkdir -p "pylib"
+          for f in _vleo.dll lib_vleo.dylib lib_vleo.so; do
+            src="crates/vleo-py/target/${{ matrix.target }}/release/$f"
+            [ -f "$src" ] && cp "$src" pylib/
+          done
+          ls -l pylib
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pylib-${{ matrix.system }}
+          path: pylib/
+          if-no-files-found: error
+      # Intel Macs, from the Apple-silicon runner. Not load-bearing: if it does
+      # not build, the package still carries the other three and says plainly
+      # on an Intel Mac that it has no engine for it.
+      - name: the engine for Intel Macs
+        if: matrix.system == 'macos-arm64'
+        continue-on-error: true
+        shell: bash
+        run: |
+          rustup target add x86_64-apple-darwin
+          cargo build --locked --release --manifest-path crates/vleo-py/Cargo.toml --target x86_64-apple-darwin
+          mkdir -p pylib-intel && cp crates/vleo-py/target/x86_64-apple-darwin/release/lib_vleo.dylib pylib-intel/
+      - uses: actions/upload-artifact@v4
+        if: matrix.system == 'macos-arm64'
+        continue-on-error: true
+        with:
+          name: pylib-macos-x86_64
+          path: pylib-intel/
+          if-no-files-found: ignore
+
+  # ONE FILE FOR EVERY LAPTOP. The kit's programs are new, unsigned `.exe`
+  # files, and that is what Windows and company antivirus question. This
+  # package has none: `pip install` puts it in place and `python -m vleo` runs
+  # the same engine inside python.exe. tools/build_wheel.py says how.
+  wheel:
+    name: the one file for every laptop
+    needs: [prove, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pylib-*
+          path: pylib
+      - name: the wheel
+        run: |
+          v="${{ needs.prove.outputs.version }}"
+          for need in windows-x86_64 macos-arm64 linux-x86_64; do
+            [ -d "pylib/pylib-$need" ] || { echo "::error::no engine for $need"; exit 1; }
+          done
+          cargo run --release -p xtask -- kit --files-only --out wheel-kit
+          VLEO_DATA="$RUNNER_TEMP/wheel-data" cargo run --release -p vleo-cli -- data sync wheel-kit/bundles
+          args=""
+          for d in pylib/pylib-*; do
+            f=$(ls "$d"/* | head -1)
+            args="$args --native ${d#pylib/pylib-}=$f"
+          done
+          python3 tools/build_wheel.py --version "$v" --kit wheel-kit $args --out .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vleo-wheel
+          path: vleo-${{ needs.prove.outputs.version }}-py3-none-any.whl
+          if-no-files-found: error
+
+  # The one file, installed and started on each system it is for, the way a
+  # teammate will: pip install, then `python -m vleo --check`, which starts the
+  # tool, asks it for its version and its page, and fails if either is not
+  # whole. Python 3.9 on Windows proves the one engine serves every Python from
+  # 3.9 up.
+  wheel-check:
+    name: the one file installs and starts
+    needs: [prove, wheel]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            python: "3.12"
+          - os: windows-latest
+            python: "3.9"
+          - os: macos-latest
+            python: "3.12"
+          - os: ubuntu-22.04
+            python: "3.10"
+          - os: ubuntu-latest
+            python: "3.12"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: vleo-wheel
+      - name: install it and start it
+        shell: bash
+        run: |
+          python -m pip install ./vleo-${{ needs.prove.outputs.version }}-py3-none-any.whl
+          cd "$RUNNER_TEMP"
+          python -m vleo --check
 
   # The one human approval. It is a GitHub environment with required reviewers,
   # which is a repository setting a person configures — this file only names it.
@@ -153,7 +269,7 @@ jobs:
   # release. The setting is still the control; this makes its absence loud.
   publish:
     name: one human says yes
-    needs: [prove, build]
+    needs: [prove, build, wheel, wheel-check]
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -212,8 +328,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           v="${{ needs.prove.outputs.version }}"
-          find artefacts -type f ! -name notes.md -exec sh -c 'mv "$1" "upload-$(basename "$1")"' _ {} \;
+          # The three kits and the one wheel; the engines the wheel was built
+          # from are inside it, not beside it.
+          mkdir upload
+          find artefacts -type f \( -name 'vleo-*.zip' -o -name 'vleo-*.whl' \) -exec mv {} upload/ \;
           gh release create "v$v" \
             --title "v$v" \
             --notes-file artefacts/notes/notes.md \
-            upload-* || gh release edit "v$v" --notes-file artefacts/notes/notes.md
+            upload/* || gh release edit "v$v" --notes-file artefacts/notes/notes.md

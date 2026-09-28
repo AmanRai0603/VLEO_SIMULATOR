@@ -7,8 +7,9 @@
 The command line, the daemon, the WebAssembly binding, the C ABI and the Python
 wheel — the doors onto one kernel.
 
-Applies to `crates/vleo-cli/**`, `crates/vleo-daemon/**`, `crates/vleo-wasm/**`,
-`crates/vleo-ffi/**`, `crates/vleo-py/**`.
+Applies to `crates/vleo-cli/**`, `crates/vleo-daemon/**`, `crates/vleo-server/**` (the server
+the daemon and the Python package both start), `crates/vleo-wasm/**`, `crates/vleo-ffi/**`,
+`crates/vleo-py/**`.
 Maintained by the developers. No face writes the repository; the case and
 results a face saves are kept outside it.
 

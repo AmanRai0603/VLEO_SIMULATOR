@@ -7,6 +7,7 @@
 #   RING 2  vleo-bus      typed messages, ports, schedule, cache keys
 #   RING 3  vleo-mod-*    one crate per subsystem — a sibling it did not declare will not compile
 #           vleo-modules  facade + dispatch table; re-exports the twelve, holds no formula
+#           vleo-server   the local server both the daemon and the Python package start
 #   FACES   vleo-cli · vleo-daemon · vleo-wasm · vleo-ffi · vleo-py
 [workspace]
 resolver = "2"
@@ -41,13 +42,14 @@ members = [
     "crates/vleo-modules",
     "crates/vleo-cli",
     "crates/vleo-daemon",
+    "crates/vleo-server",
     "crates/vleo-ffi",
     "xtask",
 ]
 exclude = ["crates/vleo-wasm", "crates/vleo-py"]
 
 [workspace.package]
-version = "0.1.2"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.94"
 license = "UNLICENSED"
@@ -62,6 +64,7 @@ vleo-graph   = { path = "crates/vleo-graph" }
 vleo-bus     = { path = "crates/vleo-bus" }
 vleo-data    = { path = "crates/vleo-data" }
 vleo-modules = { path = "crates/vleo-modules" }
+vleo-server = { path = "crates/vleo-server" }
 vleo-testkit = { path = "crates/vleo-testkit" }
 toml         = "0.8"
 serde        = { version = "1", features = ["derive"] }

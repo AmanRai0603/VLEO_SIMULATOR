@@ -15,3 +15,4 @@ features = ["pyo3/extension-module"]
 # because MATLAB supports a specific range of interpreter versions that differs
 # by release, and a user on another release reports the tool as broken.
 python-source = "python"
+module-name = "vleo._vleo"

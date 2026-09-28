@@ -74,7 +74,7 @@ say = "Open the address it printed, normally `http://127.0.0.1:7777`."
 say = "In a Codespace there is nothing to type: the tool is already running and port 7777 opens as a preview."
 
 [[layer.section.step]]
-say = "From a kit — the zip the developers share, with no repository — run `start.bat` on Windows or `./start.sh` on macOS and Linux. It opens the page itself; `START_HERE.md` in the folder says the rest."
+say = "Without a repository, the tool comes two ways. The one file for every laptop: `python -m pip install vleo-<version>-py3-none-any.whl` once, then `python -m vleo` — it runs inside Python, so Windows has no new program to stop. Or a kit, the zip for your system: double-click `Start VLEO.exe` on Windows, or run `./start.sh` on macOS and Linux. Either opens the page itself; `START_HERE.md` says the rest."
 
 
 [[layer.section]]
@@ -960,17 +960,20 @@ id = "term-kit"
 title = "Share the tool with the team"
 who = "developer"
 kind = "how-to"
-answer = "The team gets a kit, not the repository: the two programs beside exactly the files they read, with START_HERE.md on top. They use it and send back node forms; you apply them, release, and share the next kit."
+answer = "The team gets the tool, not the repository: one Python package for every laptop, or a kit per platform — the programs beside exactly the files they read, with START_HERE.md on top. They use it and send back node forms; you apply them, release, and share the next version."
 body = """
 The daemon reads the web face, the tree and every node's page at run time, so \
 the programs alone do not run. `xtask kit` puts them beside exactly those files \
 — no git history, no generators, no kernel source — in `dist/vleo-<version>/`, \
-with `START_HERE.md` (from `docs/TEAM_GUIDE.md`), `start.sh`, `start.bat` and \
-`VERSION`. Zip it and share it. A kit runs on the platform that built it; the \
-release pipeline builds one for Linux, macOS and Windows and attaches each to \
-the release. The team's case and results live under `~/.vleo/`, outside the \
-kit, so the next one replaces the folder without losing either. The whole \
-loop is in `docs/SHARING.md`."""
+with `START_HERE.md` (from `docs/TEAM_GUIDE.md`) and `VERSION` — and `start.sh` \
+off Windows; on Windows the daemon ships as `Start VLEO.exe`, which opens the \
+browser itself. Zip it and share it. A kit runs on the platform that built it; \
+the release pipeline builds one for Linux, macOS and Windows, and one Python \
+package, `vleo-<version>-py3-none-any.whl`, that carries the engine for every \
+system and runs with `python -m vleo` — no new program for Windows or an \
+antivirus to question. The team's case and results live under `~/.vleo/`, \
+outside both, so the next version replaces them without losing either. The \
+whole loop is in `docs/SHARING.md`."""
 
 [[layer.section.step]]
 say = "Build the two programs the kit carries."
@@ -1567,8 +1570,8 @@ effect = "writes"
 [[command]]
 tool = "xtask"
 name = "kit"
-usage = "kit [--bin <dir>] [--out <dir>]"
-what = "The tool as a team member gets it: the two release-built programs beside exactly the files they read, with START_HERE.md, start.sh, start.bat and VERSION, in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md."
+usage = "kit [--bin <dir>] [--out <dir>] [--files-only]"
+what = "The tool as a team member gets it: the two release-built programs beside exactly the files they read, with START_HERE.md and VERSION (and start.sh off Windows, where the daemon ships as Start VLEO.exe), in dist/vleo-<version>/. Zip it and share it; see docs/SHARING.md. --files-only leaves the programs out: the files the Python package carries."
 who = "developer"
 effect = "writes"
 

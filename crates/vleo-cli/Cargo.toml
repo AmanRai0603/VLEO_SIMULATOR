@@ -20,3 +20,6 @@ vleo-data = { workspace = true }
 
 [lints.rust]
 unsafe_code = "forbid"
+
+[build-dependencies]
+embed-resource = "3"

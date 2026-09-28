@@ -482,6 +482,18 @@ jobs:
       - name: the Python face
         working-directory: crates/vleo-py
         run: cargo build --locked --release
+      # The one-file package, built with this system's engine only, installed
+      # into a clean Python and started — the way a teammate will. The release
+      # builds it with every system's engine and checks each one.
+      - name: the Python package installs and starts
+        run: |
+          python3 tools/build_wheel.py --selftest
+          cargo run --release -p xtask -- kit --files-only --out "$RUNNER_TEMP/wheel-kit"
+          python3 tools/build_wheel.py --version 0.0.0 --kit "$RUNNER_TEMP/wheel-kit" \
+            --native linux-x86_64=crates/vleo-py/target/release/lib_vleo.so --out "$RUNNER_TEMP/wheel"
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install -q "$RUNNER_TEMP"/wheel/vleo-0.0.0-py3-none-any.whl
+          cd "$RUNNER_TEMP" && HOME="$RUNNER_TEMP/home" venv/bin/python -m vleo --check
 
   # Both profiles build on every merge. A customer build that fails only at
   # release time fails on the day it can least be afforded — and link-time

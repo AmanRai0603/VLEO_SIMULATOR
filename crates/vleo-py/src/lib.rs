@@ -195,9 +195,20 @@ fn version() -> (String, String, usize) {
     )
 }
 
+/// Start the whole tool — the pages and the engine — on loopback, in the
+/// background, and return the port it took. `root` is where the pages and the
+/// tree are; the package passes the copy it carries.
+#[pyfunction]
+#[pyo3(signature = (root = None, port = 7777, open = true))]
+fn serve(py: Python<'_>, root: Option<String>, port: u16, open: bool) -> PyResult<u16> {
+    py.allow_threads(|| vleo_server::serve(root.map(Into::into), port, open, true))
+        .map_err(PyRuntimeError::new_err)
+}
+
 #[pymodule]
-fn vleo(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _vleo(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Result_>()?;
+    m.add_function(wrap_pyfunction!(serve, m)?)?;
     m.add_function(wrap_pyfunction!(nodes, m)?)?;
     m.add_function(wrap_pyfunction!(evaluate, m)?)?;
     m.add_function(wrap_pyfunction!(sweep, m)?)?;
