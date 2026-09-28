@@ -1,4 +1,4 @@
-//! Every node form carries the method checker inside it, as `web/method.wasm`,
+//! Every node form carries the method checker inside it, as `web/method.wasm.gz`,
 //! and checks an author's method with it before anything is sent. If the
 //! checker's sources move on and the file is not rebuilt, a form checks by the
 //! old rules while intake and the gate check by the new ones — the one
@@ -22,9 +22,9 @@ fn the_form_carries_the_checker_built_from_the_current_sources() {
         .unwrap_or_default();
     assert_eq!(
         recorded, now,
-        "web/method.wasm was built from other sources than these. Run \
-         `cargo run -p xtask -- method-wasm` and commit web/method.wasm and its stamp."
+        "web/method.wasm.gz was built from other sources than these. Run \
+         `cargo run -p xtask -- method-wasm` and commit web/method.wasm.gz and its stamp."
     );
-    let wasm = std::fs::read(root.join("web/method.wasm")).unwrap();
-    assert_eq!(&wasm[..4], b"\0asm", "web/method.wasm is not WebAssembly");
+    let gz = std::fs::read(root.join("web/method.wasm.gz")).unwrap();
+    assert_eq!(&gz[..2], &[0x1f, 0x8b], "web/method.wasm.gz is not gzip");
 }

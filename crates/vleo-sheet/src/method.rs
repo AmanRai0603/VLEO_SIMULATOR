@@ -2327,7 +2327,7 @@ fn jstr(v: &str) -> String {
     o
 }
 
-/// The files the node form's checker is compiled from. `web/method.wasm` is
+/// The files the node form's checker is compiled from. `web/method.wasm.gz` is
 /// built from these by `cargo run -p xtask -- method-wasm`, which records
 /// their fingerprint beside it; a test refuses a checkout whose sources have
 /// moved on from the checker every form carries.
@@ -2438,6 +2438,74 @@ pub fn report_toml(text: &str) -> Result<Report, String> {
     }
     let cases = cases_of(&v)?;
     Ok(report(src, &Signature { inputs, output }, &cases))
+}
+
+/// The same report from the plain form the node form's checker is handed —
+/// no TOML parser, so the WebAssembly every form carries does not need one.
+///
+/// ```text
+/// output Velocity
+/// input r Length
+/// case 0|1 <expect> <tolerance> <name=value;name=value> <label …>
+/// method
+/// <the method, to the end>
+/// ```
+///
+/// `case 1` must be refused; its expect and tolerance are `-`.
+pub fn report_plain(text: &str) -> Result<Report, String> {
+    let mut output = None;
+    let mut inputs = Vec::new();
+    let mut cases = Vec::new();
+    let mut lines = text.lines();
+    let mut src = String::new();
+    while let Some(l) = lines.next() {
+        let mut w = l.splitn(2, ' ');
+        match (w.next().unwrap_or(""), w.next().unwrap_or("").trim()) {
+            ("output", q) => {
+                output = Some(quantity_dim(q).ok_or_else(|| {
+                    format!("the answer's quantity «{q}» is not one this tool has")
+                })?)
+            }
+            ("input", rest) => {
+                let (b, q) = rest.split_once(' ').unwrap_or((rest, ""));
+                let d = quantity_dim(q.trim())
+                    .ok_or_else(|| format!("the input «{b}» has no known quantity «{q}»"))?;
+                inputs.push((b.to_string(), d));
+            }
+            ("case", rest) => {
+                let f: Vec<&str> = rest.splitn(5, ' ').collect();
+                if f.len() < 4 {
+                    return Err(format!("a case line is short: «{l}»"));
+                }
+                let num = |x: &str| {
+                    x.parse::<f64>()
+                        .map_err(|_| format!("«{x}» is not a number"))
+                };
+                let refuse = f[0] == "1";
+                let mut ins = Vec::new();
+                for kv in f[3].split(';').filter(|x| !x.is_empty()) {
+                    let (k, v) = kv
+                        .split_once('=')
+                        .ok_or_else(|| format!("«{kv}» is not name=value"))?;
+                    ins.push((k.to_string(), num(v)?));
+                }
+                cases.push(Case {
+                    label: f.get(4).unwrap_or(&"").to_string(),
+                    inputs: ins,
+                    expect: if refuse { None } else { Some(num(f[1])?) },
+                    tolerance: if refuse { 0.0 } else { num(f[2])? },
+                });
+            }
+            ("method", _) => {
+                src = lines.collect::<Vec<_>>().join("\n");
+                break;
+            }
+            ("", _) => {}
+            (other, _) => return Err(format!("«{other}» is not a line the checker reads")),
+        }
+    }
+    let output = output.ok_or("the answer's quantity is not given")?;
+    Ok(report(&src, &Signature { inputs, output }, &cases))
 }
 
 /// The `[[case]]` blocks of a parsed sheet.
@@ -3095,6 +3163,20 @@ return v
                 f.name
             );
         }
+    }
+
+    #[test]
+    fn the_plain_form_reads_as_the_sheet_does() {
+        let plain = format!(
+            "output Velocity\ninput r Length\ncase 0 7754.84549737 1e-6 r=6628137 250 km\n\
+             case 0 7000 1e-6 r=6778137 wrong\ncase 1 - - r=6000000 inside\nmethod\n{}",
+            crate::example::METHOD
+        );
+        let r = report_plain(&plain).unwrap();
+        let v: Vec<bool> = r.cases.iter().map(|(_, v)| v.agrees()).collect();
+        assert_eq!(v, [true, false, true]);
+        assert_eq!(r.cases[0].0.label, "250 km");
+        assert!(report_plain("output Nonsense\nmethod\nreturn 1").is_err());
     }
 
     #[test]
