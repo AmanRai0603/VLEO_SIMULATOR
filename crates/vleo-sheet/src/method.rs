@@ -34,6 +34,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
+use vleo_units::method_rt as rt;
 use vleo_units::unit::Dim;
 use vleo_units::{constants as k, pmath, Unit};
 
@@ -360,6 +361,63 @@ pub const FUNCTIONS: &[FnSpec] = &[
     FnSpec { name: "wrap_pi", arity: 1, rule: FnRule::Pure, meaning: "an angle brought into -π..π" },
     FnSpec { name: "interp", arity: 3, rule: FnRule::Interp, meaning: "straight-line lookup in a table: interp(x, [x1, x2, …] [unit], [y1, y2, …] [unit]); held at the ends" },
 ];
+
+/// How each function is computed — one table, read by the interpreter to run
+/// a method and by the translator to write its Rust, so the two cannot take
+/// different paths. The checked ones are `vleo_units::method_rt`, which the
+/// translated code calls too.
+pub enum Impl {
+    Plain1(fn(f64) -> f64, &'static str),
+    Plain2(fn(f64, f64) -> f64, &'static str),
+    Checked1(fn(f64, u32) -> Result<f64, rt::MethodError>, &'static str),
+    Checked2(
+        fn(f64, f64, u32) -> Result<f64, rt::MethodError>,
+        &'static str,
+    ),
+}
+
+pub fn implementation(name: &str) -> Option<Impl> {
+    use Impl::*;
+    Some(match name {
+        "sqrt" => Checked1(rt::sqrt, "rt::sqrt"),
+        "cbrt" => Plain1(pmath::cbrt, "pmath::cbrt"),
+        "abs" => Plain1(pmath::abs, "pmath::abs"),
+        "min" => Plain2(pmath::min, "pmath::min"),
+        "max" => Plain2(pmath::max, "pmath::max"),
+        "hypot" => Plain2(pmath::hypot, "pmath::hypot"),
+        "fmod" => Checked2(rt::fmod, "rt::fmod"),
+        "pow" => Plain2(rt::pow, "rt::pow"),
+        "exp" => Plain1(pmath::exp, "pmath::exp"),
+        "ln" => Checked1(rt::ln, "rt::ln"),
+        "log10" => Checked1(rt::log10, "rt::log10"),
+        "log2" => Checked1(rt::log2, "rt::log2"),
+        "sin" => Plain1(pmath::sin, "pmath::sin"),
+        "cos" => Plain1(pmath::cos, "pmath::cos"),
+        "tan" => Plain1(pmath::tan, "pmath::tan"),
+        "asin" => Checked1(rt::asin, "rt::asin"),
+        "acos" => Checked1(rt::acos, "rt::acos"),
+        "atan" => Plain1(pmath::atan, "pmath::atan"),
+        "atan2" => Plain2(pmath::atan2, "pmath::atan2"),
+        "sinh" => Plain1(pmath::sinh, "pmath::sinh"),
+        "cosh" => Plain1(pmath::cosh, "pmath::cosh"),
+        "tanh" => Plain1(pmath::tanh, "pmath::tanh"),
+        "erf" => Plain1(pmath::erf, "pmath::erf"),
+        "erfc" => Plain1(pmath::erfc, "pmath::erfc"),
+        "floor" => Plain1(pmath::floor, "pmath::floor"),
+        "ceil" => Plain1(pmath::ceil, "pmath::ceil"),
+        "round" => Plain1(pmath::round, "pmath::round"),
+        "wrap_2pi" => Plain1(pmath::wrap_2pi, "pmath::wrap_2pi"),
+        "wrap_pi" => Plain1(pmath::wrap_pi, "pmath::wrap_pi"),
+        _ => return None,
+    })
+}
+
+fn rt_diag(e: rt::MethodError) -> Diag {
+    match e {
+        rt::MethodError::Refused(r) => Diag::err(0, r),
+        rt::MethodError::Degenerate { line, what } => Diag::err(line as usize, what),
+    }
+}
 
 /// A constant the kernel already holds, available to every method by name.
 pub struct ConstSpec {
@@ -1294,6 +1352,13 @@ impl Checker<'_> {
         self.diags.push(Diag::err(line, msg));
     }
     fn define(&mut self, name: &str, kind: Kind, dim: Dim, line: usize) {
+        if RUST_UNRAW.contains(&name) || name.starts_with("__") || name == "_" {
+            self.err(
+                line,
+                format!("«{name}» cannot be a name in a method — choose another"),
+            );
+            return;
+        }
         if let Some((k, _)) = self.lookup(name) {
             let what = match k {
                 Kind::Input => "an input of this node",
@@ -1904,19 +1969,8 @@ impl Machine<'_> {
                     BinOp::Add => a + b,
                     BinOp::Sub => a - b,
                     BinOp::Mul => a * b,
-                    BinOp::Div => {
-                        if b == 0.0 {
-                            return Err(Diag::err(line, "division by zero"));
-                        }
-                        a / b
-                    }
-                    BinOp::Pow => {
-                        if b.fract() == 0.0 && b.abs() < 64.0 {
-                            pmath::powi(a, b as i32)
-                        } else {
-                            pmath::powf(a, b)
-                        }
-                    }
+                    BinOp::Div => rt::div(a, b, line as u32).map_err(rt_diag)?,
+                    BinOp::Pow => rt::pow(a, b),
                     BinOp::Lt => return Ok(Val::Bool(a < b)),
                     BinOp::Le => return Ok(Val::Bool(a <= b)),
                     BinOp::Gt => return Ok(Val::Bool(a > b)),
@@ -1928,9 +1982,8 @@ impl Machine<'_> {
             }
             Expr::Call { name, args, line } => self.call(name, args, *line)?,
         };
-        if !pmath::is_finite(v) || pmath::is_nan(v) {
-            return Err(Diag::err(e.line(), "the value here is not a finite number"));
-        }
+        // Finiteness is checked where a value is named or returned — see
+        // `rt::fin` — exactly as the translated code checks it.
         Ok(Val::Num(v))
     }
     fn call(&mut self, name: &str, args: &[Expr], line: usize) -> Result<f64, Diag> {
@@ -1946,68 +1999,14 @@ impl Machine<'_> {
         for e in args {
             a.push(self.num(e)?);
         }
-        let domain = |ok: bool, what: &str| {
-            if ok {
-                Ok(())
-            } else {
-                Err(Diag::err(line, format!("{name} of {}: {what}", a[0])))
-            }
-        };
-        Ok(match name {
-            "sqrt" => {
-                domain(a[0] >= 0.0, "a negative number has no square root")?;
-                pmath::sqrt(a[0])
-            }
-            "cbrt" => pmath::cbrt(a[0]),
-            "abs" => pmath::abs(a[0]),
-            "min" => pmath::min(a[0], a[1]),
-            "max" => pmath::max(a[0], a[1]),
-            "hypot" => pmath::hypot(a[0], a[1]),
-            "fmod" => {
-                if a[1] == 0.0 {
-                    return Err(Diag::err(line, "fmod by zero"));
-                }
-                pmath::fmod(a[0], a[1])
-            }
-            "pow" => pmath::powf(a[0], a[1]),
-            "exp" => pmath::exp(a[0]),
-            "ln" => {
-                domain(a[0] > 0.0, "the logarithm needs a number above zero")?;
-                pmath::ln(a[0])
-            }
-            "log10" => {
-                domain(a[0] > 0.0, "the logarithm needs a number above zero")?;
-                pmath::log10(a[0])
-            }
-            "log2" => {
-                domain(a[0] > 0.0, "the logarithm needs a number above zero")?;
-                pmath::log2(a[0])
-            }
-            "sin" => pmath::sin(a[0]),
-            "cos" => pmath::cos(a[0]),
-            "tan" => pmath::tan(a[0]),
-            "asin" => {
-                domain((-1.0..=1.0).contains(&a[0]), "outside -1..1")?;
-                pmath::asin(a[0])
-            }
-            "acos" => {
-                domain((-1.0..=1.0).contains(&a[0]), "outside -1..1")?;
-                pmath::acos(a[0])
-            }
-            "atan" => pmath::atan(a[0]),
-            "atan2" => pmath::atan2(a[0], a[1]),
-            "sinh" => pmath::sinh(a[0]),
-            "cosh" => pmath::cosh(a[0]),
-            "tanh" => pmath::tanh(a[0]),
-            "erf" => pmath::erf(a[0]),
-            "erfc" => pmath::erfc(a[0]),
-            "floor" => pmath::floor(a[0]),
-            "ceil" => pmath::ceil(a[0]),
-            "round" => pmath::round(a[0]),
-            "wrap_2pi" => pmath::wrap_2pi(a[0]),
-            "wrap_pi" => pmath::wrap_pi(a[0]),
-            _ => return Err(Diag::err(line, format!("«{name}» is not a function"))),
-        })
+        let l = line as u32;
+        match implementation(name) {
+            Some(Impl::Plain1(f, _)) => Ok(f(a[0])),
+            Some(Impl::Plain2(f, _)) => Ok(f(a[0], a[1])),
+            Some(Impl::Checked1(f, _)) => f(a[0], l).map_err(rt_diag),
+            Some(Impl::Checked2(f, _)) => f(a[0], a[1], l).map_err(rt_diag),
+            None => Err(Diag::err(line, format!("«{name}» is not a function"))),
+        }
     }
     fn block(&mut self, body: &[Stmt]) -> Result<Flow, Diag> {
         for s in body {
@@ -2019,15 +2018,18 @@ impl Machine<'_> {
     }
     fn stmt(&mut self, s: &Stmt) -> Result<Flow, Diag> {
         match s {
-            Stmt::Let { name, expr, .. } | Stmt::Const { name, expr, .. } => {
-                let v = self.num(expr)?;
+            Stmt::Let {
+                name, expr, line, ..
+            }
+            | Stmt::Const { name, expr, line } => {
+                let v = rt::fin(self.num(expr)?, *line as u32).map_err(rt_diag)?;
                 self.scopes
                     .last_mut()
                     .expect("a scope")
                     .insert(name.clone(), v);
             }
-            Stmt::Set { name, expr, .. } => {
-                let v = self.num(expr)?;
+            Stmt::Set { name, expr, line } => {
+                let v = rt::fin(self.num(expr)?, *line as u32).map_err(rt_diag)?;
                 self.set(name, v);
             }
             Stmt::If {
@@ -2076,7 +2078,10 @@ impl Machine<'_> {
                     reason: reason.clone(),
                 }))
             }
-            Stmt::Return { expr, .. } => return Ok(Flow::Done(Outcome::Answer(self.num(expr)?))),
+            Stmt::Return { expr, line } => {
+                let v = rt::fin(self.num(expr)?, *line as u32).map_err(rt_diag)?;
+                return Ok(Flow::Done(Outcome::Answer(v)));
+            }
         }
         Ok(Flow::Next)
     }
@@ -2329,6 +2334,7 @@ fn jstr(v: &str) -> String {
 pub const CHECKER_SOURCES: &[&str] = &[
     "crates/vleo-sheet/src/method.rs",
     "crates/vleo-units/src/pmath.rs",
+    "crates/vleo-units/src/method_rt.rs",
     "crates/vleo-units/src/unit.rs",
     "crates/vleo-units/src/quantity.rs",
     "crates/vleo-units/src/constants.rs",
@@ -2474,6 +2480,275 @@ pub fn cases_of(v: &toml::Value) -> Result<Vec<Case>, String> {
         });
     }
     Ok(out)
+}
+
+// ---------------------------------------------------------------------------
+// a node's method
+
+/// What a node's method is checked against: its inputs in declared order, and
+/// its answer. `None` when a quantity is not one the tool has.
+pub fn node_signature(sh: &crate::model::Sheet) -> Option<Signature> {
+    let mut inputs = Vec::new();
+    for i in &sh.inputs {
+        inputs.push((i.binding.clone(), quantity_dim(&i.ty)?));
+    }
+    Some(Signature {
+        inputs,
+        output: quantity_dim(&sh.ty)?,
+    })
+}
+
+/// A node's method, when it has one the tool can generate code from: written,
+/// checking without error, on a row with one computed answer. Anything else
+/// keeps its hand-written holes — and the gate says why.
+pub fn node_program(sh: &crate::model::Sheet) -> Option<Program> {
+    if sh.method.text.trim().is_empty() || sh.is_declared() || !sh.publishes.is_empty() {
+        return None;
+    }
+    compile(&sh.method.text, &node_signature(sh)?).ok()
+}
+
+/// The node's kernel function, `vleo_core::physics::methods::<module>`, when
+/// it has a method to translate.
+pub fn node_rust(sh: &crate::model::Sheet) -> Option<String> {
+    let p = node_program(sh)?;
+    let inputs: Vec<String> = sh.inputs.iter().map(|i| i.binding.clone()).collect();
+    Some(to_rust(&p, &sh.id, &sh.source, &sh.method.text, &inputs))
+}
+
+// ---------------------------------------------------------------------------
+// the translation into Rust
+
+/// Rust's reserved words. A method name that is one is written as a raw
+/// identifier; the four that cannot be are refused by the checker.
+const RUST_WORDS: &[&str] = &[
+    "as", "async", "await", "break", "continue", "dyn", "enum", "extern", "fn", "impl", "in",
+    "loop", "match", "mod", "move", "mut", "pub", "ref", "static", "struct", "trait", "type",
+    "unsafe", "use", "where", "while", "abstract", "become", "box", "do", "final", "gen", "macro",
+    "override", "priv", "try", "typeof", "unsized", "virtual", "yield",
+];
+const RUST_UNRAW: &[&str] = &["self", "Self", "super", "crate"];
+
+fn ident(name: &str) -> String {
+    if RUST_WORDS.contains(&name) {
+        format!("r#{name}")
+    } else {
+        name.to_string()
+    }
+}
+
+fn lit(v: f64) -> String {
+    let t = format!("{v:?}");
+    if v < 0.0 {
+        format!("({t})")
+    } else {
+        t
+    }
+}
+
+fn rstr(s: &str) -> String {
+    let mut o = String::from("\"");
+    for c in s.chars() {
+        match c {
+            '"' => o.push_str("\\\""),
+            '\\' => o.push_str("\\\\"),
+            '\n' => o.push_str("\\n"),
+            c => o.push(c),
+        }
+    }
+    o.push('"');
+    o
+}
+
+struct Rust {
+    mutable: BTreeSet<String>,
+    depth: usize,
+}
+
+impl Rust {
+    fn expr(&self, e: &Expr) -> String {
+        match e {
+            Expr::Num { si, .. } => lit(*si),
+            Expr::Bool { value, .. } => value.to_string(),
+            Expr::Var { name, .. } => match KERNEL_CONSTANTS.iter().find(|c| c.name == name) {
+                Some(c) => c.rust.to_string(),
+                None => ident(name),
+            },
+            Expr::Neg(x) => format!("(-{})", self.expr(x)),
+            Expr::Not(x) => format!("(!{})", self.expr(x)),
+            Expr::Table { si, .. } => format!(
+                "&[{}]",
+                si.iter().map(|v| lit(*v)).collect::<Vec<_>>().join(", ")
+            ),
+            Expr::Bin { op, l, r, line } => {
+                let (a, b) = (self.expr(l), self.expr(r));
+                match op {
+                    BinOp::Div => format!("rt::div({a}, {b}, {line})?"),
+                    BinOp::Pow => format!("rt::pow({a}, {b})"),
+                    BinOp::And => format!("({a} && {b})"),
+                    BinOp::Or => format!("({a} || {b})"),
+                    _ => format!("({a} {} {b})", op.symbol()),
+                }
+            }
+            Expr::Call { name, args, line } => {
+                let a: Vec<String> = args.iter().map(|x| self.expr(x)).collect();
+                if name == "interp" {
+                    return format!("pmath::interp({}, {}, {})", a[0], a[1], a[2]);
+                }
+                match implementation(name) {
+                    Some(Impl::Plain1(_, p)) => format!("{p}({})", a[0]),
+                    Some(Impl::Plain2(_, p)) => format!("{p}({}, {})", a[0], a[1]),
+                    Some(Impl::Checked1(_, p)) => format!("{p}({}, {line})?", a[0]),
+                    Some(Impl::Checked2(_, p)) => format!("{p}({}, {}, {line})?", a[0], a[1]),
+                    None => format!("/* no function {name} */ f64::NAN"),
+                }
+            }
+        }
+    }
+
+    fn block(&mut self, body: &[Stmt], o: &mut String) {
+        for s in body {
+            self.stmt(s, o);
+        }
+    }
+
+    fn stmt(&mut self, s: &Stmt, o: &mut String) {
+        match s {
+            Stmt::Let {
+                name, expr, line, ..
+            }
+            | Stmt::Const { name, expr, line } => {
+                let m = if self.mutable.contains(name) {
+                    "mut "
+                } else {
+                    ""
+                };
+                let _ = writeln!(
+                    o,
+                    "let {m}{}: f64 = rt::fin({}, {line})?;",
+                    ident(name),
+                    self.expr(expr)
+                );
+            }
+            Stmt::Set { name, expr, line } => {
+                let _ = writeln!(
+                    o,
+                    "{} = rt::fin({}, {line})?;",
+                    ident(name),
+                    self.expr(expr)
+                );
+            }
+            Stmt::If {
+                arms, otherwise, ..
+            } => {
+                for (i, (c, body)) in arms.iter().enumerate() {
+                    let _ = writeln!(
+                        o,
+                        "{}if {} {{",
+                        if i == 0 { "" } else { "} else " },
+                        self.expr(c)
+                    );
+                    self.block(body, o);
+                }
+                if let Some(body) = otherwise {
+                    o.push_str("} else {\n");
+                    self.block(body, o);
+                }
+                o.push_str("}\n");
+            }
+            Stmt::For {
+                var,
+                first,
+                last,
+                body,
+                ..
+            } => {
+                self.depth += 1;
+                let i = format!("step_{}", self.depth);
+                let _ = writeln!(o, "for {i} in ({first}_i64)..=({last}_i64) {{");
+                let _ = writeln!(o, "let {}: f64 = {i} as f64;", ident(var));
+                self.block(body, o);
+                o.push_str("}\n");
+                self.depth -= 1;
+            }
+            Stmt::Refuse { reason, .. } => {
+                let _ = writeln!(o, "return Err(MethodError::Refused({}));", rstr(reason));
+            }
+            Stmt::Return { expr, line } => {
+                let _ = writeln!(o, "return Ok(rt::fin({}, {line})?);", self.expr(expr));
+            }
+        }
+    }
+}
+
+fn set_targets(body: &[Stmt], out: &mut BTreeSet<String>) {
+    for s in body {
+        match s {
+            Stmt::Set { name, .. } => {
+                out.insert(name.clone());
+            }
+            Stmt::If {
+                arms, otherwise, ..
+            } => {
+                for (_, b) in arms {
+                    set_targets(b, out);
+                }
+                if let Some(b) = otherwise {
+                    set_targets(b, out);
+                }
+            }
+            Stmt::For { body, .. } => set_targets(body, out),
+            _ => {}
+        }
+    }
+}
+
+/// The method as a kernel function: `vleo_core::physics::methods::<node>`.
+///
+/// BY RULE, NOT BY JUDGEMENT. Each construct has exactly one translation, the
+/// checked operations are the same `vleo_units::method_rt` functions the
+/// interpreter calls, and a value is checked for finiteness at the same places
+/// — so the function gives the interpreter's answer to the last bit, which is
+/// what the node's generated translation test asserts. `inputs` is the
+/// parameter order, the node's declared input order; every value is SI.
+pub fn to_rust(p: &Program, node: &str, source: &str, src: &str, inputs: &[String]) -> String {
+    let mut mutable = BTreeSet::new();
+    set_targets(&p.body, &mut mutable);
+    let mut r = Rust { mutable, depth: 0 };
+    let mut o = String::new();
+    let _ = writeln!(
+        o,
+        "//! GENERATED from the method of `{node}` by `cargo xtask docs`, translated by\n\
+         //! the fixed rules in crates/vleo-sheet/src/method.rs. Do not edit: the method\n\
+         //! is changed on the node's form, and this is written again from it.\n"
+    );
+    o.push_str(
+        "#![allow(clippy::all, clippy::float_cmp, clippy::cast_precision_loss, unreachable_code, \
+         unused_imports, unused_mut, unused_variables, unused_parens)]\n\n",
+    );
+    o.push_str("use vleo_units::constants::*;\nuse vleo_units::method_rt::{self as rt, MethodError};\nuse vleo_units::pmath;\n\n");
+    let _ = writeln!(
+        o,
+        "/// The method of `{node}`, source `{source}`:\n///\n/// ```text"
+    );
+    for l in src.lines() {
+        let _ = writeln!(o, "/// {l}");
+    }
+    o.push_str("/// ```\n");
+    let params: Vec<String> = inputs
+        .iter()
+        .map(|n| format!("{}: f64", ident(n)))
+        .collect();
+    let _ = writeln!(
+        o,
+        "pub fn evaluate({}) -> Result<f64, MethodError> {{",
+        params.join(", ")
+    );
+    r.block(&p.body, &mut o);
+    o.push_str(
+        "Err(MethodError::Degenerate { line: 0, what: \"the method ended without an answer\" })\n}\n",
+    );
+    o
 }
 
 // ---------------------------------------------------------------------------
@@ -2806,6 +3081,20 @@ return v
         // Too few, and no refusal: said, not guessed.
         let r = report("return 1 [m/s]", &sig(&[], "Velocity"), &[]);
         assert_eq!(r.shortfall.len(), 2);
+    }
+
+    #[test]
+    fn every_function_has_one_implementation_for_both_runner_and_translator() {
+        for f in FUNCTIONS {
+            if f.name == "interp" {
+                continue;
+            }
+            assert!(
+                implementation(f.name).is_some(),
+                "{} has no implementation",
+                f.name
+            );
+        }
     }
 
     #[test]

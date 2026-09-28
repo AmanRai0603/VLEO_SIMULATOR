@@ -118,7 +118,11 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
     // `NotRun`, which makes everything after it unreachable — and this
     // repository builds with `-D warnings`, so without this the ordinary
     // half-finished row would not compile at all.
-    let unfilled_hole = !sh.steps.is_empty()
+    // A NODE WITH A METHOD HAS NO HOLES. Its code is the method translated by
+    // rule into the kernel, and the author's cases test it; see `method::to_rust`.
+    let method = crate::method::node_program(sh);
+    let unfilled_hole = method.is_none()
+        && !sh.steps.is_empty()
         && sh.steps.iter().any(|st| {
             holes
                 .get(&st.number)
@@ -132,7 +136,27 @@ pub fn model_rs(sh: &Sheet, holes: &BTreeMap<u32, String>) -> String {
         "pub fn evaluate({args}) -> Result<{ret}, Fault> {{\n"
     ));
 
-    let last = if sh.steps.is_empty() {
+    let last = if method.is_some() {
+        o.push_str(&format!(
+            "    // generated · from the node's method, translated by rule into\n\
+             \x20   // vleo_core::physics::methods::{m}. No hole: the method is the\n\
+             \x20   // implementation, and the author's cases in evidence.rs test it.\n\
+             \x20   let method_answer: {ty} = match methods::{m}::evaluate({args}) {{\n\
+             \x20       Ok(v) => {ty}::new(v),\n\
+             \x20       Err(e) => return Err(method::fault(e, NODE_ID, \"{sym}\")),\n\
+             \x20   }};\n",
+            m = sh.rust_ident(),
+            ty = sh.ty,
+            args = sh
+                .inputs
+                .iter()
+                .map(|i| format!("{}.get()", i.binding))
+                .collect::<Vec<_>>()
+                .join(", "),
+            sym = esc(&sh.symbol)
+        ));
+        "method_answer".to_string()
+    } else if sh.steps.is_empty() {
         // A declared value publishes itself. Nothing is computed, and the
         // conversion from the unit it was written in is explicit rather than a
         // constant somebody folded by hand.
@@ -590,7 +614,8 @@ pub fn evidence_rs(sh: &Sheet) -> String {
         sh.id
     ));
     let has_parity = has_parity_grid(sh);
-    if sh.fixtures.is_empty() {
+    let has_cases = !sh.cases.is_empty();
+    if sh.fixtures.is_empty() && !has_cases {
         o.push_str(
             "// No fixtures yet. The gap pass reports this node as unevidenced and\n\
              // its validation credibility factor is zero, which governs the whole\n\
@@ -607,7 +632,7 @@ pub fn evidence_rs(sh: &Sheet) -> String {
     // A fixture input that happens to equal a named constant is still a fixture
     // input: substituting the constant would make the test compare the
     // implementation against itself.
-    if !sh.fixtures.is_empty() {
+    if !sh.fixtures.is_empty() || has_cases {
         o.push_str("#![allow(clippy::approx_constant, clippy::excessive_precision)]\n\n");
     }
     // Only when something below uses them. A declared row with neither fixtures
@@ -662,9 +687,234 @@ pub fn evidence_rs(sh: &Sheet) -> String {
         o.push_str("}\n\n");
     }
 
+    author_cases(sh, &mut o);
+    translation(sh, &mut o);
     properties(sh, &mut o);
     parity(sh, &mut o);
     o
+}
+
+/// The arguments `model::evaluate` takes for one set of SI inputs, by binding.
+fn typed_args(sh: &Sheet, inputs: &[(String, f64)]) -> String {
+    sh.inputs
+        .iter()
+        .map(|i| {
+            let v = inputs
+                .iter()
+                .find(|(k, _)| *k == i.binding)
+                .map(|(_, v)| *v)
+                .unwrap_or(0.0);
+            format!("{}::new({v:?})", i.ty)
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+/// THE AUTHOR'S CASES, as tests of the node as it ships — the generated code,
+/// its guards and all. Each expected value came from the author's own code,
+/// which is not the code under test; a disagreement goes back to the author,
+/// and the tolerance is theirs, never widened here.
+fn author_cases(sh: &Sheet, o: &mut String) {
+    if sh.cases.is_empty() {
+        return;
+    }
+    let who = if sh.author.name.trim().is_empty() {
+        "the author".to_string()
+    } else {
+        sh.author.name.trim().to_string()
+    };
+    let lang = sh.author.language.trim();
+    let has_method = crate::method::node_program(sh).is_some();
+    for (n, c) in sh.cases.iter().enumerate() {
+        let n = n + 1;
+        o.push_str(&format!(
+            "/// {who}'s case «{}», from their own {} code.\n#[test]\nfn case_{n}() {{\n",
+            esc(&c.label),
+            if lang.is_empty() { "" } else { lang }
+        ));
+        let call = format!("model::evaluate({})", typed_args(sh, &c.inputs));
+        match c.expect {
+            None if has_method => o.push_str(&format!(
+                "    let got = {call};\n    assert!(matches!(got, Err(vleo_core::fault::Fault::Refused {{ .. }})), \
+                 \"{l}: the author's code refuses this case and the node gave {{got:?}}. Take it to the author.\");\n",
+                l = esc(&c.label)
+            )),
+            None => o.push_str(&format!(
+                "    let got = {call};\n    assert!(got.is_err(), \"{l}: the author's code refuses this case and the node answered {{:?}}. Take it to the author.\", got.map(|v| v.get()));\n",
+                l = esc(&c.label)
+            )),
+            Some(want) => {
+                o.push_str(&format!(
+                    "    let got = {call}.expect(\"{l}: the author's code answers this case and the node refused it\");\n",
+                    l = esc(&c.label)
+                ));
+                o.push_str(&format!(
+                    "    let err = relative_error(got.get(), {want:?});\n    assert!(err <= {tol:?}, \"{l}: got {{}} and the author's code gave {want:?}; relative error {{}} is more than their tolerance {tol:?}. Take it to the author; do not widen the tolerance.\", got.get(), err);\n",
+                    tol = c.tolerance,
+                    l = esc(&c.label)
+                ));
+            }
+        }
+        o.push_str("}\n\n");
+    }
+}
+
+/// THE TRANSLATION, AGAINST THE METHOD IT CAME FROM. Not evidence about the
+/// physics: the expected values here are the method's own, run by the
+/// interpreter when this file was generated, and the test asserts only that the
+/// Rust translated from the method gives the same answer to the last bit — at
+/// the author's cases and around them. A failure is a translator defect, never
+/// a question for the author.
+fn translation(sh: &Sheet, o: &mut String) {
+    let Some(p) = crate::method::node_program(sh) else {
+        return;
+    };
+    let mut points: Vec<Vec<(String, f64)>> = Vec::new();
+    for c in &sh.cases {
+        if c.refuses() {
+            points.push(c.inputs.clone());
+            continue;
+        }
+        for f in [0.5, 0.9, 0.99, 1.0, 1.01, 1.1, 2.0] {
+            points.push(c.inputs.iter().map(|(k, v)| (k.clone(), v * f)).collect());
+        }
+    }
+    if points.is_empty() {
+        return;
+    }
+    o.push_str(&format!(
+        "/// The kernel translation of this node's method gives the method's own\n\
+         /// answer, to the bit, at {} points around the author's cases. A translator\n\
+         /// check, not evidence: the numbers are the method's, run by the interpreter\n\
+         /// when this file was generated.\n#[test]\nfn the_translation_gives_the_methods_answers() {{\n\
+         \x20   use vleo_core::physics::method::MethodError;\n\
+         \x20   use vleo_core::physics::methods::{}::evaluate;\n",
+        points.len(),
+        sh.rust_ident()
+    ));
+    for pt in &points {
+        let args = sh
+            .inputs
+            .iter()
+            .map(|i| {
+                let v = pt
+                    .iter()
+                    .find(|(k, _)| *k == i.binding)
+                    .map(|(_, v)| *v)
+                    .unwrap_or(0.0);
+                format!("{v:?}")
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+        match crate::method::run(&p, pt) {
+            Ok(crate::method::Outcome::Answer(v)) => o.push_str(&format!(
+                "    assert_eq!(evaluate({args}).map(f64::to_bits), Ok(0x{:016x}), \"at ({args})\");\n",
+                v.to_bits()
+            )),
+            Ok(crate::method::Outcome::Refused { .. }) => o.push_str(&format!(
+                "    assert!(matches!(evaluate({args}), Err(MethodError::Refused(_))), \"at ({args})\");\n"
+            )),
+            Err(_) => o.push_str(&format!(
+                "    assert!(matches!(evaluate({args}), Err(MethodError::Degenerate {{ .. }})), \"at ({args})\");\n"
+            )),
+        }
+    }
+    o.push_str("}\n\n");
+}
+
+/// A kernel file formatted exactly as `cargo fmt` leaves it.
+///
+/// Unlike a node's files, these are reached by `cargo fmt --all` through the
+/// kernel's own module tree, so they must already be in its layout or the
+/// format check fails on every node with a method. A file with no child
+/// modules needs no `--skip-children`, which this toolchain's `rustfmt` does
+/// not accept.
+pub fn rustfmt_standalone(text: &str) -> String {
+    use std::io::Write;
+    let dir = std::env::temp_dir().join("vleo-methods");
+    let _ = std::fs::create_dir_all(&dir);
+    let p = dir.join(format!("m-{}.rs", crate::fnv1a(text)));
+    let mut out = text.to_string();
+    if let Ok(mut f) = std::fs::File::create(&p) {
+        if f.write_all(text.as_bytes()).is_ok() {
+            drop(f);
+            let ok = std::process::Command::new("rustfmt")
+                .args(["--edition", "2021", "--quiet"])
+                .arg(&p)
+                .stderr(std::process::Stdio::null())
+                .status()
+                .map(|s| s.success())
+                .unwrap_or(false);
+            if ok {
+                if let Ok(t) = std::fs::read_to_string(&p) {
+                    out = t;
+                }
+            }
+        }
+        let _ = std::fs::remove_file(&p);
+    }
+    out
+}
+
+/// Every node's method, translated, as `vleo_core::physics::methods`.
+///
+/// One module per node with a method the tool can generate from, written from
+/// that node's sheet alone, and a `mod.rs` naming them. A module whose node no
+/// longer has a method is removed, so the kernel never carries code for a
+/// method nobody states. Returns how many files it wrote or removed.
+pub fn sync_methods(tree: &crate::load::Tree) -> Result<usize, String> {
+    let dir = tree.root.join("crates/vleo-core/src/physics/methods");
+    std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    let mut changed = 0;
+    let mut want: Vec<String> = Vec::new();
+    for sh in tree.ordered() {
+        let Some(text) = crate::method::node_rust(sh) else {
+            continue;
+        };
+        let name = sh.rust_ident();
+        let text = rustfmt_standalone(&text);
+        let p = dir.join(format!("{name}.rs"));
+        if std::fs::read_to_string(&p).ok().as_deref() != Some(text.as_str()) {
+            std::fs::write(&p, &text).map_err(|e| format!("{}: {e}", p.display()))?;
+            changed += 1;
+        }
+        want.push(name);
+    }
+    want.sort();
+    for e in std::fs::read_dir(&dir).map_err(|e| format!("{}: {e}", dir.display()))? {
+        let p = e.map_err(|e| e.to_string())?.path();
+        let stem = p
+            .file_stem()
+            .and_then(|x| x.to_str())
+            .unwrap_or("")
+            .to_string();
+        if p.extension().and_then(|x| x.to_str()) == Some("rs")
+            && stem != "mod"
+            && !want.contains(&stem)
+        {
+            std::fs::remove_file(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+            changed += 1;
+        }
+    }
+    let mut m = String::from(
+        "//! GENERATED by `cargo xtask docs`: every node's method, translated by rule\n\
+         //! into the kernel (crates/vleo-sheet/src/method.rs). One module per node that\n\
+         //! has a method; a node without one keeps its hand-written holes.\n",
+    );
+    if !want.is_empty() {
+        m.push('\n');
+    }
+    for n in &want {
+        m.push_str(&format!("pub mod {n};\n"));
+    }
+    // Written already in rustfmt's layout: a list of `pub mod` lines, sorted,
+    // is what the formatter would make of it.
+    let p = dir.join("mod.rs");
+    if std::fs::read_to_string(&p).ok().as_deref() != Some(m.as_str()) {
+        std::fs::write(&p, &m).map_err(|e| format!("{}: {e}", p.display()))?;
+        changed += 1;
+    }
+    Ok(changed)
 }
 
 /// Whether a prior implementation's grid sits beside this node.
@@ -1227,7 +1477,9 @@ pub fn gap_pass(sh: &Sheet, holes: &BTreeMap<u32, String>) -> Vec<String> {
     if sh.is_declared() && sh.confirmed_by.trim().is_empty() {
         g.push("a declared value with nobody's confirmation against it".into());
     }
-    for st in &sh.steps {
+    // A node whose code is its method, translated, has no holes to fill.
+    let from_method = crate::method::node_program(sh).is_some();
+    for st in sh.steps.iter().filter(|_| !from_method) {
         match holes.get(&st.number) {
             Some(b) if !b.trim().is_empty() && !b.contains("todo!") => {}
             _ => g.push(format!("hole {} is empty: {}", st.number, st.text)),

@@ -2040,6 +2040,9 @@ fn regenerate(sh: &crate::model::Sheet, tree: &crate::load::Tree) -> Result<usiz
             n += 1;
         }
     }
+    // The node's method lives in the kernel, not beside the sheet, and the
+    // model this just wrote calls it — so it is written in the same step.
+    n += crate::emit::sync_methods(tree)?;
     Ok(n)
 }
 

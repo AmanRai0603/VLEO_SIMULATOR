@@ -877,19 +877,10 @@ fn cases_section(sh: &Sheet) -> String {
          The method is run on each one; the code the tool generates must reproduce every one before the node is \
          connected to anything.</p>\n",
     );
-    let sig = method::Signature {
-        inputs: sh
-            .inputs
-            .iter()
-            .map(|i| {
-                (
-                    i.binding.clone(),
-                    method::quantity_dim(&i.ty).unwrap_or(vleo_units::unit::Dim::NONE),
-                )
-            })
-            .collect(),
-        output: method::quantity_dim(&sh.ty).unwrap_or(vleo_units::unit::Dim::NONE),
-    };
+    let sig = method::node_signature(sh).unwrap_or(method::Signature {
+        inputs: Vec::new(),
+        output: vleo_units::unit::Dim::NONE,
+    });
     let r = (!sh.method.text.trim().is_empty())
         .then(|| method::report(&sh.method.text, &sig, &sh.cases));
     o.push_str("<table class=\"fx cases\"><thead><tr><th>case</th><th>inputs</th><th>the author's code</th><th>tolerance</th><th>the method</th></tr></thead><tbody>\n");
