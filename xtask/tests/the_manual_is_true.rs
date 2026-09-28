@@ -266,6 +266,21 @@ fn command_ok(line: &str, k: &Known) -> Result<(), String> {
                     return Err(format!("`{line}`: there is no crate '{krate}'"));
                 }
             }
+            // The Python package: installing a file of it, and the module it
+            // starts. Only the module this repository ships may be named.
+            ["python", "-m", "pip", "install", file]
+            | ["python3", "-m", "pip", "install", file] => {
+                if !file.ends_with(".whl") {
+                    return Err(format!("`{line}`: only a .whl of this tool is installed"));
+                }
+            }
+            ["python", "-m", module, ..] | ["python3", "-m", module, ..] if *module != "pip" => {
+                if *module != "vleo" {
+                    return Err(format!(
+                        "`{line}`: this repository ships no module '{module}'"
+                    ));
+                }
+            }
             ["python3", tool, ..] => {
                 if !root().join(tool).is_file() {
                     return Err(format!("`{line}`: {tool} does not exist"));
@@ -507,6 +522,14 @@ fn every_document_is_listed_and_nothing_else() {
         .filter(|e| e.path().is_file())
         .map(|e| format!("docs/{}", e.file_name().to_string_lossy()))
         .filter(|p| p.ends_with(".md") || p.ends_with(".toml"))
+        .chain(
+            std::fs::read_dir(root().join("docs/roles"))
+                .into_iter()
+                .flatten()
+                .flatten()
+                .map(|e| format!("docs/roles/{}", e.file_name().to_string_lossy()))
+                .filter(|p| p.ends_with(".html")),
+        )
         .collect();
     same("the documents under docs/", &documented, &real).unwrap_or_else(|e| panic!("{e}"));
 }
@@ -632,8 +655,41 @@ fn the_checks_refuse_what_they_exist_to_refuse() {
 
 #[test]
 fn a_malformed_manual_is_refused_by_name() {
-    let ok = "[[layer]]\nid=\"l\"\ntitle=\"L\"\n[[layer.section]]\nid=\"s\"\ntitle=\"S\"\nwho=\"user\"\nkind=\"how-to\"\nanswer=\"A.\"\n";
+    // The three roles every manual describes, each whole — appended to every
+    // sample below, so each sample fails for its own reason and no other.
+    let roles: String = manual::ROLES
+        .iter()
+        .map(|r| {
+            format!(
+                "[[role]]\nid=\"{r}\"\ntitle=\"T\"\nanswer=\"A.\"\nsimply=\"S.\"\ndoes=[\"d\"]\n\
+                 never=[\"n\"]\nwrong=\"W.\"\nright=\"R.\"\nbreaks=\"B.\"\npredict=\"P?\"\nreveal=\"V.\"\n"
+            )
+        })
+        .collect();
+    let base = "[[layer]]\nid=\"l\"\ntitle=\"L\"\n[[layer.section]]\nid=\"s\"\ntitle=\"S\"\nwho=\"user\"\nkind=\"how-to\"\nanswer=\"A.\"\n";
+    let ok = &format!("{roles}{base}");
     manual::parse(ok).expect("the minimal manual loads");
+    // A role missing, or one described without what it must never do: its
+    // guide would open with a gap.
+    for (bad, says) in [
+        (
+            ok.replacen("id=\"maintainer\"", "id=\"nobody\"", 1),
+            "one of user",
+        ),
+        (
+            ok.replacen("[[role]]\nid=\"developer\"", "[[x]]\nid=\"developer\"", 1),
+            "'developer' exactly once",
+        ),
+        (ok.replacen("never=[\"n\"]", "never=[]", 1), "`never`"),
+    ] {
+        let e = manual::parse(&bad)
+            .err()
+            .unwrap_or_else(|| panic!("accepted ({says})"));
+        assert!(
+            e.contains(says),
+            "refused, but not for the reason ({says}): {e}"
+        );
+    }
     for (bad, says) in [
         // A command whose check is not stated.
         (format!("{ok}[[layer.section.step]]\nsay=\"x\"\nrun=\"cargo xtask status\"\n"), "no `check`"),
