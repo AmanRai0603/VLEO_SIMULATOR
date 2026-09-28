@@ -49,3 +49,14 @@ fn the_registry_matches_the_types() {
          generates Rust that will not compile."
     );
 }
+
+#[test]
+fn every_registered_quantity_has_a_unit() {
+    for name in vleo_units::QUANTITIES {
+        assert!(
+            vleo_units::quantity_unit(name).is_some(),
+            "{name} is registered but quantity_unit has no arm for it"
+        );
+    }
+    assert_eq!(vleo_units::quantity_unit("Nonsense"), None);
+}
