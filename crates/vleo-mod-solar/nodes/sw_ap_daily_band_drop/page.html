@@ -88,11 +88,11 @@ are bounded by from below.
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · since release 0.1.1 · 2026-09-27</p>
 <p><b>Rests on:</b> That the fifth-percentile dip below the centred 27-day mean, binned within 15 per cent of the rotation level, describes the window; at 17.50 it sits between two well-filled bins holding 1558 and 803 days.</p>
 <p><b>Would break if:</b> The window falls in a part of the cycle whose daily scatter differs, the chosen bin width or 27-day window proves the wrong trade, or the quiet level drops below about 15.6 so the single-day answer crosses zero.</p></div>
 <ol class="versions" reversed>
-<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (environment) to confirm · <span class="about">node</span></p>
+<li class="version"><p class="version-h"><b>v1</b> · 0.1.1 · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (environment) to confirm · <span class="about">node</span></p>
 <dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>That the fifth-percentile dip below the centred 27-day mean, binned within 15 per cent of the rotation level, describes the window; at 17.50 it sits between two well-filled bins holding 1558 and 803 days.</dd><dt>Would break if</dt><dd>The window falls in a part of the cycle whose daily scatter differs, the chosen bin width or 27-day window proves the wrong trade, or the quiet level drops below about 15.6 so the single-day answer crosses zero.</dd><dt>The relation, as this version states it</dt><dd><code>dAp_day_low(L) = -pctl(Ap - movmean(Ap, 27 d), 0.05) over days whose rotation sits within 15% of L</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · noaa_swpc</span></dd></dl></li>
 </ol>
 </section>

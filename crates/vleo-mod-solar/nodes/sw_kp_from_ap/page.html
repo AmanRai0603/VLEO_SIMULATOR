@@ -75,11 +75,11 @@
 </section>
 <section class="panel" data-panel="2">
 <p class="dx dx-explanation" title="why it is so — read to understand">explanation</p>
-<div class="belief"><p class="belief-h">Version <b>1</b> · not yet released · 2026-09-27</p>
+<div class="belief"><p class="belief-h">Version <b>1</b> · since release 0.1.1 · 2026-09-27</p>
 <p><b>Rests on:</b> The published 28-pair table, applied as published with straight lines between points, the choice of line costing at most 0.017 of a grade; confirmed by A. Rai on 2026-09-14.</p>
 <p><b>Would break if:</b> A consumer needs the peak three-hour grade and does not add the separately measured offset, or an input above 400 or below 0 reaches the table without a guard upstream.</p></div>
 <ol class="versions" reversed>
-<li class="version"><p class="version-h"><b>v1</b> · next · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (environment) to confirm · <span class="about">node</span></p>
+<li class="version"><p class="version-h"><b>v1</b> · 0.1.1 · 2026-09-27 · an assistant, transcribed from this sheet — for its owner (environment) to confirm · <span class="about">node</span></p>
 <dl><dt>What changed</dt><dd>first version: the belief this row already rested on, written down</dd><dt>Rests on</dt><dd>The published 28-pair table, applied as published with straight lines between points, the choice of line costing at most 0.017 of a grade; confirmed by A. Rai on 2026-09-14.</dd><dt>Would break if</dt><dd>A consumer needs the peak three-hour grade and does not add the separately measured offset, or an input above 400 or below 0 reaches the table without a guard upstream.</dd><dt>The relation, as this version states it</dt><dd><code>Kp = piecewise_linear(ap_28 -&gt; kp_28, clamp(Ap, 0, 400))</code> <span class="claim claim-sourced" title="stated in the cited work">sourced · iaga_kp_ap</span></dd></dl></li>
 </ol>
 </section>
