@@ -690,6 +690,38 @@ fn verify_approval_quiet(root: &Path, branch: &str, at: &str) -> Result<String, 
 // ---------------------------------------------------------------------------
 // ship
 
+/// Bring every lockfile level with the workspace version. `cargo metadata`
+/// rewrites only the entries that changed — the workspace's own crates — and
+/// upgrades nothing else.
+fn refresh_locks(root: &Path) -> Result<(), String> {
+    for manifest in [
+        "Cargo.toml",
+        "crates/vleo-py/Cargo.toml",
+        "crates/vleo-wasm/Cargo.toml",
+    ] {
+        let ok = Command::new("cargo")
+            .args([
+                "metadata",
+                "-q",
+                "--format-version",
+                "1",
+                "--manifest-path",
+                manifest,
+            ])
+            .current_dir(root)
+            .stdout(std::process::Stdio::null())
+            .status()
+            .map_err(|e| e.to_string())?
+            .success();
+        if !ok {
+            return Err(format!(
+                "the lockfile beside {manifest} could not be brought level"
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// `ship <version> [--no-push] [--no-test]` — the release branch.
 pub fn cmd_ship(root: &Path, args: &[&str]) -> Result<(), String> {
     let version = args.iter().find(|a| !a.starts_with("--")).copied().ok_or(
@@ -716,9 +748,15 @@ pub fn cmd_ship(root: &Path, args: &[&str]) -> Result<(), String> {
     step(3, &format!("stamp {version}"), || {
         crate::cmd_release(root, &[version])
     })?;
+    // The version is written into the role guides and into three lockfiles
+    // (the workspace's and the two faces built outside it). A stamp that
+    // leaves any of them behind fails the regeneration diff, or the release's
+    // `--locked` build of the Python engine.
     step(4, "regenerate", || {
         crate::cmd_variables(root)?;
-        crate::cmd_codeowners(root)
+        crate::cmd_codeowners(root)?;
+        crate::cmd_guides(root)?;
+        refresh_locks(root)
     })?;
     step(5, "gate", || crate::cmd_gate(root, &[]))?;
     if !args.contains(&"--no-test") {
