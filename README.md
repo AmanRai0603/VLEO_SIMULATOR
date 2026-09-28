@@ -1,6 +1,6 @@
 # VLEO Integrated Design Tool
 
-> **Answer first.** A design tool for a very-low-Earth-orbit multipayload spacecraft: one kernel computes every number, a team runs it on its own inputs and asks for changes through node forms, and developers check, apply and release them. Start the tool with `cargo run --release -p vleo-daemon` and press ? Manual.
+> **Answer first.** A design tool for a very-low-Earth-orbit multipayload spacecraft: one kernel computes every number, a team runs it on its own inputs and asks for changes through node forms, each change is previewed and approved by the person who asked for it, and only then released to everyone. Start the tool with `cargo run --release -p vleo-daemon` and press ? Manual.
 >
 > **Kind:** explanation + reference · **For:** everyone
 
@@ -14,6 +14,26 @@ The subject is VLEO. The method is not specific to it.
 ![The tree and the dependency matrix in one grid — nested boxes on the diagonal
 are the tree, marks off it are what reads what, and routed arrows leave the
 selected row for every node it feeds](docs/img/tool.png)
+
+## Who does what
+
+Three roles around one loop. Each has its own guide — an interactive page,
+generated from the tool's manual, that opens with the role and then carries
+every step and command for it:
+
+| role | does | guide |
+|---|---|---|
+| **user** | uses the tool; fills a node form when a node is wrong or missing; tries the preview of the change and approves it | [`docs/roles/user.html`](docs/roles/user.html) |
+| **maintainer** | takes each form in, sends the preview, records the approval, merges, releases, shares — every step one command | [`docs/roles/maintainer.html`](docs/roles/maintainer.html) |
+| **developer** | writes what the routine cannot: kernel relations, filled holes, checks, the tool itself | [`docs/roles/developer.html`](docs/roles/developer.html) |
+
+    user fills a node form ──▶ take ──▶ preview ──▶ user tries it, approves ──▶ approve ──▶ merge ──▶ ship
+                               └─ each form on its own branch, form/<author>/<node>; main holds approved work only
+
+The five commands — `take`, `preview`, `approve`, `queue`, `ship` — are
+`cargo run -p xtask -- <command>`; the maintainer's guide walks one form from
+arrival to release. Nothing reaches `main` without its author's approval of the
+exact build they tried, and the pipeline checks that on every form branch.
 
 ## Status
 
@@ -30,7 +50,7 @@ own manual shows the live counts for the copy you are running.
 | of the 320 written | 130 declared values · 172 computed · 12 KPI closures · 1 requirement · 5 achieved |
 | of the 320 written, which answer | 176 answer · 137 do not yet, because the relation is stated and never derived · 7 retired (`xtask active`) |
 | declared edges | 555 derivation · 298 contribution · 179 relation (`xtask graph`) |
-| crates | 31 — 20 node crates, 11 engine and face crates |
+| crates | 32 — 20 node crates, 12 engine, server and face crates |
 | faces | browser · daemon · command line · C ABI · Python wheel · MATLAB |
 | deepest declared chain | 33 nodes, mission duration to cost per year — declared, not yet runnable end to end |
 | 80-point sweep through the daemon | 36–37 ms, three runs, release build — the sustained solar closure against launch date. A sweep of thrust-to-drag or of cost per year answers none of its points today, and records every refusal |

@@ -4,8 +4,10 @@
 > — then start it with `python -m vleo`, and the tool opens in your browser. (Or unzip the kit for
 > your system and start the program in it.) Set your inputs, run the design, keep the results. When
 > the design itself is wrong or missing something, fill that node's form and send the file to the
-> developers — they check it, build it in, and send you the next version. Your inputs and results
-> are kept on your machine and carry over to every new version.
+> maintainer — they check it, build it in, and send you a preview of your change to try. When it
+> gives what you expect, press Approve and send back the file it saves; your change then goes into
+> the next release for everyone. Your inputs and results are kept on your machine and carry over
+> to every new version.
 >
 > **Kind:** tutorial + how-to · **For:** the team using the tool
 
@@ -83,10 +85,18 @@ browser, offline, and send to the developers.
    you type which answers it still needs. Wording alone needs none of them.
 4. Press **save a filled copy**. You can check the filled file yourself on the **Forms** page —
    it shows what the developers will see, and changes nothing.
-5. Send the filled file (e-mail, chat, a shared drive) to the developers.
+5. Send the filled file to the maintainer, the way your team shares files.
+6. **You get a preview back** — the tool with your change in it, marked with an orange **PREVIEW**
+   banner. Install it like a new version (`python -m pip install <file>.whl`), open each node the
+   banner names, run it and check it against your own answers.
+7. **When it is right, press _Approve this preview…_**, tick that you ran it, and send back the file
+   it saves. If something is wrong, do not approve — say what, and you get a new preview.
 
-They check it, apply it, and it arrives in the next version. If it cannot be applied, you get the
-file back with the reason, line by line.
+Only then is your change merged, and it reaches everyone in the next release. If your form cannot
+be taken in, you get a note back with the reason, line by line, and nothing was changed.
+
+**Your guide:** `docs/roles/user.html` in this folder is an interactive page with every step for
+you — using the tool, filling a form, approving a preview — at three depths (Learn, Read, Expert).
 
 ## 4 · When a new version arrives
 
