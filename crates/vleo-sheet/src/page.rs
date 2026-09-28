@@ -365,6 +365,7 @@ pub fn fragment(
         if !sh.is_seeded() {
             o.push_str(&pseudocode(sh));
         }
+        o.push_str(&method_section(sh));
         o.push_str("<h4>Guards</h4>\n<ul class=\"guards\">\n");
         o.push_str(&format!(
             "<li><code>{s} &ge; {lo}</code> — {r}</li>\n",
@@ -444,6 +445,7 @@ pub fn fragment(
             o.push_str("</tbody></table>\n");
             o.push_str("<p class=\"muted\">An expected value may never be produced by the code under test. The schema refuses a row whose provenance is the implementation.</p>\n");
         }
+        o.push_str(&cases_section(sh));
     });
 
     // --- 8 flags ------------------------------------------------------------
@@ -768,6 +770,162 @@ fn tab<F: FnOnce(&mut String)>(o: &mut String, i: usize, sel: bool, body: F) {
     ));
     body(o);
     o.push_str("</section>\n");
+}
+
+/// The node's method, whose it is, and — folded — the author's own code and
+/// the flight software kept with the node. Part of the algorithm tab: the
+/// method IS the algorithm, stated so the tool can check it.
+fn method_section(sh: &Sheet) -> String {
+    let mut o = String::new();
+    if sh.method.text.trim().is_empty() {
+        if !sh.is_seeded() && !sh.is_declared() && sh.publishes.is_empty() {
+            o.push_str(
+                "<h4>The method</h4>\n<p class=\"muted\">No method yet. When this node's owner sends one — the \
+                 relation in the method language, with their own code and test cases — the tool checks all three \
+                 against each other (docs/PSEUDOCODE.md).</p>\n",
+            );
+        }
+    } else {
+        o.push_str(&format!(
+            "<h4>The method <span class=\"dx dx-reference\">method language {}</span></h4>\n",
+            crate::method::LANGUAGE_VERSION
+        ));
+        if !sh.method.by.trim().is_empty() {
+            o.push_str(&format!(
+                "<p class=\"muted\">Written by {}.</p>\n",
+                h(&sh.method.by)
+            ));
+        }
+        o.push_str("<pre class=\"code method\"><code>");
+        o.push_str(&h(&sh.method.text));
+        o.push_str("</code></pre>\n");
+    }
+    if !sh.author.is_empty() {
+        o.push_str(&format!(
+            "<details class=\"author-code\"><summary>{}'s own code — {}{}</summary>\n",
+            h(if sh.author.name.trim().is_empty() {
+                "The author"
+            } else {
+                sh.author.name.trim()
+            }),
+            h(&sh.author.language),
+            if sh.author.entry.trim().is_empty() {
+                String::new()
+            } else {
+                format!(", <code>{}</code>", h(&sh.author.entry))
+            }
+        ));
+        o.push_str("<p class=\"muted\">The implementation the test cases came from. Kept and read, never compiled into the tool.</p>\n");
+        o.push_str(&format!(
+            "<pre class=\"code\"><code>{}</code></pre>\n",
+            h(&sh.author.code)
+        ));
+        if !sh.author.test_code.trim().is_empty() {
+            o.push_str(&format!(
+                "<p><b>The test code</b> — what ran it on each case.</p>\n<pre class=\"code\"><code>{}</code></pre>\n",
+                h(&sh.author.test_code)
+            ));
+        }
+        if !sh.author.how_run.trim().is_empty() {
+            o.push_str(&format!(
+                "<p class=\"muted\">Run: {}</p>\n",
+                h(&sh.author.how_run)
+            ));
+        }
+        o.push_str("</details>\n");
+    }
+    if !sh.flight.is_empty() {
+        o.push_str(&format!(
+            "<h4>Flight software kept with this node</h4>\n<p class=\"muted\">{} file(s), stored with their tests beside the relation they implement. Stored, not built by this tool.</p>\n",
+            sh.flight.len()
+        ));
+        for f in &sh.flight {
+            o.push_str(&format!(
+                "<details class=\"flight\"><summary><code>{}</code> — {}</summary>\n<p>{}</p>\n<pre class=\"code\"><code>{}</code></pre>\n",
+                h(&f.name),
+                h(&f.language),
+                h(&f.purpose),
+                h(&f.code)
+            ));
+            if !f.test_code.trim().is_empty() {
+                o.push_str(&format!(
+                    "<p><b>Its test</b></p>\n<pre class=\"code\"><code>{}</code></pre>\n",
+                    h(&f.test_code)
+                ));
+            }
+            if !f.test_result.trim().is_empty() {
+                o.push_str(&format!(
+                    "<p class=\"muted\">Last run: {}</p>\n",
+                    h(&f.test_result)
+                ));
+            }
+            o.push_str("</details>\n");
+        }
+    }
+    o
+}
+
+/// The author's test cases, each with what the method gives for it — the
+/// check the form ran before the node was sent, run again here.
+fn cases_section(sh: &Sheet) -> String {
+    use crate::method;
+    if sh.cases.is_empty() {
+        return String::new();
+    }
+    let mut o = String::from(
+        "<h4>The author's test cases</h4>\n<p class=\"muted\">Inputs and answers from the author's own code, in SI. \
+         The method is run on each one; the code the tool generates must reproduce every one before the node is \
+         connected to anything.</p>\n",
+    );
+    let sig = method::node_signature(sh).unwrap_or(method::Signature {
+        inputs: Vec::new(),
+        output: vleo_units::unit::Dim::NONE,
+    });
+    let r = (!sh.method.text.trim().is_empty())
+        .then(|| method::report(&sh.method.text, &sig, &sh.cases));
+    o.push_str("<table class=\"fx cases\"><thead><tr><th>case</th><th>inputs</th><th>the author's code</th><th>tolerance</th><th>the method</th></tr></thead><tbody>\n");
+    for (i, c) in sh.cases.iter().enumerate() {
+        let inputs = c
+            .inputs
+            .iter()
+            .map(|(k, v)| format!("{k} = {}", method::show(*v)))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let want = match c.expect {
+            Some(v) => method::show(v),
+            None => "refuses".into(),
+        };
+        let verdict = match &r {
+            None => "<span class=\"muted\">no method yet</span>".to_string(),
+            Some(r) => match r.cases.get(i) {
+                None => {
+                    "<span class=\"muted\">not run — the method does not check</span>".to_string()
+                }
+                Some((_, v)) => {
+                    let got = r.got.get(i).copied().flatten();
+                    format!(
+                        "<span class=\"{}\">{}{}</span>",
+                        if v.agrees() { "ok" } else { "bad" },
+                        h(&v.text(c)),
+                        match (got, v.agrees(), c.refuses()) {
+                            (Some(g), true, false) => format!(" — {}", method::show(g)),
+                            _ => String::new(),
+                        }
+                    )
+                }
+            },
+        };
+        o.push_str(&format!(
+            "<tr><td>{}</td><td><code>{}</code></td><td class=\"num\">{}</td><td class=\"num\">{}</td><td>{}</td></tr>\n",
+            h(&c.label),
+            h(&inputs),
+            h(&want),
+            if c.refuses() { String::new() } else { format!("{:e}", c.tolerance) },
+            verdict
+        ));
+    }
+    o.push_str("</tbody></table>\n");
+    o
 }
 
 fn empty(o: &mut String, msg: &str) {

@@ -1,0 +1,77 @@
+# The sheet. This is the only file in this folder that must be written by
+# hand, and every other artefact here is generated from it. A hand edit
+# outside a numbered HOLE block in model.rs fails the regeneration diff.
+id = "orbit_velocity"
+label = "Circular orbital speed"
+folder = "orbit_velocity"   # frozen at seed; renaming the label never moves the directory
+subsystem = "orbit"
+parent = "l3_x_envorbit"
+kind = "computed"
+owner = "systems"
+tier = "A"
+layer = 3   # 1 management · 2 the system · 3 subsystem · 4 the run
+# Where this row sits among its siblings, as whoever wrote them ordered
+# them. Folders sort alphabetically and a tree that reads alphabetically
+# is a tree nobody wrote: `Achievable lifetime` before `Specific impulse`
+# reverses the order the source put them in, and the order is part of
+# what the source said.
+order = 518
+state = "published"
+
+[question]
+text = "How fast is the spacecraft moving through the atmosphere?"
+
+# SAID SIMPLY, AND WHERE THAT BREAKS — docs/EXPLAINING.md. Prose, outside the
+# sheet hash.
+[explain]
+simply = "How fast the spacecraft moves along its orbit, and so through the atmosphere, in metres per second. It is worked out from the distance to the Earth's centre, treating the orbit as a circle, and in this tool's band lies between 7000 and 8200 metres per second."
+breaks = "It assumes a circular orbit with only the Earth pulling. At an eccentricity of 0.05, a measure of how far the orbit is from a circle, the speed varies by 5 per cent around the orbit, and a drag figure worked out at the mean speed underestimates the pass closest to the Earth."
+by = "an assistant, from what this sheet states — for its owner (systems) to confirm"
+
+[maths]
+expression = "V = sqrt(mu/r)"
+source = "vallado2013"
+
+[[assumption]]
+text = "Two-body, circular"
+fails_when = "at e = 0.05 the speed varies by 5% around the orbit and a drag figure computed at the mean underestimates the perigee pass"
+
+[output]
+# The node's one answer. The variable id is the node id: one small
+# question, one answer, one folder, one row on the tree.
+symbol = "V"
+type = "Velocity"
+unit = "MetrePerSecond"
+lower = 7000.0
+upper = 8200.0
+reason_lower = "below 7 km/s corresponds to an orbit above 1000 km, outside this tool's band"
+reason_upper = "8.2 km/s exceeds the surface circular speed and is not reachable"
+
+[[input]]
+# The consumer declares what it expects. Assembly refuses a mismatch
+# against what the producer publishes — which is the only place the
+# whole graph is visible and therefore the only place to ask.
+binding = "r"
+var = "orbit_radius"
+type = "Length"
+
+[[algorithm.step]]
+number = 1
+text = "apply the circular two-body speed relation"
+binds = "v"
+type = "Velocity"
+
+[view]
+kind = "number"
+
+[[version]]
+n = 1
+release = "0.1.1"
+date = "2026-09-27"
+by = "an assistant, transcribed from this sheet — for its owner (systems) to confirm"
+about = ["node"]
+changed = "first version: the belief this row already rested on, written down"
+rests_on = "A two-body, circular orbit, with the circular speed relation as stated and cited from vallado2013, not yet derived on the sheet."
+breaks_if = "The orbit is noticeably eccentric (at 0.05 the speed varies by 5 per cent), a derivation or check against vallado2013 disagrees, or a speed falls outside 7000 to 8200 metres per second."
+relation = "V = sqrt(mu/r)"
+source = "vallado2013"

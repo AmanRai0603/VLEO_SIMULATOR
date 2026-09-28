@@ -94,6 +94,69 @@ impl Explain {
     }
 }
 
+/// The relation once more, in the method language (`docs/PSEUDOCODE.md`).
+///
+/// A third statement of the node, beside the expression a reviewer reads and
+/// the author's own code: small and strict enough that every construct has one
+/// translation, so the Rust that ships can be generated from it and the
+/// author's cases can check all three against each other.
+///
+/// IN the sheet hash when present: the generated code is translated from it,
+/// so a different method is a different node. A sheet with none is hashed
+/// exactly as before.
+#[derive(Clone, Debug, Default)]
+pub struct Method {
+    pub text: String,
+    /// Who wrote it, as intake stamps it. The same rule as the relation: an
+    /// assistant may never be the one who supplied it.
+    pub by: String,
+}
+
+/// The node author's own implementation — the code that produced their test
+/// cases — and the script that ran it.
+///
+/// Evidence, outside the sheet hash. It is kept so the cases can be rerun and
+/// so a reviewer can read what the numbers came from; it is never compiled
+/// into the tool.
+#[derive(Clone, Debug, Default)]
+pub struct AuthorCode {
+    /// Who wrote the code, as they sign it.
+    pub name: String,
+    /// MATLAB, Octave, Python, C and so on — see `form::LANGUAGES`.
+    pub language: String,
+    /// Which function in `code` is this node.
+    pub entry: String,
+    pub code: String,
+    /// The script that ran `code` on each case and printed the results.
+    pub test_code: String,
+    /// Where and how it was run: the tool and version, the machine, the date.
+    pub how_run: String,
+}
+
+impl AuthorCode {
+    pub fn is_empty(&self) -> bool {
+        self.code.trim().is_empty() && self.test_code.trim().is_empty()
+    }
+}
+
+/// Flight software that belongs to this node, kept with its test.
+///
+/// Stored, not built: the tool keeps the code and its test beside the relation
+/// they implement so the two are reviewed and versioned together. Running them
+/// on the flight computer, or in the loop with hardware, is a later decision.
+#[derive(Clone, Debug, Default)]
+pub struct Flight {
+    /// The file name as it lives in the flight tree, `attitude_ctl.c`.
+    pub name: String,
+    pub language: String,
+    /// What it does on board, and which part of this node it implements.
+    pub purpose: String,
+    pub code: String,
+    pub test_code: String,
+    /// What the test gave when it was last run, and where.
+    pub test_result: String,
+}
+
 /// One version of a node: what it rested on, and — from the second version on —
 /// which belief broke to make it, what was tested, and what changed.
 ///
@@ -292,6 +355,15 @@ pub struct Sheet {
     /// The row said simply, where that breaks, and the wrong idea. Outside the
     /// sheet hash: see [`Explain`].
     pub explain: Explain,
+    /// The method, if one has been written. See [`Method`].
+    pub method: Method,
+    /// The author's own code, which produced `cases`. Evidence, outside the hash.
+    pub author: AuthorCode,
+    /// The author's test cases, from their own code: in SI, by input binding.
+    /// Outside the hash, like fixtures.
+    pub cases: Vec<crate::method::Case>,
+    /// Flight software kept with this node. Outside the hash.
+    pub flight: Vec<Flight>,
     /// Every recorded version, oldest first. Outside the sheet hash: a record
     /// of why the node is what it is, not part of what it computes.
     pub versions: Vec<Version>,

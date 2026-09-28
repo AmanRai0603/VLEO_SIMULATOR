@@ -115,6 +115,8 @@
     return regime
 </code></pre>
 <p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>The method</h4>
+<p class="muted">No method yet. When this node's owner sends one — the relation in the method language, with their own code and test cases — the tool checks all three against each other (docs/PSEUDOCODE.md).</p>
 <h4>Guards</h4>
 <ul class="guards">
 <li><code>regime &ge; 1</code> — 1 is quiet and is the lowest regime the mixture defines. Below it there is no label</li>
@@ -234,4 +236,7 @@ pub fn evaluate(ap: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 <p class="muted">This node draws as a number with its unit, its verdict and its provenance — which is what all but a handful of nodes want.</p>
 <p class="muted">Extrapolation outside the declared range is the most common silent error in this class of model. A node that means to extrapolate declares a wider range and says why.</p>
 </section>
+<section class="gaps"><h4>Open gaps</h4><ul>
+<li>no method yet — the relation in the method language, with the author's own code and test cases, so the tool can check it three ways (docs/PSEUDOCODE.md)</li>
+</ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>
 </article>

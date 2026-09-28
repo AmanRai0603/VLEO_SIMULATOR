@@ -288,8 +288,24 @@ pub fn cmd_take(root: &Path, args: &[&str]) -> Result<(), String> {
             crate::cmd_derisk(root, &[])
         })?;
         step(4, "gate", || crate::cmd_gate(root, &[]))?;
+        // A NODE WITH A METHOD IS BUILT FROM IT, stage by stage: translated,
+        // tested against its author's cases, their code rerun, the tests shown
+        // to test — and only then connected. Stops here if any stage fails.
+        let has_method = vleo_sheet::load_all(root)
+            .ok()
+            .and_then(|t| {
+                t.sheets
+                    .get(&node)
+                    .map(|s| !s.method.text.trim().is_empty())
+            })
+            .unwrap_or(false);
+        if has_method && !args.contains(&"--no-test") {
+            step(5, "build the node from its method", || {
+                crate::method::cmd_build_node(root, &[node.as_str()])
+            })?;
+        }
         if !args.contains(&"--no-test") {
-            step(5, "tests (cargo test --workspace)", || {
+            step(6, "tests (cargo test --workspace)", || {
                 let ok = Command::new("cargo")
                     .args(["test", "--workspace", "-q"])
                     .current_dir(root)
@@ -340,7 +356,7 @@ pub fn cmd_take(root: &Path, args: &[&str]) -> Result<(), String> {
             format!("{node} from a node form")
         };
         let message = commit_message("feat", &scope, &subject, &body);
-        step(6, "commit and push", || {
+        step(7, "commit and push", || {
             // The form is the author's, attached to the pull request — never
             // committed. Received forms live in `forms/`, which git ignores; one
             // saved anywhere else is taken back out of the commit here.

@@ -42,6 +42,13 @@ pub enum Shape {
     /// A row id. Whether it resolves is a question about the whole tree, so the
     /// gate answers it; this sees one sheet and does not pretend otherwise.
     RowId,
+    /// Source code or a method, kept exactly as typed: every line and every
+    /// leading space. Written as a multi-line string with its backslashes
+    /// escaped, so `printf("\\n")` in somebody's C comes back as they wrote it.
+    Code,
+    /// One number per input of the node, by binding name, in SI: written as an
+    /// inline table, `{ h = 250000.0 }`.
+    Inputs,
 }
 
 impl Shape {
@@ -56,6 +63,8 @@ impl Shape {
             Shape::Quantity => "quantity",
             Shape::UnitName => "unit",
             Shape::RowId => "row",
+            Shape::Code => "code",
+            Shape::Inputs => "inputs",
         }
     }
     /// The closed set, where there is one. `Quantity` and `UnitName` are closed
@@ -69,11 +78,11 @@ impl Shape {
     }
     /// Whether the value goes into the file without quotes.
     fn bare(&self) -> bool {
-        matches!(self, Shape::Number | Shape::Count)
+        matches!(self, Shape::Number | Shape::Count | Shape::Inputs)
     }
     /// Whether an existing multi-line block is something this shape can hold.
     fn may_be_prose(&self) -> bool {
-        matches!(self, Shape::Prose)
+        matches!(self, Shape::Prose | Shape::Code)
     }
 }
 
@@ -86,6 +95,16 @@ pub const VIEW_KINDS: &[&str] = &["number", "line", "bar"];
 /// *the design sustains Ap 200* and *the design needs Ap 200* are the same
 /// number and opposite requirements.
 pub const SENSES: &[&str] = &["<=", ">="];
+
+/// The languages an author's own code may be in. A closed set so a reviewer
+/// knows what will run it — and `other` for the rest, which is kept and read
+/// but never rerun.
+pub const LANGUAGES: &[&str] = &[
+    "MATLAB", "Octave", "Python", "C", "C++", "Julia", "Fortran", "Rust", "Excel", "other",
+];
+
+/// Whether a case must be refused.
+pub const YES_NO: &[&str] = &["no", "yes"];
 
 /// One question on the form: where its answer lives in the file, what shape it
 /// is, and what cannot be emitted without it.
@@ -384,6 +403,113 @@ pub const FIELDS: &[Field] = &[
         asked: true,
         insert: true,
     },
+    Field {
+        field: "method_text",
+        table: "method",
+        key: "text",
+        shape: Shape::Code,
+        group: "the method",
+        ask: "the method: your relation as a few lines in the method language \
+              (docs/PSEUDOCODE.md). It reads the inputs by their names, says every number's \
+              unit, and ends every path with return or refuse",
+        why: "the code the tool ships is generated from this, and it is run on your test \
+              cases below, so a mistake in it, in your code or in the generated code shows \
+              up as a case that disagrees — before the change reaches anyone",
+        blocks: false,
+        asked: true,
+        insert: true,
+    },
+    // Not asked: intake stamps the filler's name whenever the method changes,
+    // as it does the relation.
+    Field {
+        field: "method_by",
+        table: "method",
+        key: "by",
+        shape: Shape::Line,
+        group: "the method",
+        ask: "who wrote the method",
+        why: "a method is mathematics, and the page names the person who owns it",
+        blocks: false,
+        asked: false,
+        insert: true,
+    },
+    Field {
+        field: "author_name",
+        table: "author",
+        key: "name",
+        shape: Shape::Line,
+        group: "your code",
+        ask: "who wrote the code below",
+        why: "the cases are only as good as the code that produced them, and a reviewer \
+              needs to know whose it is",
+        blocks: false,
+        asked: true,
+        insert: true,
+    },
+    Field {
+        field: "author_language",
+        table: "author",
+        key: "language",
+        shape: Shape::Choice(LANGUAGES),
+        group: "your code",
+        ask: "what language is it in",
+        why: "what will run it again: Python and Octave can be rerun by the pipeline, the \
+              rest are kept and read",
+        blocks: false,
+        asked: true,
+        insert: true,
+    },
+    Field {
+        field: "author_entry",
+        table: "author",
+        key: "entry",
+        shape: Shape::Line,
+        group: "your code",
+        ask: "which function in it is this node",
+        why: "a file often holds several functions; this names the one the cases call",
+        blocks: false,
+        asked: true,
+        insert: true,
+    },
+    Field {
+        field: "author_code",
+        table: "author",
+        key: "code",
+        shape: Shape::Code,
+        group: "your code",
+        ask: "your code — the implementation you wrote and tested, pasted whole",
+        why: "the first of the three statements of this node. Your cases come from it; the \
+              method and the generated code are checked against them",
+        blocks: false,
+        asked: true,
+        insert: true,
+    },
+    Field {
+        field: "author_test_code",
+        table: "author",
+        key: "test_code",
+        shape: Shape::Code,
+        group: "your code",
+        ask: "your test code — the script that ran your code on each test case and printed \
+              the results",
+        why: "so the cases can be produced again, by you or by the pipeline, rather than \
+              taken on trust",
+        blocks: false,
+        asked: true,
+        insert: true,
+    },
+    Field {
+        field: "author_how_run",
+        table: "author",
+        key: "how_run",
+        shape: Shape::Prose,
+        group: "your code",
+        ask: "where and how you ran it: the tool and its version, the machine, the date",
+        why: "a number with no record of how it was made cannot be made again",
+        blocks: false,
+        asked: true,
+        insert: true,
+    },
     // Not asked: intake writes the filler's name here whenever a form changes
     // the plain words, so the page can say whose words they are.
     Field {
@@ -516,6 +642,14 @@ pub fn value(sh: &Sheet, field: &str) -> String {
         "explain_breaks" => sh.explain.breaks.clone(),
         "explain_wrong" => sh.explain.wrong.clone(),
         "explain_by" => sh.explain.by.clone(),
+        "method_text" => sh.method.text.clone(),
+        "method_by" => sh.method.by.clone(),
+        "author_name" => sh.author.name.clone(),
+        "author_language" => sh.author.language.clone(),
+        "author_entry" => sh.author.entry.clone(),
+        "author_code" => sh.author.code.clone(),
+        "author_test_code" => sh.author.test_code.clone(),
+        "author_how_run" => sh.author.how_run.clone(),
         _ => String::new(),
     }
 }
@@ -805,6 +939,49 @@ pub(crate) fn array_rows(sh: &Sheet, a: &Array) -> Vec<Vec<(&'static str, String
                 ]
             })
             .collect(),
+        "case" => sh
+            .cases
+            .iter()
+            .map(|c| {
+                let num = |v: f64| {
+                    if v == 0.0 {
+                        String::new()
+                    } else {
+                        format!("{v:?}")
+                    }
+                };
+                let inputs = c
+                    .inputs
+                    .iter()
+                    .map(|(k, v)| format!("{k} = {v:?}"))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                vec![
+                    ("label", c.label.clone()),
+                    ("refuse", if c.refuses() { "yes" } else { "no" }.to_string()),
+                    (
+                        "expect",
+                        c.expect.map(|v| format!("{v:?}")).unwrap_or_default(),
+                    ),
+                    ("tolerance", num(c.tolerance)),
+                    ("inputs", format!("{{ {inputs} }}")),
+                ]
+            })
+            .collect(),
+        "flight" => sh
+            .flight
+            .iter()
+            .map(|f| {
+                vec![
+                    ("name", f.name.clone()),
+                    ("language", f.language.clone()),
+                    ("purpose", f.purpose.clone()),
+                    ("code", f.code.clone()),
+                    ("test_code", f.test_code.clone()),
+                    ("test_result", f.test_result.clone()),
+                ]
+            })
+            .collect(),
         _ => Vec::new(),
     }
 }
@@ -1083,6 +1260,37 @@ fn ensure_table(text: &str, table: &str) -> Result<String, String> {
         o.push_str(text[end..].trim_start_matches('\n'));
         return Ok(o);
     }
+    // THE METHOD AND THE AUTHOR'S CODE go after the relation and its
+    // derivation, where a reader who has just read the expression meets the
+    // same thing again as something that runs.
+    if table == "method" || table == "author" {
+        // After the derivation — its last step, or its table — or else the
+        // relation; and the author's code after the method when there is one.
+        let after_derivation = array_blocks(text, "theory.step")
+            .last()
+            .map(|(_, e)| *e)
+            .or_else(|| window(text, "theory").map(|(_, e)| e))
+            .or_else(|| window(text, "maths").map(|(_, e)| e));
+        let end = if table == "author" {
+            window(text, "method").map(|(_, e)| e).or(after_derivation)
+        } else {
+            after_derivation
+        }
+        .ok_or_else(|| format!("this sheet has no [maths] table to put [{table}] after"))?;
+        let head = if table == "method" {
+            "# THE METHOD — the relation in the method language (docs/PSEUDOCODE.md). In the\n\
+             # sheet hash: the generated code is translated from it.\n[method]\n\n"
+        } else {
+            "# THE AUTHOR'S OWN CODE, which produced the cases below, and the script that ran\n\
+             # it. Evidence, outside the sheet hash.\n[author]\n\n"
+        };
+        let mut o = String::with_capacity(text.len() + 128);
+        o.push_str(text[..end].trim_end_matches('\n'));
+        o.push_str("\n\n");
+        o.push_str(head);
+        o.push_str(text[end..].trim_start_matches('\n'));
+        return Ok(o);
+    }
     if table != "theory" {
         return Err(format!(
             "this sheet has no [{table}] table, which every sheet should have. That is a \
@@ -1165,13 +1373,32 @@ pub fn set(text: &str, field: &str, value: &str) -> Result<String, String> {
         }
         // Insertable and absent: directly under the table header, which is
         // where `xtask confirm` puts the one key it adds and the only place in
-        // a table that is unambiguous.
-        let (from, _) = window(text, f.table).ok_or_else(|| {
+        // a table that is unambiguous. The method and the author's code are
+        // the exception: the form writes their keys one after another into a
+        // table it made, and under the header would write them backwards.
+        let (from, to) = window(text, f.table).ok_or_else(|| {
             format!(
                 "this sheet has no [{}] table to write {} into",
                 f.table, f.key
             )
         })?;
+        let from = if matches!(f.table, "method" | "author") {
+            // After the table's last value — a multi-line one included — and
+            // before any comment that introduces the next table.
+            let mut last = from;
+            for r in scan(text) {
+                if r.start < from || r.start >= to {
+                    continue;
+                }
+                let line = text[r.start..r.end].trim();
+                if r.prose || (!line.is_empty() && !line.starts_with('#')) {
+                    last = r.end;
+                }
+            }
+            last
+        } else {
+            from
+        };
         let mut o = String::with_capacity(text.len() + value.len() + 16);
         o.push_str(&text[..from]);
         o.push_str(&format!("{} = {}\n", f.key, written(&f.shape, &value)));
@@ -1221,13 +1448,29 @@ fn written(shape: &Shape, value: &str) -> String {
 fn toml_quote(v: &str) -> String {
     if v.contains('\n') {
         // A form field that has become multi-line is written as one, so the
-        // file stays parseable rather than losing the tail.
+        // file stays parseable rather than losing the tail. A basic multi-line
+        // string reads a backslash as an escape and ends at the first `"""`,
+        // so both are escaped: a formula written `\alpha`, or a line of C
+        // with `"\n"` in it, comes back exactly as it was typed.
+        let mut body = String::with_capacity(v.len() + 8);
+        for c in v.chars() {
+            match c {
+                '\\' => body.push_str("\\\\"),
+                '\n' | '\t' => body.push(c),
+                '\r' => {}
+                c if (c as u32) < 0x20 || c as u32 == 0x7f => {
+                    body.push_str(&format!("\\u{:04x}", c as u32))
+                }
+                c => body.push(c),
+            }
+        }
+        let body = body.replace("\"\"\"", "\"\"\\\"");
         return format!(
             "\"\"\"\n{}\"\"\"",
-            if v.ends_with('\n') {
-                v.to_string()
+            if body.ends_with('\n') {
+                body
             } else {
-                format!("{v}\n")
+                format!("{body}\n")
             }
         );
     }
@@ -1446,7 +1689,50 @@ pub fn normalise(field: &str, value: &str) -> Result<String, String> {
         // Prose keeps its internal newlines and loses only trailing blank ones,
         // because the layout is somebody's.
         Shape::Prose => Ok(value.trim_end().trim_start_matches('\n').to_string()),
+        // Code keeps even the first line's indentation.
+        Shape::Code => Ok(code_text(value)),
+        Shape::Inputs => inputs_text(value),
     }
+}
+
+/// Code as it is kept: every line as typed, blank lines at either end gone,
+/// line endings made one kind.
+fn code_text(value: &str) -> String {
+    let v = value.replace("\r\n", "\n");
+    let v = v.trim_end();
+    let first = v
+        .char_indices()
+        .find(|(_, c)| *c != '\n')
+        .map(|(i, _)| i)
+        .unwrap_or(v.len());
+    // Back to the start of the first non-blank line, keeping its indent.
+    let start = v[..first].rfind('\n').map(|i| i + 1).unwrap_or(0);
+    v[start..].to_string()
+}
+
+/// A case's inputs as the inline table the sheet holds: `{ h = 250000.0 }`,
+/// each value a number, the names in order.
+fn inputs_text(value: &str) -> Result<String, String> {
+    let v = value.trim();
+    let doc: toml::Value = format!("x = {v}").parse().map_err(|_| {
+        format!("'{v}' is not a set of inputs — write them as {{ name = number, … }}")
+    })?;
+    let t = doc
+        .get("x")
+        .and_then(|x| x.as_table())
+        .ok_or_else(|| format!("'{v}' is not a set of inputs"))?;
+    let mut parts = Vec::new();
+    for (k, x) in t {
+        let n = x
+            .as_float()
+            .or_else(|| x.as_integer().map(|i| i as f64))
+            .ok_or_else(|| format!("the input «{k}» is not a number"))?;
+        if !n.is_finite() {
+            return Err(format!("the input «{k}» is not finite"));
+        }
+        parts.push(format!("{k} = {n:?}"));
+    }
+    Ok(format!("{{ {} }}", parts.join(", ")))
 }
 
 /// Whether a value is one this field may hold. `normalise` without the value.
@@ -1754,6 +2040,9 @@ fn regenerate(sh: &crate::model::Sheet, tree: &crate::load::Tree) -> Result<usiz
             n += 1;
         }
     }
+    // The node's method lives in the kernel, not beside the sheet, and the
+    // model this just wrote calls it — so it is written in the same step.
+    n += crate::emit::sync_methods(tree)?;
     Ok(n)
 }
 
@@ -2009,6 +2298,109 @@ pub const ARRAYS: &[Array] = &[
         after: "maths",
         only_under: crate::derisk::REGISTER,
     },
+    Array {
+        name: "case",
+        path: "case",
+        label: "your test cases",
+        why: "inputs and the answer YOUR code gave, or that your code refuses them. They \
+              decide: the method is run on each one before you send the form, and the code \
+              the tool generates must reproduce every one before the node is connected to \
+              anything. At least three answers and one refusal",
+        columns: &[
+            Column {
+                key: "label",
+                shape: Shape::Line,
+                ask: "what this case is, in a few words — 'lowest altitude', 'a storm'",
+                required: true,
+                managed: false,
+            },
+            Column {
+                key: "refuse",
+                shape: Shape::Choice(YES_NO),
+                ask: "must the node refuse this case",
+                required: true,
+                managed: false,
+            },
+            Column {
+                key: "expect",
+                shape: Shape::Number,
+                ask: "the answer your code gave, in SI",
+                required: false,
+                managed: false,
+            },
+            Column {
+                key: "tolerance",
+                shape: Shape::Number,
+                ask: "how close is close enough, as a fraction (1e-6 is one part in a million)",
+                required: false,
+                managed: false,
+            },
+            Column {
+                key: "inputs",
+                shape: Shape::Inputs,
+                ask: "each input's value, in SI",
+                required: true,
+                managed: false,
+            },
+        ],
+        blocks: Blocks::Free,
+        after: "maths",
+        only_under: "",
+    },
+    Array {
+        name: "flight",
+        path: "flight",
+        label: "flight software kept with this node",
+        why: "on-board code that implements this node, stored with its test beside the \
+              relation it implements, so the two are reviewed and versioned together",
+        columns: &[
+            Column {
+                key: "name",
+                shape: Shape::Line,
+                ask: "its file name, as in the flight tree",
+                required: true,
+                managed: false,
+            },
+            Column {
+                key: "language",
+                shape: Shape::Line,
+                ask: "its language",
+                required: true,
+                managed: false,
+            },
+            Column {
+                key: "purpose",
+                shape: Shape::Prose,
+                ask: "what it does on board, and which part of this node it implements",
+                required: true,
+                managed: false,
+            },
+            Column {
+                key: "code",
+                shape: Shape::Code,
+                ask: "the code",
+                required: true,
+                managed: false,
+            },
+            Column {
+                key: "test_code",
+                shape: Shape::Code,
+                ask: "its test",
+                required: false,
+                managed: false,
+            },
+            Column {
+                key: "test_result",
+                shape: Shape::Prose,
+                ask: "what the test gave when it was last run, and where",
+                required: false,
+                managed: false,
+            },
+        ],
+        blocks: Blocks::Free,
+        after: "maths",
+        only_under: "",
+    },
 ];
 
 /// One repeated block, by name.
@@ -2106,6 +2498,23 @@ fn insert_point(text: &str, a: &Array) -> Result<usize, String> {
         }
         if let Some((_, end)) = window(text, "theory") {
             return Ok(end);
+        }
+    }
+    // The author's cases read after their code, which produced them; flight
+    // software after the cases.
+    if a.path == "case" || a.path == "flight" {
+        if a.path == "flight" {
+            if let Some((_, end)) = array_blocks(text, "case").last() {
+                return Ok(*end);
+            }
+        }
+        for t in ["author", "method"] {
+            if let Some((_, end)) = window(text, t) {
+                return Ok(end);
+            }
+        }
+        if let Some((_, end)) = array_blocks(text, "theory.step").last() {
+            return Ok(*end);
         }
     }
     // An algorithm step reads after the inputs it consumes.
@@ -2505,6 +2914,22 @@ fn normalise_column(c: &Column, value: &str) -> Result<String, String> {
             Err(format!("`{}` is one line; what was sent is not", c.key))
         }
         Shape::Prose => Ok(value.trim_end().trim_start_matches('\n').to_string()),
+        Shape::Code => Ok(code_text(value)),
+        Shape::Inputs => inputs_text(value),
+        Shape::Number => {
+            let n: f64 = v
+                .parse()
+                .map_err(|_| format!("`{}` is a number; '{v}' is not", c.key))?;
+            if !n.is_finite() {
+                return Err(format!("`{}` must be finite", c.key));
+            }
+            Ok(format!("{n:?}"))
+        }
+        Shape::Choice(options) if !options.contains(&v) => Err(format!(
+            "`{}` is one of: {} — not '{v}'",
+            c.key,
+            options.join(", ")
+        )),
         _ => Ok(v.to_string()),
     }
 }

@@ -91,6 +91,8 @@
     return M
 </code></pre>
 <p class="muted">Derived from the sheet, not from the generated Rust, so it says what the sheet declares rather than what one compiler made of it. The guards are postconditions: this node refuses rather than returning a number outside them.</p>
+<h4>The method</h4>
+<p class="muted">No method yet. When this node's owner sends one — the relation in the method language, with their own code and test cases — the tool checks all three against each other (docs/PSEUDOCODE.md).</p>
 <h4>Guards</h4>
 <ul class="guards">
 <li><code>M &ge; -100</code> — a margin below -10000% means the inputs are not the ones the requirement was written against</li>
@@ -178,6 +180,7 @@ pub fn evaluate(req: Ratio, ach: Ratio) -&gt; Result&lt;Ratio, Fault&gt; {
 </section>
 <section class="gaps"><h4>Open gaps</h4><ul>
 <li>the relation has nobody's name against it — an assistant may never supply mathematics, and without an attribution nothing can tell whether one did</li>
+<li>no method yet — the relation in the method language, with the author's own code and test cases, so the tool can check it three ways (docs/PSEUDOCODE.md)</li>
 <li>no fixture: nothing outside this code has ever agreed with what it computes</li>
 <li>no theory: the relation is stated but not derived — THE ROW DOES NOT ANSWER. A function is defined by its derivation, not by its expression and not by its citation, and until one is written every reader of this row is blocked on it by name</li>
 </ul><p class="muted">The gap pass lists what the sheet promised and nothing yet covers. It is a list, not a verdict — but a node with an open gap cannot enter the second review.</p></section>

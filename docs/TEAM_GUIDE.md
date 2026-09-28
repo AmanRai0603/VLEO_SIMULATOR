@@ -83,6 +83,11 @@ browser, offline, and send to the developers.
 3. If your change moves what the row computes, fill **Why it is changing**: what we believed,
    what you tested, what you now know, and what would break the new belief. The form tells you as
    you type which answers it still needs. Wording alone needs none of them.
+   **If it is your relation**, also fill **The method** (the relation as a few lines — see
+   `docs/PSEUDOCODE.md`, and *Show the example* beside each question), **Your code** (the code you
+   wrote and tested, and the script that ran it) and **Your test cases**: at least three answers
+   your code gave and one input it refuses. The form runs your method on your cases as you type;
+   send it when its check says **Sound**.
 4. Press **save a filled copy**. You can check the filled file yourself on the **Forms** page —
    it shows what the developers will see, and changes nothing.
 5. Send the filled file to the maintainer, the way your team shares files.

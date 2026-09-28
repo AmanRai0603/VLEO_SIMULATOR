@@ -11,6 +11,7 @@ use std::process::ExitCode;
 use vleo_sheet::{emit, gate, load_all, page, Tree};
 
 mod flow;
+mod method;
 
 /// A reader that stops early — `| head`, `| grep -m1`, a pager quit halfway —
 /// closes the pipe, and the next line printed panics with a backtrace that
@@ -79,6 +80,11 @@ fn main() -> ExitCode {
         "approve" => flow::cmd_approve(&root, &rest),
         "queue" => flow::cmd_queue(&root, &rest),
         "ship" => flow::cmd_ship(&root, &rest),
+        "method" => method::cmd_method(&root, &rest),
+        "method-wasm" => method::cmd_method_wasm(&root, &rest),
+        "rerun" => method::cmd_rerun(&root, &rest),
+        "build-node" => method::cmd_build_node(&root, &rest),
+        "migration" => method::cmd_migration(&root, &rest),
         "help" | "--help" | "-h" => {
             help();
             Ok(())
@@ -168,13 +174,15 @@ cargo xtask <command>
   setup              point git at tools/githooks, so the commit-message hook
                      runs on this clone. One command per person per clone, and
                      the commands that matter say so until it is done.
-  form <node>|--new [--out <file.html>]
+  form <node>|--new [--example] [--out <file.html>]
                      a node's form: one HTML file that explains itself, asks
                      every question the sheet answers, lists every row it could
                      read, and saves a filled copy. --new is the form for a node
                      the design does not have yet, which also asks where it goes.
                      Anyone can fill it, offline, by hand or with an assistant;
-                     the filled file comes back to a developer.
+                     the filled file comes back to a developer. --example fills
+                     orbit_velocity's form with the worked example, for the
+                     pipeline's end-to-end test of the method path only.
   intake <file.html> [--apply [--partial]]
                      the checker: what a filled form would change, field by
                      field, and every interface it declares — each input a row
@@ -205,6 +213,25 @@ cargo xtask <command>
                      maintainer.html and developer.html, rendered from
                      docs/manual.toml. Never
                      edited by hand; the pipeline regenerates and compares.
+  method <node>      the node's method, checked, and each of its author's test
+                     cases run through it — the check the form runs as the
+                     author types, and the one the gate refuses on.
+  method-wasm [--check]
+                     rebuild web/method.wasm.gz, the checker every node form
+                     carries, from vleo_sheet::method; --check only says
+                     whether the committed one is current.
+  rerun <node>|--all [--require]
+                     the author's own code run again on their cases: Python
+                     directly, MATLAB and Octave through Octave; anything else
+                     is kept and read, not rerun.
+  build-node <node>  from a node's method to a connected node, in order: the
+                     method on its cases, the translation into the kernel, the
+                     node's tests, the author's code rerun, a mutation the
+                     tests must catch — and only then the interface.
+  migration [--owner <o>] [--subsystem <s>] [--forms <dir>]
+                     which computed rows still need a method, by owner, and
+                     with --forms their node forms written ready to send.
+                     Nothing here writes a method: each comes from its owner.
   take <form.html> --for <author> [--again] [--no-push] [--no-test]
                      the maintainer's first step: check a filled node form;
                      if it cannot be taken, write <form>.returned.txt to send
@@ -296,11 +323,15 @@ fn cmd_form(root: &Path, args: &[&str]) -> Result<(), String> {
         let id = args
             .first()
             .filter(|a| !a.starts_with("--"))
-            .ok_or("usage: cargo xtask form <node>|--new [--out <file.html>]")?;
+            .ok_or("usage: cargo xtask form <node>|--new [--example] [--out <file.html>]")?;
         let sh = tree.sheets.get(*id).ok_or_else(|| {
             format!("no node '{id}'. For a node the design does not have yet: `form --new`")
         })?;
-        vleo_sheet::template::document(sh, &tree)
+        if args.contains(&"--example") {
+            vleo_sheet::template::document_example(sh, &tree)?
+        } else {
+            vleo_sheet::template::document(sh, &tree)
+        }
     };
     match args
         .iter()
@@ -550,6 +581,38 @@ fn print_plan(p: &vleo_sheet::template::Plan) {
             None => println!(
                 "  → no version recorded: the record is incomplete, so these decisions are withheld"
             ),
+        }
+    }
+    // THE METHOD, AGAINST ITS AUTHOR'S CASES, on the node as it would be after
+    // this form — the same check the author saw in the form and the gate runs
+    // on apply, so a refusal here is one the author could already see.
+    if let Some(text) = &p.text {
+        if let Ok(r) = vleo_sheet::method::report_toml(text) {
+            if text.contains("\n[method]") || !r.cases.is_empty() {
+                println!("\nthe method, against the author's cases:");
+                for d in &r.diags {
+                    println!("  {d}");
+                }
+                for (c, v) in &r.cases {
+                    println!(
+                        "  {} {}: {}",
+                        if v.agrees() { "ok  " } else { "FAIL" },
+                        c.label,
+                        v.text(c)
+                    );
+                }
+                for sft in &r.shortfall {
+                    println!("  missing: {sft}");
+                }
+                println!(
+                    "  {}",
+                    if r.sound() {
+                        "sound — the method checks and agrees with every case"
+                    } else {
+                        "NOT SOUND — the gate will refuse this on apply; send it back with the lines above"
+                    }
+                );
+            }
         }
     }
     if !p.open.is_empty() {
@@ -1538,6 +1601,17 @@ fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
     if touched == 0 {
         return Err(format!("no node matched '{}'", only.unwrap_or("")));
     }
+    // Every node's method, translated into the kernel, whichever node was asked
+    // for: the kernel module list is the whole tree's.
+    written += emit::sync_methods(&tree)?;
+    // The method language's reference page, from the tables the checker reads,
+    // so the page and the checker cannot describe two languages.
+    if only.is_none() {
+        let md = vleo_sheet::method::reference_md();
+        if write_if_changed(&root.join("docs/PSEUDOCODE.md"), &md)? {
+            written += 1;
+        }
+    }
     println!("docs: {touched} node(s), {written} artefact(s) written");
     Ok(())
 }
@@ -1757,7 +1831,9 @@ fn ring(crate_name: &str) -> Option<(u8, &'static str)> {
         "vleo-data" => (2, "reference data"),
         "vleo-modules" => (4, "the facade over every node crate"),
         "vleo-server" => (5, "the server both the daemon and the Python package start"),
-        "vleo-cli" | "vleo-daemon" | "vleo-ffi" | "vleo-py" | "vleo-wasm" => (6, "a face"),
+        "vleo-cli" | "vleo-daemon" | "vleo-ffi" | "vleo-py" | "vleo-wasm" | "vleo-method-wasm" => {
+            (6, "a face")
+        }
         "xtask" => (6, "the task runner"),
         n if n.starts_with("vleo-mod-") => (3, "RING 3 — the nodes"),
         _ => return None,
@@ -2287,6 +2363,12 @@ fn cmd_fill(root: &Path, args: &[&str]) -> Result<(), String> {
     if sh.is_declared() {
         return Err(format!(
             "'{id}' is a declared value — a person picked its number, so it has no holes"
+        ));
+    }
+    if vleo_sheet::method::node_program(sh).is_some() {
+        return Err(format!(
+            "'{id}' is built from its method: its code is the method translated by rule, and \
+             it has no holes. Change the method, on the node's form"
         ));
     }
     let step = sh

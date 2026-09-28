@@ -13,5 +13,5 @@
   "holes": 1,
   "inputs": ["sw_storm_return_level"],
   "contributes": [],
-  "gaps": []
+  "gaps": ["no method yet — the relation in the method language, with the author's own code and test cases, so the tool can check it three ways (docs/PSEUDOCODE.md)"]
 }

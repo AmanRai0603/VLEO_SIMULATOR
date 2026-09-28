@@ -142,6 +142,12 @@ jobs:
       - name: evidence
         run: cargo test --workspace
 
+      # The authors' own code, run again on the cases recorded from it: Python
+      # directly; MATLAB and Octave only where Octave is installed, and said
+      # when it is not. A case the code no longer gives fails here.
+      - name: the authors' code, rerun
+        run: cargo run -p xtask -- rerun --all
+
       - name: the gap pass
         run: cargo run -p xtask -- gap || true
 
@@ -155,6 +161,70 @@ jobs:
         run: |
           cargo run -p xtask -- status
           cargo run -p xtask -- graph
+
+  # A NODE BUILT FROM ITS METHOD, END TO END, on every pull request. No node of
+  # the design carries a method until its owner sends one, so without this job
+  # the path a teammate's form takes would never run. It fills orbit_velocity's
+  # real form with the worked example — the same textbook relation that node
+  # computes — and takes it through every stage on this throwaway checkout:
+  # the form's own check in a browser, intake, the author's MATLAB code rerun
+  # through Octave, build-node's translation, cases, mutation and interface,
+  # and the whole design's tests. Nothing it writes is committed.
+  method-end-to-end:
+    name: a node built from its method, end to end
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-method-e2e-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-method-e2e-
+      - name: the runners — Octave for MATLAB code, a browser for the form
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends octave
+          pip install --quiet playwright
+          python3 -m playwright install --with-deps chromium
+      - name: orbit_velocity's form, filled with the worked example
+        run: cargo run -p xtask -- form orbit_velocity --example --out "$RUNNER_TEMP/example.node-form.html"
+      - name: the form's own check, in a browser — sound, then not sound once a case is wrong
+        run: python3 tools/form_check.py "$RUNNER_TEMP/example.node-form.html"
+      # Each step below also says what it must have printed, so the job cannot
+      # pass by doing less than it claims: an exit code alone would not notice
+      # a stage that quietly found nothing to do.
+      - name: intake applies it
+        run: |
+          set -o pipefail
+          git config user.name "vleo pipeline"
+          cargo run -p xtask -- intake "$RUNNER_TEMP/example.node-form.html" --apply | tee "$RUNNER_TEMP/intake.log"
+          grep -q "sound — the method checks and agrees with every case" "$RUNNER_TEMP/intake.log"
+          grep -q "^applied:" "$RUNNER_TEMP/intake.log"
+      - name: the author's MATLAB code, rerun through Octave
+        run: |
+          set -o pipefail
+          cargo run -p xtask -- rerun orbit_velocity --require | tee "$RUNNER_TEMP/rerun.log"
+          grep -q "ok   orbit_velocity: the author's code gives all 4 recorded case(s)" "$RUNNER_TEMP/rerun.log"
+      - name: build the node from its method, every stage
+        run: |
+          set -o pipefail
+          cargo run -p xtask -- build-node orbit_velocity 2>&1 | tee "$RUNNER_TEMP/build.log"
+          test -f crates/vleo-core/src/physics/methods/orbit_velocity.rs
+          grep -q "orbit_velocity::evaluate(r.get())" crates/vleo-mod-envorbit/nodes/orbit_velocity/model.rs
+          grep -q "killed" "$RUNNER_TEMP/build.log"
+          grep -q "build-node: orbit_velocity is built from its method" "$RUNNER_TEMP/build.log"
+      - name: the node's own tests are the author's cases and the translation
+        run: |
+          set -o pipefail
+          cargo test -p vleo-mod-envorbit -- orbit_velocity --list | tee "$RUNNER_TEMP/list.log"
+          for t in case_1 case_2 case_3 case_4 the_translation_gives_the_methods_answers; do
+            grep -q "orbit_velocity::evidence::$t: test" "$RUNNER_TEMP/list.log"
+          done
+      - name: the whole design, with that node built from its method
+        run: cargo test --workspace
 
   # Every script in tools/ checks itself before it is trusted to check
   # anything else. A checker nobody has watched fail is a checker nobody knows
@@ -209,6 +279,8 @@ jobs:
         run: python3 tools/input_check.py --selftest
       - name: the manual check checks itself
         run: python3 tools/manual_check.py --selftest
+      - name: the node form's browser check
+        run: python3 tools/form_check.py --selftest
       # The walk-forward that reproduces sw_mean_band_spread's sigma disagrees
       # with the published number, and §31.4 rests on that disagreement being
       # real rather than an arithmetic slip. Its selftest checks the estimators
@@ -489,6 +561,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             crates/vleo-wasm/target
+            crates/vleo-method-wasm/target
             crates/vleo-py/target
           key: ${{ runner.os }}-excluded-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
           restore-keys: ${{ runner.os }}-excluded-
@@ -498,6 +571,11 @@ jobs:
       # committed lock, resolved from it rather than fresh on the day.
       - name: the browser face
         working-directory: crates/vleo-wasm
+        run: cargo build --locked --target wasm32-unknown-unknown --release
+      # The method checker every node form carries. Its committed build is held
+      # to its sources by a test; this proves the sources still build at all.
+      - name: the node form's method checker
+        working-directory: crates/vleo-method-wasm
         run: cargo build --locked --target wasm32-unknown-unknown --release
       - name: the Python face
         working-directory: crates/vleo-py

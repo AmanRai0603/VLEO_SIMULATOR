@@ -35,6 +35,15 @@ pub enum Fault {
         field: &'static str,
         reason: &'static str,
     },
+    /// The node's method refused these inputs, and says why.
+    ///
+    /// The author of a node's method writes where it will not answer — an
+    /// orbit inside the Earth, an altitude below what the model covers — and
+    /// this carries that sentence out. A refusal is never a substitute value.
+    Refused {
+        node: &'static str,
+        reason: &'static str,
+    },
     /// The node has never run and something asked for its value.
     NotRun { node: &'static str },
     /// The row states a relation and never derives it.
@@ -114,6 +123,7 @@ impl Fault {
         match self {
             Fault::OutOfDomain { node, .. }
             | Fault::Degenerate { node, .. }
+            | Fault::Refused { node, .. }
             | Fault::NotRun { node }
             | Fault::Undefined { node }
             | Fault::Blocked { node, .. }
@@ -132,6 +142,7 @@ impl Fault {
         match self {
             Fault::OutOfDomain { .. } => "out-of-domain",
             Fault::Degenerate { .. } => "degenerate",
+            Fault::Refused { .. } => "refused",
             Fault::NotRun { .. } => "not-run",
             Fault::Undefined { .. } => "undefined",
             Fault::Blocked { .. } => "blocked",
@@ -158,6 +169,7 @@ impl core::fmt::Display for Fault {
             Fault::Degenerate { node, field, reason } => {
                 write!(f, "{node}: {field} is degenerate — {reason}")
             }
+            Fault::Refused { node, reason } => write!(f, "{node}: refused — {reason}"),
             Fault::NotRun { node } => write!(f, "{node}: has not run"),
             Fault::Undefined { node } => write!(
                 f,

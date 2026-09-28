@@ -61,7 +61,11 @@ loop:
     3  PUBLISH   cargo run -p xtask -- publish <node>
                  a filled seeded row becomes published and its code is
                  generated, with numbered HOLE blocks.
-    4  IMPLEMENT cargo run -p xtask -- fill <node> --hole <n> --body - \
+    4  IMPLEMENT a node with a method (docs/PSEUDOCODE.md) is built from it:
+                 cargo run -p xtask -- build-node <node>
+                 translated by fixed rules into vleo-core::physics::methods,
+                 tested against its author's own cases, no holes. Otherwise:
+                 cargo run -p xtask -- fill <node> --hole <n> --body - \
                      --by "<who>" --model <model>
                  the few typed lines per hole, composing kernel relations.
     5  EVIDENCE  fixtures.toml — values from outside this code, including any
@@ -197,6 +201,18 @@ results, the manual, figures and these documents are all held to it by check.
     cargo run -p xtask -- ship <version>    the release branch, stamped and
                                             proved (docs/roles/maintainer.html)
     cargo run -p xtask -- guides            the three role guides, from the manual
+    cargo run -p xtask -- method <node>     the node's method, run on its author's
+                                            cases (docs/PSEUDOCODE.md)
+    cargo run -p xtask -- method-wasm       rebuild the checker every node form
+                                            carries, web/method.wasm.gz
+    cargo run -p xtask -- rerun <node>|--all
+                                            each author's own code, run again on
+                                            the cases recorded from it
+    cargo run -p xtask -- build-node <node> a node from its method: translated,
+                                            tested on its author's cases, then
+                                            connected
+    cargo run -p xtask -- migration         which rows still need a method, by
+                                            owner, and their forms to send
     cargo run -p vleo-cli --bin vleo -- run <node> [--save <file.csv>]
     cargo run -p vleo-cli --bin vleo -- result <file>
 

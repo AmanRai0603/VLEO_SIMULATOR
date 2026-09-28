@@ -27,6 +27,12 @@ fn s(v: Option<&toml::Value>) -> String {
     v.and_then(|v| v.as_str()).unwrap_or("").to_string()
 }
 
+/// Code as the sheet holds it: exactly as written, less the line break a
+/// multi-line string ends with.
+fn code(v: Option<&toml::Value>) -> String {
+    s(v).trim_end_matches(['\n', '\r']).to_string()
+}
+
 fn f(v: Option<&toml::Value>) -> f64 {
     v.and_then(|v| v.as_float().or_else(|| v.as_integer().map(|i| i as f64)))
         .unwrap_or(0.0)
@@ -162,6 +168,38 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
         sh.explain.breaks = reflow(&s(ex.get("breaks")));
         sh.explain.wrong = reflow(&s(ex.get("wrong")));
         sh.explain.by = s(ex.get("by")).trim().to_string();
+    }
+    if let Some(m) = t.get("method").and_then(|x| x.as_table()) {
+        // Kept exactly as written: a method's lines and indentation are its
+        // meaning, and a reflow would join them.
+        sh.method.text = code(m.get("text"));
+        sh.method.by = s(m.get("by")).trim().to_string();
+    }
+    if let Some(a) = t.get("author").and_then(|x| x.as_table()) {
+        sh.author = crate::model::AuthorCode {
+            name: s(a.get("name")),
+            language: s(a.get("language")),
+            entry: s(a.get("entry")),
+            code: code(a.get("code")),
+            test_code: code(a.get("test_code")),
+            how_run: reflow(&s(a.get("how_run"))),
+        };
+    }
+    sh.cases = crate::method::cases_of(&v).map_err(|e| format!("{}: {e}", path.display()))?;
+    for fl in t
+        .get("flight")
+        .and_then(|x| x.as_array())
+        .unwrap_or(&vec![])
+    {
+        let Some(fl) = fl.as_table() else { continue };
+        sh.flight.push(crate::model::Flight {
+            name: s(fl.get("name")),
+            language: s(fl.get("language")),
+            purpose: reflow(&s(fl.get("purpose"))),
+            code: code(fl.get("code")),
+            test_code: code(fl.get("test_code")),
+            test_result: reflow(&s(fl.get("test_result"))),
+        });
     }
     let strings = |v: Option<&toml::Value>| -> Vec<String> {
         v.and_then(|x| x.as_array())
@@ -372,6 +410,13 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
         canon.push_str(&pb.ty);
         canon.push_str(&pb.unit);
         canon.push_str(&format!("{:?}{:?}", pb.lower, pb.upper));
+    }
+    // The method is what the generated code is translated from, so it is part
+    // of what the node computes. Absent on every sheet that has not got one, so
+    // no existing hash moves.
+    if !sh.method.text.trim().is_empty() {
+        canon.push_str("method:");
+        canon.push_str(&sh.method.text.replace("\r\n", "\n"));
     }
     sh.sheet_hash = fnv1a(&canon);
     sh.impl_hash = fnv1a(&read_holes_raw(dir));

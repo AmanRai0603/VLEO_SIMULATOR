@@ -35,6 +35,15 @@ The five commands — `take`, `preview`, `approve`, `queue`, `ship` — are
 arrival to release. Nothing reaches `main` without its author's approval of the
 exact build they tried, and the pipeline checks that on every form branch.
 
+**A node's relation arrives three ways, and each checks the other two.** Its
+author's own code — MATLAB, Python, anything — produced their test cases; the
+*method* says the same relation in a small fixed language the tool can check
+for units and run ([`docs/PSEUDOCODE.md`](docs/PSEUDOCODE.md)); and the code the
+tool ships is translated from the method by fixed rules. The form runs the
+method on the author's cases as they type; `take` builds the node stage by
+stage (`build-node`) and connects it to the design only once every case agrees.
+`migration` lists the rows still without a method, by owner.
+
 ## Status
 
 Measured on `main`, 26 September 2026. Every figure here is produced by a
@@ -353,7 +362,7 @@ makes 1396 rows 1396 independent pieces of work rather than one large one.
 
 | generator | emits | what it is for |
 |---|---|---|
-| model | `model.rs` | the whole implementation, with numbered `HOLE` blocks left open |
+| model | `model.rs` | the whole implementation, with numbered `HOLE` blocks left open — or, for a node with a method, the call to its method translated into `vleo-core::physics::methods` |
 | contract | `contract.rs` | outputs, units, guarantees, domain, faults — what other nodes may rely on |
 | module | `mod.rs` | wires the node into its crate |
 | evidence | `evidence.rs` | the fixture tests, plus three properties derived from the declared domain |
@@ -652,6 +661,7 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
 | [`docs/USING_IT.md`](docs/USING_IT.md) | the worked walkthrough, with real outputs — running it, changing an input, keeping a result, a form from filling to release |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | why the rings are shaped the way they are |
 | [`docs/NODE_AUTHORING.md`](docs/NODE_AUTHORING.md) | the sheet, field by field |
+| [`docs/PSEUDOCODE.md`](docs/PSEUDOCODE.md) | the method language — every statement, function, constant and unit, and the worked example in full — generated from the checker |
 | [`docs/EXPLAINING.md`](docs/EXPLAINING.md) | how the tool explains itself — the rules every page, form, result, figure and document follows, and what checks each |
 | [`docs/DERISKING.md`](docs/DERISKING.md) | why the design is what it is — beliefs, versions, the risk register, releases; the generated narrative is [`docs/DERISK_NARRATIVE.md`](docs/DERISK_NARRATIVE.md) |
 | [`docs/WORK_MODEL.md`](docs/WORK_MODEL.md) | who does what — the team and the developers, and what crosses between them |

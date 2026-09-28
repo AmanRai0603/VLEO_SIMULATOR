@@ -473,6 +473,55 @@ ui = "check a filled form…"
 
 
 [[layer.section]]
+id = "browser-method"
+title = "Give the method, your code and your test cases"
+who = "user"
+kind = "how-to"
+answer = "In a node's form, write the relation once more as a method — a few lines in a small fixed language — paste the code you wrote and tested, and give at least three cases your code answered and one it refuses. The form runs your method on your cases as you type and shows any that disagree, before you send it."
+body = """
+A node's relation arrives three ways, and each checks the other two. **Your \
+code** — MATLAB, Python, C, anything — produced your test cases. **The method** \
+says the same relation in the method language (docs/PSEUDOCODE.md), which the \
+tool can check for units and run. **The code the tool ships** is generated from \
+the method. All three must give your answers, so a mistake in any one of them \
+shows up as a case that disagrees.
+
+**The method.** It reads the node's inputs by their names, gives every number \
+its unit in brackets — `250 [km]`, `30 [deg]` — and ends every path with \
+`return` (the answer) or `refuse` (why it will not answer). The form checks \
+the units as you type: adding a length to a time, taking the logarithm of a \
+length, or returning the wrong quantity is shown on the line it happens.
+
+**Your cases.** Each is a set of inputs, in SI, and the answer your code gave \
+for them, with how close counts. At least three answers and one case the node \
+must refuse — the refusal shows the method says no where your code says no. \
+The method's value appears beside yours only after you have typed yours, so \
+the tool is never where your answer came from.
+
+**Your code and its test** are pasted whole, with what ran them. They are \
+kept with the node so the cases can be produced again and a reviewer can read \
+where the numbers came from.
+
+**Flight software** that implements the node can be kept in the same form, \
+each file with its test and its last result. It is stored beside the relation, \
+not built by the tool.
+
+Every question has **Show the example** beside it: the same question answered \
+for one worked node, marked illustrative."""
+
+[[layer.section.step]]
+say = "Open the node's form and find *The method*. Read *The method language on one page* if it is your first."
+
+[[layer.section.step]]
+say = "Write the method, then fill *Your code*: the code, its language, the function that is this node, and the test code that ran it."
+
+[[layer.section.step]]
+say = "Add your test cases — three or more with the answer your code gave, and one it refuses — and watch *Check: the method against your cases* until it says **Sound**."
+
+[[layer.section.step]]
+say = "Say in *Why it is changing* what adding the method tested, save a filled copy and send it."
+
+[[layer.section]]
 id = "browser-preview"
 title = "Try the preview of your change, and approve it"
 who = "user"
@@ -661,6 +710,77 @@ say = "A corrected form for the same node goes onto the same branch."
 run = "cargo run -p xtask -- take forms/<file>.node-form.html --for \"<author>\" --again"
 check = "writes"
 why = "applies the corrected form onto the branch that already holds the first one"
+
+[[layer.section]]
+id = "maint-method"
+title = "Check a node's method against its author's cases"
+who = "maintainer"
+kind = "how-to"
+answer = "Run method with the node's id. It checks the method and runs every one of the author's cases through it — the same check the author saw in their form, and the one the gate refuses on."
+body = """
+`take` prints the same check before it applies a form, under *the method, \
+against the author's cases*, and the gate refuses a node whose method does not \
+check, whose cases disagree, or that has fewer than three answers and one \
+refusal. A case that disagrees is the author's to settle — their code, their \
+method or their expected value is wrong — so it goes back to them with the \
+line printed, never to a tolerance."""
+
+[[layer.section.step]]
+say = "Check one node's method and cases."
+run = "cargo run -p xtask -- method orbit_velocity"
+check = "exits"
+why = "prints each case with what the author's code gave and what the method gives, or says the node has no method yet"
+
+[[layer.section]]
+id = "maint-build"
+title = "Build a node from its method"
+who = "maintainer"
+kind = "how-to"
+answer = "take does this for you when a form carries a method; build-node does it by hand. Every stage must pass before the next runs, and the node is connected to the rest of the design only at the end."
+body = """
+**M** the method runs on the author's cases. **G1** the method is \
+translated, by fixed rules, into a kernel function in \
+`vleo-core::physics::methods` — the node's code calls it and has no holes. \
+**T1** the node, guards and all, must reproduce every case; **T2** the \
+translation must give the method's own answer to the last bit, around every \
+case. **T3** the author's own code is run again where it can be. **T4** the \
+answer is moved on purpose and the tests must notice. **I1** only then is the \
+node checked in the tree, and the rows that read it are named.
+
+A case that fails is the author's to settle. A translation test that fails is \
+a translator defect, for a developer. Neither is ever a tolerance to change."""
+
+[[layer.section.step]]
+say = "Rerun every author's code on the cases recorded from it."
+run = "cargo run -p xtask -- rerun --all"
+check = "exits"
+why = "says, per node with cases, whether the author's code still gives them, or why it could not be run here"
+
+[[layer.section]]
+id = "maint-migrate"
+title = "Move the design over to methods, a batch at a time"
+who = "maintainer"
+kind = "how-to"
+answer = "Run migration to see which rows still need a method and whose they are; with --forms it writes each owner's node forms into one folder. Send them; each comes back through take like any other change."
+body = """
+Nothing breaks meanwhile. A row without a method keeps its hand-written \
+code and its gap list says *no method yet*; a row with one is built from it \
+and tested against its owner's cases. A method is mathematics, so it only \
+ever comes from the node's owner — never from this command, and never from \
+an assistant. A row that answers a set of values keeps its holes: the method \
+language answers one quantity."""
+
+[[layer.section.step]]
+say = "See what is still to come, by owner."
+run = "cargo run -p xtask -- migration"
+check = "exits"
+why = "counts the computed rows with and without a method, and lists each owner's"
+
+[[layer.section.step]]
+say = "Write one owner's forms into a folder, ready to send."
+run = "cargo run -p xtask -- migration --owner <owner> --forms forms/out"
+check = "writes"
+why = "writes that owner's node forms into forms/out/<owner>/"
 
 [[layer.section]]
 id = "maint-preview"
@@ -1297,6 +1417,60 @@ why = "writes dist/vleo-<version>/, which git ignores"
 
 
 [[layer.section]]
+id = "term-method"
+title = "The method language and the form's checker"
+who = "developer"
+kind = "how-to"
+answer = "The method language is one module, vleo_sheet::method. Every node form carries it compiled to WebAssembly as web/method.wasm.gz; after changing the language, rebuild that file with method-wasm and commit it with its stamp."
+body = """
+The gate, `take`, intake and the node form all call \
+`vleo_sheet::method` — the form through `web/method.wasm.gz`, which \
+`xtask method-wasm` builds from `crates/vleo-method-wasm`. A test refuses a \
+checkout whose checker sources have moved on from the committed file, so a form \
+can never check by older rules than the gate. `docs/PSEUDOCODE.md` is written \
+by `xtask docs` from the same tables the checker reads. Changing what a method \
+means is a reviewed change to every node that has one."""
+
+[[layer.section.step]]
+say = "Rebuild the checker every form carries, after changing the language."
+run = "cargo run -p xtask -- method-wasm"
+check = "writes"
+why = "builds crates/vleo-method-wasm for wasm32 and writes web/method.wasm.gz and its stamp"
+
+[[layer.section.step]]
+say = "Or only ask whether it is current."
+run = "cargo run -p xtask -- method-wasm --check"
+check = "exits"
+why = "compares the fingerprint of the checker's sources with the one recorded beside web/method.wasm.gz"
+
+[[layer.section]]
+id = "term-beyond"
+title = "When the method language cannot say it"
+who = "developer"
+kind = "how-to"
+answer = "A node the method language cannot express — a set of answers, a solver that stops when it converges — keeps hand-written holes. A developer writes them, with an assistant if they like, and the author's cases still decide."
+body = """
+The language is closed on purpose: every construct has one translation, so \
+the translator needs no judgement. What it cannot express goes to the \
+existing route: `fill` splices each hole body, `--by` and `--model` record who \
+wrote it, and a **significant** node's holes are written twice by different \
+model families and compared with `differential`. An assistant here is a \
+worker, never a judge: acceptance is only ever the author's cases, the \
+fixtures, the mutation check and the gate — and no assistant supplies the \
+relation, the method or a case.
+
+When the language grows a construct, it grows in \
+`crates/vleo-sheet/src/method.rs`: the grammar, the checker, the interpreter \
+and the translation together, one reviewed change, followed by \
+`method-wasm` so every form checks by the new rules."""
+
+[[layer.section.step]]
+say = "Build a node from its method by hand, stage by stage."
+run = "cargo run -p xtask -- build-node <node>"
+check = "writes"
+why = "translates, tests, reruns, mutates and only then checks the interface; stops at the first stage that fails"
+
+[[layer.section]]
 id = "term-evidence"
 title = "Is the evidence real?"
 who = "developer"
@@ -1855,8 +2029,8 @@ effect = "reads"
 [[command]]
 tool = "xtask"
 name = "form"
-usage = "form <node>|--new [--out <file.html>]"
-what = "A node's form: one self-contained HTML file that explains itself, asks every question the sheet answers, and saves a filled copy. `--new` is the form for a node the design does not have yet. Filled anywhere, by anyone."
+usage = "form <node>|--new [--example] [--out <file.html>]"
+what = "A node's form: one self-contained HTML file that explains itself, asks every question the sheet answers, and saves a filled copy. `--new` is the form for a node the design does not have yet. Filled anywhere, by anyone. --example fills orbit_velocity's form with the worked example, only for the pipeline's end-to-end test of the method path; nothing it produces is committed."
 who = "developer"
 effect = "reads"
 
@@ -1883,6 +2057,46 @@ usage = "guides"
 what = "Renders the three role guides — docs/roles/user.html, maintainer.html and developer.html — from this manual. Never edited by hand: the pipeline regenerates them and fails when a committed one differs."
 who = "developer"
 effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "method"
+usage = "method <node>"
+what = "Checks a node's method in the method language and runs each of its author's test cases through it: what their code gave, what the method gives, and whether the set is complete — at least three answers and one refusal. The same check the node form runs as the author types, and the gate refuses on."
+who = "maintainer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "method-wasm"
+usage = "method-wasm [--check]"
+what = "Builds the method checker every node form carries — vleo_sheet::method compiled to WebAssembly — into web/method.wasm.gz with the fingerprint of its sources; --check only says whether the committed file is current."
+who = "developer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "rerun"
+usage = "rerun <node>|--all [--require]"
+what = "Runs each author's own code again on the cases recorded from it and says whether it still gives them: Python directly, MATLAB and Octave through Octave where it is installed. Code in any other language is kept and read, not rerun, and it says so; `--require` fails instead, for a pipeline that installed the runners."
+who = "maintainer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "build-node"
+usage = "build-node <node>"
+what = "Builds a node from its method, stage by stage, stopping at the first that fails: the method on its author's cases; the translation into the kernel; the node's tests — the author's cases and the translation against the method; the author's code rerun; a mutation the tests must catch; and only then the node in the tree."
+who = "maintainer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "migration"
+usage = "migration [--owner <o>] [--subsystem <s>] [--forms <dir>]"
+what = "Says which computed rows still need a method, by owner, and with --forms writes each one's node form into <dir>/<owner>/ ready to send. It writes no method: each comes from the node's owner, on the node's form, through take like any other change."
+who = "maintainer"
+effect = "reads"
 
 [[command]]
 tool = "xtask"
@@ -2266,6 +2480,11 @@ what = "Where the saved case is kept — the CSV the Inputs page and `vleo run` 
 default = "$HOME/.vleo/case/inputs.csv"
 
 [[env]]
+name = "VLEO_GOLDEN"
+what = "Set to `write` when running the translator's golden test, to write the golden files again after an intended change to how methods are translated. Unset, the test compares and fails on any difference."
+default = "unset — compare"
+
+[[env]]
 name = "VLEO_RESULTS"
 what = "Where saved results are kept — the Results page and `vleo run --save` without a path of its own. Outside the repository."
 default = "$HOME/.vleo/results"
@@ -2461,6 +2680,10 @@ path = "docs/roles/developer.html"
 what = "The developer's guide: the code and checks the routine cannot write, and the tool itself. Generated from this manual."
 
 [[doc]]
+path = "docs/PSEUDOCODE.md"
+what = "The method language: every statement, function, constant and unit a method may use, and the worked example in full. Generated from the checker's own tables."
+
+[[doc]]
 path = "docs/USING_IT.md"
 what = "The long walk through doing the work, with real output."
 
@@ -2548,6 +2771,7 @@ does = [
   "Read the design: the four layers, and each node's page.",
   "Set your inputs, run, save results and send them on.",
   "Fill a node's form when it is wrong or missing, and send it to the maintainer.",
+  "In the form, give the method, your code and your test cases — three answers and one refusal — until its check says Sound.",
   "Try the preview of your change and press Approve — or say what is still wrong.",
   "Install each new version over the old one; your inputs and results carry over.",
 ]
@@ -2573,6 +2797,7 @@ does = [
   "Send the author their preview; record the approval file they return with approve.",
   "Merge each approved pull request once every check is green.",
   "See what is waiting with queue; release with ship; publish and share the four files.",
+  "Send owners the forms for rows still without a method, with migration; take them back like any other.",
 ]
 never = [
   "Edit a node's files by hand — the form is the only way in.",
@@ -2592,7 +2817,8 @@ title = "Developer"
 answer = "You write what the routine cannot: a new relation in the kernel, a filled HOLE, a diagnosis of a failing check — and you improve the tool itself: its checks, generators, pages and pictures. Everything goes through the gate and a pull request reviewed by the number of people CONTRIBUTING sets."
 simply = "If the maintainer runs the print shop, you build and repair the presses. You do not decide what is printed — that comes from the forms — but you make sure the presses print it exactly, and you check them against pages you did not print yourself: the fixtures."
 does = [
-  "Implement a node's code once its form is applied: publish, then fill each HOLE from kernel relations.",
+  "Build a node from its method with build-node; for what the method language cannot say, fill its HOLEs from kernel relations.",
+  "Keep the method language, its checker and its translator one reviewed change, and rebuild the form's checker with method-wasm.",
   "Add a relation to vleo-core::physics when a form needs one — a reviewed change every node reads.",
   "Diagnose a check that fails for a reason outside the form.",
   "Improve the tool: its pages and pictures, the loop's commands, the checks, the release pipeline.",

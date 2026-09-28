@@ -15,6 +15,8 @@ pub mod cost;
 pub mod env;
 pub mod gnc;
 pub mod mass;
+pub mod method;
+pub mod methods;
 pub mod mission;
 pub mod orbit;
 pub mod payload;

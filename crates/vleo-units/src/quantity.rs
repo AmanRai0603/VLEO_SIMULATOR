@@ -472,6 +472,50 @@ pub const QUANTITIES: &[&str] = &[
     "Volume",
 ];
 
+/// The SI unit a quantity type stores, by the type's name.
+///
+/// Read from each type's own `UNIT`, so it cannot disagree with the type; the
+/// registry test checks that every name in [`QUANTITIES`] has an arm. The
+/// method language reads it to know the dimension of a declared input.
+pub fn quantity_unit(name: &str) -> Option<Unit> {
+    Some(match name {
+        "Acceleration" => Acceleration::UNIT,
+        "Angle" => Angle::UNIT,
+        "AngularMomentum" => AngularMomentum::UNIT,
+        "AngularRate" => AngularRate::UNIT,
+        "Area" => Area::UNIT,
+        "Charge" => Charge::UNIT,
+        "Current" => Current::UNIT,
+        "DataRate" => DataRate::UNIT,
+        "DataVolume" => DataVolume::UNIT,
+        "DipoleMoment" => DipoleMoment::UNIT,
+        "Energy" => Energy::UNIT,
+        "Force" => Force::UNIT,
+        "Frequency" => Frequency::UNIT,
+        "Impulse" => Impulse::UNIT,
+        "Irradiance" => Irradiance::UNIT,
+        "Length" => Length::UNIT,
+        "MagneticFluxDensity" => MagneticFluxDensity::UNIT,
+        "Mass" => Mass::UNIT,
+        "MassDensity" => MassDensity::UNIT,
+        "MassFlow" => MassFlow::UNIT,
+        "MassFlux" => MassFlux::UNIT,
+        "MolarMass" => MolarMass::UNIT,
+        "Money" => Money::UNIT,
+        "NumberDensity" => NumberDensity::UNIT,
+        "Power" => Power::UNIT,
+        "Pressure" => Pressure::UNIT,
+        "Ratio" => Ratio::UNIT,
+        "Temperature" => Temperature::UNIT,
+        "Time" => Time::UNIT,
+        "Torque" => Torque::UNIT,
+        "Velocity" => Velocity::UNIT,
+        "Voltage" => Voltage::UNIT,
+        "Volume" => Volume::UNIT,
+        _ => return None,
+    })
+}
+
 /// Whether this is a quantity type a sheet may declare.
 pub fn is_quantity(name: &str) -> bool {
     QUANTITIES.contains(&name)

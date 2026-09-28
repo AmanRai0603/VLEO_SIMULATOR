@@ -1,0 +1,26 @@
+[package]
+name = "vleo-method-wasm"
+description = "FACE — the method checker inside a node form. The same function intake and the gate call (vleo_sheet::method::report_toml), compiled to WebAssembly so a form opened from a file can check an author's method against their own cases before it is sent. No bindings crate: two exported functions and a buffer."
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.94"
+license = "UNLICENSED"
+authors = ["Orbitt Space"]
+repository = "https://github.com/AmanRai0603/VLEO_SIMULATOR"
+
+# Excluded from the workspace, like vleo-wasm: it needs the wasm32 target.
+# `cargo run -p xtask -- method-wasm` builds it and writes web/method.wasm.gz,
+# which every node form carries inline.
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+vleo-sheet = { path = "../vleo-sheet" }
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+panic = "abort"
+codegen-units = 1
+strip = "symbols"
