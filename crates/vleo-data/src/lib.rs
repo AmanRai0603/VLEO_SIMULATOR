@@ -268,14 +268,9 @@ pub fn case_path() -> PathBuf {
     if let Ok(p) = std::env::var("VLEO_CASE") {
         return PathBuf::from(p);
     }
-    std::env::var("HOME")
-        .map(|h| {
-            PathBuf::from(h)
-                .join(".vleo")
-                .join("case")
-                .join("inputs.csv")
-        })
-        .unwrap_or_else(|_| PathBuf::from(".vleo/case/inputs.csv"))
+    home()
+        .map(|h| h.join(".vleo").join("case").join("inputs.csv"))
+        .unwrap_or_else(|| PathBuf::from(".vleo/case/inputs.csv"))
 }
 
 /// Where the application keeps saved results: what runs returned, with the
@@ -285,9 +280,39 @@ pub fn results_path() -> PathBuf {
     if let Ok(p) = std::env::var("VLEO_RESULTS") {
         return PathBuf::from(p);
     }
-    std::env::var("HOME")
-        .map(|h| PathBuf::from(h).join(".vleo").join("results"))
-        .unwrap_or_else(|_| PathBuf::from(".vleo/results"))
+    home()
+        .map(|h| h.join(".vleo").join("results"))
+        .unwrap_or_else(|| PathBuf::from(".vleo/results"))
+}
+
+/// The person's home folder: `HOME`, or `USERPROFILE` where there is no `HOME`.
+///
+/// Windows sets `USERPROFILE` and usually not `HOME`. Reading `HOME` alone put
+/// a Windows teammate's case and results beside the program, in the folder the
+/// next kit replaces — so the upgrade that was meant to carry them over deleted
+/// them. An empty value counts as unset.
+pub fn home() -> Option<PathBuf> {
+    home_from(|k| std::env::var_os(k))
+}
+
+/// [`home`], reading the environment through `var` so it can be tested without
+/// changing the process's own.
+pub fn home_from(var: impl Fn(&str) -> Option<std::ffi::OsString>) -> Option<PathBuf> {
+    ["HOME", "USERPROFILE"]
+        .into_iter()
+        .filter_map(var)
+        .find(|v| !v.is_empty())
+        .map(PathBuf::from)
+}
+
+/// Where the reference-data store lives: `~/.vleo/data`, or wherever
+/// `VLEO_DATA` points. Outside the install directory, so it survives an
+/// upgrade rather than being deleted with the application.
+pub fn data_path() -> Option<PathBuf> {
+    std::env::var_os("VLEO_DATA")
+        .filter(|v| !v.is_empty())
+        .map(PathBuf::from)
+        .or_else(|| home().map(|h| h.join(".vleo").join("data")))
 }
 
 /// `YYYY-MM-DD`, checked for shape rather than trusted.

@@ -2025,6 +2025,11 @@ what = "The pipeline, the dependency bot and the pull-request template."
 who = "developer"
 
 [[folder]]
+name = ".gitattributes"
+what = "How git carries each file: every text file LF on every machine, and the reference data in bundles/ never rewritten, so its hash verifies on Windows too."
+who = "developer"
+
+[[folder]]
 name = ".gitignore"
 what = "What is never committed: build output, the assembled page fragments and the local data store."
 who = "developer"

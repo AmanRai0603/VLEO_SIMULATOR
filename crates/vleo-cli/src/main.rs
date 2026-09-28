@@ -24,7 +24,9 @@ fn resolve_data() -> (Vec<String>, Vec<String>) {
         // before any sync at all.
         let shipped = repo_bundles();
         if shipped.is_dir() {
-            let _ = store.sync(&vleo_data::Source::Shipped(shipped));
+            if let Err(why) = store.sync(&vleo_data::Source::Shipped(shipped)) {
+                eprintln!("reference data refused: {why}");
+            }
         }
     }
     (store.verified_names(), store.versions())
@@ -33,13 +35,7 @@ fn resolve_data() -> (Vec<String>, Vec<String>) {
 fn data_root() -> PathBuf {
     // Outside the install directory by default, so it survives an upgrade and
     // an uninstall rather than being deleted with the application.
-    std::env::var("VLEO_DATA")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| {
-            std::env::var("HOME")
-                .map(|h| PathBuf::from(h).join(".vleo").join("data"))
-                .unwrap_or_else(|_| PathBuf::from(".vleo/data"))
-        })
+    vleo_data::data_path().unwrap_or_else(|| PathBuf::from(".vleo/data"))
 }
 
 fn repo_bundles() -> PathBuf {

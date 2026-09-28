@@ -17,9 +17,15 @@ nothing in it is edited by you — so replacing it with the next version never l
 
 | on | do this |
 |---|---|
-| Windows | double-click `start.bat` |
+| Windows | right-click the zip → **Properties** → tick **Unblock** → **OK**, then **Extract All**; open the folder and double-click `start.bat` |
 | macOS | open a terminal in this folder, run `xattr -dr com.apple.quarantine .` once, then `./start.sh` |
 | Linux | `./start.sh` |
+
+**Windows says "Windows protected your PC"?** The programs are not signed yet, so Windows does not
+know them. Click **More info → Run anyway**; it asks once. Ticking **Unblock** on the zip before
+extracting it stops the question for every file inside. If your company's security software still
+blocks it, ask IT to allow the folder — the tool only listens on your own machine and never uses the
+network.
 
 The tool opens in your browser, normally at `http://127.0.0.1:7777`; if that port is taken it
 uses the next free one and opens that instead, and the window it runs in prints the address. It
@@ -61,7 +67,9 @@ file back with the reason, line by line.
 ## 4 · When a new version arrives
 
 Replace this folder with the new one and start it again. Your inputs, saved case and results are
-kept under `~/.vleo/` (your home folder), not here, so they carry over. If an input no longer
+kept under `~/.vleo/` (your home folder — on Windows `C:\Users\<you>\.vleo`), not here, so they
+carry over. (Kits before 0.1.2 kept them inside this folder on Windows: copy its hidden `.vleo`
+folder into your home folder before you delete the old one.) If an input no longer
 exists, the tool says so by name; if a result you kept rested on a belief that has since changed,
 the Results page says which one.
 

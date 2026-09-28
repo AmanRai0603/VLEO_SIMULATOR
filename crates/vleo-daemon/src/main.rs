@@ -39,7 +39,7 @@ fn main() {
         .and_then(|p| p.parse().ok())
         .unwrap_or(7777);
     let root = repo_root();
-    let (data, data_versions, bundles) = resolve_data(&root);
+    let (data, data_versions, bundles, data_refused) = resolve_data(&root);
 
     // Try a range and record the port that actually bound. A daemon that fails
     // to start with a message nobody can act on is a support case that cannot
@@ -72,6 +72,11 @@ fn main() {
     );
     if data.is_empty() {
         println!("  \x1b[33mno reference data in the store — nodes that declare a bundle will refuse\x1b[0m");
+        // Say why. A warning with no reason is the one a person cannot act on,
+        // and the reason is usually a file that changed after it was shipped.
+        if let Some(why) = &data_refused {
+            println!("  \x1b[33mwhy: {why}\x1b[0m");
+        }
     } else {
         println!("  data   {}", data_versions.join(" · "));
     }
@@ -191,19 +196,14 @@ fn repo_root() -> PathBuf {
 
 type BundleFiles = BTreeMap<String, (PathBuf, Vec<String>)>;
 
-fn resolve_data(root: &Path) -> (Vec<String>, Vec<String>, BundleFiles) {
-    let store_root = std::env::var("VLEO_DATA")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| {
-            std::env::var("HOME")
-                .map(|h| PathBuf::from(h).join(".vleo").join("data"))
-                .unwrap_or_else(|_| root.join(".vleo/data"))
-        });
+fn resolve_data(root: &Path) -> (Vec<String>, Vec<String>, BundleFiles, Option<String>) {
+    let store_root = vleo_data::data_path().unwrap_or_else(|| root.join(".vleo/data"));
     let mut store = vleo_data::Store::open(&store_root);
+    let mut refused = None;
     if store.load().is_err() || store.bundles.is_empty() {
         let shipped = root.join("bundles");
         if shipped.is_dir() {
-            let _ = store.sync(&vleo_data::Source::Shipped(shipped));
+            refused = store.sync(&vleo_data::Source::Shipped(shipped)).err();
         }
     }
     let files = store
@@ -217,7 +217,7 @@ fn resolve_data(root: &Path) -> (Vec<String>, Vec<String>, BundleFiles) {
             )
         })
         .collect();
-    (store.verified_names(), store.versions(), files)
+    (store.verified_names(), store.versions(), files, refused)
 }
 
 /// One file of one verified bundle, as it is on disk.

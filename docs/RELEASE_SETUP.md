@@ -116,10 +116,10 @@ release.
 
 **c. Run a release and watch it stop for you.** The honest test, and there is
 one trap in it: `prove` asserts that the version being released equals the
-`version` in `Cargo.toml`, currently `0.1.1`. A made-up throwaway tag fails
+`version` in `Cargo.toml`, currently `0.1.2`. A made-up throwaway tag fails
 there and never reaches the approval, which proves nothing about the approval.
 
-So use the real version. **Actions → release → Run workflow**, enter `0.1.1`
+So use the real version. **Actions → release → Run workflow**, enter `0.1.2`
 without the leading `v`, let `prove` and `build` run, and confirm the run pauses
 at **one human says yes** with a **Review deployments** button. Then **Reject**.
 A rejected deployment fails the workflow and publishes nothing, so this costs
