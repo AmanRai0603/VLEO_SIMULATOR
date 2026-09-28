@@ -1,0 +1,13 @@
+# Line endings: one rule on every machine.
+#
+# Every text file is stored and checked out with LF, Windows included. Without
+# this, git on a Windows machine rewrites text to CRLF on checkout — and the
+# Windows kit shipped reference data whose bytes no longer matched the hash in
+# its manifest, so the tool refused every bundle and the solar rows blocked.
+* text=auto eol=lf
+
+# Reference data is verified byte for byte against its manifest. Git never
+# touches a byte of it, whatever the machine or the setting.
+bundles/** -text
+
+*.png binary
