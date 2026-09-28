@@ -193,14 +193,36 @@ jobs:
         run: cargo run -p xtask -- form orbit_velocity --example --out "$RUNNER_TEMP/example.node-form.html"
       - name: the form's own check, in a browser — sound, then not sound once a case is wrong
         run: python3 tools/form_check.py "$RUNNER_TEMP/example.node-form.html"
+      # Each step below also says what it must have printed, so the job cannot
+      # pass by doing less than it claims: an exit code alone would not notice
+      # a stage that quietly found nothing to do.
       - name: intake applies it
         run: |
+          set -o pipefail
           git config user.name "vleo pipeline"
-          cargo run -p xtask -- intake "$RUNNER_TEMP/example.node-form.html" --apply
+          cargo run -p xtask -- intake "$RUNNER_TEMP/example.node-form.html" --apply | tee "$RUNNER_TEMP/intake.log"
+          grep -q "sound — the method checks and agrees with every case" "$RUNNER_TEMP/intake.log"
+          grep -q "^applied:" "$RUNNER_TEMP/intake.log"
       - name: the author's MATLAB code, rerun through Octave
-        run: cargo run -p xtask -- rerun orbit_velocity --require
+        run: |
+          set -o pipefail
+          cargo run -p xtask -- rerun orbit_velocity --require | tee "$RUNNER_TEMP/rerun.log"
+          grep -q "ok   orbit_velocity: the author's code gives all 4 recorded case(s)" "$RUNNER_TEMP/rerun.log"
       - name: build the node from its method, every stage
-        run: cargo run -p xtask -- build-node orbit_velocity
+        run: |
+          set -o pipefail
+          cargo run -p xtask -- build-node orbit_velocity 2>&1 | tee "$RUNNER_TEMP/build.log"
+          test -f crates/vleo-core/src/physics/methods/orbit_velocity.rs
+          grep -q "orbit_velocity::evaluate(r.get())" crates/vleo-mod-envorbit/nodes/orbit_velocity/model.rs
+          grep -q "killed" "$RUNNER_TEMP/build.log"
+          grep -q "build-node: orbit_velocity is built from its method" "$RUNNER_TEMP/build.log"
+      - name: the node's own tests are the author's cases and the translation
+        run: |
+          set -o pipefail
+          cargo test -p vleo-mod-envorbit -- orbit_velocity --list | tee "$RUNNER_TEMP/list.log"
+          for t in case_1 case_2 case_3 case_4 the_translation_gives_the_methods_answers; do
+            grep -q "orbit_velocity::evidence::$t: test" "$RUNNER_TEMP/list.log"
+          done
       - name: the whole design, with that node built from its method
         run: cargo test --workspace
 
