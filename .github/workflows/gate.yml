@@ -91,6 +91,7 @@ jobs:
           cargo run -p xtask -- docs
           cargo run -p xtask -- variables
           cargo run -p xtask -- derisk
+          cargo run -p xtask -- guides
           if ! git diff --quiet; then
             echo "::error::the committed artefacts differ from what the sheets generate."
             echo "Run 'cargo run -p xtask -- docs' and commit the result."
@@ -106,9 +107,11 @@ jobs:
           cargo run -p xtask -- docs
           cargo run -p xtask -- variables
           cargo run -p xtask -- derisk
+          cargo run -p xtask -- guides
           cargo run -p xtask -- docs
           cargo run -p xtask -- variables
           cargo run -p xtask -- derisk
+          cargo run -p xtask -- guides
           git diff --quiet || { echo "::error::a generator is not deterministic"; exit 1; }
 
       # CODEOWNERS IS GENERATED AND NOTHING REGENERATED IT. Every other generated
@@ -453,6 +456,23 @@ jobs:
       # is gone.
       - name: what the band confidence costs
         run: python3 tools/band_confidence_cost.py
+
+  # A FORM BRANCH MERGES ONLY WITH ITS AUTHOR'S APPROVAL OF EXACTLY WHAT IT
+  # HOLDS. The author tried a preview build of this branch and pressed Approve;
+  # the file it saved is recorded in approvals/ by `xtask approve`, and names
+  # the commit it was given for. Anything changed since — a fix, a merge from
+  # main — means a new preview and a new approval, because the author approved
+  # a build, not a branch name. Only form branches are asked this.
+  approval:
+    name: the author approved this exact change
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'form/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - run: cargo run -p xtask -- approve --verify "${{ github.head_ref }}"
 
   # The two faces the workspace excludes, because they need targets of their
   # own. `cargo build --workspace` does not reach them, so until this job

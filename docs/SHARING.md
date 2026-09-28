@@ -60,23 +60,24 @@ or an antivirus to question — the reason it exists. It is checked by installin
 
 ## 2 · Take a form back
 
-A teammate sends a filled `*.node-form.html`. It goes through the developer's loop in
-[`AGENTS.md`](../AGENTS.md), unchanged:
+A teammate sends a filled `*.node-form.html`. Save it into `forms/` (git ignores
+it) and take it in, naming its author:
 
-    cargo run -p xtask -- intake <form.html>            # check — writes nothing
-    cargo run -p xtask -- intake <form.html> --apply    # apply, with its de-risking record
-    cargo run -p xtask -- publish <node>                # a new node: generate its code
-    cargo run -p xtask -- fill <node> --hole <n> --body - --by "<who>" --model <model>
-    cargo run -p xtask -- gate && cargo test
+    cargo run -p xtask -- take forms/<file>.node-form.html --for "<author>"
 
-If it does not pass the check, send the file back with the lines intake printed. Commit naming
-whoever filled the form, review, merge.
+That puts it on its own branch `form/<author>/<node>` — checked, applied,
+regenerated, gated, tested, committed naming the author, pushed — or writes a
+note to send back and changes nothing. The push builds the author a **preview**
+by itself; send it to them, and when they press Approve, record the file they
+send back with `cargo run -p xtask -- approve <file>`. Merge once every check is
+green. A new relation still needs a developer (`publish`, `fill`). Every step,
+with what you will see and what to do when it refuses, is in the maintainer's
+guide, `docs/roles/maintainer.html`.
 
 ## 3 · Release and share the next kit
 
-    cargo run -p xtask -- derisk
-    cargo run -p xtask -- release <version>    # stamps every `next` version
-    # commit, merge, tag v<version>; the pipeline builds the three kits and the package
+    cargo run -p xtask -- ship <version>    # the release branch: narrative, stamp, gate, tests, push
+    # merge its pull request, tag v<version>; the pipeline builds the three kits and the package
 
 The teammate replaces their folder with the new one. Their inputs, saved case and results are
 under `~/.vleo/`, outside the folder, so they carry over; an input that no longer exists is set

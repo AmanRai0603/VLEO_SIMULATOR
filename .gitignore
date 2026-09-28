@@ -22,3 +22,7 @@ __pycache__
 # A kit built by `cargo run -p xtask -- kit`: the tool as the team gets it.
 # Built, zipped and shared — never committed.
 /dist/
+
+# Node forms received from authors, and the notes sent back — kept out of git;
+# the filled form is attached to the pull request instead (xtask take).
+/forms/

@@ -12,18 +12,25 @@ answer. The developers maintain the repository: check each form, apply it,
 implement and evidence it, and release. The loop is in [`AGENTS.md`](AGENTS.md);
 the team's side of it is in the tool's own Manual tab.
 
-A branch is **a set of node folders**, usually one form's worth. Because every
-artefact is derived from those folders, a branch fully determines its own
-document and its own engine — so checking one out and running it is one command
-rather than a procedure.
+A branch is **a set of node folders**, usually one form's worth, named for whoever
+filled the form: `form/<author>/<node>`. `xtask take` creates it from a fresh
+main — it is never named by hand. Because every artefact is derived from those
+folders, a branch fully determines its own document and its own engine — so
+checking one out and running it is one command rather than a procedure.
 
-    git switch node/prop-intake-throat
+    git switch form/ana-sharma/sw-ap-design
     cargo run -p xtask -- docs && cargo run --release -p vleo-daemon
 
-One form per pull request, ideally. A pull request touching thirty node folders
-is a pull request nobody can review. Name whoever filled the form in the
-commit, and attach the filled form, or the output of `xtask intake` on it, to
-the pull request — it is the record of what was asked for.
+One form per pull request. A pull request touching thirty node folders is a
+pull request nobody can review. `take` names whoever filled the form in the
+commit (`Form-by:`); attach the filled form, or the output of `xtask intake` on
+it, to the pull request — it is the record of what was asked for.
+
+**A form branch merges only with its author's approval of the exact build they
+tried** — the preview's Approve file, recorded by `xtask approve` and checked by
+the pipeline's *the author approved this exact change*. Anything pushed after
+an approval needs a new preview and a new approval. The whole loop, step by
+step, is `docs/roles/maintainer.html`.
 
 ## Two reviews, and the author is not eligible for either
 

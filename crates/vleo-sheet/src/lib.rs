@@ -22,6 +22,7 @@
 pub mod derisk;
 pub mod emit;
 pub mod form;
+pub mod guide;
 pub mod manual;
 
 /// Whether this names a quantity type a sheet may declare.

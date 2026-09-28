@@ -1,0 +1,230 @@
+# A PREVIEW: the tool built from one author's form branch, for them to try
+# before their change is approved.
+#
+# Every push to a `form/<author>/<node>` branch builds one — `xtask take`
+# pushes, so a form taken in has a preview about ten minutes later without
+# anybody starting it. The package is the same one-file Python package a
+# release ships, with two differences that stop it ever being mistaken for one:
+# its version carries `+preview.<author>.<build>`, and it carries PREVIEW.json,
+# so every view shows a PREVIEW banner and the Approve button that saves the
+# author's approval of this exact build (web/js/preview.js, `xtask approve`).
+#
+# Windows and Linux by default. The macOS engines cost ten times the Actions
+# minutes, so they are built only when asked: Actions → preview → Run workflow
+# → "also build the macOS engines".
+#
+# Nothing here publishes anything. docs/roles/maintainer.html says what to do
+# with the result.
+name: preview
+
+on:
+  push:
+    branches: ["form/**"]
+  workflow_dispatch:
+    inputs:
+      mac:
+        description: "also build the macOS engines"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# A newer push to the same branch makes the older preview pointless.
+concurrency:
+  group: preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prove:
+    name: the change is green
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.who.outputs.version }}
+      author: ${{ steps.who.outputs.author }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-preview-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ${{ runner.os }}-preview-
+      # Who it is for and what it changes, read off the branch — never typed.
+      - id: who
+        run: |
+          branch="${GITHUB_REF_NAME}"
+          case "$branch" in
+            form/*/*) author="${branch#form/}"; author="${author%%/*}" ;;
+            *) author="preview" ;;
+          esac
+          base="$(grep -m1 '^version = ' Cargo.toml | cut -d'"' -f2)"
+          local_author="$(printf '%s' "$author" | tr -c 'a-zA-Z0-9\n' '.')"
+          version="${base}+preview.${local_author}.${GITHUB_RUN_NUMBER}"
+          git fetch -q origin main
+          nodes="$(git diff --name-only origin/main...HEAD \
+            | sed -n 's#^crates/[^/]*/nodes/\([^/]*\)/.*#\1#p' | sort -u \
+            | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')"
+          # The author's name as they wrote it on the form: `xtask take` puts it
+          # in the commit as `Form-by:`.
+          author_name="$(git log origin/main..HEAD --format='%(trailers:key=Form-by,valueonly)' \
+            | sed '/^$/d' | tail -1)"
+          python3 - "$branch" "$author" "$version" "$nodes" "$author_name" <<'EOF'
+          import json, os, sys, datetime
+          branch, author, version, nodes, author_name = sys.argv[1:6]
+          json.dump({
+              "kind": "vleo-preview",
+              "branch": branch,
+              "commit": os.environ["GITHUB_SHA"],
+              "run": os.environ["GITHUB_RUN_NUMBER"],
+              "author": author,
+              "author_name": author_name or author,
+              "nodes": json.loads(nodes),
+              "version": version,
+              "built": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
+          }, open("PREVIEW.json", "w"), indent=1)
+          EOF
+          cat PREVIEW.json
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "author=$author" >> "$GITHUB_OUTPUT"
+      - name: the gate
+        run: cargo run -p xtask -- gate
+      - name: the tests
+        run: cargo test --workspace
+      - uses: actions/upload-artifact@v4
+        with:
+          name: preview-info
+          path: PREVIEW.json
+
+  engines:
+    name: the engine (${{ matrix.system }})
+    needs: prove
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            system: windows-x86_64
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            system: linux-x86_64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: build
+        shell: bash
+        run: |
+          rustup target add ${{ matrix.target }}
+          cargo build --locked --release --manifest-path crates/vleo-py/Cargo.toml --target ${{ matrix.target }}
+          mkdir -p pylib
+          for f in _vleo.dll lib_vleo.so; do
+            src="crates/vleo-py/target/${{ matrix.target }}/release/$f"
+            [ -f "$src" ] && cp "$src" pylib/
+          done
+          ls -l pylib
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pylib-${{ matrix.system }}
+          path: pylib/
+          if-no-files-found: error
+
+  engines-mac:
+    name: the engines (macOS)
+    needs: prove
+    if: github.event_name == 'workflow_dispatch' && inputs.mac
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: build
+        run: |
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin
+          for t in aarch64-apple-darwin x86_64-apple-darwin; do
+            cargo build --locked --release --manifest-path crates/vleo-py/Cargo.toml --target $t
+          done
+          mkdir -p arm intel
+          cp crates/vleo-py/target/aarch64-apple-darwin/release/lib_vleo.dylib arm/
+          cp crates/vleo-py/target/x86_64-apple-darwin/release/lib_vleo.dylib intel/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pylib-macos-arm64
+          path: arm/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pylib-macos-x86_64
+          path: intel/
+
+  package:
+    name: the preview package
+    needs: [prove, engines, engines-mac]
+    if: always() && needs.prove.result == 'success' && needs.engines.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pylib-*
+          path: pylib
+      - uses: actions/download-artifact@v4
+        with:
+          name: preview-info
+      - name: the package
+        run: |
+          cargo run --release -p xtask -- kit --files-only --out preview-kit
+          VLEO_DATA="$RUNNER_TEMP/preview-data" cargo run --release -p vleo-cli -- data sync preview-kit/bundles
+          args=""
+          for d in pylib/pylib-*; do
+            args="$args --native ${d#pylib/pylib-}=$(ls "$d"/* | head -1)"
+          done
+          python3 tools/build_wheel.py --version "${{ needs.prove.outputs.version }}" \
+            --kit preview-kit $args --preview PREVIEW.json --out .
+          {
+            echo "## Preview for ${{ needs.prove.outputs.author }}"
+            echo ""
+            echo "Download **vleo-preview-${{ needs.prove.outputs.author }}-${{ github.run_number }}** below,"
+            echo "unzip it once, and send the \`.whl\` inside to the author. They install it with"
+            echo "\`python -m pip install <file>\`, start it with \`python -m vleo\`, try the changed"
+            echo "nodes, and send back the approval file the preview saves."
+            echo ""
+            echo '```'
+            cat PREVIEW.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vleo-preview-${{ needs.prove.outputs.author }}-${{ github.run_number }}
+          path: vleo-*.whl
+          if-no-files-found: error
+
+  check:
+    name: the preview installs and starts (${{ matrix.os }})
+    needs: [prove, package]
+    if: always() && needs.package.result == 'success'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: vleo-preview-${{ needs.prove.outputs.author }}-${{ github.run_number }}
+      - name: install it and start it
+        shell: bash
+        run: |
+          python -m pip install ./vleo-*.whl
+          cd "$RUNNER_TEMP"
+          python -m vleo --check

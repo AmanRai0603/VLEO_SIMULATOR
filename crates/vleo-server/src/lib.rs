@@ -121,12 +121,20 @@ pub fn serve(
         open_browser(&format!("http://127.0.0.1:{port}"));
     }
 
+    let preview = read_preview(&root);
+    if let Some(p) = &preview {
+        println!(
+            "  \x1b[33mPREVIEW build — not a release: {}\x1b[0m",
+            p.chars().take(160).collect::<String>()
+        );
+    }
     let ctx = std::sync::Arc::new(Ctx {
         root,
         data,
         data_versions,
         bundles,
         port,
+        preview,
     });
     if background {
         std::thread::spawn(move || accept(listener, ctx));
@@ -199,6 +207,24 @@ struct Ctx {
     /// or the picture and the answer are two different claims.
     bundles: BTreeMap<String, (PathBuf, Vec<String>)>,
     port: u16,
+    /// What a preview build says about itself, as the JSON object it was
+    /// written as; `None` for a release. See `read_preview`.
+    preview: Option<String>,
+}
+
+/// A preview build's own description: `PREVIEW.json` beside the tool's files.
+///
+/// A PREVIEW IS BUILT FROM A FORM BRANCH, BEFORE ITS CHANGE IS APPROVED, and
+/// the one thing it must never be is mistaken for a release. The preview
+/// workflow writes this file — the branch, the commit, the build, the author,
+/// the nodes it changes — and the page shows it as a banner on every view, with
+/// the Approve button that saves the author's approval of this exact build. A
+/// release has no such file. Anything that is not one JSON object is ignored,
+/// so a damaged file cannot break the version endpoint.
+fn read_preview(root: &Path) -> Option<String> {
+    let text = std::fs::read_to_string(root.join("PREVIEW.json")).ok()?;
+    let t = text.trim();
+    (t.starts_with('{') && t.ends_with('}') && !t.contains("</")).then(|| t.to_string())
 }
 
 fn short(h: u64) -> String {
@@ -773,6 +799,9 @@ fn version_json(ctx: &Ctx) -> String {
     j.str_field("endpoint", "local-daemon");
     j.num_field("port", ctx.port as f64);
     j.num_field("nodes", NODES.len() as f64);
+    if let Some(p) = &ctx.preview {
+        j.key("preview").raw(p);
+    }
     j.key("data").open_arr();
     for (i, d) in ctx.data_versions.iter().enumerate() {
         if i > 0 {

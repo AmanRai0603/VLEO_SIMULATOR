@@ -10,6 +10,8 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use vleo_sheet::{emit, gate, load_all, page, Tree};
 
+mod flow;
+
 /// A reader that stops early — `| head`, `| grep -m1`, a pager quit halfway —
 /// closes the pipe, and the next line printed panics with a backtrace that
 /// reads like a crash in this program. It is not one: the reader had what it
@@ -71,6 +73,12 @@ fn main() -> ExitCode {
         "derisk" => cmd_derisk(&root, &rest),
         "release" => cmd_release(&root, &rest),
         "kit" => cmd_kit(&root, &rest),
+        "take" => flow::cmd_take(&root, &rest),
+        "guides" => cmd_guides(&root),
+        "preview" => flow::cmd_preview(&root, &rest),
+        "approve" => flow::cmd_approve(&root, &rest),
+        "queue" => flow::cmd_queue(&root, &rest),
+        "ship" => flow::cmd_ship(&root, &rest),
         "help" | "--help" | "-h" => {
             help();
             Ok(())
@@ -193,6 +201,31 @@ cargo xtask <command>
                      release-built programs are (default target/release);
                      --files-only leaves the programs out, for the Python
                      package (tools/build_wheel.py).
+  guides             the three role guides, docs/roles/user.html,
+                     maintainer.html and developer.html, rendered from
+                     docs/manual.toml. Never
+                     edited by hand; the pipeline regenerates and compares.
+  take <form.html> --for <author> [--again] [--no-push] [--no-test]
+                     the maintainer's first step: check a filled node form;
+                     if it cannot be taken, write <form>.returned.txt to send
+                     back and change nothing; otherwise put it on its own
+                     branch form/<author>/<node> from a fresh main, apply it,
+                     regenerate, gate, test, commit naming the author, push.
+  preview            where the current form branch's preview build is — every
+                     push to a form branch builds one — and what to do with it.
+  approve <approval.toml> [--no-push]
+                     the author's approval of a preview, checked against this
+                     branch: it must be for the build of what is here now.
+                     Recorded in approvals/, committed and pushed.
+  approve --verify <branch>
+                     the same check, as the pipeline runs it on a form branch's
+                     pull request.
+  queue              every form branch and where it stands: waiting for the
+                     author's approval, approved, merged.
+  ship <version> [--no-push] [--no-test]
+                     the release branch release/<version> from main: the
+                     de-risking narrative, the stamp, regenerate, gate, test,
+                     commit, push — and the tag commands for after the merge.
   release <version> [--check]
                      stamp every node version still marked `next` with this
                      release, set the workspace version, and regenerate. The
@@ -2870,6 +2903,11 @@ fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
     fs::copy(root.join("docs/manual.toml"), out.join("docs/manual.toml"))
         .map_err(|e| format!("docs/manual.toml: {e}"))?;
     files += 1;
+    // The role guides travel with the tool: a user reads docs/roles/user.html
+    // without the repository.
+    if root.join("docs/roles").is_dir() {
+        files += copy_tree(&root.join("docs/roles"), &out.join("docs/roles"))?;
+    }
     let tree = load(root)?;
     let mut crates: BTreeSet<&str> = BTreeSet::new();
     for sh in tree.ordered() {
@@ -2948,6 +2986,21 @@ fn cmd_kit(root: &Path, args: &[&str]) -> Result<(), String> {
         tree.sheets.len(),
         programs.len()
     );
+    Ok(())
+}
+
+/// The three role guides, rendered from the manual (vleo_sheet::guide).
+fn cmd_guides(root: &Path) -> Result<(), String> {
+    let m = vleo_sheet::manual::load(root)?;
+    let version = workspace_version(root)?;
+    let dir = root.join("docs").join("roles");
+    fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    for role in vleo_sheet::manual::ROLES {
+        let html = vleo_sheet::guide::render(&m, role, &version)?;
+        let out = dir.join(format!("{role}.html"));
+        fs::write(&out, &html).map_err(|e| format!("{}: {e}", out.display()))?;
+        println!("guides: {} — {} KB", out.display(), html.len() / 1024);
+    }
     Ok(())
 }
 

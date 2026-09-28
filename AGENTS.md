@@ -37,6 +37,13 @@ the tool is a change nobody checked, implemented or released.
 So every change to the design arrives the same way, and goes through the same
 loop:
 
+    0  TAKE      cargo run -p xtask -- take <form.html> --for <author>
+                 steps 1–2 and 6 in one: the form on its own branch
+                 form/<author>/<node>, checked, applied, gated, tested,
+                 committed naming the author, pushed — or a note to send back.
+                 Every push to a form branch builds a PREVIEW for the author;
+                 their APPROVE file is recorded with `xtask approve`, and a
+                 form branch merges only with it (docs/roles/maintainer.html).
     1  CHECK     cargo run -p xtask -- intake <form.html>
                  what it would change, field by field; every interface it
                  declares (each input a row that exists, of the quantity the
@@ -181,6 +188,15 @@ results, the manual, figures and these documents are all held to it by check.
                                             workspace version
     cargo run -p xtask -- kit               the tool for the team, without the
                                             repository (docs/SHARING.md)
+    cargo run -p xtask -- take <form.html> --for <author>
+                                            a form onto its own branch, applied,
+                                            tested, committed, pushed
+    cargo run -p xtask -- preview           where this form branch's preview is
+    cargo run -p xtask -- approve <file>    the author's approval of that build
+    cargo run -p xtask -- queue             every form branch and its stage
+    cargo run -p xtask -- ship <version>    the release branch, stamped and
+                                            proved (docs/roles/maintainer.html)
+    cargo run -p xtask -- guides            the three role guides, from the manual
     cargo run -p vleo-cli --bin vleo -- run <node> [--save <file.csv>]
     cargo run -p vleo-cli --bin vleo -- result <file>
 
