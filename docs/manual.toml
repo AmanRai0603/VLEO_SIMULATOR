@@ -757,6 +757,32 @@ check = "exits"
 why = "says, per node with cases, whether the author's code still gives them, or why it could not be run here"
 
 [[layer.section]]
+id = "maint-migrate"
+title = "Move the design over to methods, a batch at a time"
+who = "maintainer"
+kind = "how-to"
+answer = "Run migration to see which rows still need a method and whose they are; with --forms it writes each owner's node forms into one folder. Send them; each comes back through take like any other change."
+body = """
+Nothing breaks meanwhile. A row without a method keeps its hand-written \
+code and its gap list says *no method yet*; a row with one is built from it \
+and tested against its owner's cases. A method is mathematics, so it only \
+ever comes from the node's owner — never from this command, and never from \
+an assistant. A row that answers a set of values keeps its holes: the method \
+language answers one quantity."""
+
+[[layer.section.step]]
+say = "See what is still to come, by owner."
+run = "cargo run -p xtask -- migration"
+check = "exits"
+why = "counts the computed rows with and without a method, and lists each owner's"
+
+[[layer.section.step]]
+say = "Write one owner's forms into a folder, ready to send."
+run = "cargo run -p xtask -- migration --owner <owner> --forms forms/out"
+check = "writes"
+why = "writes that owner's node forms into forms/out/<owner>/"
+
+[[layer.section]]
 id = "maint-preview"
 title = "Send the author a preview"
 who = "maintainer"
@@ -2066,6 +2092,14 @@ effect = "writes"
 
 [[command]]
 tool = "xtask"
+name = "migration"
+usage = "migration [--owner <o>] [--subsystem <s>] [--forms <dir>]"
+what = "Says which computed rows still need a method, by owner, and with --forms writes each one's node form into <dir>/<owner>/ ready to send. It writes no method: each comes from the node's owner, on the node's form, through take like any other change."
+who = "maintainer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
 name = "take"
 usage = "take <form.html> --for <author> [--again] [--no-push] [--no-test]"
 what = "Takes a filled node form in: checks it, and if it cannot be taken writes `<form>.returned.txt` to send back and changes nothing; otherwise puts it on its own branch `form/<author>/<node>` from a fresh main, applies it, regenerates, gates, tests, commits naming the author and pushes. The push builds the author's preview."
@@ -2737,6 +2771,7 @@ does = [
   "Read the design: the four layers, and each node's page.",
   "Set your inputs, run, save results and send them on.",
   "Fill a node's form when it is wrong or missing, and send it to the maintainer.",
+  "In the form, give the method, your code and your test cases — three answers and one refusal — until its check says Sound.",
   "Try the preview of your change and press Approve — or say what is still wrong.",
   "Install each new version over the old one; your inputs and results carry over.",
 ]
@@ -2762,6 +2797,7 @@ does = [
   "Send the author their preview; record the approval file they return with approve.",
   "Merge each approved pull request once every check is green.",
   "See what is waiting with queue; release with ship; publish and share the four files.",
+  "Send owners the forms for rows still without a method, with migration; take them back like any other.",
 ]
 never = [
   "Edit a node's files by hand — the form is the only way in.",
@@ -2781,7 +2817,8 @@ title = "Developer"
 answer = "You write what the routine cannot: a new relation in the kernel, a filled HOLE, a diagnosis of a failing check — and you improve the tool itself: its checks, generators, pages and pictures. Everything goes through the gate and a pull request reviewed by the number of people CONTRIBUTING sets."
 simply = "If the maintainer runs the print shop, you build and repair the presses. You do not decide what is printed — that comes from the forms — but you make sure the presses print it exactly, and you check them against pages you did not print yourself: the fixtures."
 does = [
-  "Implement a node's code once its form is applied: publish, then fill each HOLE from kernel relations.",
+  "Build a node from its method with build-node; for what the method language cannot say, fill its HOLEs from kernel relations.",
+  "Keep the method language, its checker and its translator one reviewed change, and rebuild the form's checker with method-wasm.",
   "Add a relation to vleo-core::physics when a form needs one — a reviewed change every node reads.",
   "Diagnose a check that fails for a reason outside the form.",
   "Improve the tool: its pages and pictures, the loop's commands, the checks, the release pipeline.",

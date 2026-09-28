@@ -211,6 +211,8 @@ results, the manual, figures and these documents are all held to it by check.
     cargo run -p xtask -- build-node <node> a node from its method: translated,
                                             tested on its author's cases, then
                                             connected
+    cargo run -p xtask -- migration         which rows still need a method, by
+                                            owner, and their forms to send
     cargo run -p vleo-cli --bin vleo -- run <node> [--save <file.csv>]
     cargo run -p vleo-cli --bin vleo -- result <file>
 

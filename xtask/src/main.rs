@@ -84,6 +84,7 @@ fn main() -> ExitCode {
         "method-wasm" => method::cmd_method_wasm(&root, &rest),
         "rerun" => method::cmd_rerun(&root, &rest),
         "build-node" => method::cmd_build_node(&root, &rest),
+        "migration" => method::cmd_migration(&root, &rest),
         "help" | "--help" | "-h" => {
             help();
             Ok(())
@@ -224,6 +225,10 @@ cargo xtask <command>
                      method on its cases, the translation into the kernel, the
                      node's tests, the author's code rerun, a mutation the
                      tests must catch — and only then the interface.
+  migration [--owner <o>] [--subsystem <s>] [--forms <dir>]
+                     which computed rows still need a method, by owner, and
+                     with --forms their node forms written ready to send.
+                     Nothing here writes a method: each comes from its owner.
   take <form.html> --for <author> [--again] [--no-push] [--no-test]
                      the maintainer's first step: check a filled node form;
                      if it cannot be taken, write <form>.returned.txt to send

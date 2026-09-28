@@ -437,3 +437,86 @@ pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
     println!("\nbuild-node: {id} is built from its method, tested against its author's cases, and connected.");
     Ok(())
 }
+
+// ---------------------------------------------------------------------------
+// migration: the tree moved over to methods, a batch at a time
+
+/// `migration [--owner <o>] [--subsystem <s>] [--forms <dir>]` — which nodes
+/// still need a method, by owner, and their forms written ready to send.
+///
+/// Nothing here writes a method. Each one comes from the node's owner, on the
+/// node's form, like any other change: this only says whose they are and puts
+/// the forms in one place.
+pub fn cmd_migration(root: &Path, args: &[&str]) -> Result<(), String> {
+    let tree = vleo_sheet::load_all(root)?;
+    let flag = |f: &str| {
+        args.iter()
+            .position(|a| *a == f)
+            .and_then(|i| args.get(i + 1))
+            .copied()
+    };
+    let (owner, subsystem, forms) = (flag("--owner"), flag("--subsystem"), flag("--forms"));
+    let mut by_owner: std::collections::BTreeMap<String, Vec<&vleo_sheet::model::Sheet>> =
+        Default::default();
+    let (mut asked, mut done, mut beyond) = (0usize, 0usize, 0usize);
+    for sh in tree.ordered() {
+        if sh.is_seeded() || sh.is_declared() {
+            continue;
+        }
+        if owner.is_some_and(|o| sh.owner != o) || subsystem.is_some_and(|s| sh.subsystem != s) {
+            continue;
+        }
+        if !sh.publishes.is_empty() {
+            // A set of answers is beyond the language; its holes stay.
+            beyond += 1;
+            continue;
+        }
+        asked += 1;
+        if !sh.method.text.trim().is_empty() {
+            done += 1;
+            continue;
+        }
+        by_owner.entry(sh.owner.clone()).or_default().push(sh);
+    }
+    println!(
+        "migration: {done} of {asked} computed row(s) have a method; {} still to come{}.",
+        asked - done,
+        if beyond > 0 {
+            format!(" ({beyond} set row(s) keep their holes — the language answers one quantity)")
+        } else {
+            String::new()
+        }
+    );
+    for (o, rows) in &by_owner {
+        let names: Vec<&str> = rows.iter().take(6).map(|s| s.id.as_str()).collect();
+        println!(
+            "  {:<14} {:>4}   {}{}",
+            if o.is_empty() { "(no owner)" } else { o },
+            rows.len(),
+            names.join(", "),
+            if rows.len() > names.len() {
+                ", …"
+            } else {
+                ""
+            }
+        );
+    }
+    if let Some(dir) = forms {
+        let mut n = 0usize;
+        for (o, rows) in &by_owner {
+            let d = Path::new(dir).join(if o.is_empty() { "no-owner" } else { o });
+            fs::create_dir_all(&d).map_err(|e| format!("{}: {e}", d.display()))?;
+            for sh in rows {
+                let html = vleo_sheet::template::document(sh, &tree);
+                let p = d.join(format!("{}.node-form.html", sh.id));
+                fs::write(&p, html).map_err(|e| format!("{}: {e}", p.display()))?;
+                n += 1;
+            }
+        }
+        println!(
+            "\nwrote {n} form(s) under {dir}/<owner>/ — send each owner theirs. Each comes back \
+             through `take`, one form per branch, like any other change."
+        );
+    }
+    Ok(())
+}
