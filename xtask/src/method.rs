@@ -123,3 +123,317 @@ pub fn cmd_method_wasm(root: &Path, args: &[&str]) -> Result<(), String> {
     );
     Ok(())
 }
+
+// ---------------------------------------------------------------------------
+// rerun: the author's own code, run again on their cases
+
+/// What running the author's code again said about one node.
+enum Rerun {
+    /// Every case gave what the sheet records.
+    Agrees(usize),
+    /// Some did not; each line says which and how.
+    Differs(Vec<String>),
+    /// It could not be run here, and why — a language with no free runner, or
+    /// a runner that is not installed. Kept and read, not rerun.
+    NotRun(String),
+}
+
+fn which(cmd: &str) -> bool {
+    Command::new(cmd)
+        .arg("--version")
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false)
+}
+
+/// Run the author's code on each of their cases and compare with what they
+/// recorded. Python is called with each input as a keyword argument named by
+/// its binding; MATLAB and Octave code with the inputs in the node's declared
+/// order. A raised error or exception is a refusal.
+fn rerun_one(sh: &vleo_sheet::model::Sheet, work: &Path) -> Result<Rerun, String> {
+    let lang = sh.author.language.trim();
+    let entry = sh.author.entry.trim();
+    if sh.cases.is_empty() || sh.author.code.trim().is_empty() {
+        return Ok(Rerun::NotRun("no cases or no code".into()));
+    }
+    if entry.is_empty() {
+        return Ok(Rerun::NotRun("the entry function is not named".into()));
+    }
+    fs::create_dir_all(work).map_err(|e| e.to_string())?;
+    let order: Vec<&str> = sh.inputs.iter().map(|i| i.binding.as_str()).collect();
+    let value = |c: &vleo_sheet::method::Case, k: &str| {
+        c.inputs
+            .iter()
+            .find(|(n, _)| n == k)
+            .map(|(_, v)| *v)
+            .unwrap_or(0.0)
+    };
+    let output = match lang {
+        "Python" => {
+            if !which("python3") {
+                return Ok(Rerun::NotRun("python3 is not installed here".into()));
+            }
+            fs::write(work.join("author_code.py"), &sh.author.code).map_err(|e| e.to_string())?;
+            let mut h = String::from(
+                "import sys\nsys.path.insert(0, '.')\nimport author_code as m\nf = getattr(m, ",
+            );
+            h.push_str(&format!("{entry:?})\n"));
+            for c in &sh.cases {
+                let kw = order
+                    .iter()
+                    .map(|k| format!("{k}={:?}", value(c, k)))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                h.push_str(&format!(
+                    "try:\n    print(repr(float(f({kw}))))\nexcept Exception:\n    print('refused')\n"
+                ));
+            }
+            fs::write(work.join("harness.py"), h).map_err(|e| e.to_string())?;
+            Command::new("python3")
+                .arg("harness.py")
+                .current_dir(work)
+                .output()
+                .map_err(|e| e.to_string())?
+        }
+        "MATLAB" | "Octave" => {
+            if !which("octave") {
+                return Ok(Rerun::NotRun(format!(
+                    "{lang} code is run with Octave, and Octave is not installed here"
+                )));
+            }
+            fs::write(work.join(format!("{entry}.m")), &sh.author.code)
+                .map_err(|e| e.to_string())?;
+            let mut h = String::new();
+            for c in &sh.cases {
+                let args = order
+                    .iter()
+                    .map(|k| format!("{:?}", value(c, k)))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                h.push_str(&format!(
+                    "try\n  printf('%.17g\\n', {entry}({args}));\ncatch\n  printf('refused\\n');\nend\n"
+                ));
+            }
+            fs::write(work.join("harness.m"), h).map_err(|e| e.to_string())?;
+            Command::new("octave")
+                .args(["--no-gui", "--quiet", "--eval", "harness"])
+                .current_dir(work)
+                .output()
+                .map_err(|e| e.to_string())?
+        }
+        other => {
+            return Ok(Rerun::NotRun(format!(
+                "{} code is kept and read, not rerun — the pipeline runs Python, and MATLAB or \
+                 Octave through Octave",
+                if other.is_empty() { "unnamed" } else { other }
+            )))
+        }
+    };
+    let text = String::from_utf8_lossy(&output.stdout);
+    let lines: Vec<&str> = text
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .collect();
+    if lines.len() != sh.cases.len() {
+        return Ok(Rerun::Differs(vec![format!(
+            "the code printed {} line(s) for {} case(s): {}",
+            lines.len(),
+            sh.cases.len(),
+            String::from_utf8_lossy(&output.stderr)
+                .lines()
+                .last()
+                .unwrap_or("")
+        )]));
+    }
+    let mut bad = Vec::new();
+    for (c, got) in sh.cases.iter().zip(lines) {
+        match (c.expect, got) {
+            (None, "refused") => {}
+            (None, g) => bad.push(format!(
+                "«{}»: recorded as refused, the code gives {g}",
+                c.label
+            )),
+            (Some(e), "refused") => bad.push(format!(
+                "«{}»: recorded as {e}, the code refuses it",
+                c.label
+            )),
+            (Some(e), g) => {
+                let v: f64 = g.parse().unwrap_or(f64::NAN);
+                let rel = if e == 0.0 {
+                    v.abs()
+                } else {
+                    ((v - e) / e).abs()
+                };
+                // NaN — output that was not a number — is a disagreement too.
+                if rel.is_nan() || rel > c.tolerance {
+                    bad.push(format!(
+                        "«{}»: recorded as {e}, the code now gives {v} ({rel:.2e} apart)",
+                        c.label
+                    ));
+                }
+            }
+        }
+    }
+    Ok(if bad.is_empty() {
+        Rerun::Agrees(sh.cases.len())
+    } else {
+        Rerun::Differs(bad)
+    })
+}
+
+/// `rerun <node>|--all` — run each author's own code again on their cases.
+pub fn cmd_rerun(root: &Path, args: &[&str]) -> Result<(), String> {
+    let tree = vleo_sheet::load_all(root)?;
+    let all = args.contains(&"--all");
+    let only = args.iter().find(|a| !a.starts_with("--")).copied();
+    if !all && only.is_none() {
+        return Err("usage: cargo run -p xtask -- rerun <node> | --all".into());
+    }
+    let work_root = std::env::temp_dir().join("vleo-rerun");
+    let mut differs = 0usize;
+    let mut seen = 0usize;
+    for sh in tree.ordered() {
+        if only.is_some_and(|o| sh.id != o) || sh.cases.is_empty() {
+            continue;
+        }
+        seen += 1;
+        match rerun_one(sh, &work_root.join(&sh.id))? {
+            Rerun::Agrees(n) => println!(
+                "  ok   {}: the author's code gives all {n} recorded case(s)",
+                sh.id
+            ),
+            Rerun::NotRun(why) => println!("  note {}: not rerun — {why}", sh.id),
+            Rerun::Differs(lines) => {
+                differs += 1;
+                println!("  FAIL {}:", sh.id);
+                for l in lines {
+                    println!("         {l}");
+                }
+            }
+        }
+    }
+    let _ = fs::remove_dir_all(&work_root);
+    if seen == 0 {
+        println!(
+            "rerun: no node{} has author's cases yet",
+            only.map(|o| format!(" '{o}'")).unwrap_or_default()
+        );
+    }
+    if differs > 0 {
+        return Err(format!(
+            "{differs} node(s): the author's code no longer gives the cases recorded from it. \
+             The cases are the author's evidence — take it to them."
+        ));
+    }
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// build-node: every stage, in order, stopping at the first that fails
+
+fn stage(n: &str, what: &str) {
+    println!("\n\x1b[1m{n} · {what}\x1b[0m");
+}
+
+/// `build-node <node>` — from the node's method to a node that may be
+/// connected: translate, test against the author's cases, rerun their code,
+/// prove the tests test, and only then check the interface.
+pub fn cmd_build_node(root: &Path, args: &[&str]) -> Result<(), String> {
+    let id = args
+        .iter()
+        .find(|a| !a.starts_with("--"))
+        .copied()
+        .ok_or("usage: cargo run -p xtask -- build-node <node>")?;
+    let tree = vleo_sheet::load_all(root)?;
+    let sh = tree
+        .sheets
+        .get(id)
+        .ok_or_else(|| format!("no node '{id}'"))?;
+
+    stage("M ", "the method, against the author's cases");
+    if sh.method.text.trim().is_empty() {
+        return Err(format!(
+            "{id} has no method. Its code is its hand-written holes, built and tested by \
+             `gate` and `cargo test` as before; build-node starts from a method."
+        ));
+    }
+    cmd_method(root, &[id])?;
+
+    stage(
+        "G1",
+        "translate the method into the kernel, and regenerate the node",
+    );
+    crate::cmd_docs(root, &[id])?;
+    let path = root
+        .join("crates/vleo-core/src/physics/methods")
+        .join(format!("{}.rs", sh.rust_ident()));
+    println!(
+        "  {} — translated by rule",
+        path.strip_prefix(root).unwrap_or(&path).display()
+    );
+
+    stage(
+        "T1+T2",
+        "the node's tests: the author's cases, and the translation against the method",
+    );
+    let ok = Command::new("cargo")
+        .args(["test", "-q", "-p", &sh.crate_name, "--", &format!("{id}::")])
+        .current_dir(root)
+        .status()
+        .map_err(|e| e.to_string())?
+        .success();
+    if !ok {
+        return Err(format!(
+            "{id}: its tests fail. A case that disagrees goes back to the author; a translation \
+             test that fails is a translator defect for a developer. The node is NOT connected."
+        ));
+    }
+
+    stage("T3", "the author's own code, run again on their cases");
+    cmd_rerun(root, &[id])?;
+
+    stage(
+        "T4",
+        "the tests really test: the answer is moved and the tests must notice",
+    );
+    crate::cmd_mutate(root, &[id])?;
+
+    stage("I1", "only now, the interface: the node in the tree");
+    crate::cmd_gate(root, &[id])?;
+    let tree = vleo_sheet::load_all(root)?;
+    let checks = vleo_sheet::gate::validate_tree(&tree);
+    let failed: Vec<String> = checks
+        .iter()
+        .filter(|c| c.failed())
+        .map(|c| format!("{} — {:?}", c.name, c.verdict))
+        .collect();
+    if !failed.is_empty() {
+        return Err(format!(
+            "the tree does not assemble with {id}: {}",
+            failed.join("; ")
+        ));
+    }
+    let readers: Vec<&str> = tree
+        .ordered()
+        .into_iter()
+        .filter(|s| s.inputs.iter().any(|i| i.var == id))
+        .map(|s| s.id.as_str())
+        .collect();
+    println!(
+        "  the tree assembles. {} row(s) read {id}{}",
+        readers.len(),
+        if readers.is_empty() {
+            String::new()
+        } else {
+            format!(
+                ": {} — their answers move with it; `cargo test` checks them",
+                readers.join(", ")
+            )
+        }
+    );
+    println!("\nbuild-node: {id} is built from its method, tested against its author's cases, and connected.");
+    Ok(())
+}

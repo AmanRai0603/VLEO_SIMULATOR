@@ -82,6 +82,8 @@ fn main() -> ExitCode {
         "ship" => flow::cmd_ship(&root, &rest),
         "method" => method::cmd_method(&root, &rest),
         "method-wasm" => method::cmd_method_wasm(&root, &rest),
+        "rerun" => method::cmd_rerun(&root, &rest),
+        "build-node" => method::cmd_build_node(&root, &rest),
         "help" | "--help" | "-h" => {
             help();
             Ok(())
@@ -215,6 +217,13 @@ cargo xtask <command>
                      rebuild web/method.wasm, the checker every node form
                      carries, from vleo_sheet::method; --check only says
                      whether the committed one is current.
+  rerun <node>|--all  the author's own code run again on their cases: Python
+                     directly, MATLAB and Octave through Octave; anything else
+                     is kept and read, not rerun.
+  build-node <node>  from a node's method to a connected node, in order: the
+                     method on its cases, the translation into the kernel, the
+                     node's tests, the author's code rerun, a mutation the
+                     tests must catch — and only then the interface.
   take <form.html> --for <author> [--again] [--no-push] [--no-test]
                      the maintainer's first step: check a filled node form;
                      if it cannot be taken, write <form>.returned.txt to send
@@ -1580,6 +1589,9 @@ fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
     if touched == 0 {
         return Err(format!("no node matched '{}'", only.unwrap_or("")));
     }
+    // Every node's method, translated into the kernel, whichever node was asked
+    // for: the kernel module list is the whole tree's.
+    written += emit::sync_methods(&tree)?;
     // The method language's reference page, from the tables the checker reads,
     // so the page and the checker cannot describe two languages.
     if only.is_none() {
@@ -2339,6 +2351,12 @@ fn cmd_fill(root: &Path, args: &[&str]) -> Result<(), String> {
     if sh.is_declared() {
         return Err(format!(
             "'{id}' is a declared value — a person picked its number, so it has no holes"
+        ));
+    }
+    if vleo_sheet::method::node_program(sh).is_some() {
+        return Err(format!(
+            "'{id}' is built from its method: its code is the method translated by rule, and \
+             it has no holes. Change the method, on the node's form"
         ));
     }
     let step = sh

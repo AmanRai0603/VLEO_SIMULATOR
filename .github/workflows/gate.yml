@@ -142,6 +142,12 @@ jobs:
       - name: evidence
         run: cargo test --workspace
 
+      # The authors' own code, run again on the cases recorded from it: Python
+      # directly; MATLAB and Octave only where Octave is installed, and said
+      # when it is not. A case the code no longer gives fails here.
+      - name: the authors' code, rerun
+        run: cargo run -p xtask -- rerun --all
+
       - name: the gap pass
         run: cargo run -p xtask -- gap || true
 

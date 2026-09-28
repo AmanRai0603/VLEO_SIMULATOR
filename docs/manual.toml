@@ -732,6 +732,31 @@ check = "exits"
 why = "prints each case with what the author's code gave and what the method gives, or says the node has no method yet"
 
 [[layer.section]]
+id = "maint-build"
+title = "Build a node from its method"
+who = "maintainer"
+kind = "how-to"
+answer = "take does this for you when a form carries a method; build-node does it by hand. Every stage must pass before the next runs, and the node is connected to the rest of the design only at the end."
+body = """
+**M** the method runs on the author's cases. **G1** the method is \
+translated, by fixed rules, into a kernel function in \
+`vleo-core::physics::methods` — the node's code calls it and has no holes. \
+**T1** the node, guards and all, must reproduce every case; **T2** the \
+translation must give the method's own answer to the last bit, around every \
+case. **T3** the author's own code is run again where it can be. **T4** the \
+answer is moved on purpose and the tests must notice. **I1** only then is the \
+node checked in the tree, and the rows that read it are named.
+
+A case that fails is the author's to settle. A translation test that fails is \
+a translator defect, for a developer. Neither is ever a tolerance to change."""
+
+[[layer.section.step]]
+say = "Rerun every author's code on the cases recorded from it."
+run = "cargo run -p xtask -- rerun --all"
+check = "exits"
+why = "says, per node with cases, whether the author's code still gives them, or why it could not be run here"
+
+[[layer.section]]
 id = "maint-preview"
 title = "Send the author a preview"
 who = "maintainer"
@@ -1393,6 +1418,33 @@ check = "exits"
 why = "compares the fingerprint of the checker's sources with the one recorded beside web/method.wasm"
 
 [[layer.section]]
+id = "term-beyond"
+title = "When the method language cannot say it"
+who = "developer"
+kind = "how-to"
+answer = "A node the method language cannot express — a set of answers, a solver that stops when it converges — keeps hand-written holes. A developer writes them, with an assistant if they like, and the author's cases still decide."
+body = """
+The language is closed on purpose: every construct has one translation, so \
+the translator needs no judgement. What it cannot express goes to the \
+existing route: `fill` splices each hole body, `--by` and `--model` record who \
+wrote it, and a **significant** node's holes are written twice by different \
+model families and compared with `differential`. An assistant here is a \
+worker, never a judge: acceptance is only ever the author's cases, the \
+fixtures, the mutation check and the gate — and no assistant supplies the \
+relation, the method or a case.
+
+When the language grows a construct, it grows in \
+`crates/vleo-sheet/src/method.rs`: the grammar, the checker, the interpreter \
+and the translation together, one reviewed change, followed by \
+`method-wasm` so every form checks by the new rules."""
+
+[[layer.section.step]]
+say = "Build a node from its method by hand, stage by stage."
+run = "cargo run -p xtask -- build-node <node>"
+check = "writes"
+why = "translates, tests, reruns, mutates and only then checks the interface; stops at the first stage that fails"
+
+[[layer.section]]
 id = "term-evidence"
 title = "Is the evidence real?"
 who = "developer"
@@ -1998,6 +2050,22 @@ effect = "writes"
 
 [[command]]
 tool = "xtask"
+name = "rerun"
+usage = "rerun <node>|--all"
+what = "Runs each author's own code again on the cases recorded from it and says whether it still gives them: Python directly, MATLAB and Octave through Octave where it is installed. Code in any other language is kept and read, not rerun, and it says so."
+who = "maintainer"
+effect = "reads"
+
+[[command]]
+tool = "xtask"
+name = "build-node"
+usage = "build-node <node>"
+what = "Builds a node from its method, stage by stage, stopping at the first that fails: the method on its author's cases; the translation into the kernel; the node's tests — the author's cases and the translation against the method; the author's code rerun; a mutation the tests must catch; and only then the node in the tree."
+who = "maintainer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
 name = "take"
 usage = "take <form.html> --for <author> [--again] [--no-push] [--no-test]"
 what = "Takes a filled node form in: checks it, and if it cannot be taken writes `<form>.returned.txt` to send back and changes nothing; otherwise puts it on its own branch `form/<author>/<node>` from a fresh main, applies it, regenerates, gates, tests, commits naming the author and pushes. The push builds the author's preview."
@@ -2376,6 +2444,11 @@ what = "The published output of the tool this was ported from, for comparison."
 name = "VLEO_CASE"
 what = "Where the saved case is kept — the CSV the Inputs page and `vleo run` read. Outside the repository, so git never sees it. A copy made before a carry-over sits beside it."
 default = "$HOME/.vleo/case/inputs.csv"
+
+[[env]]
+name = "VLEO_GOLDEN"
+what = "Set to `write` when running the translator's golden test, to write the golden files again after an intended change to how methods are translated. Unset, the test compares and fails on any difference."
+default = "unset — compare"
 
 [[env]]
 name = "VLEO_RESULTS"
