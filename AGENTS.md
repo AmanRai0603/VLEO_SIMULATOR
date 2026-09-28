@@ -204,7 +204,7 @@ results, the manual, figures and these documents are all held to it by check.
     cargo run -p xtask -- method <node>     the node's method, run on its author's
                                             cases (docs/PSEUDOCODE.md)
     cargo run -p xtask -- method-wasm       rebuild the checker every node form
-                                            carries, web/method.wasm
+                                            carries, web/method.wasm.gz
     cargo run -p xtask -- rerun <node>|--all
                                             each author's own code, run again on
                                             the cases recorded from it

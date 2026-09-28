@@ -174,13 +174,15 @@ cargo xtask <command>
   setup              point git at tools/githooks, so the commit-message hook
                      runs on this clone. One command per person per clone, and
                      the commands that matter say so until it is done.
-  form <node>|--new [--out <file.html>]
+  form <node>|--new [--example] [--out <file.html>]
                      a node's form: one HTML file that explains itself, asks
                      every question the sheet answers, lists every row it could
                      read, and saves a filled copy. --new is the form for a node
                      the design does not have yet, which also asks where it goes.
                      Anyone can fill it, offline, by hand or with an assistant;
-                     the filled file comes back to a developer.
+                     the filled file comes back to a developer. --example fills
+                     orbit_velocity's form with the worked example, for the
+                     pipeline's end-to-end test of the method path only.
   intake <file.html> [--apply [--partial]]
                      the checker: what a filled form would change, field by
                      field, and every interface it declares — each input a row
@@ -215,10 +217,11 @@ cargo xtask <command>
                      cases run through it — the check the form runs as the
                      author types, and the one the gate refuses on.
   method-wasm [--check]
-                     rebuild web/method.wasm, the checker every node form
+                     rebuild web/method.wasm.gz, the checker every node form
                      carries, from vleo_sheet::method; --check only says
                      whether the committed one is current.
-  rerun <node>|--all  the author's own code run again on their cases: Python
+  rerun <node>|--all [--require]
+                     the author's own code run again on their cases: Python
                      directly, MATLAB and Octave through Octave; anything else
                      is kept and read, not rerun.
   build-node <node>  from a node's method to a connected node, in order: the
@@ -320,11 +323,15 @@ fn cmd_form(root: &Path, args: &[&str]) -> Result<(), String> {
         let id = args
             .first()
             .filter(|a| !a.starts_with("--"))
-            .ok_or("usage: cargo xtask form <node>|--new [--out <file.html>]")?;
+            .ok_or("usage: cargo xtask form <node>|--new [--example] [--out <file.html>]")?;
         let sh = tree.sheets.get(*id).ok_or_else(|| {
             format!("no node '{id}'. For a node the design does not have yet: `form --new`")
         })?;
-        vleo_sheet::template::document(sh, &tree)
+        if args.contains(&"--example") {
+            vleo_sheet::template::document_example(sh, &tree)?
+        } else {
+            vleo_sheet::template::document(sh, &tree)
+        }
     };
     match args
         .iter()

@@ -8,7 +8,10 @@
 
 use vleo_sheet::{form, method};
 
-const SHEET: &str = include_str!("../../vleo-mod-envorbit/nodes/orbit_velocity/node.toml");
+// A copy of orbit_velocity's sheet as it was before any method, kept here so
+// the test does not change meaning the day that node's owner sends one.
+
+const SHEET: &str = include_str!("data/orbit_velocity.node.toml");
 
 const METHOD: &str = "\
 # Vallado (2013), eq. 1-18: the circular two-body speed.

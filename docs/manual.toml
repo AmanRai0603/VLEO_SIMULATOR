@@ -1421,10 +1421,10 @@ id = "term-method"
 title = "The method language and the form's checker"
 who = "developer"
 kind = "how-to"
-answer = "The method language is one module, vleo_sheet::method. Every node form carries it compiled to WebAssembly as web/method.wasm; after changing the language, rebuild that file with method-wasm and commit it with its stamp."
+answer = "The method language is one module, vleo_sheet::method. Every node form carries it compiled to WebAssembly as web/method.wasm.gz; after changing the language, rebuild that file with method-wasm and commit it with its stamp."
 body = """
 The gate, `take`, intake and the node form all call \
-`vleo_sheet::method::report_toml` — the form through `web/method.wasm`, which \
+`vleo_sheet::method` — the form through `web/method.wasm.gz`, which \
 `xtask method-wasm` builds from `crates/vleo-method-wasm`. A test refuses a \
 checkout whose checker sources have moved on from the committed file, so a form \
 can never check by older rules than the gate. `docs/PSEUDOCODE.md` is written \
@@ -1435,13 +1435,13 @@ means is a reviewed change to every node that has one."""
 say = "Rebuild the checker every form carries, after changing the language."
 run = "cargo run -p xtask -- method-wasm"
 check = "writes"
-why = "builds crates/vleo-method-wasm for wasm32 and writes web/method.wasm and its stamp"
+why = "builds crates/vleo-method-wasm for wasm32 and writes web/method.wasm.gz and its stamp"
 
 [[layer.section.step]]
 say = "Or only ask whether it is current."
 run = "cargo run -p xtask -- method-wasm --check"
 check = "exits"
-why = "compares the fingerprint of the checker's sources with the one recorded beside web/method.wasm"
+why = "compares the fingerprint of the checker's sources with the one recorded beside web/method.wasm.gz"
 
 [[layer.section]]
 id = "term-beyond"
@@ -2029,8 +2029,8 @@ effect = "reads"
 [[command]]
 tool = "xtask"
 name = "form"
-usage = "form <node>|--new [--out <file.html>]"
-what = "A node's form: one self-contained HTML file that explains itself, asks every question the sheet answers, and saves a filled copy. `--new` is the form for a node the design does not have yet. Filled anywhere, by anyone."
+usage = "form <node>|--new [--example] [--out <file.html>]"
+what = "A node's form: one self-contained HTML file that explains itself, asks every question the sheet answers, and saves a filled copy. `--new` is the form for a node the design does not have yet. Filled anywhere, by anyone. --example fills orbit_velocity's form with the worked example, only for the pipeline's end-to-end test of the method path; nothing it produces is committed."
 who = "developer"
 effect = "reads"
 
@@ -2070,15 +2070,15 @@ effect = "reads"
 tool = "xtask"
 name = "method-wasm"
 usage = "method-wasm [--check]"
-what = "Builds the method checker every node form carries — vleo_sheet::method compiled to WebAssembly — into web/method.wasm with the fingerprint of its sources; --check only says whether the committed file is current."
+what = "Builds the method checker every node form carries — vleo_sheet::method compiled to WebAssembly — into web/method.wasm.gz with the fingerprint of its sources; --check only says whether the committed file is current."
 who = "developer"
 effect = "writes"
 
 [[command]]
 tool = "xtask"
 name = "rerun"
-usage = "rerun <node>|--all"
-what = "Runs each author's own code again on the cases recorded from it and says whether it still gives them: Python directly, MATLAB and Octave through Octave where it is installed. Code in any other language is kept and read, not rerun, and it says so."
+usage = "rerun <node>|--all [--require]"
+what = "Runs each author's own code again on the cases recorded from it and says whether it still gives them: Python directly, MATLAB and Octave through Octave where it is installed. Code in any other language is kept and read, not rerun, and it says so; `--require` fails instead, for a pipeline that installed the runners."
 who = "maintainer"
 effect = "reads"
 

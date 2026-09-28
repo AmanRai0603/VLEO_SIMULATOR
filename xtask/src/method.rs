@@ -10,7 +10,7 @@ use std::path::Path;
 use std::process::Command;
 
 /// Where the checker lives, and the fingerprint of what it was built from.
-pub const WASM: &str = "web/method.wasm";
+pub const WASM: &str = "web/method.wasm.gz";
 pub const STAMP: &str = "web/method.wasm.stamp";
 
 /// `method <node>` — the node's method, checked, and each of its author's
@@ -104,11 +104,22 @@ pub fn cmd_method_wasm(root: &Path, args: &[&str]) -> Result<(), String> {
     let built = root.join(
         "crates/vleo-method-wasm/target/wasm32-unknown-unknown/release/vleo_method_wasm.wasm",
     );
-    fs::copy(&built, root.join(WASM)).map_err(|e| format!("{}: {e}", built.display()))?;
+    // Gzipped, with no name or time in the header, so the same build gives the
+    // same bytes: every form carries this, and the browser unpacks it.
+    let gz = Command::new("gzip")
+        .args(["-9", "-n", "-c"])
+        .arg(&built)
+        .output()
+        .map_err(|e| format!("gzip could not be run: {e}"))?;
+    if !gz.status.success() {
+        return Err("gzip failed on the built checker".into());
+    }
+    fs::write(root.join(WASM), &gz.stdout).map_err(|e| e.to_string())?;
+    let _ = fs::remove_file(root.join("web/method.wasm"));
     fs::write(
         root.join(STAMP),
         format!(
-            "# The node form's method checker: web/method.wasm, built by\n\
+            "# The node form's method checker: web/method.wasm.gz, built by\n\
              # `cargo run -p xtask -- method-wasm` from vleo_sheet::method::CHECKER_SOURCES.\n\
              # A test refuses a checkout whose sources have moved on from it.\n\
              fingerprint = \"{now}\"\nlanguage = {}\n",
@@ -284,13 +295,17 @@ fn rerun_one(sh: &vleo_sheet::model::Sheet, work: &Path) -> Result<Rerun, String
     })
 }
 
-/// `rerun <node>|--all` — run each author's own code again on their cases.
+/// `rerun <node>|--all [--require]` — run each author's own code again on
+/// their cases. `--require` refuses a node whose code could not be run here,
+/// for a pipeline that has installed the runners and means to use them.
 pub fn cmd_rerun(root: &Path, args: &[&str]) -> Result<(), String> {
     let tree = vleo_sheet::load_all(root)?;
     let all = args.contains(&"--all");
+    let require = args.contains(&"--require");
+    let mut not_run = 0usize;
     let only = args.iter().find(|a| !a.starts_with("--")).copied();
     if !all && only.is_none() {
-        return Err("usage: cargo run -p xtask -- rerun <node> | --all".into());
+        return Err("usage: cargo run -p xtask -- rerun <node>|--all [--require]".into());
     }
     let work_root = std::env::temp_dir().join("vleo-rerun");
     let mut differs = 0usize;
@@ -305,7 +320,10 @@ pub fn cmd_rerun(root: &Path, args: &[&str]) -> Result<(), String> {
                 "  ok   {}: the author's code gives all {n} recorded case(s)",
                 sh.id
             ),
-            Rerun::NotRun(why) => println!("  note {}: not rerun — {why}", sh.id),
+            Rerun::NotRun(why) => {
+                not_run += 1;
+                println!("  note {}: not rerun — {why}", sh.id)
+            }
             Rerun::Differs(lines) => {
                 differs += 1;
                 println!("  FAIL {}:", sh.id);
@@ -326,6 +344,11 @@ pub fn cmd_rerun(root: &Path, args: &[&str]) -> Result<(), String> {
         return Err(format!(
             "{differs} node(s): the author's code no longer gives the cases recorded from it. \
              The cases are the author's evidence — take it to them."
+        ));
+    }
+    if require && not_run > 0 {
+        return Err(format!(
+            "{not_run} node(s) could not be rerun here, and --require asks that every one is"
         ));
     }
     Ok(())

@@ -92,7 +92,7 @@ const STAMPS_RELATION: &[&str] = &["algorithm", "theory"];
 /// compiled to WebAssembly by `xtask method-wasm`. Not read when this crate is
 /// itself compiled to WebAssembly — that build IS the checker.
 #[cfg(not(target_arch = "wasm32"))]
-const METHOD_WASM: &[u8] = include_bytes!("../../../web/method.wasm");
+const METHOD_WASM: &[u8] = include_bytes!("../../../web/method.wasm.gz");
 #[cfg(target_arch = "wasm32")]
 const METHOD_WASM: &[u8] = &[];
 
@@ -790,6 +790,95 @@ pub fn document(sh: &Sheet, tree: &Tree) -> String {
     )
 }
 
+/// A node's form filled with the worked example — FOR THE PIPELINE'S TEST OF
+/// THE METHOD PATH, never for a node of the design.
+///
+/// The example is the circular orbital speed, which is exactly what
+/// `orbit_velocity` computes from the same one input, so the pipeline can take
+/// that real node through every stage — the form's own check in a browser,
+/// intake, the translation, the author's cases, the author's code rerun, the
+/// mutation, the interface — on a throwaway checkout, on every pull request.
+/// Nothing it writes is ever committed: a method comes from a node's owner.
+pub fn document_example(sh: &Sheet, tree: &Tree) -> Result<String, String> {
+    let fits = sh.ty == "Velocity"
+        && sh.inputs.len() == 1
+        && sh.inputs[0].binding == "r"
+        && sh.inputs[0].ty == "Length";
+    if !fits {
+        return Err(format!(
+            "the worked example is a Velocity from one Length input `r`; {} is not that node",
+            sh.id
+        ));
+    }
+    let base = std::fs::read_to_string(sh.dir.join("node.toml"))
+        .map(|t| form::file_hash(&t))
+        .unwrap_or_default();
+    let original = content(sh);
+    let mut c = original.clone();
+    for f in FIELDS {
+        if f.field.starts_with("method_") || f.field.starts_with("author_") {
+            if let Some(v) = crate::example::field(f.field) {
+                c.fields.insert(f.field.to_string(), v.to_string());
+            }
+        }
+    }
+    for name in ["case", "flight"] {
+        let rows = crate::example::blocks(name)
+            .into_iter()
+            .map(|b| {
+                b.into_iter()
+                    .map(|(k, v)| (k.to_string(), v.to_string()))
+                    .collect()
+            })
+            .collect();
+        c.arrays.insert(name.to_string(), rows);
+    }
+    let mut data = data_toml(&sh.id, &base, &c, false);
+    data = data.replacen(
+        "\n[filled_by]\nname = \"\"\nteam = \"\"\ndate = \"\"\nai = \"none\"\n",
+        "\n[filled_by]\nname = \"the pipeline, with the worked example\"\nteam = \"\"\ndate = \"\"\nai = \"none\"\n",
+        1,
+    );
+    for (k, v) in [
+        (
+            "believed",
+            "the node's code could only be hand-written holes",
+        ),
+        (
+            "tested",
+            "the pipeline's end-to-end run of the method path, with the worked example",
+        ),
+        (
+            "learned",
+            "the method, the author's code and the generated code agree on every case",
+        ),
+        (
+            "changed",
+            "the node is built from its method — on a throwaway checkout only",
+        ),
+        ("rests_on", "a two-body, circular orbit"),
+        ("breaks_if", "the orbit is noticeably eccentric"),
+    ] {
+        data = data.replacen(
+            &format!("\n{k} = \"\"\n"),
+            &format!("\n{k} = {}\n", tq(v)),
+            1,
+        );
+    }
+    let head = format!(
+        "<h1>{}</h1>\n<p class=\"nf-id\"><code>{}</code> · the worked example, for the pipeline's test</p>\n",
+        he(&sh.label),
+        he(&sh.id)
+    );
+    Ok(page(
+        &format!("{} — node form (worked example)", sh.label),
+        &head,
+        &schema(Some(sh), tree),
+        &original_toml(&sh.id, &base, &original, false),
+        &data,
+    ))
+}
+
 /// The form for a node that does not exist yet: every question blank, and
 /// where it goes asked first.
 pub fn document_new(tree: &Tree) -> String {
@@ -845,7 +934,7 @@ fn page(title: &str, head: &str, schema: &str, original: &str, data: &str) -> St
          group it hangs under, and its kind. -->\n<script type=\"application/toml\" id=\"{DATA_ID}\">\n{}</script>\n",
         data
     ));
-    // The method checker, as base64. Never edited, and carried into every
+    // The method checker, gzipped, as base64. Never edited, and carried into every
     // saved copy, so a filled form still checks its method wherever it goes.
     o.push_str(&format!(
         "<script type=\"application/octet-stream\" id=\"vleo-method-wasm\">{}</script>\n",
@@ -2823,8 +2912,11 @@ const PAGE_JS: &str = r#"'use strict';
     if (VM || VMerr) return VM;
     try {
       const bin = atob((($('#vleo-method-wasm') || {}).textContent || '').trim());
-      const bytes = new Uint8Array(bin.length);
-      for (let k = 0; k < bin.length; k++) bytes[k] = bin.charCodeAt(k);
+      const gz = new Uint8Array(bin.length);
+      for (let k = 0; k < bin.length; k++) gz[k] = bin.charCodeAt(k);
+      // Carried compressed, to keep the form small; unpacked by the browser.
+      if (typeof DecompressionStream !== 'function') throw new Error('this browser is too old to unpack the checker');
+      const bytes = await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
       VM = (await WebAssembly.instantiate(bytes, {})).instance.exports;
     } catch (e) { VMerr = String(e && e.message || e); }
     return VM;
@@ -2842,19 +2934,21 @@ const PAGE_JS: &str = r#"'use strict';
   // beside yours, never before it, so the tool can never be where your answer
   // came from.
   function checkToml() {
-    let o = '[method]\ntext = ' + tq(S(DATA.fields.method_text)) + '\n\n[output]\ntype = ' +
-      tq(S(DATA.fields.type)) + '\n';
-    for (const [k, ty] of bindings()) o += '\n[[input]]\nbinding = ' + tq(k) + '\ntype = ' + tq(ty) + '\n';
+    // The plain form `method::report_plain` reads — see its doc comment.
+    const one = v => S(v).replace(/[\r\n]+/g, ' ').trim();
+    let o = 'output ' + one(DATA.fields.type) + '\n';
+    for (const [k, ty] of bindings()) o += 'input ' + one(k) + ' ' + one(ty) + '\n';
     const used = [], waiting = [];
     (DATA.case || []).forEach((r, i) => {
       const refuse = S(r.refuse) === 'yes';
       if ((!refuse && num(r.expect) == null) || !inputsOk(r.inputs)) { waiting.push(i); return; }
-      o += '\n[[case]]\nlabel = ' + tq(S(r.label) || 'case ' + (i + 1)) + '\nrefuse = ' + tq(refuse ? 'yes' : 'no') + '\n';
-      if (!refuse) o += 'expect = ' + num(r.expect) + '\ntolerance = ' + (num(r.tolerance) || '0') + '\n';
       const m = readInputs(r.inputs);
-      o += 'inputs = { ' + bindings().map(([k]) => k + ' = ' + Number(m[k])).join(', ') + ' }\n';
+      const ins = bindings().map(([k]) => k + '=' + Number(m[k])).join(';');
+      o += 'case ' + (refuse ? '1 - - ' : '0 ' + num(r.expect) + ' ' + (num(r.tolerance) || '0') + ' ') +
+        ins + ' ' + (one(r.label) || 'case ' + (i + 1)) + '\n';
       used.push(i);
     });
+    o += 'method\n' + S(DATA.fields.method_text);
     return { text: o, used, waiting };
   }
   let timer = null, seq = 0;
