@@ -931,6 +931,7 @@ pre.pseudo { background: var(--card); border: 1px solid var(--rule-2); padding: 
   border: 1px solid var(--rule); color: var(--ink-3); }
 .man-who.user { color: var(--in); border-color: var(--in); }
 .man-who.developer { color: var(--teal); border-color: var(--teal); }
+.man-who.maintainer { color: var(--out); border-color: var(--out); }
 
 .man-steps { margin: .8rem 0 0; padding-left: 1.4rem; }
 .man-step { margin: 0 0 .9rem; padding-left: .2rem; }
@@ -1057,3 +1058,26 @@ table.risks td { vertical-align: top; }
 .nform-dr dt { color: var(--ink-3); }
 .nform-dr dd { margin: 0; }
 @media (max-width: 640px) { .nform-dr { grid-template-columns: 1fr; } }
+
+/* A PREVIEW build: one author's change, before it is approved. The banner is on
+   every view and never scrolls away, so a preview is never mistaken for a
+   release; amber, the colour this face already uses for "not settled". */
+#preview-bar {
+  position: sticky; top: 0; z-index: 50;
+  background: var(--out-pale); color: var(--ink); border-bottom: 2px solid var(--out);
+  padding: .5rem 2.5rem; font-size: 13px; line-height: 1.6;
+}
+#preview-bar b { color: var(--out); letter-spacing: .04em; }
+#preview-bar .pv-approve { margin-left: .5rem; }
+#approve-dlg { max-width: 34rem; border: 1px solid var(--rule); border-radius: 4px;
+  background: var(--card); color: var(--ink); padding: 1rem 1.2rem; }
+#approve-dlg::backdrop { background: rgba(0, 0, 0, .35); }
+.pv-form label { display: block; margin: .6rem 0; }
+.pv-form input[name="by"], .pv-form textarea { display: block; width: 100%; box-sizing: border-box;
+  margin-top: .25rem; font: inherit; color: inherit; background: var(--paper);
+  border: 1px solid var(--rule); border-radius: 3px; padding: .35rem; }
+.pv-form .pv-check { display: flex; gap: .5rem; align-items: baseline; }
+.pv-answer { border-left: 3px solid var(--both); background: var(--both-pale); padding: .35rem .7rem; }
+.pv-steps { padding-left: 1.2rem; }
+.pv-btns { margin-top: 1rem; }
+@media (max-width: 640px) { #preview-bar { padding: .5rem 16px; } }

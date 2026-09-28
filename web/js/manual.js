@@ -50,7 +50,7 @@ function inline(text) {
 }
 
 /** Who a section is for, as the badge reads. */
-const WHO = { user: 'user', developer: 'developer', everyone: 'everyone' };
+const WHO = { user: 'user', maintainer: 'maintainer', developer: 'developer', everyone: 'everyone' };
 
 /** Whether a section shows under the chosen filter. */
 function shows(who) {
@@ -215,13 +215,15 @@ function draw(host) {
     '<aside class="man-side">' +
       '<div class="man-side-h">For</div>' +
       '<div class="man-filter" role="group" aria-label="who this is for">' +
-        [['all', 'everyone'], ['user', 'a user'], ['developer', 'a developer']].map(([k, t]) =>
+        [['all', 'everyone'], ['user', 'a user'], ['maintainer', 'a maintainer'], ['developer', 'a developer']].map(([k, t]) =>
           '<button class="ctl man-f' + (VIEW.who === k ? ' sel' : '') + '" data-who="' + k + '">' +
           t + '</button>').join('') +
       '</div>' +
       '<p class="man-side-note">A <b>user</b> — the team — reads the design, sets the inputs, runs, ' +
-        'keeps results, and asks for a change by filling a node’s form. A <b>developer</b> maintains ' +
-        'the repository: checks each form, applies it, implements, evidences and releases it.</p>' +
+        'keeps results, asks for a change by filling a node’s form, and approves the preview of it. ' +
+        'A <b>maintainer</b> runs the routine: takes each form in, sends the preview, records the ' +
+        'approval, releases. A <b>developer</b> writes what the routine cannot: code, checks, the tool ' +
+        'itself.</p>' +
       layers.map(l =>
         '<div class="man-side-h' + (l.id === L.id ? ' cur' : '') + '">' +
           '<a href="#manual/' + esc(l.id) + '" class="man-layer-link" data-layer="' + esc(l.id) + '">' +
