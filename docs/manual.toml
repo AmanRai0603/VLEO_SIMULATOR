@@ -397,6 +397,15 @@ gives the result back whole. The **CSV** opens in any spreadsheet. A result \
 somebody sent you is uploaded the same way: its report, or its `result.csv` \
 with its `sweep.csv`.
 
+**Results are kept in tiers.** Every value for 30 days — `VLEO_KEEP_DAYS` \
+sets how many — and the summary for good: when the tool starts, an older \
+result is thinned to the inputs it ran on, its answer and what could not run, \
+and says so on its page and in its report. The rest is one run away, because \
+the same engine on the same inputs gives the same answer; a thinned result is \
+not offered as a kept answer, so asking its question again runs it. **Pin** a \
+result to keep every value of it for good. A shared folder named by \
+`VLEO_RESULTS` is kept whole unless `VLEO_KEEP_DAYS` is set too.
+
 **A result's inputs can become the case.** That puts every input back to what \
 the result ran on — the way to reproduce it, or to carry on from it. It is \
 checked like any other case, and refused whole if a release has since retired \
@@ -433,6 +442,10 @@ ui = "save this sweep"
 [[layer.section.step]]
 say = "A question already kept is shown from its saved result, and the line above it says which. To run it fresh anyway:"
 ui = "run again anyway"
+
+[[layer.section.step]]
+say = "Keep every value of it for good; unpinned, an old result is thinned to its summary."
+ui = "pin"
 
 
 [[layer.section]]
@@ -2607,6 +2620,11 @@ what = "Keep a result somebody sent: `csv=` its CSV or the text of its report, a
 
 [[route]]
 method = "POST"
+path = "/v1/results/pin"
+what = "Pin a saved result so every value is kept for good (`on=1`), or unpin it (`on=0`) so it is thinned to its summary once it is older than `VLEO_KEEP_DAYS`: `name`."
+
+[[route]]
+method = "POST"
 path = "/v1/results/delete"
 what = "Remove one saved result: `name`."
 
@@ -2673,6 +2691,11 @@ default = "$HOME/.vleo/log"
 name = "VLEO_RESULTS"
 what = "Where saved results are kept, one folder each — the Results page and `vleo run --keep`. Outside the repository. Point it at a shared or synced folder and the team keeps one archive: each question is kept once, a question a colleague answered is shown rather than run again, and every result is written whole. Set but empty counts as unset."
 default = "$HOME/.vleo/results"
+
+[[env]]
+name = "VLEO_KEEP_DAYS"
+what = "How many days a saved result keeps every value. When the daemon starts, an unpinned result older than this is thinned to its summary — the inputs it ran on, its answer, what could not run — and says so; a pinned one is kept whole for good. `0` never thins. A folder named by `VLEO_RESULTS` — usually the team's shared archive — is kept whole unless this is set too: thinning it is the team's decision, not whichever laptop starts first. A value that is not a whole number of days thins nothing and says why."
+default = "30; kept whole when VLEO_RESULTS names the folder"
 
 [[env]]
 name = "VLEO_ROOT"

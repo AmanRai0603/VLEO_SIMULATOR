@@ -360,7 +360,7 @@
   "manifest": {
     "node": "l3_solar_ach_01",
     "mode": "branch",
-    "kernel": "d0a5e2",
+    "kernel": "6684dd",
     "graph": "adb684",
     "case": "cc8aca",
     "chain": "358a84",

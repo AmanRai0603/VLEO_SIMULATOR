@@ -86,6 +86,19 @@ engine, the tree and the data are one key, so a question already kept is
 shown from its result — named on screen — rather than run again, and saved
 only once. → `docs/ARCHITECTURE.html`, section 6
 
+**Pinned / thinned** — a saved result's tier. *Pinned*: every value kept for
+good. *Thinned*: older than `VLEO_KEEP_DAYS` (30) and not pinned, so the tool
+kept the inputs it ran on, its answer and what could not run, and let the
+other values go — it says so, and asking its question again runs it. A folder
+named by `VLEO_RESULTS` is kept whole unless `VLEO_KEEP_DAYS` is set too.
+→ `docs/ARCHITECTURE.html`, section 6
+
+**Figure description** — what a result draws, said by the engine: the kind
+(line, scatter, bar, heatmap, animation, 3D scene), its axes and units, every
+series and the row it shows, and every refused point with why. A page draws
+it; it never invents its own picture of the numbers.
+→ `crates/vleo-modules/src/figure.rs`, `contract/schemas/result.json`
+
 **Trace** — the record a writing `xtask` command leaves in
 `target/xtask-trace/`: its command line, the commit, and each step with its
 time and what it found or why it stopped. `xtask trace` shows the last.

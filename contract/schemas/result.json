@@ -12,6 +12,14 @@
     "target": {
       "type": "string"
     },
+    "pinned": {
+      "type": "boolean",
+      "description": "Kept whole for good: never thinned."
+    },
+    "thinned": {
+      "type": "string",
+      "description": "Empty while every value is kept; once thinned to its summary, the date and how many values were dropped."
+    },
     "name": {
       "type": "string"
     },
@@ -249,12 +257,349 @@
         "y",
         "refused"
       ]
+    },
+    "figures": {
+      "type": "array",
+      "description": "What the result draws: a face draws these rather than its own picture of the numbers.",
+      "items": {
+        "type": "object",
+        "description": "What a result draws, described by the engine (crates/vleo-modules/src/figure.rs). Values are in the axis's display unit.",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "line",
+              "scatter",
+              "bar",
+              "heatmap",
+              "animation",
+              "scene3d"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "says": {
+            "type": "string"
+          },
+          "x": {
+            "type": "object",
+            "description": "What an axis measures, its display unit, and the factor from that unit to SI.",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "unit": {
+                "type": "string"
+              },
+              "factor": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "unit",
+              "factor"
+            ]
+          },
+          "y": {
+            "type": "object",
+            "description": "What an axis measures, its display unit, and the factor from that unit to SI.",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "unit": {
+                "type": "string"
+              },
+              "factor": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "unit",
+              "factor"
+            ]
+          },
+          "z": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "What an axis measures, its display unit, and the factor from that unit to SI.",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "unit": {
+                    "type": "string"
+                  },
+                  "factor": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "id",
+                  "label",
+                  "unit",
+                  "factor"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The value of a heatmap, the time of an animation, the third dimension of a scene."
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "One line, set of points or set of bars; a null y is a point that could not be computed, drawn as a gap.",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "row": {
+                  "type": "string"
+                },
+                "x": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "y": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "name",
+                "row",
+                "x",
+                "y"
+              ]
+            }
+          },
+          "grid": {
+            "anyOf": [
+              {
+                "type": "object",
+                "description": "Row-major: z[j * len(x) + i] is at (x[i], y[j]).",
+                "properties": {
+                  "x": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  "y": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  "z": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "x",
+                  "y",
+                  "z"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "frames": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "t": {
+                  "type": "number"
+                },
+                "series": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "description": "One line, set of points or set of bars; a null y is a point that could not be computed, drawn as a gap.",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "row": {
+                        "type": "string"
+                      },
+                      "x": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        }
+                      },
+                      "y": {
+                        "type": "array",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "row",
+                      "x",
+                      "y"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "t",
+                "series"
+              ]
+            }
+          },
+          "scene": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "shape": {
+                  "type": "string",
+                  "enum": [
+                    "point",
+                    "path"
+                  ]
+                },
+                "points": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                }
+              },
+              "required": [
+                "name",
+                "shape",
+                "points"
+              ]
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "x",
+                "y",
+                "text"
+              ]
+            }
+          },
+          "gaps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "why": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "x",
+                "why"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "says",
+          "x",
+          "y",
+          "z",
+          "series",
+          "grid",
+          "frames",
+          "scene",
+          "notes",
+          "gaps"
+        ]
+      }
     }
   },
   "required": [
     "ok",
     "file",
     "target",
+    "pinned",
+    "thinned",
     "name",
     "saved",
     "mode",
@@ -275,6 +620,7 @@
     "inputs",
     "outputs",
     "blocked_rows",
-    "sweep_data"
+    "sweep_data",
+    "figures"
   ]
 }

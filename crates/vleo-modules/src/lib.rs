@@ -190,6 +190,7 @@ pub fn why_not_suppliable(id: &str) -> Option<String> {
     ))
 }
 
+pub mod figure;
 pub mod inputs;
 pub mod results;
 

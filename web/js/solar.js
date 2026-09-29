@@ -24,7 +24,7 @@ import { solarRecord, bundleFile, parityFile, engineValues, engineSweep, engineA
   engineProbe, probeSweep,
   engineLevers, centredMean, corr, quantile, num, daysSince2000 } from './record.js';
 import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
-  watchScheme, sizeCanvas, cssSize, INK } from './chart.js';
+  watchScheme, sizeCanvas, cssSize, INK, exportFigure } from './chart.js';
 
 // ---------------------------------------------------------------------------
 // describing the picture that was actually drawn
@@ -3196,7 +3196,8 @@ function panelBody(p, o) {
     '<div class="sw-view"></div>' +
     '<details class="sw-table"><summary>the numbers behind this picture</summary>' +
     '<div class="sw-table-copy"><button class="ctl sw-copy" type="button">' +
-    'copy as TSV</button><span class="sw-copied"></span></div>' +
+    'copy as TSV</button><button class="ctl sw-png" type="button">PNG</button>' +
+    '<button class="ctl sw-csv" type="button">CSV</button><span class="sw-copied"></span></div>' +
     '<div class="sw-table-body"></div></details>' +
     '<div class="sw-panel-note muted">reading the record…</div>';
 }
@@ -3317,6 +3318,13 @@ function viewStrip(host, p, o, view, shown) {
     const cv = $('.sw-panel', host);
     view.pinned = cv && cv._built ? cv._built : null;
   });
+
+  // The figure as files: its picture as PNG and its numbers as CSV, both as
+  // shown — the view's zoom and hidden series applied.
+  const png = $('.sw-png', host), csvb = $('.sw-csv', host);
+  const stem = (p && p.id) || 'figure';
+  if (png) png.onclick = () => exportFigure($('.sw-panel', host), shown, stem, 'png');
+  if (csvb) csvb.onclick = () => exportFigure($('.sw-panel', host), shown, stem, 'csv');
 
   const cp = $('.sw-copy', host), said = $('.sw-copied', host);
   if (cp) {

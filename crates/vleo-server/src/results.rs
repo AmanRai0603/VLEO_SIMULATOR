@@ -150,8 +150,14 @@ pub(super) fn rows_json(j: &mut Json, key: &str, rows: &[vleo_modules::results::
     j.close_arr();
 }
 
-pub(super) fn result_head(j: &mut Json, s: &vleo_modules::results::Saved) {
+pub(super) fn result_head(j: &mut Json, file: &str, s: &vleo_modules::results::Saved) {
     j.str_field("target", &s.target);
+    // Kept whole for good, or thinned to its summary on the date given.
+    j.bool_field(
+        "pinned",
+        vleo_modules::results::store::is_pinned(&results_dir(), file),
+    );
+    j.str_field("thinned", &s.thinned);
     j.str_field("name", &s.name);
     j.str_field("saved", &s.saved);
     j.str_field("mode", &s.mode);
@@ -234,7 +240,7 @@ pub(super) fn results_list() -> String {
         }
         j.raw("{");
         j.str_field("file", file);
-        result_head(&mut j, s);
+        result_head(&mut j, file, s);
         j.close_obj();
     }
     j.close_arr();
@@ -264,7 +270,7 @@ pub(super) fn result_json(params: &str) -> String {
     j.raw("{");
     j.bool_field("ok", true);
     j.str_field("file", &name);
-    result_head(&mut j, &s);
+    result_head(&mut j, &name, &s);
     rows_json(&mut j, "inputs", &s.inputs);
     rows_json(&mut j, "outputs", &s.outputs);
     rows_json(&mut j, "blocked_rows", &s.blocked);
@@ -272,6 +278,16 @@ pub(super) fn result_json(params: &str) -> String {
         // The same wire form a sweep run now has, so one drawing serves both.
         j.key("sweep_data").raw(&sweep_wire(&s.target, w, None));
     }
+    // What the result draws, described by the engine: any face draws this
+    // rather than inventing its own picture of the numbers.
+    j.key("figures").open_arr();
+    for (i, f) in vleo_modules::results::figures(&s).iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        j.raw(&vleo_modules::figure::json(f));
+    }
+    j.close_arr();
     j.raw("}");
     j.0
 }
@@ -360,7 +376,7 @@ fn kept_json(s: &vleo_modules::results::Saved) -> String {
             j.bool_field("ok", true);
             j.str_field("file", &file);
             j.bool_field("already", already);
-            result_head(&mut j, &kept);
+            result_head(&mut j, &file, &kept);
             j.raw("}");
             j.0
         }
@@ -477,6 +493,55 @@ pub(super) fn result_upload(params: &str) -> String {
         }
     }
     kept_json(&s)
+}
+
+/// Pin a result (`on=1`) so it is kept whole for good, or unpin it (`on=0`)
+/// so it is thinned to its summary once it is older than the keep period.
+pub(super) fn result_pin(params: &str) -> String {
+    let name = param(params, "name").map(decode).unwrap_or_default();
+    let on = flag(params, "on");
+    match vleo_modules::results::store::pin(&results_dir(), &name, on) {
+        Ok(()) => {
+            let mut j = Json::new();
+            j.raw("{");
+            j.bool_field("ok", true);
+            j.str_field("file", &name);
+            j.bool_field("pinned", on);
+            j.raw("}");
+            j.0
+        }
+        Err(e) => failed(&e),
+    }
+}
+
+/// Thin every unpinned result older than the keep period, once, at start: in
+/// the background, so a large shared folder never holds the page back.
+pub(super) fn thin_at_start() {
+    let days = match vleo_data::keep_days() {
+        Ok(Some(d)) => d,
+        Ok(None) => {
+            println!("  results kept whole for good (VLEO_KEEP_DAYS=0, or a VLEO_RESULTS folder)");
+            return;
+        }
+        Err(why) => {
+            println!("  \x1b[33m{why} — nothing was thinned\x1b[0m");
+            return;
+        }
+    };
+    println!("  results older than {days} days, unpinned, are thinned to their summary");
+    std::thread::spawn(move || {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+        match vleo_modules::results::store::thin_old(&results_dir(), now, days) {
+            Ok(done) if !done.is_empty() => {
+                println!("  thinned {} result(s) to their summary", done.len())
+            }
+            Ok(_) => {}
+            Err(e) => println!("  \x1b[33mthinning stopped: {e}\x1b[0m"),
+        }
+    });
 }
 
 pub(super) fn result_delete(params: &str) -> String {

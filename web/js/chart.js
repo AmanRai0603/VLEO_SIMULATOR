@@ -1651,6 +1651,73 @@ export function tableTsv(spec) {
   return [g.head].concat(g.rows).map(r => r.join('\t')).join('\n') + '\n';
 }
 
+/**
+ * The same grid as a CSV file, for a spreadsheet. Built from `_grid` like the
+ * table and the clipboard, so the three can never disagree.
+ */
+export function tableCsv(spec) {
+  const g = _grid(spec);
+  if (!g) return '';
+  const cell = v => /[",\n]/.test(v) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
+  return [g.head].concat(g.rows).map(r => r.map(cell).join(',')).join('\n') + '\n';
+}
+
+/** Hand the reader a file: `text` or a Blob, saved under `name`. */
+export function saveFile(name, body, type) {
+  const blob = body instanceof Blob ? body : new Blob([body], { type: type || 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+/**
+ * A figure as files: the picture as PNG — exactly the canvas the reader sees,
+ * at the display's resolution, in the scheme on screen — and its numbers as
+ * CSV. The PNG is for slides; the record is always the numbers, which is why
+ * both are offered side by side.
+ */
+export function exportFigure(canvas, spec, stem, what) {
+  const base = String(stem || 'figure').replace(/[^\w.-]+/g, '_');
+  if (what === 'csv') {
+    saveFile(base + '.csv', tableCsv(spec), 'text/csv');
+    return;
+  }
+  canvas.toBlob(b => { if (b) saveFile(base + '.png', b); }, 'image/png');
+}
+
+/**
+ * A figure the engine described (contract/schemas/result.json, `figures`) as
+ * a chart spec. The engine says what there is to see; this only draws it, so
+ * the page and any other face cannot disagree about what a result showed.
+ *
+ * Line, scatter and bar are drawn here. A heatmap, an animation and a 3D
+ * scene are described by the engine already and drawn by the next phase of
+ * the frontend; until then this answers null, and the face says so rather
+ * than drawing something else in their place.
+ */
+export function figureSpec(f, view = {}) {
+  const kinds = { line: 'line', scatter: 'dots', bar: 'bars' };
+  if (!f || !kinds[f.kind]) return null;
+  const lab = a => (a.label || a.id) + '  [' + a.unit + ']';
+  const many = f.series.length > 1;
+  return {
+    x: { label: lab(f.x), ...(view.zoom ? { min: view.zoom[0], max: view.zoom[1] } : {}) },
+    y: { label: lab(f.y) },
+    series: f.series.map((s, i) => ({
+      name: many ? s.name : '', kind: kinds[f.kind], colour: INK.series[i % INK.series.length],
+      width: f.kind === 'line' ? 2.2 : 4, x: s.x, y: s.y,
+    })).concat(f.notes.length ? [{
+      name: '', kind: 'dots', x: f.notes.map(n => n.x), y: f.notes.map(n => n.y), width: 5, alpha: 1,
+      colour: INK.text,
+    }] : []),
+    marks: [],
+    notes: f.notes.map(n => ({ x: n.x, y: n.y, text: n.text })),
+  };
+}
+
 function esc(v) {
   return String(v).replace(/[&<>"]/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

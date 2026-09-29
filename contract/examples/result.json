@@ -1,12 +1,14 @@
 {
   "ok": true,
-  "file": "2026-09-29T18-50-02Z_sw_ap_design_889478e62c60599b",
+  "file": "2026-09-29T19-43-11Z_sw_ap_design_9213c7aa68d5666c",
   "target": "sw_ap_design",
+  "pinned": false,
+  "thinned": "",
   "name": "the contract, swept",
-  "saved": "2026-09-29T18:50:02Z",
+  "saved": "2026-09-29T19:43:11Z",
   "mode": "branch",
   "chain": "075c5d",
-  "kernel": "d0a5e2",
+  "kernel": "6684dd",
   "graph": "adb684",
   "template": "48afb0100e92",
   "template_current": true,
@@ -14,7 +16,7 @@
   "ran": 2,
   "blocked": 0,
   "changed": 0,
-  "question": "889478e62c60599b",
+  "question": "9213c7aa68d5666c",
   "sweep": {
     "over": "sw_storm_design_level",
     "points": 3,
@@ -1361,5 +1363,53 @@
       132
     ],
     "refused": []
-  }
+  },
+  "figures": [
+    {
+      "id": "sweep",
+      "kind": "line",
+      "title": "sw_ap_design across sw_storm_design_level",
+      "says": "sw_ap_design across sw_storm_design_level: 3 answered, 0 refused",
+      "x": {
+        "id": "sw_storm_design_level",
+        "label": "Storm level designed for",
+        "unit": "dimensionless",
+        "factor": 1
+      },
+      "y": {
+        "id": "sw_ap_design",
+        "label": "sw_ap_design",
+        "unit": "dimensionless",
+        "factor": 1
+      },
+      "z": null,
+      "series": [
+        {
+          "name": "sw_ap_design",
+          "row": "sw_ap_design",
+          "x": [
+            1,
+            2,
+            3
+          ],
+          "y": [
+            48,
+            80,
+            132
+          ]
+        }
+      ],
+      "grid": null,
+      "frames": [],
+      "scene": [],
+      "notes": [
+        {
+          "x": 3,
+          "y": 132,
+          "text": "this case"
+        }
+      ],
+      "gaps": []
+    }
+  ]
 }

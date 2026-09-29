@@ -27,7 +27,7 @@
 'use strict';
 
 import { $, $$, esc, fmt, plural, answerFirst } from './dom.js';
-import { drawChart, attachHover, tableFor, tableTsv, INK, watchScheme } from './chart.js';
+import { drawChart, attachHover, tableFor, tableTsv, watchScheme, exportFigure, figureSpec } from './chart.js';
 import { caseChanged } from './state.js';
 
 const POST = { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } };
@@ -77,7 +77,9 @@ export async function renderResults(host) {
         '<tr class="res-row' + (r.file === PAGE.open ? ' sel' : '') + '" data-file="' + esc(r.file) + '">' +
         '<td>' + esc(r.saved) + (r.name ? '<div class="muted">' + esc(r.name) + '</div>' : '') + '</td>' +
         '<td><code>' + esc(r.target) + '</code>' + (r.sweep ? '<span class="res-kind" title="a sweep over ' +
-          esc(r.sweep.over) + ', ' + r.sweep.points + ' points">sweep</span>' : '') + '</td><td><b>' +
+          esc(r.sweep.over) + ', ' + r.sweep.points + ' points">sweep</span>' : '') +
+          (r.pinned ? '<span class="res-kind" title="kept whole for good">pinned</span>' : '') +
+          (r.thinned ? '<span class="res-kind" title="thinned to its summary">summary</span>' : '') + '</td><td><b>' +
           esc(answerText(r)) + '</b></td>' +
         '<td>' + r.changed + ' changed</td><td>' + r.ran + ' · ' + r.blocked + ' blocked</td>' +
         '<td><button class="ctl res-open" data-file="' + esc(r.file) + '">open</button></td></tr>').join('') +
@@ -130,6 +132,13 @@ async function view(el, host, all) {
       esc(r.mode) + ' · <b>' + plural(r.changed, 'input') + ' changed</b> from the defaults</p>' +
     '<p class="chainline muted">chain <b>' + esc(r.chain) + '</b> · kernel ' + esc(r.kernel) + ' · graph ' +
       esc(r.graph) + (r.data ? ' · data ' + esc(r.data) : '') + '</p>' +
+    // KEPT IN TIERS. Every value for a time, the summary for good: an
+    // unpinned result older than the keep period keeps its inputs, its answer
+    // and what could not run. The rest is one run away, and it says so.
+    (r.thinned ? '<p class="run-stale res-thinned">Thinned to its summary on ' + esc(r.thinned.split(' ')[0]) +
+      ': ' + plural(+r.thinned.split(' ')[1] || 0, 'other value') + ' of the run ' +
+      (r.thinned.split(' ')[1] === '1' ? 'was' : 'were') + ' let go. The inputs it ran on, its answer and ' +
+      'what could not run are kept — use its inputs as the case and run it to see every value again.</p>' : '') +
     (r.template_current ? '' : '<p class="run-stale">Saved against another set of inputs than this tool ' +
       'has now. It is shown as it was; loading its inputs as the case carries them over.</p>') +
     // WHAT IT RESTS ON. A result keeps the version of every row it ran
@@ -150,6 +159,9 @@ async function view(el, host, all) {
       (r.sweep_data ? '<a class="ctl" href="/v1/result.sweep.csv?name=' + q + '" download="' +
         esc(PAGE.open.replace(/\.csv$/, '') + '.sweep.csv') + '">download sweep CSV</a>' : '') +
       '<button class="ctl res-case" title="make the inputs this result ran on the saved case">use its inputs as the case</button>' +
+      '<button class="ctl res-pin" title="' + (r.pinned ? 'let it be thinned to its summary once it is old'
+        : 'keep every value of this result for good; unpinned, it is thinned to its summary once it is old') + '">' +
+        (r.pinned ? 'unpin' : 'pin') + '</button>' +
       '<button class="ctl res-del">delete</button><span class="why res-do-said"></span></div>';
   const others = all.filter(x => x.file !== PAGE.open);
   if (others.length) {
@@ -158,10 +170,12 @@ async function view(el, host, all) {
         esc(x.saved + ' · ' + x.target + (x.name ? ' · ' + x.name : '')) + '</option>').join('') + '</select></div>';
   }
   h += '<div class="res-cmp-out"></div>';
-  if (r.sweep_data) {
+  const fig = (r.figures || []).find(f => f.id === 'sweep');
+  if (fig) {
     h += '<h4>The sweep it keeps</h4><p class="muted res-sw-said"></p>' +
       '<canvas class="plot res-sw-plot" width="900" height="320"></canvas>' +
       '<div class="runbar"><button class="ctl res-sw-copy" type="button">copy as TSV</button>' +
+      '<button class="ctl res-sw-png" type="button">PNG</button><button class="ctl res-sw-csv" type="button">CSV</button>' +
       '<span class="res-sw-copied"></span><span class="muted">hover to read a point, drag to zoom, ' +
       'double-click to undo</span></div>' +
       '<details><summary>the numbers behind this picture</summary><div class="res-sw-table"></div></details>';
@@ -199,42 +213,38 @@ async function view(el, host, all) {
     await caseChanged();
     said.textContent = 'the case is now the inputs this result ran on — ' + plural(res.changed, 'input') + ' changed';
   };
+  $('.res-pin', el).onclick = async () => {
+    const res = await post('/v1/results/pin', { name: PAGE.open, on: r.pinned ? '0' : '1' });
+    if (!res.ok) { $('.res-do-said', el).textContent = 'not changed: ' + (res.message || 'refused'); return; }
+    renderResults(host);
+  };
   $('.res-del', el).onclick = async () => {
     if (!confirm('Delete this saved result? Download it first to keep a copy.')) return;
     const res = await post('/v1/results/delete', { name: PAGE.open });
     if (res.ok) { PAGE.open = null; renderResults(host); }
   };
-  if (r.sweep_data) drawSweep(el, r);
+  if (fig) drawSweep(el, r, fig);
   const cmp = $('.res-cmp', el);
   if (cmp) cmp.onchange = () => { PAGE.compare = cmp.value; compare($('.res-cmp-out', el), r); };
   if (PAGE.compare) compare($('.res-cmp-out', el), r);
 }
 
 /**
- * A saved sweep, drawn from its record with the same chart the run panel uses.
- * Nothing is run: the points are the ones the engine returned when it was
- * saved, and a refused point is a gap in the line, as it was then.
+ * A saved sweep, drawn from the figure the engine described for it, with the
+ * same chart the run panel uses. Nothing is run: the points are the ones the
+ * engine returned when it was saved, and a refused point is a gap in the
+ * line, as it was then.
  */
-function drawSweep(el, r) {
-  const w = r.sweep_data;
+function drawSweep(el, r, f) {
   const c = $('.res-sw-plot', el);
-  const fx = w.x_factor || 1, fy = w.y_factor || 1;
-  const pts = w.x.map((x, i) => [x, w.y[i]]).concat(w.refused.map(q => [q.x, null]))
-    .sort((a, b) => a[0] - b[0]);
-  const u = x => (!x || x === '-') ? 'dimensionless' : x;
-  const at = r.inputs.find(i => i.id === w.x_id);
-  const ans = r.outputs.find(o => o.id === r.target);
-  const here = at && ans && at.si !== null && ans.si !== null ? { x: at.si / fx, y: ans.si / fy } : null;
   let zoom = null;
-  const spec = () => ({
-    x: { label: w.x_id + '  [' + u(w.x_unit) + ']', ...(zoom ? { min: zoom[0], max: zoom[1] } : {}) },
-    y: { label: w.y_id + '  [' + u(w.y_unit) + ']' },
-    series: [{ name: '', kind: 'line', colour: INK.series[0], width: 2.2,
-               x: pts.map(p => p[0] / fx), y: pts.map(p => (p[1] === null ? null : p[1] / fy)) }]
-      .concat(here ? [{ name: '', kind: 'dots', x: [here.x], y: [here.y], width: 5, alpha: 1, colour: INK.text }] : []),
-    marks: [],
-    notes: here ? [{ x: here.x, y: here.y, text: 'this case' }] : [],
-  });
+  const spec = () => figureSpec(f, { zoom });
+  if (!spec()) {
+    $('.res-sw-said', el).textContent = 'This result describes a ' + f.kind + ' figure, which this page does ' +
+      'not draw yet; its numbers are in the downloads.';
+    c.remove();
+    return;
+  }
   const paint = () => {
     if (!c.isConnected) return;
     const sp = spec();
@@ -247,10 +257,14 @@ function drawSweep(el, r) {
   };
   paint();
   watchScheme(paint);
-  $('.res-sw-said', el).innerHTML = esc(w.y_id) + ' across <b>' + esc(w.x_id) + '</b>: ' +
-    plural(w.x.length, 'point') + ' answered' + (w.refused.length ? ', <b>' + w.refused.length +
-    ' refused</b> — ' + esc(w.refused[0].why) + ' — drawn as gaps' : ', none refused') +
+  const answered = f.series[0].y.filter(v => v !== null).length;
+  $('.res-sw-said', el).innerHTML = esc(f.y.id) + ' across <b>' + esc(f.x.id) + '</b>: ' +
+    plural(answered, 'point') + ' answered' + (f.gaps.length ? ', <b>' + f.gaps.length +
+    ' refused</b> — ' + esc(f.gaps[0].why) + ' — drawn as gaps' : ', none refused') +
     '. Every point was computed when this was saved; nothing here runs.';
+  const stem = (r.name || r.target).replace(/\s+/g, '_') + '_sweep';
+  $('.res-sw-png', el).onclick = () => exportFigure(c, spec(), stem, 'png');
+  $('.res-sw-csv', el).onclick = () => exportFigure(c, spec(), stem, 'csv');
   $('.res-sw-copy', el).onclick = async () => {
     let okay = false;
     try { await navigator.clipboard.writeText(tableTsv(spec())); okay = true; } catch (e) { okay = false; }

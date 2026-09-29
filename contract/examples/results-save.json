@@ -1,13 +1,15 @@
 {
   "ok": true,
-  "file": "2026-09-29T18-50-02Z_sw_ap_design_592e1dfb2d27d70c",
+  "file": "2026-09-29T19-43-11Z_sw_ap_design_791cf69e607d6c47",
   "already": false,
   "target": "sw_ap_design",
+  "pinned": false,
+  "thinned": "",
   "name": "the contract",
-  "saved": "2026-09-29T18:50:02Z",
+  "saved": "2026-09-29T19:43:11Z",
   "mode": "branch",
   "chain": "075c5d",
-  "kernel": "d0a5e2",
+  "kernel": "6684dd",
   "graph": "adb684",
   "template": "48afb0100e92",
   "template_current": true,
@@ -15,7 +17,7 @@
   "ran": 2,
   "blocked": 0,
   "changed": 0,
-  "question": "592e1dfb2d27d70c",
+  "question": "791cf69e607d6c47",
   "sweep": null,
   "versions": [
     {

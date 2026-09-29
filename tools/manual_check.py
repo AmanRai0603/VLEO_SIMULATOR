@@ -771,6 +771,16 @@ def browser_walk():
                 said = page.locator(".res-cmp-box").inner_text()
                 assert "1 input differs" in said and "sw_storm_design_level" in said, \
                     f"two results do not compare by the input that differs: {said[:300]}"
+                # Pinned, it says so and is kept whole; unpinned, it says so again.
+                pin = U("browser-results", 9)
+                button(".res-do", pin).click()
+                page.wait_for_function(
+                    "() => [...document.querySelectorAll('.res-row.sel .res-kind')].some(e => e.innerText === 'pinned')",
+                    timeout=15000)
+                assert any((k / "pinned").is_file() for k in kept_results() if k.is_dir()), \
+                    "a pinned result has no pin in its folder"
+                button(".res-do", "unpin").click()
+                page.wait_for_selector(".res-do .res-pin:text-is('" + pin + "')")
                 button(".res-do", U("browser-results", 6)).click()
                 page.wait_for_function(
                     "() => /the case is now/.test(document.querySelector('.res-do-said').innerText)", timeout=15000)
@@ -782,7 +792,7 @@ def browser_walk():
                 urllib.request.urlopen(urllib.request.Request(base + "v1/inputs/reset", data=b""), timeout=10)
                 untouched("the results walk")
             ok("a result is saved from a run, shown, sent as a report, uploaded back, compared, "
-               "made the case and deleted — git sees none of it", results_round_trip)
+               "pinned and unpinned, made the case and deleted — git sees none of it", results_round_trip)
 
             # THE FORMS PAGE HANDS OUT EVERY FORM AND CHECKS ONE THAT COMES BACK.
             # It never applies one: that is the developer's, at a terminal.

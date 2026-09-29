@@ -163,6 +163,10 @@ fn env_read() -> BTreeSet<String> {
             // vleo-data reads its path settings through one function, so that
             // "set but empty" means unset for every one of them.
             "set_to_something(&var, \"",
+            // …and reads any other through the stand-in `var` those
+            // functions take, so each can be tested without the process's own
+            // environment.
+            " var(\"",
         ] {
             let mut rest = text.as_str();
             while let Some(i) = rest.find(pat) {

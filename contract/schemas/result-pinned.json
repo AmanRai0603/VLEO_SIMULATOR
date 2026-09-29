@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "result-pinned",
+  "description": "A result pinned or unpinned: a pinned result is kept whole for good.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "file": {
+      "type": "string"
+    },
+    "pinned": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "ok",
+    "file",
+    "pinned"
+  ]
+}
