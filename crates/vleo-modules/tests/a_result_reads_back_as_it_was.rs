@@ -90,7 +90,8 @@ fn results_are_kept_listed_and_removed_and_a_path_is_never_followed() {
     let dir = std::env::temp_dir().join(format!("vleo-results-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     let (s, _, _) = a_result();
-    let name = store::save(&dir, &s).unwrap();
+    let (name, already) = store::save(&dir, &s).unwrap();
+    assert!(!already);
     std::fs::write(dir.join("broken.csv"), "not a result").unwrap();
     let (good, bad) = store::list(&dir);
     assert_eq!(good.len(), 1);
@@ -111,9 +112,9 @@ fn results_are_kept_listed_and_removed_and_a_path_is_never_followed() {
     let mut forged = s.clone();
     forged.target = "..\\..\\..\\x".into();
     forged.chain = "../../y".into();
-    let name = store::save(&dir, &forged).unwrap();
+    let (name, _) = store::save(&dir, &forged).unwrap();
     assert!(
-        dir.join(&name).is_file() && !name.contains(".."),
+        dir.join(&name).is_dir() && !name.contains(".."),
         "{name} left the folder"
     );
     let _ = std::fs::remove_dir_all(&dir);
@@ -191,9 +192,9 @@ fn a_row_whose_first_belief_came_after_the_result_is_a_belief_that_moved() {
     let text = csv(&s);
     assert!(text.contains("#! versions none\n"), "{text}");
     let with_row = text.replace(
-        "section,id,name,value,unit,si,credibility,governing,note\n",
+        "section,id,name,value,unit,si,credibility,governing,note,cred\n",
         &format!(
-            "section,id,name,value,unit,si,credibility,governing,note\noutput,{id},x,1,-,1,1,x,\n"
+            "section,id,name,value,unit,si,credibility,governing,note,cred\noutput,{id},x,1,-,1,1,x,,\n"
         ),
     );
     let then = read(&with_row).unwrap();

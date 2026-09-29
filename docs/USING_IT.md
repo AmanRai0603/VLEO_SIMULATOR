@@ -200,8 +200,12 @@ vleo selftest
 
 ### Keeping what a run said
 
-A run worth remembering is saved as a **result**: one CSV with every value it
-returned, every row it blocked on, and every input it ran on.
+A run worth remembering is saved as a **result**: every value it returned,
+every row it blocked on, and every input it ran on. `--save <file.csv>` writes
+it where you say; `--keep` keeps it in the results folder the browser shows —
+one folder per result, with its report page — and keeps each question once. A
+question already kept there is not run again: `vleo run` and `vleo sweep` show
+the saved answer and say which result it is; `--again` runs it anyway.
 
 ```
 $ vleo run sw_ap_design --inputs cases/examples/storm_level_2.csv --save storm2.csv

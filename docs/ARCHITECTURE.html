@@ -151,7 +151,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <text x="614" y="97" class="d-ts">3D graphics (WebGL)</text>
       <!-- contract -->
       <rect x="20" y="146" width="842" height="56" rx="6" class="d-contract"/>
-      <text x="36" y="170" class="d-tb">Contract — HTTP API under /v1 (29 routes, JSON) · output descriptions · result package · sheet schema</text>
+      <text x="36" y="170" class="d-tb">Contract — HTTP API under /v1 (30 routes, JSON) · output descriptions · result package · sheet schema</text>
       <text x="36" y="190" class="d-ts">the only thing both sides depend on; changed only with both sides' review</text>
       <!-- backend -->
       <rect x="20" y="216" width="560" height="112" rx="6" class="d-out"/>
@@ -237,7 +237,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
   <div class="tbl"><table>
     <thead><tr><th>Piece</th><th>What it is</th><th>State</th></tr></thead>
     <tbody>
-      <tr><td>The HTTP API</td><td>29 routes under <code>/v1</code>, JSON, served from the same origin as the pages — so the browser's cross-origin rules never apply.</td><td><span class="tag t-now">exists</span></td></tr>
+      <tr><td>The HTTP API</td><td>30 routes under <code>/v1</code>, JSON, served from the same origin as the pages — so the browser's cross-origin rules never apply.</td><td><span class="tag t-now">exists</span></td></tr>
       <tr><td>Version and identity</td><td><code>/v1/version</code> reports the engine version, kernel and graph hashes; a node page carries its sheet hash and refuses to show a stale one.</td><td><span class="tag t-now">exists</span></td></tr>
       <tr><td><code>contract/</code></td><td>One JSON Schema per route (request and answer) and per file format; example answers recorded from the real engine.</td><td><span class="tag t-new">phase 7</span></td></tr>
       <tr><td>Contract tests</td><td>Run in <code>cargo test</code>: every route's live answer validates against its schema; a changed answer without a changed example fails.</td><td><span class="tag t-new">phase 7</span></td></tr>
@@ -481,9 +481,10 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
     <thead><tr><th>What</th><th>Measured</th><th>Kept how</th></tr></thead>
     <tbody>
       <tr><td>A case — all 128 inputs</td><td class="num">9 KB</td><td>Each distinct set stored once, by hash. A run records the hash and only the values that differ from that release's defaults.</td></tr>
+      <tr><td>A saved result</td><td class="num">folder</td><td>One folder per question: <code>result.csv</code>, <code>sweep.csv</code> for a sweep, and <code>report.html</code> — the one file to send, which draws its sweep and uploads back whole. <b>Kept once:</b> the row, the inputs, the engine (its code included), the tree, the data and what a sweep moved are one key, and a question already kept is shown from its result — named on screen — rather than run again. <span class="tag t-done">done</span></td></tr>
       <tr><td>Result summary</td><td class="num">≈ 2 KB</td><td>Always. KPIs, verdicts, what was blocked, chain hash, input hash, who, when, tags, pin.</td></tr>
       <tr><td>All 1,396 row values of a run</td><td class="num">182 KB · 27 KB compressed</td><td>Compressed while recent (30 days) or pinned; then an unpinned result thins to its summary. Opening a thinned result reruns it and, if the engine has changed, shows what moved.</td></tr>
-      <tr><td>Figures, sweeps, animation frames</td><td class="num">—</td><td>Saved with the result when pinned or when a figure declares them — the outputs the figure needs, not every row at every point.</td></tr>
+      <tr><td>Figures, sweeps, animation frames</td><td class="num">—</td><td>Sweeps are saved with their result today, and drawn again from their points. Animation frames and other figures: saved with the result when pinned or when a figure declares them — the outputs the figure needs, not every row at every point.</td></tr>
       <tr><td>Large arrays</td><td class="num">—</td><td>Parquet above ~100,000 values — columnar, typed, several times smaller, read directly by Python, MATLAB and Excel. Loaded into a page as an overview first (each pixel's minimum and maximum, so no peak is lost) and detail on zoom.</td></tr>
       <tr><td>The index of all results</td><td class="num">—</td><td>A small index file, rebuilt from the results if lost. Moves to SQLite — one embedded file, no server — past ~50,000 results or when queries across runs are needed.</td></tr>
       <tr><td>Crash logs</td><td class="num">&lt; 1 KB each</td><td><code>~/.vleo/log/</code>, the newest 50 kept.</td></tr>
@@ -658,9 +659,10 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <tr><td class="num">1–2</td><td>Local server safety; bad sheets refused at build; tests for every checker</td><td>backend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">3–4</td><td>Code restructured; three branches; team code owners; a release only from a merged pull request; CI timeouts; the evidence headline; the glossary</td><td>all</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">5</td><td>When something breaks: unwinding build, per-request guard, connection places, the C boundary, crash log, whole writes, empty variables</td><td>backend · data</td><td><span class="tag t-done">done</span></td></tr>
+      <tr><td class="num">—</td><td>Results kept once and reused: a result is a folder; a question already kept is shown from its saved result instead of run, in the browser and in <code>vleo</code>; sweeps saved and drawn again; the report draws its sweep and uploads back whole; the engine's identity covers the kernel's code</td><td>data · backend · frontend</td><td><span class="tag t-done">done</span></td></tr>
       <tr><td class="num">6</td><td>Scripts that explain themselves: the pipeline table, <code>explain</code>, uniform steps, <code>--dry-run</code>, traces, <code>why</code>, generated <code>PIPELINE.md</code></td><td>backend</td><td><span class="tag t-new">next</span></td></tr>
       <tr><td class="num">7</td><td>The contract: <code>contract/</code> schemas and recorded answers, contract tests, the mock engine, the versioning rule, frontend / backend / data teams in CODEOWNERS, split CI</td><td>all</td><td></td></tr>
-      <tr><td class="num">8</td><td>Storage and outputs: output types — number, table, figure, text, <b>animation, 3D scene</b>; the result package (folder + <code>.vleo</code>); tiers and thinning; input dedupe; the index behind one interface; the shared folder; reports with SVG figures; PNG and CSV export; sweeps saved</td><td>data · backend</td><td></td></tr>
+      <tr><td class="num">8</td><td>Storage and outputs: output types — number, table, figure, text, <b>animation, 3D scene</b>; the result package grows with them (a zipped <code>.vleo</code> only for a result one report page cannot carry); tiers and thinning; input dedupe; the index behind one interface, so finding a kept question does not read every result; PNG and CSV export</td><td>data · backend</td><td></td></tr>
       <tr><td class="num">9</td><td>Frontend: the component library and one page template in <code>web/</code>; <code>lesson.toml</code>; widgets computed by the kernel in the browser; <b>the animation player and the 3D viewer</b>; bundled fonts and shared assets; the lesson form; the docs folder for readers; the first lesson</td><td>frontend</td><td></td></tr>
       <tr><td class="num">10</td><td>Figure numbers move into the kernel, solar first; each approved reference picture must stay the same</td><td>backend · frontend</td><td></td></tr>
       <tr><td class="num">11</td><td>Readability: a guide to changing the code (a node, a route, a component, an output kind), the two 3,200-line files split, generator examples, required docs; typed errors</td><td>all</td><td></td></tr>
@@ -668,7 +670,7 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
       <tr><td class="num">—</td><td>Content, by people: 124 of 190 computing rows have no outside check and 137 have no theory. Filled through forms, alongside every phase</td><td>design</td><td><span class="tag t-grow">continuous</span></td></tr>
     </tbody>
   </table></div>
-  <p class="col muted">Not on the roadmap, deliberately: a database server now; a web framework; moving the design out of git; caching — a full run of all 1,396 rows takes 12 ms. New dependencies arrive only with the phase that needs them — a zip library (8); bundled fonts and a WebGL library for 3D (9); Parquet and SQLite when their thresholds are reached — each recorded in <code>ADOPTION.lock</code> with its licence and fallback. The kernel stays free of all of them.</p>
+  <p class="col muted">Not on the roadmap, deliberately: a database server now; a web framework; moving the design out of git; a hidden cache — a full run of all 1,396 rows takes 12 ms, so the reason to reuse a kept answer is that it is named, shared and kept once, never speed, and it is always shown as the saved result it is. New dependencies arrive only with the phase that needs them — a zip library (8); bundled fonts and a WebGL library for 3D (9); Parquet and SQLite when their thresholds are reached — each recorded in <code>ADOPTION.lock</code> with its licence and fallback. The kernel stays free of all of them.</p>
 </section>
 
 <!-- ────────────────────────────────────────────────────────────── 11 ── -->
@@ -680,7 +682,8 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
     <tbody>
       <tr><td>Where the tool runs</td><td>On each person's computer, with a shared results folder for the team (<code>VLEO_RESULTS</code>). No server to run, works offline, one archive for everyone.</td><td>People need to see each other's runs live, or who may run what must be controlled — then one team server behind sign-in and HTTPS, on the same storage interface.</td></tr>
       <tr><td>Database</td><td>No database server. Files and a rebuildable index; SQLite as an embedded index only past ~50,000 results.</td><td>The index grows past that, or queries across runs are needed.</td></tr>
-      <tr><td>How a result is saved and shared</td><td>A folder on disk; one <code>.vleo</code> file to share, with a self-contained <code>report.html</code>.</td><td>—</td></tr>
+      <tr><td>How a result is saved and shared</td><td>A folder on disk; to share, its <code>report.html</code> — one file that opens in any browser, draws its sweep, and uploads back whole.</td><td>A result carries what one page cannot — animation frames, a 3D scene — then one zipped <code>.vleo</code> file.</td></tr>
+      <tr><td>The same question asked twice</td><td>Answered from its saved result, never silently: the answer names the result and when it was saved, and <i>run again anyway</i> runs it fresh. A question is kept once.</td><td>Finding a kept question is slow — then the index of phase 8 answers it instead of reading every result.</td></tr>
       <tr><td>How long results are kept</td><td>Summaries forever; all values for 30 days; pinned and shared results forever.</td><td>The shared folder's size says otherwise — the numbers are settings.</td></tr>
       <tr><td>Where page content lives</td><td><code>lesson.toml</code> beside <code>node.toml</code>, per node or per group of nodes; outside the sheet hash.</td><td>—</td></tr>
       <tr><td>Animation and 3D</td><td>Part of the core output model (phase 8) and the frontend (phase 9) — not an afterthought — with 3D growing richer over time in the same format.</td><td>—</td></tr>

@@ -309,8 +309,9 @@ fn route(
         ("GET", "/v1/derisk") => ok_json(derisk_json(ctx)),
         ("GET", "/v1/results") => ok_json(results_list()),
         ("GET", "/v1/result") => ok_json(result_json(params)),
-        ("GET", "/v1/result.csv") => result_file(params, false),
-        ("GET", "/v1/result.html") => result_file(params, true),
+        ("GET", "/v1/result.csv") => result_file(params, "csv"),
+        ("GET", "/v1/result.sweep.csv") => result_file(params, "sweep"),
+        ("GET", "/v1/result.html") => result_file(params, "report"),
         ("POST", "/v1/results/save") => ok_json(result_save(params, ctx)),
         ("POST", "/v1/results/upload") => ok_json(result_upload(params)),
         ("POST", "/v1/results/delete") => ok_json(result_delete(params)),
@@ -692,6 +693,35 @@ fn build_case(params: &str, ctx: &Ctx) -> Case {
     }
 }
 
+/// Which inputs an answer was for, as the run response says it: whether it is
+/// the declared design, how many inputs the saved case changes, and what the
+/// last update did to the case. A saved answer shown again says it the same way.
+fn inputs_note(j: &mut Json, params: &str) {
+    // Which inputs this answer was for. A number with no case beside it
+    // is a number a reader will quote for the wrong inputs.
+    let saved = if param(params, "inputs").map(decode).as_deref() == Some("defaults") {
+        None
+    } else {
+        Some(saved_case().reading)
+    };
+    let note = saved.as_ref().and_then(|s| s.upgrade.as_ref());
+    j.key("inputs").raw("{");
+    j.bool_field("defaults", saved.is_none());
+    j.num_field(
+        "changed",
+        saved.as_ref().map(|s| s.changed).unwrap_or(0) as f64,
+    );
+    // What the last update did to the case, until it is next saved:
+    // values it could not carry, and inputs it added at their defaults.
+    j.bool_field("upgraded", note.is_some());
+    j.num_field(
+        "set_aside",
+        note.map(|u| u.set_aside.len()).unwrap_or(0) as f64,
+    );
+    j.num_field("new", note.map(|u| u.new.len()).unwrap_or(0) as f64);
+    j.close_obj();
+}
+
 fn run_json(params: &str, ctx: &Ctx) -> String {
     if let Some(refusal) = case_refused(params, ctx) {
         return refusal;
@@ -702,6 +732,16 @@ fn run_json(params: &str, ctx: &Ctx) -> String {
     for (id, _) in &case.supply {
         if let Some(why) = unsuppliable(id) {
             return refuse(id, &why);
+        }
+    }
+    // A QUESTION ALREADY ANSWERED IS SHOWN, NOT ASKED AGAIN — when the face
+    // asks for that (`reuse=1`), and never silently: the answer says which
+    // saved result it is. The same engine on the same inputs gives the same
+    // answer, and everything that decides it is in the question's key.
+    if flag(params, "reuse") && !flag(params, "again") {
+        let q = question_of(&case, None);
+        if let Some((file, saved)) = vleo_modules::results::store::find(&results_dir(), &q) {
+            return saved_run_json(params, &file, &saved, &q);
         }
     }
     let mut scratch = Scratch::new();
@@ -718,29 +758,7 @@ fn run_json(params: &str, ctx: &Ctx) -> String {
         }
         Ok(r) => {
             j.bool_field("ok", true);
-            // Which inputs this answer was for. A number with no case beside it
-            // is a number a reader will quote for the wrong inputs.
-            let saved = if param(params, "inputs").map(decode).as_deref() == Some("defaults") {
-                None
-            } else {
-                Some(saved_case().reading)
-            };
-            let note = saved.as_ref().and_then(|s| s.upgrade.as_ref());
-            j.key("inputs").raw("{");
-            j.bool_field("defaults", saved.is_none());
-            j.num_field(
-                "changed",
-                saved.as_ref().map(|s| s.changed).unwrap_or(0) as f64,
-            );
-            // What the last update did to the case, until it is next saved:
-            // values it could not carry, and inputs it added at their defaults.
-            j.bool_field("upgraded", note.is_some());
-            j.num_field(
-                "set_aside",
-                note.map(|u| u.set_aside.len()).unwrap_or(0) as f64,
-            );
-            j.num_field("new", note.map(|u| u.new.len()).unwrap_or(0) as f64);
-            j.close_obj();
+            inputs_note(&mut j, params);
             j.key("values").open_arr();
             for (i, v) in r.values.iter().enumerate() {
                 if i > 0 {
@@ -941,7 +959,9 @@ fn probe_json(params: &str) -> String {
     j.0
 }
 
-fn sweep_json(params: &str, ctx: &Ctx) -> String {
+/// What a sweep request asks: the row, the input moved, the range in SI, and
+/// how many points — clamped as the sweep will run it.
+fn sweep_spec(params: &str) -> (String, String, f64, f64, usize) {
     let node = param(params, "node").map(decode).unwrap_or_default();
     let over = param(params, "over").map(decode).unwrap_or_default();
     let from: f64 = param(params, "from")
@@ -954,40 +974,40 @@ fn sweep_json(params: &str, ctx: &Ctx) -> String {
         .and_then(|v| v.parse().ok())
         .unwrap_or(48)
         .clamp(2, 400);
+    (node, over, from, to, points)
+}
 
+/// Run a sweep: the row's answer at each point across the range, every other
+/// input held at the case. Refused points are kept with why. A request the
+/// sweep cannot make at all comes back as the wire refusal.
+fn run_sweep(params: &str, ctx: &Ctx) -> Result<vleo_modules::results::Sweep, String> {
+    let (node, over, from, to, points) = sweep_spec(params);
     // The axis has to be a row a reader can actually move. Sweeping a computed
     // one drew a flat line and reported no refusals, which is the same silent
     // substitution as `set=` on one and reads as a real result.
     if let Some(why) = unsuppliable(&over) {
-        return refuse(&over, &why);
+        return Err(refuse(&over, &why));
     }
     if let Some(refusal) = case_refused(params, ctx) {
-        return refusal;
+        return Err(refusal);
     }
-
-    let mut j = Json::new();
-    j.raw("{");
     let (ni, oi) = match (Vleo::find(&node), Vleo::find(&over)) {
         (Some(a), Some(b)) => (a, b),
-        _ => {
-            j.bool_field("ok", false);
-            j.str_field("message", "the sweep names a node that does not exist");
-            j.raw("}");
-            return j.0;
-        }
+        _ => return Err(failed("the sweep names a node that does not exist")),
     };
-    j.bool_field("ok", true);
-    j.str_field("x_id", &over);
-    j.str_field("y_id", &node);
-    j.str_field("x_unit", VARS[oi as usize].unit.symbol());
-    j.str_field("y_unit", VARS[ni as usize].unit.symbol());
-    j.num_field("x_factor", VARS[oi as usize].unit.si_factor());
-    j.num_field("y_factor", VARS[ni as usize].unit.si_factor());
-
+    let mut w = vleo_modules::results::Sweep {
+        over: over.clone(),
+        over_name: VARS[oi as usize].label.to_string(),
+        x_unit: VARS[oi as usize].unit.symbol().to_string(),
+        x_factor: VARS[oi as usize].unit.si_factor(),
+        y_unit: VARS[ni as usize].unit.symbol().to_string(),
+        y_factor: VARS[ni as usize].unit.si_factor(),
+        from,
+        to,
+        points,
+        ..Default::default()
+    };
     let mut scratch = Scratch::new();
-    let mut xs = Vec::new();
-    let mut ys = Vec::new();
-    let mut refused: Vec<(f64, String)> = Vec::new();
     for i in 0..points {
         let t = i as f64 / (points - 1) as f64;
         let x = from + t * (to - from);
@@ -997,16 +1017,59 @@ fn sweep_json(params: &str, ctx: &Ctx) -> String {
         match vleo_modules::evaluate(&case, &mut scratch) {
             Ok(r) => match r.values.iter().find(|v| v.id == node) {
                 Some(v) => {
-                    xs.push(x);
-                    ys.push(v.value);
+                    w.x.push(x);
+                    w.y.push(v.value);
                 }
-                None => refused.push((x, "blocked".to_string())),
+                None => w.refused.push((x, "blocked".to_string())),
             },
-            Err(f) => refused.push((x, format!("{f}"))),
+            Err(f) => w.refused.push((x, format!("{f}"))),
         }
     }
+    Ok(w)
+}
+
+/// A behaviour sweep. Refused points are recorded with their reason, never
+/// dropped — a sweep in which some rows quietly used a substituted value is a
+/// sweep whose conclusion is unknown.
+///
+/// With `reuse=1`, a sweep already saved for exactly this question — same row,
+/// range, points, inputs, engine and data — is returned from its result and
+/// says so, rather than run again.
+fn sweep_json(params: &str, ctx: &Ctx) -> String {
+    let (node, over, from, to, points) = sweep_spec(params);
+    if flag(params, "reuse") && !flag(params, "again") && case_refused(params, ctx).is_none() {
+        let mut case = build_case(params, ctx);
+        case.target = node.clone();
+        let q = question_of(&case, Some((over.as_str(), from, to, points)));
+        if let Some((file, saved)) = vleo_modules::results::store::find(&results_dir(), &q) {
+            if let Some(w) = &saved.sweep {
+                return sweep_wire(&node, w, Some((&file, &saved, &q)));
+            }
+        }
+    }
+    match run_sweep(params, ctx) {
+        Ok(w) => sweep_wire(&node, &w, None),
+        Err(refusal) => refusal,
+    }
+}
+
+/// A sweep on the wire — run now, or read from the result it was saved in.
+fn sweep_wire(
+    node: &str,
+    w: &vleo_modules::results::Sweep,
+    from_saved: Option<(&str, &vleo_modules::results::Saved, &str)>,
+) -> String {
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.str_field("x_id", &w.over);
+    j.str_field("y_id", node);
+    j.str_field("x_unit", &w.x_unit);
+    j.str_field("y_unit", &w.y_unit);
+    j.num_field("x_factor", w.x_factor);
+    j.num_field("y_factor", w.y_factor);
     j.key("x").open_arr();
-    for (i, v) in xs.iter().enumerate() {
+    for (i, v) in w.x.iter().enumerate() {
         if i > 0 {
             j.raw(",");
         }
@@ -1014,7 +1077,7 @@ fn sweep_json(params: &str, ctx: &Ctx) -> String {
     }
     j.close_arr();
     j.key("y").open_arr();
-    for (i, v) in ys.iter().enumerate() {
+    for (i, v) in w.y.iter().enumerate() {
         if i > 0 {
             j.raw(",");
         }
@@ -1022,7 +1085,7 @@ fn sweep_json(params: &str, ctx: &Ctx) -> String {
     }
     j.close_arr();
     j.key("refused").open_arr();
-    for (i, (x, why)) in refused.iter().enumerate() {
+    for (i, (x, why)) in w.refused.iter().enumerate() {
         if i > 0 {
             j.raw(",");
         }
@@ -1032,6 +1095,9 @@ fn sweep_json(params: &str, ctx: &Ctx) -> String {
         j.close_obj();
     }
     j.close_arr();
+    if let Some((file, s, q)) = from_saved {
+        from_saved_json(&mut j, file, s, q);
+    }
     j.raw("}");
     j.0
 }
