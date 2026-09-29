@@ -15,6 +15,7 @@
 
 import { $, esc, plural, answerFirst } from './dom.js';
 import { S, subtreeAll, subsystemLayers } from './state.js';
+import { drawFigureInto } from './figures.js';
 
 export const SECTIONS = [
   ['node',   'the node, and its assembly'],
@@ -22,18 +23,46 @@ export const SECTIONS = [
   ['layers', 'layer by layer'],
   ['tree',   'the tree hierarchy, and its connections'],
   ['rings',  'the rings, and what may call what'],
+  ['figures', 'every kind of figure a result can draw'],
 ];
 
 export function drawArchitecture() {
   $('#arch-nav').innerHTML = SECTIONS.map(([k, label], i) =>
     '<button class="ctl arch' + (k === S.arch ? ' sel' : '') + '" data-arch="' + k + '">' +
     (i + 1) + ' · ' + esc(label) + '</button>').join('');
-  const draw = { node: secNode, conn: secConn, layers: secLayers, tree: secTree, rings: secRings };
+  const draw = { node: secNode, conn: secConn, layers: secLayers, tree: secTree, rings: secRings,
+    figures: secFigures };
   $('#arch-body').innerHTML = answerFirst('Every row of the design is the same folder: one sheet written ' +
     'by hand, and everything else generated from it. Rows connect only through the inputs they declare, ' +
     'and each layer reaches the one above through a single interface row.',
     ['The five sections below go from one node, to how nodes connect, to layers, to the whole tree, to the code rings.'],
     'explanation') + (draw[S.arch] || secNode)();
+  if (S.arch === 'figures') drawSamples($('#arch-figs'));
+}
+
+// ---------------------------------------------------------------------------
+// 6 — the figures a result can draw
+
+function secFigures() {
+  return lead(
+    'A result does not carry a picture; it carries a <b>figure description</b> — the kind, the axes and ' +
+    'their units, every series and the row it shows, and every point that could not be computed and why. ' +
+    'The engine writes it (<code>crates/vleo-modules/src/figure.rs</code>) and every face draws it, so two ' +
+    'faces cannot disagree about what a result showed.') +
+    '<p class="run-stale">Each figure below is a <b>sample</b> with illustrative numbers, not a result: the ' +
+    'shape of its kind, served by <code>/v1/figures/samples</code> so a face can be built against every ' +
+    'kind before the engine produces it for a real run.</p>' +
+    '<div id="arch-figs"><p class="muted">loading the samples…</p></div>';
+}
+
+async function drawSamples(host) {
+  if (!host) return;
+  let r;
+  try { r = await (await fetch('/v1/figures/samples')).json(); } catch (e) { r = { ok: false, message: String(e) }; }
+  if (!r.ok) { host.innerHTML = '<div class="blocked">' + esc(r.message || 'no answer') + '</div>'; return; }
+  host.innerHTML = r.figures.map((f, i) => '<section class="fig-sample" data-kind="' + esc(f.kind) + '">' +
+    h4((i + 1) + ' · ' + f.kind + ' — ' + f.title) + '<div class="fig-host"></div></section>').join('');
+  host.querySelectorAll('.fig-host').forEach((el, i) => drawFigureInto(el, r.figures[i], 'sample_' + r.figures[i].kind));
 }
 
 // ---------------------------------------------------------------------------

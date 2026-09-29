@@ -1533,6 +1533,26 @@ check = "writes"
 why = "rewrites contract/examples/ from the real engine, and drafts a schema for a route that has none"
 
 [[layer.section]]
+id = "term-lesson"
+title = "Put a lesson beside a row"
+who = "developer"
+kind = "how-to"
+answer = "A lesson is lesson.toml beside the row's node.toml — content only, drawn by the page from its components, with widgets the engine answers. Place the one the expert sent, and the gate checks it: every key known, every claim tagged, no markup, every row a widget names real."
+body = """
+The expert writes the lesson; nobody writes HTML for it and nobody writes a \
+formula for the page to compute. `docs/LESSONS.md` is the file, table by \
+table, and `docs/examples/orbit_velocity.lesson.toml` a complete example. \
+Place it beside the row's `node.toml` and run the gate on that row: check \
+`lesson` refuses it with every reason. On the row's page it is the segment \
+*the lesson*, served by `/v1/lesson/<id>`. A lesson is outside the sheet \
+hash, so it never changes an answer."""
+
+[[layer.section.step]]
+say = "Check the row the lesson sits beside — the gate reads its lesson.toml."
+run = "cargo run -p xtask -- gate orbit_velocity"
+check = "exits"
+
+[[layer.section]]
 id = "term-kit"
 title = "Share the tool with the team"
 who = "developer"
@@ -2530,6 +2550,11 @@ what = "A row, as the engine holds it."
 
 [[route]]
 method = "GET"
+path = "/v1/lesson/<id>"
+what = "A row's lesson — its `lesson.toml`, checked as the gate checks it — or `lesson: null` for a row with none. A lesson that fails its check is refused with the reasons."
+
+[[route]]
+method = "GET"
 path = "/v1/manual"
 what = "This manual, with what is true of the running tool right now."
 
@@ -2607,6 +2632,11 @@ what = "A saved sweep's points as CSV, to keep or send: `name`."
 method = "GET"
 path = "/v1/result.html"
 what = "A saved result as a report page that reads without the tool, draws its sweep, and carries its CSVs: `name`."
+
+[[route]]
+method = "GET"
+path = "/v1/figures/samples"
+what = "One figure of every kind — line, scatter, bar, heatmap, animation, 3D scene — with illustrative numbers, as a result's `figures` carries them. What a face is built and checked against; not a result."
 
 [[route]]
 method = "POST"
@@ -2879,6 +2909,10 @@ who = "developer"
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Every document under docs/. Checked against the folder, both ways.
+
+[[doc]]
+path = "docs/LESSONS.md"
+what = "Lessons: lesson.toml beside a row, what each table holds, how the page draws it from components, and how the gate checks it."
 
 [[doc]]
 path = "docs/roles/user.html"

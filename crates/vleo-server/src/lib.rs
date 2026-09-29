@@ -309,6 +309,9 @@ fn route(
         // outside the repository. Viewing one runs nothing.
         ("GET", "/v1/derisk") => ok_json(derisk_json(ctx)),
         ("GET", "/v1/results") => ok_json(results_list()),
+        // One well-formed figure of every kind, with illustrative numbers: what
+        // a face is built against before the engine sends that kind for a run.
+        ("GET", "/v1/figures/samples") => ok_json(figure_samples()),
         ("GET", "/v1/result") => ok_json(result_json(params)),
         ("GET", "/v1/result.csv") => result_file(params, "csv"),
         ("GET", "/v1/result.sweep.csv") => result_file(params, "sweep"),
@@ -321,6 +324,9 @@ fn route(
         ("GET", p) if p.starts_with("/v1/fragment/") => {
             let id = p.trim_start_matches("/v1/fragment/");
             fragment(ctx, id)
+        }
+        ("GET", p) if p.starts_with("/v1/lesson/") => {
+            ok_json(lesson_json(ctx, p.trim_start_matches("/v1/lesson/")))
         }
         ("GET", p) if p.starts_with("/v1/node/") => {
             let id = p.trim_start_matches("/v1/node/");
@@ -1104,6 +1110,11 @@ fn sweep_wire(
         j.close_obj();
     }
     j.close_arr();
+    // The same sweep as the engine describes it for drawing: a face draws this
+    // rather than its own picture of the points.
+    j.key("figure").raw(&vleo_modules::figure::json(
+        &vleo_modules::figure::from_sweep(node, w, None),
+    ));
     if let Some((file, s, q)) = from_saved {
         from_saved_json(&mut j, file, s, q);
     }

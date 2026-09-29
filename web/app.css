@@ -1100,3 +1100,22 @@ table.risks td { vertical-align: top; }
 .pv-steps { padding-left: 1.2rem; }
 .pv-btns { margin-top: 1rem; }
 @media (max-width: 640px) { #preview-bar { padding: .5rem 16px; } }
+
+/* ── the lesson: every part drawn by web/js/components.js ─────────────────── */
+.lesson { max-width: 60rem; }
+.lesson h4 { margin: 1.2rem 0 .4rem; }
+.ls-by { margin: .4rem 0 0; }
+.ls-station p { line-height: 1.55; }
+.ls-claim { margin: .2rem 0 0; }
+.ls-eq { margin: .8rem 0; padding: .6rem .8rem; border-left: 3px solid var(--rule-2); }
+.ls-eq code { font-size: 15px; }
+.ls-eq figcaption { margin-top: .35rem; font-size: 12.5px; color: var(--ink-2); }
+.ls-widget { margin-top: 1rem; padding: .6rem .8rem; border: 1px solid var(--rule-2); border-radius: 4px; }
+.ls-slider { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: .3rem 0; font-size: 12.5px; }
+.ls-slider input { flex: 1 1 14rem; min-width: 10rem; }
+.ls-check .ls-opt.ls-right { border-color: var(--teal); color: var(--teal); }
+.ls-check .ls-opt.ls-wrong { border-color: var(--out); color: var(--out); }
+.ls-why { font-size: 13px; }
+.fig-ctl:empty { display: none; }
+.fig-ctl .fig-scrub { flex: 1 1 12rem; min-width: 8rem; }
+.fig-canvas { max-width: 100%; }

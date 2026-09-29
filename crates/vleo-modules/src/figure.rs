@@ -373,16 +373,43 @@ pub fn samples() -> Vec<Figure> {
                     });
                 }
                 Kind::Animation => {
+                    // A wave moving along x: one frame every 10 s.
                     f.z = Some(ax("t", "s"));
-                    f.frames = (0..3)
-                        .map(|k| Frame {
-                            t: k as f64 * 10.0,
-                            series: alloc::vec![line("a", k as f64)],
+                    f.frames = (0..12)
+                        .map(|k| {
+                            let x: Vec<f64> = (0..41).map(|i| i as f64 * 0.1).collect();
+                            let y = x
+                                .iter()
+                                .map(|x| Some(vleo_units::pmath::sin(2.0 * (x - k as f64 * 0.25))))
+                                .collect();
+                            Frame {
+                                t: k as f64 * 10.0,
+                                series: alloc::vec![Series {
+                                    name: "a".to_string(),
+                                    row: "a".to_string(),
+                                    x,
+                                    y,
+                                }],
+                            }
                         })
                         .collect();
                 }
                 Kind::Scene3d => {
+                    // A body at the centre and a tilted circular path around it.
+                    f.y = ax("y", "km");
                     f.z = Some(ax("z", "km"));
+                    let (r, tilt) = (6700.0, 0.9);
+                    let path = (0..=48)
+                        .map(|k| {
+                            let a = k as f64 * core::f64::consts::TAU / 48.0;
+                            let (s, c) = (vleo_units::pmath::sin(a), vleo_units::pmath::cos(a));
+                            [
+                                r * c,
+                                r * s * vleo_units::pmath::cos(tilt),
+                                r * s * vleo_units::pmath::sin(tilt),
+                            ]
+                        })
+                        .collect();
                     f.scene = alloc::vec![
                         Body {
                             name: "Earth".to_string(),
@@ -392,11 +419,7 @@ pub fn samples() -> Vec<Figure> {
                         Body {
                             name: "orbit".to_string(),
                             shape: "path".to_string(),
-                            points: alloc::vec![
-                                [6700.0, 0.0, 0.0],
-                                [0.0, 6700.0, 0.0],
-                                [-6700.0, 0.0, 0.0]
-                            ],
+                            points: path,
                         },
                     ];
                 }
