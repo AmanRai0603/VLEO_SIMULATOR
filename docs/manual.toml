@@ -1574,6 +1574,12 @@ run = "cargo run -p xtask -- lesson apply <file>"
 check = "writes"
 why = "writes the row's lesson.toml"
 
+[[layer.section.step]]
+say = "Every row's page and every lesson as plain pages, for people who read without the tool — the engine runs in the page to answer the widgets."
+run = "cargo run -p xtask -- readers"
+check = "writes"
+why = "writes target/readers"
+
 [[layer.section]]
 id = "term-kit"
 title = "Share the tool with the team"
@@ -2370,6 +2376,14 @@ name = "ship"
 usage = "ship <version> [--no-push] [--no-test]"
 what = "Cuts a release from main on its own branch `release/<version>`: the de-risking narrative, the version stamp, regeneration, the gate and the tests, one commit, pushed — and prints the tag commands for after the merge."
 who = "maintainer"
+effect = "writes"
+
+[[command]]
+tool = "xtask"
+name = "readers"
+usage = "readers [--out <dir>]"
+what = "The docs folder for readers: every row's page — the tool's own generated page — and every lesson, read with no tool running, from a shared drive or an internal web server. A lesson's widgets are answered by the engine compiled for the browser (crates/vleo-kernel-wasm), on the declared values; a row that reads reference data refuses there by name. Written to target/readers, or --out; nothing committed."
+who = "developer"
 effect = "writes"
 
 [[command]]

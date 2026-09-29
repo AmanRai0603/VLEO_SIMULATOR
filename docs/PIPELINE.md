@@ -18,7 +18,7 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 6. **build** — a node built from its method, and its tests shown to test: `method`, `build-node`, `rerun`, `method-wasm`, `differential`, `mutate`
 7. **gate** — the checks every change passes, and what they generate: `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
 8. **preview** — the author tries the build and approves it: `preview`, `approve`, `queue`
-9. **release** — the stamped release everyone gets: `ship`, `release`, `derisk`, `kit`, `bundle`
+9. **release** — the stamped release everyone gets: `readers`, `ship`, `release`, `derisk`, `kit`, `bundle`
 10. **read** — reports: what exists, what is open, why a node is what it is: `status`, `active`, `reach`, `gap`, `graph`, `migration`, `explain`, `why`, `trace`
 11. **setup** — once per person per clone: `setup`, `help`
 
@@ -456,6 +456,22 @@ every form branch and where it stands: waiting for the author's approval, approv
 | code | `xtask/src/flow.rs` — `cmd_queue` |
 
 ### release — the stamped release everyone gets
+
+#### `readers`
+
+    cargo run -p xtask -- readers [--out <dir>]
+
+the docs folder for readers: every row's page and every lesson, read with no tool running — from a shared drive or an internal web server. A lesson's widgets are answered by the engine compiled for the browser. Default target/readers.
+
+| | |
+|---|---|
+| reads | the tree, generated/fragments, every lesson.toml, web/js and web/app.css, crates/vleo-kernel-wasm |
+| writes | the readers' docs folder: target/readers, or --out — rebuilt whole; nothing committed |
+| checks | every lesson passes its check; every link and asset a page names is in the folder |
+| undo | delete the folder |
+| steps | 1 build the engine for the browser · 2 bundle the page script · 3 write the pages · 4 check every page has what it links |
+| dry run | --dry-run prints this plan — the steps, what it would write, how to undo it — and touches nothing |
+| code | `xtask/src/readers.rs` — `cmd_readers` |
 
 #### `ship`
 

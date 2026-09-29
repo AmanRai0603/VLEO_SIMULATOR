@@ -198,6 +198,8 @@ results, the manual, figures and these documents are all held to it by check.
     cargo run -p xtask -- release <version> [--check]
                                             stamp every `next` version; set the
                                             workspace version
+    cargo run -p xtask -- readers           every row's page and lesson, read
+                                            with no tool running (docs/LESSONS.md)
     cargo run -p xtask -- kit               the tool for the team, without the
                                             repository (docs/SHARING.md)
     cargo run -p xtask -- take <form.html> --for <author>

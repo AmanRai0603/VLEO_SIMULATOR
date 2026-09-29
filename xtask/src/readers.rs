@@ -1,0 +1,588 @@
+//! The readers' docs folder: every row's page and every lesson, read with no
+//! tool running — from a shared drive or any internal web server.
+//!
+//! Three things make it work without the tool:
+//!
+//! - **One classic script.** A page opened from a file cannot load ES modules,
+//!   so the modules a page needs (`web/js/readers.js` and what it imports) are
+//!   bundled into `assets/vleo.js` by [`bundle`]: each module becomes a scope
+//!   that returns its exports, in the order its imports need. The code is the
+//!   tool's own, unchanged — the component library, the figure player, the
+//!   chart — so a lesson here is drawn exactly as in the tool.
+//! - **The engine in the page.** `crates/vleo-kernel-wasm`, built here and
+//!   carried in `assets/kernel.js`, answers a lesson's widgets with the same
+//!   relations the tool runs. A row that reads reference data refuses by name.
+//! - **The pages the tool already generates.** Each row's page is its
+//!   generated fragment (`generated/fragments/<id>.html`); nothing is written
+//!   twice.
+//!
+//! Nothing here is committed: the folder is built, like the kit, and shared.
+
+use super::*;
+use crate::pipeline::{OnStop, Run};
+
+/// `xtask readers [--out <dir>]`.
+pub(super) fn cmd_readers(root: &Path, args: &[&str]) -> Result<(), String> {
+    let out = args
+        .iter()
+        .position(|a| *a == "--out")
+        .and_then(|i| args.get(i + 1))
+        .map(PathBuf::from)
+        .unwrap_or_else(|| root.join("target/readers"));
+    let mut run = Run::start(root, "readers", args, 4);
+    let retry = format!("cargo run -p xtask -- readers --out {}", out.display());
+    let kernel = run.step(
+        "build the engine for the browser",
+        OnStop::new("nothing written", retry.clone()),
+        || {
+            let k = build_kernel(root)?;
+            let said = format!("{} KB, compressed", k.len() / 1024);
+            Ok((k, said))
+        },
+    )?;
+    let script = run.step(
+        "bundle the page script",
+        OnStop::new("nothing written", retry.clone()),
+        || {
+            let b = bundle(root, "readers.js")?;
+            let said = format!("{} KB, from web/js", b.len() / 1024);
+            Ok((b, said))
+        },
+    )?;
+    let tree = load(root)?;
+    let (pages, lessons) = run.step(
+        "write the pages",
+        OnStop::new(
+            format!(
+                "{} may be partly written; it is rebuilt whole",
+                out.display()
+            ),
+            retry.clone(),
+        ),
+        || {
+            let (p, l) = write_folder(root, &tree, &out, &script, &kernel)?;
+            Ok(((p, l), format!("{p} row pages, {l} with a lesson")))
+        },
+    )?;
+    run.step(
+        "check every page has what it links",
+        OnStop::new(
+            format!("{} is written but incomplete", out.display()),
+            retry,
+        ),
+        || {
+            let missing = broken_links(&out)?;
+            if missing.is_empty() {
+                Ok(((), "every link and asset is in the folder".into()))
+            } else {
+                Err(format!("missing: {}", missing.join(", ")))
+            }
+        },
+    )?;
+    run.done(&format!(
+        "readers: {} — {pages} rows, {lessons} lessons. Open index.html, or put the folder on a \
+         shared drive or an internal web server.",
+        out.display()
+    ));
+    Ok(())
+}
+
+/// The kernel compiled for the browser, gzipped with no name or time in the
+/// header so the same build gives the same bytes.
+fn build_kernel(root: &Path) -> Result<Vec<u8>, String> {
+    let manifest = root.join("crates/vleo-kernel-wasm/Cargo.toml");
+    let mut cmd = std::process::Command::new("cargo");
+    cmd.args([
+        "build",
+        "--release",
+        "--target",
+        "wasm32-unknown-unknown",
+        "--manifest-path",
+    ])
+    .arg(&manifest)
+    .current_dir(root);
+    if root.join("crates/vleo-kernel-wasm/Cargo.lock").exists() {
+        cmd.arg("--locked");
+    }
+    if !cmd.status().map_err(|e| e.to_string())?.success() {
+        return Err(
+            "the engine did not build for the browser — is the wasm32-unknown-unknown \
+                    target installed? `rustup target add wasm32-unknown-unknown`"
+                .into(),
+        );
+    }
+    let built = root.join(
+        "crates/vleo-kernel-wasm/target/wasm32-unknown-unknown/release/vleo_kernel_wasm.wasm",
+    );
+    let gz = std::process::Command::new("gzip")
+        .args(["-9", "-n", "-c"])
+        .arg(&built)
+        .output()
+        .map_err(|e| format!("gzip could not be run: {e}"))?;
+    if !gz.status.success() {
+        return Err("gzip failed on the built engine".into());
+    }
+    Ok(gz.stdout)
+}
+
+/// One classic script from an ES module in `web/js` and every module it
+/// imports: each module a scope returning its exports, dependencies first.
+///
+/// It reads the forms the face is written in — `import { a, b } from './x.js'`,
+/// `export { a } from './x.js'`, and `export` before a `function`, `async
+/// function`, `const`, `let` or `class` — and refuses anything else it meets
+/// on an import or export line, rather than bundle something it did not
+/// understand.
+pub(crate) fn bundle(root: &Path, entry: &str) -> Result<String, String> {
+    let dir = root.join("web/js");
+    let mut order: Vec<String> = Vec::new();
+    let mut seen = BTreeSet::new();
+    fn visit(
+        dir: &Path,
+        name: &str,
+        seen: &mut BTreeSet<String>,
+        order: &mut Vec<String>,
+        stack: &mut Vec<String>,
+    ) -> Result<(), String> {
+        if seen.contains(name) {
+            return Ok(());
+        }
+        if stack.iter().any(|s| s == name) {
+            return Err(format!("web/js: an import cycle through {name}"));
+        }
+        stack.push(name.to_string());
+        let text = fs::read_to_string(dir.join(name)).map_err(|e| format!("web/js/{name}: {e}"))?;
+        for (_, from) in imports(&text, name)? {
+            visit(dir, &from, seen, order, stack)?;
+        }
+        stack.pop();
+        seen.insert(name.to_string());
+        order.push(name.to_string());
+        Ok(())
+    }
+    visit(&dir, entry, &mut seen, &mut order, &mut Vec::new())?;
+    let mut o = String::from(
+        "/* Bundled by `cargo run -p xtask -- readers` from web/js — generated, never edited. */\n\
+         (function () {\n'use strict';\nconst __m = {};\n",
+    );
+    for name in &order {
+        let text = fs::read_to_string(dir.join(name)).map_err(|e| e.to_string())?;
+        o.push_str(&format!("__m[{name:?}] = (function () {{\n"));
+        o.push_str(&module_body(&text, name)?);
+        o.push_str("})();\n");
+    }
+    o.push_str("})();\n");
+    Ok(o)
+}
+
+/// The `(names, module)` of every import and re-export in a module.
+fn imports(text: &str, name: &str) -> Result<Vec<(String, String)>, String> {
+    let mut out = Vec::new();
+    for stmt in statements(text) {
+        let s = stmt.trim_start();
+        if s.starts_with("import ") || (s.starts_with("export {") && s.contains(" from ")) {
+            let (names, from) = parse_from(s).ok_or_else(|| {
+                format!("web/js/{name}: an import this bundler does not read: {s}")
+            })?;
+            out.push((names, from));
+        }
+    }
+    Ok(out)
+}
+
+/// Import and export statements, each whole even when it spans lines; every
+/// other line on its own.
+fn statements(text: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut open: Option<String> = None;
+    for line in text.lines() {
+        if let Some(mut cur) = open.take() {
+            cur.push('\n');
+            cur.push_str(line);
+            if line.contains(';') {
+                out.push(cur);
+            } else {
+                open = Some(cur);
+            }
+            continue;
+        }
+        let t = line.trim_start();
+        if (t.starts_with("import ") || t.starts_with("export {")) && !line.contains(';') {
+            open = Some(line.to_string());
+        } else {
+            out.push(line.to_string());
+        }
+    }
+    if let Some(cur) = open {
+        out.push(cur);
+    }
+    out
+}
+
+fn parse_from(s: &str) -> Option<(String, String)> {
+    let a = s.find('{')? + 1;
+    let b = s.find('}')?;
+    let names = s[a..b].split_whitespace().collect::<Vec<_>>().join(" ");
+    let rest = &s[b..];
+    let q = rest.find("'./")? + 3;
+    let e = rest[q..].find('\'')? + q;
+    Some((names, rest[q..e].to_string()))
+}
+
+/// A module's code as the body of a scope that returns its exports.
+fn module_body(text: &str, name: &str) -> Result<String, String> {
+    let mut body = String::new();
+    let mut exported: Vec<String> = Vec::new();
+    for stmt in statements(text) {
+        let s = stmt.trim_start();
+        if s.starts_with("import ") {
+            let (names, from) = parse_from(s).ok_or("unread import")?;
+            if names.contains(" as ") {
+                return Err(format!(
+                    "web/js/{name}: `as` in an import is not bundled: {s}"
+                ));
+            }
+            body.push_str(&format!("const {{ {names} }} = __m[{from:?}];\n"));
+        } else if s.starts_with("export {") {
+            let (names, from) = parse_from(s).ok_or_else(|| {
+                format!("web/js/{name}: an export this bundler does not read: {s}")
+            })?;
+            body.push_str(&format!("const {{ {names} }} = __m[{from:?}];\n"));
+            exported.extend(
+                names
+                    .split(',')
+                    .map(|n| n.trim().to_string())
+                    .filter(|n| !n.is_empty()),
+            );
+        } else if let Some(rest) = stmt.strip_prefix("export ") {
+            let decl = rest.trim_start();
+            let after = ["async function ", "function ", "const ", "let ", "class "]
+                .iter()
+                .find_map(|k| decl.strip_prefix(k))
+                .ok_or_else(|| {
+                    format!("web/js/{name}: an export this bundler does not read: {s}")
+                })?;
+            let id: String = after
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '$')
+                .collect();
+            exported.push(id);
+            body.push_str(rest);
+            body.push('\n');
+        } else {
+            body.push_str(&stmt);
+            body.push('\n');
+        }
+    }
+    body.push_str(&format!("return {{ {} }};\n", exported.join(", ")));
+    Ok(body)
+}
+
+/// Every row's page, the index, and the assets. Returns how many rows and how
+/// many lessons.
+fn write_folder(
+    root: &Path,
+    tree: &Tree,
+    out: &Path,
+    script: &str,
+    kernel: &[u8],
+) -> Result<(usize, usize), String> {
+    let _ = fs::remove_dir_all(out);
+    let (assets, rows_dir) = (out.join("assets"), out.join("rows"));
+    for d in [&assets, &rows_dir] {
+        fs::create_dir_all(d).map_err(|e| format!("{}: {e}", d.display()))?;
+    }
+    let w = |p: PathBuf, t: &str| fs::write(&p, t).map_err(|e| format!("{}: {e}", p.display()));
+    fs::copy(root.join("web/app.css"), assets.join("app.css")).map_err(|e| e.to_string())?;
+    w(assets.join("vleo.js"), script)?;
+    w(
+        assets.join("kernel.js"),
+        &format!(
+            "/* The engine, compiled for the browser (crates/vleo-kernel-wasm), gzipped and base64-encoded. */\nwindow.VLEO_KERNEL = \"{}\";\n",
+            vleo_sheet::template::base64(kernel)
+        ),
+    )?;
+    let mut rows = 0;
+    let mut lessons = Vec::new();
+    for sh in tree.ordered() {
+        let frag = fs::read_to_string(
+            root.join("generated/fragments")
+                .join(format!("{}.html", sh.id)),
+        )
+        .unwrap_or_else(|_| {
+            format!(
+                "<p class=\"empty\">{} has no generated page yet.</p>",
+                he(&sh.id)
+            )
+        });
+        let lesson = match vleo_sheet::lesson::load(&sh.dir, &sh.id) {
+            Some(Ok(l)) if vleo_sheet::lesson::problems(&l, tree).is_empty() => Some(l),
+            Some(Ok(_)) | Some(Err(_)) => {
+                return Err(format!(
+                    "{}: its lesson does not pass its check — run the gate",
+                    sh.id
+                ))
+            }
+            None => None,
+        };
+        w(
+            rows_dir.join(format!("{}.html", sh.id)),
+            &row_page(sh, tree, &frag, lesson.as_ref()),
+        )?;
+        rows += 1;
+        if let Some(l) = lesson {
+            lessons.push((sh.id.clone(), l.title.clone(), l.answer.clone()));
+        }
+    }
+    w(out.join("index.html"), &index_page(tree, &lessons))?;
+    Ok((rows, lessons.len()))
+}
+
+/// The few lines of layout a readers' page needs that the tool's shell does
+/// not: a header of its own and a column to read in.
+const READERS_CSS: &str = ".rd-top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;\
+padding:10px 16px;border-bottom:1px solid var(--rule);position:sticky;top:0;background:var(--paper);z-index:5}\
+.rd-main{max-width:1100px;margin:0 auto;padding:8px 16px 64px}.rd-lessons li,.rd-rows li{margin:4px 0}";
+
+const DEPTH: &str = "<span class=\"grp\" id=\"depth\" role=\"group\" aria-label=\"how deep the page goes\"><span class=\"lbl\">depth</span>\
+<button class=\"ctl dp\" data-depth=\"learn\">Learn</button><button class=\"ctl dp\" data-depth=\"read\">Read</button>\
+<button class=\"ctl dp\" data-depth=\"expert\">Expert</button></span>";
+
+fn shell(title: &str, up: &str, body: &str, tail: &str) -> String {
+    format!(
+        "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n\
+         <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n\
+         <title>{title}</title>\n<link rel=\"stylesheet\" href=\"{up}assets/app.css\">\n<style>{READERS_CSS}</style>\n</head>\n\
+         <body class=\"readers\">\n<header class=\"rd-top\"><a class=\"ctl\" href=\"{up}index.html\">VLEO design — for readers</a> {DEPTH}</header>\n\
+         <main class=\"rd-main\" id=\"node-body\">\n{body}\n</main>\n{tail}</body>\n</html>\n"
+    )
+}
+
+fn row_page(
+    sh: &vleo_sheet::model::Sheet,
+    tree: &Tree,
+    fragment: &str,
+    lesson: Option<&vleo_sheet::lesson::Lesson>,
+) -> String {
+    let mut body = fragment.to_string();
+    let mut tail = String::new();
+    if let Some(l) = lesson {
+        body.push_str(
+            "\n<section class=\"seg\" data-seg=\"lesson\"><h3 class=\"seg-h\">the lesson — how this row is taught</h3>\
+             <div id=\"row-lesson\"></div></section>\n",
+        );
+        // The rows its widgets name, and only those: what a slider needs to
+        // know of a row — its range, its unit and the factor to SI.
+        let ids: BTreeSet<&String> = l
+            .widgets
+            .iter()
+            .flat_map(|w| w.inputs.iter().chain(&w.outputs))
+            .collect();
+        let rows: Vec<String> = ids
+            .iter()
+            .filter_map(|id| tree.sheets.get(*id))
+            .map(|s| {
+                let u = vleo_units::Unit::from_name(&s.unit).unwrap_or(vleo_units::Unit::One);
+                format!(
+                    "{{\"id\":{},\"label\":{},\"unit\":{},\"lo\":{},\"hi\":{},\"factor\":{}}}",
+                    js(&s.id),
+                    js(&s.label),
+                    js(u.symbol()),
+                    num(s.lower),
+                    num(s.upper),
+                    num(u.si_factor())
+                )
+            })
+            .collect();
+        tail.push_str(&format!(
+            "<script type=\"application/json\" id=\"vleo-rows\">[{}]</script>\n\
+             <script type=\"application/json\" id=\"vleo-lesson-json\">{}</script>\n\
+             <script src=\"../assets/kernel.js\"></script>\n",
+            rows.join(",").replace('<', "\\u003c"),
+            vleo_sheet::lesson::json(l).replace('<', "\\u003c")
+        ));
+    }
+    tail.push_str("<script src=\"../assets/vleo.js\"></script>\n");
+    shell(&format!("{} — VLEO", he(&sh.label)), "../", &body, &tail)
+}
+
+fn index_page(tree: &Tree, lessons: &[(String, String, String)]) -> String {
+    let mut b = String::from(
+        "<section class=\"answer-first view-af\"><p class=\"af-k\">Answer first <span class=\"dx dx-reference\">reference</span></p>\
+         <p class=\"af-a\">Every row of the VLEO design, and every lesson, as the tool shows them — read here with no tool running.</p>\
+         <ul class=\"af-points\"><li>A row's page is the tool's own: what it asks, the real thing and its source, where it breaks, its record.</li>\
+         <li>A lesson's widgets are answered by the engine, running in the page on the declared values. A row that reads reference data refuses here and says so.</li>\
+         <li>To run a case of your own, save a result or send a form, open the tool.</li></ul></section>\n",
+    );
+    b.push_str("<h2>Lessons</h2>\n");
+    if lessons.is_empty() {
+        b.push_str("<p class=\"empty\">No row has a lesson yet. A lesson is written by the person who knows the row, through its lesson form.</p>\n");
+    } else {
+        b.push_str("<ul class=\"rd-lessons\">\n");
+        for (id, title, answer) in lessons {
+            b.push_str(&format!(
+                "<li><a href=\"rows/{id}.html\"><b>{}</b></a> <code>{id}</code><br><span class=\"muted\">{}</span></li>\n",
+                he(title),
+                he(answer)
+            ));
+        }
+        b.push_str("</ul>\n");
+    }
+    for layer in 1..=4 {
+        let rows: Vec<&vleo_sheet::model::Sheet> = tree
+            .ordered()
+            .into_iter()
+            .filter(|s| s.layer == layer)
+            .collect();
+        if rows.is_empty() {
+            continue;
+        }
+        b.push_str(&format!("<h2>Layer {layer}</h2>\n<ul class=\"rd-rows\">\n"));
+        for s in rows {
+            b.push_str(&format!(
+                "<li><a href=\"rows/{id}.html\">{}</a> <code>{id}</code>{}</li>\n",
+                he(&s.label),
+                if s.is_seeded() {
+                    " <span class=\"muted\">seeded</span>"
+                } else {
+                    ""
+                },
+                id = he(&s.id)
+            ));
+        }
+        b.push_str("</ul>\n");
+    }
+    shell(
+        "VLEO design — for readers",
+        "",
+        &b,
+        "<script src=\"assets/vleo.js\"></script>\n",
+    )
+}
+
+/// Every `href` and `src` that points into the folder, that is not there.
+fn broken_links(out: &Path) -> Result<Vec<String>, String> {
+    let mut missing = BTreeSet::new();
+    let mut pages = vec![out.join("index.html")];
+    for e in fs::read_dir(out.join("rows"))
+        .map_err(|e| e.to_string())?
+        .flatten()
+    {
+        pages.push(e.path());
+    }
+    for p in pages {
+        let text = fs::read_to_string(&p).map_err(|e| e.to_string())?;
+        let base = p.parent().unwrap_or(out);
+        for attr in ["href=\"", "src=\""] {
+            for part in text.split(attr).skip(1) {
+                let link = part.split('"').next().unwrap_or("");
+                if link.is_empty() || link.starts_with('#') || link.contains(':') {
+                    continue;
+                }
+                if !base.join(link).exists() {
+                    missing.insert(format!(
+                        "{link} (from {})",
+                        p.file_name().unwrap_or_default().to_string_lossy()
+                    ));
+                }
+            }
+        }
+    }
+    Ok(missing.into_iter().take(12).collect())
+}
+
+fn he(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+}
+
+fn js(s: &str) -> String {
+    let mut o = String::from("\"");
+    for c in s.chars() {
+        match c {
+            '"' => o.push_str("\\\""),
+            '\\' => o.push_str("\\\\"),
+            '\n' => o.push_str("\\n"),
+            c if (c as u32) < 0x20 => o.push_str(&format!("\\u{:04x}", c as u32)),
+            c => o.push(c),
+        }
+    }
+    o.push('"');
+    o
+}
+
+fn num(v: f64) -> String {
+    if v.is_finite() {
+        format!("{v:?}")
+    } else {
+        "null".into()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The bundle holds every module the entry needs, dependencies first, and
+    /// nothing in it is still an import or an export.
+    #[test]
+    fn the_bundle_is_every_module_in_order_and_no_module_syntax() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
+        let b = bundle(&root, "readers.js").unwrap();
+        let at = |m: &str| {
+            b.find(&format!("__m[\"{m}\"] = (function"))
+                .unwrap_or_else(|| panic!("{m} is not in the bundle"))
+        };
+        for (before, after) in [
+            ("dom.js", "state.js"),
+            ("chart.js", "figures.js"),
+            ("figures.js", "components.js"),
+            ("components.js", "readers.js"),
+            ("depth.js", "readers.js"),
+        ] {
+            assert!(
+                at(before) < at(after),
+                "{before} comes after {after}, which needs it"
+            );
+        }
+        for l in b.lines() {
+            let t = l.trim_start();
+            assert!(
+                !t.starts_with("import ") && !t.starts_with("export "),
+                "module syntax left in the bundle: {l}"
+            );
+        }
+        let from = at("components.js");
+        let comp = &b[from..from + 1 + b[from + 1..].find("\n__m[").unwrap_or(b.len() - from - 1)];
+        let ret = comp
+            .lines()
+            .rev()
+            .find(|l| l.starts_with("return {"))
+            .unwrap_or("");
+        for name in ["renderLesson", "useEngine", "answerFirst"] {
+            assert!(
+                ret.contains(name),
+                "components' exports do not include {name}: {ret}"
+            );
+        }
+    }
+
+    /// Syntax the bundler does not read is refused, not bundled half-understood.
+    #[test]
+    fn an_import_it_does_not_read_is_refused() {
+        assert!(module_body("import { a as b } from './x.js';\n", "t.js").is_err());
+        assert!(module_body("export default function f() {}\n", "t.js").is_err());
+        assert!(imports("import * as all from './x.js';\n", "t.js").is_err());
+        let body = module_body(
+            "import {\n  a,\n  b,\n} from './x.js';\nexport const c = a + b;\n",
+            "t.js",
+        )
+        .unwrap();
+        assert!(
+            body.contains("const { a, b, } = __m[\"x.js\"];") && body.ends_with("return { c };\n"),
+            "{body}"
+        );
+    }
+}

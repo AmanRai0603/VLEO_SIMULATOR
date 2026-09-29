@@ -22,9 +22,8 @@ pub(super) fn ring(crate_name: &str) -> Option<(u8, &'static str)> {
         "vleo-data" => (2, "reference data"),
         "vleo-modules" => (4, "the facade over every node crate"),
         "vleo-server" => (5, "the server both the daemon and the Python package start"),
-        "vleo-cli" | "vleo-daemon" | "vleo-ffi" | "vleo-py" | "vleo-wasm" | "vleo-method-wasm" => {
-            (6, "a face")
-        }
+        "vleo-cli" | "vleo-daemon" | "vleo-ffi" | "vleo-py" | "vleo-wasm" | "vleo-method-wasm"
+        | "vleo-kernel-wasm" => (6, "a face"),
         "xtask" => (6, "the task runner"),
         n if n.starts_with("vleo-mod-") => (3, "RING 3 — the nodes"),
         _ => return None,

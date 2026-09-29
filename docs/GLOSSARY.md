@@ -109,6 +109,10 @@ the page draws it from its component library. Outside the sheet hash.
 row fills anywhere, checked as they type by the gate's own lesson check, and
 sent back; `xtask lesson apply` writes it beside the row. → `docs/LESSONS.md`
 
+**Readers' folder** — every row's page and every lesson as plain pages, built
+by `xtask readers` for a shared drive or an internal web server; the engine
+runs in the page to answer a lesson's widgets. → `docs/SHARING.md`, section 4
+
 **Component library** — `web/js/components.js`: every part a page is built
 from, by name — station, equation, widget, check-yourself, claim tag,
 references, figure. A page that needs something new gets it added there once.
