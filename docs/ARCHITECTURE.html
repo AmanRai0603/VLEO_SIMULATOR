@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VLEO Tool Architecture</title>
+<!--
+  docs/ARCHITECTURE.html — the architecture of the VLEO design tool, end to end.
+
+  Hand-written. Opens in any browser straight from the repository or a shared
+  drive: no fonts, scripts or images are fetched from anywhere, so it reads the
+  same offline as online. Diagrams are inline SVG coloured through the tokens
+  below, so they follow the reader's light or dark setting.
+
+  When the architecture changes, change this page in the same pull request.
+  docs/ARCHITECTURE.md keeps the reasons the kernel's rings are shaped the way
+  they are; this page is the whole system around them.
+-->
+<style>
+:root {
+  --paper: #fbfaf7; --card: #ffffff; --ink: #1a1a1a; --ink-2: #4b4b4b; --ink-3: #8a8880;
+  --rule: #ddd8cd; --rule-2: #ece8de;
+  --out: #b5731a; --out-pale: #f6e9d8;
+  --in: #61399c; --in-pale: #ece5f7;
+  --both: #22704a; --both-pale: #dfeee6;
+  --teal: #14807f; --teal-pale: #dcefee;
+  --slate: #4a5568; --slate-pale: #e8ebef;
+  --warn: #a4372b; --warn-pale: #f7e3df;
+  --display: "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+  --body: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #141310; --card: #1e1d19; --ink: #ecebe6; --ink-2: #b8b5ad; --ink-3: #8f8c84;
+    --rule: #3a382f; --rule-2: #2e2c27;
+    --out: #d18a2b; --out-pale: #3a2c14; --in: #a98ae0; --in-pale: #2a2340;
+    --both: #4fa87a; --both-pale: #17301f; --teal: #3cb3b1; --teal-pale: #123230;
+    --slate: #94a3b8; --slate-pale: #22262e; --warn: #ef8a7a; --warn-pale: #3a1d18;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 15.5px; line-height: 1.6; padding-inline: 16px; padding-block: 0 64px; }
+.wrap { max-width: 920px; margin: 0 auto; }
+header.top { padding-block: 40px 20px; border-bottom: 1px solid var(--rule); display: grid; gap: 10px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin: 0; }
+h1 { font-family: var(--display); font-weight: 800; font-size: clamp(30px, 5vw, 42px); line-height: 1.1; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 700; font-size: 24px; line-height: 1.25; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--display); font-weight: 650; font-size: 16.5px; margin: 0; }
+p { margin: 0; }
+a { color: inherit; }
+code { font-family: var(--mono); font-size: .86em; background: var(--rule-2); padding: .06em .32em; border-radius: 3px; }
+.kind { font-size: 13.5px; color: var(--ink-3); }
+nav.toc { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13.5px; }
+nav.toc a { color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--rule); }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--ink); border-color: var(--ink); outline: none; }
+section { padding-block: 36px 10px; display: grid; gap: 16px; border-bottom: 1px solid var(--rule-2); }
+.sec-n { font-family: var(--mono); font-size: 12px; color: var(--out); letter-spacing: .06em; }
+.answer { border-left: 3px solid var(--both); background: var(--both-pale); padding: 10px 14px; border-radius: 0 4px 4px 0; max-width: 74ch; }
+.lede { font-size: 17px; color: var(--ink-2); max-width: 68ch; }
+.col { max-width: 70ch; }
+.muted { color: var(--ink-3); }
+ul.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; max-width: 72ch; }
+figure { margin: 0; }
+.fig { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 14px; overflow-x: auto; }
+.fig svg { display: block; width: 100%; min-width: 720px; height: auto; }
+.fig figcaption { font-size: 13px; color: var(--ink-3); margin-top: 8px; max-width: 82ch; }
+.tbl { overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; background: var(--card); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule-2); }
+th { font-family: var(--mono); font-weight: 500; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); background: var(--paper); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.card { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; display: grid; gap: 8px; min-width: 0; align-content: start; }
+.card h3 { font-size: 15.5px; }
+.card p, .card li { font-size: 14px; color: var(--ink-2); }
+.tag { display: inline-block; font-family: var(--mono); font-size: 11px; padding: 1px 7px; border-radius: 10px; letter-spacing: .03em; white-space: nowrap; }
+.t-now { background: var(--slate-pale); color: var(--slate); }
+.t-new { background: var(--out-pale); color: var(--out); }
+.t-done { background: var(--both-pale); color: var(--both); }
+.t-grow { background: var(--in-pale); color: var(--in); }
+.t-risk { background: var(--warn-pale); color: var(--warn); }
+.term { font-family: var(--mono); font-size: 12.5px; background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; white-space: pre; overflow-x: auto; line-height: 1.55; color: var(--ink-2); }
+.term .ok { color: var(--both); } .term .bad { color: var(--warn); }
+/* Diagrams, coloured through the tokens so both schemes read. */
+.d-box { fill: var(--card); stroke: var(--rule); stroke-width: 1.2; }
+.d-out { fill: var(--out-pale); stroke: var(--out); stroke-width: 1.2; }
+.d-in { fill: var(--in-pale); stroke: var(--in); stroke-width: 1.2; }
+.d-both { fill: var(--both-pale); stroke: var(--both); stroke-width: 1.2; }
+.d-teal { fill: var(--teal-pale); stroke: var(--teal); stroke-width: 1.2; }
+.d-slate { fill: var(--slate-pale); stroke: var(--slate); stroke-width: 1.2; }
+.d-band { fill: var(--paper); stroke: var(--rule); stroke-width: 1; stroke-dasharray: 4 4; }
+.d-contract { fill: var(--paper); stroke: var(--out); stroke-width: 1.4; stroke-dasharray: 6 4; }
+.d-t { fill: var(--ink); font-family: var(--body); font-size: 13px; }
+.d-tb { fill: var(--ink); font-family: var(--display); font-weight: 650; font-size: 13.5px; }
+.d-ts { fill: var(--ink-2); font-family: var(--body); font-size: 11.5px; }
+.d-tm { fill: var(--ink-3); font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; }
+.d-a { stroke: var(--ink-3); stroke-width: 1.4; fill: none; }
+.d-ah { fill: var(--ink-3); }
+.d-bar1 { fill: var(--warn); } .d-bar2 { fill: var(--both); }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">VLEO integrated design tool · architecture</p>
+  <h1>How the tool is built, end to end</h1>
+  <p class="lede">What each part is, where its code and data live, how a number becomes a picture and a picture becomes a shared result, who can reach what, and the order in which the rest is built.</p>
+  <p class="answer"><b>Answer first.</b> The tool has three parts. The <b>backend</b> is the engine: one Rust kernel that computes every number, and the local server that answers the browser. The <b>frontend</b> is HTML: the pages, charts, forms and — as they arrive — animations and 3D views that show what the engine produced. The <b>data</b> part keeps everything: the design in git, reference data in hashed bundles, and each person's case and results as files, optionally in a shared folder. The three meet only at written contracts, so each can be worked on by people with different backgrounds, at the same time, without breaking the others.</p>
+  <p class="kind"><b>Kind:</b> reference + explanation · <b>For:</b> everyone — users, maintainers, developers, and anyone deciding how to extend the tool</p>
+  <nav class="toc" aria-label="Sections">
+    <a href="#parts">1 · Three parts</a>
+    <a href="#parallel">2 · Working in parallel</a>
+    <a href="#whole">3 · Where everything lives</a>
+    <a href="#pictures">4 · Visualisation</a>
+    <a href="#pages">5 · Pages and HTML</a>
+    <a href="#data">6 · Data at scale</a>
+    <a href="#access">7 · Access and sync</a>
+    <a href="#scripts">8 · The scripts</a>
+    <a href="#failure">9 · When something breaks</a>
+    <a href="#roadmap">10 · Roadmap</a>
+    <a href="#decisions">11 · Decisions</a>
+    <a href="#more">12 · Further reading</a>
+  </nav>
+</header>
+
+<!-- ─────────────────────────────────────────────────────────────── 1 ── -->
+<section id="parts">
+  <p class="sec-n">1 · THREE PARTS</p>
+  <h2>Frontend, backend and data — and the contracts between them</h2>
+  <p class="answer"><b>Answer first.</b> Each part has its own folders, its own skills and its own checks. What crosses between them is fixed in writing: the frontend reaches the backend only through the HTTP API under <code>/v1</code> and a small set of file formats; the backend reaches stored data only through the storage interface in <code>vleo-data</code>. Change anything inside a part freely; change a contract only with both sides agreeing.</p>
+  <figure class="fig">
+    <svg viewBox="0 0 880 460" role="img" aria-label="Layered architecture: the frontend at the top, the contract band, the backend, the storage interface band, and the data at the bottom, each with its folders and the skills it needs.">
+      <text x="20" y="24" class="d-tm">LAYER</text>
+      <text x="600" y="24" class="d-tm">WHO WORKS HERE</text>
+      <!-- frontend -->
+      <rect x="20" y="36" width="560" height="96" rx="6" class="d-teal"/>
+      <text x="36" y="60" class="d-tb">Frontend — what people see and touch</text>
+      <text x="36" y="80" class="d-ts">web/ — app shell, panels, charts (canvas), manual view · 24 modules</text>
+      <text x="36" y="97" class="d-ts">page templates and forms (today generated from crates/vleo-sheet)</text>
+      <text x="36" y="114" class="d-ts">later here: animation player, 3D viewer, component library</text>
+      <rect x="600" y="36" width="262" height="96" rx="6" class="d-box"/>
+      <text x="614" y="60" class="d-tb">HTML · CSS · JavaScript</text>
+      <text x="614" y="80" class="d-ts">design, charts, accessibility,</text>
+      <text x="614" y="97" class="d-ts">3D graphics (WebGL)</text>
+      <!-- contract -->
+      <rect x="20" y="146" width="842" height="56" rx="6" class="d-contract"/>
+      <text x="36" y="170" class="d-tb">Contract — HTTP API under /v1 (29 routes, JSON) · output descriptions · result package · sheet schema</text>
+      <text x="36" y="190" class="d-ts">the only thing both sides depend on; changed only with both sides' review</text>
+      <!-- backend -->
+      <rect x="20" y="216" width="560" height="112" rx="6" class="d-out"/>
+      <text x="36" y="240" class="d-tb">Backend — the engine</text>
+      <text x="36" y="260" class="d-ts">crates/vleo-units → vleo-core → vleo-bus → vleo-mod-* (1,396 rows)</text>
+      <text x="36" y="277" class="d-ts">crates/vleo-modules (the tree) · vleo-server (the /v1 routes)</text>
+      <text x="36" y="294" class="d-ts">vleo-cli · vleo-ffi (C) · vleo-py (Python) · vleo-wasm (browser)</text>
+      <text x="36" y="311" class="d-ts">xtask and vleo-sheet: generators, gate, forms</text>
+      <rect x="600" y="216" width="262" height="112" rx="6" class="d-box"/>
+      <text x="614" y="240" class="d-tb">Rust · numerics · physics</text>
+      <text x="614" y="260" class="d-ts">spacecraft engineering,</text>
+      <text x="614" y="277" class="d-ts">units, verification,</text>
+      <text x="614" y="294" class="d-ts">the forms and generators</text>
+      <!-- storage interface -->
+      <rect x="20" y="342" width="842" height="38" rx="6" class="d-contract"/>
+      <text x="36" y="366" class="d-tb">Storage interface — vleo-data: save, list, open, thin; write whole; paths; crash log</text>
+      <!-- data -->
+      <rect x="20" y="394" width="560" height="56" rx="6" class="d-both"/>
+      <text x="36" y="418" class="d-tb">Data — what is kept</text>
+      <text x="36" y="437" class="d-ts">design in git · bundles (hashed) · ~/.vleo (case, results, index, logs) · shared folder</text>
+      <rect x="600" y="394" width="262" height="56" rx="6" class="d-box"/>
+      <text x="614" y="418" class="d-tb">formats · retention · sharing</text>
+      <text x="614" y="437" class="d-ts">files, indexes, later SQLite</text>
+    </svg>
+    <figcaption>Read top to bottom: a person uses the frontend; the frontend asks the backend through the contract; the backend keeps and finds things through the storage interface. Nothing reaches past the layer below it.</figcaption>
+  </figure>
+  <div class="tbl"><table>
+    <thead><tr><th>Part</th><th>Folders</th><th>What it must never do</th><th>Its checks</th></tr></thead>
+    <tbody>
+      <tr><td><b>Frontend</b></td><td><code>web/</code>, <code>panels/</code>, page templates, <code>crates/vleo-sheet/src/form_page/</code></td><td>compute a number — every number comes from the engine; carry its own formula</td><td>panel checks (renders, moves, matches — light and dark), the manual's browser walk</td></tr>
+      <tr><td><b>Backend</b></td><td><code>crates/</code> (engine, server, faces for C and Python), <code>xtask/</code>, <code>layers/</code></td><td>draw anything; hold state a restart would lose; write a person's data other than through <code>vleo-data</code></td><td><code>xtask gate</code>, <code>cargo test</code>, fixtures, mutation tests, the release-profile run</td></tr>
+      <tr><td><b>Data</b></td><td><code>crates/vleo-data</code>, <code>bundles/</code>, <code>sources/</code>, <code>~/.vleo/</code></td><td>change a published bundle; leave a file half written; keep what can be recomputed forever</td><td>bundle hashes, the whole-write test, retention tests</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────── 2 ── -->
+<section id="parallel">
+  <p class="sec-n">2 · WORKING IN PARALLEL</p>
+  <h2>How the frontend and the backend are developed at the same time</h2>
+  <p class="answer"><b>Answer first.</b> Both sides build against the same written contract. The backend proves it keeps the contract with <b>contract tests</b>; the frontend builds against <b>recorded example answers</b> served by a small <b>mock engine</b>, so a frontend developer never has to compile Rust and a backend developer never has to open a browser. Inside <code>/v1</code> a change may only add; anything that removes or changes meaning becomes <code>/v2</code>, served beside <code>/v1</code> for one release while the frontend moves over.</p>
+  <figure class="fig">
+    <svg viewBox="0 0 880 334" role="img" aria-label="Two lanes: frontend work against recorded examples and a mock engine; backend work against contract tests; both meet at the contract folder, both run in CI, and one release ships both.">
+      <defs><marker id="p-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="d-ah"/></marker></defs>
+      <text x="20" y="22" class="d-tm">FRONTEND LANE</text>
+      <rect x="20" y="34" width="250" height="78" rx="6" class="d-teal"/>
+      <text x="36" y="58" class="d-tb">Frontend developer</text>
+      <text x="36" y="78" class="d-ts">pages, charts, animation, 3D</text>
+      <text x="36" y="95" class="d-ts">no Rust toolchain needed</text>
+      <rect x="20" y="130" width="250" height="62" rx="6" class="d-box"/>
+      <text x="36" y="154" class="d-tb">Mock engine</text>
+      <text x="36" y="173" class="d-ts">serves the recorded answers on /v1</text>
+      <path d="M145 112 L145 128" class="d-a" marker-end="url(#p-ah)"/>
+      <rect x="310" y="60" width="260" height="170" rx="8" class="d-contract"/>
+      <text x="440" y="86" text-anchor="middle" class="d-tb">contract/</text>
+      <text x="440" y="108" text-anchor="middle" class="d-ts">a schema per /v1 route</text>
+      <text x="440" y="126" text-anchor="middle" class="d-ts">a schema per file format</text>
+      <text x="440" y="144" text-anchor="middle" class="d-ts">recorded example answers,</text>
+      <text x="440" y="160" text-anchor="middle" class="d-ts">produced by the real engine</text>
+      <text x="440" y="182" text-anchor="middle" class="d-ts">contract version: 1</text>
+      <text x="440" y="210" text-anchor="middle" class="d-tm">REVIEWED BY BOTH SIDES</text>
+      <path d="M270 161 L308 161" class="d-a" marker-end="url(#p-ah)"/>
+      <text x="610" y="22" class="d-tm">BACKEND LANE</text>
+      <rect x="610" y="34" width="252" height="78" rx="6" class="d-out"/>
+      <text x="626" y="58" class="d-tb">Backend developer</text>
+      <text x="626" y="78" class="d-ts">engine, nodes, server, storage</text>
+      <text x="626" y="95" class="d-ts">no browser needed</text>
+      <rect x="610" y="130" width="252" height="62" rx="6" class="d-box"/>
+      <text x="626" y="154" class="d-tb">Contract tests</text>
+      <text x="626" y="173" class="d-ts">answers checked against schemas</text>
+      <path d="M736 112 L736 128" class="d-a" marker-end="url(#p-ah)"/>
+      <path d="M610 161 L572 161" class="d-a" marker-end="url(#p-ah)"/>
+      <rect x="20" y="250" width="530" height="70" rx="6" class="d-both"/>
+      <text x="36" y="272" class="d-tb">CI on every pull request</text>
+      <text x="36" y="290" class="d-ts">frontend: panel checks, on the mock and on the real engine</text>
+      <text x="36" y="306" class="d-ts">backend: gate, tests, contract tests</text>
+      <rect x="570" y="250" width="292" height="70" rx="6" class="d-slate"/>
+      <text x="586" y="274" class="d-tb">One release ships both</text>
+      <text x="586" y="293" class="d-ts">the page checks the contract version on start</text>
+      <path d="M440 230 L440 248" class="d-a" marker-end="url(#p-ah)"/>
+    </svg>
+  </figure>
+  <div class="tbl"><table>
+    <thead><tr><th>Piece</th><th>What it is</th><th>State</th></tr></thead>
+    <tbody>
+      <tr><td>The HTTP API</td><td>29 routes under <code>/v1</code>, JSON, served from the same origin as the pages — so the browser's cross-origin rules never apply.</td><td><span class="tag t-now">exists</span></td></tr>
+      <tr><td>Version and identity</td><td><code>/v1/version</code> reports the engine version, kernel and graph hashes; a node page carries its sheet hash and refuses to show a stale one.</td><td><span class="tag t-now">exists</span></td></tr>
+      <tr><td><code>contract/</code></td><td>One JSON Schema per route (request and answer) and per file format; example answers recorded from the real engine.</td><td><span class="tag t-new">phase 7</span></td></tr>
+      <tr><td>Contract tests</td><td>Run in <code>cargo test</code>: every route's live answer validates against its schema; a changed answer without a changed example fails.</td><td><span class="tag t-new">phase 7</span></td></tr>
+      <tr><td>Mock engine</td><td><code>python3 tools/mock_engine.py</code> serves the recorded answers on the same routes; the panel checks run against it as well as against the real engine.</td><td><span class="tag t-new">phase 7</span></td></tr>
+      <tr><td>The versioning rule</td><td>Within <code>/v1</code>: add routes and fields only. Remove or re-mean anything: <code>/v2</code> beside <code>/v1</code> for one release. The page reads <code>contract</code> from <code>/v1/version</code> and names a mismatch instead of misbehaving.</td><td><span class="tag t-new">phase 7</span></td></tr>
+      <tr><td>Ownership</td><td>CODEOWNERS gains a frontend team (<code>web/</code>, <code>panels/</code>, templates), a backend team (engine and server) and a data team (<code>vleo-data</code>, formats); <code>contract/</code> needs a reviewer from both frontend and backend.</td><td><span class="tag t-new">phase 7</span></td></tr>
+      <tr><td>Markup owned by the frontend</td><td>Page generators in <code>vleo-sheet</code> build HTML as Rust strings today. They move to templates in <code>web/</code>, filled with data by the generator — so every piece of HTML, CSS and JavaScript lives with the frontend.</td><td><span class="tag t-new">phase 9</span></td></tr>
+    </tbody>
+  </table></div>
+  <div class="grid2">
+    <div class="card"><h3>A frontend change, alone</h3><p>New chart style, a better layout, a 3D camera control: edit <code>web/</code>, run the panel checks against the mock engine, open a pull request. No backend reviewer, no Rust build.</p></div>
+    <div class="card"><h3>A backend change, alone</h3><p>A faster resolver, a new node, a fix in a relation: edit <code>crates/</code>, run the gate, tests and contract tests. If every answer still matches its schema, nothing in the frontend can notice.</p></div>
+    <div class="card"><h3>A change to both</h3><p>A new field in <code>/v1/run</code>: first a pull request to <code>contract/</code> adding it (both sides review), then the backend fills it and the frontend shows it — in either order, because an added field breaks nobody.</p></div>
+    <div class="card"><h3>A breaking change</h3><p>Renaming a field: <code>/v2</code> is added beside <code>/v1</code>; the frontend moves in its own pull request; <code>/v1</code> is removed one release later. Nobody has to merge on the same day.</p></div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────── 3 ── -->
+<section id="whole">
+  <p class="sec-n">3 · WHERE EVERYTHING LIVES</p>
+  <h2>Four places data lives, one engine, several faces</h2>
+  <p class="answer"><b>Answer first.</b> Everything the tool knows lives in exactly one of four places, and each has one rule for how it changes. The design and the reference data change only by review and arrive with a release. A person's case and results are theirs and live outside the repository. Personal reading state never leaves the browser it was made in.</p>
+  <figure class="fig">
+    <svg viewBox="0 0 880 430" role="img" aria-label="The design and reference data are released into the tool on each computer; the tool reads and writes the case and results, which can sit in a shared folder; personal state stays in the browser.">
+      <defs><marker id="w-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-ah"/></marker></defs>
+      <text x="20" y="26" class="d-tm">SOURCES · CHANGED ONLY BY REVIEW</text>
+      <rect x="20" y="40" width="230" height="118" rx="6" class="d-in"/>
+      <text x="36" y="64" class="d-tb">① The design — git</text>
+      <text x="36" y="86" class="d-ts">1,396 sheets (node.toml)</text>
+      <text x="36" y="104" class="d-ts">lesson.toml pages · diagrams</text>
+      <text x="36" y="122" class="d-ts">changed by forms → pull requests</text>
+      <text x="36" y="140" class="d-ts">history, review, blame for free</text>
+      <rect x="20" y="176" width="230" height="96" rx="6" class="d-teal"/>
+      <text x="36" y="200" class="d-tb">② Reference data — bundles</text>
+      <text x="36" y="222" class="d-ts">solar weather, coefficients</text>
+      <text x="36" y="240" class="d-ts">hashed, versioned, never edited</text>
+      <text x="36" y="258" class="d-ts">3.8 MB today</text>
+      <rect x="292" y="112" width="120" height="84" rx="6" class="d-box"/>
+      <text x="352" y="146" text-anchor="middle" class="d-tb">Release</text>
+      <text x="352" y="166" text-anchor="middle" class="d-ts">kit · wheel</text>
+      <text x="352" y="182" text-anchor="middle" class="d-ts">docs folder</text>
+      <path d="M250 100 C 272 100, 272 140, 290 140" class="d-a" marker-end="url(#w-ah)"/>
+      <path d="M250 224 C 272 224, 272 170, 290 170" class="d-a" marker-end="url(#w-ah)"/>
+      <text x="452" y="26" class="d-tm">EACH PERSON'S COMPUTER</text>
+      <rect x="452" y="40" width="210" height="232" rx="8" class="d-band"/>
+      <rect x="468" y="58" width="178" height="62" rx="6" class="d-out"/>
+      <text x="557" y="84" text-anchor="middle" class="d-tb">Engine (backend)</text>
+      <text x="557" y="104" text-anchor="middle" class="d-ts">computes every number</text>
+      <rect x="468" y="138" width="178" height="52" rx="6" class="d-box"/>
+      <text x="557" y="161" text-anchor="middle" class="d-tb">Outputs</text>
+      <text x="557" y="179" text-anchor="middle" class="d-ts">numbers · tables · figures · text</text>
+      <rect x="468" y="208" width="178" height="50" rx="6" class="d-teal"/>
+      <text x="557" y="230" text-anchor="middle" class="d-tb">Faces (frontend)</text>
+      <text x="557" y="248" text-anchor="middle" class="d-ts">browser · CLI · Python</text>
+      <path d="M557 120 L557 136" class="d-a" marker-end="url(#w-ah)"/>
+      <path d="M557 190 L557 206" class="d-a" marker-end="url(#w-ah)"/>
+      <path d="M412 154 L450 154" class="d-a" marker-end="url(#w-ah)"/>
+      <text x="700" y="26" class="d-tm">YOUR WORK</text>
+      <rect x="700" y="40" width="165" height="104" rx="6" class="d-both"/>
+      <text x="714" y="64" class="d-tb">③ Case &amp; results</text>
+      <text x="714" y="86" class="d-ts">~/.vleo on your machine</text>
+      <text x="714" y="104" class="d-ts">case 9 KB · results tiered</text>
+      <text x="714" y="122" class="d-ts">index for fast listing</text>
+      <rect x="700" y="162" width="165" height="68" rx="6" class="d-both"/>
+      <text x="714" y="186" class="d-tb">Shared results folder</text>
+      <text x="714" y="206" class="d-ts">network or synced drive</text>
+      <text x="714" y="222" class="d-ts">the team's archive</text>
+      <rect x="700" y="246" width="165" height="54" rx="6" class="d-slate"/>
+      <text x="714" y="270" class="d-tb">④ Personal state</text>
+      <text x="714" y="288" class="d-ts">stays in the browser</text>
+      <path d="M646 88 L698 88" class="d-a" marker-end="url(#w-ah)" marker-start="url(#w-ah)"/>
+      <path d="M782 144 L782 160" class="d-a" marker-end="url(#w-ah)" marker-start="url(#w-ah)"/>
+      <path d="M646 234 C 676 234, 676 272, 698 272" class="d-a" marker-end="url(#w-ah)"/>
+      <text x="20" y="318" class="d-tm">WHO CHANGES WHAT</text>
+      <rect x="20" y="330" width="200" height="80" rx="6" class="d-box"/>
+      <text x="34" y="354" class="d-tb">Experts</text>
+      <text x="34" y="374" class="d-ts">fill a node or lesson form;</text>
+      <text x="34" y="392" class="d-ts">never touch the repository</text>
+      <rect x="236" y="330" width="200" height="80" rx="6" class="d-box"/>
+      <text x="250" y="354" class="d-tb">Maintainers</text>
+      <text x="250" y="374" class="d-ts">take forms, preview, approve,</text>
+      <text x="250" y="392" class="d-ts">merge, release</text>
+      <rect x="452" y="330" width="200" height="80" rx="6" class="d-box"/>
+      <text x="466" y="354" class="d-tb">Developers</text>
+      <text x="466" y="374" class="d-ts">frontend, backend, data —</text>
+      <text x="466" y="392" class="d-ts">by pull request</text>
+      <rect x="668" y="330" width="197" height="80" rx="6" class="d-box"/>
+      <text x="682" y="354" class="d-tb">The team</text>
+      <text x="682" y="374" class="d-ts">set inputs, run, keep,</text>
+      <text x="682" y="392" class="d-ts">share results</text>
+    </svg>
+  </figure>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────── 4 ── -->
+<section id="pictures">
+  <p class="sec-n">4 · VISUALISATION</p>
+  <h2>How a picture is made: data, then a description, then drawing</h2>
+  <p class="answer"><b>Answer first.</b> A figure is never stored as a picture. The engine produces the <b>data</b>; a small <b>description</b> says what to draw from it — the kind of mark, axes with units, the answer line, the rows it came from; a <b>renderer</b> draws it when someone looks. The same description serves an interactive chart in the browser, a static SVG in a report, a PNG for slides, an animation (the description plus a time axis) and a 3D view (geometry plus the same time series). A picture can always be redrawn from data; data can never be recovered from a picture.</p>
+  <figure class="fig">
+    <svg viewBox="0 0 880 300" role="img" aria-label="Engine data goes to an output description, which is drawn by the browser, the report, an image export, the animation player and the 3D viewer; checks run on every renderer.">
+      <defs><marker id="v-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="d-ah"/></marker></defs>
+      <rect x="20" y="70" width="180" height="120" rx="6" class="d-out"/>
+      <text x="36" y="96" class="d-tb">1 · Data</text>
+      <text x="36" y="118" class="d-ts">from the engine only</text>
+      <text x="36" y="136" class="d-ts">numbers, series, sweeps</text>
+      <text x="36" y="154" class="d-ts">CSV small · Parquet large</text>
+      <text x="36" y="172" class="d-ts">stored once, by hash</text>
+      <path d="M200 130 L238 130" class="d-a" marker-end="url(#v-ah)"/>
+      <rect x="240" y="50" width="230" height="160" rx="6" class="d-in"/>
+      <text x="256" y="76" class="d-tb">2 · Description (a few KB)</text>
+      <text x="256" y="98" class="d-ts">kind: line · scatter · bar · band</text>
+      <text x="256" y="116" class="d-ts">        heatmap · animation · 3D</text>
+      <text x="256" y="134" class="d-ts">axes with units · data references</text>
+      <text x="256" y="152" class="d-ts">answer line · finding line</text>
+      <text x="256" y="170" class="d-ts">rows it came from · chain hash</text>
+      <text x="256" y="192" class="d-tm">ONE FORMAT, READ BY EVERY FACE</text>
+      <path d="M470 130 C 500 130, 500 40, 530 40" class="d-a" marker-end="url(#v-ah)"/>
+      <path d="M470 130 C 505 130, 505 98, 530 98" class="d-a" marker-end="url(#v-ah)"/>
+      <path d="M470 130 C 505 130, 505 156, 530 156" class="d-a" marker-end="url(#v-ah)"/>
+      <path d="M470 130 C 500 130, 500 214, 530 214" class="d-a" marker-end="url(#v-ah)"/>
+      <rect x="532" y="18" width="330" height="44" rx="6" class="d-teal"/>
+      <text x="546" y="38" class="d-tb">Browser — interactive canvas</text>
+      <text x="546" y="54" class="d-ts">hover, zoom, table view — exists today</text>
+      <rect x="532" y="76" width="330" height="44" rx="6" class="d-teal"/>
+      <text x="546" y="96" class="d-tb">Report and docs — static SVG</text>
+      <text x="546" y="112" class="d-ts">prints, PDFs, opens without the tool</text>
+      <rect x="532" y="134" width="330" height="44" rx="6" class="d-teal"/>
+      <text x="546" y="154" class="d-tb">Export — PNG · CSV per figure</text>
+      <text x="546" y="170" class="d-ts">slides and spreadsheets</text>
+      <rect x="532" y="192" width="330" height="44" rx="6" class="d-teal"/>
+      <text x="546" y="212" class="d-tb">Animation player · 3D viewer</text>
+      <text x="546" y="228" class="d-ts">the same description + time axis / geometry</text>
+      <rect x="20" y="244" width="842" height="40" rx="6" class="d-both"/>
+      <text x="36" y="269" class="d-t">Checks on every renderer: it <tspan font-weight="600">renders</tspan> · it <tspan font-weight="600">moves</tspan> when its inputs change · it <tspan font-weight="600">matches</tspan> a reference a person approved, light and dark.</text>
+    </svg>
+    <figcaption>The blue-green boxes are frontend; the description between them and the engine is part of the contract. That is what lets a chart, an animation and a 3D view of one quantity never disagree.</figcaption>
+  </figure>
+  <div class="tbl"><table>
+    <thead><tr><th>Output kind</th><th>Stored as</th><th>Drawn by</th></tr></thead>
+    <tbody>
+      <tr><td>Number</td><td>value, unit, verdict, provenance — the values CSV</td><td>every face</td></tr>
+      <tr><td>Table</td><td>columns with units, rows — CSV; Parquet when large</td><td>table view; Excel; Python</td></tr>
+      <tr><td>Figure — line, scatter, bar, band, heatmap</td><td>the description (JSON) + data files</td><td>browser canvas; SVG in reports; PNG export</td></tr>
+      <tr><td>Text</td><td>answer first, findings, notes with claim tags — Markdown subset</td><td>every face</td></tr>
+      <tr><td>Animation</td><td>the figure description plus a time axis; frames are slices of the data, loaded in chunks</td><td>the player in the page; MP4 or GIF only as an export, never the record — a video cannot be zoomed, checked or re-coloured</td></tr>
+      <tr><td>3D scene</td><td>geometry as glTF 2.0 (<code>.glb</code>); motion — attitude, position — as time series in a declared frame (ECI, ECEF or body, from <code>vleo-units::frames</code>)</td><td>the 3D viewer (WebGL, bundled so it works offline); Blender or any glTF viewer</td></tr>
+    </tbody>
+  </table></div>
+  <div class="grid2">
+    <div class="card"><h3>3D, first</h3><p>The spacecraft body and its appendages from the design's own dimensions; its attitude and position over time; the orbit around a plain Earth; a fixed set of camera views that the checks compare against approved references.</p></div>
+    <div class="card"><h3>3D, as it grows</h3><p>Subsystem meshes, ground tracks and sensor footprints on a textured globe, eclipse and lighting, the drag and atomic-oxygen field over the surfaces, several design variants side by side. Each is a new kind of geometry or series in the same format, not a new viewer.</p></div>
+  </div>
+  <p class="col muted">Today the solar figures compute their own statistics in the browser (about 75 places in <code>web/js/solar.js</code>). Those numbers move into the kernel with tests (phase 10), so the frontend only draws and every figure can be reproduced from Python or the command line.</p>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────── 5 ── -->
+<section id="pages">
+  <p class="sec-n">5 · PAGES AND HTML</p>
+  <h2>How a node page is made, including rich interactive lessons</h2>
+  <p class="answer"><b>Answer first.</b> Nobody writes HTML for a page. An expert writes <b>content</b> through a form — text, equations, stories, "try it" widgets declared as <i>sliders for these inputs, show these outputs</i>, diagrams as SVG files. A generator assembles the page from a <b>component library</b> that frontend developers build once and test. When a page needs something new, it is added to the library once, and from then on any page can use it by name.</p>
+  <figure class="fig">
+    <svg viewBox="0 0 880 300" role="img" aria-label="node.toml, lesson.toml and diagram files go through the generator, which uses the component library, to produce a small page; shared styles, scripts and fonts are loaded once; try-it widgets compute with the kernel compiled for the browser; personal state stays in the browser.">
+      <defs><marker id="g-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="d-ah"/></marker></defs>
+      <text x="20" y="22" class="d-tm">WRITTEN BY THE EXPERT (THROUGH A FORM)</text>
+      <rect x="20" y="34" width="200" height="54" rx="6" class="d-in"/>
+      <text x="34" y="57" class="d-tb">node.toml</text>
+      <text x="34" y="76" class="d-ts">relation, bounds, sources</text>
+      <rect x="20" y="100" width="200" height="72" rx="6" class="d-in"/>
+      <text x="34" y="123" class="d-tb">lesson.toml</text>
+      <text x="34" y="142" class="d-ts">stations, stories, equations,</text>
+      <text x="34" y="159" class="d-ts">declared try-it widgets</text>
+      <rect x="20" y="184" width="200" height="54" rx="6" class="d-in"/>
+      <text x="34" y="207" class="d-tb">assets/*.svg</text>
+      <text x="34" y="226" class="d-ts">diagrams; the gate limits size</text>
+      <path d="M220 62 C 250 62, 250 136, 282 136" class="d-a" marker-end="url(#g-ah)"/>
+      <path d="M220 136 L282 136" class="d-a" marker-end="url(#g-ah)"/>
+      <path d="M220 210 C 250 210, 250 136, 282 136" class="d-a" marker-end="url(#g-ah)"/>
+      <rect x="284" y="92" width="170" height="88" rx="6" class="d-out"/>
+      <text x="369" y="122" text-anchor="middle" class="d-tb">Generator</text>
+      <text x="369" y="142" text-anchor="middle" class="d-ts">xtask docs</text>
+      <text x="369" y="160" text-anchor="middle" class="d-ts">checks as it builds</text>
+      <rect x="284" y="204" width="170" height="70" rx="6" class="d-teal"/>
+      <text x="369" y="228" text-anchor="middle" class="d-tb">Component library</text>
+      <text x="369" y="246" text-anchor="middle" class="d-ts">built once by frontend,</text>
+      <text x="369" y="262" text-anchor="middle" class="d-ts">tested, reused everywhere</text>
+      <path d="M369 202 L369 182" class="d-a" marker-end="url(#g-ah)"/>
+      <path d="M454 136 L496 136" class="d-a" marker-end="url(#g-ah)"/>
+      <text x="498" y="22" class="d-tm">WHAT THE READER GETS</text>
+      <rect x="498" y="34" width="364" height="92" rx="6" class="d-both"/>
+      <text x="512" y="58" class="d-tb">page.html — content only, about 20–40 KB</text>
+      <text x="512" y="78" class="d-ts">answer first · say it simply · the real thing ·</text>
+      <text x="512" y="95" class="d-ts">where it breaks · try it · story · references</text>
+      <text x="512" y="113" class="d-ts">Learn · Read · Expert modes</text>
+      <rect x="498" y="138" width="176" height="80" rx="6" class="d-box"/>
+      <text x="512" y="161" class="d-tb">Shared, loaded once</text>
+      <text x="512" y="180" class="d-ts">styles · scripts · fonts</text>
+      <text x="512" y="197" class="d-ts">bundled: works offline</text>
+      <rect x="686" y="138" width="176" height="80" rx="6" class="d-out"/>
+      <text x="700" y="161" class="d-tb">Try-it widgets</text>
+      <text x="700" y="180" class="d-ts">compute with the kernel,</text>
+      <text x="700" y="197" class="d-ts">compiled for the browser</text>
+      <rect x="498" y="230" width="364" height="44" rx="6" class="d-slate"/>
+      <text x="512" y="250" class="d-tb">Notebook of gaps, quiz progress, chosen mode</text>
+      <text x="512" y="266" class="d-ts">kept in the reader's browser — never in the repo</text>
+    </svg>
+  </figure>
+  <div class="grid2">
+    <div class="card"><h3>What the expert writes</h3>
+      <ul class="plain">
+        <li>Text for each station, with claim tags: sourced, derived, declared, illustrative</li>
+        <li>Equations, and the source each comes from</li>
+        <li>Widgets as declarations: sliders for these input rows, show these output rows, draw this figure</li>
+        <li>Diagrams as SVG files; stories; check-yourself questions</li>
+      </ul></div>
+    <div class="card"><h3>What frontend developers build once</h3>
+      <ul class="plain">
+        <li>Components: station, answer-first, figure, table, equation, widget, animation, 3D view, story, check-yourself, references, claim tag, depth switch</li>
+        <li>One page template used by node pages, lessons, forms, the case page, result reports, guides and the manual</li>
+        <li>A gate check that refuses a page building a component by hand, or a formula written inside a page</li>
+      </ul></div>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>A rich page as one self-contained file</th><th>The same page built this way</th></tr></thead>
+    <tbody>
+      <tr><td class="num">≈ 265 KB, fonts and code inside</td><td class="num">≈ 30 KB of content; the rest shared</td></tr>
+      <tr><td>its calculators carry their own formulas</td><td>widgets computed by the kernel — they cannot disagree with the tool</td></tr>
+      <tr><td>fonts fetched from the internet at every open</td><td>fonts bundled with the tool; works offline, contacts nobody</td></tr>
+      <tr><td>edited as one large HTML file</td><td>edited as content through a lesson form, reviewed like a node form</td></tr>
+    </tbody>
+  </table></div>
+  <p class="col muted">The first lesson is <i>Eight loops, one beam</i>, on the propulsion subsystem's group row. Its physics is checked against the rows that exist first; rows it needs that do not exist yet (the RF circuit, the grids) arrive as new-node forms before the lesson that uses them.</p>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────── 6 ── -->
+<section id="data">
+  <p class="sec-n">6 · DATA AT SCALE</p>
+  <h2>Keeping everything the tool makes, without flooding</h2>
+  <p class="answer"><b>Answer first.</b> Runs are deterministic: the same version and the same inputs give the same numbers, every time. So what cannot be recomputed — who ran what, on which inputs, what they concluded — is kept forever and small; the heavy numbers are kept while recent or pinned, and recomputed on demand after that.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>What</th><th>Measured</th><th>Kept how</th></tr></thead>
+    <tbody>
+      <tr><td>A case — all 128 inputs</td><td class="num">9 KB</td><td>Each distinct set stored once, by hash. A run records the hash and only the values that differ from that release's defaults.</td></tr>
+      <tr><td>Result summary</td><td class="num">≈ 2 KB</td><td>Always. KPIs, verdicts, what was blocked, chain hash, input hash, who, when, tags, pin.</td></tr>
+      <tr><td>All 1,396 row values of a run</td><td class="num">182 KB · 27 KB compressed</td><td>Compressed while recent (30 days) or pinned; then an unpinned result thins to its summary. Opening a thinned result reruns it and, if the engine has changed, shows what moved.</td></tr>
+      <tr><td>Figures, sweeps, animation frames</td><td class="num">—</td><td>Saved with the result when pinned or when a figure declares them — the outputs the figure needs, not every row at every point.</td></tr>
+      <tr><td>Large arrays</td><td class="num">—</td><td>Parquet above ~100,000 values — columnar, typed, several times smaller, read directly by Python, MATLAB and Excel. Loaded into a page as an overview first (each pixel's minimum and maximum, so no peak is lost) and detail on zoom.</td></tr>
+      <tr><td>The index of all results</td><td class="num">—</td><td>A small index file, rebuilt from the results if lost. Moves to SQLite — one embedded file, no server — past ~50,000 results or when queries across runs are needed.</td></tr>
+      <tr><td>Crash logs</td><td class="num">&lt; 1 KB each</td><td><code>~/.vleo/log/</code>, the newest 50 kept.</td></tr>
+      <tr><td>Pinned and shared results</td><td>—</td><td>Never thinned, never deleted by the tool.</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="fig">
+    <svg viewBox="0 0 880 250" role="img" aria-label="Results for 10 people over one year: keeping everything 22 GB, tiered 0.8 GB. 1,396 rich pages: self-contained about 370 MB, content plus shared parts about 42 MB.">
+      <text x="20" y="24" class="d-tb">Results · 10 people · 50 saved runs a day · one year (125,000 results)</text>
+      <text x="20" y="58" class="d-ts">Keep everything in full</text>
+      <rect x="230" y="44" width="560" height="20" rx="3" class="d-bar1"/>
+      <text x="798" y="59" class="d-t">22 GB</text>
+      <text x="20" y="92" class="d-ts">Tiered</text>
+      <rect x="230" y="78" width="20.4" height="20" rx="3" class="d-bar2"/>
+      <text x="258" y="93" class="d-t">0.8 GB</text>
+      <text x="20" y="150" class="d-tb">Pages · 1,396 nodes with rich interactive pages</text>
+      <text x="20" y="184" class="d-ts">Each page self-contained</text>
+      <rect x="230" y="170" width="560" height="20" rx="3" class="d-bar1"/>
+      <text x="798" y="185" class="d-t">≈ 370 MB</text>
+      <text x="20" y="218" class="d-ts">Content + shared parts</text>
+      <rect x="230" y="204" width="63.6" height="20" rx="3" class="d-bar2"/>
+      <text x="302" y="219" class="d-t">≈ 42 MB</text>
+    </svg>
+    <figcaption>Estimates from measured sizes: 182 KB per full result, ≈ 2 KB summary, 27 KB compressed; ≈ 265 KB for a self-contained rich page, ≈ 30 KB of content. Each pair is drawn to its own scale.</figcaption>
+  </figure>
+  <div class="grid2">
+    <div class="card"><h3>No database server</h3><p>The design stays in git, where history, review and blame are free. Reference data stays in hashed bundles. Nothing on the physics path waits on a network. An embedded SQLite index is the one database the tool may take on, and only at the size where files stop being quick to list.</p></div>
+    <div class="card"><h3>One storage interface</h3><p>Saving, listing, opening and thinning results go through <code>vleo-data</code>, which the server, the command line and Python all call. Files today; SQLite or a team server later, without touching the engine or the pages.</p></div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────── 7 ── -->
+<section id="access">
+  <p class="sec-n">7 · ACCESS, SYNC AND MAINTENANCE</p>
+  <h2>Who reaches what, and how it stays in step</h2>
+  <p class="answer"><b>Answer first.</b> Everyone gets the tool from one place — a release — and nobody has to install anything just to read. The design reaches people as a new version; results reach people through a shared folder or as a single file; pages and reports open in any browser.</p>
+  <figure class="fig">
+    <svg viewBox="0 0 880 330" role="img" aria-label="The developer and maintainer branches merge into main; main produces a release; the release reaches team laptops, which share a results folder, a docs folder for readers, and result files anyone can open. Experts reach the repository through forms.">
+      <defs><marker id="a-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-ah"/></marker></defs>
+      <text x="20" y="22" class="d-tm">THE REPOSITORY</text>
+      <rect x="20" y="34" width="270" height="176" rx="8" class="d-band"/>
+      <rect x="36" y="50" width="112" height="46" rx="6" class="d-in"/>
+      <text x="92" y="72" text-anchor="middle" class="d-tb">developer</text>
+      <text x="92" y="88" text-anchor="middle" class="d-ts">software</text>
+      <rect x="162" y="50" width="112" height="46" rx="6" class="d-in"/>
+      <text x="218" y="72" text-anchor="middle" class="d-tb">maintainer</text>
+      <text x="218" y="88" text-anchor="middle" class="d-ts">forms, design</text>
+      <rect x="92" y="130" width="126" height="62" rx="6" class="d-out"/>
+      <text x="155" y="154" text-anchor="middle" class="d-tb">main</text>
+      <text x="155" y="172" text-anchor="middle" class="d-ts">merged PR only</text>
+      <path d="M92 96 C 92 116, 130 112, 140 128" class="d-a" marker-end="url(#a-ah)"/>
+      <path d="M218 96 C 218 116, 180 112, 170 128" class="d-a" marker-end="url(#a-ah)"/>
+      <path d="M218 161 L318 161" class="d-a" marker-end="url(#a-ah)"/>
+      <rect x="320" y="126" width="140" height="70" rx="6" class="d-box"/>
+      <text x="390" y="152" text-anchor="middle" class="d-tb">Release (CI)</text>
+      <text x="390" y="170" text-anchor="middle" class="d-ts">refuses anything not</text>
+      <text x="390" y="186" text-anchor="middle" class="d-ts">merged into main</text>
+      <path d="M460 146 C 490 146, 490 51, 518 51" class="d-a" marker-end="url(#a-ah)"/>
+      <path d="M460 166 C 490 166, 490 199, 518 199" class="d-a" marker-end="url(#a-ah)"/>
+      <path d="M460 180 C 486 180, 486 279, 518 279" class="d-a" marker-end="url(#a-ah)"/>
+      <rect x="520" y="20" width="342" height="62" rx="6" class="d-both"/>
+      <text x="536" y="43" class="d-tb">Team laptops — the tool</text>
+      <text x="536" y="60" class="d-ts">one .whl, or a kit per system</text>
+      <text x="536" y="75" class="d-ts">update: install the new version</text>
+      <path d="M600 84 L600 98" class="d-a" marker-end="url(#a-ah)" marker-start="url(#a-ah)"/>
+      <rect x="560" y="100" width="302" height="50" rx="6" class="d-both"/>
+      <text x="576" y="121" class="d-tb">Shared results folder</text>
+      <text x="576" y="139" class="d-ts">every laptop reads and adds to it</text>
+      <rect x="520" y="168" width="342" height="62" rx="6" class="d-teal"/>
+      <text x="536" y="191" class="d-tb">Readers — the docs folder</text>
+      <text x="536" y="208" class="d-ts">every node page and lesson as plain HTML</text>
+      <text x="536" y="223" class="d-ts">from a shared drive; no install</text>
+      <rect x="520" y="248" width="342" height="62" rx="6" class="d-slate"/>
+      <text x="536" y="271" class="d-tb">Anyone — a result file</text>
+      <text x="536" y="288" class="d-ts">.vleo to reopen; report.html to read,</text>
+      <text x="536" y="303" class="d-ts">print or PDF — figures included</text>
+      <rect x="20" y="236" width="270" height="72" rx="6" class="d-in"/>
+      <text x="36" y="260" class="d-tb">Experts' forms</text>
+      <text x="36" y="278" class="d-ts">own branch, preview, approval,</text>
+      <text x="36" y="294" class="d-ts">then merged into maintainer</text>
+    </svg>
+    <figcaption>The deployment is laptops plus a shared results folder (see Decisions). GitHub Pages could host the docs folder, but for a private repository it needs a paid plan; a shared drive or any internal web server works on any plan.</figcaption>
+  </figure>
+  <div class="tbl"><table>
+    <thead><tr><th>What</th><th>How it stays in step</th><th>Who maintains it</th></tr></thead>
+    <tbody>
+      <tr><td>The design and pages</td><td>A new release; the tool shows its version and what moved since a result was saved.</td><td>Maintainers, through forms</td></tr>
+      <tr><td>Reference data</td><td>A new bundle version, verified by hash before any run uses it.</td><td>Maintainers</td></tr>
+      <tr><td>Team results</td><td>The shared folder (<code>VLEO_RESULTS</code>). Each person's index is rebuilt from it, so there is nothing to merge; names are unique and every write is whole, so nobody overwrites or half-writes another's result.</td><td>Everyone adds; pins protect</td></tr>
+      <tr><td>The tool itself</td><td>Pull requests into <code>developer</code>, then <code>main</code>, then a release.</td><td>Frontend, backend and data developers</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────── 8 ── -->
+<section id="scripts">
+  <p class="sec-n">8 · THE SCRIPTS</p>
+  <h2>A node's journey, and every script able to explain itself</h2>
+  <p class="answer"><b>Answer first.</b> Every command says, in the same way, which step it is on, what it read and wrote, and — if it stops — which step, why, what state the files are in, and the exact command to try again. One table in the code describes every script; the help text and a generated <code>docs/PIPELINE.md</code> come from it, and a test fails if they ever disagree.</p>
+  <figure class="fig">
+    <svg viewBox="0 0 880 200" role="img" aria-label="A node's journey: form, take, check, apply, publish, build, gate and test, preview and approve, pull request into maintainer, main, release.">
+      <defs><marker id="s-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="d-ah"/></marker></defs>
+      <rect x="14" y="30" width="96" height="56" rx="6" class="d-in"/><text x="62" y="54" text-anchor="middle" class="d-tb">Form</text><text x="62" y="72" text-anchor="middle" class="d-ts">expert fills</text>
+      <rect x="132" y="30" width="96" height="56" rx="6" class="d-box"/><text x="180" y="54" text-anchor="middle" class="d-tb">take</text><text x="180" y="72" text-anchor="middle" class="d-ts">own branch</text>
+      <rect x="250" y="30" width="96" height="56" rx="6" class="d-box"/><text x="298" y="54" text-anchor="middle" class="d-tb">intake</text><text x="298" y="72" text-anchor="middle" class="d-ts">check only</text>
+      <rect x="368" y="30" width="96" height="56" rx="6" class="d-box"/><text x="416" y="54" text-anchor="middle" class="d-tb">apply</text><text x="416" y="72" text-anchor="middle" class="d-ts">all or nothing</text>
+      <rect x="486" y="30" width="96" height="56" rx="6" class="d-box"/><text x="534" y="54" text-anchor="middle" class="d-tb">publish</text><text x="534" y="72" text-anchor="middle" class="d-ts">code generated</text>
+      <rect x="604" y="30" width="96" height="56" rx="6" class="d-box"/><text x="652" y="54" text-anchor="middle" class="d-tb">build-node</text><text x="652" y="72" text-anchor="middle" class="d-ts">from method</text>
+      <rect x="722" y="30" width="140" height="56" rx="6" class="d-both"/><text x="792" y="54" text-anchor="middle" class="d-tb">gate + test</text><text x="792" y="72" text-anchor="middle" class="d-ts">the green line</text>
+      <path d="M110 58 L130 58" class="d-a" marker-end="url(#s-ah)"/><path d="M228 58 L248 58" class="d-a" marker-end="url(#s-ah)"/><path d="M346 58 L366 58" class="d-a" marker-end="url(#s-ah)"/><path d="M464 58 L484 58" class="d-a" marker-end="url(#s-ah)"/><path d="M582 58 L602 58" class="d-a" marker-end="url(#s-ah)"/><path d="M700 58 L720 58" class="d-a" marker-end="url(#s-ah)"/>
+      <path d="M792 86 C 792 112, 760 112, 740 126" class="d-a" marker-end="url(#s-ah)"/>
+      <rect x="604" y="126" width="140" height="56" rx="6" class="d-out"/><text x="674" y="150" text-anchor="middle" class="d-tb">preview · approve</text><text x="674" y="168" text-anchor="middle" class="d-ts">the author tries it</text>
+      <rect x="444" y="126" width="138" height="56" rx="6" class="d-in"/><text x="513" y="150" text-anchor="middle" class="d-tb">→ maintainer</text><text x="513" y="168" text-anchor="middle" class="d-ts">pull request</text>
+      <rect x="286" y="126" width="136" height="56" rx="6" class="d-in"/><text x="354" y="150" text-anchor="middle" class="d-tb">→ main</text><text x="354" y="168" text-anchor="middle" class="d-ts">pull request</text>
+      <rect x="132" y="126" width="132" height="56" rx="6" class="d-out"/><text x="198" y="150" text-anchor="middle" class="d-tb">ship · release</text><text x="198" y="168" text-anchor="middle" class="d-ts">to everyone</text>
+      <path d="M604 154 L584 154" class="d-a" marker-end="url(#s-ah)"/><path d="M444 154 L424 154" class="d-a" marker-end="url(#s-ah)"/><path d="M286 154 L266 154" class="d-a" marker-end="url(#s-ah)"/>
+    </svg>
+  </figure>
+  <p class="col">The shape every writing command prints (phase 6) — an illustration of the format, with an illustrative author and node:</p>
+  <div class="term" role="img" aria-label="Illustrative terminal output: a command stops at step 3, gives the reason, the state of the files and the retry command.">xtask intake --apply sw_ap_design.node-form.html
+  <span class="ok">1/5 · read the form</span>              sw_ap_design, 14 fields, by Ana Sharma
+  <span class="ok">2/5 · check every interface</span>      3 inputs, each a row of the quantity expected
+  <span class="bad">3/5 · apply to the sheet</span>          stopped
+      why       the sheet changed since this form was made (field: upper)
+      files     unchanged — the sheet was put back as it was
+      retry     cargo run -p xtask -- form sw_ap_design   (send the author a fresh form)
+      code      the function and step name to search for
+      trace     target/xtask-trace/&lt;time&gt;-intake.log</div>
+  <div class="grid2">
+    <div class="card"><h3>For every command</h3>
+      <ul class="plain">
+        <li><code>xtask explain &lt;command&gt;</code> — reads, writes, checks, how to undo, where its code is</li>
+        <li><code>--dry-run</code> — what would happen, doing nothing</li>
+        <li>a trace of each run; <code>xtask trace</code> shows the last</li>
+      </ul></div>
+    <div class="card"><h3>For every node</h3>
+      <ul class="plain">
+        <li><code>xtask why &lt;node&gt;</code> — every form taken and who wrote it, its versions, builds and last gate result</li>
+        <li>step names in the code equal the printed names, so an error message finds its line</li>
+      </ul></div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────── 9 ── -->
+<section id="failure">
+  <p class="sec-n">9 · WHEN SOMETHING BREAKS</p>
+  <h2>A bug ends one request, leaves a file to send, and never half-writes data</h2>
+  <p class="answer"><b>Answer first.</b> A bug in the tool is a Rust panic. It is caught where it happens — per request in the server, at the C boundary — written to a crash log a person can send, and answered with a message that says so; the tool keeps running. Every write of a person's data is whole, so a crash at any moment leaves each file either as it was or as it should be.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Mechanism</th><th>Where</th><th>What it guarantees</th></tr></thead>
+    <tbody>
+      <tr><td>Unwinding release build</td><td><code>Cargo.toml</code> <code>[profile.release]</code></td><td>A panic can be caught at all. Under the earlier <code>panic = "abort"</code> one bug in any request closed the whole daemon.</td></tr>
+      <tr><td>One request at a time, guarded</td><td><code>vleo-server/src/http.rs</code> — <code>handled</code></td><td>A bug answers that request with a 500 (JSON for <code>/v1</code>, naming the crash log); the next request is served.</td></tr>
+      <tr><td>Connection places given back</td><td><code>http.rs</code> — <code>OpenPlace</code></td><td>Released however a connection's thread ends; bugs cannot use up the 64 places until every connection is refused.</td></tr>
+      <tr><td>The C boundary</td><td><code>vleo-ffi</code> — <code>guarded</code></td><td>A bug becomes <code>VLEO_INTERNAL</code> and a message for MATLAB, Simulink or a C program; it never unwinds into the caller.</td></tr>
+      <tr><td>Crash log</td><td><code>vleo-data/src/crash.rs</code></td><td>One plain-text file per bug in <code>~/.vleo/log/</code> (or <code>VLEO_LOG</code>): program, version, time, thread, message, line of code. Newest 50 kept.</td></tr>
+      <tr><td>Whole writes</td><td><code>vleo-data/src/whole.rs</code> — <code>write_whole</code></td><td>Case, results, backups, the data lockfile and the command line's saved files are written aside, flushed and renamed over: a reader — this tool, another laptop, a sync client — never sees a file half written.</td></tr>
+      <tr><td>Paths from the environment</td><td><code>vleo-data</code> — <code>case_path</code>, <code>results_path</code>, <code>log_path</code></td><td>A variable set but empty counts as unset, so a stray <code>VLEO_RESULTS=</code> never sends results into whatever folder the tool was started in.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="col muted">Each guarantee has a test that was run against a deliberately broken version and went red. Errors outside the kernel are still passed as text in about 130 places; typed errors per crate follow in phase 11.</p>
+</section>
+
+<!-- ────────────────────────────────────────────────────────────── 10 ── -->
+<section id="roadmap">
+  <p class="sec-n">10 · ROADMAP</p>
+  <h2>Every phase, in order</h2>
+  <p class="answer"><b>Answer first.</b> Nothing is rewritten; each phase adds to what exists. Safety first, then what everything else is built on — scripts that explain themselves, the frontend–backend contract, then the storage and output model — so that later additions only add new kinds of thing and never change the ones before.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Phase</th><th>What</th><th>Part</th><th>State</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1–2</td><td>Local server safety; bad sheets refused at build; tests for every checker</td><td>backend</td><td><span class="tag t-done">done</span></td></tr>
+      <tr><td class="num">3–4</td><td>Code restructured; three branches; team code owners; a release only from a merged pull request; CI timeouts; the evidence headline; the glossary</td><td>all</td><td><span class="tag t-done">done</span></td></tr>
+      <tr><td class="num">5</td><td>When something breaks: unwinding build, per-request guard, connection places, the C boundary, crash log, whole writes, empty variables</td><td>backend · data</td><td><span class="tag t-done">done</span></td></tr>
+      <tr><td class="num">6</td><td>Scripts that explain themselves: the pipeline table, <code>explain</code>, uniform steps, <code>--dry-run</code>, traces, <code>why</code>, generated <code>PIPELINE.md</code></td><td>backend</td><td><span class="tag t-new">next</span></td></tr>
+      <tr><td class="num">7</td><td>The contract: <code>contract/</code> schemas and recorded answers, contract tests, the mock engine, the versioning rule, frontend / backend / data teams in CODEOWNERS, split CI</td><td>all</td><td></td></tr>
+      <tr><td class="num">8</td><td>Storage and outputs: output types — number, table, figure, text, <b>animation, 3D scene</b>; the result package (folder + <code>.vleo</code>); tiers and thinning; input dedupe; the index behind one interface; the shared folder; reports with SVG figures; PNG and CSV export; sweeps saved</td><td>data · backend</td><td></td></tr>
+      <tr><td class="num">9</td><td>Frontend: the component library and one page template in <code>web/</code>; <code>lesson.toml</code>; widgets computed by the kernel in the browser; <b>the animation player and the 3D viewer</b>; bundled fonts and shared assets; the lesson form; the docs folder for readers; the first lesson</td><td>frontend</td><td></td></tr>
+      <tr><td class="num">10</td><td>Figure numbers move into the kernel, solar first; each approved reference picture must stay the same</td><td>backend · frontend</td><td></td></tr>
+      <tr><td class="num">11</td><td>Readability: a guide to changing the code (a node, a route, a component, an output kind), the two 3,200-line files split, generator examples, required docs; typed errors</td><td>all</td><td></td></tr>
+      <tr><td class="num">—</td><td>Grows with use: richer 3D (see section 4); Parquet when a dataset passes ~100,000 values; the SQLite index past ~50,000 results; a team server only if live shared runs or access control are needed</td><td>all</td><td><span class="tag t-grow">continuous</span></td></tr>
+      <tr><td class="num">—</td><td>Content, by people: 124 of 190 computing rows have no outside check and 137 have no theory. Filled through forms, alongside every phase</td><td>design</td><td><span class="tag t-grow">continuous</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="col muted">Not on the roadmap, deliberately: a database server now; a web framework; moving the design out of git; caching — a full run of all 1,396 rows takes 12 ms. New dependencies arrive only with the phase that needs them — a zip library (8); bundled fonts and a WebGL library for 3D (9); Parquet and SQLite when their thresholds are reached — each recorded in <code>ADOPTION.lock</code> with its licence and fallback. The kernel stays free of all of them.</p>
+</section>
+
+<!-- ────────────────────────────────────────────────────────────── 11 ── -->
+<section id="decisions">
+  <p class="sec-n">11 · DECISIONS</p>
+  <h2>What was decided, and when to look again</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Question</th><th>Decided</th><th>Look again when</th></tr></thead>
+    <tbody>
+      <tr><td>Where the tool runs</td><td>On each person's computer, with a shared results folder for the team (<code>VLEO_RESULTS</code>). No server to run, works offline, one archive for everyone.</td><td>People need to see each other's runs live, or who may run what must be controlled — then one team server behind sign-in and HTTPS, on the same storage interface.</td></tr>
+      <tr><td>Database</td><td>No database server. Files and a rebuildable index; SQLite as an embedded index only past ~50,000 results.</td><td>The index grows past that, or queries across runs are needed.</td></tr>
+      <tr><td>How a result is saved and shared</td><td>A folder on disk; one <code>.vleo</code> file to share, with a self-contained <code>report.html</code>.</td><td>—</td></tr>
+      <tr><td>How long results are kept</td><td>Summaries forever; all values for 30 days; pinned and shared results forever.</td><td>The shared folder's size says otherwise — the numbers are settings.</td></tr>
+      <tr><td>Where page content lives</td><td><code>lesson.toml</code> beside <code>node.toml</code>, per node or per group of nodes; outside the sheet hash.</td><td>—</td></tr>
+      <tr><td>Animation and 3D</td><td>Part of the core output model (phase 8) and the frontend (phase 9) — not an afterthought — with 3D growing richer over time in the same format.</td><td>—</td></tr>
+      <tr><td>Frontend and backend</td><td>Separate parts meeting at a versioned contract, with separate owners and checks, so they are developed in parallel.</td><td>—</td></tr>
+      <tr><td>How a release is decided</td><td>By merging a pull request into <code>main</code>; the release workflow refuses anything else (<code>docs/RELEASE_SETUP.md</code>).</td><td>A second reviewer joins — set <code>RELEASE_APPROVALS</code> to 1.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ────────────────────────────────────────────────────────────── 12 ── -->
+<section id="more">
+  <p class="sec-n">12 · FURTHER READING</p>
+  <h2>Where each part is described in full</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Document</th><th>What it adds</th></tr></thead>
+    <tbody>
+      <tr><td><code>docs/ARCHITECTURE.md</code></td><td>Why the kernel's rings are shaped the way they are</td></tr>
+      <tr><td><code>AGENTS.md</code></td><td>The rules that do not bend, and the developer's loop</td></tr>
+      <tr><td><code>CONTRIBUTING.md</code></td><td>The three branches and who reviews what</td></tr>
+      <tr><td><code>docs/NODE_AUTHORING.md</code></td><td>The sheet, field by field; evidence and provenance</td></tr>
+      <tr><td><code>docs/EXPLAINING.md</code></td><td>How every page, form and document explains itself</td></tr>
+      <tr><td><code>panels/README.md</code></td><td>How a figure is declared and checked</td></tr>
+      <tr><td><code>docs/RELEASE_SETUP.md</code></td><td>How a release is decided, tagged, proved and shipped</td></tr>
+      <tr><td><code>docs/SHARING.md</code></td><td>The kit and the one-file package for the team</td></tr>
+      <tr><td><code>docs/GLOSSARY.md</code></td><td>The words used here in a sense of their own</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+</div>
+</body>
+</html>
