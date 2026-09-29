@@ -19,7 +19,7 @@
 //! stored, so it cannot go stale.
 //!
 //! None of these types is ever written by hand. They are generated into
-//! `vleo-graph` from the sheets, and this crate holds only their shape.
+//! `vleo-modules` from the sheets, and this crate holds only their shape.
 
 use crate::credibility::Tier;
 use crate::evidence::Fixture;
@@ -333,8 +333,8 @@ pub enum View {
 
 /// What the resolver needs from the generated tables.
 ///
-/// The resolver lives here and the tables live in `vleo-graph` and
-/// `vleo-modules`, so this trait is the seam between a kernel that can be
+/// The resolver lives here and the tables live in `vleo-modules`, so this
+/// trait is the seam between a kernel that can be
 /// reviewed on its own and a graph that changes every time a node is added.
 pub trait NodeTable {
     fn nodes(&self) -> &[NodeDef];

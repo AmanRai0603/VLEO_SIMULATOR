@@ -637,19 +637,17 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
   targets of their own, so `cargo build --workspace` does not reach them. They
   have their own pipeline job; build them by hand from their own directories.
 
-## Two things a fresh clone needs from a person
+## What a fresh clone needs from a person
 
 1. `cargo xtask setup` — points git at `tools/githooks` so the commit-message
    hook runs. Git will not follow a committed hooks path on its own, because a
    hook that ran because it was cloned would be arbitrary code from a pull
    request. The authoring commands say so until it is done.
-2. A GitHub environment named `release` with required reviewers. Nothing in
-   this repository can create it — an environment named in a workflow but never
-   configured is created empty and approves instantly. The release job's first
-   step reads the environment's protection rules and stops if nobody is
-   required, so the absence fails the release rather than passing it quietly.
-   `docs/RELEASE_SETUP.md` is the whole procedure, including the plan
-   constraint that applies to a private repository on a personal account.
+2. Nothing for releases. A release is decided by merging a pull request into
+   `main`; the workflow refuses a commit that did not come through one before
+   it builds anything. Optionally, the repository variable `RELEASE_APPROVALS`
+   sets how many approvals that pull request needs. `docs/RELEASE_SETUP.md` is
+   the whole rule, and what branch protection adds on a paid plan.
 
 ---
 
@@ -658,6 +656,7 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
 | | |
 |---|---|
 | **? Manual**, in the tool | the place to start. Every task in the browser and in the terminal, for a user and for a developer, what cannot be done by hand, and every command, route, setting and folder. Source: [`docs/manual.toml`](docs/manual.toml) |
+| [`docs/GLOSSARY.md`](docs/GLOSSARY.md) | the words this repository uses in a sense of its own — row, closure, sense, fixture, form, take — each in a sentence, with where it is defined |
 | [`docs/USING_IT.md`](docs/USING_IT.md) | the worked walkthrough, with real outputs — running it, changing an input, keeping a result, a form from filling to release |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | why the rings are shaped the way they are |
 | [`docs/NODE_AUTHORING.md`](docs/NODE_AUTHORING.md) | the sheet, field by field |
@@ -667,7 +666,7 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
 | [`docs/WORK_MODEL.md`](docs/WORK_MODEL.md) | who does what — the team and the developers, and what crosses between them |
 | [`docs/VARIABLES.md`](docs/VARIABLES.md) | every variable, unit, bound and the reason for it — generated |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | a developer's first day, one form from arrival to release, and what to do when the tool is down |
-| [`docs/RELEASE_SETUP.md`](docs/RELEASE_SETUP.md) | tagging, proving and shipping a release |
+| [`docs/RELEASE_SETUP.md`](docs/RELEASE_SETUP.md) | how a release is decided, tagged, proved and shipped |
 | [`docs/MATLAB_PORT_PLAN.md`](docs/MATLAB_PORT_PLAN.md) | how the study was ported, row by row — the record of a finished job |
 | [`docs/DELIVERY_PLAN.md`](docs/DELIVERY_PLAN.md) | what was to be built, in what order |
 | [`docs/GITLAB_TRANSFER.md`](docs/GITLAB_TRANSFER.md) | what moving off GitHub would cost, measured rather than guessed |

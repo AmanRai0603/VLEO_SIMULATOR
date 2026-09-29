@@ -55,7 +55,11 @@ def selftest():
     # The two verdicts this reads are the page's own words; if they move, this
     # must move with them. Read them from the generator rather than trusting
     # a copy here.
-    src = open(os.path.join(os.path.dirname(__file__), "..", "crates", "vleo-sheet", "src", "template.rs")).read()
+    here = os.path.join(os.path.dirname(__file__), "..", "crates", "vleo-sheet", "src")
+    src = "".join(
+        open(os.path.join(here, f)).read()
+        for f in ("template.rs", "form_page/page.js", "form_page/page.css")
+    )
     for words in ("Sound: the method checks", "Not sound yet", "nf-sound", "nf-check"):
         assert words in src, "the form no longer says %r" % words
     print("selftest: ok")

@@ -1,10 +1,17 @@
-# The release pipeline, and the one human approval.
+# The release pipeline, and the rule that decides what may be released.
 #
 # The working model's line for this is short: "the release pipeline itself, plus
-# one human approval". The two halves matter equally. Everything mechanical is
-# mechanical — the version, the notes, the builds, the checks — so that the one
-# thing left for a person is the only thing a person is better at: deciding
-# whether this is the state of the tool that goes to a customer.
+# one human decision". Everything mechanical is mechanical — the version, the
+# notes, the builds, the checks — so that the one thing left for a person is the
+# only thing a person is better at: deciding whether this is the state of the
+# tool that goes to a customer.
+#
+# That decision is the merge of a pull request into main. A release is cut only
+# from a commit on main that a merged pull request put there; the first job
+# refuses anything else before a single binary is built. The review happened on
+# the pull request, where the change could be read — not on a button pressed
+# after the artefacts exist. docs/RELEASE_SETUP.md says why this replaced the
+# environment approval, and what branch protection it relies on.
 #
 # Two things this workflow may never do, and does not:
 #
@@ -12,9 +19,8 @@
 #     a person in repository settings. A pipeline that can widen its own gate
 #     has no gate.
 #   - hold a signing key. Signing and notarisation take a certificate that
-#     lives in an organisation secret a release engineer controls, requested at
-#     the approval step rather than read by this file. The signing job is
-#     deliberately absent until that certificate exists; a workflow that
+#     lives in an organisation secret a release engineer controls. The signing
+#     job is deliberately absent until that certificate exists; a workflow that
 #     pretends to sign is worse than one that admits it does not.
 name: release
 
@@ -37,12 +43,70 @@ jobs:
   prove:
     name: the tool is green before anything is built
     runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       version: ${{ steps.v.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # The release rule. What is released is a commit on main, and main moves
+      # only by merged pull requests — so the commit must be on main, and a
+      # merged pull request into main must be the thing that put it there. A
+      # tag pushed on a side branch, a run started from one, or a commit pushed
+      # to main around review all stop here, before anything is built.
+      - name: this commit came to main through a merged pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha="$(git rev-parse HEAD)"
+          case "${{ github.event_name }}" in
+            workflow_dispatch)
+              [ "${{ github.ref }}" = "refs/heads/main" ] || {
+                echo "::error::A release is run from main, not ${{ github.ref }}. Nothing has been built."
+                exit 1
+              } ;;
+            *)
+              git fetch -q origin main
+              git merge-base --is-ancestor "$sha" origin/main || {
+                echo "::error::The tag ${{ github.ref_name }} is on $sha, which is not on main."
+                echo "::error::Tag the merge commit of the release pull request. Nothing has been built."
+                exit 1
+              } ;;
+          esac
+          prs=$(gh api "repos/${{ github.repository }}/commits/$sha/pulls" \
+            --jq '.[] | select(.merged_at != null and .base.ref == "main") | .number')
+          if [ -z "$prs" ]; then
+            echo "::error::$sha is on main, but no merged pull request into main put it there."
+            echo "::error::Main moves only by reviewed pull requests; see docs/RELEASE_SETUP.md."
+            echo "::error::Nothing has been built."
+            exit 1
+          fi
+          # How many people other than the author must have approved it is a
+          # repository variable, set by a person: RELEASE_APPROVALS. Unset, it
+          # is 0 — on a one-person project GitHub lets nobody approve their own
+          # pull request, so requiring one would stop every release.
+          need="${{ vars.RELEASE_APPROVALS }}"
+          need="${need:-0}"
+          best=0
+          echo "### Merged into main by" >> "$GITHUB_STEP_SUMMARY"
+          for n in $prs; do
+            title=$(gh api "repos/${{ github.repository }}/pulls/$n" --jq '.title')
+            ok=$(gh api "repos/${{ github.repository }}/pulls/$n/reviews" \
+              --jq '[.[] | select(.state == "APPROVED") | .user.login] | unique | length')
+            echo "#$n $title — $ok approval(s)"
+            echo "- #$n $title — $ok approval(s)" >> "$GITHUB_STEP_SUMMARY"
+            if [ "$ok" -gt "$best" ]; then best=$ok; fi
+          done
+          [ "$best" -ge "$need" ] || {
+            echo "::error::The pull request that put $sha on main has $best approval(s);"
+            echo "::error::RELEASE_APPROVALS asks for $need. Nothing has been built."
+            exit 1
+          }
 
       - id: v
         run: |
@@ -120,6 +184,7 @@ jobs:
             target: x86_64-pc-windows-msvc
             system: windows-x86_64
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -200,6 +265,7 @@ jobs:
     name: the one file for every laptop
     needs: [prove, build]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -249,6 +315,7 @@ jobs:
           - os: ubuntu-latest
             python: "3.12"
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     steps:
       - uses: actions/setup-python@v5
         with:
@@ -263,65 +330,23 @@ jobs:
           cd "$RUNNER_TEMP"
           python -m vleo --check
 
-  # The one human approval. It is a GitHub environment with required reviewers,
-  # which is a repository setting a person configures — this file only names it.
-  # That separation is the whole safety property: the workflow cannot grant
-  # itself the approval by editing itself.
-  #
-  # Set it up once: Settings → Environments → New environment → "release" →
-  # Required reviewers. An environment named here but never configured is
-  # created empty and approves instantly, which looks exactly like an approval
-  # that happened. The first step below refuses that: no required reviewers, no
-  # release. The setting is still the control; this makes its absence loud.
+  # Nothing here decides anything. The decision was the merge into main, and
+  # the first job has already refused a commit that did not come through one.
   publish:
-    name: one human says yes
+    name: publish the release
     needs: [prove, build, wheel, wheel-check]
     runs-on: ubuntu-latest
-    environment: release
+    timeout-minutes: 20
     permissions:
       contents: write
     steps:
-      # Fail closed. An unconfigured environment approves instantly and leaves
-      # the same green tick as a reviewed one, so the difference has to be
-      # asserted rather than assumed. Read the environment's own protection
-      # rules and stop if nobody is required.
-      - name: the approval is real
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # Three outcomes, not two. "No reviewers are configured" and "this
-          # token cannot read the setting" both stop the release, and must —
-          # but they are different problems and telling somebody the wrong one
-          # sends them to the wrong page. docs/RELEASE_SETUP.md explains both.
-          if ! body=$(gh api "repos/${{ github.repository }}/environments/release" 2>&1); then
-            echo "::error::Could not read the 'release' environment. Either it does not"
-            echo "::error::exist, or this token cannot see it. The response was:"
-            echo "$body" | sed 's/^/::error::  /'
-            echo "::error::See docs/RELEASE_SETUP.md. Nothing has been published."
-            exit 1
-          fi
-          rules=$(printf '%s' "$body" | jq -r '[.protection_rules[]?.type] | join(",")')
-          echo "protection rules on 'release': ${rules:-<none>}"
-          case ",$rules," in
-            *,required_reviewers,*) echo "a person is required to approve this release" ;;
-            *)
-              echo "::error::The 'release' environment exists and has no required reviewers,"
-              echo "::error::so this release would publish with nobody approving it. Add them"
-              echo "::error::at Settings -> Environments -> release -> Required reviewers,"
-              echo "::error::then re-run this job. See docs/RELEASE_SETUP.md."
-              echo "::error::Nothing has been published."
-              exit 1
-              ;;
-          esac
-
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: artefacts
 
-      # What the approver is agreeing to, in front of them at the moment they
-      # agree. An approval given against a page that does not say what is in
-      # the release is a button press, not a decision.
+      # What was released, on the run's own page, beside the pull request that
+      # decided it.
       - name: what is being released
         run: |
           cat artefacts/notes/notes.md >> "$GITHUB_STEP_SUMMARY"

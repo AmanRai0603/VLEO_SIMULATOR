@@ -186,24 +186,11 @@ fn opt<'a>(args: &'a [&'a str], name: &str) -> Option<&'a str> {
 /// name is the only honest version: a refusal the user can see beats a silent
 /// substitution every time.
 fn suppliable(idx: u16) -> Result<(), String> {
-    let def = &NODES[idx as usize];
-    if def.kind == Kind::Declared {
-        return Ok(());
+    let id = NODES[idx as usize].id;
+    match vleo_modules::why_not_suppliable(id) {
+        None => Ok(()),
+        Some(why) => Err(format!("{why} `vleo show {id}` lists them.")),
     }
-    Err(format!(
-        "'{}' is {}, so a supplied value would be overwritten the moment it is \
-         evaluated. Set one of the declared numbers it reads instead — `vleo show {}` \
-         lists them.",
-        def.id,
-        match def.kind {
-            Kind::Computed => "computed from its inputs",
-            Kind::Required => "a target handed down from the layer above",
-            Kind::Achieved => "what a subsystem returned",
-            Kind::Kpi => "a key performance indicator",
-            Kind::Declared => unreachable!(),
-        },
-        def.id
-    ))
 }
 
 fn sets(args: &[&str]) -> Result<Vec<(String, f64)>, String> {

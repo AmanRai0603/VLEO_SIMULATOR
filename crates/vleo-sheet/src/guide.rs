@@ -21,12 +21,7 @@
 
 use crate::manual::{Check, Manual, Role, Section, Who};
 
-fn esc(s: &str) -> String {
-    s.replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-}
+use crate::text::html as esc;
 
 /// The manual's own light markup — `code`, **bold**, *italic*, a blank line
 /// between paragraphs — the same rules the browser's Manual view applies.

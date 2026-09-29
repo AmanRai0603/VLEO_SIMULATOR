@@ -1,8 +1,8 @@
-//! The facade — twelve crates behind one dependency, and the one `NodeTable`
+//! The facade — the subsystem crates behind one dependency, and the one `NodeTable`
 //! the resolver walks.
 //!
 //! Every face takes a single dependency on this crate. The compiler still sees
-//! twelve units, so they build in parallel, and no face can reach a module
+//! one unit per subsystem, so they build in parallel, and no face can reach a module
 //! directly — which is why adding a face cannot change a result.
 //!
 //! This crate holds **no formula**. It holds the tables generated from the
@@ -156,6 +156,32 @@ pub fn case_refusal(case: &vleo_bus::Case) -> Option<String> {
     } else {
         alloc::format!("there is no case '{}'. The cases are: {}", case.base, names)
     })
+}
+
+/// Why a value supplied to `id` cannot be applied, or `None` when it can.
+///
+/// A supplied value survives only on a row that declares its own number; every
+/// other kind works its answer out during the run and overwrites what was
+/// supplied, so the run would report a number nobody asked for. The command
+/// line and the server each had their own copy of this rule, and the two had
+/// already drifted once; this is the one both call.
+pub fn why_not_suppliable(id: &str) -> Option<String> {
+    let Some(k) = Vleo::find(id) else {
+        return Some(alloc::format!("there is no row called '{id}'"));
+    };
+    let def = &NODES[k as usize];
+    let what = match def.kind {
+        Kind::Declared => return None,
+        Kind::Computed => "computed from its inputs",
+        Kind::Required => "a target handed down from the layer above",
+        Kind::Achieved => "what a subsystem returned",
+        Kind::Kpi => "a key performance indicator",
+    };
+    Some(alloc::format!(
+        "'{}' is {what}, so a supplied value would be overwritten the moment it is \
+         evaluated. Set one of the declared numbers it reads instead.",
+        def.id
+    ))
 }
 
 pub mod inputs;

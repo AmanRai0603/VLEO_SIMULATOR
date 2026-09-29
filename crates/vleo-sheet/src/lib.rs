@@ -51,6 +51,7 @@ pub mod load;
 pub mod model;
 pub mod page;
 pub mod template;
+pub mod text;
 
 pub use load::{load_all, Tree};
 pub use model::{Assumption, Fixture, Sheet, Step, View};

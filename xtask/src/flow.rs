@@ -109,14 +109,22 @@ fn clean(root: &Path) -> Result<(), String> {
     }
 }
 
-/// The base every form branch starts from: `origin/main` when it can be
+/// Where the maintainers' work gathers: every form branch starts from it and
+/// its pull request goes back into it. `main` takes only what has been
+/// gathered here or on `developer`, through a pull request, and a release is
+/// cut from `main` alone (CONTRIBUTING.md, "The three branches").
+pub const FORMS_BASE: &str = "maintainer";
+
+/// The base every form branch starts from: `origin/maintainer` when it can be
 /// fetched, so a branch never starts from a stale copy.
-fn fresh_main(root: &Path) -> String {
-    match git(root, &["fetch", "-q", "origin", "main"]) {
-        Ok(_) => "origin/main".to_string(),
+fn fresh_base(root: &Path) -> String {
+    match git(root, &["fetch", "-q", "origin", FORMS_BASE]) {
+        Ok(_) => format!("origin/{FORMS_BASE}"),
         Err(e) => {
-            eprintln!("  (could not fetch origin/main — {e}; starting from the local main)");
-            "main".to_string()
+            eprintln!(
+                "  (could not fetch origin/{FORMS_BASE} — {e}; starting from the local {FORMS_BASE})"
+            );
+            FORMS_BASE.to_string()
         }
     }
 }
@@ -256,7 +264,7 @@ pub fn cmd_take(root: &Path, args: &[&str]) -> Result<(), String> {
     }
     clean(root)?;
 
-    // 2 — its own branch, from a fresh main.
+    // 2 — its own branch, from a fresh maintainer branch.
     let branch = form_branch(author, &node);
     let exists = git(root, &["rev-parse", "--verify", "--quiet", &branch]).is_ok();
     step(1, &format!("branch {branch}"), || {
@@ -269,7 +277,7 @@ pub fn cmd_take(root: &Path, args: &[&str]) -> Result<(), String> {
             }
             git(root, &["switch", "-q", &branch]).map(|_| ())
         } else {
-            let base = fresh_main(root);
+            let base = fresh_base(root);
             git(root, &["switch", "-q", "-c", &branch, &base]).map(|_| ())
         }
     })?;
@@ -380,7 +388,7 @@ pub fn cmd_take(root: &Path, args: &[&str]) -> Result<(), String> {
              https://github.com/{repo}/actions/workflows/preview.yml?query=branch%3A{}\n  \
              2 · send its package to {who}; they try it and send back the approval file\n  \
              3 · open the pull request:\n      \
-             https://github.com/{repo}/compare/main...{branch}?expand=1",
+             https://github.com/{repo}/compare/{FORMS_BASE}...{branch}?expand=1",
             branch.replace('/', "%2F")
         );
         Ok(())
@@ -599,7 +607,7 @@ pub fn cmd_approve(root: &Path, args: &[&str]) -> Result<(), String> {
     println!(
         "\n\x1b[1mapproved.\x1b[0m {} approved build {} — recorded in {store}.\n\
          The pull request can now be reviewed and merged:\n  \
-         https://github.com/{repo}/compare/main...{}?expand=1",
+         https://github.com/{repo}/compare/{FORMS_BASE}...{}?expand=1",
         a.by, a.run, a.branch
     );
     Ok(())
@@ -677,7 +685,7 @@ pub fn cmd_queue(root: &Path, _args: &[&str]) -> Result<(), String> {
     println!("{:<44} {:<11} stage", "branch", "last change");
     for (branch, (r, remote, _local, date)) in &seen {
         let store = approval_path(branch).unwrap_or_default();
-        let on_main = git(root, &["show", &format!("origin/main:{store}")]).ok();
+        let on_main = git(root, &["show", &format!("origin/{FORMS_BASE}:{store}")]).ok();
         let on_branch = git(root, &["show", &format!("{r}:{store}")]).ok();
         let stage = if on_main.is_some() && on_main == on_branch {
             "merged — delete the branch: git push origin --delete ".to_string() + branch

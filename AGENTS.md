@@ -39,11 +39,13 @@ loop:
 
     0  TAKE      cargo run -p xtask -- take <form.html> --for <author>
                  steps 1–2 and 6 in one: the form on its own branch
-                 form/<author>/<node>, checked, applied, gated, tested,
+                 form/<author>/<node> from `maintainer`, checked, applied,
+                 gated, tested,
                  committed naming the author, pushed — or a note to send back.
                  Every push to a form branch builds a PREVIEW for the author;
                  their APPROVE file is recorded with `xtask approve`, and a
-                 form branch merges only with it (docs/roles/maintainer.html).
+                 form branch merges into `maintainer` only with it
+                 (docs/roles/maintainer.html).
     1  CHECK     cargo run -p xtask -- intake <form.html>
                  what it would change, field by field; every interface it
                  declares (each input a row that exists, of the quantity the
@@ -72,7 +74,9 @@ loop:
                  known values the form supplied (intake prints them; it never
                  writes them).
     6  GATE      cargo run -p xtask -- gate && cargo test
-    7  RELEASE   commit naming whoever filled the form, review, merge; then
+    7  RELEASE   commit naming whoever filled the form, review, merge into
+                 `maintainer`; a pull request takes `maintainer` (and
+                 `developer`) into `main`; then, on `main`,
                  cargo run -p xtask -- derisk      (the narrative, regenerated)
                  cargo run -p xtask -- release <version>
                  stamps every version still `next` with the release that ships
