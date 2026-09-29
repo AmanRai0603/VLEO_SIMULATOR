@@ -97,6 +97,17 @@ pub(crate) const PIPELINE: &[Cmd] = &[
         dry: Dry::Plan,
     },
     Cmd {
+        name: "lesson",
+        stage: "apply",
+        reads: "the row's sheet and lesson.toml, the tree's rows, web/method.wasm.gz; a filled lesson form",
+        writes: "form: <node>.lesson-form.html, or --out; apply: lesson.toml beside the row's node.toml",
+        checks: "the lesson, as the gate checks it: every key known, every claim tagged, no markup, every row a widget names real; apply gates the row",
+        undo: "`git restore` (or delete) the row's lesson.toml; a refused apply puts it back itself",
+        code: ("xtask/src/forms.rs", "cmd_lesson"),
+        steps: &["check the lesson", "write it beside the row", "gate the row"],
+        dry: Dry::Check("lesson check <file>: every reason it would be refused, nothing written"),
+    },
+    Cmd {
         name: "take",
         stage: "take",
         reads: "the filled form, the `maintainer` branch, the tree",

@@ -25,6 +25,7 @@ pub mod example;
 pub mod form;
 pub mod guide;
 pub mod lesson;
+pub mod lesson_form;
 pub mod manual;
 pub mod method;
 

@@ -509,6 +509,10 @@ say = "When it comes back, check it: what it would change, every interface, and 
 ui = "check a filled form…"
 
 
+[[layer.section.step]]
+say = "A lesson is written the same way: its form, filled anywhere, checked as you type, sent back."
+ui = "write a lesson — its form"
+
 [[layer.section]]
 id = "browser-method"
 title = "Give the method, your code and your test cases"
@@ -1534,23 +1538,41 @@ why = "rewrites contract/examples/ from the real engine, and drafts a schema for
 
 [[layer.section]]
 id = "term-lesson"
-title = "Put a lesson beside a row"
+title = "Take a lesson in, from its form"
 who = "developer"
 kind = "how-to"
-answer = "A lesson is lesson.toml beside the row's node.toml — content only, drawn by the page from its components, with widgets the engine answers. Place the one the expert sent, and the gate checks it: every key known, every claim tagged, no markup, every row a widget names real."
+answer = "A lesson arrives the way a node change does: the expert who knows the row fills its lesson form anywhere, checked as they type by the gate's own check, and sends it back; lesson apply checks it again, writes lesson.toml beside the row's node.toml and gates the row — or puts it back."
 body = """
 The expert writes the lesson; nobody writes HTML for it and nobody writes a \
 formula for the page to compute. `docs/LESSONS.md` is the file, table by \
-table, and `docs/examples/orbit_velocity.lesson.toml` a complete example. \
-Place it beside the row's `node.toml` and run the gate on that row: check \
-`lesson` refuses it with every reason. On the row's page it is the segment \
-*the lesson*, served by `/v1/lesson/<id>`. A lesson is outside the sheet \
-hash, so it never changes an answer."""
+table, and `docs/examples/orbit_velocity.lesson.toml` a complete example.
+
+**The form** is one HTML file — from `lesson form`, or *write a lesson — its \
+form* on the row's page. It carries the checker every node form carries, which \
+holds the lesson check the gate runs, and a table of the tree's rows, so a \
+widget naming a row that is not there is refused while the author types. \
+**lesson check** says what a filled one holds and every reason it would be \
+refused; **lesson apply** writes it and gates the row, and puts the row back if \
+the gate refuses. A lesson is outside the sheet hash, so it never changes an \
+answer."""
 
 [[layer.section.step]]
-say = "Check the row the lesson sits beside — the gate reads its lesson.toml."
-run = "cargo run -p xtask -- gate orbit_velocity"
+say = "A row's lesson form, to send to whoever knows the row."
+run = "cargo run -p xtask -- lesson form orbit_velocity --out orbit_velocity.lesson-form.html"
+check = "writes"
+why = "writes the form beside you"
+
+[[layer.section.step]]
+say = "What a filled form — or a bare lesson.toml, with --for — holds, and every reason it would be refused. Writes nothing."
+run = "cargo run -p xtask -- lesson check docs/examples/orbit_velocity.lesson.toml --for orbit_velocity"
 check = "exits"
+expect = "passes the check the gate runs"
+
+[[layer.section.step]]
+say = "Write it beside the row and gate the row; a refusal puts it back."
+run = "cargo run -p xtask -- lesson apply <file>"
+check = "writes"
+why = "writes the row's lesson.toml"
 
 [[layer.section]]
 id = "term-kit"
@@ -2213,6 +2235,15 @@ what = "The checker: what a filled node form would change, field by field, and e
 who = "developer"
 effect = "writes"
 
+
+[[command]]
+tool = "xtask"
+name = "lesson"
+usage = "lesson apply <file> [--for <node>] [--check]"
+what = "A row's lesson: `lesson form <node>` writes its form, one HTML file the expert fills anywhere, checked as they type by the gate's own lesson check; `lesson check <file>` says what a filled one holds and every reason it would be refused; `lesson apply` writes it as lesson.toml beside the row and gates the row, or puts it back."
+who = "developer"
+effect = "writes"
+
 [[command]]
 tool = "xtask"
 name = "publish"
@@ -2597,6 +2628,11 @@ what = "Remove the saved case: every input back to its default."
 method = "GET"
 path = "/v1/form/<id>"
 what = "A node's form, as one self-contained HTML file to fill anywhere. `new` is the form for a node the design does not have yet."
+
+[[route]]
+method = "GET"
+path = "/v1/lesson-form/<id>"
+what = "A row's lesson form, as one self-contained HTML file to fill anywhere, checked as it is typed by the gate's own lesson check. Writes nothing — a filled one is applied by a developer with `xtask lesson apply`."
 
 [[route]]
 method = "POST"

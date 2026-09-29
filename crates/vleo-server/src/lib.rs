@@ -325,6 +325,9 @@ fn route(
             let id = p.trim_start_matches("/v1/fragment/");
             fragment(ctx, id)
         }
+        ("GET", p) if p.starts_with("/v1/lesson-form/") => {
+            lesson_form_file(ctx, p.trim_start_matches("/v1/lesson-form/"))
+        }
         ("GET", p) if p.starts_with("/v1/lesson/") => {
             ok_json(lesson_json(ctx, p.trim_start_matches("/v1/lesson/")))
         }

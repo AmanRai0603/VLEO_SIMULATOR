@@ -239,9 +239,30 @@ fn known(t: &toml::Table, at: &str, keys: &[&str]) -> Result<(), String> {
     }
 }
 
+/// What a lesson's check needs to know of a row it names.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RowKind {
+    /// A value a person picks — the only kind a reader may move.
+    pub declared: bool,
+    /// Nothing specified yet — it has nothing to show.
+    pub seeded: bool,
+}
+
 /// Everything wrong with a lesson, against the tree it teaches. Empty when it
 /// may be drawn.
 pub fn problems(l: &Lesson, tree: &Tree) -> Vec<String> {
+    problems_with(l, &|id| {
+        tree.sheets.get(id).map(|sh| RowKind {
+            declared: sh.is_declared(),
+            seeded: sh.is_seeded(),
+        })
+    })
+}
+
+/// [`problems`], with the rows looked up through `row` — so the same check
+/// runs in a lesson form opened from a file, against the table of rows the
+/// form carries, and not a second copy of it written in JavaScript.
+pub fn problems_with(l: &Lesson, row: &dyn Fn(&str) -> Option<RowKind>) -> Vec<String> {
     let mut out = Vec::new();
     for (k, v) in [("title", &l.title), ("by", &l.by), ("answer", &l.answer)] {
         if v.trim().is_empty() {
@@ -302,18 +323,18 @@ pub fn problems(l: &Lesson, tree: &Tree) -> Vec<String> {
             ));
         }
         for id in &w.inputs {
-            match tree.sheets.get(id) {
+            match row(id) {
                 None => out.push(format!("{at}: input '{id}' is not a row")),
-                Some(sh) if !sh.is_declared() => out.push(format!(
+                Some(r) if !r.declared => out.push(format!(
                     "{at}: input '{id}' is computed, not declared — a reader can move only a value a person picks"
                 )),
                 _ => {}
             }
         }
         for id in &w.outputs {
-            match tree.sheets.get(id) {
+            match row(id) {
                 None => out.push(format!("{at}: output '{id}' is not a row")),
-                Some(sh) if sh.is_seeded() => out.push(format!(
+                Some(r) if r.seeded => out.push(format!(
                     "{at}: output '{id}' is seeded — it has nothing to compute yet"
                 )),
                 _ => {}
@@ -371,6 +392,79 @@ fn markup(t: &str) -> Option<String> {
                 + ">"
         })
     })
+}
+
+/// The rows a lesson form carries for its check: one line each, `id d|c s|p`
+/// — declared or computed, seeded or published.
+pub fn rows_block(tree: &Tree) -> String {
+    let mut o = String::new();
+    for sh in tree.sheets.values() {
+        o.push_str(&format!(
+            "row {} {} {}\n",
+            sh.id,
+            if sh.is_declared() { 'd' } else { 'c' },
+            if sh.is_seeded() { 's' } else { 'p' }
+        ));
+    }
+    o
+}
+
+/// The check a lesson form runs while its author types, as JSON: the plain
+/// text the form sends — `node <id>`, then its `row` lines ([`rows_block`]),
+/// then a line `---`, then the lesson's TOML — read and checked by
+/// [`read`] and [`problems_with`], exactly as intake and the gate do.
+///
+/// `{"ok":true,"problems":[]}` when it may be applied; `ok` false with the
+/// problems, or with `read` saying why the TOML does not read.
+pub fn report(text: &str) -> String {
+    let (head, toml_text) = text.split_once("\n---\n").unwrap_or((text, ""));
+    let mut node = "";
+    let mut rows = std::collections::BTreeMap::new();
+    for l in head.lines() {
+        let w: Vec<&str> = l.split_whitespace().collect();
+        match w.as_slice() {
+            ["node", id] => node = id,
+            ["row", id, d, s] => {
+                rows.insert(
+                    id.to_string(),
+                    RowKind {
+                        declared: *d == "d",
+                        seeded: *s == "s",
+                    },
+                );
+            }
+            _ => {}
+        }
+    }
+    let q = |s: &str| json_text(s);
+    match read(toml_text, node) {
+        Err(e) => format!("{{\"ok\":false,\"read\":{},\"problems\":[]}}", q(&e)),
+        Ok(l) => {
+            let p = problems_with(&l, &|id| rows.get(id).copied());
+            format!(
+                "{{\"ok\":{},\"read\":\"\",\"problems\":[{}]}}",
+                p.is_empty(),
+                p.iter().map(|x| q(x)).collect::<Vec<_>>().join(",")
+            )
+        }
+    }
+}
+
+fn json_text(s: &str) -> String {
+    let mut o = String::from("\"");
+    for c in s.chars() {
+        match c {
+            '"' => o.push_str("\\\""),
+            '\\' => o.push_str("\\\\"),
+            '\n' => o.push_str("\\n"),
+            '\r' => o.push_str("\\r"),
+            '\t' => o.push_str("\\t"),
+            c if (c as u32) < 0x20 => o.push_str(&format!("\\u{:04x}", c as u32)),
+            c => o.push(c),
+        }
+    }
+    o.push('"');
+    o
 }
 
 /// A lesson as JSON, for the page.

@@ -129,3 +129,41 @@ fn the_gate_reads_a_rows_lesson_and_refuses_a_bad_one() {
     assert_eq!(verdict(&sh), Some(true), "a bad lesson passed the gate");
     let _ = std::fs::remove_dir_all(&d);
 }
+
+/// The check a lesson form runs in the browser is the gate's own: fed the
+/// form's plain text — the row table the form carries, then the TOML — it
+/// names exactly the problems the gate names, for a good lesson and a bad one.
+#[test]
+fn the_forms_check_is_the_gates_check() {
+    let tree = vleo_sheet::load::load_all(&root()).unwrap();
+    let rows = vleo_sheet::lesson::rows_block(&tree);
+    for text in [
+        example(),
+        example()
+            .replacen(
+                "inputs = [\"orbit_altitude\"]",
+                "inputs = [\"orbit_radius\"]",
+                1,
+            )
+            .replacen("answer = 3", "answer = 5", 1),
+    ] {
+        let gate = problems(&read(&text, "orbit_velocity").unwrap(), &tree);
+        let form = vleo_sheet::lesson::report(&format!("node orbit_velocity\n{rows}---\n{text}"));
+        let want = format!(
+            "{{\"ok\":{},\"read\":\"\",\"problems\":[{}]}}",
+            gate.is_empty(),
+            gate.iter()
+                .map(|p| format!("\"{}\"", p.replace('\\', "\\\\").replace('"', "\\\"")))
+                .collect::<Vec<_>>()
+                .join(",")
+        );
+        assert_eq!(form, want);
+    }
+    let bad = vleo_sheet::lesson::report(&format!(
+        "node orbit_velocity\n{rows}---\n[lesson]\nsourse = 1\n"
+    ));
+    assert!(
+        bad.starts_with("{\"ok\":false,\"read\":\"") && bad.contains("sourse"),
+        "{bad}"
+    );
+}

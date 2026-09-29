@@ -113,6 +113,7 @@ pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), Stri
         "confirm" => cmd_confirm(&root, &rest),
         "form" => cmd_form(&root, &rest),
         "intake" => cmd_intake(&root, &rest),
+        "lesson" => cmd_lesson(&root, &rest),
         "publish" => cmd_publish(&root, &rest),
         "derisk" => cmd_derisk(&root, &rest),
         "release" => cmd_release(&root, &rest),
@@ -238,6 +239,18 @@ cargo xtask <command>
                      in its place in the tree), regenerates, gates, and puts
                      everything back on a refusal. Known-good values come out as
                      a request, never written.
+  lesson form <node> [--out <file.html>]
+                     a row's lesson form: one HTML file the expert who knows
+                     the row fills anywhere, checked as they type by the
+                     gate's own lesson check, saved as a filled copy.
+  lesson check <file> [--for <node>]
+                     what a filled lesson form (or a bare lesson.toml, with
+                     --for) holds, and every reason it would be refused.
+                     Writes nothing.
+  lesson apply <file> [--for <node>] [--check]
+                     check it, write it as lesson.toml beside the row's
+                     node.toml, and gate the row — or put the row back.
+                     --check (what --dry-run runs) only checks.
   publish <node>     move a filled, seeded row to published, so its model,
                      contract and evidence are generated and its holes can be
                      written. Refuses, naming every reason, while it is not ready.

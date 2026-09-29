@@ -2333,6 +2333,7 @@ fn jstr(v: &str) -> String {
 /// moved on from the checker every form carries.
 pub const CHECKER_SOURCES: &[&str] = &[
     "crates/vleo-sheet/src/method.rs",
+    "crates/vleo-sheet/src/lesson.rs",
     "crates/vleo-units/src/pmath.rs",
     "crates/vleo-units/src/method_rt.rs",
     "crates/vleo-units/src/unit.rs",

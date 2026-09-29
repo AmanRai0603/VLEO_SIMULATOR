@@ -43,10 +43,28 @@ request; a lesson that fails is refused with its reasons, never drawn half-right
 
 ## How one arrives
 
-The expert writes it and sends it; a developer places it beside the row's
-`node.toml` and runs the gate — `cargo run -p xtask -- gate <node>` — which
-reads it (check `lesson`) and refuses it with every reason. It goes through
-review like a node change, and ships in the kit with the row's folder.
+Like a change to a node: through a form, filled by the person who knows the
+row, and applied by a developer.
+
+1. **The form.** `cargo run -p xtask -- lesson form <node> --out <file>`, or
+   *write a lesson — its form* on the row's page. One HTML file that works
+   with no server and no network: the lesson as fields, the row's question
+   beside it, and **the check the gate runs, run in the page** as the author
+   types. The form carries the checker every node form carries
+   (`web/method.wasm.gz`, which holds `vleo_sheet::lesson::report`) and a
+   table of the tree's rows, so a widget naming a row that is not there — or
+   asking a reader to move a computed one — is refused before it is sent.
+   *Save a filled copy* writes the file to send back.
+2. **The check.** `cargo run -p xtask -- lesson check <file>` says what the
+   filled form holds and every reason it would be refused. It reads a filled
+   form or a bare `lesson.toml` (with `--for <node>`), and writes nothing.
+3. **The apply.** `cargo run -p xtask -- lesson apply <file>` checks it again,
+   writes it as `lesson.toml` beside the row's `node.toml`, and gates the row —
+   or puts the row back as it was. It goes through review like a node change,
+   and ships in the kit with the row's folder.
+
+The lesson travels in the form escaped, so nothing it says can end or open an
+element of the page.
 
 A lesson sits **outside the sheet hash**, like `[explain]` and `[theory]`: it is
 how a row is taught, not what it computes, so a lesson never changes an answer
@@ -54,9 +72,6 @@ or a saved result's key.
 
 ## Where this breaks
 
-- **There is no lesson form yet.** Node forms are a page anyone fills and a
-  developer takes in with one command; a lesson is still a TOML file sent by
-  hand. The form is the next piece of this work.
 - **A widget needs the engine running.** The page asks the local engine;
   a lesson read from a static copy of the docs has no widgets that answer.
 - **No row has a lesson yet.** The example is an example: its text is taken
