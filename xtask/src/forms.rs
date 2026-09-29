@@ -250,7 +250,7 @@ pub(super) fn cmd_intake(root: &Path, args: &[&str]) -> Result<(), String> {
                 vleo_sheet::form::Saved::Refused(e) => Err(e),
             })?;
             run.done(&format!(
-                "applied. Review with `git diff`, and name {named} in the commit — the form is theirs."
+                "applied: review with `git diff`, and name {named} in the commit — the form is theirs."
             ));
             Ok(())
         }
