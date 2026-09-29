@@ -440,13 +440,31 @@ pub fn read(text: &str) -> Result<Saved, String> {
 
 /// A file name for a result: when, what, and which chain — so two saves of the
 /// same question on different inputs never collide, and a listing sorts by time.
+///
+/// Every part is reduced to letters, digits, `_` and `-`: the target and the
+/// chain come from the file, and an uploaded file can say anything there. A
+/// `..` or a slash in them once built a name that wrote outside the results
+/// folder.
 pub fn file_name(s: &Saved) -> String {
-    let when: String = s
-        .saved
-        .chars()
-        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
-        .collect();
-    format!("{}_{}_{}.csv", when.trim_matches('-'), s.target, s.chain)
+    let plain = |t: &str, keep: char| -> String {
+        let p: String = t
+            .chars()
+            .map(|c| {
+                if c.is_ascii_alphanumeric() || c == keep {
+                    c
+                } else {
+                    '-'
+                }
+            })
+            .collect();
+        p.trim_matches('-').to_string()
+    };
+    format!(
+        "{}_{}_{}.csv",
+        plain(&s.saved, '-'),
+        plain(&s.target, '_'),
+        plain(&s.chain, '-')
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -782,6 +800,9 @@ pub mod store {
     pub fn save(dir: &Path, s: &Saved) -> Result<String, String> {
         std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
         let name = file_name(s);
+        if !is_plain(&name) {
+            return Err(format!("'{name}' is not a result's file name"));
+        }
         std::fs::write(dir.join(&name), csv(s)).map_err(|e| format!("{name}: {e}"))?;
         Ok(name)
     }

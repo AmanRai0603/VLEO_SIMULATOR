@@ -106,6 +106,16 @@ fn results_are_kept_listed_and_removed_and_a_path_is_never_followed() {
     }
     store::remove(&dir, &name).unwrap();
     assert!(store::list(&dir).0.is_empty());
+    // An uploaded file names its own target and chain. Saved under a name
+    // built from them, a `..` there once wrote outside the results folder.
+    let mut forged = s.clone();
+    forged.target = "..\\..\\..\\x".into();
+    forged.chain = "../../y".into();
+    let name = store::save(&dir, &forged).unwrap();
+    assert!(
+        dir.join(&name).is_file() && !name.contains(".."),
+        "{name} left the folder"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 

@@ -302,16 +302,16 @@ fn write_if_changed(path: &Path, text: &str) -> Result<bool, String> {
 /// Today, as the sheets write it.
 fn today() -> String {
     // The sheets carry a plain ISO date and nothing reads it as a timestamp, so
-    // a date is all this needs. Taken from the system clock through `date`
-    // rather than a crate, because adding a dependency to stamp a date is how a
-    // dependency list stops meaning anything.
-    std::process::Command::new("date")
-        .arg("+%Y-%m-%d")
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map(|s| s.trim().to_string())
-        .unwrap_or_default()
+    // a date is all this needs. It once came from the `date` program, which
+    // Windows does not have.
+    vleo_units::calendar::Civil::from_unix(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0),
+    )
+    .date()
+    .to_string()
 }
 
 /// One node's form, to fill anywhere and send back. See `vleo_sheet::template`.
