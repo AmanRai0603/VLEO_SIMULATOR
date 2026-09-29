@@ -693,7 +693,7 @@ pub mod saved {
             });
         }
         let backup = backup_path(path, &note.from);
-        let kept = std::fs::write(&backup, &text);
+        let kept = write_whole(&backup, &text);
         note.backup = Some(backup.display().to_string());
         let upgraded = csv_with(&r.set, Some(&note));
         let written = kept.and_then(|_| write_whole(path, &upgraded));
@@ -747,13 +747,10 @@ pub mod saved {
         LOCK.lock().unwrap_or_else(|e| e.into_inner())
     }
 
-    /// Written beside itself and renamed over, which replaces it in one step.
+    /// Written beside itself and renamed over, which replaces it in one step —
+    /// the tool's one way of writing a person's data (vleo_data::write_whole).
     fn write_whole(path: &Path, text: &str) -> std::io::Result<()> {
-        let mut tmp = path.as_os_str().to_owned();
-        tmp.push(".writing");
-        let tmp = PathBuf::from(tmp);
-        std::fs::write(&tmp, text)?;
-        std::fs::rename(&tmp, path)
+        vleo_data::write_whole(path, text)
     }
 
     /// Beside the case, named for the template it was written for, and never

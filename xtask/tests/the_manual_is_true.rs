@@ -154,6 +154,9 @@ fn env_read() -> BTreeSet<String> {
             "env::var_os(\"",
             "environ.get(\"",
             "environ[\"",
+            // vleo-data reads its path settings through one function, so that
+            // "set but empty" means unset for every one of them.
+            "set_to_something(&var, \"",
         ] {
             let mut rest = text.as_str();
             while let Some(i) = rest.find(pat) {
@@ -521,7 +524,7 @@ fn every_document_is_listed_and_nothing_else() {
         .flatten()
         .filter(|e| e.path().is_file())
         .map(|e| format!("docs/{}", e.file_name().to_string_lossy()))
-        .filter(|p| p.ends_with(".md") || p.ends_with(".toml"))
+        .filter(|p| p.ends_with(".md") || p.ends_with(".toml") || p.ends_with(".html"))
         .chain(
             std::fs::read_dir(root().join("docs/roles"))
                 .into_iter()

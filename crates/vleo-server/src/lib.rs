@@ -82,6 +82,10 @@ pub fn serve(
     open: bool,
     background: bool,
 ) -> Result<u16, String> {
+    // First, so that a bug anywhere after this — in any request — leaves a file
+    // a person can send (vleo_data::crash). The daemon and `python -m vleo`
+    // both start here.
+    vleo_data::crash::install("vleo-server", env!("CARGO_PKG_VERSION"));
     let root = root.unwrap_or_else(repo_root);
     let (data, data_versions, bundles, data_refused) = resolve_data(&root);
 
@@ -1439,5 +1443,49 @@ mod requests {
         assert_eq!(named(&format!("set={id}:NaN")).as_deref(), Some(id));
         assert!(named(&format!("set={id}")).is_some());
         assert!(set_refusal("node=x&mode=branch").is_none());
+    }
+
+    #[test]
+    fn a_bug_in_one_request_is_answered_and_the_next_request_still_served() {
+        use super::handled;
+        let (status, ctype, body) = handled("GET", "/v1/run", || panic!("a bug in the handler"));
+        assert_eq!(status, "500 Internal Server Error");
+        assert!(
+            ctype.starts_with("application/json"),
+            "the face reads /v1 as JSON"
+        );
+        let body = String::from_utf8(body).unwrap();
+        assert!(
+            body.contains("\"ok\":false") && body.contains("still running"),
+            "{body}"
+        );
+        // A page, not the API, is told in plain text.
+        assert!(handled("GET", "/", || panic!("again"))
+            .1
+            .starts_with("text/plain"));
+        // And the next request is served as if nothing had happened.
+        let fine = handled("GET", "/v1/version", || {
+            ("200 OK", "application/json", b"{}".to_vec())
+        });
+        assert_eq!(fine.0, "200 OK");
+    }
+
+    #[test]
+    fn a_connection_slot_is_given_back_when_its_thread_panics() {
+        use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
+        use std::sync::Arc;
+        let open = Arc::new(AtomicUsize::new(1));
+        let place = super::OpenPlace(open.clone());
+        let ended = std::thread::spawn(move || {
+            let _place = place;
+            panic!("a bug outside the guarded handler");
+        })
+        .join();
+        assert!(ended.is_err());
+        assert_eq!(
+            open.load(SeqCst),
+            0,
+            "the slot leaked; enough of these and every connection is refused"
+        );
     }
 }
