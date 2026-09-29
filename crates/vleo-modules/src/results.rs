@@ -110,6 +110,9 @@ pub struct Saved {
     pub versions_known: bool,
     /// The sweep, when the result is one.
     pub sweep: Option<Sweep>,
+    /// When the result was thinned to its summary, and how many values went —
+    /// `2026-10-29 104` — or empty for a result kept whole. See [`thin`].
+    pub thinned: String,
 }
 
 impl Saved {
@@ -325,6 +328,38 @@ pub fn question(
     format!("{:016x}", h.finish())
 }
 
+/// A result thinned to its summary: every input it ran on (the case, so it can
+/// be run again), the answer, every row that could not run and why, and the
+/// beliefs it rested on — everything but the other values of the run.
+///
+/// ALL VALUES FOR A TIME, THE SUMMARY FOR EVER (docs/ARCHITECTURE.html,
+/// section 6). A run's full set of values is the heavy part of a result and the
+/// part a person least often reads again; the engine gives it back on request,
+/// because runs are deterministic and the inputs are kept. So an unpinned
+/// result is thinned once it is older than the keep period, and says so.
+pub fn thin(s: &Saved, today: &str) -> Saved {
+    let mut t = s.clone();
+    if !t.thinned.is_empty() {
+        return t;
+    }
+    let before = t.outputs.len();
+    t.outputs.retain(|o| o.id == t.target);
+    t.thinned = format!("{today} {}", before - t.outputs.len());
+    t
+}
+
+/// What a saved result draws, described by the engine (see [`crate::figure`]):
+/// for a sweep, the answer across what it moved, with the case it was saved at
+/// called out. A single run draws nothing; its answer is a number.
+pub fn figures(s: &Saved) -> Vec<crate::figure::Figure> {
+    let Some(w) = &s.sweep else {
+        return Vec::new();
+    };
+    let si = |rows: &[Row], id: &str| rows.iter().find(|r| r.id == id).and_then(|r| r.si);
+    let here = si(&s.inputs, &w.over).zip(si(&s.outputs, &s.target));
+    vec![crate::figure::from_sweep(&s.target, w, here)]
+}
+
 /// The question a case asks, as a saved result's key — worked out from the case
 /// exactly as the run would apply it, so a question answered and saved by the
 /// browser is found by the command line, and on another laptop.
@@ -450,6 +485,9 @@ pub fn csv(s: &Saved) -> String {
             }
         ));
     }
+    if !s.thinned.is_empty() {
+        o.push_str(&format!("#! thinned {}\n", meta(&s.thinned)));
+    }
     // `cred` is last: every column is read by its name, so a tool from before
     // it was added still reads a result that has it.
     o.push_str("section,id,name,value,unit,si,credibility,governing,note,cred\n");
@@ -522,6 +560,7 @@ pub fn read(text: &str) -> Result<Saved, String> {
                 "data" => s.data = v.split_whitespace().map(str::to_string).collect(),
                 "ran" => s.ran = v.parse().unwrap_or(0),
                 "blocked" => s.blocked_count = v.parse().unwrap_or(0),
+                "thinned" => s.thinned = v.clone(),
                 "versions" => {
                     s.versions_known = true;
                     s.versions = v
@@ -895,6 +934,19 @@ pub fn html(s: &Saved) -> String {
             format!(" · data {}", he(&s.data.join(", ")))
         }
     ));
+    // Thinned, it says so before anything else is read from it: the values
+    // not shown were let go, not zero and not lost by accident.
+    if let Some((on, n)) = s.thinned.split_once(' ') {
+        o.push_str(&format!(
+            "<p class=\"m\"><b>Thinned to its summary on {}:</b> {} other value{} of the run \
+             {} let go. The inputs it ran on, its answer and what could not run are kept; run \
+             it again on those inputs to see every value.</p>\n",
+            he(on),
+            he(n),
+            if n == "1" { "" } else { "s" },
+            if n == "1" { "was" } else { "were" }
+        ));
+    }
     if let Some(w) = &s.sweep {
         o.push_str(&sweep_section(s, w));
     }
@@ -1266,6 +1318,12 @@ pub mod store {
     pub const RESULT: &str = "result.csv";
     pub const SWEEP: &str = "sweep.csv";
     pub const REPORT: &str = "report.html";
+    /// Present when the result is pinned: kept whole, and never thinned.
+    pub const PINNED: &str = "pinned";
+    /// The index of a results folder: one line per result, rebuilt from the
+    /// folders whenever it is out of date, so it is never the only copy of
+    /// anything and another laptop's results are in it as soon as they land.
+    pub const INDEX: &str = ".index.tsv";
 
     /// What a directory holds: each result by its name, and each entry that
     /// does not read as one, with why.
@@ -1298,13 +1356,176 @@ pub mod store {
         (good, bad)
     }
 
-    /// The result that already answers this question, if one is kept — the
-    /// newest, when more than one is.
-    pub fn find(dir: &Path, question: &str) -> Option<(String, Saved)> {
-        list(dir)
+    /// One result, as the index holds it.
+    #[derive(Clone, Debug, PartialEq)]
+    pub struct Entry {
+        pub name: String,
+        pub question: String,
+        pub saved: String,
+        pub target: String,
+        pub pinned: bool,
+        pub thinned: bool,
+    }
+
+    /// Every result in the folder, from the index — rebuilt first when the
+    /// folder holds anything the index does not, lacks anything it names, or
+    /// has changed since it was written. Reading every result is what the
+    /// index saves: finding a question reads one small file.
+    pub fn index(dir: &Path) -> Vec<Entry> {
+        let now = entries(dir);
+        let at = dir.join(INDEX);
+        if let (Ok(text), Ok(written)) = (
+            std::fs::read_to_string(&at),
+            std::fs::metadata(&at).and_then(|m| m.modified()),
+        ) {
+            let held: Vec<Entry> = text.lines().filter_map(entry_from_line).collect();
+            let same_names = held.len() == now.len()
+                && held.iter().all(|e| now.iter().any(|(n, _)| *n == e.name));
+            // Strictly earlier: a change in the same tick as the index is a
+            // change, on a filesystem whose clock is coarse.
+            let unchanged = now.iter().all(|(_, m)| *m < written);
+            if same_names && unchanged {
+                // A pin is one file's presence; read live, never from memory.
+                return held
+                    .into_iter()
+                    .map(|e| Entry {
+                        pinned: is_pinned(dir, &e.name),
+                        ..e
+                    })
+                    .collect();
+            }
+        }
+        let fresh: Vec<Entry> = list(dir)
             .0
             .into_iter()
-            .find(|(_, s)| s.question() == question)
+            .map(|(name, s)| Entry {
+                pinned: dir.join(&name).join(PINNED).is_file(),
+                thinned: !s.thinned.is_empty(),
+                question: s.question(),
+                saved: s.saved.clone(),
+                target: s.target.clone(),
+                name,
+            })
+            .collect();
+        let mut text = String::from("# name\tquestion\tsaved\ttarget\tpinned\tthinned — rebuilt from the folders; safe to delete\n");
+        for e in &fresh {
+            text.push_str(&format!(
+                "{}\t{}\t{}\t{}\t{}\t{}\n",
+                e.name, e.question, e.saved, e.target, e.pinned as u8, e.thinned as u8
+            ));
+        }
+        // An index that cannot be written is only slower, never wrong.
+        let _ = vleo_data::write_whole(&at, text);
+        fresh
+    }
+
+    fn entry_from_line(l: &str) -> Option<Entry> {
+        if l.starts_with('#') {
+            return None;
+        }
+        let c: Vec<&str> = l.split('\t').collect();
+        (c.len() == 6).then(|| Entry {
+            name: c[0].into(),
+            question: c[1].into(),
+            saved: c[2].into(),
+            target: c[3].into(),
+            pinned: c[4] == "1",
+            thinned: c[5] == "1",
+        })
+    }
+
+    /// The results in a folder, each with when it last changed.
+    fn entries(dir: &Path) -> Vec<(String, std::time::SystemTime)> {
+        let Ok(rd) = std::fs::read_dir(dir) else {
+            return Vec::new();
+        };
+        rd.flatten()
+            .filter_map(|e| {
+                let name = e.file_name().to_string_lossy().into_owned();
+                let p = e.path();
+                if name.starts_with('.') || !(p.is_dir() || name.ends_with(".csv")) {
+                    return None;
+                }
+                // A folder's time moves when a file is added to it or removed
+                // (a pin); its result.csv's when the result is rewritten (a
+                // thinning). The later of the two.
+                let m = |q: &Path| std::fs::metadata(q).and_then(|m| m.modified()).ok();
+                let t = [m(&p), m(&p.join(RESULT))].into_iter().flatten().max()?;
+                Some((name, t))
+            })
+            .collect()
+    }
+
+    /// The result that already answers this question, if one is kept whole —
+    /// the newest, when more than one is. A thinned result is a summary, not
+    /// the answer, so the question is asked again.
+    pub fn find(dir: &Path, question: &str) -> Option<(String, Saved)> {
+        let mut hits: Vec<Entry> = index(dir)
+            .into_iter()
+            .filter(|e| e.question == question && !e.thinned)
+            .collect();
+        hits.sort_by(|a, b| b.name.cmp(&a.name));
+        hits.into_iter()
+            .find_map(|e| open(dir, &e.name).ok().map(|s| (e.name, s)))
+    }
+
+    /// Pin a result, or unpin it: a pinned result is kept whole for good.
+    pub fn pin(dir: &Path, name: &str, on: bool) -> Result<(), String> {
+        if !is_plain(name) || !dir.join(name).join(RESULT).is_file() {
+            return Err(format!(
+                "'{name}' is not a result's folder; a result kept as one .csv before \
+                 results were folders cannot be pinned — upload it again to make it one"
+            ));
+        }
+        let p = dir.join(name).join(PINNED);
+        let _ = std::fs::remove_file(dir.join(INDEX));
+        if on {
+            vleo_data::write_whole(&p, "kept whole: never thinned\n")
+                .map_err(|e| format!("{name}: {e}"))
+        } else if p.exists() {
+            std::fs::remove_file(&p).map_err(|e| format!("{name}: {e}"))
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Whether a result is pinned.
+    pub fn is_pinned(dir: &Path, name: &str) -> bool {
+        is_plain(name) && dir.join(name).join(PINNED).is_file()
+    }
+
+    /// Thin every unpinned result saved more than `keep_days` before `now`
+    /// (Unix seconds) to its summary — see [`super::thin`]. Returns the names
+    /// thinned. A pinned result, one already thinned, one kept as one .csv, and
+    /// one whose date does not read are left as they are.
+    pub fn thin_old(dir: &Path, now: i64, keep_days: u32) -> Result<Vec<String>, String> {
+        let today = vleo_units::calendar::Civil::from_unix(now)
+            .date()
+            .to_string();
+        let mut done = Vec::new();
+        for e in index(dir) {
+            if e.pinned || e.thinned || !dir.join(&e.name).is_dir() {
+                continue;
+            }
+            let Some(saved) = vleo_units::calendar::Civil::parse(&e.saved) else {
+                continue;
+            };
+            if now - saved.to_unix() <= i64::from(keep_days) * 86_400 {
+                continue;
+            }
+            let s = open(dir, &e.name)?;
+            let t = super::thin(&s, &today);
+            let folder = dir.join(&e.name);
+            vleo_data::write_whole(&folder.join(RESULT), csv(&t))
+                .map_err(|x| format!("{}: {x}", e.name))?;
+            vleo_data::write_whole(&folder.join(REPORT), html(&t))
+                .map_err(|x| format!("{}: {x}", e.name))?;
+            done.push(e.name);
+        }
+        if !done.is_empty() {
+            let _ = std::fs::remove_file(dir.join(INDEX));
+        }
+        Ok(done)
     }
 
     /// Keep a result, once. Returns the name it is kept under and whether it

@@ -1021,3 +1021,27 @@ fn the_validator_refuses_what_it_exists_to_refuse() {
         ])
     );
 }
+
+/// Every kind of figure the engine can describe keeps the contract — not only
+/// the line a saved sweep draws today — so a face built against the schema can
+/// draw a heatmap, an animation or a 3D scene the day the engine sends one.
+#[test]
+fn every_kind_of_figure_keeps_the_contract() {
+    let result = schema("result").expect("no result schema");
+    let item = result
+        .get("properties")
+        .and_then(|p| p.get("figures"))
+        .and_then(|f| f.get("items"))
+        .expect("the result schema does not describe figures");
+    for f in vleo_modules::figure::samples() {
+        let text = vleo_modules::figure::json(&f);
+        let v = parse(&text).unwrap_or_else(|e| panic!("{}: not JSON: {e}\n{text}", f.id));
+        let mut errs = Vec::new();
+        validate(&v, item, &format!("$.figures[{}]", f.id), &mut errs);
+        assert!(
+            errs.is_empty(),
+            "a {} figure breaks the contract: {errs:#?}",
+            f.id
+        );
+    }
+}

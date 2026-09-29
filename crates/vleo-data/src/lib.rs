@@ -292,6 +292,36 @@ pub fn results_path_from(var: impl Fn(&str) -> Option<std::ffi::OsString>) -> Pa
     set_to_something(&var, "VLEO_RESULTS").unwrap_or_else(|| in_vleo_home(&var, &["results"]))
 }
 
+/// How many days a result keeps all its values before it is thinned to its
+/// summary: `VLEO_KEEP_DAYS`, 30 when unset or empty. `0` means never thin —
+/// `None`. A value that does not read as a whole number of days is refused
+/// with why, rather than read as some other number.
+///
+/// A FOLDER NAMED BY `VLEO_RESULTS` IS KEPT WHOLE unless `VLEO_KEEP_DAYS` is
+/// set too. That folder is usually the team's shared archive, and thinning it
+/// is a decision for the team, not for whichever laptop happens to start first.
+pub fn keep_days() -> Result<Option<u32>, String> {
+    keep_days_from(|k| std::env::var_os(k))
+}
+
+/// [`keep_days`], reading the environment through `var`.
+pub fn keep_days_from(
+    var: impl Fn(&str) -> Option<std::ffi::OsString>,
+) -> Result<Option<u32>, String> {
+    let Some(v) = var("VLEO_KEEP_DAYS").filter(|v| !v.is_empty()) else {
+        let shared = set_to_something(&var, "VLEO_RESULTS").is_some();
+        return Ok((!shared).then_some(30));
+    };
+    let v = v.to_string_lossy();
+    match v.trim().parse::<u32>() {
+        Ok(0) => Ok(None),
+        Ok(n) => Ok(Some(n)),
+        Err(_) => Err(format!(
+            "VLEO_KEEP_DAYS={v} is not a whole number of days (0 keeps every result whole)"
+        )),
+    }
+}
+
 /// Where crash logs go: `~/.vleo/log/`, or wherever `VLEO_LOG` points.
 pub fn log_path() -> PathBuf {
     log_path_from(|k| std::env::var_os(k))

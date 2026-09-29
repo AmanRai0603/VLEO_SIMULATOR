@@ -298,6 +298,15 @@ params = [["name", "@saved"]]
 
 [[route]]
 method = "POST"
+path = "/v1/results/pin"
+answer = "json"
+schema = "result-pinned"
+[[route.example]]
+name = "results-pin"
+params = [["name", "@saved"], ["on", "1"]]
+
+[[route]]
+method = "POST"
 path = "/v1/results/delete"
 answer = "json"
 schema = "ok"

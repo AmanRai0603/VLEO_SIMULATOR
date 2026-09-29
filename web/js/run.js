@@ -25,7 +25,7 @@ import { S, reachFrom, isSeeded, isUndefined, isDeprecated, theCase, caseKey } f
 import { withOverrides, isInput, fromSI, toSI, unitOf, outOfRange, setOverride,
          clearOverride, onOverrideChange } from './inputs.js';
 import { drawChart, attachHover, tableFor, tableTsv, viewSpec, viewIsOn,
-         watchScheme, INK } from './chart.js';
+         watchScheme, INK, exportFigure } from './chart.js';
 import { savedValues, caseInput, saveOverridesToCase, savableOverrides } from './case.js';
 
 const POST = { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } };
@@ -941,11 +941,18 @@ function strip(host, spec, shown, view, again) {
       '</span><button class="ctl sw-unzoom" type="button">the whole range</button>'
     : '') +
     '<button class="ctl sw-copy" type="button">copy as TSV</button>' +
+    '<button class="ctl sw-png" type="button">PNG</button>' +
+    '<button class="ctl sw-csv" type="button">CSV</button>' +
     '<span class="sw-copied"></span>' +
     '<span class="sw-hint muted">hover to read a point, drag across the plot to zoom, ' +
     'double-click or Escape to undo</span>';
   const un = $('.sw-unzoom', el);
   if (un) un.onclick = () => { view.zoom = null; again(); };
+  // The picture for slides and its numbers for a spreadsheet — the figure as
+  // it is on screen, zoom and all.
+  const stem = () => (spec.y.label.split(/\s/)[0] || 'sweep') + '_over_' + (spec.x.label.split(/\s/)[0] || 'x');
+  $('.sw-png', el).onclick = () => exportFigure($('.sw-plot', host), shown, stem(), 'png');
+  $('.sw-csv', el).onclick = () => exportFigure($('.sw-plot', host), shown, stem(), 'csv');
   $('.sw-copy', el).onclick = async () => {
     const said = $('.sw-copied', el);
     let okay = false;

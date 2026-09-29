@@ -133,6 +133,7 @@ pub fn serve(
         open_browser(&format!("http://127.0.0.1:{port}"));
     }
 
+    results::thin_at_start();
     let preview = read_preview(&root);
     if let Some(p) = &preview {
         println!(
@@ -315,6 +316,7 @@ fn route(
         ("POST", "/v1/results/save") => ok_json(result_save(params, ctx)),
         ("POST", "/v1/results/upload") => ok_json(result_upload(params)),
         ("POST", "/v1/results/delete") => ok_json(result_delete(params)),
+        ("POST", "/v1/results/pin") => ok_json(result_pin(params)),
         ("POST", "/v1/results/as-case") => ok_json(result_as_case(params)),
         ("GET", p) if p.starts_with("/v1/fragment/") => {
             let id = p.trim_start_matches("/v1/fragment/");

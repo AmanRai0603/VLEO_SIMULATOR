@@ -20,6 +20,14 @@
           "target": {
             "type": "string"
           },
+          "pinned": {
+            "type": "boolean",
+            "description": "Kept whole for good: never thinned."
+          },
+          "thinned": {
+            "type": "string",
+            "description": "Empty while every value is kept; once thinned to its summary, the date and how many values were dropped."
+          },
           "name": {
             "type": "string"
           },
@@ -125,6 +133,8 @@
         "required": [
           "file",
           "target",
+          "pinned",
+          "thinned",
           "name",
           "saved",
           "mode",
