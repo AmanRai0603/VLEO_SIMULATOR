@@ -2789,6 +2789,11 @@ what = "The pipeline, the dependency bot and the pull-request template."
 who = "developer"
 
 [[folder]]
+name = "contract"
+what = "Where the page and the engine meet: every /v1 route, a schema for every answer, the file formats, and answers recorded from the real engine that the mock engine serves. Checked by the contract tests; reviewed by both sides (contract/README.md)."
+who = "developer"
+
+[[folder]]
 name = "approvals"
 what = "Each form branch's author approval of the exact preview build they tried, recorded by `xtask approve`. A form branch merges only with one that matches."
 who = "maintainer"
