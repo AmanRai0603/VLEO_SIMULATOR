@@ -14,13 +14,46 @@ use vleo_sheet::form::{self, Saved};
 use vleo_sheet::load::load_all;
 use vleo_sheet::template::{self, Verdict};
 
+/// A copy of the tree in a temporary folder, made once for this test binary:
+/// applying a form writes sheets and regenerates folders, and that is done to
+/// the copy, never to the checkout a developer may be editing.
 fn root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .to_path_buf()
+    static COPY: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    COPY.get_or_init(|| {
+        let real = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let to = std::env::temp_dir().join(format!("vleo-form-tree-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&to);
+        for e in std::fs::read_dir(real.join("crates")).unwrap().flatten() {
+            let name = e.file_name().to_string_lossy().to_string();
+            if name.starts_with("vleo-mod-") {
+                copy(
+                    &e.path().join("nodes"),
+                    &to.join("crates").join(&name).join("nodes"),
+                );
+            }
+        }
+        copy(
+            &real.join("crates/vleo-wasm/src"),
+            &to.join("crates/vleo-wasm/src"),
+        );
+        for d in ["layers", "cases", "sources", "web"] {
+            copy(&real.join(d), &to.join(d));
+        }
+        to
+    })
+    .clone()
+}
+
+fn copy(from: &Path, to: &Path) {
+    std::fs::create_dir_all(to).unwrap();
+    for e in std::fs::read_dir(from).unwrap().flatten() {
+        let p = e.path();
+        if p.is_dir() {
+            copy(&p, &to.join(e.file_name()));
+        } else {
+            std::fs::copy(&p, to.join(e.file_name())).unwrap();
+        }
+    }
 }
 
 /// A published computed row with a note, four assumptions and a relation.

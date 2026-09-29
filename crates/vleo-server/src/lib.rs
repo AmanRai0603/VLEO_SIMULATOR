@@ -178,15 +178,24 @@ fn accept(listener: TcpListener, ctx: std::sync::Arc<Ctx>) {
     // writes sheets and regenerates folders, and two saves interleaving would
     // be a race this tool has never had to think about and should not start to.
     let one_at_a_time = std::sync::Arc::new(std::sync::Mutex::new(()));
+    let open = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
     for stream in listener.incoming() {
         match stream {
             Ok(s) => {
+                use std::sync::atomic::Ordering::SeqCst;
+                if open.fetch_add(1, SeqCst) >= MAX_CONNECTIONS {
+                    open.fetch_sub(1, SeqCst);
+                    drop(s);
+                    continue;
+                }
                 let ctx = ctx.clone();
                 let gate = one_at_a_time.clone();
+                let open = open.clone();
                 std::thread::spawn(move || {
                     if let Err(e) = serve_one(s, &ctx, &gate) {
                         eprintln!("vleo: {e}");
                     }
+                    open.fetch_sub(1, SeqCst);
                 });
             }
             Err(e) => eprintln!("vleo: accept: {e}"),
@@ -362,26 +371,44 @@ fn serve_one(mut stream: TcpStream, ctx: &Ctx, gate: &std::sync::Mutex<()>) -> s
         }
         Err(e) => return Err(e),
     }
+    if request.len() > MAX_LINE {
+        return answer(
+            &mut stream,
+            "414 URI Too Long",
+            "the request line is too long",
+        );
+    }
     let mut parts = request.split_whitespace();
     let method = parts.next().unwrap_or("").to_string();
     let target = parts.next().unwrap_or("/").to_string();
 
-    let mut length = 0usize;
+    let mut head = Head::default();
+    let mut header_bytes = 0usize;
     loop {
         let mut line = String::new();
         if reader.read_line(&mut line)? == 0 {
             break;
         }
+        header_bytes += line.len();
+        head.lines += 1;
+        if header_bytes > MAX_HEADERS || head.lines > MAX_HEADER_LINES {
+            return answer(
+                &mut stream,
+                "431 Request Header Fields Too Large",
+                "too many or too long headers",
+            );
+        }
         let l = line.trim_end();
         if l.is_empty() {
             break;
         }
-        if let Some(v) = l.to_ascii_lowercase().strip_prefix("content-length:") {
-            length = v.trim().parse().unwrap_or(0);
-        }
+        head.take(l);
     }
-    let mut body = vec![0u8; length];
-    if length > 0 {
+    if let Some((status, why)) = head.refusal(&method, ctx.port) {
+        return answer(&mut stream, status, why);
+    }
+    let mut body = vec![0u8; head.length];
+    if head.length > 0 {
         reader.read_exact(&mut body)?;
     }
     let body = String::from_utf8_lossy(&body).to_string();
@@ -403,13 +430,137 @@ fn serve_one(mut stream: TcpStream, ctx: &Ctx, gate: &std::sync::Mutex<()>) -> s
         let _one = gate.lock().unwrap_or_else(|p| p.into_inner());
         route(&method, &path, &params, ctx)
     };
+    respond(&mut stream, status, ctype, &payload)
+}
+
+fn respond(
+    stream: &mut TcpStream,
+    status: &str,
+    ctype: &str,
+    payload: &[u8],
+) -> std::io::Result<()> {
+    // Never framed: the page is the tool, and a page of someone else's that
+    // puts it in a frame could click its buttons for the person looking at it.
     let head = format!(
-        "HTTP/1.1 {status}\r\nContent-Type: {ctype}\r\nContent-Length: {}\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n",
+        "HTTP/1.1 {status}\r\nContent-Type: {ctype}\r\nContent-Length: {}\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nX-Frame-Options: DENY\r\nContent-Security-Policy: frame-ancestors 'none'\r\nConnection: close\r\n\r\n",
         payload.len()
     );
     stream.write_all(head.as_bytes())?;
-    stream.write_all(&payload)?;
+    stream.write_all(payload)?;
     stream.flush()
+}
+
+/// A request refused before it is read further, with the reason as its body.
+fn answer(stream: &mut TcpStream, status: &str, why: &str) -> std::io::Result<()> {
+    respond(stream, status, "text/plain; charset=utf-8", why.as_bytes())
+}
+
+// THE LIMITS OF ONE REQUEST. The largest thing a person sends is a filled node
+// form or a results file, well under a megabyte; the limits sit far above that
+// and far below what could exhaust the machine.
+const MAX_LINE: usize = 16 * 1024;
+const MAX_HEADERS: usize = 64 * 1024;
+const MAX_HEADER_LINES: usize = 100;
+const MAX_BODY: usize = 16 * 1024 * 1024;
+/// Connections being read or answered at once. A page opens a handful; a
+/// flood past this is closed rather than given a thread each.
+const MAX_CONNECTIONS: usize = 64;
+
+/// The headers a request is judged on.
+#[derive(Default)]
+struct Head {
+    length: usize,
+    bad_length: bool,
+    chunked: bool,
+    host: Option<String>,
+    origin: Option<String>,
+    fetch_site: Option<String>,
+    lines: usize,
+}
+
+impl Head {
+    fn take(&mut self, line: &str) {
+        let Some((k, v)) = line.split_once(':') else {
+            return;
+        };
+        let v = v.trim();
+        match k.trim().to_ascii_lowercase().as_str() {
+            "content-length" => match v.parse() {
+                Ok(n) => self.length = n,
+                Err(_) => self.bad_length = true,
+            },
+            "transfer-encoding" => self.chunked = !v.eq_ignore_ascii_case("identity"),
+            "host" => self.host = Some(v.to_ascii_lowercase()),
+            "origin" => self.origin = Some(v.to_ascii_lowercase()),
+            "sec-fetch-site" => self.fetch_site = Some(v.to_ascii_lowercase()),
+            _ => {}
+        }
+    }
+
+    /// Why this request is not answered, or `None` to answer it.
+    ///
+    /// THE TOOL LISTENS ON LOOPBACK, AND LOOPBACK IS NOT PRIVATE FROM THE
+    /// BROWSER. Any page the person has open can send requests to
+    /// 127.0.0.1, so where a request came from is checked, not assumed:
+    ///
+    /// * **Host** must name this server. A page on another site that has
+    ///   pointed its own name at 127.0.0.1 (DNS rebinding) sends its own name
+    ///   here, and is refused — without this it could read every result.
+    /// * **Origin**, on anything that changes something, must be this server.
+    ///   A browser sends it with every POST; a page elsewhere posting a form
+    ///   here is refused instead of resetting the case or deleting results.
+    ///   A request with no Origin is a program, not a page (the parity tools,
+    ///   `curl`), unless the browser says it came from another site.
+    fn refusal(&self, method: &str, port: u16) -> Option<(&'static str, &'static str)> {
+        let ours = |authority: &str| {
+            ["127.0.0.1", "localhost", "[::1]"]
+                .iter()
+                .any(|h| authority == format!("{h}:{port}"))
+        };
+        match &self.host {
+            Some(h) if ours(h) => {}
+            _ => {
+                return Some((
+                    "421 Misdirected Request",
+                    "this server answers only to its own address",
+                ))
+            }
+        }
+        if self.chunked {
+            return Some(("411 Length Required", "send the body with a Content-Length"));
+        }
+        if self.bad_length {
+            return Some(("400 Bad Request", "the Content-Length is not a number"));
+        }
+        if self.length > MAX_BODY {
+            return Some((
+                "413 Content Too Large",
+                "the request body is larger than this tool accepts",
+            ));
+        }
+        if method != "GET" && method != "HEAD" {
+            match &self.origin {
+                Some(o) => {
+                    let authority = o.strip_prefix("http://").unwrap_or("not ours");
+                    if !ours(authority) {
+                        return Some((
+                            "403 Forbidden",
+                            "a page on another site cannot change this tool",
+                        ));
+                    }
+                }
+                None => {
+                    if matches!(self.fetch_site.as_deref(), Some("cross-site" | "same-site")) {
+                        return Some((
+                            "403 Forbidden",
+                            "a page on another site cannot change this tool",
+                        ));
+                    }
+                }
+            }
+        }
+        None
+    }
 }
 
 fn route(
@@ -1074,9 +1225,21 @@ fn decode(s: &str) -> String {
                 out.push(b' ');
                 i += 1;
             }
+            // The two digits are read as BYTES. Slicing the text there panicked
+            // when a raw multi-byte character followed the `%`, and a release
+            // build aborts on a panic: one malformed request ended the tool.
             b'%' if i + 2 < b.len() => {
-                out.push(u8::from_str_radix(&s[i + 1..i + 3], 16).unwrap_or(b'?'));
-                i += 3;
+                let hex = |c: u8| (c as char).to_digit(16).map(|d| d as u8);
+                match (hex(b[i + 1]), hex(b[i + 2])) {
+                    (Some(h), Some(l)) => {
+                        out.push(h << 4 | l);
+                        i += 3;
+                    }
+                    _ => {
+                        out.push(b'%');
+                        i += 1;
+                    }
+                }
             }
             c => {
                 out.push(c);
@@ -1258,13 +1421,13 @@ fn form_file(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
 /// Now, as a result records it: UTC, to the second. Through `date` rather than a
 /// crate, as xtask stamps its dates.
 fn now_utc() -> String {
-    std::process::Command::new("date")
-        .args(["-u", "+%Y-%m-%dT%H:%M:%SZ"])
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map(|s| s.trim().to_string())
-        .unwrap_or_default()
+    vleo_units::calendar::Civil::from_unix(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0),
+    )
+    .to_string()
 }
 
 fn results_dir() -> PathBuf {
@@ -1785,7 +1948,13 @@ fn inputs_json() -> String {
 fn inputs_reading(params: &str) -> vleo_modules::inputs::Reading {
     match param(params, "csv") {
         Some(csv) => vleo_modules::inputs::read_csv(&decode(csv)),
-        None => vleo_modules::inputs::check_values(&sets(params)),
+        None => {
+            let mut r = vleo_modules::inputs::check_values(&sets(params));
+            if let Some((id, why)) = set_refusal(params) {
+                r.refused.insert(0, (0, id, why));
+            }
+            r
+        }
     }
 }
 
@@ -1879,6 +2048,32 @@ fn sets(params: &str) -> Vec<(String, f64)> {
         .collect()
 }
 
+/// The first `set=` that cannot be applied, named, with why.
+///
+/// `sets` keeps only what it can read, so a value typed wrong was dropped and
+/// the run went ahead on the design's own number — a refusal turned into a
+/// substitution. Every endpoint that takes values asks this first, as the
+/// command line always has.
+fn set_refusal(params: &str) -> Option<(String, String)> {
+    for kv in params.split('&') {
+        let Some(("set", v)) = kv.split_once('=') else {
+            continue;
+        };
+        let d = decode(v);
+        let Some((id, val)) = d.split_once(':') else {
+            return Some((d.clone(), format!("'{d}' is not id:value")));
+        };
+        if Vleo::find(id).is_none() {
+            return Some((id.to_string(), format!("there is no row called '{id}'")));
+        }
+        match val.trim().parse::<f64>() {
+            Ok(x) if x.is_finite() => {}
+            _ => return Some((id.to_string(), format!("'{val}' is not a number"))),
+        }
+    }
+    None
+}
+
 /// A supplied value only survives on a row that declares its own number.
 ///
 /// Every other kind works its answer out during the run and overwrites what was
@@ -1892,7 +2087,9 @@ fn sets(params: &str) -> Vec<(String, f64)> {
 /// became load-bearing the moment `env_f107` started reading the solar
 /// subsystem: the two faces then disagreed about the same request.
 fn unsuppliable(id: &str) -> Option<String> {
-    let k = Vleo::find(id)?;
+    let Some(k) = Vleo::find(id) else {
+        return Some(format!("there is no row called '{id}'"));
+    };
     let def = &NODES[k as usize];
     if def.kind == Kind::Declared {
         return None;
@@ -1929,6 +2126,16 @@ fn refuse(node: &str, message: &str) -> String {
 /// unknown name or a condition that cannot be applied comes back as a sentence
 /// rather than as the declared design with a customer's name on it.
 fn case_refused(params: &str, ctx: &Ctx) -> Option<String> {
+    if let Some((node, why)) = set_refusal(params) {
+        let mut j = Json::new();
+        j.raw("{");
+        j.bool_field("ok", false);
+        j.str_field("fault", "bad-set");
+        j.str_field("node", &node);
+        j.str_field("message", &why);
+        j.raw("}");
+        return Some(j.0);
+    }
     let case = build_case(params, ctx);
     let why = vleo_modules::case_refusal(&case)?;
     let mut j = Json::new();
@@ -2631,5 +2838,93 @@ mod start_by_name {
         assert!(!opens_by_name("vleo-daemon"));
         assert!(!opens_by_name("vleo"));
         assert!(!opens_by_name("Start VLEO (1)"));
+    }
+}
+
+#[cfg(test)]
+mod requests {
+    use super::{decode, set_refusal, Head, MAX_BODY};
+
+    fn head(lines: &[&str]) -> Head {
+        let mut h = Head::default();
+        for l in lines {
+            h.take(l);
+        }
+        h
+    }
+
+    #[test]
+    fn decoding_never_panics_and_keeps_what_it_cannot_read() {
+        assert_eq!(decode("a+b%20c"), "a b c");
+        assert_eq!(decode("%C2%B0"), "°");
+        // A raw multi-byte character after `%` once sliced text mid-character
+        // and aborted the release build.
+        assert_eq!(decode("%€x"), "%€x");
+        assert_eq!(decode("%zz"), "%zz");
+        assert_eq!(decode("50%"), "50%");
+        assert_eq!(decode("%4"), "%4");
+    }
+
+    #[test]
+    fn only_this_server_s_own_address_is_answered() {
+        let ok = head(&["Host: 127.0.0.1:7777"]);
+        assert!(ok.refusal("GET", 7777).is_none());
+        assert!(head(&["Host: localhost:7777"])
+            .refusal("GET", 7777)
+            .is_none());
+        // DNS rebinding: another site's name, pointed at loopback.
+        let rebound = head(&["Host: evil.example:7777"]);
+        assert_eq!(
+            rebound.refusal("GET", 7777).unwrap().0,
+            "421 Misdirected Request"
+        );
+        assert!(head(&["Host: 127.0.0.1:7778"])
+            .refusal("GET", 7777)
+            .is_some());
+        assert!(head(&[]).refusal("GET", 7777).is_some());
+    }
+
+    #[test]
+    fn a_page_on_another_site_cannot_change_anything() {
+        let own = head(&["Host: 127.0.0.1:7777", "Origin: http://127.0.0.1:7777"]);
+        assert!(own.refusal("POST", 7777).is_none());
+        let other = head(&["Host: 127.0.0.1:7777", "Origin: https://evil.example"]);
+        assert_eq!(other.refusal("POST", 7777).unwrap().0, "403 Forbidden");
+        let null = head(&["Host: 127.0.0.1:7777", "Origin: null"]);
+        assert!(null.refusal("POST", 7777).is_some());
+        let told = head(&["Host: 127.0.0.1:7777", "Sec-Fetch-Site: cross-site"]);
+        assert!(told.refusal("POST", 7777).is_some());
+        // A program, not a page: the parity tools post with neither header.
+        let program = head(&["Host: localhost:7777"]);
+        assert!(program.refusal("POST", 7777).is_none());
+        // Reading is left to the browser's own same-origin rule.
+        assert!(other.refusal("GET", 7777).is_none());
+    }
+
+    #[test]
+    fn bodies_are_bounded_and_measured() {
+        let h = |l: &str| {
+            head(&["Host: 127.0.0.1:1", l])
+                .refusal("POST", 1)
+                .map(|r| r.0)
+        };
+        assert_eq!(h("Transfer-Encoding: chunked"), Some("411 Length Required"));
+        assert_eq!(h("Content-Length: lots"), Some("400 Bad Request"));
+        let big = format!("Content-Length: {}", MAX_BODY + 1);
+        assert_eq!(h(&big), Some("413 Content Too Large"));
+        assert_eq!(h("Content-Length: 10"), None);
+    }
+
+    #[test]
+    fn a_value_that_cannot_be_applied_is_named_not_dropped() {
+        let id = vleo_modules::NODES[0].id;
+        assert!(set_refusal(&format!("set={id}:1.5")).is_none());
+        assert!(set_refusal(&format!("set={id}%3A2")).is_none());
+        let named = |p: &str| set_refusal(p).map(|(n, _)| n);
+        assert_eq!(named("set=no_such_row:1").as_deref(), Some("no_such_row"));
+        assert_eq!(named(&format!("set={id}:fast")).as_deref(), Some(id));
+        assert_eq!(named(&format!("set={id}:NaN")).as_deref(), Some(id));
+        assert!(named(&format!("set={id}")).is_some());
+        assert!(set_refusal("node=x&mode=branch").is_none());
     }
 }

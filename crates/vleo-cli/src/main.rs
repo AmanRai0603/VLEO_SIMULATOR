@@ -722,13 +722,13 @@ fn cmd_cases() -> Result<(), String> {
 
 /// Now, as a result records it: UTC, to the second.
 fn now_utc() -> String {
-    std::process::Command::new("date")
-        .args(["-u", "+%Y-%m-%dT%H:%M:%SZ"])
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map(|s| s.trim().to_string())
-        .unwrap_or_default()
+    vleo_core::units::calendar::Civil::from_unix(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0),
+    )
+    .to_string()
 }
 
 /// A saved result, as it was when it was saved. Runs nothing: a result read

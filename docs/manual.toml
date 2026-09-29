@@ -2200,8 +2200,8 @@ effect = "irreversible"
 [[command]]
 tool = "xtask"
 name = "mutate"
-usage = "mutate [<node>]"
-what = "Perturb a row's answer and require its own tests to notice. Puts the row back."
+usage = "mutate [--literals] [<node>]"
+what = "Perturb a row's answer and require its own tests to notice; with --literals, move each decimal number in its hole code in turn and report the ones no test notices. Puts the row back."
 who = "developer"
 effect = "reads"
 

@@ -23,8 +23,58 @@ pub struct Tree {
     pub cycles: Vec<CycleSpec>,
 }
 
+// A VALUE OF THE WRONG KIND IS AN ERROR, NOT A DEFAULT. These helpers used to
+// turn a number typed as text into 0.0 and anything that was not text into "",
+// so a sheet with `lower = "1e-6"` loaded as a lower bound of zero and nothing
+// said so. Each wrong value is now recorded against the file being read, and
+// `load_all` refuses the tree if any were.
+thread_local! {
+    static READING: std::cell::RefCell<String> = const { std::cell::RefCell::new(String::new()) };
+    static WRONG: std::cell::RefCell<Vec<String>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// Name the file the next values come from.
+fn reading(path: &Path) {
+    READING.with(|r| *r.borrow_mut() = path.display().to_string());
+}
+
+fn wrong(expected: &str, v: &toml::Value) {
+    let file = READING.with(|r| r.borrow().clone());
+    let mut shown = v.to_string();
+    if shown.len() > 60 {
+        shown = format!("{}…", shown.chars().take(60).collect::<String>());
+    }
+    WRONG.with(|w| {
+        w.borrow_mut().push(format!(
+            "{file}: {shown} is {} {}, where {expected} was expected",
+            if v.type_str().starts_with(['a', 'i']) {
+                "an"
+            } else {
+                "a"
+            },
+            v.type_str()
+        ))
+    });
+}
+
+/// A table where the sheet's shape promises one; anything else is recorded.
+fn table(v: &toml::Value) -> Option<&toml::value::Table> {
+    let t = v.as_table();
+    if t.is_none() {
+        wrong("a table", v);
+    }
+    t
+}
+
 fn s(v: Option<&toml::Value>) -> String {
-    v.and_then(|v| v.as_str()).unwrap_or("").to_string()
+    match v {
+        None => String::new(),
+        Some(toml::Value::String(x)) => x.clone(),
+        Some(other) => {
+            wrong("text", other);
+            String::new()
+        }
+    }
 }
 
 /// Code as the sheet holds it: exactly as written, less the line break a
@@ -34,15 +84,43 @@ fn code(v: Option<&toml::Value>) -> String {
 }
 
 fn f(v: Option<&toml::Value>) -> f64 {
-    v.and_then(|v| v.as_float().or_else(|| v.as_integer().map(|i| i as f64)))
-        .unwrap_or(0.0)
+    match v {
+        None => 0.0,
+        Some(toml::Value::Float(x)) => *x,
+        Some(toml::Value::Integer(i)) => *i as f64,
+        Some(other) => {
+            wrong("a number", other);
+            0.0
+        }
+    }
 }
 
 fn u(v: Option<&toml::Value>) -> u32 {
-    v.and_then(|v| v.as_integer()).unwrap_or(0) as u32
+    match v {
+        None => 0,
+        Some(toml::Value::Integer(i)) if (0..=u32::MAX as i64).contains(i) => *i as u32,
+        Some(other) => {
+            wrong("a whole number", other);
+            0
+        }
+    }
 }
 
 pub fn load_all(root: &Path) -> Result<Tree, String> {
+    WRONG.with(|w| w.borrow_mut().clear());
+    let tree = load_everything(root)?;
+    let wrong = WRONG.with(|w| std::mem::take(&mut *w.borrow_mut()));
+    if !wrong.is_empty() {
+        return Err(format!(
+            "{} value(s) in the sheets are of the wrong kind:\n  {}",
+            wrong.len(),
+            wrong.join("\n  ")
+        ));
+    }
+    Ok(tree)
+}
+
+fn load_everything(root: &Path) -> Result<Tree, String> {
     let mut tree = Tree {
         root: root.to_path_buf(),
         ..Default::default()
@@ -94,6 +172,7 @@ pub fn load_all(root: &Path) -> Result<Tree, String> {
 fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
     let path = dir.join("node.toml");
     let text = fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+    reading(&path);
     let v: toml::Value = text
         .parse()
         .map_err(|e| format!("{}: malformed sheet: {e}", path.display()))?;
@@ -156,7 +235,9 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
         sh.theory.why = reflow(&s(th.get("why")));
         sh.theory.reading = reflow(&s(th.get("reading")));
         for st in th.get("step").and_then(|s| s.as_array()).unwrap_or(&vec![]) {
-            let st = st.as_table().unwrap();
+            let Some(st) = table(st) else {
+                continue;
+            };
             sh.theory.steps.push(TheoryStep {
                 text: reflow(&s(st.get("text"))),
                 math: reflow(&s(st.get("math"))),
@@ -251,7 +332,9 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
         .and_then(|a| a.as_array())
         .unwrap_or(&vec![])
     {
-        let a = a.as_table().unwrap();
+        let Some(a) = table(a) else {
+            continue;
+        };
         sh.assumptions.push(Assumption {
             text: s(a.get("text")),
             fails_when: s(a.get("fails_when")),
@@ -292,7 +375,9 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
         sh.confirmed_by = s(val.get("confirmed_by"));
     }
     for i in t.get("input").and_then(|i| i.as_array()).unwrap_or(&vec![]) {
-        let i = i.as_table().unwrap();
+        let Some(i) = table(i) else {
+            continue;
+        };
         sh.inputs.push(Input {
             binding: s(i.get("binding")),
             var: s(i.get("var")),
@@ -305,7 +390,9 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
             .and_then(|s| s.as_array())
             .unwrap_or(&vec![])
         {
-            let st = st.as_table().unwrap();
+            let Some(st) = table(st) else {
+                continue;
+            };
             sh.steps.push(Step {
                 number: u(st.get("number")),
                 text: s(st.get("text")),
@@ -347,6 +434,7 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
     let fx = dir.join("fixtures.toml");
     if fx.is_file() {
         let ftext = fs::read_to_string(&fx).map_err(|e| format!("{}: {e}", fx.display()))?;
+        reading(&fx);
         let fv: toml::Value = ftext
             .parse()
             .map_err(|e| format!("{}: malformed fixtures: {e}", fx.display()))?;
@@ -355,7 +443,9 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
             .and_then(|r| r.as_array())
             .unwrap_or(&vec![])
         {
-            let r = r.as_table().unwrap();
+            let Some(r) = table(r) else {
+                continue;
+            };
             let mut inputs = Vec::new();
             if let Some(m) = r.get("inputs").and_then(|m| m.as_table()) {
                 for (k, val) in m {
@@ -519,13 +609,17 @@ fn load_layers(tree: &mut Tree) -> Result<(), String> {
     files.sort();
     for p in files {
         let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+        reading(&p);
+        reading(&p);
         let v: toml::Value = text.parse().map_err(|e| format!("{}: {e}", p.display()))?;
         // A layer file may declare the architecture's own cycles. They belong
         // here rather than in a case because a loop is a property of the
         // design, not of who bought it.
         tree.cycles.extend(parse_cycles(&v));
         for g in v.get("group").and_then(|g| g.as_array()).unwrap_or(&vec![]) {
-            let g = g.as_table().unwrap();
+            let Some(g) = table(g) else {
+                continue;
+            };
             let grp = Group {
                 id: s(g.get("id")),
                 label: s(g.get("label")),
@@ -552,7 +646,9 @@ fn load_layers(tree: &mut Tree) -> Result<(), String> {
             .and_then(|r| r.as_array())
             .unwrap_or(&vec![])
         {
-            let r = r.as_table().unwrap();
+            let Some(r) = table(r) else {
+                continue;
+            };
             tree.relations.push(Relation {
                 from: s(r.get("from")),
                 to: s(r.get("to")),
@@ -607,6 +703,8 @@ fn load_cases(tree: &mut Tree) -> Result<(), String> {
     files.sort();
     for p in files {
         let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+        reading(&p);
+        reading(&p);
         let v: toml::Value = text.parse().map_err(|e| format!("{}: {e}", p.display()))?;
         let mut c = Case {
             id: s(v.get("id")),
@@ -642,13 +740,16 @@ fn load_cases(tree: &mut Tree) -> Result<(), String> {
 fn load_sources(tree: &mut Tree) -> Result<(), String> {
     let p = tree.root.join("sources").join("sources.toml");
     let text = fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))?;
+    reading(&p);
     let v: toml::Value = text.parse().map_err(|e| format!("{}: {e}", p.display()))?;
     for r in v
         .get("source")
         .and_then(|r| r.as_array())
         .unwrap_or(&vec![])
     {
-        let r = r.as_table().unwrap();
+        let Some(r) = table(r) else {
+            continue;
+        };
         let src = Source {
             id: s(r.get("id")),
             title: s(r.get("title")),

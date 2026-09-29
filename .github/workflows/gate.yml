@@ -442,6 +442,9 @@ jobs:
             [ -z "$n" ] && continue
             echo "::group::$n"
             cargo run -p xtask -- mutate "$n" || rc=1
+            # Each decimal number in the node's own code, moved in turn: a
+            # report of the ones no test notices, not a gate (see the command).
+            cargo run -p xtask -- mutate --literals "$n" || true
             echo "::endgroup::"
           done < changed-nodes.txt
           exit $rc

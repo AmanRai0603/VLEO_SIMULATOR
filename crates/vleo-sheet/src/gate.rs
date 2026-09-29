@@ -237,6 +237,134 @@ fn method_checks(sh: &Sheet) -> Vec<Check> {
     out
 }
 
+/// Rust source with its comments removed and its string and character
+/// literals emptied, so a check that reads code reads code.
+///
+/// The checks below once searched the raw text, so a hole that mentioned
+/// `Sense::AtLeast` in a comment passed 7e while applying `Sense::AtMost`, and
+/// a string saying ".sin()" failed the maths rule. Lifetimes (`'a`) are kept.
+pub fn code_only(src: &str) -> String {
+    let c: Vec<char> = src.chars().collect();
+    let mut o = String::with_capacity(src.len());
+    let mut i = 0;
+    while i < c.len() {
+        match c[i] {
+            '/' if c.get(i + 1) == Some(&'/') => {
+                while i < c.len() && c[i] != '\n' {
+                    i += 1;
+                }
+            }
+            '/' if c.get(i + 1) == Some(&'*') => {
+                let mut depth = 1;
+                i += 2;
+                while i < c.len() && depth > 0 {
+                    if c[i] == '/' && c.get(i + 1) == Some(&'*') {
+                        depth += 1;
+                        i += 2;
+                    } else if c[i] == '*' && c.get(i + 1) == Some(&'/') {
+                        depth -= 1;
+                        i += 2;
+                    } else {
+                        i += 1;
+                    }
+                }
+                o.push(' ');
+            }
+            'r' if matches!(c.get(i + 1), Some('"' | '#'))
+                && (i == 0 || !(c[i - 1].is_alphanumeric() || c[i - 1] == '_')) =>
+            {
+                // A raw string: r"..." or r#"..."#, with as many hashes.
+                let mut j = i + 1;
+                let mut hashes = 0;
+                while c.get(j) == Some(&'#') {
+                    hashes += 1;
+                    j += 1;
+                }
+                if c.get(j) != Some(&'"') {
+                    o.push(c[i]);
+                    i += 1;
+                    continue;
+                }
+                j += 1;
+                loop {
+                    if j >= c.len() {
+                        break;
+                    }
+                    if c[j] == '"' && (0..hashes).all(|k| c.get(j + 1 + k) == Some(&'#')) {
+                        j += 1 + hashes;
+                        break;
+                    }
+                    j += 1;
+                }
+                o.push_str("\"\"");
+                i = j;
+            }
+            '"' => {
+                i += 1;
+                while i < c.len() && c[i] != '"' {
+                    if c[i] == '\\' {
+                        i += 1;
+                    }
+                    i += 1;
+                }
+                i += 1;
+                o.push_str("\"\"");
+            }
+            '\'' if c.get(i + 1) == Some(&'\\') || c.get(i + 2) == Some(&'\'') => {
+                // A character literal, not a lifetime.
+                i += 1;
+                if c.get(i) == Some(&'\\') {
+                    i += 1;
+                }
+                while i < c.len() && c[i] != '\'' {
+                    i += 1;
+                }
+                i += 1;
+                o.push_str("' '");
+            }
+            ch => {
+                o.push(ch);
+                i += 1;
+            }
+        }
+    }
+    o
+}
+
+/// The platform's transcendental and root functions, by method name.
+const PLATFORM_MATHS: &[&str] = &[
+    "sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sin_cos", "sinh", "cosh", "tanh",
+    "asinh", "acosh", "atanh", "exp", "exp2", "exp_m1", "ln", "ln_1p", "log", "log2", "log10",
+    "powf", "powi", "sqrt", "cbrt", "hypot",
+];
+
+/// Every call into the platform's maths library in `src`: `x.sin()`,
+/// `x . sin ()`, `f64::sin(x)`. Comments and strings are not code and are not
+/// read. `pmath::sin(x)` is the portable route and is not a match.
+pub fn platform_maths(src: &str) -> Vec<String> {
+    let code: String = code_only(src)
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .collect();
+    let mut found = Vec::new();
+    for name in PLATFORM_MATHS {
+        for (form, shown) in [
+            (format!(".{name}("), format!(".{name}()")),
+            (format!("f64::{name}("), format!("f64::{name}()")),
+            (format!("f32::{name}("), format!("f32::{name}()")),
+        ] {
+            // The dot (or `::`) before the name and the `(` after it keep
+            // `.sin(` from matching `.asin(` or `.sinh(`.
+            if code.contains(&form) {
+                found.push(shown);
+            }
+        }
+    }
+    found.sort();
+    found.dedup();
+    found
+}
+
 /// The per-node checks.
 pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     let mut out = Vec::new();
@@ -630,7 +758,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         } else {
             "Sense::AtMost"
         };
-        let body: String = holes.values().cloned().collect::<Vec<_>>().join("\n");
+        let body: String = code_only(&holes.values().cloned().collect::<Vec<_>>().join("\n"));
         if body.contains(other) && !body.contains(want) {
             disagree.push(format!(
                 "{} declares sense {:?} so this must apply {want}, and it applies {other}",
@@ -766,13 +894,8 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     //      for a reason that is not a defect.
     let mut leaks = Vec::new();
     for (n, body) in &holes {
-        for bad in [
-            ".sin()", ".cos()", ".exp()", ".ln()", ".powf(", ".sqrt()", ".atan2(", ".tan()",
-            ".log10(",
-        ] {
-            if body.contains(bad) {
-                leaks.push(format!("hole {n} calls {bad} — route it through pmath"));
-            }
+        for bad in platform_maths(body) {
+            leaks.push(format!("hole {n} calls {bad} — route it through pmath"));
         }
     }
     out.push(if leaks.is_empty() {
