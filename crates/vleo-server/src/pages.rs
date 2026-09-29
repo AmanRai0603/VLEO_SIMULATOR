@@ -542,3 +542,27 @@ pub(super) fn lesson_json(ctx: &Ctx, id: &str) -> String {
         vleo_sheet::lesson::json(&l)
     )
 }
+
+/// A row's lesson form: one HTML file to fill anywhere, as `xtask lesson form`
+/// writes it. Reading it writes nothing; a filled one is applied by a
+/// developer, with `xtask lesson apply`.
+pub(super) fn lesson_form_file(ctx: &Ctx, id: &str) -> (&'static str, &'static str, Vec<u8>) {
+    let id = decode(id);
+    let text = |status, body: String| (status, "text/plain; charset=utf-8", body.into_bytes());
+    let tree = match vleo_sheet::load::load_all(&ctx.root) {
+        Ok(t) => t,
+        Err(e) => {
+            return text(
+                "500 Internal Server Error",
+                format!("the tree does not load: {e}"),
+            )
+        }
+    };
+    match tree.sheets.get(&id) {
+        None => text("404 Not Found", format!("no row '{id}'")),
+        Some(sh) => match vleo_sheet::lesson_form::document(sh, &tree) {
+            Ok(html) => ("200 OK", "text/html; charset=utf-8", html.into_bytes()),
+            Err(e) => text("500 Internal Server Error", e),
+        },
+    }
+}

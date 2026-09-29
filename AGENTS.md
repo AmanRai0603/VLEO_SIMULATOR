@@ -174,6 +174,10 @@ results, the manual, figures and these documents are all held to it by check.
     cargo run -p xtask -- form <node>|--new    a node's form, to send out
     cargo run -p xtask -- intake <form.html> [--apply [--partial]]
                                             the checker, then the apply
+    cargo run -p xtask -- lesson form <node> | check <file> | apply <file>
+                                            a row's lesson: its form to send,
+                                            the gate's check, then the apply
+                                            (docs/LESSONS.md)
     cargo run -p xtask -- publish <node>    seeded and filled → published
     cargo run -p xtask -- declare <node>    the completion questions, and which
                                             are still open

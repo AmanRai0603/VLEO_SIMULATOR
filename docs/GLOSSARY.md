@@ -105,6 +105,10 @@ output rows for the engine to answer, check-yourself questions. Content only;
 the page draws it from its component library. Outside the sheet hash.
 → `docs/LESSONS.md`
 
+**Lesson form** — a row's lesson as one HTML file the expert who knows the
+row fills anywhere, checked as they type by the gate's own lesson check, and
+sent back; `xtask lesson apply` writes it beside the row. → `docs/LESSONS.md`
+
 **Component library** — `web/js/components.js`: every part a page is built
 from, by name — station, equation, widget, check-yourself, claim tag,
 references, figure. A page that needs something new gets it added there once.

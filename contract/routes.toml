@@ -221,6 +221,15 @@ name = "form-orbit_velocity"
 path = "/v1/form/orbit_velocity"
 
 [[route]]
+method = "GET"
+path = "/v1/lesson-form/<id>"
+answer = "html"
+contains = "id=\"vleo-lesson\""
+[[route.example]]
+name = "lesson-form-orbit_velocity"
+path = "/v1/lesson-form/orbit_velocity"
+
+[[route]]
 method = "POST"
 path = "/v1/form/check"
 answer = "json"

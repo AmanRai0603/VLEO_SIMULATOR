@@ -13,7 +13,7 @@ Generated from the one table in `xtask/src/pipeline.rs`; `cargo run -p xtask -- 
 1. **form** — an expert fills a node's form: `form`
 2. **take** — the maintainer puts it on its own branch: `take`
 3. **check** — what it would change, before anything is written: `intake`
-4. **apply** — the form written into the sheet — all of it or none: `new`
+4. **apply** — the form written into the sheet — all of it or none: `lesson`, `new`
 5. **publish** — a filled row's code generated, and its holes written: `declare`, `publish`, `fill`, `confirm`
 6. **build** — a node built from its method, and its tests shown to test: `method`, `build-node`, `rerun`, `method-wasm`, `differential`, `mutate`
 7. **gate** — the checks every change passes, and what they generate: `docs`, `assemble`, `gate`, `ready`, `codeowners`, `variables`, `guides`, `pipeline`
@@ -93,6 +93,24 @@ the checker: what a filled form would change, field by field, and every interfac
 | code | `xtask/src/forms.rs` — `cmd_intake` |
 
 ### apply — the form written into the sheet — all of it or none
+
+#### `lesson`
+
+    cargo run -p xtask -- lesson form <node> [--out <file.html>]
+    cargo run -p xtask -- lesson check <file> [--for <node>]
+    cargo run -p xtask -- lesson apply <file> [--for <node>] [--check]
+
+a row's lesson form: one HTML file the expert who knows the row fills anywhere, checked as they type by the gate's own lesson check, saved as a filled copy. what a filled lesson form (or a bare lesson.toml, with --for) holds, and every reason it would be refused. Writes nothing. check it, write it as lesson.toml beside the row's node.toml, and gate the row — or put the row back. --check (what --dry-run runs) only checks.
+
+| | |
+|---|---|
+| reads | the row's sheet and lesson.toml, the tree's rows, web/method.wasm.gz; a filled lesson form |
+| writes | form: <node>.lesson-form.html, or --out; apply: lesson.toml beside the row's node.toml |
+| checks | the lesson, as the gate checks it: every key known, every claim tagged, no markup, every row a widget names real; apply gates the row |
+| undo | `git restore` (or delete) the row's lesson.toml; a refused apply puts it back itself |
+| steps | 1 check the lesson · 2 write it beside the row · 3 gate the row |
+| dry run | --dry-run runs lesson check <file>: every reason it would be refused, nothing written |
+| code | `xtask/src/forms.rs` — `cmd_lesson` |
 
 #### `new`
 

@@ -1,0 +1,16 @@
+/* The lesson form: the node form's look, and the few parts only a lesson has. */
+.ls-block { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; margin: 10px 0; }
+.ls-block label { display: block; font-size: 13px; color: var(--ink2); margin: 8px 0 2px; }
+.ls-block input[type=text], .ls-block input[type=number], .ls-block select, .ls-block textarea {
+  width: 100%; font: 14px/1.45 system-ui, sans-serif; padding: 6px 8px; border: 1px solid var(--rule);
+  border-radius: 4px; background: var(--paper); color: var(--ink); }
+.ls-block textarea { min-height: 5.5em; resize: vertical; }
+.ls-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.ls-row > div { flex: 1 1 12rem; min-width: 0; }
+.ls-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ls-head b { font: 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.ls-add { margin: 4px 0 14px; }
+.ls-check { max-width: 920px; margin: 24px auto 0; }
+.ls-ok { color: var(--ok); font-weight: 600; }
+.ls-bad { color: var(--warn); }
+.ls-bad li { margin: 3px 0; }

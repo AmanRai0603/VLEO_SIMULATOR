@@ -97,12 +97,12 @@ pub const CHECKER: &str = "web/method.wasm.gz";
 /// unpacks and runs it is the shape browsers and antivirus block, and the
 /// first 0.3.0 Windows kit was blocked by Chrome for exactly that. Missing, the
 /// form says so on its check rather than checking by nothing.
-fn checker(tree: &Tree) -> Vec<u8> {
+pub(crate) fn checker(tree: &Tree) -> Vec<u8> {
     std::fs::read(tree.root.join(CHECKER)).unwrap_or_default()
 }
 
 /// Standard base64, for carrying the checker inside the page.
-fn base64(bytes: &[u8]) -> String {
+pub(crate) fn base64(bytes: &[u8]) -> String {
     const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut o = String::with_capacity(bytes.len().div_ceil(3) * 4);
     for c in bytes.chunks(3) {
