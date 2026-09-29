@@ -1505,9 +1505,4 @@ fn var_resolves(tree: &Tree, var: &str) -> bool {
 /// produced by `l3_solar_interface`. Anything walking the graph by EDGES rather
 /// than by variables wants this — the cycle detector above all, because an edge
 /// it cannot follow is a loop it cannot find.
-fn producer_of(var: &str) -> &str {
-    match var.split_once('.') {
-        Some((node, _)) => node,
-        None => var,
-    }
-}
+use crate::text::producer_of;

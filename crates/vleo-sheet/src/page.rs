@@ -14,12 +14,7 @@ use crate::model::*;
 use crate::short_hex;
 use vleo_units::Unit;
 
-fn h(s: &str) -> String {
-    s.replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-}
+use crate::text::html as h;
 
 fn unit_symbol(name: &str) -> String {
     Unit::from_name(name)
@@ -1150,12 +1145,7 @@ fn pseudocode(sh: &Sheet) -> String {
 /// The node that answers a variable. For a member of a published set the
 /// variable is `<node id>.<publish id>` and the node is the part before the
 /// dot; a node id never contains one.
-fn producer_of(var: &str) -> &str {
-    match var.split_once('.') {
-        Some((node, _)) => node,
-        None => var,
-    }
-}
+use crate::text::producer_of;
 
 /// The unit a variable is measured in, whether it is a node's primary answer
 /// or one member of a set that node publishes.

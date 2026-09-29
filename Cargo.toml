@@ -3,7 +3,6 @@
 # Ring discipline (enforced by the crate graph; a backwards call fails the build):
 #   RING 0  vleo-units    newtype units, frames, constants, portable maths
 #   RING 1  vleo-core     every formula, the resolver, the graph types   (no_std)
-#   RING 1b vleo-graph    the three graphs, generated from the sheets    (no_std)
 #   RING 2  vleo-bus      typed messages, ports, schedule, cache keys
 #   RING 3  vleo-mod-*    one crate per subsystem — a sibling it did not declare will not compile
 #           vleo-modules  facade + dispatch table; re-exports the twelve, holds no formula
@@ -60,13 +59,14 @@ repository = "https://github.com/AmanRai0603/VLEO_SIMULATOR"
 vleo-units   = { path = "crates/vleo-units" }
 vleo-sheet   = { path = "crates/vleo-sheet" }
 vleo-core    = { path = "crates/vleo-core" }
-vleo-graph   = { path = "crates/vleo-graph" }
 vleo-bus     = { path = "crates/vleo-bus" }
 vleo-data    = { path = "crates/vleo-data" }
 vleo-modules = { path = "crates/vleo-modules" }
 vleo-server = { path = "crates/vleo-server" }
-vleo-testkit = { path = "crates/vleo-testkit" }
 toml         = "0.8"
+# Edits a TOML file keeping its comments and layout — the tools' edits to
+# Cargo.toml and the sheets, instead of rewriting lines by hand.
+toml_edit    = "0.22"
 serde        = { version = "1", features = ["derive"] }
 serde_json   = "1"
 

@@ -80,3 +80,58 @@ fn the_same_tree_untouched_loads() {
     load_all(&root).expect("an unedited node did not load on its own");
     let _ = std::fs::remove_dir_all(&root);
 }
+
+#[test]
+fn a_misspelt_key_is_named_with_the_one_it_meant() {
+    let root = one_node_tree("spelling", |t| t.replacen("\nlower =", "\nlowr =", 1));
+    let Err(err) = load_all(&root) else {
+        panic!("a misspelt key was passed over");
+    };
+    assert!(
+        err.contains("output.lowr") && err.contains("did you mean `lower`"),
+        "{err}"
+    );
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+#[test]
+fn every_key_the_form_writes_is_one_the_loader_takes() {
+    use vleo_sheet::form::{ARRAYS, FIELDS};
+    use vleo_sheet::load::SCHEMA;
+    let allowed = |table: &str, key: &str| {
+        SCHEMA
+            .iter()
+            .any(|(t, keys)| *t == table && keys.contains(&key))
+    };
+    for f in FIELDS {
+        // A field of a table is also that table's key at the top level.
+        let (parent, own) = match f.table.rsplit_once('.') {
+            Some((p, o)) => (p, o),
+            None => ("", f.table),
+        };
+        if !f.table.is_empty() {
+            assert!(allowed(parent, own), "the form writes table `{}`", f.table);
+        }
+        assert!(
+            allowed(f.table, f.key),
+            "the form writes `{}.{}`",
+            f.table,
+            f.key
+        );
+    }
+    for a in ARRAYS {
+        assert!(
+            allowed("", a.path.split('.').next().unwrap()),
+            "the form writes [[{}]]",
+            a.path
+        );
+        for c in a.columns {
+            assert!(
+                allowed(a.path, c.key),
+                "the form writes `{}.{}`",
+                a.path,
+                c.key
+            );
+        }
+    }
+}

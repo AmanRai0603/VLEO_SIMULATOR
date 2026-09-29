@@ -106,6 +106,212 @@ fn u(v: Option<&toml::Value>) -> u32 {
     }
 }
 
+/// Every key a sheet may hold, by the table it sits in (`""` is the top
+/// level; an array of tables is named once, by its path).
+///
+/// THE SHEET'S SHAPE, WRITTEN DOWN ONCE. The loader used to read the keys it
+/// knew and pass over the rest, so `lowr = 5.0` was a sheet with no lower
+/// bound and nothing said so. A key not listed here is now named, with the
+/// nearest one that is. A test holds this list to the node form's own fields,
+/// so the form can never write a key the loader refuses.
+pub const SCHEMA: &[(&str, &[&str])] = &[
+    (
+        "",
+        &[
+            "algorithm",
+            "assumption",
+            "author",
+            "case",
+            "contributes",
+            "criticality",
+            "crosses_to",
+            "data",
+            "explain",
+            "flight",
+            "folder",
+            "id",
+            "input",
+            "kind",
+            "label",
+            "layer",
+            "maths",
+            "method",
+            "migrated_from",
+            "order",
+            "output",
+            "owner",
+            "parent",
+            "parity_tolerance",
+            "publishes",
+            "question",
+            "risk",
+            "sense",
+            "state",
+            "subsystem",
+            "theory",
+            "tier",
+            "value",
+            "version",
+            "view",
+        ],
+    ),
+    ("algorithm", &["step"]),
+    ("algorithm.step", &["binds", "number", "text", "type"]),
+    ("assumption", &["fails_when", "text"]),
+    (
+        "author",
+        &["code", "entry", "how_run", "language", "name", "test_code"],
+    ),
+    (
+        "case",
+        &["expect", "inputs", "label", "refuse", "tolerance"],
+    ),
+    ("contributes", &["kpis"]),
+    ("data", &["bundles"]),
+    ("explain", &["breaks", "by", "simply", "wrong"]),
+    (
+        "flight",
+        &[
+            "code",
+            "language",
+            "name",
+            "purpose",
+            "test_code",
+            "test_result",
+        ],
+    ),
+    ("input", &["binding", "type", "var"]),
+    ("maths", &["confirmed_by", "expression", "source"]),
+    ("method", &["by", "text"]),
+    (
+        "output",
+        &[
+            "lower",
+            "reason_lower",
+            "reason_upper",
+            "symbol",
+            "type",
+            "unit",
+            "upper",
+        ],
+    ),
+    (
+        "publishes",
+        &[
+            "id",
+            "label",
+            "lower",
+            "reason_lower",
+            "reason_upper",
+            "symbol",
+            "type",
+            "unit",
+            "upper",
+        ],
+    ),
+    ("question", &["note", "text"]),
+    ("risk", &["id", "level", "owner", "since", "title", "why"]),
+    ("theory", &["reading", "step", "why"]),
+    ("theory.step", &["math", "text"]),
+    ("value", &["confirmed_by", "number"]),
+    (
+        "version",
+        &[
+            "about",
+            "believed",
+            "breaks_if",
+            "by",
+            "changed",
+            "cost",
+            "date",
+            "learned",
+            "n",
+            "relation",
+            "release",
+            "rests_on",
+            "risks",
+            "source",
+            "tested",
+        ],
+    ),
+    ("view", &["kind", "over", "points", "y"]),
+];
+
+/// Tables whose keys are the author's own names, not the sheet's.
+const FREE: &[&str] = &["case.inputs"];
+
+/// Every key in a sheet that the schema does not list, as `path.key`, each
+/// with the nearest key that table does allow.
+pub fn unknown_keys(v: &toml::Value) -> Vec<String> {
+    fn allowed(path: &str) -> Option<&'static [&'static str]> {
+        SCHEMA.iter().find(|(p, _)| *p == path).map(|(_, k)| *k)
+    }
+    fn nearest(key: &str, among: &[&str]) -> Option<String> {
+        let d = |a: &str, b: &str| {
+            let (a, b): (Vec<char>, Vec<char>) = (a.chars().collect(), b.chars().collect());
+            let mut row: Vec<usize> = (0..=b.len()).collect();
+            for i in 1..=a.len() {
+                let mut prev = row[0];
+                row[0] = i;
+                for j in 1..=b.len() {
+                    let cur = row[j];
+                    row[j] = (row[j] + 1)
+                        .min(row[j - 1] + 1)
+                        .min(prev + usize::from(a[i - 1] != b[j - 1]));
+                    prev = cur;
+                }
+            }
+            row[b.len()]
+        };
+        among
+            .iter()
+            .map(|k| (d(key, k), *k))
+            .filter(|(n, _)| *n <= 2)
+            .min()
+            .map(|(_, k)| k.to_string())
+    }
+    fn walk(path: &str, t: &toml::value::Table, out: &mut Vec<String>) {
+        if FREE.contains(&path) {
+            return;
+        }
+        let Some(keys) = allowed(path) else {
+            return;
+        };
+        for (k, v) in t {
+            let here = if path.is_empty() {
+                k.clone()
+            } else {
+                format!("{path}.{k}")
+            };
+            if !keys.contains(&k.as_str()) {
+                out.push(match nearest(k, keys) {
+                    Some(n) => {
+                        format!("`{here}` is not a key a sheet can hold — did you mean `{n}`?")
+                    }
+                    None => format!("`{here}` is not a key a sheet can hold"),
+                });
+                continue;
+            }
+            match v {
+                toml::Value::Table(sub) => walk(&here, sub, out),
+                toml::Value::Array(items) => {
+                    for i in items {
+                        if let toml::Value::Table(sub) = i {
+                            walk(&here, sub, out);
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    let mut out = Vec::new();
+    if let Some(t) = v.as_table() {
+        walk("", t, &mut out);
+    }
+    out
+}
+
 pub fn load_all(root: &Path) -> Result<Tree, String> {
     WRONG.with(|w| w.borrow_mut().clear());
     let tree = load_everything(root)?;
@@ -179,6 +385,10 @@ fn load_sheet(dir: &Path, crate_name: &str) -> Result<Sheet, String> {
     let t = v
         .as_table()
         .ok_or_else(|| format!("{}: not a table", path.display()))?;
+    for k in unknown_keys(&v) {
+        let file = path.display();
+        WRONG.with(|w| w.borrow_mut().push(format!("{file}: {k}")));
+    }
 
     let mut sh = Sheet {
         id: s(t.get("id")),

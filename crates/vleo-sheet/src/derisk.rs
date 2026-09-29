@@ -661,25 +661,38 @@ pub fn version_toml(v: &Version) -> String {
 }
 
 /// A sheet's text with every unreleased version stamped as `release`. Only the
-/// `release` key inside a `[[version]]` block is touched; nothing else in the
+/// `release` value inside a `[[version]]` block is touched; nothing else in the
 /// file moves.
+///
+/// Edited as a TOML document, not line by line: a line that merely looked like
+/// `[[version]]` or `release = "next"` inside a multi-line string was once
+/// enough to move the wrong one. A file that does not parse is left alone and
+/// stamps nothing; the loader names it.
 pub fn stamp(text: &str, release: &str) -> (String, usize) {
-    let mut out = String::with_capacity(text.len());
-    let mut in_version = false;
+    let Ok(mut doc) = text.parse::<toml_edit::DocumentMut>() else {
+        return (text.to_string(), 0);
+    };
     let mut n = 0;
-    for line in text.split_inclusive('\n') {
-        let t = line.trim();
-        if t.starts_with('[') {
-            in_version = t == "[[version]]";
-        }
-        if in_version && t.replace(' ', "") == format!("release=\"{NEXT}\"") {
-            out.push_str(&format!("release = \"{release}\"\n"));
-            n += 1;
-        } else {
-            out.push_str(line);
+    if let Some(versions) = doc
+        .get_mut("version")
+        .and_then(|v| v.as_array_of_tables_mut())
+    {
+        for v in versions.iter_mut() {
+            let Some(value) = v.get_mut("release").and_then(|r| r.as_value_mut()) else {
+                continue;
+            };
+            if value.as_str() == Some(NEXT) {
+                let decor = value.decor().clone();
+                *value = release.into();
+                *value.decor_mut() = decor;
+                n += 1;
+            }
         }
     }
-    (out, n)
+    if n == 0 {
+        return (text.to_string(), 0);
+    }
+    (doc.to_string(), n)
 }
 
 #[cfg(test)]
@@ -729,6 +742,17 @@ mod tests {
         assert_eq!(
             out,
             "release = \"next\"\n[[version]]\nn = 1\nrelease = \"0.1.0\"\n[[version]]\nn = 2\nrelease = \"0.2.0\"\n[view]\nrelease = \"next\"\n"
+        );
+    }
+
+    #[test]
+    fn text_that_only_looks_like_a_version_is_left_alone() {
+        let text = "note = \"\"\"\n[[version]]\nrelease = \"next\"\n\"\"\"\n[[version]]\nn = 1\nrelease = \"next\"\n";
+        let (out, n) = stamp(text, "0.4.0");
+        assert_eq!(n, 1);
+        assert_eq!(
+            out,
+            "note = \"\"\"\n[[version]]\nrelease = \"next\"\n\"\"\"\n[[version]]\nn = 1\nrelease = \"0.4.0\"\n"
         );
     }
 

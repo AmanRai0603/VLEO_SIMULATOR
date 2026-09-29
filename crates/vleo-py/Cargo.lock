@@ -611,6 +611,7 @@ name = "vleo-sheet"
 version = "0.3.0"
 dependencies = [
  "toml 0.8.23",
+ "toml_edit",
  "vleo-units",
 ]
 
