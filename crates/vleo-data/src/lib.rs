@@ -44,6 +44,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use vleo_core::hash::Hasher;
 
+pub mod crash;
+mod whole;
+pub use whole::write_whole;
+
 /// What a bundle says about itself.
 #[derive(Clone, Debug, Default)]
 pub struct Manifest {
@@ -254,7 +258,7 @@ impl Store {
             ));
         }
         fs::create_dir_all(&self.root).map_err(|e| e.to_string())?;
-        fs::write(self.root.join("vleo.lock"), o).map_err(|e| e.to_string())
+        write_whole(&self.root.join("vleo.lock"), o).map_err(|e| e.to_string())
     }
 }
 
@@ -265,24 +269,59 @@ impl Store {
 /// points. One place, read by the daemon and the command line alike, so the
 /// browser and the terminal always run the same case.
 pub fn case_path() -> PathBuf {
-    if let Ok(p) = std::env::var("VLEO_CASE") {
-        return PathBuf::from(p);
-    }
-    home()
-        .map(|h| h.join(".vleo").join("case").join("inputs.csv"))
-        .unwrap_or_else(|| PathBuf::from(".vleo/case/inputs.csv"))
+    case_path_from(|k| std::env::var_os(k))
+}
+
+/// [`case_path`], reading the environment through `var`.
+pub fn case_path_from(var: impl Fn(&str) -> Option<std::ffi::OsString>) -> PathBuf {
+    set_to_something(&var, "VLEO_CASE")
+        .unwrap_or_else(|| in_vleo_home(&var, &["case", "inputs.csv"]))
 }
 
 /// Where the application keeps saved results: what runs returned, with the
 /// inputs they ran on. Outside the repository like the case —
-/// `~/.vleo/results/`, or wherever `VLEO_RESULTS` points.
+/// `~/.vleo/results/`, or wherever `VLEO_RESULTS` points. Point it at a shared
+/// or synced folder and the team keeps one archive (docs/ARCHITECTURE.html,
+/// "Who reaches what"): names are unique and every write is whole.
 pub fn results_path() -> PathBuf {
-    if let Ok(p) = std::env::var("VLEO_RESULTS") {
-        return PathBuf::from(p);
-    }
-    home()
-        .map(|h| h.join(".vleo").join("results"))
-        .unwrap_or_else(|| PathBuf::from(".vleo/results"))
+    results_path_from(|k| std::env::var_os(k))
+}
+
+/// [`results_path`], reading the environment through `var`.
+pub fn results_path_from(var: impl Fn(&str) -> Option<std::ffi::OsString>) -> PathBuf {
+    set_to_something(&var, "VLEO_RESULTS").unwrap_or_else(|| in_vleo_home(&var, &["results"]))
+}
+
+/// Where crash logs go: `~/.vleo/log/`, or wherever `VLEO_LOG` points.
+pub fn log_path() -> PathBuf {
+    log_path_from(|k| std::env::var_os(k))
+}
+
+/// [`log_path`], reading the environment through `var`.
+pub fn log_path_from(var: impl Fn(&str) -> Option<std::ffi::OsString>) -> PathBuf {
+    set_to_something(&var, "VLEO_LOG").unwrap_or_else(|| in_vleo_home(&var, &["log"]))
+}
+
+/// A variable's value as a path, when it is set to something.
+///
+/// SET BUT EMPTY COUNTS AS UNSET. `VLEO_RESULTS=` left in a shell profile read
+/// as the empty path, which is the folder the tool happened to start in — so
+/// results were saved there, and the next start from somewhere else could not
+/// find them. `VLEO_DATA` already worked this way; now every path does.
+fn set_to_something(
+    var: &impl Fn(&str) -> Option<std::ffi::OsString>,
+    name: &str,
+) -> Option<PathBuf> {
+    var(name).filter(|v| !v.is_empty()).map(PathBuf::from)
+}
+
+/// `~/.vleo/<parts…>`, or `.vleo/<parts…>` beside the program when there is no
+/// home folder at all.
+fn in_vleo_home(var: &impl Fn(&str) -> Option<std::ffi::OsString>, parts: &[&str]) -> PathBuf {
+    let base = home_from(var)
+        .map(|h| h.join(".vleo"))
+        .unwrap_or_else(|| PathBuf::from(".vleo"));
+    parts.iter().fold(base, |p, s| p.join(s))
 }
 
 /// The person's home folder: `HOME`, or `USERPROFILE` where there is no `HOME`.
@@ -309,10 +348,8 @@ pub fn home_from(var: impl Fn(&str) -> Option<std::ffi::OsString>) -> Option<Pat
 /// `VLEO_DATA` points. Outside the install directory, so it survives an
 /// upgrade rather than being deleted with the application.
 pub fn data_path() -> Option<PathBuf> {
-    std::env::var_os("VLEO_DATA")
-        .filter(|v| !v.is_empty())
-        .map(PathBuf::from)
-        .or_else(|| home().map(|h| h.join(".vleo").join("data")))
+    let var = |k: &str| std::env::var_os(k);
+    set_to_something(&var, "VLEO_DATA").or_else(|| home().map(|h| h.join(".vleo").join("data")))
 }
 
 /// `YYYY-MM-DD`, checked for shape rather than trusted.

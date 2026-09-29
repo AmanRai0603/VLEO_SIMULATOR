@@ -51,6 +51,32 @@ repository. → the manual, *Set the inputs — the case*
 
 ---
 
+## The three parts
+
+**Frontend** — what people see and touch: the pages, charts and forms in the
+browser, and as they arrive the animation player and the 3D viewer. HTML, CSS
+and JavaScript, in `web/`. It draws; it never computes a number.
+→ `docs/ARCHITECTURE.html`
+
+**Backend** — the engine: the Rust kernel that computes every number, the
+1,396 rows, and the local server that answers the browser. In `crates/`.
+→ `docs/ARCHITECTURE.html`
+
+**Data (the part)** — what is kept: the design in git, reference data in
+bundles, and each person's case, results and crash logs under `~/.vleo/`.
+Reached only through `vleo-data`. → `docs/ARCHITECTURE.html`
+
+**Contract** — what the frontend and backend both depend on and nothing else:
+the HTTP API under `/v1` and a few file formats. Changed only with both sides
+reviewing, so each side can otherwise change freely.
+→ `docs/ARCHITECTURE.html`, section 2
+
+**Crash log** — one small text file per bug the tool hits, in `~/.vleo/log/`,
+naming the line of code. The file to send to whoever maintains the tool.
+→ `docs/ARCHITECTURE.html`, section 9
+
+---
+
 ## The code
 
 **Ring** — one of the four dependency levels:

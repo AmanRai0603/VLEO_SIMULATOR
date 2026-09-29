@@ -2490,8 +2490,13 @@ what = "Set to `write` when running the translator's golden test, to write the g
 default = "unset — compare"
 
 [[env]]
+name = "VLEO_LOG"
+what = "Where a crash log is written when the tool hits a bug — one small text file per bug, naming the line of code; the newest 50 are kept. Send the file to whoever maintains the tool. Set but empty counts as unset."
+default = "$HOME/.vleo/log"
+
+[[env]]
 name = "VLEO_RESULTS"
-what = "Where saved results are kept — the Results page and `vleo run --save` without a path of its own. Outside the repository."
+what = "Where saved results are kept — the Results page and `vleo run --save` without a path of its own. Outside the repository. Point it at a shared or synced folder and the team keeps one archive: names are unique and every write is whole. Set but empty counts as unset."
 default = "$HOME/.vleo/results"
 
 [[env]]
@@ -2707,6 +2712,10 @@ what = "Every field of a sheet, and why it is there."
 [[doc]]
 path = "docs/ARCHITECTURE.md"
 what = "The rings, the layers and the reasoning behind them."
+
+[[doc]]
+path = "docs/ARCHITECTURE.html"
+what = "The whole tool end to end, with diagrams: frontend, backend and data and the contract between them, how pictures and pages are made, how data is kept without flooding, who reaches what, and the roadmap. Opens in any browser, offline."
 
 [[doc]]
 path = "docs/WORK_MODEL.md"

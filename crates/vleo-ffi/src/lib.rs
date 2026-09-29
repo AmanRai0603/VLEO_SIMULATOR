@@ -34,6 +34,9 @@ pub const VLEO_BLOCKED: c_int = 3;
 pub const VLEO_BAD_ARGUMENT: c_int = 4;
 /// A declared reference-data bundle is absent or does not verify.
 pub const VLEO_DATA: c_int = 5;
+/// The engine hit a bug. The calling program is unaffected; the message says
+/// what happened and where the crash log is, if the host installed one.
+pub const VLEO_INTERNAL: c_int = 6;
 
 thread_local! {
     /// The last message, per thread. No global state: a sweep is a parallel map
@@ -146,6 +149,34 @@ pub extern "C" fn vleo_graph_hash() -> u64 {
 /// `out` must point to a writable [`VleoResult`].
 #[no_mangle]
 pub unsafe extern "C" fn vleo_evaluate(case: *const VleoCase, out: *mut VleoResult) -> c_int {
+    guarded(|| evaluate(case, out))
+}
+
+/// Run `f`, turning a panic into [`VLEO_INTERNAL`] and a message.
+///
+/// A panic must never cross into C: unwinding through a caller that is MATLAB,
+/// Simulink or a C program ends that whole program. At the boundary it becomes
+/// what every other failure here is — a return code the caller inspects, and a
+/// sentence in `vleo_last_message`.
+fn guarded(f: impl FnOnce() -> c_int) -> c_int {
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)) {
+        Ok(code) => code,
+        Err(payload) => {
+            let what = payload
+                .downcast_ref::<String>()
+                .cloned()
+                .or_else(|| payload.downcast_ref::<&str>().map(|s| s.to_string()))
+                .unwrap_or_else(|| "no message".into());
+            set_message(format!(
+                "the engine hit a bug ({what}); this call failed and the calling program is \
+                 unaffected. Report it with the call's inputs to whoever maintains the tool."
+            ));
+            VLEO_INTERNAL
+        }
+    }
+}
+
+unsafe fn evaluate(case: *const VleoCase, out: *mut VleoResult) -> c_int {
     if case.is_null() || out.is_null() {
         set_message("a null pointer was passed where a case and a result were expected".into());
         return VLEO_BAD_ARGUMENT;
@@ -262,5 +293,22 @@ unsafe fn write_cstr(s: &str, buf: *mut c_char, len: c_int) -> c_int {
         VLEO_BAD_ARGUMENT
     } else {
         VLEO_OK
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_panic_becomes_a_code_and_a_message_not_a_crash_of_the_caller() {
+        let code = guarded(|| panic!("index out of bounds"));
+        assert_eq!(code, VLEO_INTERNAL);
+        let msg = LAST.with(|m| m.borrow().clone());
+        assert!(
+            msg.contains("index out of bounds") && msg.contains("unaffected"),
+            "{msg}"
+        );
+        assert_eq!(guarded(|| VLEO_OK), VLEO_OK);
     }
 }

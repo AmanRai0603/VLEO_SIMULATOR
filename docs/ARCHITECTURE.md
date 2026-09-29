@@ -4,6 +4,11 @@
 >
 > **Kind:** explanation · **For:** developers
 
+This page is the kernel's rings and why. The whole system around them — the
+frontend, the backend and the data, the contract between them, visualisation,
+pages, storage, access and the roadmap — is `docs/ARCHITECTURE.html`, with
+diagrams; open it in a browser.
+
 ## Four rings, one direction
 
     RING 0   vleo-units     units and frames as types, constants, portable maths

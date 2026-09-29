@@ -558,6 +558,7 @@ version = "0.3.0"
 dependencies = [
  "vleo-bus",
  "vleo-core",
+ "vleo-data",
  "vleo-mod-acs",
  "vleo-mod-atthw",
  "vleo-mod-closure",

@@ -803,7 +803,9 @@ pub mod store {
         if !is_plain(&name) {
             return Err(format!("'{name}' is not a result's file name"));
         }
-        std::fs::write(dir.join(&name), csv(s)).map_err(|e| format!("{name}: {e}"))?;
+        // Whole: a results folder may be shared or synced, and another laptop
+        // or a sync client must never read a result half written.
+        vleo_data::write_whole(&dir.join(&name), csv(s)).map_err(|e| format!("{name}: {e}"))?;
         Ok(name)
     }
 

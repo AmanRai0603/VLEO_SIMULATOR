@@ -31,12 +31,17 @@ pub(super) fn accept(listener: TcpListener, ctx: std::sync::Arc<Ctx>) {
                 }
                 let ctx = ctx.clone();
                 let gate = one_at_a_time.clone();
-                let open = open.clone();
+                // Released however the thread ends. It used to be a line after
+                // serve_one, which a panic skipped — so under `python -m vleo`,
+                // where a panic ends only this thread, every bug hit leaked one
+                // of the MAX_CONNECTIONS places, and after that many the tool
+                // closed every connection it was offered.
+                let place = OpenPlace(open.clone());
                 std::thread::spawn(move || {
+                    let _place = place;
                     if let Err(e) = serve_one(s, &ctx, &gate) {
                         eprintln!("vleo: {e}");
                     }
-                    open.fetch_sub(1, SeqCst);
                 });
             }
             Err(e) => eprintln!("vleo: accept: {e}"),
@@ -124,9 +129,72 @@ pub(super) fn serve_one(
         // request already failed, and refusing every later one would turn one
         // bad request into a dead tool.
         let _one = gate.lock().unwrap_or_else(|p| p.into_inner());
-        route(&method, &path, &params, ctx)
+        handled(&method, &path, || route(&method, &path, &params, ctx))
     };
     respond(&mut stream, status, ctype, &payload)
+}
+
+/// One slot of the MAX_CONNECTIONS, given back when the thread holding it ends
+/// — normally or by a panic.
+pub(super) struct OpenPlace(pub(super) std::sync::Arc<std::sync::atomic::AtomicUsize>);
+
+impl Drop for OpenPlace {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+    }
+}
+
+/// Handle one request so that a bug in it ends THAT request, not the tool.
+///
+/// A panic inside `handle` has already been written to the crash log by the
+/// hook (vleo_data::crash) by the time it arrives here. The request is answered
+/// with a 500 saying so and naming the file; the tool goes on serving.
+///
+/// What a caught panic can leave behind was checked rather than assumed:
+/// handling is one request at a time behind a lock that recovers from a
+/// poisoned state; the shared context is read-only; and every write of a
+/// person's data is whole (vleo_data::write_whole), so a panic between two
+/// writes leaves each file either as it was or as it should be — never half.
+pub(super) fn handled<F>(
+    method: &str,
+    path: &str,
+    handle: F,
+) -> (&'static str, &'static str, Vec<u8>)
+where
+    F: FnOnce() -> (&'static str, &'static str, Vec<u8>),
+{
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(handle)) {
+        Ok(answer) => answer,
+        Err(_) => {
+            let log = vleo_data::crash::last()
+                .map(|p| format!(" The details were written to {}.", p.display()))
+                .unwrap_or_default();
+            let message = format!(
+                "The tool hit a bug while handling {method} {path}. That one request \
+                 stopped and the tool is still running. Your case and saved results \
+                 are written whole, so none is left half written.{log} Send that file \
+                 to whoever maintains the tool."
+            );
+            if path.starts_with("/v1/") {
+                // The face reads every /v1 answer as JSON and shows `message`.
+                let body = format!(
+                    "{{\"ok\":false,\"fault\":\"internal\",\"message\":{}}}",
+                    json::string(&message)
+                );
+                (
+                    "500 Internal Server Error",
+                    "application/json; charset=utf-8",
+                    body.into_bytes(),
+                )
+            } else {
+                (
+                    "500 Internal Server Error",
+                    "text/plain; charset=utf-8",
+                    message.into_bytes(),
+                )
+            }
+        }
+    }
 }
 
 pub(super) fn respond(

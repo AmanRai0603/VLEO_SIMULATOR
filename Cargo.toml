@@ -75,7 +75,16 @@ serde_json   = "1"
 opt-level = 3
 lto = "fat"
 codegen-units = 1
-panic = "abort"
+# UNWIND, SO ONE BUG ENDS ONE REQUEST AND NOT THE TOOL. With "abort" a panic in
+# any request closed the whole daemon, leaving nothing written and a page that
+# simply stopped. (The Python package is built outside this workspace, where
+# unwinding was already the default: there a panic ended only that request's
+# thread — silently, with a dropped connection and one connection place never
+# given back.) The server now catches a panic per request, the C entry point
+# catches it at the boundary, and a crash log records it (vleo_data::crash).
+# None of that can work under "abort". A full run is 12 ms; the cost of
+# unwinding tables is not measurable against that.
+panic = "unwind"
 strip = "symbols"
 
 # Dependencies optimised once and cached; an unoptimised nalgebra-class dependency

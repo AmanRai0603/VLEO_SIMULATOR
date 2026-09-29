@@ -658,6 +658,7 @@ showing an optimum near 300 km — recorded 15 September 2026](docs/img/sweep.pn
 | **? Manual**, in the tool | the place to start. Every task in the browser and in the terminal, for a user and for a developer, what cannot be done by hand, and every command, route, setting and folder. Source: [`docs/manual.toml`](docs/manual.toml) |
 | [`docs/GLOSSARY.md`](docs/GLOSSARY.md) | the words this repository uses in a sense of its own — row, closure, sense, fixture, form, take — each in a sentence, with where it is defined |
 | [`docs/USING_IT.md`](docs/USING_IT.md) | the worked walkthrough, with real outputs — running it, changing an input, keeping a result, a form from filling to release |
+| [`docs/ARCHITECTURE.html`](docs/ARCHITECTURE.html) | the whole tool end to end, with diagrams — frontend, backend and data, how pictures, pages and results are made and shared, and the roadmap. Open it in a browser |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | why the rings are shaped the way they are |
 | [`docs/NODE_AUTHORING.md`](docs/NODE_AUTHORING.md) | the sheet, field by field |
 | [`docs/PSEUDOCODE.md`](docs/PSEUDOCODE.md) | the method language — every statement, function, constant and unit, and the worked example in full — generated from the checker |

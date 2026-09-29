@@ -73,6 +73,9 @@ fn quiet_when_the_reader_stops() {
 }
 
 fn main() -> ExitCode {
+    // The crash log first, so the quiet handling below wraps it: a reader
+    // closing the pipe is not a bug and writes no file; anything else does.
+    vleo_data::crash::install("vleo", env!("CARGO_PKG_VERSION"));
     quiet_when_the_reader_stops();
     let args: Vec<String> = std::env::args().skip(1).collect();
     let cmd = args.first().map(|s| s.as_str()).unwrap_or("help");
@@ -316,7 +319,8 @@ fn cmd_run(args: &[&str]) -> Result<(), String> {
     // file the browser's Results page and `vleo result` read back unchanged.
     if let Some(path) = opt(args, "--save") {
         let s = vleo_modules::results::from_run(&results, &case.supply, &now_utc(), "");
-        std::fs::write(path, vleo_modules::results::csv(&s)).map_err(|e| format!("{path}: {e}"))?;
+        vleo_data::write_whole(std::path::Path::new(path), vleo_modules::results::csv(&s))
+            .map_err(|e| format!("{path}: {e}"))?;
         eprintln!("saved the result to {path}");
     }
 
@@ -727,7 +731,8 @@ fn cmd_result(args: &[&str]) -> Result<(), String> {
     let text = std::fs::read_to_string(file).map_err(|e| format!("{file}: {e}"))?;
     let s = vleo_modules::results::read(&vleo_modules::results::unwrap_report(&text))?;
     if let Some(out) = opt(args, "--html") {
-        std::fs::write(out, vleo_modules::results::html(&s)).map_err(|e| format!("{out}: {e}"))?;
+        vleo_data::write_whole(std::path::Path::new(out), vleo_modules::results::html(&s))
+            .map_err(|e| format!("{out}: {e}"))?;
         eprintln!("wrote the report to {out}");
     }
     let unit = |u: &str| {
