@@ -69,7 +69,12 @@ Reached only through `vleo-data`. → `docs/ARCHITECTURE.html`
 **Contract** — what the frontend and backend both depend on and nothing else:
 the HTTP API under `/v1` and a few file formats. Changed only with both sides
 reviewing, so each side can otherwise change freely.
-→ `docs/ARCHITECTURE.html`, section 2
+→ `contract/README.md`; `docs/ARCHITECTURE.html`, section 2
+
+**Mock engine** — `tools/mock_engine.py`: the page served against the
+answers recorded in `contract/examples`, with no Rust built. For working on
+the page; every number on it is a recorded example, and the page says so.
+→ `contract/README.md`
 
 **Crash log** — one small text file per bug the tool hits, in `~/.vleo/log/`,
 naming the line of code. The file to send to whoever maintains the tool.

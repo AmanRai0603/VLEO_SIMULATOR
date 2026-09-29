@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "run",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "defaults": {
+          "type": "boolean"
+        },
+        "changed": {
+          "type": "number"
+        },
+        "upgraded": {
+          "type": "boolean"
+        },
+        "set_aside": {
+          "type": "number"
+        },
+        "new": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "defaults",
+        "changed",
+        "upgraded",
+        "set_aside",
+        "new"
+      ]
+    },
+    "values": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "si": {
+            "type": "number"
+          },
+          "shown": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "cred": {
+            "type": "number"
+          },
+          "governing": {
+            "type": "string"
+          },
+          "vec": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "symbol",
+          "label",
+          "si",
+          "shown",
+          "unit",
+          "cred",
+          "governing",
+          "vec"
+        ]
+      }
+    },
+    "blocked": {
+      "type": "array"
+    },
+    "verdicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "node": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "expected": {
+            "type": "number"
+          },
+          "got": {
+            "type": "number"
+          },
+          "error": {
+            "type": "number"
+          },
+          "tolerance": {
+            "type": "number"
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "provenance": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "node",
+          "label",
+          "expected",
+          "got",
+          "error",
+          "tolerance",
+          "passed",
+          "provenance",
+          "source"
+        ]
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "properties": {
+        "node": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string"
+        },
+        "kernel": {
+          "type": "string"
+        },
+        "graph": {
+          "type": "string"
+        },
+        "case": {
+          "type": "string"
+        },
+        "chain": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "ran": {
+          "type": "number"
+        },
+        "blocked": {
+          "type": "number"
+        },
+        "iterations": {
+          "type": "number"
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "node",
+        "mode",
+        "kernel",
+        "graph",
+        "case",
+        "chain",
+        "endpoint",
+        "ran",
+        "blocked",
+        "iterations",
+        "data"
+      ]
+    },
+    "fault": {
+      "type": "string"
+    },
+    "node": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ok"
+  ]
+}

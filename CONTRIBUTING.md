@@ -87,6 +87,7 @@ policies within a month, and they had already begun to differ.
 | **a tolerance** | two | the commonest way a gate stops meaning anything is somebody widening one to get green, so a tolerance change is a gate change |
 | publishing a licensed bundle | two | publication is irreversible by design |
 | moving a branch in `layers/` | two | the tree is the decomposition, and moving a branch moves everyone's work |
+| `contract/` — a route, a schema, a file format | two: one frontend, one backend (and the data team for `formats/`) | it is where the two sides meet; CODEOWNERS asks any one owner, so both is this rule (`contract/README.md`) |
 | a node sheet — a form applied, or a new node | H1a completeness, then H1b physics | above |
 | fixtures and filled holes | H2, after the machine stages pass | above |
 | anything else | one | ordinary blast radius |

@@ -3,7 +3,8 @@
 # sheet's owner, and regenerate.
 #
 # The maintainers own what is shared, because a defect there reaches every
-# node at once. Each subsystem's developers own its nodes.
+# node at once. The frontend, backend and data teams own their parts, and
+# contract/ is owned by both sides. Each subsystem's developers own its nodes.
 
 # team: maintainers
 /crates/                  @AmanRai0603
@@ -16,12 +17,43 @@
 /docs/                    @AmanRai0603
 /areas/                   @AmanRai0603
 /bundles/                 @AmanRai0603
+/contract/                @AmanRai0603
 /.github/                 @AmanRai0603
 /AGENTS.md                @AmanRai0603
 /CONTRIBUTING.md          @AmanRai0603
 /CODEOWNERS               @AmanRai0603
 /Cargo.toml               @AmanRai0603
 /Cargo.lock               @AmanRai0603
+
+# team: frontend
+/web/                     @AmanRai0603
+/panels/                  @AmanRai0603
+/tools/panel_check.py     @AmanRai0603
+/tools/panel_review.py    @AmanRai0603
+/tools/form_check.py      @AmanRai0603
+/tools/mock_engine.py     @AmanRai0603
+/tools/mock_check.py      @AmanRai0603
+
+# team: backend
+/crates/vleo-units/       @AmanRai0603
+/crates/vleo-core/        @AmanRai0603
+/crates/vleo-bus/         @AmanRai0603
+/crates/vleo-modules/     @AmanRai0603
+/crates/vleo-sheet/       @AmanRai0603
+/crates/vleo-server/      @AmanRai0603
+/crates/vleo-daemon/      @AmanRai0603
+/crates/vleo-cli/         @AmanRai0603
+/xtask/                   @AmanRai0603
+
+# team: data
+/crates/vleo-data/        @AmanRai0603
+/bundles/                 @AmanRai0603
+
+# team: the contract: frontend and backend
+/contract/                @AmanRai0603
+
+# team: the file formats: frontend, backend and data
+/contract/formats/        @AmanRai0603
 
 # team: aero developers
 /crates/vleo-mod-massaero/nodes/aero_accommodation/ @AmanRai0603

@@ -1075,6 +1075,12 @@ table.risks td { vertical-align: top; }
 /* A PREVIEW build: one author's change, before it is approved. The banner is on
    every view and never scrolls away, so a preview is never mistaken for a
    release; amber, the colour this face already uses for "not settled". */
+#contract-bar { padding: .45rem .8rem; font-size: 12px; background: var(--out-pale); color: var(--ink);
+  border-bottom: 2px solid var(--out); }
+#mock-bar { padding: .45rem .8rem; font-size: 12px; background: var(--in-pale); color: var(--ink);
+  border-bottom: 2px solid var(--in); }
+#mock-bar b { color: var(--in); letter-spacing: .04em; }
+#contract-bar b { color: var(--out); letter-spacing: .04em; }
 #preview-bar {
   position: sticky; top: 0; z-index: 50;
   background: var(--out-pale); color: var(--ink); border-bottom: 2px solid var(--out);

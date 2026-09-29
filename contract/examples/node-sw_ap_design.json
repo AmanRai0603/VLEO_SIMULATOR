@@ -1,0 +1,71 @@
+{
+  "ok": true,
+  "id": "sw_ap_design",
+  "folder": "crates/vleo-mod-solar/nodes/sw_ap_design",
+  "subsystem": "solar",
+  "state": "published",
+  "sheet_hash": "5bb31a",
+  "impl_hash": "e5fc60",
+  "steps": 1,
+  "inputs": 1,
+  "outputs": 1,
+  "fixtures": 3,
+  "artefacts": [
+    {
+      "name": "node.toml",
+      "written": "by hand",
+      "what": "the sheet — the only file here written by hand",
+      "present": true,
+      "bytes": 11584
+    },
+    {
+      "name": "fixtures.toml",
+      "written": "by hand",
+      "what": "known-good values, and where each came from",
+      "present": true,
+      "bytes": 1412
+    },
+    {
+      "name": "model.rs",
+      "written": "generated",
+      "what": "the whole file, with one numbered HOLE per algorithm step",
+      "present": true,
+      "bytes": 6118
+    },
+    {
+      "name": "contract.rs",
+      "written": "generated",
+      "what": "the untyped adapter the bus calls",
+      "present": true,
+      "bytes": 1443
+    },
+    {
+      "name": "mod.rs",
+      "written": "generated",
+      "what": "the module wiring",
+      "present": true,
+      "bytes": 519
+    },
+    {
+      "name": "evidence.rs",
+      "written": "generated",
+      "what": "the fixtures, as tests",
+      "present": true,
+      "bytes": 5646
+    },
+    {
+      "name": "page.html",
+      "written": "generated",
+      "what": "the tabs a reader opens",
+      "present": true,
+      "bytes": 28696
+    },
+    {
+      "name": "meta.json",
+      "written": "generated",
+      "what": "state and hashes, written by the gate",
+      "present": true,
+      "bytes": 658
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+# A saved result's values: result.csv in a result's folder, the CSV
+# `vleo run --save` writes, and what a report page carries inside it.
+# Written by vleo_modules::results::csv, read back by results::read.
+#
+# `meta` are the `#! <key> <value>` lines every file carries; `columns` the
+# header every file has, in any order. A new meta line or column may be added
+# (readers go by name); removing or re-meaning one is a new `format`.
+format = "vleo-result/1"
+marker = "result"
+meta = ["result", "target", "mode", "saved", "name", "chain", "kernel", "graph", "case", "template", "data", "ran", "blocked"]
+columns = ["section", "id", "name", "value", "unit", "si", "credibility", "governing", "note"]

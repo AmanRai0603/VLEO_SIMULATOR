@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "path": "/tmp/vleo-contract-3092/case.csv",
+  "changed": 1,
+  "defaulted": 127,
+  "set": [
+    {
+      "id": "sw_storm_design_level",
+      "value": 2
+    }
+  ],
+  "refused": [],
+  "template": null,
+  "outdated": false,
+  "upgrade": null
+}

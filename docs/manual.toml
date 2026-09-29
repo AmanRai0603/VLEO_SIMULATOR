@@ -1472,6 +1472,54 @@ check = "exits"
 expect = "its gate, run now"
 
 [[layer.section]]
+id = "term-contract"
+title = "Work on the page without the engine, and change what they share"
+who = "developer"
+kind = "how-to"
+answer = "The page and the engine meet at one contract in contract/: every route, a schema for every answer, the file formats, and answers recorded from the real engine. A frontend developer runs the page on the mock engine with no Rust; a backend developer proves the engine keeps the contract with cargo test. Inside /v1 a change may only add."
+body = """
+**The contract is `contract/`** — `routes.toml` lists every route and the \
+requests the tests make; `schemas/` has one schema per kind of answer; \
+`formats/` the CSV files people keep and send; `examples/` answers recorded \
+from the real engine. `contract/README.md` is the whole of it.
+
+**The backend keeps it.** The contract tests start the real server and make \
+every request: every answer must validate against its schema, and a field \
+the schema does not declare is a failure — so the page may read only what \
+the contract lists. They run in `cargo test`.
+
+**The frontend builds against it.** `tools/mock_engine.py` serves the page \
+from `web/` and every answer from the recorded examples, with no Rust built; \
+the page says **MOCK ENGINE** at the top, because every number on it is an \
+example. `tools/mock_check.py` walks the page on it in a browser, and the \
+pipeline runs that with no Rust toolchain at all.
+
+**Changing it.** Within `/v1`, add only: a new route or field breaks nobody. \
+A field goes into the schema first, in a pull request both sides review; \
+then either side can use it. Removing or re-meaning one is `/v2`, beside \
+`/v1` for a release. When an answer's shape changes, re-record the examples. \
+The page carries the contract version it was built for and names an engine \
+that speaks another."""
+
+[[layer.section.step]]
+say = "The mock engine checks itself: every recorded example reads, and each request finds the answer it should."
+run = "python3 tools/mock_engine.py --selftest"
+check = "exits"
+expect = "selftest: ok"
+
+[[layer.section.step]]
+say = "The page on recorded answers, with no Rust — then open the address it prints."
+run = "python3 tools/mock_engine.py"
+check = "serves"
+expect = "http://127.0.0.1:"
+
+[[layer.section.step]]
+say = "Re-record the examples from the real engine after an answer's shape changes. A schema is never rewritten: that is the contract, changed by hand."
+run = "VLEO_CONTRACT_RECORD=1 cargo test -p vleo-server --test the_contract_holds"
+check = "writes"
+why = "rewrites contract/examples/ from the real engine, and drafts a schema for a route that has none"
+
+[[layer.section]]
 id = "term-kit"
 title = "Share the tool with the team"
 who = "developer"
@@ -2450,7 +2498,7 @@ what = "The page's modules, one per concern, served as they are written — no b
 [[route]]
 method = "GET"
 path = "/v1/version"
-what = "The engine's identity: kernel, graph, row count and data versions."
+what = "The engine's identity: the contract version it speaks, kernel, graph, row count and data versions."
 
 [[route]]
 method = "GET"
@@ -2605,6 +2653,11 @@ what = "The published output of the tool this was ported from, for comparison."
 name = "VLEO_CASE"
 what = "Where the saved case is kept — the CSV the Inputs page and `vleo run` read. Outside the repository, so git never sees it. A copy made before a carry-over sits beside it."
 default = "$HOME/.vleo/case/inputs.csv"
+
+[[env]]
+name = "VLEO_CONTRACT_RECORD"
+what = "Set to `1` when running the contract tests, to record contract/examples/ again from the real engine after an answer's shape changes, and draft a schema for a route that has none. It never rewrites a schema. Unset, the tests only check."
+default = "unset — check"
 
 [[env]]
 name = "VLEO_GOLDEN"

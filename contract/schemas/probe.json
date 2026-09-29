@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "probe",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "node": {
+      "type": "string"
+    },
+    "si": {
+      "type": "number"
+    },
+    "unit": {
+      "type": "string"
+    },
+    "factor": {
+      "type": "number"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "factor": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "unit",
+          "factor"
+        ]
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "si": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "si"
+        ]
+      }
+    }
+  },
+  "required": [
+    "ok",
+    "node",
+    "si",
+    "unit",
+    "factor",
+    "inputs",
+    "outputs"
+  ]
+}

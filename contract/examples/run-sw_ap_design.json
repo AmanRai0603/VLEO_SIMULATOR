@@ -1,0 +1,104 @@
+{
+  "ok": true,
+  "inputs": {
+    "defaults": false,
+    "changed": 0,
+    "upgraded": false,
+    "set_aside": 0,
+    "new": 0
+  },
+  "values": [
+    {
+      "id": "sw_storm_design_level",
+      "symbol": "G_design",
+      "label": "Storm level designed for",
+      "si": 3,
+      "shown": "3.00000",
+      "unit": "-",
+      "cred": 1,
+      "governing": "uncertainty",
+      "vec": [
+        4,
+        4,
+        4,
+        3,
+        4,
+        1,
+        3,
+        4
+      ]
+    },
+    {
+      "id": "sw_ap_design",
+      "symbol": "Ap_design",
+      "label": "Ap design value",
+      "si": 132,
+      "shown": "132.000",
+      "unit": "-",
+      "cred": 1,
+      "governing": "mathematics",
+      "vec": [
+        1,
+        4,
+        4,
+        3,
+        4,
+        1,
+        3,
+        4
+      ]
+    }
+  ],
+  "blocked": [],
+  "verdicts": [
+    {
+      "node": "sw_ap_design",
+      "label": "G2 moderate — Kp 6 — daily Ap bounded at 80",
+      "expected": 80,
+      "got": 80,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "published-source",
+      "source": "iaga_kp_ap"
+    },
+    {
+      "node": "sw_ap_design",
+      "label": "G1 minor — Kp 5 — daily Ap bounded at 48",
+      "expected": 48,
+      "got": 48,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "published-source",
+      "source": "iaga_kp_ap"
+    },
+    {
+      "node": "sw_ap_design",
+      "label": "G3 strong — Kp 7 — daily Ap bounded at 132, the declared default",
+      "expected": 132,
+      "got": 132,
+      "error": 0,
+      "tolerance": 0.000000000001,
+      "passed": true,
+      "provenance": "published-source",
+      "source": "iaga_kp_ap"
+    }
+  ],
+  "manifest": {
+    "node": "sw_ap_design",
+    "mode": "branch",
+    "kernel": "d0a5e2",
+    "graph": "adb684",
+    "case": "1f25f9",
+    "chain": "075c5d",
+    "endpoint": "local-daemon",
+    "ran": 2,
+    "blocked": 0,
+    "iterations": 0,
+    "data": [
+      "solar-drivers@2026.09.04#54784567db11b868",
+      "solar-weather@2026.09.14#f3557eb8443bfdaa"
+    ]
+  }
+}

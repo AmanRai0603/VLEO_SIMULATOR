@@ -13,7 +13,8 @@ pub(super) fn cmd_codeowners(root: &Path) -> Result<(), String> {
          # sheet's owner, and regenerate.\n\
          #\n\
          # The maintainers own what is shared, because a defect there reaches every\n\
-         # node at once. Each subsystem's developers own its nodes.\n\n\
+         # node at once. The frontend, backend and data teams own their parts, and\n\
+         # contract/ is owned by both sides. Each subsystem's developers own its nodes.\n\n\
          # team: maintainers\n",
     );
     let m = handles(&teams.maintainers);
@@ -28,6 +29,7 @@ pub(super) fn cmd_codeowners(root: &Path) -> Result<(), String> {
         "/docs/",
         "/areas/",
         "/bundles/",
+        "/contract/",
         "/.github/",
         "/AGENTS.md",
         "/CONTRIBUTING.md",
@@ -36,6 +38,74 @@ pub(super) fn cmd_codeowners(root: &Path) -> Result<(), String> {
         "/Cargo.lock",
     ] {
         o.push_str(&format!("{path:<26}{m}\n"));
+    }
+    // The three parts, over the maintainers on their own paths. contract/ is
+    // where the frontend and the backend meet, so both own it; its file
+    // formats are the data team's as well. GitHub asks ANY owner listed on a
+    // path, not one of each — so "both sides review the contract" is a review
+    // rule in CONTRIBUTING.md, which this makes sure reaches both.
+    let part = |name: &str| {
+        teams
+            .parts
+            .get(name)
+            .cloned()
+            .unwrap_or_else(|| teams.maintainers.clone())
+    };
+    let both = |names: &[&str]| {
+        let mut who: Vec<String> = names.iter().flat_map(|n| part(n)).collect();
+        who.sort();
+        who.dedup();
+        who
+    };
+    for (label, owners, paths) in [
+        (
+            "frontend",
+            both(&["frontend"]),
+            &[
+                "/web/",
+                "/panels/",
+                "/tools/panel_check.py",
+                "/tools/panel_review.py",
+                "/tools/form_check.py",
+                "/tools/mock_engine.py",
+                "/tools/mock_check.py",
+            ][..],
+        ),
+        (
+            "backend",
+            both(&["backend"]),
+            &[
+                "/crates/vleo-units/",
+                "/crates/vleo-core/",
+                "/crates/vleo-bus/",
+                "/crates/vleo-modules/",
+                "/crates/vleo-sheet/",
+                "/crates/vleo-server/",
+                "/crates/vleo-daemon/",
+                "/crates/vleo-cli/",
+                "/xtask/",
+            ][..],
+        ),
+        (
+            "data",
+            both(&["data"]),
+            &["/crates/vleo-data/", "/bundles/"][..],
+        ),
+        (
+            "the contract: frontend and backend",
+            both(&["frontend", "backend"]),
+            &["/contract/"][..],
+        ),
+        (
+            "the file formats: frontend, backend and data",
+            both(&["frontend", "backend", "data"]),
+            &["/contract/formats/"][..],
+        ),
+    ] {
+        o.push_str(&format!("\n# team: {label}\n"));
+        for path in paths {
+            o.push_str(&format!("{path:<26}{}\n", handles(&owners)));
+        }
     }
     // Node folders by the team that answers for them. They come after the
     // shared paths: in CODEOWNERS the last matching rule wins.
@@ -104,6 +174,8 @@ pub(super) fn cmd_codeowners(root: &Path) -> Result<(), String> {
 /// The teams areas/teams.toml declares.
 struct Teams {
     maintainers: Vec<String>,
+    /// frontend, backend and data — see areas/teams.toml.
+    parts: BTreeMap<String, Vec<String>>,
     developers: BTreeMap<String, Vec<String>>,
 }
 
@@ -141,8 +213,23 @@ fn read_teams(root: &Path) -> Result<Teams, String> {
             list(Some(who), &format!("[developers] {team}"))?,
         );
     }
+    let mut parts = BTreeMap::new();
+    for (name, who) in v
+        .get("parts")
+        .and_then(|d| d.as_table())
+        .into_iter()
+        .flatten()
+    {
+        if !matches!(name.as_str(), "frontend" | "backend" | "data") {
+            return Err(format!(
+                "areas/teams.toml: [parts] {name} is not one of the three parts — frontend, backend, data"
+            ));
+        }
+        parts.insert(name.clone(), list(Some(who), &format!("[parts] {name}"))?);
+    }
     Ok(Teams {
         maintainers,
+        parts,
         developers,
     })
 }

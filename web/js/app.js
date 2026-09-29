@@ -21,7 +21,7 @@ import { renderManual } from './manual.js';
 import { renderCase, preview, saveOverridesToCase, savableOverrides } from './case.js';
 import { renderResults, openResult } from './results.js';
 import { renderForms } from './forms.js';
-import { showPreview } from './preview.js';
+import { showPreview, showContract, showMock } from './preview.js';
 import { initDepth } from './depth.js';
 import { loadOverrides, overrideCount, clearAllOverrides, clearOverride,
          fromSI, onOverrideChange } from './inputs.js';
@@ -39,6 +39,8 @@ async function boot() {
   }
   fillSubsys();
   // A preview build says so on every view, before anything else is drawn.
+  showContract();
+  showMock();
   showPreview();
   // The saved case, so every status line and run panel can say which inputs
   // the numbers are for before the first run is asked for.

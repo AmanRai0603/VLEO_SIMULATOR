@@ -1,0 +1,31 @@
+{
+  "ok": true,
+  "node": "sw_ap_design",
+  "read_by": 4,
+  "branches": [
+    {
+      "id": "sw_design_safe_duration",
+      "label": "How long the design Ap lasts",
+      "sub": "solar",
+      "rows": 3
+    },
+    {
+      "id": "sw_exceedance_duration",
+      "label": "How long one exceedance lasts",
+      "sub": "solar",
+      "rows": 3
+    },
+    {
+      "id": "sw_exceedance_phase",
+      "label": "When in the cycle exceedances fall",
+      "sub": "solar",
+      "rows": 3
+    },
+    {
+      "id": "sw_exceedance_rate",
+      "label": "Days a year above the design level",
+      "sub": "solar",
+      "rows": 3
+    }
+  ]
+}

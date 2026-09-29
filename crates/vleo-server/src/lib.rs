@@ -357,9 +357,16 @@ fn ok_json(s: String) -> (&'static str, &'static str, Vec<u8>) {
     ("200 OK", "application/json; charset=utf-8", s.into_bytes())
 }
 
+/// The version of the contract between the page and the engine
+/// (contract/README.md). The page carries the one it was built for and says
+/// so when the engine speaks another; `contract/VERSION` and the page are
+/// held to this by the contract tests.
+pub const CONTRACT: &str = "1";
+
 fn version_json(ctx: &Ctx) -> String {
     let mut j = Json::new();
     j.raw("{");
+    j.str_field("contract", CONTRACT);
     j.str_field("kernel", &short(Vleo::kernel_hash()));
     j.str_field("graph", &short(Vleo::graph_hash()));
     j.str_field("version", env!("CARGO_PKG_VERSION"));

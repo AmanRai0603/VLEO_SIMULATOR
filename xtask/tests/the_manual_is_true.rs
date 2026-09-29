@@ -275,6 +275,21 @@ fn command_ok(line: &str, k: &Known) -> Result<(), String> {
                     return Err(format!("`{line}`: there is no crate '{krate}'"));
                 }
             }
+            // One integration test of one crate: the crate, and the test file.
+            ["cargo", "test", "-p", krate, "--test", test] => {
+                if !k.crates.contains(*krate) {
+                    return Err(format!("`{line}`: there is no crate '{krate}'"));
+                }
+                if !root()
+                    .join("crates")
+                    .join(krate)
+                    .join("tests")
+                    .join(format!("{test}.rs"))
+                    .is_file()
+                {
+                    return Err(format!("`{line}`: {krate} has no test called '{test}'"));
+                }
+            }
             // The Python package: installing a file of it, and the module it
             // starts. Only the module this repository ships may be named.
             ["python", "-m", "pip", "install", file]
