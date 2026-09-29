@@ -449,6 +449,7 @@ pub(super) fn cmd_guides(root: &Path) -> Result<(), String> {
 }
 
 pub(super) fn cmd_release(root: &Path, args: &[&str]) -> Result<(), String> {
+    use crate::pipeline::{OnStop, Run};
     use vleo_sheet::derisk::{release_key, stamp, NEXT};
     let v = args
         .iter()
@@ -466,25 +467,30 @@ pub(super) fn cmd_release(root: &Path, args: &[&str]) -> Result<(), String> {
             "{v} is older than the workspace's {now}; a release only moves forward"
         ));
     }
-    let tree = load(root)?;
-    let mut newer = Vec::new();
-    let mut pending = Vec::new();
-    for sh in tree.ordered() {
-        for ver in &sh.versions {
-            if ver.release == NEXT {
-                pending.push(format!("{} v{}", sh.id, ver.n));
-            } else if release_key(&ver.release) > Some(key) {
-                newer.push(format!("{} v{} says {}", sh.id, ver.n, ver.release));
+    // What is stamped, and what already names a later release.
+    let versions = |tree: &Tree| {
+        let mut newer = Vec::new();
+        let mut pending = Vec::new();
+        for sh in tree.ordered() {
+            for ver in &sh.versions {
+                if ver.release == NEXT {
+                    pending.push(format!("{} v{}", sh.id, ver.n));
+                } else if release_key(&ver.release) > Some(key) {
+                    newer.push(format!("{} v{} says {}", sh.id, ver.n, ver.release));
+                }
             }
         }
-    }
-    if !newer.is_empty() {
-        return Err(format!(
-            "these versions already name a later release than {v}: {}",
-            newer.join(", ")
-        ));
-    }
+        (newer, pending)
+    };
     if args.contains(&"--check") {
+        // Only reads: the check the release pipeline runs, and --dry-run.
+        let (newer, pending) = versions(&load(root)?);
+        if !newer.is_empty() {
+            return Err(format!(
+                "these versions already name a later release than {v}: {}",
+                newer.join(", ")
+            ));
+        }
         if v != now {
             return Err(format!("the workspace says {now}, and the release is {v}. Run `cargo xtask release {v}` and commit"));
         }
@@ -499,67 +505,128 @@ pub(super) fn cmd_release(root: &Path, args: &[&str]) -> Result<(), String> {
         println!("release {v}: every node version is stamped, and the workspace says {v}");
         return Ok(());
     }
-    let mut stamped = 0;
-    let mut nodes = 0;
-    for sh in tree.ordered() {
-        if !sh.versions.iter().any(|x| x.release == NEXT) {
-            continue;
-        }
-        let path = sh.dir.join("node.toml");
-        let text = fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
-        let (out, n) = stamp(&text, v);
-        if n > 0 {
-            fs::write(&path, out).map_err(|e| format!("{}: {e}", path.display()))?;
-            stamped += n;
-            nodes += 1;
-        }
-    }
-    if v != now {
-        let path = root.join("Cargo.toml");
-        let text = fs::read_to_string(&path).map_err(|e| format!("Cargo.toml: {e}"))?;
-        let out = with_workspace_version(&text, v)?;
-        fs::write(&path, out).map_err(|e| format!("Cargo.toml: {e}"))?;
-        // The lock file names the workspace's own version; cargo rewrites it,
-        // offline, the moment anything asks it about the workspace.
-        let st = std::process::Command::new("cargo")
-            .args(["metadata", "--offline", "--format-version", "1"])
-            .current_dir(root)
-            .stdout(std::process::Stdio::null())
-            .status()
-            .map_err(|e| format!("cargo metadata: {e}"))?;
-        if !st.success() {
-            return Err("cargo could not update Cargo.lock for the new version".into());
-        }
-        // THE CRATES OUTSIDE THE WORKSPACE KEEP LOCK FILES OF THEIR OWN, and
-        // each names the workspace crates it depends on at their version. Left
-        // alone they still said 0.1.0 after release 0.1.1, and the pipeline's
-        // `--locked` build of the wasm face refused. Every one is refreshed the
-        // same way, offline.
-        let crates = fs::read_dir(root.join("crates")).map_err(|e| format!("crates/: {e}"))?;
-        for dir in crates.filter_map(|e| e.ok()).map(|e| e.path()) {
-            if !dir.join("Cargo.lock").is_file() {
-                continue;
-            }
-            let st = std::process::Command::new("cargo")
-                .args(["metadata", "--offline", "--format-version", "1"])
-                .current_dir(&dir)
-                .stdout(std::process::Stdio::null())
-                .status()
-                .map_err(|e| format!("cargo metadata: {e}"))?;
-            if !st.success() {
+    let mut run = Run::start(root, "release", args, 4);
+    let again = format!("cargo run -p xtask -- release {v}");
+    let tree = run.step(
+        "check the versions",
+        OnStop::new("unchanged — nothing was written", &again),
+        || {
+            let tree = load(root)?;
+            let (newer, pending) = versions(&tree);
+            if !newer.is_empty() {
                 return Err(format!(
-                    "cargo could not update {}/Cargo.lock for the new version",
-                    dir.display()
+                    "these versions already name a later release than {v}: {}",
+                    newer.join(", ")
                 ));
             }
-        }
+            let said = format!(
+                "{} version(s) to stamp; the workspace says {now}",
+                pending.len()
+            );
+            Ok((tree, said))
+        },
+    )?;
+    run.step(
+        "stamp the versions",
+        OnStop::new(
+            "the sheets stamped before the one that failed are stamped; `git diff` shows which",
+            format!("`git restore` the sheets, then {again}"),
+        ),
+        || {
+            let mut stamped = 0;
+            let mut nodes = 0;
+            for sh in tree.ordered() {
+                if !sh.versions.iter().any(|x| x.release == NEXT) {
+                    continue;
+                }
+                let path = sh.dir.join("node.toml");
+                let text =
+                    fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+                let (out, n) = stamp(&text, v);
+                if n > 0 {
+                    fs::write(&path, out).map_err(|e| format!("{}: {e}", path.display()))?;
+                    stamped += n;
+                    nodes += 1;
+                }
+            }
+            Ok((
+                (),
+                format!("{stamped} version(s) stamped on {nodes} node(s)"),
+            ))
+        },
+    )?;
+    if v == now {
+        run.skip(
+            "set the workspace version",
+            &format!("the workspace already says {v}"),
+        );
+    } else {
+        run.step(
+            "set the workspace version",
+            OnStop::new(
+                "the sheets are stamped; Cargo.toml or a lock file may be changed — `git diff` shows which",
+                format!("`git restore Cargo.toml Cargo.lock crates/*/Cargo.lock`, then {again}"),
+            ),
+            || {
+                let path = root.join("Cargo.toml");
+                let text = fs::read_to_string(&path).map_err(|e| format!("Cargo.toml: {e}"))?;
+                let out = with_workspace_version(&text, v)?;
+                fs::write(&path, out).map_err(|e| format!("Cargo.toml: {e}"))?;
+                // The lock file names the workspace's own version; cargo rewrites
+                // it, offline, the moment anything asks it about the workspace.
+                let st = std::process::Command::new("cargo")
+                    .args(["metadata", "--offline", "--format-version", "1"])
+                    .current_dir(root)
+                    .stdout(std::process::Stdio::null())
+                    .status()
+                    .map_err(|e| format!("cargo metadata: {e}"))?;
+                if !st.success() {
+                    return Err("cargo could not update Cargo.lock for the new version".into());
+                }
+                // THE CRATES OUTSIDE THE WORKSPACE KEEP LOCK FILES OF THEIR OWN,
+                // and each names the workspace crates it depends on at their
+                // version. Left alone they still said 0.1.0 after release 0.1.1,
+                // and the pipeline's `--locked` build of the wasm face refused.
+                // Every one is refreshed the same way, offline.
+                let crates =
+                    fs::read_dir(root.join("crates")).map_err(|e| format!("crates/: {e}"))?;
+                for dir in crates.filter_map(|e| e.ok()).map(|e| e.path()) {
+                    if !dir.join("Cargo.lock").is_file() {
+                        continue;
+                    }
+                    let st = std::process::Command::new("cargo")
+                        .args(["metadata", "--offline", "--format-version", "1"])
+                        .current_dir(&dir)
+                        .stdout(std::process::Stdio::null())
+                        .status()
+                        .map_err(|e| format!("cargo metadata: {e}"))?;
+                    if !st.success() {
+                        return Err(format!(
+                            "cargo could not update {}/Cargo.lock for the new version",
+                            dir.display()
+                        ));
+                    }
+                }
+                Ok(((), format!("{now} -> {v}, and every lock file")))
+            },
+        )?;
     }
-    cmd_docs(root, &[])?;
-    cmd_derisk(root, &[])?;
-    println!(
-        "release {v}: {stamped} version(s) stamped on {nodes} node(s); workspace {now} -> {v}.\n\
+    run.step(
+        "regenerate",
+        OnStop::new(
+            "stamped and versioned; the generated files are part written",
+            "cargo run -p xtask -- docs && cargo run -p xtask -- derisk",
+        ),
+        || {
+            cmd_docs(root, &[])?;
+            cmd_derisk(root, &[])?;
+            Ok(((), "node files and the de-risking narrative".to_string()))
+        },
+    )?;
+    run.done(&format!(
+        "release {v}: stamped, workspace {now} -> {v}.\n\
          Next: `cargo run -p xtask -- gate && cargo test`, commit, then tag v{v}."
-    );
+    ));
     Ok(())
 }
 

@@ -40,13 +40,48 @@ pub(super) fn cmd_form(root: &Path, args: &[&str]) -> Result<(), String> {
 
 /// What a filled form would do to its node, and with `--apply`, do it.
 pub(super) fn cmd_intake(root: &Path, args: &[&str]) -> Result<(), String> {
+    use crate::pipeline::{OnStop, Run};
     use vleo_sheet::template;
-    let file = args
+    let file = *args
         .first()
         .filter(|a| !a.starts_with("--"))
         .ok_or("usage: cargo xtask intake <file.html> [--apply [--partial]]")?;
-    let html = fs::read_to_string(file).map_err(|e| format!("{file}: {e}"))?;
-    let p = template::plan(root, &html)?;
+    let apply = args.contains(&"--apply");
+    // Only an apply writes, so only an apply runs as numbered steps and
+    // leaves a trace. The check alone is a report.
+    let mut run = apply.then(|| Run::start(root, "intake", args, 3));
+    let untouched = || {
+        OnStop::new(
+            "unchanged — nothing was written",
+            format!("cargo run -p xtask -- intake {file}"),
+        )
+    };
+    let read = || -> Result<(template::Plan, String), String> {
+        let html = fs::read_to_string(file).map_err(|e| format!("{file}: {e}"))?;
+        Ok((template::plan(root, &html)?, file.to_string()))
+    };
+    let (p, _) = match run.as_mut() {
+        Some(r) => r.step("read the form", untouched(), || {
+            let (p, f) = read()?;
+            let said = format!(
+                "{} — filled by {}",
+                p.new
+                    .as_ref()
+                    .map(|n| n.id.clone())
+                    .unwrap_or_else(|| p.form.node.clone()),
+                if p.form.name.is_empty() {
+                    "(nobody named)"
+                } else {
+                    &p.form.name
+                }
+            );
+            Ok(((p, f), said))
+        })?,
+        None => read()?,
+    };
+    if let (Some(r), Some(_)) = (run.as_mut(), p.new.as_ref()) {
+        r.set_total(4);
+    }
     let f = &p.form;
     let who = format!(
         "{}{}{}; assistant: {}",
@@ -67,142 +102,158 @@ pub(super) fn cmd_intake(root: &Path, args: &[&str]) -> Result<(), String> {
         },
         f.ai
     );
-    match &p.new {
-        Some(n) => println!(
-            "\x1b[1ma new node\x1b[0m — {} under {}, a {} row — a node form filled by {who}",
-            if n.id.is_empty() { "(no id)" } else { &n.id },
-            if n.parent.is_empty() {
-                "(no group)"
-            } else {
-                &n.parent
-            },
-            n.kind
-        ),
-        None => {
-            println!("\x1b[1m{}\x1b[0m — a node form filled by {who}", f.node);
-            println!(
-                "  {}",
-                if p.base_current {
-                    "node.toml is still the version the form was made from"
+    let report = || {
+        match &p.new {
+            Some(n) => println!(
+                "\x1b[1ma new node\x1b[0m — {} under {}, a {} row — a node form filled by {who}",
+                if n.id.is_empty() { "(no id)" } else { &n.id },
+                if n.parent.is_empty() {
+                    "(no group)"
                 } else {
-                    "node.toml has changed since the form was made — a change to the same thing \
-                     is a conflict, named below"
-                }
-            );
+                    &n.parent
+                },
+                n.kind
+            ),
+            None => {
+                println!("\x1b[1m{}\x1b[0m — a node form filled by {who}", f.node);
+                println!(
+                    "  {}",
+                    if p.base_current {
+                        "node.toml is still the version the form was made from"
+                    } else {
+                        "node.toml has changed since the form was made — a change to the same thing \
+                         is a conflict, named below"
+                    }
+                );
+            }
         }
-    }
-    print_plan(&p);
-    if !args.contains(&"--apply") {
+        print_plan(&p);
+    };
+    let Some(mut run) = run else {
+        report();
         if p.applicable() > 0 {
             println!("\napply with: cargo run -p xtask -- intake {file} --apply");
         }
         return Ok(());
-    }
-    if p.blocked() > 0 && !args.contains(&"--partial") {
-        return Err(format!(
-            "{} change(s) cannot be applied (listed above). Resolve them, or apply the rest \
-             with --apply --partial — nothing was written",
-            p.blocked()
-        ));
-    }
+    };
+    run.step("check every change", untouched(), || {
+        report();
+        if p.blocked() > 0 && !args.contains(&"--partial") {
+            return Err(format!(
+                "{} change(s) cannot be applied (listed above). Resolve them, or apply the rest \
+                 with --apply --partial",
+                p.blocked()
+            ));
+        }
+        Ok((
+            (),
+            format!("{} to apply, {} blocked", p.applicable(), p.blocked()),
+        ))
+    })?;
     let named = if f.name.is_empty() {
         "the filler".to_string()
     } else {
         f.name.clone()
     };
+    let put_back = || {
+        OnStop::new(
+            "as they were — a refused apply is put back whole",
+            format!("send the lines above back to {named}; or fix and `cargo run -p xtask -- intake {file} --apply`"),
+        )
+    };
     match &p.new {
         Some(n) => {
-            if p.items
-                .iter()
-                .any(|i| i.what.starts_with("new ·") && i.verdict != template::Verdict::Apply)
-            {
-                return Err(
-                    "a new node needs a free id, a group that exists and a kind \
-                            the tree holds before it can be built — nothing was written"
-                        .into(),
-                );
-            }
-            let (dir, like) = build_new_node(root, n)?;
-            let p2 = match template::plan_onto(root, f, &n.id, &like) {
-                Ok(p2) => p2,
-                Err(e) => {
-                    unbuild_new_node(root, &dir)?;
-                    return Err(e);
+            let (dir, p2) = run.step("build the new node", put_back(), || {
+                if p.items
+                    .iter()
+                    .any(|i| i.what.starts_with("new ·") && i.verdict != template::Verdict::Apply)
+                {
+                    return Err(
+                        "a new node needs a free id, a group that exists and a kind the tree \
+                         holds before it can be built"
+                            .into(),
+                    );
                 }
-            };
-            println!(
-                "\nbuilt {} on the shape of {like}; applying the form to it:",
-                n.id
-            );
-            // WHAT THE FORM DOES NOT ASK, the model row decides — and says so.
-            // These are the developer's: how many reviewers the node needs,
-            // its tier, what reference data it reads.
-            let made = fs::read_to_string(dir.join("node.toml")).unwrap_or_default();
-            let mut p2 = p2;
-            for key in ["subsystem", "owner", "criticality", "tier", "bundles"] {
-                if let Some(l) = made
-                    .lines()
-                    .find(|l| l.trim_start().starts_with(&format!("{key} = ")))
+                let (dir, like) = build_new_node(root, n)?;
+                let mut p2 = match template::plan_onto(root, f, &n.id, &like) {
+                    Ok(p2) => p2,
+                    Err(e) => {
+                        unbuild_new_node(root, &dir)?;
+                        return Err(e);
+                    }
+                };
+                // WHAT THE FORM DOES NOT ASK, the model row decides — and says
+                // so. These are the developer's: how many reviewers the node
+                // needs, its tier, what reference data it reads.
+                let made = fs::read_to_string(dir.join("node.toml")).unwrap_or_default();
+                for key in ["subsystem", "owner", "criticality", "tier", "bundles"] {
+                    if let Some(l) = made
+                        .lines()
+                        .find(|l| l.trim_start().starts_with(&format!("{key} = ")))
+                    {
+                        p2.open.push(format!(
+                            "`{}` is taken from {like} — the form does not ask it; confirm it",
+                            l.split('#').next().unwrap_or(l).trim()
+                        ));
+                    }
+                }
+                if load(root)?
+                    .sheets
+                    .get(&like)
+                    .is_some_and(|l| !l.kpis.is_empty())
                 {
                     p2.open.push(format!(
-                        "`{}` is taken from {like} — the form does not ask it; confirm it",
-                        l.split('#').next().unwrap_or(l).trim()
+                        "it contributes to no KPI: {like}'s [contributes] is {like}'s own contract \
+                         edge and is not inherited — add one if this row should move a KPI"
                     ));
                 }
-            }
-            if load(root)?
-                .sheets
-                .get(&like)
-                .is_some_and(|l| !l.kpis.is_empty())
-            {
-                p2.open.push(format!(
-                    "it contributes to no KPI: {like}'s [contributes] is {like}'s own contract \
-                     edge and is not inherited — add one if this row should move a KPI"
-                ));
-            }
-            print_plan(&p2);
-            match template::apply(root, &p2) {
+                print_plan(&p2);
+                Ok(((dir, p2), format!("{} built on the shape of {like}", n.id)))
+            })?;
+            run.step("apply to the sheet", put_back(), || match template::apply(root, &p2) {
                 vleo_sheet::form::Saved::Ok { regenerated, .. } => {
                     cmd_codeowners(root)?;
-                    println!(
-                        "\nadded: {} under {} — node.toml written, {regenerated} artefact(s) \
-                         generated, the whole tree gated, CODEOWNERS regenerated. It is seeded: \
-                         `cargo run -p xtask -- declare {}` says what is still open, and \
-                         `cargo run -p xtask -- publish {}` generates its code once it is \
-                         complete. Review with `git status` and `git diff`, and name {named} \
-                         in the commit.",
-                        n.id, n.parent, n.id, n.id
-                    );
-                    Ok(())
+                    Ok((
+                        (),
+                        format!(
+                            "node.toml written, {regenerated} artefact(s) generated, the whole tree \
+                             gated, CODEOWNERS regenerated"
+                        ),
+                    ))
                 }
                 vleo_sheet::form::Saved::Stale { .. } => {
                     unbuild_new_node(root, &dir)?;
-                    Err("the new node changed while it was being built — nothing was kept".into())
+                    Err("the new node changed while it was being built".into())
                 }
                 vleo_sheet::form::Saved::Refused(e) => {
                     unbuild_new_node(root, &dir)?;
-                    Err(format!(
-                        "{e} — the new node was removed again; nothing was kept"
-                    ))
+                    Err(format!("{e} — the new node was removed again"))
                 }
-            }
+            })?;
+            run.done(&format!(
+                "added: {} under {}. It is seeded: `cargo run -p xtask -- declare {}` says what is \
+                 still open, and `cargo run -p xtask -- publish {}` generates its code once it is \
+                 complete. Review with `git status` and `git diff`, and name {named} in the commit.",
+                n.id, n.parent, n.id, n.id
+            ));
+            Ok(())
         }
-        None => match template::apply(root, &p) {
-            vleo_sheet::form::Saved::Ok { regenerated, .. } => {
-                println!(
-                    "\napplied: node.toml written, {regenerated} artefact(s) regenerated, the gate \
-                     passed. Review with `git diff`, and name {named} in the commit — the form is \
-                     theirs."
-                );
-                Ok(())
-            }
-            vleo_sheet::form::Saved::Stale { .. } => Err(
-                "node.toml changed while the form was being checked. Run intake again — nothing \
-                 was written"
-                    .into(),
-            ),
-            vleo_sheet::form::Saved::Refused(e) => Err(e),
-        },
+        None => {
+            run.step("apply to the sheet", put_back(), || match template::apply(root, &p) {
+                vleo_sheet::form::Saved::Ok { regenerated, .. } => Ok((
+                    (),
+                    format!("node.toml written, {regenerated} artefact(s) regenerated, the gate passed"),
+                )),
+                vleo_sheet::form::Saved::Stale { .. } => Err(
+                    "node.toml changed while the form was being checked. Run intake again".into(),
+                ),
+                vleo_sheet::form::Saved::Refused(e) => Err(e),
+            })?;
+            run.done(&format!(
+                "applied. Review with `git diff`, and name {named} in the commit — the form is theirs."
+            ));
+            Ok(())
+        }
     }
 }
 

@@ -217,8 +217,20 @@ results, the manual, figures and these documents are all held to it by check.
                                             connected
     cargo run -p xtask -- migration         which rows still need a method, by
                                             owner, and their forms to send
-    cargo run -p vleo-cli --bin vleo -- run <node> [--save <file.csv>]
-    cargo run -p vleo-cli --bin vleo -- result <file>
+    cargo run -p xtask -- explain [<command>]
+                                            what a command reads, writes and
+                                            checks, how to undo it, where its
+                                            code is (docs/PIPELINE.md)
+    cargo run -p xtask -- why <node>        a node's history, and its gate now
+    cargo run -p xtask -- trace             the last writing run, step by step
+    cargo run -p xtask -- pipeline [--check]
+                                            docs/PIPELINE.md, from the table
+    cargo run -p vleo-cli --bin vleo -- run <node> [--save <file.csv>] [--keep]
+    cargo run -p vleo-cli --bin vleo -- result <file|folder>
+
+Every command that writes prints numbered steps, says on a stop why, what state
+the files are in and how to retry, leaves a trace in `target/xtask-trace/`, and
+takes `--dry-run`.
 
 One command must be green before anything is pushed:
 

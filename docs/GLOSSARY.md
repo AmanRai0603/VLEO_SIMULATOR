@@ -75,6 +75,17 @@ reviewing, so each side can otherwise change freely.
 naming the line of code. The file to send to whoever maintains the tool.
 → `docs/ARCHITECTURE.html`, section 9
 
+**Saved result / kept once** — a run or a sweep kept as a folder: its values,
+its sweep's points, and a report page to send. The row, its inputs, the
+engine, the tree and the data are one key, so a question already kept is
+shown from its result — named on screen — rather than run again, and saved
+only once. → `docs/ARCHITECTURE.html`, section 6
+
+**Trace** — the record a writing `xtask` command leaves in
+`target/xtask-trace/`: its command line, the commit, and each step with its
+time and what it found or why it stopped. `xtask trace` shows the last.
+→ `docs/PIPELINE.md`
+
 ---
 
 ## The code

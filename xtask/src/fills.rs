@@ -405,7 +405,8 @@ pub(super) fn cmd_differential(root: &Path, args: &[&str]) -> Result<(), String>
 ///     after it is committed, and the message is more useful at the moment
 ///     somebody is holding the two lines in their head
 pub(super) fn cmd_fill(root: &Path, args: &[&str]) -> Result<(), String> {
-    let id = args
+    use crate::pipeline::{OnStop, Run};
+    let id = *args
         .first()
         .ok_or("usage: cargo xtask fill <node> --hole <n> --body <file|->")?;
     let n: u32 = args
@@ -415,137 +416,169 @@ pub(super) fn cmd_fill(root: &Path, args: &[&str]) -> Result<(), String> {
         .ok_or("which hole: --hole <n>")?
         .parse()
         .map_err(|_| "--hole takes a number".to_string())?;
-    let src = args
+    let src = *args
         .iter()
         .position(|a| *a == "--body")
         .and_then(|i| args.get(i + 1))
         .ok_or("the body, as a file or - for standard input: --body <file|->")?;
-
-    let body = if *src == "-" {
-        let mut buf = String::new();
-        std::io::Read::read_to_string(&mut std::io::stdin(), &mut buf)
-            .map_err(|e| e.to_string())?;
-        buf
-    } else {
-        fs::read_to_string(src).map_err(|e| format!("{src}: {e}"))?
-    };
-    if body.trim().is_empty() {
-        return Err(
-            "the body is empty. An empty hole is a gap, and the gap pass already says so".into(),
-        );
-    }
-
-    let tree = load(root)?;
-    let sh = tree
-        .sheets
-        .get(*id)
-        .ok_or_else(|| format!("no node '{id}'"))?;
-    if sh.is_declared() {
-        return Err(format!(
-            "'{id}' is a declared value — a person picked its number, so it has no holes"
-        ));
-    }
-    if vleo_sheet::method::node_program(sh).is_some() {
-        return Err(format!(
-            "'{id}' is built from its method: its code is the method translated by rule, and \
-             it has no holes. Change the method, on the node's form"
-        ));
-    }
-    let step = sh
-        .steps
-        .iter()
-        .find(|st| st.number == n)
-        .ok_or_else(|| {
-            format!(
-                "'{id}' declares {} step(s); there is no hole {n}. The algorithm in the sheet decides how many there are",
-                sh.steps.len()
-            )
-        })?;
-
-    for (needle, why) in [
-        ("---- HOLE", "a body may not carry a HOLE marker — one body would claim the next block as well"),
-        ("---- end HOLE", "a body may not carry a HOLE marker — one body would claim the next block as well"),
-        ("Fault::", "a body may not construct a fault. The guards are generated from the declared domain, with the reason attached"),
-        ("return Err(", "a body may not return early. The generated tail maps the answer and its faults"),
-    ] {
-        if body.contains(needle) {
-            return Err(format!("refused: {why} (found {needle:?})"));
-        }
-    }
-    if let Some(bad) = vleo_sheet::gate::platform_maths(&body).first() {
-        return Err(format!(
-            "refused: the body calls {bad} — route it through pmath, or cross-face agreement \
-             fails on the first night for a reason that is not a defect"
-        ));
-    }
-
-    // Everything that can refuse, refuses before the file is touched. A splice
-    // that lands and then reports "nothing was written" is worse than either
-    // outcome on its own.
-    let attribution = args
-        .iter()
-        .position(|a| *a == "--by")
-        .and_then(|i| args.get(i + 1))
-        .copied();
-    let model = args
-        .iter()
-        .position(|a| *a == "--model")
-        .and_then(|i| args.get(i + 1))
-        .copied();
-    let attribution = match (attribution, model) {
-        (Some(who), Some(model)) => {
-            check_fill_attribution(sh, n, model, &body)?;
-            Some((who, model))
-        }
-        (Some(who), None) => {
-            return Err(format!(
-                "a body by {who} needs the model that wrote it: --model <name>. Two bodies from \
-                 one model are one body written twice, so the model is what the comparison \
-                 turns on. Nothing was written."
-            ))
-        }
-        (None, _) if sh.criticality == "significant" => {
-            return Err(format!(
-                "'{id}' is significant, so its holes are filled twice by different models and \
-                 the two compared. An unattributed body cannot be compared to anything: pass \
-                 --by <who> --model <model>. Nothing was written."
-            ))
-        }
-        (None, _) => None,
+    let mut run = Run::start(root, "fill", args, 3);
+    let untouched = || {
+        OnStop::new(
+            "unchanged — nothing was written",
+            "fix the body, then run fill again",
+        )
     };
 
-    let mut holes = vleo_sheet::load::read_holes(&sh.dir);
-    let before = holes.get(&n).cloned().unwrap_or_default();
-    holes.insert(n, body.clone());
-    let text = gate::formatted(&emit::model_rs(sh, &holes));
-    write_if_changed(&sh.dir.join("model.rs"), &text)?;
-
-    // Read it back and prove the body landed where it was meant to. Writing a
-    // file and announcing success is how a splice that silently dropped the
-    // last line gets discovered three nodes later.
-    let after = vleo_sheet::load::read_holes(&sh.dir);
-    let landed = after
-        .get(&n)
-        .map(|s| s.trim().to_string())
-        .unwrap_or_default();
-    if landed.is_empty() {
-        return Err(format!(
-            "hole {n} is still empty after the splice — nothing was written"
-        ));
-    }
-    if let Some((who, model)) = attribution {
-        record_fill(sh, n, who, model, &body)?;
-    }
-    println!(
-        "{id} hole {n} ({}) — {} line(s) spliced{}",
-        step.text,
-        landed.lines().count(),
-        if before.trim().is_empty() {
-            ""
+    let (tree, body) = run.step("read the body", untouched(), || {
+        let body = if src == "-" {
+            let mut buf = String::new();
+            std::io::Read::read_to_string(&mut std::io::stdin(), &mut buf)
+                .map_err(|e| e.to_string())?;
+            buf
         } else {
-            ", replacing what was there"
+            fs::read_to_string(src).map_err(|e| format!("{src}: {e}"))?
+        };
+        if body.trim().is_empty() {
+            return Err(
+                "the body is empty. An empty hole is a gap, and the gap pass already says so"
+                    .into(),
+            );
         }
-    );
+        let said = format!("{} line(s) from {src}", body.lines().count());
+        Ok(((load(root)?, body), said))
+    })?;
+
+    let (sh, step, attribution) = run.step("check the body", untouched(), || {
+        let sh = tree
+            .sheets
+            .get(id)
+            .ok_or_else(|| format!("no node '{id}'"))?;
+        if sh.is_declared() {
+            return Err(format!(
+                "'{id}' is a declared value — a person picked its number, so it has no holes"
+            ));
+        }
+        if vleo_sheet::method::node_program(sh).is_some() {
+            return Err(format!(
+                "'{id}' is built from its method: its code is the method translated by rule, and \
+                 it has no holes. Change the method, on the node's form"
+            ));
+        }
+        let step = sh
+            .steps
+            .iter()
+            .find(|st| st.number == n)
+            .ok_or_else(|| {
+                format!(
+                    "'{id}' declares {} step(s); there is no hole {n}. The algorithm in the sheet decides how many there are",
+                    sh.steps.len()
+                )
+            })?;
+        for (needle, why) in [
+            ("---- HOLE", "a body may not carry a HOLE marker — one body would claim the next block as well"),
+            ("---- end HOLE", "a body may not carry a HOLE marker — one body would claim the next block as well"),
+            ("Fault::", "a body may not construct a fault. The guards are generated from the declared domain, with the reason attached"),
+            ("return Err(", "a body may not return early. The generated tail maps the answer and its faults"),
+        ] {
+            if body.contains(needle) {
+                return Err(format!("refused: {why} (found {needle:?})"));
+            }
+        }
+        if let Some(bad) = vleo_sheet::gate::platform_maths(&body).first() {
+            return Err(format!(
+                "refused: the body calls {bad} — route it through pmath, or cross-face agreement \
+                 fails on the first night for a reason that is not a defect"
+            ));
+        }
+        // Everything that can refuse, refuses before the file is touched. A
+        // splice that lands and then reports "nothing was written" is worse
+        // than either outcome on its own.
+        let attribution = args
+            .iter()
+            .position(|a| *a == "--by")
+            .and_then(|i| args.get(i + 1))
+            .copied();
+        let model = args
+            .iter()
+            .position(|a| *a == "--model")
+            .and_then(|i| args.get(i + 1))
+            .copied();
+        let attribution = match (attribution, model) {
+            (Some(who), Some(model)) => {
+                check_fill_attribution(sh, n, model, &body)?;
+                Some((who, model))
+            }
+            (Some(who), None) => {
+                return Err(format!(
+                    "a body by {who} needs the model that wrote it: --model <name>. Two bodies from \
+                     one model are one body written twice, so the model is what the comparison \
+                     turns on"
+                ))
+            }
+            (None, _) if sh.criticality == "significant" => {
+                return Err(format!(
+                    "'{id}' is significant, so its holes are filled twice by different models and \
+                     the two compared. An unattributed body cannot be compared to anything: pass \
+                     --by <who> --model <model>"
+                ))
+            }
+            (None, _) => None,
+        };
+        let said = format!(
+            "hole {n} ({}): no marker, fault or early return; portable maths{}",
+            step.text,
+            match attribution {
+                Some((who, model)) => format!("; by {who} with {model}"),
+                None => String::new(),
+            }
+        );
+        Ok(((sh, step, attribution), said))
+    })?;
+
+    run.step(
+        "splice into the hole",
+        OnStop::new(
+            "model.rs may hold the new body, or not — `git diff` on the node's folder shows which",
+            format!(
+                "`git restore {}/model.rs`, then run fill again",
+                sh.dir.strip_prefix(root).unwrap_or(&sh.dir).display()
+            ),
+        ),
+        || {
+            let mut holes = vleo_sheet::load::read_holes(&sh.dir);
+            let before = holes.get(&n).cloned().unwrap_or_default();
+            holes.insert(n, body.clone());
+            let text = gate::formatted(&emit::model_rs(sh, &holes));
+            write_if_changed(&sh.dir.join("model.rs"), &text)?;
+            // Read it back and prove the body landed where it was meant to.
+            // Writing a file and announcing success is how a splice that
+            // silently dropped the last line gets discovered three nodes later.
+            let after = vleo_sheet::load::read_holes(&sh.dir);
+            let landed = after
+                .get(&n)
+                .map(|s| s.trim().to_string())
+                .unwrap_or_default();
+            if landed.is_empty() {
+                return Err(format!("hole {n} is still empty after the splice"));
+            }
+            if let Some((who, model)) = attribution {
+                record_fill(sh, n, who, model, &body)?;
+            }
+            Ok((
+                (),
+                format!(
+                    "{id} hole {n} ({}) — {} line(s) spliced{}",
+                    step.text,
+                    landed.lines().count(),
+                    if before.trim().is_empty() {
+                        ""
+                    } else {
+                        ", replacing what was there"
+                    }
+                ),
+            ))
+        },
+    )?;
     // The crate is the folder the node lives in, not its subsystem tag: gnc
     // rows live in vleo-mod-acs, and a command line that names a crate nobody
     // has is worse than no command line.
@@ -556,6 +589,8 @@ pub(super) fn cmd_fill(root: &Path, args: &[&str]) -> Result<(), String> {
         .and_then(|p| p.file_name())
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_default();
-    println!("Now: cargo xtask gate {id} && cargo test -p {krate}");
+    run.done(&format!(
+        "Now: cargo xtask gate {id} && cargo test -p {krate}"
+    ));
     Ok(())
 }

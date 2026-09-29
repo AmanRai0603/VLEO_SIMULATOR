@@ -17,6 +17,7 @@ mod graph;
 mod hooks;
 mod method;
 mod mutate;
+mod pipeline;
 mod release;
 mod report;
 use fills::*;
@@ -62,12 +63,35 @@ fn main() -> ExitCode {
         warn_if_hooks_are_not_wired(&root);
     }
 
-    if let Err(e) = known_flags(cmd, &rest) {
+    let checked: Vec<&str> = rest.iter().copied().filter(|a| *a != "--dry-run").collect();
+    if let Err(e) = known_flags(cmd, &checked) {
         eprintln!("xtask {cmd}: {e}");
         return ExitCode::FAILURE;
     }
 
-    let r = match cmd {
+    // --dry-run, on any command: what it would do, doing nothing — its check
+    // mode when it has one, the plan from the pipeline table when it does not.
+    let r = if rest.contains(&"--dry-run") {
+        pipeline::dry_run(&root, cmd, &rest)
+    } else {
+        dispatch(&root, cmd, &rest)
+    };
+
+    match r {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("\x1b[31mxtask: {e}\x1b[0m");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+/// Run one command. Every command the program has is here, and in `help`, and
+/// in the pipeline table — a test holds the three to each other.
+pub(crate) fn dispatch(root: &Path, cmd: &str, rest: &[&str]) -> Result<(), String> {
+    let root = root.to_path_buf();
+    let rest = rest.to_vec();
+    match cmd {
         "docs" => cmd_docs(&root, &rest),
         "assemble" => cmd_assemble(&root, &rest),
         "gate" => cmd_gate(&root, &rest),
@@ -104,6 +128,10 @@ fn main() -> ExitCode {
         "rerun" => method::cmd_rerun(&root, &rest),
         "build-node" => method::cmd_build_node(&root, &rest),
         "migration" => method::cmd_migration(&root, &rest),
+        "explain" => pipeline::cmd_explain(&root, &rest),
+        "why" => pipeline::cmd_why(&root, &rest),
+        "trace" => pipeline::cmd_trace(&root, &rest),
+        "pipeline" => pipeline::cmd_pipeline(&root, &rest),
         "help" | "--help" | "-h" => {
             help();
             Ok(())
@@ -111,14 +139,6 @@ fn main() -> ExitCode {
         other => Err(format!(
             "unknown command '{other}'. Try `cargo xtask help`."
         )),
-    };
-
-    match r {
-        Ok(()) => ExitCode::SUCCESS,
-        Err(e) => {
-            eprintln!("\x1b[31mxtask: {e}\x1b[0m");
-            ExitCode::FAILURE
-        }
     }
 }
 
@@ -288,8 +308,24 @@ cargo xtask <command>
                      unit, its range, the reason for each bound, and what reads
                      it. Generated, because a register maintained by hand is a
                      register that is wrong.
+  explain [<command>]
+                     where a command sits in a node's journey, what it reads,
+                     writes and checks, how to undo it, its steps and where its
+                     code is — from the one table docs/PIPELINE.md is written
+                     from. With no command, the whole journey.
+  why <node>         a node's history in one place: every recorded version and
+                     who made it, the commits that changed it, its approvals,
+                     how its code came to be, and its gate, run now.
+  trace [<command>] [--list]
+                     the last run's trace — every command that writes leaves
+                     one in target/xtask-trace/, the newest 50 kept — or the
+                     last of one command, or --list every one kept.
+  pipeline [--check] write docs/PIPELINE.md from the pipeline table; --check
+                     only says whether it is current.
 
-The tree is seeded once, ever, by tools/seed_tree.py.";
+Every command that writes also takes --dry-run: its check mode where it has
+one, otherwise the plan — its steps, what it would write, how to undo it —
+with nothing touched. The tree is seeded once, ever, by tools/seed_tree.py.";
 
 fn help() {
     println!("{HELP}");
@@ -389,28 +425,46 @@ fn write_if_changed(path: &Path, text: &str) -> Result<bool, String> {
 
 /// Move a seeded row to published, from a terminal.
 fn cmd_publish(root: &Path, args: &[&str]) -> Result<(), String> {
-    let id = args.first().ok_or("usage: cargo xtask publish <node>")?;
-    let tree = load(root)?;
-    let sh = tree
-        .sheets
-        .get(*id)
-        .ok_or_else(|| format!("no node '{id}'"))?;
-    let base = fs::read_to_string(sh.dir.join("node.toml"))
-        .map(|t| vleo_sheet::form::file_hash(&t))
-        .map_err(|e| e.to_string())?;
-    match vleo_sheet::form::publish(root, id, &base) {
-        vleo_sheet::form::Saved::Ok { regenerated, .. } => {
-            println!(
-                "published {id}: {regenerated} artefact(s) generated, the whole tree gated. Its \
-                 holes are next — `cargo run -p xtask -- fill {id} --hole <n> --body <file>`."
-            );
-            Ok(())
-        }
-        vleo_sheet::form::Saved::Stale { .. } => {
-            Err("the sheet changed while publishing — run it again".into())
-        }
-        vleo_sheet::form::Saved::Refused(e) => Err(e),
-    }
+    use pipeline::{OnStop, Run};
+    let id = *args.first().ok_or("usage: cargo xtask publish <node>")?;
+    let mut run = Run::start(root, "publish", args, 2);
+    let again = format!("cargo run -p xtask -- publish {id}");
+    let base = run.step(
+        "read the sheet",
+        OnStop::new("unchanged — nothing was written", &again),
+        || {
+            let tree = load(root)?;
+            let sh = tree
+                .sheets
+                .get(id)
+                .ok_or_else(|| format!("no node '{id}'"))?;
+            let base = fs::read_to_string(sh.dir.join("node.toml"))
+                .map(|t| vleo_sheet::form::file_hash(&t))
+                .map_err(|e| e.to_string())?;
+            Ok((base, format!("{id} — {}", sh.label)))
+        },
+    )?;
+    run.step(
+        "publish, generate and gate",
+        OnStop::new(
+            "as they were — a publish that does not gate is put back whole",
+            format!("`cargo run -p xtask -- declare {id}` says what is still open; then {again}"),
+        ),
+        || match vleo_sheet::form::publish(root, id, &base) {
+            vleo_sheet::form::Saved::Ok { regenerated, .. } => Ok((
+                (),
+                format!("{regenerated} artefact(s) generated, the whole tree gated"),
+            )),
+            vleo_sheet::form::Saved::Stale { .. } => {
+                Err("the sheet changed while publishing".into())
+            }
+            vleo_sheet::form::Saved::Refused(e) => Err(e),
+        },
+    )?;
+    run.done(&format!(
+        "published {id}. Its holes are next — `cargo run -p xtask -- fill {id} --hole <n> --body <file>`."
+    ));
+    Ok(())
 }
 
 fn cmd_docs(root: &Path, args: &[&str]) -> Result<(), String> {
