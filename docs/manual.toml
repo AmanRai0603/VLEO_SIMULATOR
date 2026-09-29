@@ -407,14 +407,6 @@ say = "After a run, give the result a name if you like, then keep it."
 ui = "save this result"
 
 [[layer.section.step]]
-say = "After a sweep, keep it the same way: the run at the case and the line across the range, together."
-ui = "save this sweep"
-
-[[layer.section.step]]
-say = "A question already kept is shown from its saved result, and the line above it says which. To run it fresh anyway:"
-ui = "run again anyway"
-
-[[layer.section.step]]
 say = "Every result kept on this machine. Open one to see it; nothing runs."
 ui = "Results"
 
@@ -433,6 +425,14 @@ ui = "upload a result…"
 [[layer.section.step]]
 say = "Run on exactly what it ran on."
 ui = "use its inputs as the case"
+
+[[layer.section.step]]
+say = "After a sweep, keep it the same way: the run at the case and the line across the range, together."
+ui = "save this sweep"
+
+[[layer.section.step]]
+say = "A question already kept is shown from its saved result, and the line above it says which. To run it fresh anyway:"
+ui = "run again anyway"
 
 
 [[layer.section]]
