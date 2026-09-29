@@ -167,10 +167,13 @@ cargo xtask <command>
                      same hash, which is what makes verification mean anything.
                      Publication is irreversible by design.
   bundle verify      re-check every hash in bundles/.
-  mutate [<node>]    perturb the answer by a tenth of a percent and require the
+  mutate [--literals] [<node>]
+                     perturb the answer by a tenth of a percent and require the
                      node's own tests to notice. A test that passes against a
                      wrong number proves nothing, and nothing else in the gate
                      can tell the difference between evidence and decoration.
+                     --literals moves each decimal number in the node's HOLE
+                     code in turn and reports the ones no test notices.
   setup              point git at tools/githooks, so the commit-message hook
                      runs on this clone. One command per person per clone, and
                      the commands that matter say so until it is done.
@@ -1242,6 +1245,14 @@ fn mutant_scale(sh: &vleo_sheet::model::Sheet) -> f64 {
 /// between the two, `cargo xtask docs <node>` regenerates the file and the
 /// mutation is outside every hole, so it does not survive.
 fn cmd_mutate(root: &Path, args: &[&str]) -> Result<(), String> {
+    if args.contains(&"--literals") {
+        let rest: Vec<&str> = args
+            .iter()
+            .copied()
+            .filter(|a| *a != "--literals")
+            .collect();
+        return cmd_mutate_literals(root, &rest);
+    }
     let tree = load(root)?;
     let only = args.first().copied();
     let mut targets: Vec<&vleo_sheet::model::Sheet> = tree
@@ -1385,6 +1396,142 @@ fn cmd_mutate(root: &Path, args: &[&str]) -> Result<(), String> {
         ));
     }
     Ok(())
+}
+
+/// Mutation testing, one decimal number at a time.
+///
+/// Scaling the answer asks whether the evidence notices the node being wrong
+/// as a whole. It cannot ask whether it notices one coefficient being wrong: a
+/// fixture taken at the one point where a term vanishes passes whatever that
+/// term's coefficient is. So each decimal literal inside a HOLE body is moved,
+/// in turn, by more than twice the loosest tolerance, and the node's tests are
+/// run against it. A literal no test objects to is reported by line.
+///
+/// A report, not a gate: most rows have no fixture yet, and every survivor on
+/// them is already a counted gap. Read it for the rows that do.
+fn cmd_mutate_literals(root: &Path, args: &[&str]) -> Result<(), String> {
+    let tree = load(root)?;
+    let only = args.first().copied();
+    let mut targets: Vec<&vleo_sheet::model::Sheet> = tree
+        .ordered()
+        .into_iter()
+        .filter(|sh| sh.state == "published" && !sh.is_declared() && !sh.fixtures.is_empty())
+        .filter(|sh| only.is_none_or(|o| sh.id == o))
+        .collect();
+    targets.sort_by(|a, b| a.id.cmp(&b.id));
+    let (mut killed, mut survived) = (0usize, Vec::new());
+    for sh in &targets {
+        let path = sh.dir.join("model.rs");
+        let original = fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+        for (line, mutant) in literal_mutants(&original, mutant_scale(sh)) {
+            fs::write(&path, &mutant).map_err(|e| format!("{}: {e}", path.display()))?;
+            let out = std::process::Command::new("cargo")
+                .current_dir(root)
+                .args(["test", "-q", "-p", &sh.crate_name, "--", &sh.id])
+                .output();
+            fs::write(&path, &original).map_err(|e| format!("{}: {e}", path.display()))?;
+            let out = out.map_err(|e| format!("running cargo test: {e}"))?;
+            let text = format!(
+                "{}{}",
+                String::from_utf8_lossy(&out.stdout),
+                String::from_utf8_lossy(&out.stderr)
+            );
+            if !text.contains("test result:") {
+                continue; // did not build: not a detection, and not a survivor
+            }
+            if out.status.success() {
+                survived.push(format!("{} model.rs:{line}", sh.id));
+            } else {
+                killed += 1;
+            }
+        }
+    }
+    println!(
+        "mutate --literals: {} node(s) with fixtures, {killed} literal mutant(s) caught, {} not",
+        targets.len(),
+        survived.len()
+    );
+    for s in &survived {
+        println!("  no test noticed the number at {s} changing");
+    }
+    Ok(())
+}
+
+/// Every decimal literal inside a HOLE body, each moved by `scale` in its own
+/// copy of `src`, with the line it is on.
+fn literal_mutants(src: &str, scale: f64) -> Vec<(usize, String)> {
+    let mut out = Vec::new();
+    let mut inside = false;
+    let mut offset = 0usize;
+    for (n, line) in src.split_inclusive('\n').enumerate() {
+        let t = line.trim_start();
+        if t.starts_with("// ---- HOLE ") {
+            inside = true;
+        } else if t.starts_with("// ---- end HOLE ") {
+            inside = false;
+        } else if inside {
+            // The code part of the line: before a comment, outside strings.
+            let code = vleo_sheet::gate::code_only(line);
+            let cb: Vec<char> = code.chars().collect();
+            let lb: Vec<char> = line.chars().collect();
+            let mut i = 0;
+            while i < cb.len() {
+                let starts = cb[i].is_ascii_digit()
+                    && (i == 0
+                        || !(cb[i - 1].is_alphanumeric() || cb[i - 1] == '_' || cb[i - 1] == '.'));
+                if !starts {
+                    i += 1;
+                    continue;
+                }
+                let mut j = i;
+                while j < cb.len() && (cb[j].is_ascii_digit() || cb[j] == '_') {
+                    j += 1;
+                }
+                let mut float = false;
+                if j + 1 < cb.len() && cb[j] == '.' && cb[j + 1].is_ascii_digit() {
+                    float = true;
+                    j += 1;
+                    while j < cb.len() && (cb[j].is_ascii_digit() || cb[j] == '_') {
+                        j += 1;
+                    }
+                }
+                if j < cb.len() && (cb[j] == 'e' || cb[j] == 'E') {
+                    let mut k = j + 1;
+                    if k < cb.len() && (cb[k] == '+' || cb[k] == '-') {
+                        k += 1;
+                    }
+                    if k < cb.len() && cb[k].is_ascii_digit() {
+                        float = true;
+                        j = k;
+                        while j < cb.len() && cb[j].is_ascii_digit() {
+                            j += 1;
+                        }
+                    }
+                }
+                let text: String = cb[i..j].iter().filter(|c| **c != '_').collect();
+                // Comments and strings were blanked, not removed, only when
+                // they kept their length; check the literal is really there.
+                let same = lb.len() >= j
+                    && lb[i..j].iter().collect::<String>() == cb[i..j].iter().collect::<String>();
+                if float && same {
+                    if let Ok(v) = text.parse::<f64>() {
+                        if v != 0.0 {
+                            let byte_i: usize = lb[..i].iter().map(|c| c.len_utf8()).sum();
+                            let byte_j: usize = lb[..j].iter().map(|c| c.len_utf8()).sum();
+                            let mut m = String::with_capacity(src.len() + 8);
+                            m.push_str(&src[..offset + byte_i]);
+                            m.push_str(&format!("{:?}", v * scale));
+                            m.push_str(&src[offset + byte_j..]);
+                            out.push((n + 1, m));
+                        }
+                    }
+                }
+                i = j;
+            }
+        }
+        offset += line.len();
+    }
+    out
 }
 
 /// Scale the one line every generated model.rs ends with.
@@ -2392,15 +2539,11 @@ fn cmd_fill(root: &Path, args: &[&str]) -> Result<(), String> {
             return Err(format!("refused: {why} (found {needle:?})"));
         }
     }
-    for bad in [
-        ".sin()", ".cos()", ".exp()", ".ln()", ".powf(", ".sqrt()", ".atan2(", ".tan()", ".log10(",
-    ] {
-        if body.contains(bad) {
-            return Err(format!(
-                "refused: the body calls {bad} — route it through pmath, or cross-face agreement \
-                 fails on the first night for a reason that is not a defect"
-            ));
-        }
+    if let Some(bad) = vleo_sheet::gate::platform_maths(&body).first() {
+        return Err(format!(
+            "refused: the body calls {bad} — route it through pmath, or cross-face agreement \
+             fails on the first night for a reason that is not a defect"
+        ));
     }
 
     // Everything that can refuse, refuses before the file is touched. A splice
