@@ -91,6 +91,15 @@ path = "/v1/node/sw_ap_design"
 
 [[route]]
 method = "GET"
+path = "/v1/lesson/<id>"
+answer = "json"
+schema = "lesson"
+[[route.example]]
+name = "lesson-none"
+path = "/v1/lesson/sw_ap_design"
+
+[[route]]
+method = "GET"
 path = "/v1/derisk"
 answer = "json"
 schema = "derisk"
@@ -241,6 +250,15 @@ answer = "json"
 schema = "results"
 [[route.example]]
 name = "results"
+
+[[route]]
+method = "GET"
+path = "/v1/figures/samples"
+answer = "json"
+schema = "figures"
+[[route.example]]
+name = "figures-samples"
+params = []
 
 [[route]]
 method = "GET"

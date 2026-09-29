@@ -1,0 +1,54 @@
+# AN EXAMPLE LESSON — the shape of lesson.toml, not a lesson anybody has
+# reviewed. Its text is taken from what orbit_velocity's own sheet already says
+# ([explain], [maths], [[assumption]]); nothing here is new physics. A real
+# lesson is written by the person who knows the row, sent as a lesson form,
+# and placed beside the row's node.toml (docs/LESSONS.md).
+#
+# `cargo test -p vleo-sheet --test lessons_hold_together` reads it, and the
+# browser check places it beside orbit_velocity for as long as it looks.
+
+[lesson]
+title = "How fast a very low orbit goes"
+by = "example — replace with the name of the person who wrote it"
+answer = "In this tool's band a spacecraft moves at 7000 to 8200 metres per second, and the lower it flies the faster it goes."
+kind = "explanation"
+
+[[station]]
+kind = "simply"
+title = "Said simply"
+text = "How fast the spacecraft moves along its orbit, and so through the atmosphere, in metres per second. It is worked out from the distance to the Earth's centre, treating the orbit as a circle."
+claim = "derived"
+
+[[station]]
+kind = "real"
+title = "The real thing"
+text = "For a circular orbit with only the Earth pulling, the speed depends only on the distance from the Earth's centre: the closer in, the faster."
+claim = "sourced"
+source = "vallado2013"
+
+[[station]]
+kind = "breaks"
+title = "Where it breaks"
+text = "It assumes a circular orbit with only the Earth pulling. At an eccentricity of 0.05 the speed varies by 5 per cent around the orbit, and a drag figure worked out at the mean speed underestimates the pass closest to the Earth."
+claim = "derived"
+
+[[equation]]
+text = "V = sqrt(mu / r)"
+says = "the circular speed at distance r from the Earth's centre, where mu is the Earth's gravitational parameter"
+claim = "sourced"
+source = "vallado2013"
+
+[[widget]]
+title = "Try it: fly lower"
+inputs = ["orbit_altitude"]
+outputs = ["orbit_velocity", "orbit_radius"]
+sweep = "orbit_altitude"
+
+[[check]]
+question = "The spacecraft is lowered from 400 km to 250 km. Its speed…"
+options = ["falls", "stays the same", "rises"]
+answer = 3
+why = "Closer to the Earth's centre, the circular speed is higher: r is smaller, so sqrt(mu / r) is larger."
+
+[[reference]]
+text = "vallado2013 — the source the row cites for the circular speed relation."

@@ -259,6 +259,23 @@ pub(super) fn results_list() -> String {
     j.0
 }
 
+/// One figure of every kind, from [`vleo_modules::figure::samples`].
+pub(super) fn figure_samples() -> String {
+    let mut j = Json::new();
+    j.raw("{");
+    j.bool_field("ok", true);
+    j.key("figures").open_arr();
+    for (i, f) in vleo_modules::figure::samples().iter().enumerate() {
+        if i > 0 {
+            j.raw(",");
+        }
+        j.raw(&vleo_modules::figure::json(f));
+    }
+    j.close_arr();
+    j.raw("}");
+    j.0
+}
+
 /// One saved result, whole.
 pub(super) fn result_json(params: &str) -> String {
     let name = param(params, "name").map(decode).unwrap_or_default();

@@ -24,6 +24,7 @@ pub mod emit;
 pub mod example;
 pub mod form;
 pub mod guide;
+pub mod lesson;
 pub mod manual;
 pub mod method;
 

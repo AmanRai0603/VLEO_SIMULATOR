@@ -16,5 +16,45 @@
     80,
     132
   ],
-  "refused": []
+  "refused": [],
+  "figure": {
+    "id": "sweep",
+    "kind": "line",
+    "title": "sw_ap_design across sw_storm_design_level",
+    "says": "sw_ap_design across sw_storm_design_level: 3 answered, 0 refused",
+    "x": {
+      "id": "sw_storm_design_level",
+      "label": "Storm level designed for",
+      "unit": "dimensionless",
+      "factor": 1
+    },
+    "y": {
+      "id": "sw_ap_design",
+      "label": "sw_ap_design",
+      "unit": "dimensionless",
+      "factor": 1
+    },
+    "z": null,
+    "series": [
+      {
+        "name": "sw_ap_design",
+        "row": "sw_ap_design",
+        "x": [
+          1,
+          2,
+          3
+        ],
+        "y": [
+          48,
+          80,
+          132
+        ]
+      }
+    ],
+    "grid": null,
+    "frames": [],
+    "scene": [],
+    "notes": [],
+    "gaps": []
+  }
 }

@@ -29,6 +29,7 @@
 import { $, $$, esc, fmt, plural, answerFirst } from './dom.js';
 import { drawChart, attachHover, tableFor, tableTsv, watchScheme, exportFigure, figureSpec } from './chart.js';
 import { caseChanged } from './state.js';
+import { drawFigureInto } from './figures.js';
 
 const POST = { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } };
 const PAGE = { open: null, compare: '', filter: '' };
@@ -180,6 +181,11 @@ async function view(el, host, all) {
       'double-click to undo</span></div>' +
       '<details><summary>the numbers behind this picture</summary><div class="res-sw-table"></div></details>';
   }
+  // Any other figure the result describes, drawn by the figure player.
+  const more = (r.figures || []).filter(f => f.id !== 'sweep');
+  if (more.length) {
+    h += more.map((f, i) => '<h4>' + esc(f.title) + '</h4><div class="res-fig" data-i="' + i + '"></div>').join('');
+  }
   const changed = r.inputs.filter(i => i.note === 'changed');
   h += '<h4>Inputs changed from their defaults</h4>' + (changed.length
     ? '<div class="ri-wrap"><table class="fx"><tbody>' + changed.map(i => '<tr><td><code>' + esc(i.id) +
@@ -224,6 +230,7 @@ async function view(el, host, all) {
     if (res.ok) { PAGE.open = null; renderResults(host); }
   };
   if (fig) drawSweep(el, r, fig);
+  $$('.res-fig', el).forEach(d => drawFigureInto(d, more[+d.dataset.i], (r.name || r.target) + '_' + more[+d.dataset.i].id));
   const cmp = $('.res-cmp', el);
   if (cmp) cmp.onchange = () => { PAGE.compare = cmp.value; compare($('.res-cmp-out', el), r); };
   if (PAGE.compare) compare($('.res-cmp-out', el), r);

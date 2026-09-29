@@ -67,6 +67,15 @@ def check():
         rows = p.locator(".res-row").count()
         step("the Results page lists the recorded results", rows >= 1, f"{rows} row(s)")
 
+        # Every kind of figure the engine can describe, drawn from its samples.
+        p.locator("#tabs .tab", has_text="Architecture").first.click()
+        p.click('[data-arch="figures"]')
+        p.wait_for_selector(".fig-sample canvas", timeout=15000)
+        kinds = p.eval_on_selector_all(".fig-sample", "s => s.map(x => x.dataset.kind)")
+        drawn = p.locator(".fig-sample canvas").count()
+        step("every kind of figure is drawn from its sample", drawn == 6 and "scene3d" in kinds,
+             f"{drawn} drawn: {', '.join(kinds)}")
+
         step("no page error", not errors, "; ".join(errors[:3]))
 
         # An engine from another release: the page must say so, not misread.

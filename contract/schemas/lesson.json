@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "lesson",
+  "description": "A row's lesson, or null when it has none. A lesson that fails its check is refused with why (ok false), never drawn half-right.",
+  "type": "object",
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "checked": {
+      "type": "boolean",
+      "description": "False only where the tree could not be read to check it again; the release checked it."
+    },
+    "lesson": {
+      "anyOf": [
+        {
+          "type": "object",
+          "description": "A row's lesson (crates/vleo-sheet/src/lesson.rs): content only, drawn by the page from its components.",
+          "properties": {
+            "node": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "by": {
+              "type": "string"
+            },
+            "answer": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "tutorial",
+                "how-to",
+                "explanation",
+                "reference"
+              ]
+            },
+            "stations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "simply",
+                      "real",
+                      "breaks",
+                      "story"
+                    ]
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "claim": {
+                    "type": "string",
+                    "enum": [
+                      "sourced",
+                      "derived",
+                      "declared",
+                      "illustrative"
+                    ]
+                  },
+                  "source": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "title",
+                  "text",
+                  "claim",
+                  "source"
+                ]
+              }
+            },
+            "equations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "says": {
+                    "type": "string"
+                  },
+                  "claim": {
+                    "type": "string",
+                    "enum": [
+                      "sourced",
+                      "derived",
+                      "declared",
+                      "illustrative"
+                    ]
+                  },
+                  "source": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "text",
+                  "says",
+                  "claim",
+                  "source"
+                ]
+              }
+            },
+            "widgets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "description": "Sliders for the input rows; the engine's answer for the output rows; with sweep, the first output drawn across that input.",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "inputs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "outputs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "sweep": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "title",
+                  "inputs",
+                  "outputs",
+                  "sweep"
+                ]
+              }
+            },
+            "checks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string"
+                  },
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "answer": {
+                    "type": "integer"
+                  },
+                  "why": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "question",
+                  "options",
+                  "answer",
+                  "why"
+                ]
+              }
+            },
+            "references": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "node",
+            "title",
+            "by",
+            "answer",
+            "kind",
+            "stations",
+            "equations",
+            "widgets",
+            "checks",
+            "references"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "ok",
+    "checked",
+    "lesson"
+  ]
+}

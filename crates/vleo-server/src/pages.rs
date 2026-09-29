@@ -504,3 +504,41 @@ pub(super) fn form_check(ctx: &Ctx, params: &str) -> String {
     j.raw("}");
     j.0
 }
+
+/// A row's lesson, when it has one: `lesson` is null for a row with none.
+///
+/// Checked here as the gate checks it, against the tree on disk, so a lesson
+/// edited beside a running copy is refused with its reasons rather than drawn
+/// half-right. Where the tree cannot be read — a kit without the sheets — the
+/// lesson is served as the release checked it, and `checked` says so.
+pub(super) fn lesson_json(ctx: &Ctx, id: &str) -> String {
+    if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+        return failed("not a node identifier");
+    }
+    let Some(i) = Vleo::find(id) else {
+        return failed("no such node");
+    };
+    let dir = ctx.root.join(NODES[i as usize].folder);
+    let l = match vleo_sheet::lesson::load(&dir, id) {
+        None => return "{\"ok\":true,\"checked\":true,\"lesson\":null}".to_string(),
+        Some(Err(e)) => return failed(&e),
+        Some(Ok(l)) => l,
+    };
+    let checked = match vleo_sheet::load::load_all(&ctx.root) {
+        Ok(tree) => {
+            let bad = vleo_sheet::lesson::problems(&l, &tree);
+            if !bad.is_empty() {
+                return failed(&format!(
+                    "{id}'s lesson does not pass its check: {}",
+                    bad.join("; ")
+                ));
+            }
+            true
+        }
+        Err(_) => false,
+    };
+    format!(
+        "{{\"ok\":true,\"checked\":{checked},\"lesson\":{}}}",
+        vleo_sheet::lesson::json(&l)
+    )
+}

@@ -1045,3 +1045,22 @@ fn every_kind_of_figure_keeps_the_contract() {
         );
     }
 }
+
+/// A lesson, as the route serves one, keeps the contract. No row carries a
+/// lesson yet, so the recorded example is the null answer; this holds the
+/// shape of a real one — the example lesson in docs/examples — to the schema.
+#[test]
+fn a_lesson_keeps_the_contract() {
+    let s = schema("lesson").expect("no lesson schema");
+    let text =
+        std::fs::read_to_string(root().join("docs/examples/orbit_velocity.lesson.toml")).unwrap();
+    let l = vleo_sheet::lesson::read(&text, "orbit_velocity").unwrap();
+    let answer = format!(
+        "{{\"ok\":true,\"checked\":true,\"lesson\":{}}}",
+        vleo_sheet::lesson::json(&l)
+    );
+    let v = parse(&answer).unwrap_or_else(|e| panic!("not JSON: {e}\n{answer}"));
+    let mut errs = Vec::new();
+    validate(&v, &s, "$", &mut errs);
+    assert!(errs.is_empty(), "a lesson breaks the contract: {errs:#?}");
+}

@@ -109,6 +109,24 @@ impl Check {
 /// order, with a reason. A version is a record, so a malformed one is refused
 /// rather than noted: a de-risking narrative with holes in it reads as though
 /// nothing was risked.
+/// A lesson beside the sheet, if there is one: every key known, every claim
+/// tagged and sourced where it says so, no markup, and every row a widget names
+/// real — an input a person picks, an output that computes. `None` for a row
+/// with no lesson, which is most of them and is not a gap.
+fn lesson_check(sh: &Sheet, tree: &Tree) -> Option<Check> {
+    Some(match crate::lesson::load(&sh.dir, &sh.id)? {
+        Err(e) => Check::fail("lesson", e),
+        Ok(l) => {
+            let bad = crate::lesson::problems(&l, tree);
+            if bad.is_empty() {
+                Check::pass("lesson")
+            } else {
+                Check::fail("lesson", bad.join("; "))
+            }
+        }
+    })
+}
+
 fn versions_check(sh: &Sheet) -> Check {
     let bad = crate::derisk::version_problems(sh);
     if bad.is_empty() {
@@ -401,6 +419,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
         });
         out.push(versions_check(sh));
         out.extend(method_checks(sh));
+        out.extend(lesson_check(sh, tree));
         let gaps = emit::gap_pass(sh, &holes);
         out.push(if gaps.is_empty() {
             Check::pass("gap-pass")
@@ -411,6 +430,7 @@ pub fn gate_node(sh: &Sheet, tree: &Tree) -> Vec<Check> {
     }
     out.push(versions_check(sh));
     out.extend(method_checks(sh));
+    out.extend(lesson_check(sh, tree));
 
     // 1 — the sheet validates; no required field is blank.
     let mut missing = Vec::new();
