@@ -39,6 +39,17 @@ fn main() {
             std::process::exit(1);
         }
     };
+    let wrong = vleo_sheet::emit::wiring_errors(&tree);
+    if !wrong.is_empty() {
+        for w in &wrong {
+            println!("cargo:warning={w}");
+        }
+        println!(
+            "cargo:warning={} name(s) in the sheets resolve to nothing; the engine is not built on a guess",
+            wrong.len()
+        );
+        std::process::exit(1);
+    }
     let out = PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR"));
     std::fs::write(out.join("tables.rs"), vleo_sheet::emit::tables_rs(&tree))
         .expect("write tables.rs");

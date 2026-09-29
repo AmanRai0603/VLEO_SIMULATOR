@@ -503,3 +503,20 @@ mod on_disk {
         assert!(std::path::Path::new(u.backup.as_ref().unwrap()).exists());
     }
 }
+
+#[test]
+fn a_value_for_no_row_or_not_a_number_is_refused_not_skipped() {
+    let i = an_input();
+    let unknown = run(i.id, vec![("no_such_row".into(), 1.0)]);
+    assert!(
+        case_refusal(&unknown).is_some(),
+        "an unknown row was accepted"
+    );
+    assert!(
+        value(&unknown).is_none(),
+        "the run went ahead without the value it was given"
+    );
+    let nan = run(i.id, vec![(i.id.to_string(), f64::NAN)]);
+    assert!(case_refusal(&nan).is_some(), "NaN was accepted");
+    assert!(value(&nan).is_none(), "NaN passed the range check");
+}

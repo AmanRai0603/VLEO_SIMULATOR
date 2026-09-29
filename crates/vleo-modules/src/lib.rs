@@ -135,6 +135,18 @@ impl Vleo {
 /// had never heard of, which is a number with somebody else's name on it — a
 /// test and two tools named cases that did not exist and passed for years.
 pub fn case_refusal(case: &vleo_bus::Case) -> Option<String> {
+    // A value for a row that does not exist was skipped, and the run went on
+    // without it — the same substitution, one level down.
+    for (id, v) in &case.supply {
+        if Vleo::find(id).is_none() {
+            return Some(alloc::format!(
+                "the case sets '{id}', and there is no such row"
+            ));
+        }
+        if !v.is_finite() {
+            return Some(alloc::format!("the value set for '{id}' is not a number"));
+        }
+    }
     if Vleo::case_of(case).is_some() {
         return None;
     }
@@ -363,12 +375,31 @@ impl Scratch {
             slots: alloc::vec![Slot::EMPTY; VAR_COUNT],
             order: alloc::vec![0; NODE_COUNT + 1],
             mark: alloc::vec![0; NODE_COUNT + 1],
-            stack: alloc::vec![0; NODE_COUNT + 2],
+            // Every expansion pushes the inputs of its node (or of its whole
+            // cycle), and a producer can be waiting more than once, so the
+            // bound is the inputs, times the widest cycle, not the node count.
+            stack: alloc::vec![0; NODE_COUNT + 2 + input_edges() * widest_cycle()],
             ran: alloc::vec![0; NODE_COUNT + 1],
             blocked: alloc::vec![0; NODE_COUNT + 1],
             blocked_fault: alloc::vec![Fault::NotRun { node: "" }; NODE_COUNT + 1],
         }
     }
+}
+
+/// Every input of every row: the edges of the dependency graph.
+fn input_edges() -> usize {
+    NODES.iter().map(|d| d.inputs.len()).sum()
+}
+
+/// The most rows any declared cycle holds, and at least one.
+fn widest_cycle() -> usize {
+    CASES
+        .iter()
+        .flat_map(|c| c.cycles.iter())
+        .map(|c| c.nodes.len())
+        .max()
+        .unwrap_or(1)
+        .max(1)
 }
 
 /// Evaluate a case.
@@ -420,8 +451,16 @@ pub fn evaluate(case: &vleo_bus::Case, scratch: &mut Scratch) -> Result<vleo_bus
         }
     }
     for (id, val) in &case.supply {
-        if let Some(v) = Vleo::find(id) {
-            supply_checked(&mut store, v, *val)?;
+        match Vleo::find(id) {
+            Some(v) => supply_checked(&mut store, v, *val)?,
+            // `case_refusal` names the row; a face that did not ask it still
+            // gets a refusal rather than a run without the value.
+            None => {
+                return Err(Fault::Refused {
+                    node: "the case",
+                    reason: "it sets a row that does not exist",
+                })
+            }
         }
     }
 
@@ -469,6 +508,13 @@ pub fn evaluate(case: &vleo_bus::Case, scratch: &mut Scratch) -> Result<vleo_bus
 fn supply_checked(store: &mut Store<'_>, v: NodeIdx, value: f64) -> Result<(), Fault> {
     let var = &VARS[v as usize];
     let def = &NODES[var.producer as usize];
+    // NaN passes both range comparisons below, so it is refused first.
+    if !value.is_finite() {
+        return Err(Fault::Refused {
+            node: def.id,
+            reason: "the value supplied is not a finite number",
+        });
+    }
     if value < var.limit.lower {
         return Err(Fault::OutOfDomain {
             node: def.id,
