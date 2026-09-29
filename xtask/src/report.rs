@@ -81,7 +81,49 @@ pub(super) fn cmd_status(root: &Path) -> Result<(), String> {
         .map(|s| s.id.as_str())
         .collect();
     println!("{} KPI closures declared: {}", kpis.len(), kpis.join(", "));
+    evidence_debt(&tree);
     Ok(())
+}
+
+/// What each computing row's answer is checked against, by its best fixture.
+///
+/// The order is docs/NODE_AUTHORING.md's: an independent derivation first, then
+/// a published source, another tool, a physical bound. A row with no fixture is
+/// checked by nothing but itself. Counted over the specified rows that compute,
+/// because a declared row has nothing to check.
+fn evidence_debt(tree: &Tree) {
+    const ORDER: [(&str, &str); 4] = [
+        ("independent-derivation", "an independent derivation"),
+        ("published-source", "a published source"),
+        ("independent-tool", "another tool"),
+        ("physical-bound", "a physical bound"),
+    ];
+    let computing: Vec<_> = tree
+        .ordered()
+        .into_iter()
+        .filter(|s| !s.is_seeded() && !s.is_declared())
+        .collect();
+    let n = computing.len();
+    let mut best = [0usize; ORDER.len()];
+    for sh in &computing {
+        if let Some(i) = ORDER
+            .iter()
+            .position(|(p, _)| sh.fixtures.iter().any(|f| f.provenance == *p))
+        {
+            best[i] += 1;
+        }
+    }
+    let none = computing.iter().filter(|s| s.fixtures.is_empty()).count();
+    let no_theory = computing.iter().filter(|s| s.theory.is_empty()).count();
+    println!();
+    println!("evidence, over the {n} specified rows that compute:");
+    println!(
+        "  {none:>4} of {n} have no fixture — nothing checks their answer but the code itself"
+    );
+    for ((_, words), c) in ORDER.iter().zip(best) {
+        println!("  {c:>4} of {n} are checked, at best, against {words}");
+    }
+    println!("  {no_theory:>4} of {n} say nothing of where their relation comes from (no theory)");
 }
 
 pub(super) fn cmd_gap(root: &Path) -> Result<(), String> {

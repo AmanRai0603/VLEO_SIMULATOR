@@ -184,9 +184,10 @@ git remote set-url origin https://gitlab.com/${NS}/${PROJ}.git
    no cron in the file.
 4. **Decide about the four URLs** in `Cargo.toml` (×3), `README.md` and
    `docs/RELEASE_SETUP.md`. They are correct only while GitHub is the home.
-5. **`docs/RELEASE_SETUP.md` is GitHub-specific** and needs rewriting for
-   protected environments if GitLab becomes the home. The shape of the problem
-   is the same; the tier is Premium instead of Pro.
+5. **`docs/RELEASE_SETUP.md` is GitHub-specific.** Its rule — release only a
+   commit a merged request put on `main` — asks GitHub's API which pull
+   requests contain the commit; on GitLab that is the merge-requests-for-a-
+   commit endpoint, and the workflow step is rewritten around it.
 6. **`CODEOWNERS` becomes inert.** The file moves and GitLab reads it, but
    code-owner approval is Premium. On Free, 1337 ownership rules stop routing
    anything, silently — nothing warns you.

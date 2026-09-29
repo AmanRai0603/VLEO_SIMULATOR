@@ -14,7 +14,7 @@ the team's side of it is in the tool's own Manual tab.
 
 A branch is **a set of node folders**, usually one form's worth, named for whoever
 filled the form: `form/<author>/<node>`. `xtask take` creates it from a fresh
-main — it is never named by hand. Because every artefact is derived from those
+`maintainer` — it is never named by hand. Because every artefact is derived from those
 folders, a branch fully determines its own document and its own engine — so
 checking one out and running it is one command rather than a procedure.
 
@@ -31,6 +31,32 @@ tried** — the preview's Approve file, recorded by `xtask approve` and checked 
 the pipeline's *the author approved this exact change*. Anything pushed after
 an approval needs a new preview and a new approval. The whole loop, step by
 step, is `docs/roles/maintainer.html`.
+
+## The three branches
+
+| branch | who works into it | how | what it is for |
+|---|---|---|---|
+| `developer` | the developers: the kernel, the generators, the gate, the faces, the tools | a pull request from a working branch | changes to the software itself |
+| `maintainer` | the maintainers: node forms | `xtask take` puts each form on `form/<author>/<node>` from `maintainer`; its pull request goes back into `maintainer` | changes to the design |
+| `main` | nobody directly | a pull request from `developer` or `maintainer` | what is released |
+
+**A release is cut only from `main`, and only from a commit that reached `main`
+through a merged pull request** — the release pipeline checks it before
+anything is built. Tags are `vX.Y.Z`. `developer` and `maintainer` are brought
+up to date from `main` after each release, by a merge, never a force-push.
+
+## Who reviews
+
+Ownership is generated into `CODEOWNERS` from [`areas/teams.toml`](areas/teams.toml):
+one **maintainer** team owns everything shared, and each subsystem's
+**developer** team owns that subsystem's nodes. Today every team is one person.
+GitHub never lets an author approve their own pull request, so until a team has
+a second member the reviewer counts below are met by the maintainer who reads
+and merges it, and "the author is not eligible" applies to the person who
+filled the form. The rules apply in full as the teams grow — change the handles
+in `areas/teams.toml`, run `cargo run -p xtask -- codeowners`, and turn on
+"Require review from Code Owners" for `main` then, not before, or no pull
+request can merge.
 
 ## Two reviews, and the author is not eligible for either
 

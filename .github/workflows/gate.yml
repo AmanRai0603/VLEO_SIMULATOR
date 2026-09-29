@@ -48,6 +48,7 @@ jobs:
   gate:
     name: build, generate, gate, test
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -173,6 +174,7 @@ jobs:
   method-end-to-end:
     name: a node built from its method, end to end
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -232,6 +234,7 @@ jobs:
   tooling:
     name: the tools check themselves
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -356,6 +359,7 @@ jobs:
   review:
     name: advisory review (never blocks)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     continue-on-error: true
     permissions:
       contents: read
@@ -386,6 +390,7 @@ jobs:
   mutants:
     name: the changed nodes' tests are load-bearing
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
@@ -452,6 +457,7 @@ jobs:
   panels:
     name: the panels render, move and match
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -538,12 +544,13 @@ jobs:
   # HOLDS. The author tried a preview build of this branch and pressed Approve;
   # the file it saved is recorded in approvals/ by `xtask approve`, and names
   # the commit it was given for. Anything changed since — a fix, a merge from
-  # main — means a new preview and a new approval, because the author approved
-  # a build, not a branch name. Only form branches are asked this.
+  # maintainer — means a new preview and a new approval, because the author
+  # approved a build, not a branch name. Only form branches are asked this.
   approval:
     name: the author approved this exact change
     if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'form/')
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -558,6 +565,7 @@ jobs:
   excluded-faces:
     name: the faces outside the workspace
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -605,6 +613,7 @@ jobs:
   shipping-profile:
     name: the profile that ships
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       # This job had NO cache and is the most expensive in the file: four
@@ -628,6 +637,7 @@ jobs:
   no-std:
     name: the kernel stays no_std
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - run: rustup target add thumbv7em-none-eabihf

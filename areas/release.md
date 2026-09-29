@@ -1,6 +1,6 @@
 # areas/release.md
 
-> **Answer first.** The release pipeline builds, gates and packages; one person approves; and it never changes branch protection or signs without a certificate.
+> **Answer first.** The release pipeline builds, gates, packages and publishes only a commit a merged pull request put on main; it never changes branch protection or signs without a certificate.
 >
 > **Kind:** reference + explanation · **For:** developers
 
@@ -18,39 +18,39 @@ person in repository settings. A pipeline that can widen its own gate has no
 gate.
 
 **Hold a signing key.** Signing and notarisation take a certificate that lives
-in an organisation secret a release engineer controls, requested at the
-approval step and never read by a workflow file. The signing job is
-deliberately absent until that certificate exists: a workflow that pretends to
-sign is worse than one that admits it does not.
+in an organisation secret a release engineer controls, never read by a workflow
+file. The signing job is deliberately absent until that certificate exists: a
+workflow that pretends to sign is worse than one that admits it does not.
 
 ## Prove before you build
 
 A release that discovers its own failure after the artefacts are uploaded has
 already told somebody the wrong thing. The order is fixed:
 
-1. the tag agrees with the version in `Cargo.toml`
-2. the gate
-3. the regeneration diff is clean
-4. every bundle hash verifies
-5. golden vectors against the **release** profile — link-time optimisation
+1. the commit came to `main` through a merged pull request
+2. the tag agrees with the version in `Cargo.toml`
+3. the gate
+4. the regeneration diff is clean
+5. every bundle hash verifies
+6. golden vectors against the **release** profile — link-time optimisation
    changes inlining, so a release proved only in debug is not proved
-6. the notes, read off the log
-7. only then, the binaries
+7. the notes, read off the log
+8. only then, the binaries
 
-## The one human approval
+## The decision is the merge
 
-A GitHub environment named `release`, with required reviewers configured in
-Settings → Environments. The workflow only names it. That separation is the
-whole safety property: the workflow cannot grant itself the approval by editing
-itself.
+A release is a commit on `main` that a merged pull request put there. The
+first step of `prove` refuses anything else — a run started off `main`, a tag
+on a side branch, a commit pushed to `main` around review — before a single
+binary is built, and writes the pull request that decided it to the run's
+summary. How many approvals that pull request needs is the repository variable
+`RELEASE_APPROVALS`, set by a person, 0 when unset; a pipeline that could lower
+its own bar would have none.
 
-**Until that environment exists with reviewers on it, the gate approves
-instantly.** Creating it is a one-time human action and nothing in this
-repository can do it.
-
-The approver sees the release notes and the artefact list in the job summary at
-the moment they approve. An approval given against a page that does not say
-what is in the release is a button press, not a decision.
+It replaced a GitHub environment with required reviewers, which a private
+repository on a free plan cannot have, and which asked for approval after
+everything was built, against a list of file names. `docs/RELEASE_SETUP.md`
+has the whole rule and how to prove it works.
 
 ## The three doors
 

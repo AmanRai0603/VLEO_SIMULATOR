@@ -182,7 +182,8 @@ cargo xtask <command>
                      then the gap pass, then what criticality demands. A node
                      with an open gap does not enter H2 — the reviewer accepts,
                      they do not hunt for defects a machine finds free.
-  codeowners         regenerate CODEOWNERS from the layer files.
+  codeowners         regenerate CODEOWNERS from areas/teams.toml and the owner
+                     each sheet names.
   bundle publish <dir>
                      hash every payload file and write the result into the
                      manifest. Publishing twice from the same input gives the
@@ -261,7 +262,7 @@ cargo xtask <command>
                      the maintainer's first step: check a filled node form;
                      if it cannot be taken, write <form>.returned.txt to send
                      back and change nothing; otherwise put it on its own
-                     branch form/<author>/<node> from a fresh main, apply it,
+                     branch form/<author>/<node> from a fresh maintainer, apply it,
                      regenerate, gate, test, commit naming the author, push.
   preview            where the current form branch's preview build is — every
                      push to a form branch builds one — and what to do with it.

@@ -646,10 +646,10 @@ id = "maint-loop"
 title = "The loop, and where each change stands"
 who = "maintainer"
 kind = "explanation"
-answer = "Each form lives on its own branch, form/<author>/<node>, and passes through four stages: taken, previewed, approved, merged. main only ever receives changes whose author tried and approved them; a release takes everything merged since the last one."
+answer = "Each form lives on its own branch, form/<author>/<node>, and passes through four stages: taken, previewed, approved, merged into the maintainer branch. main only ever receives changes whose author tried and approved them, through a pull request from maintainer; a release takes everything merged into main since the last one."
 body = """
 **Taken.** `take` checks the form and, if it can be applied, puts it on its own \
-branch from a fresh main — applied, regenerated, gated, tested, committed with \
+branch from a fresh `maintainer` — applied, regenerated, gated, tested, committed with \
 the author's name, pushed. If it cannot, it writes a note to send back and \
 changes nothing.
 
@@ -661,9 +661,10 @@ author.
 the exact build. `approve` records it on the branch — refused if anything has \
 changed since that build — and the pull request's approval check turns green.
 
-**Merged, then released.** You merge the pull request when every check is \
-green. `ship` cuts a release from main when you choose; the release pipeline \
-builds the four files; you publish and share them.
+**Merged, then released.** You merge the pull request into `maintainer` when \
+every check is green. When a set of changes is ready, a pull request takes \
+`maintainer` into `main`; `ship` cuts a release from main when you choose; the \
+release pipeline builds the four files; you publish and share them.
 
 Many forms can be in flight at once, each on its own branch, none waiting for \
 another. `queue` says where each one stands."""
@@ -825,7 +826,7 @@ approval at all. Each refusal says which.
 **The pull request.** `take` and `approve` both print its link. Merge only when \
 every check is green — among them **the author approved this exact change**, \
 which reruns the same check the pipeline's way. Use *Squash and merge*: the \
-author's `Form-by:` line and the approval travel with it into main.
+author's `Form-by:` line and the approval travel with it into `maintainer`, and on into main.
 
 An approval is a record, not a password: it proves which build was approved, \
 and you, who received it, vouch for who sent it."""
@@ -847,18 +848,19 @@ id = "maint-ship"
 title = "Release a version"
 who = "maintainer"
 kind = "how-to"
-answer = "From an up-to-date main, run ship with the new version. Merge the pull request it opens the way to, tag the merged main, and publish the four files the release pipeline builds."
+answer = "Once maintainer and developer are merged into main, run ship on an up-to-date main. Merge the pull request it opens the way to and tag the merge commit; the release pipeline builds and publishes the four files itself."
 body = """
 `ship` cuts `release/<version>`: the de-risking narrative regenerated, every \
 node version still marked `next` stamped with this release, regeneration, the \
 gate, the tests, one commit, pushed. It lists whose forms the release carries.
 
-**After the merge:** tag it (the commands `ship` prints). The **release** \
-workflow then builds the three kits and the one-file package and installs the \
-package on Windows, macOS and Linux. Its last job, *one human says yes*, ends \
-red on this repository by design — the files are built. Download the four \
-artifacts, unzip each once, and publish them as the release on GitHub, then \
-share the `.whl` with everyone.
+**The merge is the decision.** The release workflow builds only a commit that \
+a merged pull request put on main, and refuses anything else before it builds \
+(docs/RELEASE_SETUP.md). After the merge, tag the merge commit (the commands \
+`ship` prints). The **release** workflow then builds the three kits and the \
+one-file package, installs the package on Windows, macOS and Linux, and \
+publishes the release with the four files attached; share the `.whl` with \
+everyone.
 
 Choosing the number: the middle number for new behaviour or a change in how \
 the team gets the tool, the last for fixes."""
@@ -899,12 +901,12 @@ id = "maint-two"
 title = "Two forms for the same node"
 who = "maintainer"
 kind = "how-to"
-answer = "Each still gets its own branch. Merge the first when it is approved; then bring main into the second, send its author a new preview, and record their new approval."
+answer = "Each still gets its own branch. Merge the first when it is approved; then bring maintainer into the second, send its author a new preview, and record their new approval."
 body = """
 Two authors can send forms for one node at once — each is taken onto its own \
-branch, and neither waits. After the first merges, the second is behind main. \
-Bring main into it (`git switch form/<author>/<node>` then `git merge \
-origin/main`); if the same field changed in both, git stops with a conflict — \
+branch, and neither waits. After the first merges, the second is behind \
+maintainer. Bring maintainer into it (`git switch form/<author>/<node>` then \
+`git merge origin/maintainer`); if the same field changed in both, git stops with a conflict — \
 that is a question for the two authors, never a coin toss, and a developer can \
 resolve it once they agree. Anything pushed after an approval needs a new \
 preview and a new approval, so the second author approves the combined \
@@ -936,8 +938,8 @@ pull request's checks are green, among them *the author approved this exact \
 change*; it is squash-merged.
 
 **5 · Released.** When a few forms are merged, `ship 0.3.0` cuts the release, \
-its pull request is merged, `v0.3.0` is tagged, and the four files are \
-published and shared. Ana installs 0.3.0 over the preview; her inputs and \
+its pull request is merged, `v0.3.0` is tagged on the merge commit, and the \
+release workflow publishes the four files. Ana installs 0.3.0 over the preview; her inputs and \
 results are still there.
 
 **What would have stopped it:** had Ana's form re-pointed an input to a row \
@@ -2105,7 +2107,7 @@ effect = "reads"
 tool = "xtask"
 name = "take"
 usage = "take <form.html> --for <author> [--again] [--no-push] [--no-test]"
-what = "Takes a filled node form in: checks it, and if it cannot be taken writes `<form>.returned.txt` to send back and changes nothing; otherwise puts it on its own branch `form/<author>/<node>` from a fresh main, applies it, regenerates, gates, tests, commits naming the author and pushes. The push builds the author's preview."
+what = "Takes a filled node form in: checks it, and if it cannot be taken writes `<form>.returned.txt` to send back and changes nothing; otherwise puts it on its own branch `form/<author>/<node>` from a fresh `maintainer`, applies it, regenerates, gates, tests, commits naming the author and pushes. The push builds the author's preview."
 who = "maintainer"
 effect = "writes"
 
@@ -2683,6 +2685,10 @@ path = "docs/roles/developer.html"
 what = "The developer's guide: the code and checks the routine cannot write, and the tool itself. Generated from this manual."
 
 [[doc]]
+path = "docs/GLOSSARY.md"
+what = "The words this repository uses in a sense of its own, each in a sentence, with where it is defined."
+
+[[doc]]
 path = "docs/PSEUDOCODE.md"
 what = "The method language: every statement, function, constant and unit a method may use, and the worked example in full. Generated from the checker's own tables."
 
@@ -2748,7 +2754,7 @@ what = "The solar subsystem row by row. Generated by tools/solar_rows.py."
 
 [[doc]]
 path = "docs/RELEASE_SETUP.md"
-what = "Setting up the release approval — the one piece of the release pipeline that cannot live in this repository."
+what = "How a release is decided — a merged pull request into main — and how the release workflow refuses anything else before it builds."
 
 [[doc]]
 path = "docs/GITLAB_TRANSFER.md"
